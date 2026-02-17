@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1\Common;
 
+use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
+use App\Models\StudentProfile;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
@@ -98,7 +102,7 @@ class MeetingTokenController extends Controller
                 'expires_in' => 7200,
             ], __('Meeting token generated'));
 
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             Log::error('Invalid meeting token parameters', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,
@@ -110,7 +114,7 @@ class MeetingTokenController extends Controller
                 400,
                 'INVALID_PARAMETERS'
             );
-        } catch (\RuntimeException $e) {
+        } catch (RuntimeException $e) {
             Log::error('LiveKit service error', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,
@@ -122,7 +126,7 @@ class MeetingTokenController extends Controller
                 503,
                 'SERVICE_UNAVAILABLE'
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::critical('Unexpected error generating meeting token', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,
@@ -242,7 +246,7 @@ class MeetingTokenController extends Controller
                 'already_exists' => false,
             ], __('Meeting created successfully.'));
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Failed to start meeting via mobile API', [
                 'session_id' => $session->id,
                 'session_type' => $sessionType,
@@ -302,7 +306,7 @@ class MeetingTokenController extends Controller
 
             return $this->serverError(__('Failed to end meeting.'));
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Failed to end meeting via mobile API', [
                 'session_id' => $session->id,
                 'session_type' => $sessionType,
@@ -354,7 +358,7 @@ class MeetingTokenController extends Controller
                 'is_active' => $roomInfo['is_active'] ?? false,
             ], __('Participants retrieved.'));
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Failed to get meeting participants', [
                 'session_id' => $session->id,
                 'session_type' => $sessionType,
@@ -425,7 +429,7 @@ class MeetingTokenController extends Controller
                 'KICK_FAILED'
             );
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Failed to kick participant', [
                 'session_id' => $session->id,
                 'session_type' => $sessionType,
@@ -472,7 +476,7 @@ class MeetingTokenController extends Controller
             'interactive' => InteractiveCourseSession::where('id', $id)
                 ->where(function ($q) use ($userId) {
                     // Get the student profile ID for this user
-                    $studentProfile = \App\Models\StudentProfile::where('user_id', $userId)->first();
+                    $studentProfile = StudentProfile::where('user_id', $userId)->first();
                     $studentProfileId = $studentProfile?->id;
 
                     if ($studentProfileId) {

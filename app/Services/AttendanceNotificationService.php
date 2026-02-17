@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use Exception;
+use App\Enums\NotificationType;
+use App\Events\AttendanceUpdated;
 use App\Enums\AttendanceStatus;
 use App\Models\MeetingAttendance;
 use App\Models\User;
@@ -62,7 +65,7 @@ class AttendanceNotificationService
             // Send notifications to parents
             $this->sendParentNotifications($attendance, $user);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send attendance notification', [
                 'attendance_id' => $attendance->id,
                 'user_id' => $attendance->user_id,
@@ -82,11 +85,11 @@ class AttendanceNotificationService
             foreach ($parents as $parent) {
                 $status = $attendance->attendance_status ?? AttendanceStatus::ATTENDED->value;
                 $notificationType = match ($status) {
-                    AttendanceStatus::ATTENDED->value => \App\Enums\NotificationType::ATTENDANCE_MARKED_PRESENT,
-                    AttendanceStatus::ABSENT->value => \App\Enums\NotificationType::ATTENDANCE_MARKED_ABSENT,
-                    AttendanceStatus::LATE->value => \App\Enums\NotificationType::ATTENDANCE_MARKED_LATE,
-                    AttendanceStatus::LEFT->value => \App\Enums\NotificationType::ATTENDANCE_MARKED_LATE, // Left early treated as late for notifications
-                    default => \App\Enums\NotificationType::ATTENDANCE_MARKED_PRESENT,
+                    AttendanceStatus::ATTENDED->value => NotificationType::ATTENDANCE_MARKED_PRESENT,
+                    AttendanceStatus::ABSENT->value => NotificationType::ATTENDANCE_MARKED_ABSENT,
+                    AttendanceStatus::LATE->value => NotificationType::ATTENDANCE_MARKED_LATE,
+                    AttendanceStatus::LEFT->value => NotificationType::ATTENDANCE_MARKED_LATE, // Left early treated as late for notifications
+                    default => NotificationType::ATTENDANCE_MARKED_PRESENT,
                 };
 
                 $sessionType = $attendance->session->getMeetingType() ?? 'session';
@@ -113,7 +116,7 @@ class AttendanceNotificationService
                     $status === AttendanceStatus::ABSENT->value // Mark absent as important
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send parent attendance notification', [
                 'attendance_id' => $attendance->id,
                 'user_id' => $student->id,
@@ -128,14 +131,14 @@ class AttendanceNotificationService
     public function broadcastAttendanceUpdate(int $sessionId, int $userId, array $data): void
     {
         try {
-            broadcast(new \App\Events\AttendanceUpdated($sessionId, $userId, $data))->toOthers();
+            broadcast(new AttendanceUpdated($sessionId, $userId, $data))->toOthers();
 
             Log::debug('Attendance update broadcasted', [
                 'session_id' => $sessionId,
                 'user_id' => $userId,
                 'event' => $data['status'] ?? 'unknown',
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to broadcast attendance update', [
                 'session_id' => $sessionId,
                 'user_id' => $userId,

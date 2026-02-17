@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
@@ -71,7 +72,7 @@ class ScheduleController extends Controller
 
         try {
             $targetDate = Carbon::parse($date);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->error(__('Invalid date format.'), 400, 'INVALID_DATE');
         }
 

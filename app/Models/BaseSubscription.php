@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Exception;
 use App\Enums\BillingCycle;
 use App\Enums\PurchaseSource;
 use App\Enums\SessionSubscriptionStatus;
@@ -510,7 +511,7 @@ abstract class BaseSubscription extends Model
     public function cancel(?string $reason = null): self
     {
         if (! $this->canCancel()) {
-            throw new \Exception('Cannot cancel subscription in current state');
+            throw new Exception('Cannot cancel subscription in current state');
         }
 
         $this->update([
@@ -529,7 +530,7 @@ abstract class BaseSubscription extends Model
     public function pause(?string $reason = null): self
     {
         if (! $this->canPause()) {
-            throw new \Exception('Cannot pause subscription in current state');
+            throw new Exception('Cannot pause subscription in current state');
         }
 
         $this->update([
@@ -547,7 +548,7 @@ abstract class BaseSubscription extends Model
     public function resume(): self
     {
         if (! $this->canResume()) {
-            throw new \Exception('Cannot resume subscription in current state');
+            throw new Exception('Cannot resume subscription in current state');
         }
 
         $this->update([
@@ -565,7 +566,7 @@ abstract class BaseSubscription extends Model
     public function enableAutoRenewal(): self
     {
         if (! $this->billing_cycle->supportsAutoRenewal()) {
-            throw new \Exception('This billing cycle does not support auto-renewal');
+            throw new Exception('This billing cycle does not support auto-renewal');
         }
 
         $this->update(['auto_renew' => true]);
@@ -629,11 +630,11 @@ abstract class BaseSubscription extends Model
     public function issueCertificate(): self
     {
         if ($this->certificate_issued) {
-            throw new \Exception('Certificate already issued');
+            throw new Exception('Certificate already issued');
         }
 
         if (! $this->isCertificateEligible()) {
-            throw new \Exception('Subscription not eligible for certificate');
+            throw new Exception('Subscription not eligible for certificate');
         }
 
         $this->update([

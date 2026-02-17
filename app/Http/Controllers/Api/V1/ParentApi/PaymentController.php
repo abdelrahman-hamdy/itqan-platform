@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
+use App\Models\QuranSubscription;
+use App\Models\AcademicSubscription;
+use App\Models\CourseSubscription;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
@@ -216,13 +219,13 @@ class PaymentController extends Controller
     protected function getSubscription(string $type, int $id, int $userId)
     {
         return match ($type) {
-            'quran' => \App\Models\QuranSubscription::where('id', $id)
+            'quran' => QuranSubscription::where('id', $id)
                 ->where('student_id', $userId)
                 ->first(),
-            'academic' => \App\Models\AcademicSubscription::where('id', $id)
+            'academic' => AcademicSubscription::where('id', $id)
                 ->where('student_id', $userId)
                 ->first(),
-            'course' => \App\Models\CourseSubscription::where('id', $id)
+            'course' => CourseSubscription::where('id', $id)
                 ->where('user_id', $userId)
                 ->first(),
             default => null,

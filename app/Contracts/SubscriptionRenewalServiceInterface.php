@@ -2,6 +2,8 @@
 
 namespace App\Contracts;
 
+use App\Exceptions\SubscriptionNotFoundException;
+use Exception;
 use App\Models\BaseSubscription;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -88,8 +90,8 @@ interface SubscriptionRenewalServiceInterface
      * @param  float  $amount  The payment amount received
      * @return BaseSubscription The renewed subscription
      *
-     * @throws \App\Exceptions\SubscriptionNotFoundException When subscription cannot be found
-     * @throws \Exception When subscription cannot be renewed in current state
+     * @throws SubscriptionNotFoundException When subscription cannot be found
+     * @throws Exception When subscription cannot be renewed in current state
      */
     public function manualRenewal(BaseSubscription $subscription, float $amount): BaseSubscription;
 
@@ -103,8 +105,8 @@ interface SubscriptionRenewalServiceInterface
      * @param  float  $amount  The payment amount received
      * @return BaseSubscription The reactivated subscription
      *
-     * @throws \App\Exceptions\SubscriptionNotFoundException When subscription cannot be found
-     * @throws \Exception When subscription is not in expired status
+     * @throws SubscriptionNotFoundException When subscription cannot be found
+     * @throws Exception When subscription is not in expired status
      */
     public function reactivate(BaseSubscription $subscription, float $amount): BaseSubscription;
 

@@ -2,6 +2,8 @@
 
 namespace App\Services\Attendance;
 
+use InvalidArgumentException;
+use Illuminate\Support\Collection;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Models\User;
@@ -83,14 +85,14 @@ class QuranReportService extends BaseReportSyncService
 
         if ($newMemorizationDegree !== null) {
             if ($newMemorizationDegree < 0 || $newMemorizationDegree > 10) {
-                throw new \InvalidArgumentException('New memorization degree must be between 0 and 10');
+                throw new InvalidArgumentException('New memorization degree must be between 0 and 10');
             }
             $updateData['new_memorization_degree'] = $newMemorizationDegree;
         }
 
         if ($reservationDegree !== null) {
             if ($reservationDegree < 0 || $reservationDegree > 10) {
-                throw new \InvalidArgumentException('Reservation degree must be between 0 and 10');
+                throw new InvalidArgumentException('Reservation degree must be between 0 and 10');
             }
             $updateData['reservation_degree'] = $reservationDegree;
         }
@@ -107,7 +109,7 @@ class QuranReportService extends BaseReportSyncService
     /**
      * Get students for a Quran session
      */
-    protected function getSessionStudents(QuranSession $session): \Illuminate\Support\Collection
+    protected function getSessionStudents(QuranSession $session): Collection
     {
         // For individual sessions
         if ($session->session_type === 'individual' && $session->student_id) {

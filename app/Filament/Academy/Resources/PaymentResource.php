@@ -2,17 +2,24 @@
 
 namespace App\Filament\Academy\Resources;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Schema;
+use App\Filament\Academy\Resources\PaymentResource\Pages\ListPayments;
+use App\Filament\Academy\Resources\PaymentResource\Pages\CreatePayment;
+use App\Filament\Academy\Resources\PaymentResource\Pages\ViewPayment;
+use App\Filament\Academy\Resources\PaymentResource\Pages\EditPayment;
 use App\Filament\Academy\Resources\PaymentResource\Pages;
 use App\Filament\Shared\Resources\Financial\BasePaymentResource;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class PaymentResource extends BasePaymentResource
 {
-    protected static ?string $navigationGroup = 'المالية';
+    protected static string | \UnitEnum | null $navigationGroup = 'المالية';
 
     protected static ?int $navigationSort = 1;
 
@@ -31,9 +38,9 @@ class PaymentResource extends BasePaymentResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
-            Tables\Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
             static::getMarkCompletedAction(),
             static::getGenerateInvoiceAction(),
@@ -47,7 +54,7 @@ class PaymentResource extends BasePaymentResource
         return [];
     }
 
-    protected static function getAcademyFormField(): ?Forms\Components\Select
+    protected static function getAcademyFormField(): ?Select
     {
         // No academy field needed - auto-scoped to current academy
         return null;
@@ -57,10 +64,10 @@ class PaymentResource extends BasePaymentResource
     // Form - Uses Parent Sections
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 static::getPaymentInfoSection(),
                 static::getAmountDetailsSection(),
                 static::getPaymentStatusSection(),
@@ -76,10 +83,10 @@ class PaymentResource extends BasePaymentResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPayments::route('/'),
-            'create' => Pages\CreatePayment::route('/create'),
-            'view' => Pages\ViewPayment::route('/{record}'),
-            'edit' => Pages\EditPayment::route('/{record}/edit'),
+            'index' => ListPayments::route('/'),
+            'create' => CreatePayment::route('/create'),
+            'view' => ViewPayment::route('/{record}'),
+            'edit' => EditPayment::route('/{record}/edit'),
         ];
     }
 

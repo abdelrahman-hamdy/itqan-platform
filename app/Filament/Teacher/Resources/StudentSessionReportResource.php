@@ -2,21 +2,31 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Placeholder;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Schemas\Components\Grid;
+use Filament\Actions\BulkActionGroup;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Table;
+use App\Filament\Teacher\Resources\StudentSessionReportResource\Pages\ListStudentSessionReports;
+use App\Filament\Teacher\Resources\StudentSessionReportResource\Pages\ViewStudentSessionReport;
+use App\Filament\Teacher\Resources\StudentSessionReportResource\Pages\EditStudentSessionReport;
 use App\Enums\AttendanceStatus;
 use App\Filament\Shared\Resources\BaseStudentSessionReportResource;
 use App\Filament\Teacher\Resources\StudentSessionReportResource\Pages;
 use App\Models\StudentSessionReport;
 use App\Services\StudentReportService;
 use Filament\Forms;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -36,7 +46,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-chart-bar';
 
     protected static ?string $navigationLabel = 'تقارير الطلاب';
 
@@ -44,7 +54,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
 
     protected static ?string $pluralModelLabel = 'تقارير الطلاب';
 
-    protected static ?string $navigationGroup = 'التقارير والتقييمات';
+    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والتقييمات';
 
     protected static ?int $navigationSort = 1;
 
@@ -76,11 +86,11 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     {
         return Section::make('معلومات الجلسة')
             ->schema([
-                Forms\Components\Placeholder::make('student_info')
+                Placeholder::make('student_info')
                     ->label('الطالب')
                     ->content(fn (?StudentSessionReport $record) => $record?->student?->name ?? '-'),
 
-                Forms\Components\Placeholder::make('session_info')
+                Placeholder::make('session_info')
                     ->label('الجلسة')
                     ->content(fn (?StudentSessionReport $record) => $record?->session?->title ?? '-'),
             ])->columns(2);
@@ -93,15 +103,15 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     {
         return [
             ActionGroup::make([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض'),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
 
                 Action::make('update_evaluation')
                     ->label('تحديث التقييم')
                     ->icon('heroicon-o-pencil')
-                    ->form([
+                    ->schema([
                         Grid::make(2)
                             ->schema([
                                 TextInput::make('new_memorization_degree')
@@ -173,7 +183,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
+            BulkActionGroup::make([
                 // Add bulk actions if needed
             ]),
         ];
@@ -213,7 +223,8 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
                     default => 'gray',
                 }),
 
-            Tables\Columns\BadgeColumn::make('attendance_status')
+            TextColumn::make('attendance_status')
+                ->badge()
                 ->label('حالة الحضور')
                 ->formatStateUsing(function (mixed $state): string {
                     if ($state instanceof AttendanceStatus) {
@@ -268,7 +279,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
                 ->suffix('/10')
                 ->sortable(),
 
-            Tables\Columns\IconColumn::make('is_calculated')
+            IconColumn::make('is_calculated')
                 ->label('محسوب تلقائياً')
                 ->boolean()
                 ->trueIcon('heroicon-o-check-circle')
@@ -312,10 +323,10 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
                 }),
 
             Filter::make('date_range')
-                ->form([
-                    Forms\Components\DatePicker::make('from')
+                ->schema([
+                    DatePicker::make('from')
                         ->label('من تاريخ'),
-                    Forms\Components\DatePicker::make('until')
+                    DatePicker::make('until')
                         ->label('إلى تاريخ'),
                 ])
                 ->columns(2)
@@ -342,7 +353,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     // Table Configuration Override
     // ========================================
 
-    public static function table(\Filament\Tables\Table $table): \Filament\Tables\Table
+    public static function table(Table $table): Table
     {
         return parent::table($table)
             ->defaultSort('session.scheduled_at', 'desc')
@@ -389,9 +400,9 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListStudentSessionReports::route('/'),
-            'view' => Pages\ViewStudentSessionReport::route('/{record}'),
-            'edit' => Pages\EditStudentSessionReport::route('/{record}/edit'),
+            'index' => ListStudentSessionReports::route('/'),
+            'view' => ViewStudentSessionReport::route('/{record}'),
+            'edit' => EditStudentSessionReport::route('/{record}/edit'),
         ];
     }
 

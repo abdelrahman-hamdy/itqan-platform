@@ -2,6 +2,8 @@
 
 namespace App\Filament\Teacher\Widgets;
 
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\Action;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\QuranSession;
@@ -46,21 +48,22 @@ class RecentSessionsWidget extends BaseWidget
         return $table
             ->query($query)
             ->columns([
-                Tables\Columns\TextColumn::make('session_code')
+                TextColumn::make('session_code')
                     ->label('رمز الجلسة')
                     ->weight(FontWeight::Bold)
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('title')
+                TextColumn::make('title')
                     ->label('عنوان الجلسة')
                     ->limit(30)
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->searchable(),
 
-                Tables\Columns\BadgeColumn::make('session_type')
+                TextColumn::make('session_type')
+                    ->badge()
                     ->label('النوع')
                     ->colors([
                         'primary' => 'individual',
@@ -74,12 +77,13 @@ class RecentSessionsWidget extends BaseWidget
                         default => $state,
                     }),
 
-                Tables\Columns\TextColumn::make('scheduled_at')
+                TextColumn::make('scheduled_at')
                     ->label('الموعد')
                     ->dateTime('Y-m-d H:i')
                     ->sortable(),
 
-                Tables\Columns\BadgeColumn::make('status')
+                TextColumn::make('status')
+                    ->badge()
                     ->label('الحالة')
                     ->colors([
                         'warning' => SessionStatus::SCHEDULED->value,
@@ -89,7 +93,7 @@ class RecentSessionsWidget extends BaseWidget
                         'gray' => AttendanceStatus::ABSENT->value,
                     ])
                     ->formatStateUsing(function ($state): string {
-                        $statusValue = $state instanceof \App\Enums\SessionStatus ? $state->value : (string) $state;
+                        $statusValue = $state instanceof SessionStatus ? $state->value : (string) $state;
 
                         return match ($statusValue) {
                             SessionStatus::UNSCHEDULED->value => 'غير مجدولة',
@@ -103,8 +107,8 @@ class RecentSessionsWidget extends BaseWidget
                         };
                     }),
             ])
-            ->actions([
-                Tables\Actions\Action::make('view')
+            ->recordActions([
+                Action::make('view')
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
                     ->url(fn (QuranSession $record): string => route('filament.teacher.resources.quran-sessions.view', [

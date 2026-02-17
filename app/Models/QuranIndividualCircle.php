@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use DB;
+use Log;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\Traits\ScopedToAcademy;
@@ -198,7 +200,7 @@ class QuranIndividualCircle extends Model
         return $this->sessions()->countable();
     }
 
-    public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    public function quizAssignments(): MorphMany
     {
         return $this->morphMany(QuizAssignment::class, 'assignable');
     }
@@ -283,7 +285,7 @@ class QuranIndividualCircle extends Model
      */
     public function handleSessionCancelled(): void
     {
-        \DB::transaction(function () {
+        DB::transaction(function () {
             $circle = static::lockForUpdate()->find($this->id);
 
             if (! $circle) {
@@ -302,7 +304,7 @@ class QuranIndividualCircle extends Model
                 'sessions_completed' => $completed,
             ]);
 
-            \Log::info("Circle {$circle->id} remaining sessions incremented due to cancellation", [
+            Log::info("Circle {$circle->id} remaining sessions incremented due to cancellation", [
                 'circle_id' => $circle->id,
                 'new_remaining' => $circle->sessions_remaining,
             ]);

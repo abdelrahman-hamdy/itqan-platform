@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use Exception;
 use App\Constants\DefaultAcademy;
 use App\Enums\BillingCycle;
 use App\Models\QuranPackage;
@@ -240,7 +241,7 @@ class TrialConversionModal extends Component
                 'message' => 'تم إنشاء الاشتراك بنجاح! يرجى إتمام عملية الدفع لتفعيل الاشتراك.',
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->errorMessage = $e->getMessage();
 
             $this->dispatch('trial-converted-error', [

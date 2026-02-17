@@ -13,13 +13,13 @@ class AcademicWeeklyChartWidget extends ChartWidget
     // Prevent auto-discovery - Dashboard explicitly adds this widget
     protected static bool $isDiscoverable = false;
 
-    protected static ?string $heading = 'نشاط الجلسات - آخر 7 أيام';
+    protected ?string $heading = 'نشاط الجلسات - آخر 7 أيام';
 
     protected static ?int $sort = 2;
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $maxHeight = '280px';
+    protected ?string $maxHeight = '280px';
 
     protected function getData(): array
     {

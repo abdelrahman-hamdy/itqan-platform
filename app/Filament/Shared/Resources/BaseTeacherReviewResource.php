@@ -2,11 +2,19 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
 use App\Models\TeacherReview;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -26,7 +34,7 @@ abstract class BaseTeacherReviewResource extends Resource
 {
     protected static ?string $model = TeacherReview::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-star';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-star';
 
     protected static ?string $navigationLabel = 'تقييمات المعلمين';
 
@@ -95,43 +103,43 @@ abstract class BaseTeacherReviewResource extends Resource
     // Shared Form Definition
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات التقييم')
+        return $schema
+            ->components([
+                Section::make('معلومات التقييم')
                     ->schema([
-                        Forms\Components\TextInput::make('reviewable.user.name')
+                        TextInput::make('reviewable.user.name')
                             ->label('المعلم')
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('reviewable_type')
+                        TextInput::make('reviewable_type')
                             ->label('نوع المعلم')
                             ->formatStateUsing(fn ($state) => static::formatTeacherType($state))
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('student.full_name')
+                        TextInput::make('student.full_name')
                             ->label('الطالب')
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('rating')
+                        TextInput::make('rating')
                             ->label('التقييم')
                             ->suffix('/ 5')
                             ->disabled(),
 
-                        Forms\Components\Toggle::make('is_approved')
+                        Toggle::make('is_approved')
                             ->label('تم الموافقة')
                             ->disabled(fn () => ! static::canApproveReviews()),
 
-                        Forms\Components\DateTimePicker::make('approved_at')
+                        DateTimePicker::make('approved_at')
                             ->label('تاريخ الموافقة')
                             ->disabled(),
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('نص التقييم')
+                Section::make('نص التقييم')
                     ->schema([
-                        Forms\Components\Textarea::make('comment')
+                        Textarea::make('comment')
                             ->label('التعليق')
                             ->rows(4)
                             ->disabled(fn () => ! static::canApproveReviews()),
@@ -149,8 +157,8 @@ abstract class BaseTeacherReviewResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions());
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions());
     }
 
     /**
@@ -189,7 +197,7 @@ abstract class BaseTeacherReviewResource extends Resource
                 ->limit(50)
                 ->wrap(),
 
-            Tables\Columns\IconColumn::make('is_approved')
+            IconColumn::make('is_approved')
                 ->label('موافق عليه')
                 ->boolean(),
 
@@ -206,14 +214,14 @@ abstract class BaseTeacherReviewResource extends Resource
     protected static function getTableFilters(): array
     {
         return [
-            Tables\Filters\SelectFilter::make('reviewable_type')
+            SelectFilter::make('reviewable_type')
                 ->label('نوع المعلم')
                 ->options([
                     QuranTeacherProfile::class => 'معلم قرآن',
                     AcademicTeacherProfile::class => 'معلم أكاديمي',
                 ]),
 
-            Tables\Filters\SelectFilter::make('rating')
+            SelectFilter::make('rating')
                 ->label('التقييم')
                 ->options([
                     '5' => '5 نجوم',
@@ -223,7 +231,7 @@ abstract class BaseTeacherReviewResource extends Resource
                     '1' => '1 نجمة',
                 ]),
 
-            Tables\Filters\TernaryFilter::make('is_approved')
+            TernaryFilter::make('is_approved')
                 ->label('الموافقة')
                 ->trueLabel('موافق عليه')
                 ->falseLabel('في الانتظار'),

@@ -2,6 +2,7 @@
 
 namespace App\Services\Webhook\LiveKit;
 
+use Exception;
 use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
 use App\Models\BaseSession;
@@ -114,7 +115,7 @@ class RoomFinishedHandler extends AbstractLiveKitEventHandler
             if (method_exists($session, 'updateSubscriptionUsage')) {
                 try {
                     $session->updateSubscriptionUsage();
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->logError('Failed to update subscription usage', [
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),
@@ -136,7 +137,7 @@ class RoomFinishedHandler extends AbstractLiveKitEventHandler
             $this->logInfo('Final attendance calculated', [
                 'session_id' => $session->id,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logError('Failed to calculate final attendance', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),

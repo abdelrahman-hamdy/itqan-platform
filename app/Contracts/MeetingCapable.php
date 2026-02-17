@@ -2,6 +2,9 @@
 
 namespace App\Contracts;
 
+use App\Models\Academy;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use App\Models\User;
 
 /**
@@ -76,7 +79,7 @@ interface MeetingCapable
     /**
      * Get the academy this session belongs to
      */
-    public function getAcademy(): ?\App\Models\Academy;
+    public function getAcademy(): ?Academy;
 
     /**
      * Get meeting configuration specific to this session type
@@ -88,7 +91,7 @@ interface MeetingCapable
     /**
      * Get the scheduled start time for the meeting
      */
-    public function getMeetingStartTime(): ?\Carbon\Carbon;
+    public function getMeetingStartTime(): ?Carbon;
 
     /**
      * Get the expected duration of the meeting in minutes
@@ -107,7 +110,7 @@ interface MeetingCapable
     /**
      * Get all participants who should have access to this meeting
      *
-     * @return \Illuminate\Database\Eloquent\Collection Collection of User models
+     * @return Collection Collection of User models
      */
-    public function getMeetingParticipants(): \Illuminate\Database\Eloquent\Collection;
+    public function getMeetingParticipants(): Collection;
 }

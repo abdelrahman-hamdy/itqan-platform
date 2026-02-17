@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher\Academic;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
@@ -292,7 +293,7 @@ class SessionController extends Controller
                     'ended_at' => $session->ended_at->toISOString(),
                 ],
             ], __('Session completed successfully'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
 
             return $this->error(__('Failed to complete session.'), 500, 'COMPLETE_FAILED');

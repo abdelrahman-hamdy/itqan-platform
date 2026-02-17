@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\AcademicSession;
 use App\Enums\UserType;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -28,7 +29,7 @@ class AssignAcademicHomeworkRequest extends FormRequest
 
         // If it's a string (ID), load the model
         if (is_string($sessionParam) || is_numeric($sessionParam)) {
-            $session = \App\Models\AcademicSession::find($sessionParam);
+            $session = AcademicSession::find($sessionParam);
         } else {
             $session = $sessionParam;
         }

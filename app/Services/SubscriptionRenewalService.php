@@ -2,6 +2,10 @@
 
 namespace App\Services;
 
+use Illuminate\Database\QueryException;
+use InvalidArgumentException;
+use Throwable;
+use App\Exceptions\SubscriptionNotFoundException;
 use App\Contracts\SubscriptionRenewalServiceInterface;
 use App\Models\BaseSubscription;
 use App\Services\Subscription\RenewalNotificationService;
@@ -72,7 +76,7 @@ class SubscriptionRenewalService implements SubscriptionRenewalServiceInterface
                 } else {
                     $results['failed']++;
                 }
-            } catch (\Illuminate\Database\QueryException $e) {
+            } catch (QueryException $e) {
                 $results['failed']++;
                 $results['errors'][] = [
                     'subscription_id' => $subscription->id,
@@ -85,7 +89,7 @@ class SubscriptionRenewalService implements SubscriptionRenewalServiceInterface
                     'error' => $e->getMessage(),
                     'code' => $e->getCode(),
                 ]);
-            } catch (\InvalidArgumentException $e) {
+            } catch (InvalidArgumentException $e) {
                 $results['failed']++;
                 $results['errors'][] = [
                     'subscription_id' => $subscription->id,
@@ -97,7 +101,7 @@ class SubscriptionRenewalService implements SubscriptionRenewalServiceInterface
                 Log::error("Invalid data processing renewal for subscription {$subscription->id}", [
                     'error' => $e->getMessage(),
                 ]);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $results['failed']++;
                 $results['errors'][] = [
                     'subscription_id' => $subscription->id,
@@ -164,7 +168,7 @@ class SubscriptionRenewalService implements SubscriptionRenewalServiceInterface
      *
      * Delegates to RenewalProcessor
      *
-     * @throws \App\Exceptions\SubscriptionNotFoundException When the subscription cannot be found
+     * @throws SubscriptionNotFoundException When the subscription cannot be found
      */
     public function manualRenewal(BaseSubscription $subscription, float $amount): BaseSubscription
     {
@@ -176,7 +180,7 @@ class SubscriptionRenewalService implements SubscriptionRenewalServiceInterface
      *
      * Delegates to RenewalProcessor
      *
-     * @throws \App\Exceptions\SubscriptionNotFoundException When the subscription cannot be found
+     * @throws SubscriptionNotFoundException When the subscription cannot be found
      */
     public function reactivate(BaseSubscription $subscription, float $amount): BaseSubscription
     {

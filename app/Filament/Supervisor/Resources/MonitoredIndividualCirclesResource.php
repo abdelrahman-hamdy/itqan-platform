@@ -2,17 +2,35 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use App\Models\QuranTeacherProfile;
+use App\Models\User;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource\Pages\ListMonitoredIndividualCircles;
+use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource\Pages\CreateMonitoredIndividualCircle;
+use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource\Pages\ViewMonitoredIndividualCircle;
+use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource\Pages\EditMonitoredIndividualCircle;
+use Illuminate\Database\Eloquent\Model;
 use App\Enums\UserType;
 use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource\Pages;
 use App\Models\QuranIndividualCircle;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -28,7 +46,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
 {
     protected static ?string $model = QuranIndividualCircle::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-user';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user';
 
     protected static ?string $navigationLabel = 'الحلقات الفردية';
 
@@ -36,16 +54,16 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'الحلقات الفردية';
 
-    protected static ?string $navigationGroup = 'إدارة القرآن';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Section::make('معلومات الحلقة الأساسية')
                     ->schema([
                         Grid::make(2)
@@ -69,7 +87,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                                             return ['0' => 'لا توجد معلمين مُسندين'];
                                         }
 
-                                        return \App\Models\QuranTeacherProfile::whereIn('user_id', $teacherIds)
+                                        return QuranTeacherProfile::whereIn('user_id', $teacherIds)
                                             ->active()
                                             ->get()
                                             ->mapWithKeys(function ($teacher) {
@@ -88,7 +106,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                                     ->options(function () {
                                         $academy = static::getCurrentSupervisorAcademy();
 
-                                        return \App\Models\User::where('user_type', UserType::STUDENT->value)
+                                        return User::where('user_type', UserType::STUDENT->value)
                                             ->when($academy, fn ($q) => $q->where('academy_id', $academy->id))
                                             ->with('studentProfile')
                                             ->get()
@@ -187,30 +205,31 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('circle_code')
+                TextColumn::make('circle_code')
                     ->label('رمز الحلقة')
                     ->searchable()
                     ->sortable()
                     ->fontFamily('mono'),
 
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('اسم الحلقة')
                     ->searchable()
                     ->sortable()
                     ->limit(25)
                     ->tooltip(fn ($record) => $record->name),
 
-                Tables\Columns\TextColumn::make('quranTeacher.name')
+                TextColumn::make('quranTeacher.name')
                     ->label('المعلم')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\BadgeColumn::make('specialization')
+                TextColumn::make('specialization')
+                    ->badge()
                     ->label('التخصص')
                     ->formatStateUsing(fn (?string $state): string => $state ? (QuranIndividualCircle::SPECIALIZATIONS[$state] ?? $state) : '-')
                     ->colors([
@@ -221,30 +240,31 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                         'primary' => 'complete',
                     ]),
 
-                Tables\Columns\BadgeColumn::make('memorization_level')
+                TextColumn::make('memorization_level')
+                    ->badge()
                     ->label('المستوى')
                     ->formatStateUsing(fn (?string $state): string => $state ? (QuranIndividualCircle::MEMORIZATION_LEVELS[$state] ?? $state) : '-')
                     ->color('gray'),
 
-                Tables\Columns\TextColumn::make('sessions_completed')
+                TextColumn::make('sessions_completed')
                     ->label('الجلسات')
                     ->formatStateUsing(fn ($record): string => "{$record->sessions_completed} / {$record->total_sessions}")
                     ->alignCenter()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('total_memorized_pages')
+                TextColumn::make('total_memorized_pages')
                     ->label('صفحات الحفظ')
                     ->alignCenter()
                     ->sortable()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('total_reviewed_pages')
+                TextColumn::make('total_reviewed_pages')
                     ->label('صفحات المراجعة')
                     ->alignCenter()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\IconColumn::make('is_active')
+                IconColumn::make('is_active')
                     ->label('الحالة')
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
@@ -252,7 +272,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                     ->trueColor('success')
                     ->falseColor('danger'),
 
-                Tables\Columns\TextColumn::make('last_session_at')
+                TextColumn::make('last_session_at')
                     ->label('آخر جلسة')
                     ->dateTime('Y-m-d')
                     ->timezone(static::getTimezone())
@@ -260,7 +280,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                     ->sortable()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d')
                     ->sortable()
@@ -274,20 +294,20 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                     ->falseLabel('غير نشطة')
                     ->placeholder('الكل'),
 
-                Tables\Filters\SelectFilter::make('specialization')
+                SelectFilter::make('specialization')
                     ->label('التخصص')
                     ->options(QuranIndividualCircle::SPECIALIZATIONS),
 
-                Tables\Filters\SelectFilter::make('memorization_level')
+                SelectFilter::make('memorization_level')
                     ->label('مستوى الحفظ')
                     ->options(QuranIndividualCircle::MEMORIZATION_LEVELS),
 
-                Tables\Filters\SelectFilter::make('quran_teacher_id')
+                SelectFilter::make('quran_teacher_id')
                     ->label('المعلم')
                     ->options(function () {
                         $teacherIds = static::getAssignedQuranTeacherIds();
 
-                        return \App\Models\User::whereIn('id', $teacherIds)
+                        return User::whereIn('id', $teacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->name]);
                     })
@@ -299,15 +319,15 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                     ->query(fn (Builder $query): Builder => $query->where('total_memorized_pages', '>', 0)
                         ->orWhere('total_reviewed_pages', '>', 0)),
             ])
-            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make()
+            ->recordActions([
+                ActionGroup::make([
+                    ViewAction::make()
                         ->label('عرض'),
-                    Tables\Actions\EditAction::make()
+                    EditAction::make()
                         ->label('تعديل'),
-                    Tables\Actions\Action::make('toggle_status')
+                    Action::make('toggle_status')
                         ->label(fn (QuranIndividualCircle $record) => $record->is_active ? 'إيقاف' : 'تفعيل')
                         ->icon(fn (QuranIndividualCircle $record) => $record->is_active ? 'heroicon-o-pause-circle' : 'heroicon-o-play-circle')
                         ->color(fn (QuranIndividualCircle $record) => $record->is_active ? 'warning' : 'success')
@@ -320,19 +340,19 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                         ->action(fn (QuranIndividualCircle $record) => $record->update([
                             'is_active' => ! $record->is_active,
                         ])),
-                    Tables\Actions\Action::make('view_sessions')
+                    Action::make('view_sessions')
                         ->label('الجلسات')
                         ->icon('heroicon-o-calendar-days')
                         ->url(fn (QuranIndividualCircle $record): string => MonitoredAllSessionsResource::getUrl('index', [
                             'activeTab' => 'quran',
                         ])),
-                    Tables\Actions\DeleteAction::make()
+                    DeleteAction::make()
                         ->label('حذف'),
                 ]),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد'),
                 ]),
             ]);
@@ -376,10 +396,10 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListMonitoredIndividualCircles::route('/'),
-            'create' => Pages\CreateMonitoredIndividualCircle::route('/create'),
-            'view' => Pages\ViewMonitoredIndividualCircle::route('/{record}'),
-            'edit' => Pages\EditMonitoredIndividualCircle::route('/{record}/edit'),
+            'index' => ListMonitoredIndividualCircles::route('/'),
+            'create' => CreateMonitoredIndividualCircle::route('/create'),
+            'view' => ViewMonitoredIndividualCircle::route('/{record}'),
+            'edit' => EditMonitoredIndividualCircle::route('/{record}/edit'),
         ];
     }
 
@@ -387,7 +407,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
      * Supervisors can edit any circle shown in their filtered list.
      * The query already filters to only show circles for assigned teachers.
      */
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return true;
     }

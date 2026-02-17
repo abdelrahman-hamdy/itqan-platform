@@ -2,13 +2,26 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use App\Models\SupervisorProfile;
+use App\Models\AcademicTeacherProfile;
+use App\Services\AcademyContextService;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\DateTimePicker;
+use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages\ListMonitoredAllSessions;
+use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages\CreateMonitoredSession;
+use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages\ViewMonitoredSession;
+use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages\EditMonitoredSession;
+use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages\ObserveSession;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Filament\Shared\Tables\SessionTableColumns;
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages;
 use App\Models\QuranSession;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables\Table;
 
 /**
@@ -21,7 +34,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
     // This resource uses a virtual model approach - actual queries are done in pages
     protected static ?string $model = QuranSession::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-video-camera';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-video-camera';
 
     protected static ?string $navigationLabel = 'جميع الجلسات';
 
@@ -29,14 +42,14 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'جميع الجلسات';
 
-    protected static ?string $navigationGroup = 'إدارة الجلسات';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة الجلسات';
 
     protected static ?int $navigationSort = 10;
 
     /**
      * Get supervisor profile from session
      */
-    protected static function getCurrentSupervisorProfile(): ?\App\Models\SupervisorProfile
+    protected static function getCurrentSupervisorProfile(): ?SupervisorProfile
     {
         $user = auth()->user();
 
@@ -73,7 +86,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
             return [];
         }
 
-        return \App\Models\AcademicTeacherProfile::whereIn('user_id', $userIds)
+        return AcademicTeacherProfile::whereIn('user_id', $userIds)
             ->pluck('id')->toArray();
     }
 
@@ -116,45 +129,45 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
      */
     protected static function getTimezone(): string
     {
-        return \App\Services\AcademyContextService::getTimezone();
+        return AcademyContextService::getTimezone();
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات الجلسة')
+        return $schema
+            ->components([
+                Section::make('معلومات الجلسة')
                     ->schema([
-                        Forms\Components\TextInput::make('session_code')
+                        TextInput::make('session_code')
                             ->label('رمز الجلسة')
                             ->disabled()
                             ->dehydrated(false),
 
-                        Forms\Components\TextInput::make('title')
+                        TextInput::make('title')
                             ->label('عنوان الجلسة')
                             ->required()
                             ->maxLength(255),
 
-                        Forms\Components\Select::make('status')
+                        Select::make('status')
                             ->label('الحالة')
                             ->options(SessionStatus::options())
                             ->required(),
 
-                        Forms\Components\Textarea::make('description')
+                        Textarea::make('description')
                             ->label('وصف الجلسة')
                             ->helperText('أهداف ومحتوى الجلسة')
                             ->rows(2)
                             ->columnSpanFull(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('التوقيت')
+                Section::make('التوقيت')
                     ->schema([
-                        Forms\Components\DateTimePicker::make('scheduled_at')
+                        DateTimePicker::make('scheduled_at')
                             ->label('موعد الجلسة')
                             ->required()
                             ->timezone(static::getTimezone()),
 
-                        Forms\Components\Select::make('duration_minutes')
+                        Select::make('duration_minutes')
                             ->label('مدة الجلسة')
                             ->options(SessionDuration::options())
                             ->default(60)
@@ -164,14 +177,14 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
                         // They are displayed as read-only in the view page
                     ])->columns(2),
 
-                Forms\Components\Section::make('الملاحظات')
+                Section::make('الملاحظات')
                     ->schema([
-                        Forms\Components\Textarea::make('session_notes')
+                        Textarea::make('session_notes')
                             ->label('ملاحظات الجلسة')
                             ->rows(3)
                             ->helperText('ملاحظات خاصة بالمعلم عن سير الجلسة'),
 
-                        Forms\Components\Textarea::make('supervisor_notes')
+                        Textarea::make('supervisor_notes')
                             ->label('ملاحظات المشرف')
                             ->rows(3)
                             ->helperText('ملاحظات من المشرف بعد المراجعة'),
@@ -205,11 +218,11 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListMonitoredAllSessions::route('/'),
-            'create' => Pages\CreateMonitoredSession::route('/create'),
-            'view' => Pages\ViewMonitoredSession::route('/{record}'),
-            'edit' => Pages\EditMonitoredSession::route('/{record}/edit'),
-            'observe' => Pages\ObserveSession::route('/{record}/observe'),
+            'index' => ListMonitoredAllSessions::route('/'),
+            'create' => CreateMonitoredSession::route('/create'),
+            'view' => ViewMonitoredSession::route('/{record}'),
+            'edit' => EditMonitoredSession::route('/{record}/edit'),
+            'observe' => ObserveSession::route('/{record}/observe'),
         ];
     }
 

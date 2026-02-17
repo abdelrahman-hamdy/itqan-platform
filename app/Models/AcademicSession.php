@@ -2,6 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+use App\Services\NotificationService;
+use Exception;
+use DB;
+use Illuminate\Database\QueryException;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Collection;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
@@ -58,9 +65,9 @@ use Illuminate\Support\Facades\Log;
  * @property bool $homework_assigned
  * @property string|null $recording_url
  * @property bool $recording_enabled
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MeetingAttendance> $meetingAttendances
+ * @property-read Collection<int, MeetingAttendance> $meetingAttendances
  *
- * @method \Illuminate\Database\Eloquent\Relations\HasMany meetingAttendances()
+ * @method HasMany meetingAttendances()
  *
  * @see BaseSession Parent class with common session fields
  * @see CountsTowardsSubscription Trait for subscription logic
@@ -118,7 +125,7 @@ class AcademicSession extends BaseSession
         $this->fillable = array_merge(parent::$baseFillable, $this->fillable);
 
         // Call grandparent (Model) constructor directly to avoid BaseSession overwriting fillable
-        \Illuminate\Database\Eloquent\Model::__construct($attributes);
+        Model::__construct($attributes);
     }
 
     /**
@@ -176,13 +183,13 @@ class AcademicSession extends BaseSession
         }
 
         try {
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
             $notificationService->sendHomeworkAssignedNotification(
                 $this,
                 $student,
                 null  // No specific homework ID for Academic homework
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Report to monitoring services (Sentry, Bugsnag, etc.) but don't fail
             report($e);
             \Log::warning('Failed to send homework notification to student', [
@@ -195,14 +202,14 @@ class AcademicSession extends BaseSession
         // Notify parent separately to avoid one failure affecting the other
         try {
             if ($student->studentProfile && $student->studentProfile->parent) {
-                $notificationService = app(\App\Services\NotificationService::class);
+                $notificationService = app(NotificationService::class);
                 $notificationService->sendHomeworkAssignedNotification(
                     $this,
                     $student->studentProfile->parent->user,
                     null
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Report to monitoring services but don't fail
             report($e);
             \Log::warning('Failed to send homework notification to parent', [
@@ -230,7 +237,7 @@ class AcademicSession extends BaseSession
 
         while ($attempt < $maxRetries) {
             try {
-                return \DB::transaction(function () {
+                return DB::transaction(function () {
                     // Get prefix from config
                     $prefix = config('session-naming.type_prefixes.academic_private', 'AP');
                     $yearMonth = now()->format('ym');
@@ -251,7 +258,7 @@ class AcademicSession extends BaseSession
 
                     return $codePrefix.str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
                 });
-            } catch (\Illuminate\Database\QueryException $e) {
+            } catch (QueryException $e) {
                 $attempt++;
                 // Retry on deadlock or lock timeout
                 if ($attempt >= $maxRetries || ! static::isRetryableException($e)) {
@@ -272,7 +279,7 @@ class AcademicSession extends BaseSession
     /**
      * Check if the exception is retryable (deadlock or lock timeout)
      */
-    protected static function isRetryableException(\Illuminate\Database\QueryException $e): bool
+    protected static function isRetryableException(QueryException $e): bool
     {
         $errorCode = $e->errorInfo[1] ?? 0;
 
@@ -360,7 +367,7 @@ class AcademicSession extends BaseSession
      * Get all homework submissions for this session (through homework assignments)
      * This is a convenience method that fetches submissions via the homework relationship
      */
-    public function homeworkSubmissions(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    public function homeworkSubmissions(): HasManyThrough
     {
         return $this->hasManyThrough(
             AcademicHomeworkSubmission::class,
@@ -587,7 +594,7 @@ class AcademicSession extends BaseSession
     /**
      * Get all participants who should have access to this meeting (abstract method implementation)
      */
-    public function getMeetingParticipants(): \Illuminate\Database\Eloquent\Collection
+    public function getMeetingParticipants(): Collection
     {
         $participants = collect();
 
@@ -677,7 +684,7 @@ class AcademicSession extends BaseSession
     protected function initializeStudentReports(): void
     {
         if ($this->student_id) {
-            \App\Models\AcademicSessionReport::firstOrCreate([
+            AcademicSessionReport::firstOrCreate([
                 'session_id' => $this->id,
                 'student_id' => $this->student_id,
             ], [
@@ -719,7 +726,7 @@ class AcademicSession extends BaseSession
      */
     public function markAsCompleted(array $additionalData = []): bool
     {
-        return \DB::transaction(function () use ($additionalData) {
+        return DB::transaction(function () use ($additionalData) {
             // Lock for update to prevent race conditions
             $session = self::lockForUpdate()->find($this->id);
 
@@ -831,7 +838,6 @@ class AcademicSession extends BaseSession
     // SUBSCRIPTION COUNTING LOGIC (Aligned with QuranSession)
     // ========================================
     // Note: countsTowardsSubscription() and updateSubscriptionUsage() are now provided by the CountsTowardsSubscription trait
-
     /**
      * Get the subscription instance for counting (required by CountsTowardsSubscription trait)
      *
@@ -839,7 +845,7 @@ class AcademicSession extends BaseSession
      * - Individual sessions: subscription comes from academic individual lesson
      * - Group sessions: not yet implemented
      *
-     * @return \App\Models\AcademicSubscription|null
+     * @return AcademicSubscription|null
      */
     protected function getSubscriptionForCounting()
     {

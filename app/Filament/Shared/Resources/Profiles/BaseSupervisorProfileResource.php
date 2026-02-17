@@ -2,11 +2,24 @@
 
 namespace App\Filament\Shared\Resources\Profiles;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\FileUpload;
+use App\Rules\PasswordRules;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Schemas\Components\Component;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use App\Enums\Gender;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Models\SupervisorProfile;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -25,11 +38,11 @@ abstract class BaseSupervisorProfileResource extends Resource
 
     protected static ?string $tenantOwnershipRelationshipName = 'academy';
 
-    protected static ?string $navigationIcon = 'heroicon-o-shield-check';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-shield-check';
 
     protected static ?string $navigationLabel = 'المشرفين';
 
-    protected static ?string $navigationGroup = 'إدارة المستخدمين';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المستخدمين';
 
     protected static ?string $modelLabel = 'مشرف';
 
@@ -47,46 +60,46 @@ abstract class BaseSupervisorProfileResource extends Resource
     // Shared Form
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->components([
             static::getBasicInfoSection(),
             static::getAccountInfoSection(),
         ]);
     }
 
-    protected static function getBasicInfoSection(): Forms\Components\Section
+    protected static function getBasicInfoSection(): Section
     {
-        return Forms\Components\Section::make('المعلومات الأساسية')
+        return Section::make('المعلومات الأساسية')
             ->schema([
-                Forms\Components\Grid::make(2)->schema([
-                    Forms\Components\TextInput::make('email')
+                Grid::make(2)->schema([
+                    TextInput::make('email')
                         ->label('البريد الإلكتروني')
                         ->email()
                         ->required()
                         ->unique(table: SupervisorProfile::class, ignoreRecord: true)
                         ->maxLength(255),
-                    Forms\Components\TextInput::make('supervisor_code')
+                    TextInput::make('supervisor_code')
                         ->label('رمز المشرف')
                         ->disabled()
                         ->dehydrated(false)
                         ->visible(fn (string $operation): bool => $operation !== 'create'),
-                    Forms\Components\TextInput::make('first_name')
+                    TextInput::make('first_name')
                         ->label('الاسم الأول')
                         ->required()
                         ->maxLength(255),
-                    Forms\Components\TextInput::make('last_name')
+                    TextInput::make('last_name')
                         ->label('اسم العائلة')
                         ->required()
                         ->maxLength(255),
                     static::getPhoneInput()->required(),
-                    Forms\Components\Select::make('gender')
+                    Select::make('gender')
                         ->label('الجنس')
                         ->options(Gender::options())
                         ->default(Gender::MALE->value)
                         ->required(),
                 ]),
-                Forms\Components\FileUpload::make('avatar')
+                FileUpload::make('avatar')
                     ->label('الصورة الشخصية')
                     ->image()
                     ->imageEditor()
@@ -96,12 +109,12 @@ abstract class BaseSupervisorProfileResource extends Resource
             ]);
     }
 
-    protected static function getAccountInfoSection(): Forms\Components\Section
+    protected static function getAccountInfoSection(): Section
     {
-        return Forms\Components\Section::make('معلومات الحساب')
+        return Section::make('معلومات الحساب')
             ->schema([
-                Forms\Components\Grid::make(2)->schema([
-                    Forms\Components\TextInput::make('password')
+                Grid::make(2)->schema([
+                    TextInput::make('password')
                         ->label('كلمة المرور')
                         ->password()
                         ->revealable()
@@ -109,8 +122,8 @@ abstract class BaseSupervisorProfileResource extends Resource
                         ->required(fn (string $context): bool => $context === 'create')
                         ->minLength(6)
                         ->maxLength(255)
-                        ->rules([\App\Rules\PasswordRules::rule()]),
-                    Forms\Components\TextInput::make('password_confirmation')
+                        ->rules([PasswordRules::rule()]),
+                    TextInput::make('password_confirmation')
                         ->label('تأكيد كلمة المرور')
                         ->password()
                         ->revealable()
@@ -118,7 +131,7 @@ abstract class BaseSupervisorProfileResource extends Resource
                         ->required(fn (string $context, $get): bool => $context === 'create' || filled($get('password')))
                         ->same('password'),
                 ]),
-                Forms\Components\Toggle::make('user_active_status')
+                Toggle::make('user_active_status')
                     ->label('الحساب مفعل')
                     ->default(true)
                     ->afterStateHydrated(function ($component, $record) {
@@ -127,7 +140,7 @@ abstract class BaseSupervisorProfileResource extends Resource
                         }
                     })
                     ->dehydrated(false),
-                Forms\Components\Textarea::make('notes')
+                Textarea::make('notes')
                     ->label('ملاحظات')
                     ->rows(3)
                     ->maxLength(1000),
@@ -143,40 +156,40 @@ abstract class BaseSupervisorProfileResource extends Resource
         return $table
             ->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions());
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions());
     }
 
     protected static function getTableColumns(): array
     {
         return [
-            Tables\Columns\TextColumn::make('supervisor_code')
+            TextColumn::make('supervisor_code')
                 ->label('رمز المشرف')
                 ->searchable()
                 ->sortable()
                 ->weight('bold')
                 ->copyable(),
-            Tables\Columns\TextColumn::make('full_name')
+            TextColumn::make('full_name')
                 ->label('الاسم الكامل')
                 ->searchable(['first_name', 'last_name'])
                 ->sortable(),
-            Tables\Columns\TextColumn::make('email')
+            TextColumn::make('email')
                 ->label('البريد الإلكتروني')
                 ->searchable()
                 ->sortable()
                 ->copyable(),
-            Tables\Columns\TextColumn::make('phone')
+            TextColumn::make('phone')
                 ->label('رقم الهاتف')
                 ->searchable()
                 ->toggleable(isToggledHiddenByDefault: true),
-            Tables\Columns\IconColumn::make('user.active_status')
+            IconColumn::make('user.active_status')
                 ->label('نشط')
                 ->boolean()
                 ->trueIcon('heroicon-o-check-circle')
                 ->falseIcon('heroicon-o-x-circle')
                 ->trueColor('success')
                 ->falseColor('danger'),
-            Tables\Columns\TextColumn::make('created_at')
+            TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')
                 ->dateTime()
                 ->sortable()
@@ -187,7 +200,7 @@ abstract class BaseSupervisorProfileResource extends Resource
     protected static function getTableFilters(): array
     {
         return [
-            Tables\Filters\TrashedFilter::make(),
+            TrashedFilter::make(),
         ];
     }
 
@@ -197,9 +210,9 @@ abstract class BaseSupervisorProfileResource extends Resource
         return static::scopeEloquentQuery($query);
     }
 
-    protected static function getPhoneInput(string $name = 'phone', string $label = 'رقم الهاتف'): Forms\Components\Component
+    protected static function getPhoneInput(string $name = 'phone', string $label = 'رقم الهاتف'): Component
     {
-        return \Ysfkaya\FilamentPhoneInput\Forms\PhoneInput::make($name)
+        return PhoneInput::make($name)
             ->label($label)
             ->defaultCountry('SA')
             ->initialCountry('sa')

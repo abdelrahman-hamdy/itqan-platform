@@ -2,6 +2,17 @@
 
 namespace App\Services;
 
+use Exception;
+use App\Models\StudentProfile;
+use App\Models\QuranCircleEnrollment;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
+use App\Models\AcademicIndividualLesson;
+use App\Models\AcademicSubscription;
+use App\Models\InteractiveCourseEnrollment;
+use App\Models\InteractiveCourse;
+use App\Models\CourseSubscription;
+use App\Models\RecordedCourse;
 use App\Contracts\QuizServiceInterface;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -132,7 +143,7 @@ class QuizService implements QuizServiceInterface
 
         // Check if student can start a new attempt
         if (! $assignment->canStudentAttempt($studentId)) {
-            throw new \Exception('لقد استنفدت جميع محاولاتك المتاحة');
+            throw new Exception('لقد استنفدت جميع محاولاتك المتاحة');
         }
 
         return QuizAttempt::create([
@@ -148,7 +159,7 @@ class QuizService implements QuizServiceInterface
     public function submitAttempt(QuizAttempt $attempt, array $answers): QuizAttempt
     {
         if ($attempt->isCompleted()) {
-            throw new \Exception('تم تقديم هذه المحاولة بالفعل');
+            throw new Exception('تم تقديم هذه المحاولة بالفعل');
         }
 
         $attempt->submit($answers);
@@ -209,7 +220,7 @@ class QuizService implements QuizServiceInterface
     public function getStudentQuizzes(int $studentId): Collection
     {
         // Get student's user_id (most tables use users.id as student_id)
-        $student = \App\Models\StudentProfile::find($studentId);
+        $student = StudentProfile::find($studentId);
         $userId = $student?->user_id;
 
         if (! $userId) {
@@ -221,7 +232,7 @@ class QuizService implements QuizServiceInterface
 
         // 1. Quran Circles (group) - using Eloquent for tenant scoping via circle relationship
         // The QuranCircleEnrollment model joins with QuranCircle which has tenant scoping
-        $quranCircleIds = \App\Models\QuranCircleEnrollment::where('student_id', $userId)
+        $quranCircleIds = QuranCircleEnrollment::where('student_id', $userId)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereHas('circle', function ($query) use ($student) {
                 // Ensure circle belongs to same academy as student for tenant isolation
@@ -229,42 +240,42 @@ class QuizService implements QuizServiceInterface
             })
             ->pluck('circle_id');
         foreach ($quranCircleIds as $id) {
-            $assignableIds->push(['type' => \App\Models\QuranCircle::class, 'id' => $id]);
+            $assignableIds->push(['type' => QuranCircle::class, 'id' => $id]);
         }
 
         // 2. Quran Individual Circles (uses users.id)
-        $individualCircleIds = \App\Models\QuranIndividualCircle::where('student_id', $userId)
+        $individualCircleIds = QuranIndividualCircle::where('student_id', $userId)
             ->pluck('id');
         foreach ($individualCircleIds as $id) {
-            $assignableIds->push(['type' => \App\Models\QuranIndividualCircle::class, 'id' => $id]);
+            $assignableIds->push(['type' => QuranIndividualCircle::class, 'id' => $id]);
         }
 
         // 3. Academic Individual Lessons (uses users.id) - directly on lesson or via subscription
-        $academicLessonIds = \App\Models\AcademicIndividualLesson::where('student_id', $userId)
+        $academicLessonIds = AcademicIndividualLesson::where('student_id', $userId)
             ->pluck('id');
         foreach ($academicLessonIds as $id) {
-            $assignableIds->push(['type' => \App\Models\AcademicIndividualLesson::class, 'id' => $id]);
+            $assignableIds->push(['type' => AcademicIndividualLesson::class, 'id' => $id]);
         }
 
         // 3b. Academic Subscriptions (uses users.id) - private lessons subscriptions
-        $academicSubIds = \App\Models\AcademicSubscription::where('student_id', $userId)
+        $academicSubIds = AcademicSubscription::where('student_id', $userId)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->pluck('id');
         foreach ($academicSubIds as $id) {
-            $assignableIds->push(['type' => \App\Models\AcademicSubscription::class, 'id' => $id]);
+            $assignableIds->push(['type' => AcademicSubscription::class, 'id' => $id]);
         }
 
         // 4. Interactive Courses - from active enrollments (uses student_profiles.id)
-        $interactiveCourseIds = \App\Models\InteractiveCourseEnrollment::where('student_id', $studentId)
+        $interactiveCourseIds = InteractiveCourseEnrollment::where('student_id', $studentId)
             ->where('enrollment_status', EnrollmentStatus::ENROLLED)
             ->pluck('course_id');
         foreach ($interactiveCourseIds as $id) {
-            $assignableIds->push(['type' => \App\Models\InteractiveCourse::class, 'id' => $id]);
+            $assignableIds->push(['type' => InteractiveCourse::class, 'id' => $id]);
         }
 
         // 5. Recorded Courses - using CourseSubscription model for tenant scoping
         // CourseSubscription extends BaseSubscription which has tenant scoping
-        $recordedCourseIds = \App\Models\CourseSubscription::where('student_id', $userId)
+        $recordedCourseIds = CourseSubscription::where('student_id', $userId)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereNotNull('recorded_course_id')
             ->whereHas('recordedCourse', function ($query) use ($student) {
@@ -273,7 +284,7 @@ class QuizService implements QuizServiceInterface
             })
             ->pluck('recorded_course_id');
         foreach ($recordedCourseIds as $id) {
-            $assignableIds->push(['type' => \App\Models\RecordedCourse::class, 'id' => $id]);
+            $assignableIds->push(['type' => RecordedCourse::class, 'id' => $id]);
         }
 
         // Build query for quiz assignments based on collected assignables
@@ -365,18 +376,18 @@ class QuizService implements QuizServiceInterface
         $type = get_class($assignable);
 
         return match ($type) {
-            \App\Models\QuranCircle::class => $assignable->subscriptions()
+            QuranCircle::class => $assignable->subscriptions()
                 ->where('student_id', $studentId)
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->exists(),
-            \App\Models\QuranIndividualCircle::class => $assignable->student_id === $studentId,
-            \App\Models\AcademicIndividualLesson::class => $assignable->subscription?->student_id === $studentId,
-            \App\Models\AcademicSubscription::class => $assignable->student_id === $studentId && $assignable->status === SessionSubscriptionStatus::ACTIVE,
-            \App\Models\InteractiveCourse::class => $assignable->enrollments()
+            QuranIndividualCircle::class => $assignable->student_id === $studentId,
+            AcademicIndividualLesson::class => $assignable->subscription?->student_id === $studentId,
+            AcademicSubscription::class => $assignable->student_id === $studentId && $assignable->status === SessionSubscriptionStatus::ACTIVE,
+            InteractiveCourse::class => $assignable->enrollments()
                 ->where('student_id', $studentId)
                 ->where('enrollment_status', EnrollmentStatus::ENROLLED)
                 ->exists(),
-            \App\Models\RecordedCourse::class => $assignable->enrollments()
+            RecordedCourse::class => $assignable->enrollments()
                 ->where('user_id', auth()->id())
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->exists(),
@@ -392,12 +403,12 @@ class QuizService implements QuizServiceInterface
         $type = get_class($assignable);
 
         return match ($type) {
-            \App\Models\QuranCircle::class => $assignable->name ?? 'حلقة قرآن',
-            \App\Models\QuranIndividualCircle::class => $assignable->name ?? 'حلقة فردية',
-            \App\Models\AcademicIndividualLesson::class => $assignable->subscription?->teacher?->user?->name ?? 'درس أكاديمي',
-            \App\Models\AcademicSubscription::class => ($assignable->subject_name ?? 'درس خاص').' - '.($assignable->teacher?->user?->name ?? ''),
-            \App\Models\InteractiveCourse::class => $assignable->name ?? 'دورة تفاعلية',
-            \App\Models\RecordedCourse::class => $assignable->name ?? 'دورة مسجلة',
+            QuranCircle::class => $assignable->name ?? 'حلقة قرآن',
+            QuranIndividualCircle::class => $assignable->name ?? 'حلقة فردية',
+            AcademicIndividualLesson::class => $assignable->subscription?->teacher?->user?->name ?? 'درس أكاديمي',
+            AcademicSubscription::class => ($assignable->subject_name ?? 'درس خاص').' - '.($assignable->teacher?->user?->name ?? ''),
+            InteractiveCourse::class => $assignable->name ?? 'دورة تفاعلية',
+            RecordedCourse::class => $assignable->name ?? 'دورة مسجلة',
             default => 'غير محدد',
         };
     }

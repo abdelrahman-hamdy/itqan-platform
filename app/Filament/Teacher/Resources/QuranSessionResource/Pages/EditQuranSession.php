@@ -2,13 +2,16 @@
 
 namespace App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
+use App\Models\QuranSession;
 use App\Filament\Teacher\Resources\QuranSessionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * @property \App\Models\QuranSession $record
+ * @property QuranSession $record
  */
 class EditQuranSession extends EditRecord
 {
@@ -17,9 +20,9 @@ class EditQuranSession extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
-            Actions\DeleteAction::make()
+            DeleteAction::make()
                 ->label('حذف')
                 ->after(function () {
                     // Update session counts for individual circles if needed

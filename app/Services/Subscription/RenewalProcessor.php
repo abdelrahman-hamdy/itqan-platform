@@ -2,6 +2,9 @@
 
 namespace App\Services\Subscription;
 
+use Exception;
+use Illuminate\Database\QueryException;
+use Throwable;
 use App\Enums\PaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -70,7 +73,7 @@ class RenewalProcessor
             }
 
             return $this->processRenewalManually($subscription);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Release lock on failure so retry is possible
             $lock->release();
 
@@ -123,7 +126,7 @@ class RenewalProcessor
 
                     return false;
                 }
-            } catch (\Illuminate\Database\QueryException $e) {
+            } catch (QueryException $e) {
                 Log::error('Database error during renewal processing', [
                     'subscription_id' => $lockedSubscription->id,
                     'error' => $e->getMessage(),
@@ -131,7 +134,7 @@ class RenewalProcessor
                 $this->handleFailedRenewal($lockedSubscription, 'خطأ في قاعدة البيانات');
 
                 return false;
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::critical('Unexpected error during renewal processing', [
                     'subscription_id' => $lockedSubscription->id,
                     'error' => $e->getMessage(),
@@ -282,7 +285,7 @@ class RenewalProcessor
             }
 
             if (! $lockedSubscription->canRenew()) {
-                throw new \Exception('Subscription cannot be renewed in current state');
+                throw new Exception('Subscription cannot be renewed in current state');
             }
 
             $this->handleSuccessfulRenewal($lockedSubscription, $amount);
@@ -313,7 +316,7 @@ class RenewalProcessor
             }
 
             if (! $lockedSubscription->isCancelled()) {
-                throw new \Exception('Only cancelled subscriptions can be reactivated');
+                throw new Exception('Only cancelled subscriptions can be reactivated');
             }
 
             $lockedSubscription->update([

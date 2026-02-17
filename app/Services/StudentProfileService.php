@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use Exception;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\UploadedFile;
 use App\Models\AcademicGradeLevel;
 use App\Models\StudentProfile;
 use App\Models\User;
@@ -81,7 +84,7 @@ class StudentProfileService
             ]);
 
             return $studentProfile;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to create basic student profile', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
@@ -96,7 +99,7 @@ class StudentProfileService
      *
      * @param  StudentProfile  $profile  The profile to update
      * @param  array  $data  Validated data
-     * @param  \Illuminate\Http\UploadedFile|null  $avatarFile  Optional avatar file
+     * @param UploadedFile|null $avatarFile Optional avatar file
      * @return StudentProfile The updated profile
      */
     public function updateProfile(StudentProfile $profile, array $data, $avatarFile = null): StudentProfile
@@ -143,9 +146,9 @@ class StudentProfileService
      * Get grade levels for a student's academy.
      *
      * @param  User  $user  The student user
-     * @return \Illuminate\Database\Eloquent\Collection Grade levels
+     * @return Collection Grade levels
      */
-    public function getGradeLevels(User $user): \Illuminate\Database\Eloquent\Collection
+    public function getGradeLevels(User $user): Collection
     {
         return AcademicGradeLevel::where('academy_id', $user->academy_id)
             ->active()

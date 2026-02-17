@@ -12,13 +12,13 @@ class TeacherWeeklyChartWidget extends ChartWidget
     // Prevent auto-discovery - not needed on main dashboard
     protected static bool $isDiscoverable = false;
 
-    protected static ?string $heading = 'الجلسات - آخر 7 أيام';
+    protected ?string $heading = 'الجلسات - آخر 7 أيام';
 
     protected static ?int $sort = 3;
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $maxHeight = '250px';
+    protected ?string $maxHeight = '250px';
 
     protected function getData(): array
     {

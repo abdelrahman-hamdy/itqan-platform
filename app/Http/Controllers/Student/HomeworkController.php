@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Student;
 
+use Exception;
+use App\Models\AcademicHomework;
+use App\Models\InteractiveCourseHomework;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SubmitStudentHomeworkRequest;
 use App\Services\HomeworkService;
@@ -132,7 +135,7 @@ class HomeworkController extends Controller
                 return redirect()->route('student.homework.view', ['id' => $id, 'type' => $type])
                     ->with('success', 'تم تسليم الواجب بنجاح');
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء تسليم الواجب: '.$e->getMessage());
@@ -172,12 +175,12 @@ class HomeworkController extends Controller
     private function getHomeworkByType($id, $type, $academyId)
     {
         return match ($type) {
-            'academic' => \App\Models\AcademicHomework::where('id', $id)
+            'academic' => AcademicHomework::where('id', $id)
                 ->where('academy_id', $academyId)
                 ->first(),
             // Note: 'quran' type removed - Quran homework is now tracked through QuranSession model
             // and graded through student session reports. See migration: 2025_11_17_190605_drop_quran_homework_tables.php
-            'interactive' => \App\Models\InteractiveCourseHomework::where('id', $id)
+            'interactive' => InteractiveCourseHomework::where('id', $id)
                 ->whereHas('session.interactiveCourse', function ($q) use ($academyId) {
                     $q->where('academy_id', $academyId);
                 })

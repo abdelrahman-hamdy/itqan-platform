@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\View\View;
+use App\Models\AcademicSubject;
+use App\Models\AcademicGradeLevel;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicPackage;
 use App\Models\AcademicSubscription;
@@ -15,7 +18,7 @@ class UnifiedAcademicTeacherController extends Controller
     /**
      * Display a listing of Academic teachers (Unified for both public and authenticated)
      */
-    public function index(Request $request, $subdomain): \Illuminate\View\View
+    public function index(Request $request, $subdomain): View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -148,12 +151,12 @@ class UnifiedAcademicTeacherController extends Controller
         });
 
         // Get filter options
-        $subjects = \App\Models\AcademicSubject::where('academy_id', $academy->id)
+        $subjects = AcademicSubject::where('academy_id', $academy->id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $academy->id)
+        $gradeLevels = AcademicGradeLevel::where('academy_id', $academy->id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -171,7 +174,7 @@ class UnifiedAcademicTeacherController extends Controller
     /**
      * Display the specified academic teacher profile (Unified for both public and authenticated)
      */
-    public function show(Request $request, $subdomain, $teacherId): \Illuminate\View\View
+    public function show(Request $request, $subdomain, $teacherId): View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();

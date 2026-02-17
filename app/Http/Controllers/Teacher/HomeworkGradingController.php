@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use Exception;
 use App\Enums\HomeworkGradingAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GradeHomeworkSubmissionRequest;
@@ -157,7 +158,7 @@ class HomeworkGradingController extends Controller
                 return redirect()->route('teacher.homework.grade', $submissionId)
                     ->with('success', 'تم حفظ التقييم بنجاح');
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء تصحيح الواجب: '.$e->getMessage());
@@ -196,7 +197,7 @@ class HomeworkGradingController extends Controller
 
             return redirect()->route('teacher.homework.index')
                 ->with('success', 'تم طلب التعديل من الطالب بنجاح');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء طلب التعديل: '.$e->getMessage());
         }

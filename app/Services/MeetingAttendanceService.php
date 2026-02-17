@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Contracts\MeetingAttendanceServiceInterface;
 use App\Contracts\MeetingCapable;
 use App\Enums\MeetingEventType;
@@ -107,7 +108,7 @@ class MeetingAttendanceService implements MeetingAttendanceServiceInterface
                 if ($attendance) {
                     $this->notificationService->sendAttendanceNotifications($attendance);
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Continue processing other attendances even if notification fails
                 continue;
             }

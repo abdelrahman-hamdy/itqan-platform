@@ -12,7 +12,7 @@ use Filament\Pages\Dashboard as BaseDashboard;
 
 class Dashboard extends BaseDashboard
 {
-    protected static ?string $navigationIcon = 'heroicon-o-eye';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-eye';
 
     protected static ?string $navigationLabel = 'لوحة التحكم';
 
@@ -25,7 +25,7 @@ class Dashboard extends BaseDashboard
         // should still access the dashboard
     }
 
-    public function getColumns(): int|string|array
+    public function getColumns(): int|array
     {
         return [
             'default' => 1,

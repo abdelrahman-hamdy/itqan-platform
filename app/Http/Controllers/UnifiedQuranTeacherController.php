@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
+use Exception;
 use App\Enums\QuranLearningLevel;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
@@ -27,7 +30,7 @@ class UnifiedQuranTeacherController extends Controller
     /**
      * Display a listing of Quran teachers (Unified for both public and authenticated)
      */
-    public function index(Request $request, $subdomain): \Illuminate\View\View
+    public function index(Request $request, $subdomain): View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -156,7 +159,7 @@ class UnifiedQuranTeacherController extends Controller
     /**
      * Display the specified teacher profile (Unified for both public and authenticated)
      */
-    public function show(Request $request, $subdomain, $teacherId): \Illuminate\View\View
+    public function show(Request $request, $subdomain, $teacherId): View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -225,7 +228,7 @@ class UnifiedQuranTeacherController extends Controller
     /**
      * Show trial booking form (requires authentication)
      */
-    public function showTrialForm(Request $request, $subdomain, $teacherId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+    public function showTrialForm(Request $request, $subdomain, $teacherId): View|RedirectResponse
     {
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
 
@@ -268,7 +271,7 @@ class UnifiedQuranTeacherController extends Controller
     /**
      * Submit trial request (requires authentication)
      */
-    public function submitTrialRequest(Request $request, $subdomain, $teacherId): \Illuminate\Http\RedirectResponse
+    public function submitTrialRequest(Request $request, $subdomain, $teacherId): RedirectResponse
     {
         Log::info('Trial request submission started', [
             'subdomain' => $subdomain,
@@ -371,7 +374,7 @@ class UnifiedQuranTeacherController extends Controller
             // Send notification to teacher
             try {
                 app(TrialNotificationService::class)->sendTrialRequestReceivedNotification($trialRequest);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::warning('Failed to send trial request notification', [
                     'trial_request_id' => $trialRequest->id,
                     'error' => $e->getMessage(),
@@ -381,7 +384,7 @@ class UnifiedQuranTeacherController extends Controller
             return redirect()->route('quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id])
                 ->with('success', __('payments.trial.request_success'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Trial request creation failed', [
                 'user_id' => $user->id,
                 'teacher_id' => $teacherId,
@@ -402,7 +405,7 @@ class UnifiedQuranTeacherController extends Controller
     /**
      * Show subscription booking form
      */
-    public function showSubscriptionBooking(Request $request, $subdomain, $teacherId, $packageId): \Illuminate\View\View
+    public function showSubscriptionBooking(Request $request, $subdomain, $teacherId, $packageId): View
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
 
@@ -448,7 +451,7 @@ class UnifiedQuranTeacherController extends Controller
     /**
      * Submit subscription request
      */
-    public function submitSubscriptionRequest(Request $request, $subdomain, $teacherId, $packageId): \Illuminate\Http\RedirectResponse
+    public function submitSubscriptionRequest(Request $request, $subdomain, $teacherId, $packageId): RedirectResponse
     {
         Log::info('Subscription request received', [
             'subdomain' => $subdomain,
@@ -546,7 +549,7 @@ class UnifiedQuranTeacherController extends Controller
             return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
                 ->with('info', __('payments.subscription.payment_pending'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Subscription creation failed', [
                 'user_id' => $user->id,
                 'teacher_id' => $teacherId,

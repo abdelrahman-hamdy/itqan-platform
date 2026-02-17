@@ -2,6 +2,8 @@
 
 namespace App\Models\Traits;
 
+use Exception;
+use App\Models\MeetingAttendance;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Exceptions\MeetingException;
@@ -48,7 +50,7 @@ trait HasMeetings
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to auto-create meeting for ready session', [
                 'session_id' => $this->id,
                 'error' => $e->getMessage(),
@@ -110,7 +112,7 @@ trait HasMeetings
 
             return $meetingData['meeting_url'];
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to generate meeting link', [
                 'session_type' => $this->getMeetingSessionType(),
                 'session_id' => $this->id,
@@ -153,7 +155,7 @@ trait HasMeetings
 
             return $token;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to generate participant token', [
                 'session_type' => $this->getMeetingSessionType(),
                 'session_id' => $this->id,
@@ -204,7 +206,7 @@ trait HasMeetings
             $roomInfo = $liveKitService->getRoomInfo($this->meeting_room_name);
 
             return $roomInfo && $roomInfo['is_active'];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to check meeting status', [
                 'session_type' => $this->getMeetingSessionType(),
                 'session_id' => $this->id,
@@ -317,7 +319,7 @@ trait HasMeetings
      */
     public function meetingAttendances()
     {
-        return $this->hasMany(\App\Models\MeetingAttendance::class, 'session_id')
+        return $this->hasMany(MeetingAttendance::class, 'session_id')
             ->where('session_type', $this->getMeetingSessionType());
     }
 
@@ -335,7 +337,7 @@ trait HasMeetings
             $roomInfo = $liveKitService->getRoomInfo($this->meeting_room_name);
 
             return $roomInfo ? $roomInfo['participant_count'] : 0;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to get participants count', [
                 'session_type' => $this->getMeetingSessionType(),
                 'session_id' => $this->id,
@@ -373,7 +375,7 @@ trait HasMeetings
             }
 
             return $success;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to end meeting', [
                 'session_type' => $this->getMeetingSessionType(),
                 'session_id' => $this->id,

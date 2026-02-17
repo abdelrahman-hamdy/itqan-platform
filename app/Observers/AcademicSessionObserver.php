@@ -2,6 +2,8 @@
 
 namespace App\Observers;
 
+use Exception;
+use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Services\NotificationService;
@@ -56,7 +58,7 @@ class AcademicSessionObserver
                 'session_id' => $session->id,
                 'session_type' => $session->session_type ?? 'individual',
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle Academic session cancellation', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -82,7 +84,7 @@ class AcademicSessionObserver
             // Send notification to student
             $notificationService->send(
                 $student,
-                \App\Enums\NotificationType::HOMEWORK_ASSIGNED,
+                NotificationType::HOMEWORK_ASSIGNED,
                 [
                     'session_title' => $session->title ?? 'جلسة أكاديمية',
                     'teacher_name' => $session->academicTeacher?->user->name ?? 'المعلم',
@@ -108,7 +110,7 @@ class AcademicSessionObserver
                 'student_id' => $student->id,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send academic homework assigned notifications', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),

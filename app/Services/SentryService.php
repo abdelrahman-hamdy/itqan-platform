@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -80,7 +81,7 @@ class SentryService
                 'sentry_url' => $this->getSentryUrl(),
                 'fetched_at' => now()->toISOString(),
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'configured' => true,
                 'error' => 'Error connecting to Sentry: '.$e->getMessage(),
@@ -166,7 +167,7 @@ class SentryService
                     'crash_free_rate' => $crashFreeRate,
                 ];
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Silently fail for optional stats
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SessionRecordingResource\Pages;
 
+use Filament\Actions\Action;
 use App\Filament\Resources\SessionRecordingResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -18,7 +19,7 @@ class ViewSessionRecording extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('download')
+            Action::make('download')
                 ->label('تحميل التسجيل')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('success')
@@ -26,7 +27,7 @@ class ViewSessionRecording extends ViewRecord
                 ->url(fn () => $this->getRecord()->getDownloadUrl())
                 ->openUrlInNewTab(),
 
-            Actions\Action::make('stream')
+            Action::make('stream')
                 ->label('تشغيل التسجيل')
                 ->icon('heroicon-o-play')
                 ->color('primary')
@@ -34,7 +35,7 @@ class ViewSessionRecording extends ViewRecord
                 ->url(fn () => $this->getRecord()->getStreamUrl())
                 ->openUrlInNewTab(),
 
-            Actions\Action::make('delete')
+            Action::make('delete')
                 ->label('حذف')
                 ->icon('heroicon-o-trash')
                 ->color('danger')

@@ -2,6 +2,12 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource\Pages\ListManagedTeacherEarnings;
+use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource\Pages\ViewManagedTeacherEarning;
 use App\Enums\UserType;
 use App\Filament\Shared\Resources\BaseTeacherEarningResource;
 use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource\Pages;
@@ -21,7 +27,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
 {
-    protected static ?string $navigationGroup = 'إدارة المعلمين';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المعلمين';
 
     protected static ?int $navigationSort = 2;
 
@@ -84,7 +90,7 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
             static::getFinalizeAction(),
             static::getDisputeAction(),
             static::getResolveDisputeAction(),
-            Tables\Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
         ];
     }
@@ -95,7 +101,7 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
+            BulkActionGroup::make([
                 static::getFinalizeBulkAction(),
             ]),
         ];
@@ -115,7 +121,7 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
         return parent::table($table)
             ->columns([
                 ...static::getTableColumns(),
-                Tables\Columns\TextColumn::make('session_completed_at')
+                TextColumn::make('session_completed_at')
                     ->label('تاريخ الجلسة')
                     ->dateTime('Y-m-d H:i')
                     ->sortable(),
@@ -130,9 +136,9 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
     /**
      * Additional teacher filter for Supervisor panel.
      */
-    protected static function getTeacherFilter(): Tables\Filters\SelectFilter
+    protected static function getTeacherFilter(): SelectFilter
     {
-        return Tables\Filters\SelectFilter::make('teacher_id')
+        return SelectFilter::make('teacher_id')
             ->label('المعلم')
             ->options(function () {
                 $teacherIds = BaseSupervisorResource::getAllAssignedTeacherIds();
@@ -207,8 +213,8 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListManagedTeacherEarnings::route('/'),
-            'view' => Pages\ViewManagedTeacherEarning::route('/{record}'),
+            'index' => ListManagedTeacherEarnings::route('/'),
+            'view' => ViewManagedTeacherEarning::route('/{record}'),
         ];
     }
 }

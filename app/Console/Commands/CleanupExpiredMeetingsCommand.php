@@ -2,6 +2,10 @@
 
 namespace App\Console\Commands;
 
+use Exception;
+use App\Models\QuranSession;
+use App\Models\VideoSettings;
+use Carbon\Carbon;
 use App\Services\AutoMeetingCreationService;
 use App\Services\CronJobLogger;
 use Illuminate\Console\Command;
@@ -85,7 +89,7 @@ class CleanupExpiredMeetingsCommand extends Command
 
             return self::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('💥 Fatal error during cleanup: '.$e->getMessage());
 
             if ($this->getOutput()->isVerbose()) {
@@ -148,19 +152,19 @@ class CleanupExpiredMeetingsCommand extends Command
         $sessionDetails = [];
 
         // Process sessions in chunks to prevent memory issues
-        \App\Models\QuranSession::whereNotNull('meeting_id')
+        QuranSession::whereNotNull('meeting_id')
             ->active()
             ->whereNotNull('scheduled_at')
             ->with('academy')
             ->chunkById(100, function ($sessions) use (&$expiredCount, &$sessionDetails) {
                 foreach ($sessions as $session) {
-                    $videoSettings = \App\Models\VideoSettings::forAcademy($session->academy);
+                    $videoSettings = VideoSettings::forAcademy($session->academy);
 
                     if (! $videoSettings->auto_end_meetings) {
                         continue;
                     }
 
-                    $scheduledEndTime = \Carbon\Carbon::parse($session->scheduled_at)
+                    $scheduledEndTime = Carbon::parse($session->scheduled_at)
                         ->addMinutes($session->duration_minutes ?? 60);
                     $actualEndTime = $videoSettings->getMeetingEndTime($scheduledEndTime);
 

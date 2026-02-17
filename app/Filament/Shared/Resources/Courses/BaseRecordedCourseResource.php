@@ -2,17 +2,30 @@
 
 namespace App\Filament\Shared\Resources\Courses;
 
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Filters\Filter;
+use Filament\Forms\Components\DatePicker;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\DifficultyLevel;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\RecordedCourse;
 use Filament\Forms;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -35,9 +48,9 @@ abstract class BaseRecordedCourseResource extends Resource
 
     protected static ?string $tenantOwnershipRelationshipName = 'academy';
 
-    protected static ?string $navigationIcon = 'heroicon-o-video-camera';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-video-camera';
 
-    protected static ?string $navigationGroup = 'إدارة الدورات المسجلة';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة الدورات المسجلة';
 
     protected static ?string $navigationLabel = 'الدورات المسجلة';
 
@@ -71,13 +84,13 @@ abstract class BaseRecordedCourseResource extends Resource
      * Get academy field for form (Admin only).
      * Admin: Academy selector | Academy: null (auto-scoped)
      */
-    abstract protected static function getAcademyFormField(): ?Forms\Components\Select;
+    abstract protected static function getAcademyFormField(): ?Select;
 
     /**
      * Get instructor field for form (panel-specific).
      * Admin: May not have instructor | Academy: Required instructor field
      */
-    abstract protected static function getInstructorFormField(): ?Forms\Components\Select;
+    abstract protected static function getInstructorFormField(): ?Select;
 
     /**
      * Get panel-specific form fields (admin notes, instructor, etc.).
@@ -117,10 +130,10 @@ abstract class BaseRecordedCourseResource extends Resource
     // Shared Form Implementation
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Tabs::make('course-tabs')
                     ->tabs([
                         static::getBasicInfoTab(),
@@ -136,20 +149,20 @@ abstract class BaseRecordedCourseResource extends Resource
     /**
      * Basic Information Tab
      */
-    protected static function getBasicInfoTab(): Tabs\Tab
+    protected static function getBasicInfoTab(): Tab
     {
-        return Tabs\Tab::make('المعلومات الأساسية')
+        return Tab::make('المعلومات الأساسية')
             ->icon('heroicon-o-information-circle')
             ->schema([
                 Section::make('معلومات الدورة')
                     ->schema([
-                        Forms\Components\TextInput::make('title')
+                        TextInput::make('title')
                             ->label('عنوان الدورة')
                             ->required()
                             ->maxLength(255)
                             ->placeholder('أدخل عنوان الدورة'),
 
-                        Forms\Components\TextInput::make('course_code')
+                        TextInput::make('course_code')
                             ->label('رمز الدورة')
                             ->required()
                             ->maxLength(255)
@@ -157,7 +170,7 @@ abstract class BaseRecordedCourseResource extends Resource
                             ->helperText('رمز فريد للدورة (مثال: MATH101)')
                             ->placeholder('أدخل رمز الدورة'),
 
-                        Forms\Components\Textarea::make('description')
+                        Textarea::make('description')
                             ->label('وصف الدورة')
                             ->rows(3)
                             ->maxLength(1000)
@@ -169,14 +182,14 @@ abstract class BaseRecordedCourseResource extends Resource
 
                 Section::make('التصنيف الأكاديمي')
                     ->schema([
-                        Forms\Components\Select::make('subject_id')
+                        Select::make('subject_id')
                             ->label('المادة الدراسية')
                             ->options(fn () => static::getSubjectOptions())
                             ->required()
                             ->searchable()
                             ->preload(),
 
-                        Forms\Components\Select::make('grade_level_id')
+                        Select::make('grade_level_id')
                             ->label('الصف الدراسي')
                             ->options(fn (Get $get) => static::getGradeLevelOptions($get))
                             ->searchable()
@@ -188,7 +201,7 @@ abstract class BaseRecordedCourseResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('duration_hours')
+                                TextInput::make('duration_hours')
                                     ->label('مدة الدورة (بالساعات)')
                                     ->numeric()
                                     ->minValue(0)
@@ -196,7 +209,7 @@ abstract class BaseRecordedCourseResource extends Resource
                                     ->default(0)
                                     ->required(),
 
-                                Forms\Components\TextInput::make('price')
+                                TextInput::make('price')
                                     ->label('السعر')
                                     ->numeric()
                                     ->prefix(getCurrencyCode())
@@ -204,7 +217,7 @@ abstract class BaseRecordedCourseResource extends Resource
                                     ->default(0)
                                     ->required(),
 
-                                Forms\Components\Select::make('difficulty_level')
+                                Select::make('difficulty_level')
                                     ->label('مستوى الدورة')
                                     ->options([
                                         'easy' => 'سهل',
@@ -214,13 +227,13 @@ abstract class BaseRecordedCourseResource extends Resource
                                     ->default('medium')
                                     ->required(),
 
-                                Forms\Components\DateTimePicker::make('enrollment_deadline')
+                                DateTimePicker::make('enrollment_deadline')
                                     ->label('آخر موعد للتسجيل')
                                     ->nullable()
                                     ->helperText('اتركه فارغاً للتسجيل المفتوح'),
                             ]),
 
-                        Forms\Components\Toggle::make('is_published')
+                        Toggle::make('is_published')
                             ->label('منشور')
                             ->default(false)
                             ->required(),
@@ -228,21 +241,21 @@ abstract class BaseRecordedCourseResource extends Resource
 
                 Section::make('المتطلبات والنتائج')
                     ->schema([
-                        Forms\Components\TagsInput::make('prerequisites')
+                        TagsInput::make('prerequisites')
                             ->label('المتطلبات المسبقة')
                             ->placeholder('اضغط Enter لإضافة متطلب')
                             ->helperText('مثال: معرفة أساسيات البرمجة، إتقان اللغة الإنجليزية')
                             ->reorderable()
                             ->columnSpanFull(),
 
-                        Forms\Components\TagsInput::make('learning_outcomes')
+                        TagsInput::make('learning_outcomes')
                             ->label('نتائج التعلم')
                             ->placeholder('اضغط Enter لإضافة نتيجة')
                             ->helperText('مثال: بناء تطبيقات ويب كاملة، فهم قواعد البيانات')
                             ->reorderable()
                             ->columnSpanFull(),
 
-                        Forms\Components\TagsInput::make('tags')
+                        TagsInput::make('tags')
                             ->label('الكلمات المفتاحية')
                             ->placeholder('اضغط Enter لإضافة كلمة')
                             ->helperText('تساعد في البحث والتصنيف')
@@ -255,36 +268,36 @@ abstract class BaseRecordedCourseResource extends Resource
     /**
      * Lessons Tab
      */
-    protected static function getLessonsTab(): Tabs\Tab
+    protected static function getLessonsTab(): Tab
     {
-        return Tabs\Tab::make('دروس الدورة')
+        return Tab::make('دروس الدورة')
             ->icon('heroicon-o-play')
             ->schema([
                 Section::make('📚 إدارة دروس الدورة')
                     ->description('يمكنك إضافة عدد لا محدود من الدروس وتحديد محتوى كل درس')
                     ->schema([
-                        Forms\Components\Repeater::make('lessons')
+                        Repeater::make('lessons')
                             ->relationship('lessons')
                             ->label('دروس الدورة')
                             ->schema([
-                                Forms\Components\Hidden::make('course_section_id')
+                                Hidden::make('course_section_id')
                                     ->default(1),
 
-                                Forms\Components\Hidden::make('created_by')
+                                Hidden::make('created_by')
                                     ->default(auth()->id()),
 
-                                Forms\Components\TextInput::make('title')
+                                TextInput::make('title')
                                     ->label('عنوان الدرس')
                                     ->required()
                                     ->maxLength(255)
                                     ->columnSpanFull(),
 
-                                Forms\Components\RichEditor::make('description')
+                                RichEditor::make('description')
                                     ->label('وصف الدرس')
                                     ->required()
                                     ->columnSpanFull(),
 
-                                Forms\Components\FileUpload::make('video_url')
+                                FileUpload::make('video_url')
                                     ->label('فيديو الدرس')
                                     ->disk('public')
                                     ->directory('lessons/videos')
@@ -300,15 +313,15 @@ abstract class BaseRecordedCourseResource extends Resource
 
                                 Grid::make(3)
                                     ->schema([
-                                        Forms\Components\Toggle::make('is_published')
+                                        Toggle::make('is_published')
                                             ->label('منشور')
                                             ->default(true),
 
-                                        Forms\Components\Toggle::make('is_free_preview')
+                                        Toggle::make('is_free_preview')
                                             ->label('معاينة مجانية')
                                             ->default(false),
 
-                                        Forms\Components\Toggle::make('is_downloadable')
+                                        Toggle::make('is_downloadable')
                                             ->label('قابل للتحميل')
                                             ->default(false),
                                     ]),
@@ -325,15 +338,15 @@ abstract class BaseRecordedCourseResource extends Resource
     /**
      * Prerequisites Tab
      */
-    protected static function getPrerequisitesTab(): Tabs\Tab
+    protected static function getPrerequisitesTab(): Tab
     {
-        return Tabs\Tab::make('المتطلبات والنتائج')
+        return Tab::make('المتطلبات والنتائج')
             ->icon('heroicon-o-clipboard-document-list')
             ->schema([
                 Section::make('متطلبات الدورة')
                     ->description('حدد المتطلبات الأساسية للالتحاق بهذه الدورة')
                     ->schema([
-                        Forms\Components\TagsInput::make('prerequisites')
+                        TagsInput::make('prerequisites')
                             ->label('المتطلبات المسبقة')
                             ->placeholder('اضغط Enter لإضافة متطلب')
                             ->helperText('مثال: معرفة أساسيات البرمجة، إتقان اللغة الإنجليزية')
@@ -344,14 +357,14 @@ abstract class BaseRecordedCourseResource extends Resource
                 Section::make('نتائج التعلم')
                     ->description('ماذا سيتعلم الطالب من هذه الدورة؟')
                     ->schema([
-                        Forms\Components\TagsInput::make('learning_outcomes')
+                        TagsInput::make('learning_outcomes')
                             ->label('نتائج التعلم')
                             ->placeholder('اضغط Enter لإضافة نتيجة')
                             ->helperText('مثال: بناء تطبيقات ويب كاملة، فهم قواعد البيانات')
                             ->reorderable()
                             ->columnSpanFull(),
 
-                        Forms\Components\TagsInput::make('tags')
+                        TagsInput::make('tags')
                             ->label('الكلمات المفتاحية')
                             ->placeholder('اضغط Enter لإضافة كلمة')
                             ->helperText('تساعد في البحث والتصنيف')
@@ -364,20 +377,20 @@ abstract class BaseRecordedCourseResource extends Resource
     /**
      * Certificate Tab
      */
-    protected static function getCertificateTab(): Tabs\Tab
+    protected static function getCertificateTab(): Tab
     {
-        return Tabs\Tab::make('الشهادة')
+        return Tab::make('الشهادة')
             ->icon('heroicon-o-academic-cap')
             ->schema([
                 Section::make('إعدادات الشهادة')
                     ->description('تخصيص شهادة إتمام الدورة')
                     ->schema([
-                        Forms\Components\Select::make('certificate_template_style')
+                        Select::make('certificate_template_style')
                             ->label('تصميم الشهادة')
                             ->options(CertificateTemplateStyle::options())
                             ->helperText('اختر تصميم الشهادة التي ستُمنح للطلاب عند إتمام الدورة'),
 
-                        Forms\Components\Textarea::make('certificate_template_text')
+                        Textarea::make('certificate_template_text')
                             ->label('نص الشهادة المخصص')
                             ->rows(4)
                             ->placeholder('يُشهد بأن الطالب/ة قد أتم/ت بنجاح دورة...')
@@ -396,8 +409,8 @@ abstract class BaseRecordedCourseResource extends Resource
         return $table
             ->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions());
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions());
     }
 
     /**
@@ -475,11 +488,11 @@ abstract class BaseRecordedCourseResource extends Resource
                     false: fn (Builder $query) => $query->where('price', '>', 0),
                 ),
 
-            Tables\Filters\Filter::make('created_at')
-                ->form([
-                    Forms\Components\DatePicker::make('from')
+            Filter::make('created_at')
+                ->schema([
+                    DatePicker::make('from')
                         ->label(__('filament.filters.from_date')),
-                    Forms\Components\DatePicker::make('until')
+                    DatePicker::make('until')
                         ->label(__('filament.filters.to_date')),
                 ])
                 ->query(function (Builder $query, array $data): Builder {

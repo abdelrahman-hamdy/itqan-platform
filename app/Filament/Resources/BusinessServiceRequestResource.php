@@ -2,12 +2,33 @@
 
 namespace App\Filament\Resources;
 
+use App\Services\AcademyContextService;
+use Illuminate\Database\Eloquent\Model;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Forms\Components\DatePicker;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\BusinessServiceRequestResource\Pages\ListBusinessServiceRequests;
+use App\Filament\Resources\BusinessServiceRequestResource\Pages\CreateBusinessServiceRequest;
+use App\Filament\Resources\BusinessServiceRequestResource\Pages\ViewBusinessServiceRequest;
+use App\Filament\Resources\BusinessServiceRequestResource\Pages\EditBusinessServiceRequest;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Resources\BusinessServiceRequestResource\Pages;
 use App\Models\BusinessServiceRequest;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -17,9 +38,9 @@ class BusinessServiceRequestResource extends Resource
 {
     protected static ?string $model = BusinessServiceRequest::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static ?string $navigationGroup = 'خدمات الأعمال';
+    protected static string | \UnitEnum | null $navigationGroup = 'خدمات الأعمال';
 
     protected static ?string $navigationLabel = 'طلبات الأعمال';
 
@@ -34,7 +55,7 @@ class BusinessServiceRequestResource extends Resource
      */
     public static function canAccess(): bool
     {
-        return \App\Services\AcademyContextService::isSuperAdmin();
+        return AcademyContextService::isSuperAdmin();
     }
 
     /**
@@ -42,31 +63,31 @@ class BusinessServiceRequestResource extends Resource
      */
     public static function canCreate(): bool
     {
-        return \App\Services\AcademyContextService::isSuperAdmin();
+        return AcademyContextService::isSuperAdmin();
     }
 
     /**
      * Check if the current user can edit records
      */
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
-        return \App\Services\AcademyContextService::isSuperAdmin();
+        return AcademyContextService::isSuperAdmin();
     }
 
     /**
      * Check if the current user can delete records
      */
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
-        return \App\Services\AcademyContextService::isSuperAdmin();
+        return AcademyContextService::isSuperAdmin();
     }
 
     /**
      * Check if the current user can view records
      */
-    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canView(Model $record): bool
     {
-        return \App\Services\AcademyContextService::isSuperAdmin();
+        return AcademyContextService::isSuperAdmin();
     }
 
     public static function getEloquentQuery(): Builder
@@ -75,24 +96,24 @@ class BusinessServiceRequestResource extends Resource
             ->with(['serviceCategory']);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات العميل')
+        return $schema
+            ->components([
+                Section::make('معلومات العميل')
                     ->schema([
-                        Forms\Components\TextInput::make('client_name')
+                        TextInput::make('client_name')
                             ->label('اسم العميل')
                             ->required()
                             ->maxLength(255),
 
-                        Forms\Components\TextInput::make('client_phone')
+                        TextInput::make('client_phone')
                             ->label('رقم الهاتف')
                             ->tel()
                             ->required()
                             ->maxLength(255),
 
-                        Forms\Components\TextInput::make('client_email')
+                        TextInput::make('client_email')
                             ->label('البريد الإلكتروني')
                             ->email()
                             ->required()
@@ -100,16 +121,16 @@ class BusinessServiceRequestResource extends Resource
                     ])
                     ->columns(3),
 
-                Forms\Components\Section::make('تفاصيل المشروع')
+                Section::make('تفاصيل المشروع')
                     ->schema([
-                        Forms\Components\Select::make('service_category_id')
+                        Select::make('service_category_id')
                             ->label('نوع الخدمة')
                             ->relationship('serviceCategory', 'name')
                             ->required()
                             ->searchable()
                             ->preload(),
 
-                        Forms\Components\Select::make('project_budget')
+                        Select::make('project_budget')
                             ->label('الميزانية المتوقعة')
                             ->options([
                                 '500-1000' => '500 - 1000 ر.س',
@@ -120,7 +141,7 @@ class BusinessServiceRequestResource extends Resource
                             ])
                             ->placeholder('اختر الميزانية'),
 
-                        Forms\Components\Select::make('project_deadline')
+                        Select::make('project_deadline')
                             ->label('الموعد المطلوب')
                             ->options([
                                 'urgent' => 'عاجل (أسبوع)',
@@ -129,7 +150,7 @@ class BusinessServiceRequestResource extends Resource
                             ])
                             ->placeholder('اختر الموعد'),
 
-                        Forms\Components\Textarea::make('project_description')
+                        Textarea::make('project_description')
                             ->label('وصف المشروع')
                             ->required()
                             ->rows(6)
@@ -137,9 +158,9 @@ class BusinessServiceRequestResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('معلومات إدارية')
+                Section::make('معلومات إدارية')
                     ->schema([
-                        Forms\Components\Select::make('status')
+                        Select::make('status')
                             ->label('حالة الطلب')
                             ->options([
                                 SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
@@ -151,7 +172,7 @@ class BusinessServiceRequestResource extends Resource
                             ->default(SessionSubscriptionStatus::PENDING->value)
                             ->required(),
 
-                        Forms\Components\Textarea::make('admin_notes')
+                        Textarea::make('admin_notes')
                             ->label('ملاحظات إدارية')
                             ->rows(4)
                             ->placeholder('ملاحظات خاصة بالطلب...'),
@@ -164,27 +185,27 @@ class BusinessServiceRequestResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('client_name')
+                TextColumn::make('client_name')
                     ->label('اسم العميل')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('client_email')
+                TextColumn::make('client_email')
                     ->label('البريد الإلكتروني')
                     ->searchable()
                     ->copyable(),
 
-                Tables\Columns\TextColumn::make('client_phone')
+                TextColumn::make('client_phone')
                     ->label('رقم الهاتف')
                     ->searchable()
                     ->copyable(),
 
-                Tables\Columns\TextColumn::make('serviceCategory.name')
+                TextColumn::make('serviceCategory.name')
                     ->label('نوع الخدمة')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('project_budget')
+                TextColumn::make('project_budget')
                     ->label('الميزانية')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         '500-1000' => '500 - 1000 ر.س',
@@ -195,7 +216,7 @@ class BusinessServiceRequestResource extends Resource
                         default => $state,
                     }),
 
-                Tables\Columns\TextColumn::make('project_deadline')
+                TextColumn::make('project_deadline')
                     ->label('الموعد')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'urgent' => 'عاجل (أسبوع)',
@@ -204,7 +225,8 @@ class BusinessServiceRequestResource extends Resource
                         default => $state,
                     }),
 
-                Tables\Columns\BadgeColumn::make('status')
+                TextColumn::make('status')
+                    ->badge()
                     ->label('الحالة')
                     ->colors([
                         'warning' => SessionSubscriptionStatus::PENDING->value,
@@ -222,13 +244,13 @@ class BusinessServiceRequestResource extends Resource
                         default => $state,
                     }),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الطلب')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
+                SelectFilter::make('status')
                     ->label('حالة الطلب')
                     ->options([
                         SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
@@ -238,18 +260,18 @@ class BusinessServiceRequestResource extends Resource
                         SessionStatus::COMPLETED->value => 'مكتمل',
                     ]),
 
-                Tables\Filters\SelectFilter::make('service_category_id')
+                SelectFilter::make('service_category_id')
                     ->label('نوع الخدمة')
                     ->relationship('serviceCategory', 'name')
                     ->searchable()
                     ->preload(),
 
-                Tables\Filters\Filter::make('created_at')
+                Filter::make('created_at')
                     ->label('تاريخ الطلب')
-                    ->form([
-                        Forms\Components\DatePicker::make('created_from')
+                    ->schema([
+                        DatePicker::make('created_from')
                             ->label('من تاريخ'),
-                        Forms\Components\DatePicker::make('created_until')
+                        DatePicker::make('created_until')
                             ->label('إلى تاريخ'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -264,19 +286,19 @@ class BusinessServiceRequestResource extends Resource
                             );
                     }),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
+            ->recordActions([
+                ViewAction::make()
                     ->label('عرض'),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف')
                     ->requiresConfirmation()
                     ->modalHeading('تأكيد الحذف')
                     ->modalDescription('هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.')
                     ->modalSubmitActionLabel('حذف')
                     ->modalCancelActionLabel('إلغاء'),
-                Tables\Actions\Action::make('mark_reviewed')
+                Action::make('mark_reviewed')
                     ->label('مراجعة')
                     ->icon('heroicon-o-eye')
                     ->color('info')
@@ -290,11 +312,11 @@ class BusinessServiceRequestResource extends Resource
                         $record->update(['status' => 'reviewed']);
                     }),
 
-                Tables\Actions\Action::make('change_status')
+                Action::make('change_status')
                     ->label('تغيير الحالة')
                     ->icon('heroicon-o-arrow-path')
-                    ->form([
-                        Forms\Components\Select::make('status')
+                    ->schema([
+                        Select::make('status')
                             ->label('الحالة الجديدة')
                             ->options([
                                 SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
@@ -304,16 +326,16 @@ class BusinessServiceRequestResource extends Resource
                                 SessionStatus::COMPLETED->value => 'مكتمل',
                             ])
                             ->required(),
-                        Forms\Components\Textarea::make('admin_notes')
+                        Textarea::make('admin_notes')
                             ->label('ملاحظات إدارية'),
                     ])
                     ->action(function (array $data, BusinessServiceRequest $record): void {
                         $record->update($data);
                     }),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('mark_reviewed')
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    BulkAction::make('mark_reviewed')
                         ->label('وضع علامة مراجعة')
                         ->icon('heroicon-o-eye')
                         ->color('info')
@@ -330,7 +352,7 @@ class BusinessServiceRequestResource extends Resource
                             });
                         }),
 
-                    Tables\Actions\BulkAction::make('mark_approved')
+                    BulkAction::make('mark_approved')
                         ->label('قبول المحدد')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
@@ -345,7 +367,7 @@ class BusinessServiceRequestResource extends Resource
                             });
                         }),
 
-                    Tables\Actions\DeleteBulkAction::make()
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد')
                         ->requiresConfirmation()
                         ->modalHeading('تأكيد الحذف الجماعي')
@@ -367,10 +389,10 @@ class BusinessServiceRequestResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListBusinessServiceRequests::route('/'),
-            'create' => Pages\CreateBusinessServiceRequest::route('/create'),
-            'view' => Pages\ViewBusinessServiceRequest::route('/{record}'),
-            'edit' => Pages\EditBusinessServiceRequest::route('/{record}/edit'),
+            'index' => ListBusinessServiceRequests::route('/'),
+            'create' => CreateBusinessServiceRequest::route('/create'),
+            'view' => ViewBusinessServiceRequest::route('/{record}'),
+            'edit' => EditBusinessServiceRequest::route('/{record}/edit'),
         ];
     }
 

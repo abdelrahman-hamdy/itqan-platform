@@ -2,6 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\View\View;
+use Illuminate\Pagination\LengthAwarePaginator;
+use App\Models\QuranSubscription;
+use Illuminate\Http\RedirectResponse;
+use Log;
+use DB;
+use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -15,7 +22,7 @@ class UnifiedQuranCircleController extends Controller
     /**
      * Display a listing of Quran circles (Unified for both public and authenticated)
      */
-    public function index(Request $request, $subdomain): \Illuminate\View\View
+    public function index(Request $request, $subdomain): View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -91,7 +98,7 @@ class UnifiedQuranCircleController extends Controller
             $currentPage = $request->get('page', 1);
             $offset = ($currentPage - 1) * $perPage;
 
-            $paginatedCircles = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedCircles = new LengthAwarePaginator(
                 $circles->slice($offset, $perPage),
                 $circles->count(),
                 $perPage,
@@ -123,7 +130,7 @@ class UnifiedQuranCircleController extends Controller
     /**
      * Display the specified circle details (Unified for both public and authenticated)
      */
-    public function show(Request $request, $subdomain, $circleId): \Illuminate\View\View
+    public function show(Request $request, $subdomain, $circleId): View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -183,7 +190,7 @@ class UnifiedQuranCircleController extends Controller
 
                 // Get active subscription for this circle
                 if ($circle->quran_teacher_id) {
-                    $subscription = \App\Models\QuranSubscription::where('student_id', $user->id)
+                    $subscription = QuranSubscription::where('student_id', $user->id)
                         ->where('academy_id', $academy->id)
                         ->where('quran_teacher_id', $circle->quran_teacher_id)
                         ->where('subscription_type', 'group')
@@ -210,7 +217,7 @@ class UnifiedQuranCircleController extends Controller
     /**
      * Enroll student in a circle (requires authentication)
      */
-    public function enroll(Request $request, $subdomain, $circleId): \Illuminate\Http\RedirectResponse
+    public function enroll(Request $request, $subdomain, $circleId): RedirectResponse
     {
         // Must be authenticated
         if (! Auth::check()) {
@@ -223,7 +230,7 @@ class UnifiedQuranCircleController extends Controller
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
         $user = Auth::user();
 
-        \Log::info('[CircleEnroll] Starting enrollment', [
+        Log::info('[CircleEnroll] Starting enrollment', [
             'user_id' => $user->id,
             'circle_id' => $circleId,
             'academy_id' => $academy->id,
@@ -235,7 +242,7 @@ class UnifiedQuranCircleController extends Controller
             ->where('status', true)
             ->firstOrFail();
 
-        \Log::info('[CircleEnroll] Circle found', [
+        Log::info('[CircleEnroll] Circle found', [
             'circle_id' => $circle->id,
             'monthly_fee' => $circle->monthly_fee,
             'monthly_fee_type' => gettype($circle->monthly_fee),
@@ -243,7 +250,7 @@ class UnifiedQuranCircleController extends Controller
 
         // Check if already enrolled
         if ($circle->students()->where('users.id', $user->id)->exists()) {
-            \Log::info('[CircleEnroll] Already enrolled');
+            Log::info('[CircleEnroll] Already enrolled');
 
             return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
                 ->with('info', __('circles.already_enrolled'));
@@ -251,7 +258,7 @@ class UnifiedQuranCircleController extends Controller
 
         // Check if circle is open for enrollment
         if ($circle->enrollment_status !== CircleEnrollmentStatus::OPEN || $circle->available_spots <= 0) {
-            \Log::info('[CircleEnroll] Enrollment closed');
+            Log::info('[CircleEnroll] Enrollment closed');
 
             return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
                 ->with('error', __('circles.enrollment_closed'));
@@ -260,23 +267,23 @@ class UnifiedQuranCircleController extends Controller
         // Check if circle has a fee - if so, redirect to payment flow
         $hasFee = $circle->monthly_fee && $circle->monthly_fee > 0;
 
-        \Log::info('[CircleEnroll] Fee check', [
+        Log::info('[CircleEnroll] Fee check', [
             'hasFee' => $hasFee,
             'monthly_fee' => $circle->monthly_fee,
         ]);
 
         if ($hasFee) {
-            \Log::info('[CircleEnroll] PAID CIRCLE - Creating pending subscription');
+            Log::info('[CircleEnroll] PAID CIRCLE - Creating pending subscription');
 
             // Create pending subscription first, then redirect to payment
-            $subscription = \DB::transaction(function () use ($circle, $user, $academy) {
-                \Log::info('[CircleEnroll] Inside transaction - creating subscription');
+            $subscription = DB::transaction(function () use ($circle, $user, $academy) {
+                Log::info('[CircleEnroll] Inside transaction - creating subscription');
 
-                $sub = \App\Models\QuranSubscription::create([
+                $sub = QuranSubscription::create([
                     'academy_id' => $academy->id,
                     'student_id' => $user->id,
                     'quran_teacher_id' => $circle->quran_teacher_id,
-                    'subscription_code' => \App\Models\QuranSubscription::generateSubscriptionCode($academy->id),
+                    'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
                     'subscription_type' => 'group',
                     'education_unit_type' => 'App\\Models\\QuranCircle',
                     'education_unit_id' => $circle->id,
@@ -288,14 +295,14 @@ class UnifiedQuranCircleController extends Controller
                     'final_price' => $circle->monthly_fee,
                     'currency' => $circle->currency ?? getCurrencyCode(null, $circle->academy),
                     'billing_cycle' => 'monthly',
-                    'payment_status' => \App\Enums\SubscriptionPaymentStatus::PENDING,
-                    'status' => \App\Enums\SessionSubscriptionStatus::PENDING,
+                    'payment_status' => SubscriptionPaymentStatus::PENDING,
+                    'status' => SessionSubscriptionStatus::PENDING,
                     'memorization_level' => $circle->memorization_level ?? 'beginner',
                     'starts_at' => now(),
                     'auto_renew' => true,
                 ]);
 
-                \Log::info('[CircleEnroll] Subscription created', [
+                Log::info('[CircleEnroll] Subscription created', [
                     'subscription_id' => $sub->id,
                     'status_raw' => $sub->getRawOriginal('status'),
                     'status_cast' => $sub->status,
@@ -305,14 +312,14 @@ class UnifiedQuranCircleController extends Controller
 
                 // Check if pivot was accidentally created
                 $pivotExists = $circle->students()->where('quran_circle_students.student_id', $user->id)->exists();
-                \Log::info('[CircleEnroll] Pivot check after subscription create', [
+                Log::info('[CircleEnroll] Pivot check after subscription create', [
                     'pivot_exists' => $pivotExists,
                 ]);
 
                 return $sub;
             });
 
-            \Log::info('[CircleEnroll] Redirecting to payment page', [
+            Log::info('[CircleEnroll] Redirecting to payment page', [
                 'subscription_id' => $subscription->id,
             ]);
 
@@ -324,7 +331,7 @@ class UnifiedQuranCircleController extends Controller
         }
 
         // Free circle - enroll immediately
-        \DB::transaction(function () use ($circle, $user, $academy) {
+        DB::transaction(function () use ($circle, $user, $academy) {
             // Enroll student in circle
             $circle->students()->attach($user->id, [
                 'enrolled_at' => now(),
@@ -336,11 +343,11 @@ class UnifiedQuranCircleController extends Controller
             ]);
 
             // Create a free subscription
-            \App\Models\QuranSubscription::create([
+            QuranSubscription::create([
                 'academy_id' => $academy->id,
                 'student_id' => $user->id,
                 'quran_teacher_id' => $circle->quran_teacher_id,
-                'subscription_code' => \App\Models\QuranSubscription::generateSubscriptionCode($academy->id),
+                'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
                 'subscription_type' => 'group',
                 'education_unit_type' => 'App\\Models\\QuranCircle',
                 'education_unit_id' => $circle->id,

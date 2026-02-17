@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use InvalidArgumentException;
+use Exception;
 use App\Contracts\SubscriptionServiceInterface;
 use App\Enums\BillingCycle;
 use App\Enums\EnrollmentStatus;
@@ -67,7 +69,7 @@ class SubscriptionService implements SubscriptionServiceInterface
             self::TYPE_QURAN => QuranSubscription::class,
             self::TYPE_ACADEMIC => AcademicSubscription::class,
             self::TYPE_COURSE => CourseSubscription::class,
-            default => throw new \InvalidArgumentException("Unknown subscription type: {$type}"),
+            default => throw new InvalidArgumentException("Unknown subscription type: {$type}"),
         };
     }
 
@@ -175,7 +177,7 @@ class SubscriptionService implements SubscriptionServiceInterface
             $subscription = $subscription::lockForUpdate()->find($subscription->id);
 
             if (! $subscription->isPending()) {
-                throw new \Exception('Subscription is not in pending state');
+                throw new Exception('Subscription is not in pending state');
             }
 
             $subscription->activate();
@@ -207,7 +209,7 @@ class SubscriptionService implements SubscriptionServiceInterface
             $subscription = $subscription::lockForUpdate()->find($subscription->id);
 
             if (! $subscription->canCancel()) {
-                throw new \Exception('Subscription cannot be cancelled in current state');
+                throw new Exception('Subscription cannot be cancelled in current state');
             }
 
             $subscription->cancel($reason);
@@ -556,7 +558,7 @@ class SubscriptionService implements SubscriptionServiceInterface
      */
     public function changeBillingCycle(BaseSubscription $subscription, BillingCycle $newCycle): BaseSubscription
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($subscription, $newCycle) {
+        return DB::transaction(function () use ($subscription, $newCycle) {
             $updateData = ['billing_cycle' => $newCycle];
 
             // If new cycle doesn't support auto-renewal, disable it
@@ -581,7 +583,7 @@ class SubscriptionService implements SubscriptionServiceInterface
     public function toggleAutoRenewal(BaseSubscription $subscription, bool $enabled): BaseSubscription
     {
         if ($enabled && ! $subscription->billing_cycle->supportsAutoRenewal()) {
-            throw new \Exception('This billing cycle does not support auto-renewal');
+            throw new Exception('This billing cycle does not support auto-renewal');
         }
 
         $subscription->update(['auto_renew' => $enabled]);

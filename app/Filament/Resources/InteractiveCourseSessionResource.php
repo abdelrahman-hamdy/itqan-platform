@@ -2,10 +2,32 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\Action;
+use App\Enums\SessionStatus;
+use App\Filament\Pages\ObserveSessionPage;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Filters\SelectFilter;
+use App\Filament\Resources\InteractiveCourseSessionResource\Pages\ListInteractiveCourseSessions;
+use App\Filament\Resources\InteractiveCourseSessionResource\Pages\CreateInteractiveCourseSession;
+use App\Filament\Resources\InteractiveCourseSessionResource\Pages\ViewInteractiveCourseSession;
+use App\Filament\Resources\InteractiveCourseSessionResource\Pages\EditInteractiveCourseSession;
 use App\Filament\Resources\InteractiveCourseSessionResource\Pages;
 use App\Filament\Shared\Resources\BaseInteractiveCourseSessionResource;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -34,7 +56,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
 
     protected static ?int $navigationSort = 3;
 
@@ -58,7 +80,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     {
         return Section::make('معلومات الجلسة الأساسية')
             ->schema([
-                Forms\Components\Select::make('course_id')
+                Select::make('course_id')
                     ->relationship('course', 'title')
                     ->label('الدورة')
                     ->required()
@@ -67,12 +89,12 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
                     ->disabled(fn ($record) => $record !== null)
                     ->dehydrated(),
 
-                Forms\Components\TextInput::make('session_code')
+                TextInput::make('session_code')
                     ->label('رمز الجلسة')
                     ->disabled()
                     ->dehydrated(false),
 
-                Forms\Components\TextInput::make('session_number')
+                TextInput::make('session_number')
                     ->label('رقم الجلسة')
                     ->required()
                     ->numeric()
@@ -87,27 +109,27 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ActionGroup::make([
-                Tables\Actions\Action::make('observe_meeting')
+            ActionGroup::make([
+                Action::make('observe_meeting')
                     ->label('مراقبة الجلسة')
                     ->icon('heroicon-o-eye')
                     ->color('info')
                     ->visible(fn ($record): bool => $record->meeting_room_name
                         && in_array(
-                            $record->status instanceof \App\Enums\SessionStatus ? $record->status : \App\Enums\SessionStatus::tryFrom($record->status),
-                            [\App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING]
+                            $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
+                            [SessionStatus::READY, SessionStatus::ONGOING]
                         ))
-                    ->url(fn ($record): string => \App\Filament\Pages\ObserveSessionPage::getUrl().'?'.http_build_query([
+                    ->url(fn ($record): string => ObserveSessionPage::getUrl().'?'.http_build_query([
                         'sessionId' => $record->id,
                         'sessionType' => 'interactive',
                     ]))
                     ->openUrlInNewTab(),
 
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض'),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف'),
 
                 static::makeStartSessionAction(),
@@ -115,9 +137,9 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
                 static::makeCancelSessionAction('admin'),
                 static::makeJoinMeetingAction(),
 
-                Tables\Actions\RestoreAction::make()
+                RestoreAction::make()
                     ->label(__('filament.actions.restore')),
-                Tables\Actions\ForceDeleteAction::make()
+                ForceDeleteAction::make()
                     ->label(__('filament.actions.force_delete')),
             ]),
         ];
@@ -129,11 +151,11 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
-                Tables\Actions\RestoreBulkAction::make()
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+                RestoreBulkAction::make()
                     ->label(__('filament.actions.restore_selected')),
-                Tables\Actions\ForceDeleteBulkAction::make()
+                ForceDeleteBulkAction::make()
                     ->label(__('filament.actions.force_delete_selected')),
             ]),
         ];
@@ -160,15 +182,15 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     {
         return Section::make('ملاحظات')
             ->schema([
-                Forms\Components\Grid::make(2)
+                Grid::make(2)
                     ->schema([
-                        Forms\Components\Textarea::make('session_notes')
+                        Textarea::make('session_notes')
                             ->label('ملاحظات الجلسة')
                             ->rows(3)
                             ->maxLength(1000)
                             ->helperText('ملاحظات داخلية للإدارة'),
 
-                        Forms\Components\Textarea::make('supervisor_notes')
+                        Textarea::make('supervisor_notes')
                             ->label('ملاحظات المشرف')
                             ->rows(3)
                             ->maxLength(2000)
@@ -191,7 +213,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
         return [
             ...parent::getTableFilters(),
 
-            Tables\Filters\SelectFilter::make('course_id')
+            SelectFilter::make('course_id')
                 ->label('الدورة')
                 ->relationship('course', 'title')
                 ->searchable(),
@@ -206,10 +228,10 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListInteractiveCourseSessions::route('/'),
-            'create' => Pages\CreateInteractiveCourseSession::route('/create'),
-            'view' => Pages\ViewInteractiveCourseSession::route('/{record}'),
-            'edit' => Pages\EditInteractiveCourseSession::route('/{record}/edit'),
+            'index' => ListInteractiveCourseSessions::route('/'),
+            'create' => CreateInteractiveCourseSession::route('/create'),
+            'view' => ViewInteractiveCourseSession::route('/{record}'),
+            'edit' => EditInteractiveCourseSession::route('/{record}/edit'),
         ];
     }
 }

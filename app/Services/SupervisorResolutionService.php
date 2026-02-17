@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use InvalidArgumentException;
 use App\Enums\UserType;
 use App\Models\ChatGroup;
 use App\Models\SupervisorResponsibility;
@@ -177,12 +178,12 @@ class SupervisorResolutionService
     {
         // Supervisor must be in the same academy as teacher
         if ($teacher->academy_id !== $newSupervisor->academy_id) {
-            throw new \InvalidArgumentException('Supervisor must be in the same academy as teacher');
+            throw new InvalidArgumentException('Supervisor must be in the same academy as teacher');
         }
 
         // New supervisor must actually be a supervisor
         if ($newSupervisor->user_type !== UserType::SUPERVISOR->value) {
-            throw new \InvalidArgumentException('Target user is not a supervisor');
+            throw new InvalidArgumentException('Target user is not a supervisor');
         }
 
         return true;

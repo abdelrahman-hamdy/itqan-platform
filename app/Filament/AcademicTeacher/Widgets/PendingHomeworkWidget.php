@@ -2,6 +2,8 @@
 
 namespace App\Filament\AcademicTeacher\Widgets;
 
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\Action;
 use App\Enums\HomeworkSubmissionStatus;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
@@ -48,26 +50,26 @@ class PendingHomeworkWidget extends BaseWidget
                     ->limit(10)
             )
             ->columns([
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->searchable()
                     ->placeholder('غير محدد'),
 
-                Tables\Columns\TextColumn::make('homework.session.academicIndividualLesson.academicSubject.name')
+                TextColumn::make('homework.session.academicIndividualLesson.academicSubject.name')
                     ->label('المادة')
                     ->placeholder('غير محدد'),
 
-                Tables\Columns\TextColumn::make('homework.title')
+                TextColumn::make('homework.title')
                     ->label('عنوان الواجب')
                     ->limit(30)
                     ->placeholder('غير محدد'),
 
-                Tables\Columns\TextColumn::make('submitted_at')
+                TextColumn::make('submitted_at')
                     ->label('تاريخ التسليم')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('submission_status')
+                TextColumn::make('submission_status')
                     ->label('الحالة')
                     ->badge()
                     ->formatStateUsing(fn ($state) => match ($state?->value ?? $state) {
@@ -81,14 +83,14 @@ class PendingHomeworkWidget extends BaseWidget
                         default => 'gray',
                     }),
 
-                Tables\Columns\TextColumn::make('is_late')
+                TextColumn::make('is_late')
                     ->label('تأخير')
                     ->badge()
                     ->formatStateUsing(fn ($state, $record) => $state ? ($record->days_late.' أيام') : 'في الوقت')
                     ->color(fn ($state) => $state ? 'danger' : 'success'),
             ])
-            ->actions([
-                Tables\Actions\Action::make('grade')
+            ->recordActions([
+                Action::make('grade')
                     ->label('تصحيح')
                     ->icon('heroicon-o-pencil-square')
                     ->url(fn ($record) => route('filament.academic-teacher.resources.academic-sessions.view', [

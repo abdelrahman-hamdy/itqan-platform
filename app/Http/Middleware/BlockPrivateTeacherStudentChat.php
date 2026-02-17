@@ -23,7 +23,7 @@ class BlockPrivateTeacherStudentChat
      * Blocks private chat attempts between teachers and students.
      * They must use supervised group chats instead.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param Closure(Request):Response $next
      */
     public function handle(Request $request, Closure $next): Response
     {

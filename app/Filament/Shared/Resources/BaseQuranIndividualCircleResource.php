@@ -2,16 +2,18 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Schemas\Components\Section;
+use Illuminate\Database\Eloquent\Model;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Grid;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Columns\IconColumn;
 use App\Models\QuranIndividualCircle;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -28,7 +30,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
 {
     protected static ?string $model = QuranIndividualCircle::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-user';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user';
 
     protected static ?string $modelLabel = 'حلقة فردية';
 
@@ -69,12 +71,12 @@ abstract class BaseQuranIndividualCircleResource extends Resource
         return true;
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return true;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return false;
     }
@@ -83,7 +85,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
     // Shared Form Definition
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         $schema = [];
 
@@ -99,7 +101,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
         // Add additional sections from child classes
         $schema = array_merge($schema, static::getAdditionalFormSections());
 
-        return $form->schema($schema);
+        return $form->components($schema);
     }
 
     /**
@@ -182,10 +184,10 @@ abstract class BaseQuranIndividualCircleResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
-            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions());
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions());
     }
 
     /**
@@ -201,7 +203,8 @@ abstract class BaseQuranIndividualCircleResource extends Resource
                 ->sortable()
                 ->weight(FontWeight::SemiBold),
 
-            BadgeColumn::make('specialization')
+            TextColumn::make('specialization')
+                ->badge()
                 ->label('التخصص')
                 ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::SPECIALIZATIONS[$state] ?? $state)
                 ->colors([
@@ -237,7 +240,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
                 ->alignCenter()
                 ->toggleable(isToggledHiddenByDefault: true),
 
-            Tables\Columns\IconColumn::make('is_active')
+            IconColumn::make('is_active')
                 ->label('الحالة')
                 ->boolean()
                 ->trueIcon('heroicon-o-check-circle')

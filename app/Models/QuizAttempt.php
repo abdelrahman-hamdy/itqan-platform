@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\NotificationService;
+use App\Enums\NotificationType;
+use Exception;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -208,7 +212,7 @@ class QuizAttempt extends Model
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
             $quiz = $this->assignment->quiz;
             $student = $this->student;
 
@@ -218,8 +222,8 @@ class QuizAttempt extends Model
             }
 
             $notificationType = $this->passed
-                ? \App\Enums\NotificationType::QUIZ_PASSED
-                : \App\Enums\NotificationType::QUIZ_FAILED;
+                ? NotificationType::QUIZ_PASSED
+                : NotificationType::QUIZ_FAILED;
 
             $notificationService->send(
                 $student->user,
@@ -268,7 +272,7 @@ class QuizAttempt extends Model
             if ($teacher) {
                 $notificationService->send(
                     $teacher,
-                    \App\Enums\NotificationType::QUIZ_COMPLETED_TEACHER,
+                    NotificationType::QUIZ_COMPLETED_TEACHER,
                     [
                         'quiz_title' => $quiz->title,
                         'student_name' => $student->user->full_name,
@@ -285,8 +289,8 @@ class QuizAttempt extends Model
                     ]
                 );
             }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send quiz completion notification', [
+        } catch (Exception $e) {
+            Log::error('Failed to send quiz completion notification', [
                 'attempt_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);

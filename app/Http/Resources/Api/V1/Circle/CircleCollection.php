@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources\Api\V1\Circle;
 
+use App\Models\QuranIndividualCircle;
+use App\Models\QuranCircle;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
@@ -37,8 +39,8 @@ class CircleCollection extends ResourceCollection
     protected function getTypeBreakdown(): array
     {
         return [
-            'individual' => $this->collection->filter(fn ($circle) => $circle->resource instanceof \App\Models\QuranIndividualCircle)->count(),
-            'group' => $this->collection->filter(fn ($circle) => $circle->resource instanceof \App\Models\QuranCircle)->count(),
+            'individual' => $this->collection->filter(fn ($circle) => $circle->resource instanceof QuranIndividualCircle)->count(),
+            'group' => $this->collection->filter(fn ($circle) => $circle->resource instanceof QuranCircle)->count(),
         ];
     }
 
@@ -56,7 +58,7 @@ class CircleCollection extends ResourceCollection
     protected function getTotalCapacity(): int
     {
         return $this->collection
-            ->filter(fn ($circle) => $circle->resource instanceof \App\Models\QuranCircle)
+            ->filter(fn ($circle) => $circle->resource instanceof QuranCircle)
             ->sum(fn ($circle) => $circle->max_students ?? 0);
     }
 
@@ -66,7 +68,7 @@ class CircleCollection extends ResourceCollection
     protected function getTotalStudents(): int
     {
         return $this->collection
-            ->filter(fn ($circle) => $circle->resource instanceof \App\Models\QuranCircle)
+            ->filter(fn ($circle) => $circle->resource instanceof QuranCircle)
             ->sum(fn ($circle) => $circle->current_students ?? 0);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use Exception;
+use App\Constants\DefaultAcademy;
 use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Models\QuranSession;
@@ -91,7 +93,7 @@ class SendTrialSessionRemindersCommand extends Command
 
             return self::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('Trial reminder processing failed: '.$e->getMessage());
 
             if ($isVerbose) {
@@ -195,7 +197,7 @@ class SendTrialSessionRemindersCommand extends Command
                     }
                 }
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results['errors'][] = [
                     'session_id' => $session->id,
                     'session_code' => $session->session_code,
@@ -222,7 +224,7 @@ class SendTrialSessionRemindersCommand extends Command
     private function sendStudentReminder(QuranSession $session): void
     {
         // Build session URL - use student profile as sessions are embedded there
-        $subdomain = $session->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+        $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
         $sessionUrl = route('student.profile', ['subdomain' => $subdomain]);
 
         // Use role-specific TRIAL_SESSION_REMINDER_STUDENT type

@@ -2,6 +2,9 @@
 
 namespace App\Contracts;
 
+use Exception;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Http\Response;
 use App\Enums\CertificateTemplateStyle;
 use App\Models\Certificate;
 use App\Models\CourseSubscription;
@@ -37,7 +40,7 @@ interface CertificateServiceInterface
      * @param  CourseSubscription  $subscription  The course subscription
      * @return Certificate The issued certificate
      *
-     * @throws \Exception If student has not completed 100% of the course or certificate already issued
+     * @throws Exception If student has not completed 100% of the course or certificate already issued
      */
     public function issueCertificateForRecordedCourse(CourseSubscription $subscription): Certificate;
 
@@ -49,7 +52,7 @@ interface CertificateServiceInterface
      * @param  InteractiveCourseEnrollment  $enrollment  The course enrollment
      * @return Certificate The issued certificate
      *
-     * @throws \Exception If enrollment is not completed or certificate already issued
+     * @throws Exception If enrollment is not completed or certificate already issued
      */
     public function issueCertificateForInteractiveCourse(InteractiveCourseEnrollment $enrollment): Certificate;
 
@@ -65,7 +68,7 @@ interface CertificateServiceInterface
      * @param  int|null  $teacherId  Teacher ID to be shown on certificate
      * @return Certificate The issued certificate
      *
-     * @throws \Exception If subscription type is invalid or certificate already issued
+     * @throws Exception If subscription type is invalid or certificate already issued
      */
     public function issueManualCertificate(
         $subscriptionable,
@@ -113,7 +116,7 @@ interface CertificateServiceInterface
      * Returns a download response for the certificate PDF. Regenerates PDF if file doesn't exist.
      *
      * @param  Certificate  $certificate  The certificate to download
-     * @return \Symfony\Component\HttpFoundation\StreamedResponse Download response
+     * @return StreamedResponse Download response
      */
     public function downloadCertificate(Certificate $certificate);
 
@@ -123,7 +126,7 @@ interface CertificateServiceInterface
      * Returns an inline PDF response. Regenerates PDF if file doesn't exist.
      *
      * @param  Certificate  $certificate  The certificate to stream
-     * @return \Illuminate\Http\Response PDF stream response
+     * @return Response PDF stream response
      */
     public function streamCertificate(Certificate $certificate);
 

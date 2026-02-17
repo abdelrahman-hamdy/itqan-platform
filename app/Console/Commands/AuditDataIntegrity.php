@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Throwable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -60,7 +61,7 @@ class AuditDataIntegrity extends Command
             } else {
                 $this->output->writeln('<info>OK</info>');
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->output->writeln("<error>ERROR: {$e->getMessage()}</error>");
             $this->issues[] = [
                 'check' => $name,

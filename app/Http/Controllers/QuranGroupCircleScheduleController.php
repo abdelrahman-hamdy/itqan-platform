@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\View\View;
+use Exception;
+use App\Models\StudentSessionReport;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Http\Requests\PreviewGroupCircleSessionsRequest;
@@ -32,7 +35,7 @@ class QuranGroupCircleScheduleController extends Controller
     /**
      * Display teacher's group circles and their schedules
      */
-    public function index($subdomain, Request $request): \Illuminate\View\View
+    public function index($subdomain, Request $request): View
     {
         $this->authorize('viewAny', QuranCircle::class);
 
@@ -52,7 +55,7 @@ class QuranGroupCircleScheduleController extends Controller
     /**
      * Show form to create/edit schedule for a group circle
      */
-    public function create($subdomain, $circle): \Illuminate\View\View
+    public function create($subdomain, $circle): View
     {
         $user = Auth::user();
 
@@ -122,7 +125,7 @@ class QuranGroupCircleScheduleController extends Controller
                 'circle_status' => $circle->fresh()->status,
             ], true, 200);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ في حفظ الجدول: '.$e->getMessage());
         }
     }
@@ -151,7 +154,7 @@ class QuranGroupCircleScheduleController extends Controller
                 'circle_status' => $circle->fresh()->status,
             ], true, 200);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ في تفعيل الجدول: '.$e->getMessage());
         }
     }
@@ -180,7 +183,7 @@ class QuranGroupCircleScheduleController extends Controller
                 'circle_status' => $circle->fresh()->status,
             ], true, 200);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ في إلغاء تفعيل الجدول: '.$e->getMessage());
         }
     }
@@ -227,7 +230,7 @@ class QuranGroupCircleScheduleController extends Controller
                 'weekly_pattern' => $request->weekly_schedule,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ في معاينة الجلسات: '.$e->getMessage());
         }
     }
@@ -235,7 +238,7 @@ class QuranGroupCircleScheduleController extends Controller
     /**
      * Show circle schedule details and generated sessions
      */
-    public function show($subdomain, QuranCircle $circle): \Illuminate\View\View
+    public function show($subdomain, QuranCircle $circle): View
     {
         $this->authorize('view', $circle);
 
@@ -308,7 +311,7 @@ class QuranGroupCircleScheduleController extends Controller
                 'session' => $session,
             ], true, 200);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء جدولة الجلسة: '.$e->getMessage());
         }
     }
@@ -339,7 +342,7 @@ class QuranGroupCircleScheduleController extends Controller
                 'generated_count' => $generatedCount,
             ], true, 200);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ في إنشاء الجلسات: '.$e->getMessage());
         }
     }
@@ -347,7 +350,7 @@ class QuranGroupCircleScheduleController extends Controller
     /**
      * Generate comprehensive progress report for the group circle
      */
-    public function progressReport($subdomain, $circle): \Illuminate\View\View
+    public function progressReport($subdomain, $circle): View
     {
         $user = Auth::user();
 
@@ -527,7 +530,7 @@ class QuranGroupCircleScheduleController extends Controller
     /**
      * Generate progress report for a specific student within the group circle
      */
-    public function studentProgressReport($subdomain, $circle, $student): \Illuminate\View\View
+    public function studentProgressReport($subdomain, $circle, $student): View
     {
         $user = Auth::user();
 
@@ -548,7 +551,7 @@ class QuranGroupCircleScheduleController extends Controller
             ->get();
 
         // Calculate student-specific statistics for this circle using new report system
-        $studentReports = \App\Models\StudentSessionReport::where('student_id', $student->id)
+        $studentReports = StudentSessionReport::where('student_id', $student->id)
             ->whereIn('session_id', $sessions->pluck('id'))
             ->get();
 

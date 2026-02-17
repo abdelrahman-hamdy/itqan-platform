@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
+use Exception;
 use App\Enums\CertificateTemplateStyle;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
@@ -93,7 +94,7 @@ class CertificateController extends Controller
                 ],
             ], __('Certificate issued successfully'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
 
             return $this->error($e->getMessage(), 400, 'CERTIFICATE_ISSUE_FAILED');
@@ -112,7 +113,7 @@ class CertificateController extends Controller
         $quranTeacherId = $user->quranTeacherProfile?->id;
 
         if (! $quranTeacherId) {
-            throw new \Exception(__('Quran teacher profile not found.'));
+            throw new Exception(__('Quran teacher profile not found.'));
         }
 
         $circle = QuranIndividualCircle::where('id', $circleId)
@@ -121,15 +122,15 @@ class CertificateController extends Controller
             ->first();
 
         if (! $circle) {
-            throw new \Exception(__('Circle not found.'));
+            throw new Exception(__('Circle not found.'));
         }
 
         if (! $circle->subscription) {
-            throw new \Exception(__('No subscription found for this circle.'));
+            throw new Exception(__('No subscription found for this circle.'));
         }
 
         if ($circle->subscription->certificate_issued) {
-            throw new \Exception(__('Certificate already issued for this subscription.'));
+            throw new Exception(__('Certificate already issued for this subscription.'));
         }
 
         return $this->certificateService->issueManualCertificate(
@@ -154,7 +155,7 @@ class CertificateController extends Controller
         $quranTeacherId = $user->quranTeacherProfile?->id;
 
         if (! $quranTeacherId) {
-            throw new \Exception(__('Quran teacher profile not found.'));
+            throw new Exception(__('Quran teacher profile not found.'));
         }
 
         $circle = QuranCircle::where('id', $circleId)
@@ -162,7 +163,7 @@ class CertificateController extends Controller
             ->first();
 
         if (! $circle) {
-            throw new \Exception(__('Circle not found.'));
+            throw new Exception(__('Circle not found.'));
         }
 
         // SECURITY: Verify enrollment FIRST, then get student from enrolled list
@@ -170,7 +171,7 @@ class CertificateController extends Controller
         $student = $circle->students()->where('users.id', $studentId)->first();
         if (! $student) {
             // Generic message prevents enumeration - attacker can't tell if user exists but isn't enrolled
-            throw new \Exception(__('Student is not enrolled in this circle.'));
+            throw new Exception(__('Student is not enrolled in this circle.'));
         }
 
         return $this->certificateService->issueGroupCircleCertificate(
@@ -194,7 +195,7 @@ class CertificateController extends Controller
         $academicTeacherId = $user->academicTeacherProfile?->id;
 
         if (! $academicTeacherId) {
-            throw new \Exception(__('Academic teacher profile not found.'));
+            throw new Exception(__('Academic teacher profile not found.'));
         }
 
         $lesson = AcademicIndividualLesson::where('id', $lessonId)
@@ -203,15 +204,15 @@ class CertificateController extends Controller
             ->first();
 
         if (! $lesson) {
-            throw new \Exception(__('Lesson not found.'));
+            throw new Exception(__('Lesson not found.'));
         }
 
         if (! $lesson->subscription) {
-            throw new \Exception(__('No subscription found for this lesson.'));
+            throw new Exception(__('No subscription found for this lesson.'));
         }
 
         if ($lesson->subscription->certificate_issued) {
-            throw new \Exception(__('Certificate already issued for this subscription.'));
+            throw new Exception(__('Certificate already issued for this subscription.'));
         }
 
         return $this->certificateService->issueManualCertificate(
@@ -236,7 +237,7 @@ class CertificateController extends Controller
         $academicTeacherId = $user->academicTeacherProfile?->id;
 
         if (! $academicTeacherId) {
-            throw new \Exception(__('Academic teacher profile not found.'));
+            throw new Exception(__('Academic teacher profile not found.'));
         }
 
         $course = InteractiveCourse::where('id', $courseId)
@@ -244,7 +245,7 @@ class CertificateController extends Controller
             ->first();
 
         if (! $course) {
-            throw new \Exception(__('Course not found.'));
+            throw new Exception(__('Course not found.'));
         }
 
         // SECURITY: Verify enrollment FIRST, then get student from enrolled list
@@ -255,7 +256,7 @@ class CertificateController extends Controller
 
         if (! $student) {
             // Generic message prevents enumeration - attacker can't tell if user exists but isn't enrolled
-            throw new \Exception(__('Student is not enrolled in this course.'));
+            throw new Exception(__('Student is not enrolled in this course.'));
         }
 
         return $this->certificateService->issueInteractiveCourseCertificate(

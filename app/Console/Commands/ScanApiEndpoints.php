@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Illuminate\Http\Request;
 use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -170,7 +171,7 @@ class ScanApiEndpoints extends Command
     {
         try {
             $response = app()->handle(
-                \Illuminate\Http\Request::create($uri, 'GET', [], [], [], [
+                Request::create($uri, 'GET', [], [], [], [
                     'HTTP_AUTHORIZATION' => 'Bearer '.$token,
                     'HTTP_ACCEPT' => 'application/json',
                     'HTTP_X_ACADEMY_SUBDOMAIN' => $subdomain,

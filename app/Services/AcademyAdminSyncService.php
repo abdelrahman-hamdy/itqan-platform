@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use InvalidArgumentException;
+use Illuminate\Database\Eloquent\Collection;
 use App\Enums\UserType;
 use App\Models\Academy;
 use App\Models\User;
@@ -58,7 +60,7 @@ class AcademyAdminSyncService
                     if ($newAdmin) {
                         // Validate user is an admin
                         if ($newAdmin->user_type !== UserType::ADMIN->value) {
-                            throw new \InvalidArgumentException("User ID {$newAdminId} is not an admin user");
+                            throw new InvalidArgumentException("User ID {$newAdminId} is not an admin user");
                         }
 
                         // Clear any other academy's admin_id if this admin was previously assigned elsewhere
@@ -181,7 +183,7 @@ class AcademyAdminSyncService
      *
      * @param  User|null  $currentAdmin  The current admin (to include their assigned academy)
      */
-    public function getAvailableAcademies(?User $currentAdmin = null): \Illuminate\Database\Eloquent\Collection
+    public function getAvailableAcademies(?User $currentAdmin = null): Collection
     {
         return Academy::active()
             ->where(function ($query) use ($currentAdmin) {
@@ -198,7 +200,7 @@ class AcademyAdminSyncService
      *
      * @param  Academy|null  $currentAcademy  The current academy (to include its assigned admin)
      */
-    public function getAvailableAdmins(?Academy $currentAcademy = null): \Illuminate\Database\Eloquent\Collection
+    public function getAvailableAdmins(?Academy $currentAcademy = null): Collection
     {
         return User::where('user_type', UserType::ADMIN->value)
             ->where(function ($query) use ($currentAcademy) {

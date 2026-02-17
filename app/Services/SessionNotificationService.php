@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Constants\DefaultAcademy;
 use App\Enums\NotificationType;
 use App\Models\AcademicSession;
@@ -56,7 +57,7 @@ class SessionNotificationService
             } elseif ($session instanceof InteractiveCourseSession) {
                 $this->sendInteractiveSessionReadyNotifications($session);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send session ready notifications', [
                 'session_id' => $session->id,
                 'session_type' => $this->settingsService->getSessionType($session),
@@ -91,7 +92,7 @@ class SessionNotificationService
                     '/teacher-panel/quran-sessions/'.$session->id
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send Quran session ready notifications', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -119,7 +120,7 @@ class SessionNotificationService
                     '/academic-teacher-panel/academic-sessions/'.$session->id
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send Academic session ready notifications', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -171,7 +172,7 @@ class SessionNotificationService
                     '/academic-teacher-panel/interactive-course-sessions/'.$session->id
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send Interactive session ready notifications', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -231,7 +232,7 @@ class SessionNotificationService
                     }
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send session started notifications', [
                 'session_id' => $session->id,
                 'session_type' => $this->settingsService->getSessionType($session),
@@ -292,7 +293,7 @@ class SessionNotificationService
                     }
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send session completed notifications', [
                 'session_id' => $session->id,
                 'session_type' => $this->settingsService->getSessionType($session),
@@ -344,7 +345,7 @@ class SessionNotificationService
                     true // important
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send absent notifications', [
                 'session_id' => $session->id,
                 'session_type' => $this->settingsService->getSessionType($session),

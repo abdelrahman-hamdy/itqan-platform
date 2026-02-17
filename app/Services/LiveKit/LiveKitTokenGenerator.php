@@ -2,6 +2,7 @@
 
 namespace App\Services\LiveKit;
 
+use Exception;
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
 use Agence104\LiveKit\VideoGrant;
@@ -85,14 +86,14 @@ class LiveKitTokenGenerator
 
             return $token;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to generate LiveKit token', [
                 'error' => $e->getMessage(),
                 'user_id' => $user->id,
                 'room_name' => $roomName,
             ]);
 
-            throw new \Exception('Failed to generate access token: '.$e->getMessage());
+            throw new Exception('Failed to generate access token: '.$e->getMessage());
         }
     }
 
@@ -117,12 +118,12 @@ class LiveKitTokenGenerator
 
             return $token->toJwt();
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to generate Egress token', [
                 'error' => $e->getMessage(),
             ]);
 
-            throw new \Exception('Failed to generate Egress token: '.$e->getMessage());
+            throw new Exception('Failed to generate Egress token: '.$e->getMessage());
         }
     }
 
@@ -156,13 +157,13 @@ class LiveKitTokenGenerator
 
             return $token;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to generate room token', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
             ]);
 
-            throw new \Exception('Failed to generate room token: '.$e->getMessage());
+            throw new Exception('Failed to generate room token: '.$e->getMessage());
         }
     }
 
@@ -217,13 +218,13 @@ class LiveKitTokenGenerator
 
             return $token;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to generate custom token', [
                 'error' => $e->getMessage(),
                 'identity' => $identity,
             ]);
 
-            throw new \Exception('Failed to generate token: '.$e->getMessage());
+            throw new Exception('Failed to generate token: '.$e->getMessage());
         }
     }
 

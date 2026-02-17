@@ -2,6 +2,11 @@
 
 namespace App\Filament\Shared;
 
+use App\Models\Academy;
+use Filament\Forms\Components\Hidden;
+use Filament\Tables\Columns\TextColumn;
+use App\Models\AcademicSubject;
+use App\Models\AcademicGradeLevel;
 use App\Filament\Resources\BaseResource as SuperAdminBaseResource;
 use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Builder;
@@ -55,7 +60,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
     /**
      * Get current teacher's academy
      */
-    protected static function getCurrentTeacherAcademy(): ?\App\Models\Academy
+    protected static function getCurrentTeacherAcademy(): ?Academy
     {
         $academyContextService = app(AcademyContextService::class);
 
@@ -184,7 +189,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
         $teacherAcademy = static::getCurrentTeacherAcademy();
         if ($teacherAcademy) {
             // Add hidden academy_id field if not present
-            $academyField = \Filament\Forms\Components\Hidden::make('academy_id')
+            $academyField = Hidden::make('academy_id')
                 ->default($teacherAcademy->id);
 
             array_unshift($schema, $academyField);
@@ -224,9 +229,9 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
      * Hide academy column in tables since teachers only see their academy
      * Override getAcademyColumn from BaseResource
      */
-    protected static function getAcademyColumn(): \Filament\Tables\Columns\TextColumn
+    protected static function getAcademyColumn(): TextColumn
     {
-        return \Filament\Tables\Columns\TextColumn::make('academy.name')
+        return TextColumn::make('academy.name')
             ->label('الأكاديمية')
             ->sortable()
             ->searchable()
@@ -245,7 +250,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
             return [];
         }
 
-        return \App\Models\AcademicSubject::where('academy_id', $academy->id)
+        return AcademicSubject::where('academy_id', $academy->id)
             ->pluck('name', 'id')
             ->toArray();
     }
@@ -261,7 +266,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
             return [];
         }
 
-        return \App\Models\AcademicGradeLevel::where('academy_id', $academy->id)
+        return AcademicGradeLevel::where('academy_id', $academy->id)
             ->pluck('name', 'id')
             ->toArray();
     }

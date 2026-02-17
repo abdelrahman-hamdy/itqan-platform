@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Illuminate\Contracts\Http\Kernel;
 use App\Enums\UserType;
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -174,7 +175,7 @@ class CheckAllRoutes extends Command
             }
 
             // Handle request through a fresh app instance to avoid state issues
-            $kernel = app(\Illuminate\Contracts\Http\Kernel::class);
+            $kernel = app(Kernel::class);
             $response = $kernel->handle($request);
             $kernel->terminate($request, $response);
 

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Widgets;
 
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\Action;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\UserType;
 use App\Models\Academy;
@@ -53,12 +55,13 @@ class RecentActivitiesWidget extends BaseWidget
                 $query->latest()->limit(10)
             )
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('الاسم')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\BadgeColumn::make('user_type')
+                TextColumn::make('user_type')
+                    ->badge()
                     ->label('نوع المستخدم')
                     ->colors([
                         'primary' => 'quran_teacher',
@@ -78,13 +81,14 @@ class RecentActivitiesWidget extends BaseWidget
                         default => $state,
                     }),
 
-                Tables\Columns\TextColumn::make('academy.name')
+                TextColumn::make('academy.name')
                     ->label('الأكاديمية')
                     ->searchable()
                     ->sortable()
                     ->placeholder('غير محدد'),
 
-                Tables\Columns\BadgeColumn::make('status')
+                TextColumn::make('status')
+                    ->badge()
                     ->label('الحالة')
                     ->colors([
                         'success' => SessionSubscriptionStatus::ACTIVE->value,
@@ -100,13 +104,13 @@ class RecentActivitiesWidget extends BaseWidget
                         default => $state,
                     }),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ التسجيل')
                     ->dateTime('Y-m-d H:i')
                     ->sortable(),
             ])
-            ->actions([
-                Tables\Actions\Action::make('view')
+            ->recordActions([
+                Action::make('view')
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
                     ->url(fn (User $record): string => "/admin/users/{$record->id}")

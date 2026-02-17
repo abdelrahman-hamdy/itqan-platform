@@ -2,6 +2,11 @@
 
 namespace App\Services;
 
+use Exception;
+use Log;
+use App\Models\QuranCircleSchedule;
+use App\Models\QuranTrialRequest;
+use App\Enums\TrialRequestStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Models\QuranCircle;
@@ -38,7 +43,7 @@ class SessionManagementService
         // Validate subscription has remaining sessions
         $remainingSessions = $this->getRemainingIndividualSessions($circle);
         if ($remainingSessions <= 0) {
-            throw new \Exception('لا توجد جلسات متبقية في الاشتراك');
+            throw new Exception('لا توجد جلسات متبقية في الاشتراك');
         }
 
         // Get duration from subscription -> package if not provided
@@ -186,9 +191,9 @@ class SessionManagementService
                             $session = $this->createGroupSession($circle, $scheduledAt, $durationMinutes);
                         }
                         $sessions->push($session);
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         // Log error but continue with other sessions
-                        \Log::warning('Failed to create session', [
+                        Log::warning('Failed to create session', [
                             'circle_id' => $circle->id,
                             'scheduled_at' => $scheduledAt,
                             'error' => $e->getMessage(),
@@ -226,7 +231,7 @@ class SessionManagementService
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             throw $e;
         }
@@ -364,7 +369,7 @@ class SessionManagementService
             ->exists();
 
         if ($conflict) {
-            throw new \Exception('يوجد تعارض مع جلسة أخرى في هذا التوقيت');
+            throw new Exception('يوجد تعارض مع جلسة أخرى في هذا التوقيت');
         }
     }
 
@@ -402,7 +407,7 @@ class SessionManagementService
         // Option 3: Create makeup session requirement
 
         // We'll go with Option 1 for flexibility
-        \Log::info('Individual session deleted', [
+        Log::info('Individual session deleted', [
             'session_id' => $session->id,
             'circle_id' => $session->individual_circle_id,
             'remaining_sessions' => $this->getRemainingIndividualSessions($session->individualCircle) - 1,
@@ -412,7 +417,7 @@ class SessionManagementService
     private function handleGroupSessionDeletion(QuranSession $session): void
     {
         // Business logic: Group sessions can be deleted but teacher should maintain monthly count
-        \Log::info('Group session deleted', [
+        Log::info('Group session deleted', [
             'session_id' => $session->id,
             'circle_id' => $session->circle_id,
             'session_month' => $session->session_month,
@@ -423,22 +428,22 @@ class SessionManagementService
     /**
      * Generate exact number of group sessions from a schedule
      *
-     * @param  \App\Models\QuranCircleSchedule  $schedule  The circle schedule with weekly_schedule
+     * @param QuranCircleSchedule $schedule The circle schedule with weekly_schedule
      * @param  int  $sessionCount  Number of sessions to generate
      * @return int Number of sessions created
      */
-    public function generateExactGroupSessions(\App\Models\QuranCircleSchedule $schedule, int $sessionCount): int
+    public function generateExactGroupSessions(QuranCircleSchedule $schedule, int $sessionCount): int
     {
         $circle = $schedule->circle;
 
         if (! $circle) {
-            throw new \Exception('الجدول غير مرتبط بحلقة');
+            throw new Exception('الجدول غير مرتبط بحلقة');
         }
 
         $weeklySchedule = $schedule->weekly_schedule ?? [];
 
         if (empty($weeklySchedule)) {
-            throw new \Exception('لم يتم تحديد جدول أسبوعي');
+            throw new Exception('لم يتم تحديد جدول أسبوعي');
         }
 
         // Map day names to Carbon day numbers
@@ -508,9 +513,9 @@ class SessionManagementService
                             $schedule->default_duration_minutes ?? $circle->session_duration_minutes ?? 60
                         );
                         $createdCount++;
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         // Log but continue - might be a conflict
-                        \Log::warning('Could not create group session', [
+                        Log::warning('Could not create group session', [
                             'circle_id' => $circle->id,
                             'scheduled_at' => $scheduledAt->toDateTimeString(),
                             'error' => $e->getMessage(),
@@ -554,8 +559,8 @@ class SessionManagementService
                     $durationMinutes
                 );
                 $createdCount++;
-            } catch (\Exception $e) {
-                \Log::warning('Failed to create individual session', [
+            } catch (Exception $e) {
+                Log::warning('Failed to create individual session', [
                     'circle_id' => $circle->id,
                     'scheduled_at' => $scheduledAt->toDateTimeString(),
                     'error' => $e->getMessage(),
@@ -569,11 +574,11 @@ class SessionManagementService
     /**
      * Create a trial session for a trial request
      *
-     * @param  \App\Models\QuranTrialRequest  $trialRequest  The trial request
+     * @param QuranTrialRequest $trialRequest The trial request
      * @param  array  $data  Schedule configuration containing schedule_time, schedule_start_date
      * @return int Number of sessions created (1 on success)
      */
-    public function createTrialSession(\App\Models\QuranTrialRequest $trialRequest, array $data): int
+    public function createTrialSession(QuranTrialRequest $trialRequest, array $data): int
     {
         $timezone = AcademyContextService::getTimezone();
 
@@ -592,7 +597,7 @@ class SessionManagementService
 
         // Validate not in the past
         if ($scheduledAt->isPast()) {
-            throw new \Exception('لا يمكن جدولة جلسة في وقت ماضي');
+            throw new Exception('لا يمكن جدولة جلسة في وقت ماضي');
         }
 
         // Get teacher ID from trial request
@@ -600,7 +605,7 @@ class SessionManagementService
         $teacherId = $trialRequest->teacher?->user_id;
 
         if (! $teacherId) {
-            throw new \Exception('لم يتم العثور على المعلم المرتبط بالطلب التجريبي');
+            throw new Exception('لم يتم العثور على المعلم المرتبط بالطلب التجريبي');
         }
 
         // Check for conflicts
@@ -617,17 +622,17 @@ class SessionManagementService
             'trial_request_id' => $trialRequest->id,
             'session_code' => $this->generateSessionCode('TRL', $trialRequest->id, $scheduledAt),
             'session_type' => 'trial',
-            'status' => \App\Enums\SessionStatus::SCHEDULED,
+            'status' => SessionStatus::SCHEDULED,
             'title' => $title,
             'description' => $description,
             'scheduled_at' => $scheduledAtUtc,
             'duration_minutes' => 30,
-            'created_by' => \Illuminate\Support\Facades\Auth::id(),
+            'created_by' => Auth::id(),
         ]);
 
         // Update trial request status (use UTC for storage)
         $trialRequest->update([
-            'status' => \App\Enums\TrialRequestStatus::SCHEDULED,
+            'status' => TrialRequestStatus::SCHEDULED,
             'scheduled_at' => $scheduledAtUtc,
         ]);
 

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Archived;
 
+use Exception;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -83,7 +84,7 @@ class MigrateChattifyToWirechat extends Command
             // Display statistics
             $this->displayStatistics();
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             $this->error('Migration failed: '.$e->getMessage());
             $this->error($e->getTraceAsString());

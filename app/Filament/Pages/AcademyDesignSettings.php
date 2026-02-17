@@ -2,34 +2,38 @@
 
 namespace App\Filament\Pages;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\ViewField;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\Textarea;
+use Exception;
+use Filament\Actions\Action;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Exceptions\Halt;
 
 /**
- * @property Form $form
+ * @property \Filament\Schemas\Schema $form
  */
 class AcademyDesignSettings extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-paint-brush';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-paint-brush';
 
-    protected static string $view = 'filament.pages.academy-design-settings';
+    protected string $view = 'filament.pages.academy-design-settings';
 
-    protected static ?string $navigationGroup = 'إدارة النظام';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة النظام';
 
     protected static ?string $navigationLabel = 'تصميم الصفحة الرئيسية';
 
@@ -52,10 +56,10 @@ class AcademyDesignSettings extends Page implements HasForms
         }
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Section::make()
                     ->schema([
                         Select::make('selectedAcademyId')
@@ -76,7 +80,7 @@ class AcademyDesignSettings extends Page implements HasForms
                         Repeater::make('sections_order')
                             ->label('')
                             ->simple(
-                                \Filament\Forms\Components\ViewField::make('section')
+                                ViewField::make('section')
                                     ->label('')
                                     ->view('filament.forms.components.section-display'),
                             )
@@ -139,7 +143,7 @@ class AcademyDesignSettings extends Page implements HasForms
                             ->placeholder('تعليم متميز للمستقبل')
                             ->default('تعليم متميز للمستقبل'),
 
-                        \Filament\Forms\Components\Textarea::make('hero_subheading')
+                        Textarea::make('hero_subheading')
                             ->label('عنوان فرعي')
                             ->placeholder('انضم إلى آلاف الطلاب الذين يطورون مهاراتهم...')
                             ->default('انضم إلى آلاف الطلاب الذين يطورون مهاراتهم في القرآن الكريم والتعليم الأكاديمي مع أفضل المعلمين المتخصصين')
@@ -180,7 +184,7 @@ class AcademyDesignSettings extends Page implements HasForms
                             ->placeholder('إنجازاتنا بالأرقام')
                             ->default('إنجازاتنا بالأرقام'),
 
-                        \Filament\Forms\Components\Textarea::make('stats_subheading')
+                        Textarea::make('stats_subheading')
                             ->label('عنوان فرعي')
                             ->placeholder('نفخر بإنجازاتنا ونتائج طلابنا المتميزة')
                             ->default('نفخر بإنجازاتنا ونتائج طلابنا المتميزة')
@@ -221,7 +225,7 @@ class AcademyDesignSettings extends Page implements HasForms
                             ->placeholder('آراء طلابنا')
                             ->default('آراء طلابنا'),
 
-                        \Filament\Forms\Components\Textarea::make('reviews_subheading')
+                        Textarea::make('reviews_subheading')
                             ->label('عنوان فرعي')
                             ->placeholder('اكتشف تجارب طلابنا الناجحة وكيف ساعدتهم في تحقيق أهدافهم التعليمية')
                             ->default('اكتشف تجارب طلابنا الناجحة وكيف ساعدتهم في تحقيق أهدافهم التعليمية')
@@ -267,7 +271,7 @@ class AcademyDesignSettings extends Page implements HasForms
                                             ->imageResizeTargetHeight('150'),
                                     ]),
 
-                                \Filament\Forms\Components\Textarea::make('content')
+                                Textarea::make('content')
                                     ->label('نص التقييم')
                                     ->required()
                                     ->rows(3)
@@ -328,7 +332,7 @@ class AcademyDesignSettings extends Page implements HasForms
                             ->placeholder('برامج القرآن الكريم')
                             ->default('برامج القرآن الكريم'),
 
-                        \Filament\Forms\Components\Textarea::make('quran_subheading')
+                        Textarea::make('quran_subheading')
                             ->label('عنوان فرعي')
                             ->placeholder('ابدأ رحلتك في حفظ القرآن الكريم مع نخبة من أفضل المعلمين المتخصصين')
                             ->default('ابدأ رحلتك في حفظ القرآن الكريم مع نخبة من أفضل المعلمين المتخصصين')
@@ -381,7 +385,7 @@ class AcademyDesignSettings extends Page implements HasForms
                             ->placeholder('البرامج الأكاديمية')
                             ->default('البرامج الأكاديمية'),
 
-                        \Filament\Forms\Components\Textarea::make('academic_subheading')
+                        Textarea::make('academic_subheading')
                             ->label('عنوان فرعي')
                             ->placeholder('تعليم أكاديمي متميز مع معلمين خبراء في جميع المواد الدراسية')
                             ->default('تعليم أكاديمي متميز مع معلمين خبراء في جميع المواد الدراسية')
@@ -422,7 +426,7 @@ class AcademyDesignSettings extends Page implements HasForms
                             ->placeholder('الدورات المسجلة')
                             ->default('الدورات المسجلة'),
 
-                        \Filament\Forms\Components\Textarea::make('courses_subheading')
+                        Textarea::make('courses_subheading')
                             ->label('عنوان فرعي')
                             ->placeholder('دورات تعليمية شاملة ومتنوعة في مختلف المجالات والتخصصات')
                             ->default('دورات تعليمية شاملة ومتنوعة في مختلف المجالات والتخصصات')
@@ -463,7 +467,7 @@ class AcademyDesignSettings extends Page implements HasForms
                             ->placeholder('مميزات المنصة')
                             ->default('مميزات المنصة'),
 
-                        \Filament\Forms\Components\Textarea::make('features_subheading')
+                        Textarea::make('features_subheading')
                             ->label('عنوان فرعي')
                             ->placeholder('اكتشف المميزات التي تجعلنا الخيار الأفضل لتعليمك وتطوير مهاراتك')
                             ->default('اكتشف المميزات التي تجعلنا الخيار الأفضل لتعليمك وتطوير مهاراتك')
@@ -595,7 +599,7 @@ class AcademyDesignSettings extends Page implements HasForms
 
         } catch (Halt $exception) {
             return;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Notification::make()
                 ->title('حدث خطأ أثناء الحفظ')
                 ->body($e->getMessage())
@@ -607,7 +611,7 @@ class AcademyDesignSettings extends Page implements HasForms
     protected function getFormActions(): array
     {
         return [
-            \Filament\Actions\Action::make('save')
+            Action::make('save')
                 ->label('حفظ التغييرات')
                 ->submit('save'),
         ];

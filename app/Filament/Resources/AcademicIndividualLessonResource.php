@@ -2,13 +2,36 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Select;
+use App\Models\User;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Schemas\Components\Grid;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
+use App\Filament\Resources\AcademicIndividualLessonResource\Pages\ListAcademicIndividualLessons;
+use App\Filament\Resources\AcademicIndividualLessonResource\Pages\CreateAcademicIndividualLesson;
+use App\Filament\Resources\AcademicIndividualLessonResource\Pages\ViewAcademicIndividualLesson;
+use App\Filament\Resources\AcademicIndividualLessonResource\Pages\EditAcademicIndividualLesson;
 use App\Enums\UserType;
 use App\Filament\Resources\AcademicIndividualLessonResource\Pages;
 use App\Filament\Shared\Resources\BaseAcademicIndividualLessonResource;
 use App\Models\AcademicIndividualLesson;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
@@ -34,7 +57,7 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
 
     protected static ?string $navigationLabel = 'الدروس الفردية';
 
-    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
 
     protected static ?int $navigationSort = 5;
 
@@ -57,21 +80,21 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
     {
         return Section::make('معلومات الدرس الأساسية')
             ->schema([
-                Forms\Components\TextInput::make('lesson_code')
+                TextInput::make('lesson_code')
                     ->label('رمز الدرس')
                     ->disabled(),
 
-                Forms\Components\TextInput::make('name')
+                TextInput::make('name')
                     ->label('اسم الدرس')
                     ->required()
                     ->maxLength(255),
 
-                Forms\Components\Textarea::make('description')
+                Textarea::make('description')
                     ->label('وصف الدرس')
                     ->rows(3)
                     ->columnSpanFull(),
 
-                Forms\Components\Select::make('academic_teacher_id')
+                Select::make('academic_teacher_id')
                     ->relationship('academicTeacher', 'id')
                     ->label('المعلم')
                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->user?->name)
@@ -79,10 +102,10 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
                     ->preload()
                     ->required(),
 
-                Forms\Components\Select::make('student_id')
+                Select::make('student_id')
                     ->label('الطالب')
                     ->options(function () {
-                        return \App\Models\User::where('user_type', UserType::STUDENT->value)
+                        return User::where('user_type', UserType::STUDENT->value)
                             ->with('studentProfile')
                             ->get()
                             ->mapWithKeys(function ($user) {
@@ -93,14 +116,14 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
                     ->preload()
                     ->required(),
 
-                Forms\Components\Select::make('academic_subject_id')
+                Select::make('academic_subject_id')
                     ->relationship('academicSubject', 'name')
                     ->label('المادة')
                     ->searchable()
                     ->preload()
                     ->required(),
 
-                Forms\Components\Select::make('academic_grade_level_id')
+                Select::make('academic_grade_level_id')
                     ->relationship('academicGradeLevel', 'name')
                     ->label('المستوى الدراسي')
                     ->searchable()
@@ -116,22 +139,22 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ActionGroup::make([
-                Tables\Actions\ViewAction::make()
+            ActionGroup::make([
+                ViewAction::make()
                     ->label('عرض'),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
-                Tables\Actions\Action::make('view_sessions')
+                Action::make('view_sessions')
                     ->label('الجلسات')
                     ->icon('heroicon-o-calendar-days')
                     ->url(fn (AcademicIndividualLesson $record): string => AcademicSessionResource::getUrl('index', [
                         'tableFilters[academic_individual_lesson_id][value]' => $record->id,
                     ])),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف'),
-                Tables\Actions\RestoreAction::make()
+                RestoreAction::make()
                     ->label('استعادة'),
-                Tables\Actions\ForceDeleteAction::make()
+                ForceDeleteAction::make()
                     ->label('حذف نهائي'),
             ]),
         ];
@@ -143,11 +166,11 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
-                Tables\Actions\RestoreBulkAction::make()
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+                RestoreBulkAction::make()
                     ->label(__('filament.actions.restore_selected')),
-                Tables\Actions\ForceDeleteBulkAction::make()
+                ForceDeleteBulkAction::make()
                     ->label(__('filament.actions.force_delete_selected')),
             ]),
         ];
@@ -175,15 +198,15 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
     {
         return Section::make('التوقيت')
             ->schema([
-                Forms\Components\DateTimePicker::make('started_at')
+                DateTimePicker::make('started_at')
                     ->label('تاريخ البدء')
                     ->timezone(AcademyContextService::getTimezone()),
 
-                Forms\Components\DateTimePicker::make('completed_at')
+                DateTimePicker::make('completed_at')
                     ->label('تاريخ الإكمال')
                     ->timezone(AcademyContextService::getTimezone()),
 
-                Forms\Components\DateTimePicker::make('last_session_at')
+                DateTimePicker::make('last_session_at')
                     ->label('آخر جلسة')
                     ->timezone(AcademyContextService::getTimezone())
                     ->disabled(),
@@ -198,14 +221,14 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
     {
         return Section::make('ملاحظات')
             ->schema([
-                Forms\Components\Grid::make(2)
+                Grid::make(2)
                     ->schema([
-                        Forms\Components\Textarea::make('admin_notes')
+                        Textarea::make('admin_notes')
                             ->label('ملاحظات الإدارة')
                             ->rows(3)
                             ->maxLength(1000)
                             ->helperText('ملاحظات داخلية للإدارة'),
-                        Forms\Components\Textarea::make('supervisor_notes')
+                        Textarea::make('supervisor_notes')
                             ->label('ملاحظات المشرف')
                             ->rows(3)
                             ->maxLength(2000)
@@ -260,13 +283,13 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
         return [
             ...parent::getTableFilters(),
 
-            Tables\Filters\SelectFilter::make('academic_teacher_id')
+            SelectFilter::make('academic_teacher_id')
                 ->label('المعلم')
                 ->relationship('academicTeacher.user', 'name')
                 ->searchable()
                 ->preload(),
 
-            Tables\Filters\TrashedFilter::make()
+            TrashedFilter::make()
                 ->label(__('filament.filters.trashed')),
         ];
     }
@@ -278,10 +301,10 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAcademicIndividualLessons::route('/'),
-            'create' => Pages\CreateAcademicIndividualLesson::route('/create'),
-            'view' => Pages\ViewAcademicIndividualLesson::route('/{record}'),
-            'edit' => Pages\EditAcademicIndividualLesson::route('/{record}/edit'),
+            'index' => ListAcademicIndividualLessons::route('/'),
+            'create' => CreateAcademicIndividualLesson::route('/create'),
+            'view' => ViewAcademicIndividualLesson::route('/{record}'),
+            'edit' => EditAcademicIndividualLesson::route('/{record}/edit'),
         ];
     }
 }

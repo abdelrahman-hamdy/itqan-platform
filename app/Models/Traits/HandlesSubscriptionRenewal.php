@@ -2,6 +2,9 @@
 
 namespace App\Models\Traits;
 
+use Exception;
+use RuntimeException;
+use App\Services\NotificationService;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Services\PaymentService;
@@ -90,7 +93,7 @@ trait HandlesSubscriptionRenewal
             $subscription = static::lockForUpdate()->find($this->id);
 
             if (! $subscription) {
-                throw new \Exception("Subscription {$this->id} not found");
+                throw new Exception("Subscription {$this->id} not found");
             }
 
             // Double-check eligibility after lock (another process might have renewed)
@@ -132,7 +135,7 @@ trait HandlesSubscriptionRenewal
 
                     return false;
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Exception during payment: Track as failed attempt
                 $subscription->processRenewalFailure($e->getMessage());
 
@@ -181,7 +184,7 @@ trait HandlesSubscriptionRenewal
 
         // Ensure billing_cycle exists before calculating end date
         if (! $this->billing_cycle) {
-            throw new \RuntimeException('Cannot process renewal: billing cycle is not set for subscription #'.$this->id);
+            throw new RuntimeException('Cannot process renewal: billing cycle is not set for subscription #'.$this->id);
         }
 
         $newEndDate = $this->billing_cycle->calculateEndDate($this->ends_at ?? now());
@@ -292,7 +295,7 @@ trait HandlesSubscriptionRenewal
     public function manualRenewal(float $amount, ?string $newBillingCycle = null): bool
     {
         if (! $this->canRenew()) {
-            throw new \Exception('Cannot renew subscription in current state');
+            throw new Exception('Cannot renew subscription in current state');
         }
 
         return DB::transaction(function () use ($amount, $newBillingCycle) {
@@ -372,7 +375,7 @@ trait HandlesSubscriptionRenewal
         }
 
         try {
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             $subscriptionData = [
                 'subscription_id' => $this->id,
@@ -390,7 +393,7 @@ trait HandlesSubscriptionRenewal
                 'subscription_id' => $this->id,
                 'amount' => $amount,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to send renewal success notification', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),
@@ -410,7 +413,7 @@ trait HandlesSubscriptionRenewal
         }
 
         try {
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             $paymentData = [
                 'subscription_id' => $this->id,
@@ -428,7 +431,7 @@ trait HandlesSubscriptionRenewal
                 'subscription_id' => $this->id,
                 'reason' => $reason,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to send payment failed notification', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),
@@ -449,7 +452,7 @@ trait HandlesSubscriptionRenewal
         }
 
         try {
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             $subscriptionData = [
                 'subscription_id' => $this->id,
@@ -472,7 +475,7 @@ trait HandlesSubscriptionRenewal
 
             // Mark reminder as sent
             $this->update(['renewal_reminder_sent_at' => now()]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to send renewal reminder', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),

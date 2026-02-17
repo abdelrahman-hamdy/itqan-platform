@@ -2,11 +2,24 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
 use App\Models\TeacherEarning;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -26,7 +39,7 @@ abstract class BaseTeacherEarningResource extends Resource
 {
     protected static ?string $model = TeacherEarning::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-currency-dollar';
 
     protected static ?string $navigationLabel = 'أرباح المعلمين';
 
@@ -94,49 +107,49 @@ abstract class BaseTeacherEarningResource extends Resource
     // Shared Form Definition
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات الربح')
+        return $schema
+            ->components([
+                Section::make('معلومات الربح')
                     ->schema([
-                        Forms\Components\TextInput::make('teacher.user.name')
+                        TextInput::make('teacher.user.name')
                             ->label('المعلم')
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('teacher_type')
+                        TextInput::make('teacher_type')
                             ->label('نوع المعلم')
                             ->formatStateUsing(fn ($state) => static::formatTeacherType($state))
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('amount')
+                        TextInput::make('amount')
                             ->label('المبلغ')
                             ->numeric()
                             ->prefix(getCurrencySymbol())
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('calculation_method')
+                        TextInput::make('calculation_method')
                             ->label('طريقة الحساب')
                             ->formatStateUsing(fn ($record) => $record->calculation_method_label ?? '-')
                             ->disabled(),
 
-                        Forms\Components\DatePicker::make('earning_month')
+                        DatePicker::make('earning_month')
                             ->label('شهر الربح')
                             ->disabled(),
 
-                        Forms\Components\DateTimePicker::make('session_completed_at')
+                        DateTimePicker::make('session_completed_at')
                             ->label('تاريخ إكمال الجلسة')
                             ->disabled(),
 
-                        Forms\Components\DateTimePicker::make('calculated_at')
+                        DateTimePicker::make('calculated_at')
                             ->label('تاريخ الحساب')
                             ->disabled(),
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('تفاصيل الحساب')
+                Section::make('تفاصيل الحساب')
                     ->schema([
-                        Forms\Components\Placeholder::make('rate_snapshot_display')
+                        Placeholder::make('rate_snapshot_display')
                             ->label('الأسعار المستخدمة')
                             ->content(function ($record) {
                                 if (empty($record?->rate_snapshot)) {
@@ -160,7 +173,7 @@ abstract class BaseTeacherEarningResource extends Resource
                                 return implode(' | ', $lines) ?: '-';
                             }),
 
-                        Forms\Components\Placeholder::make('calculation_metadata_display')
+                        Placeholder::make('calculation_metadata_display')
                             ->label('تفاصيل الجلسة')
                             ->content(function ($record) {
                                 if (empty($record?->calculation_metadata)) {
@@ -215,7 +228,7 @@ abstract class BaseTeacherEarningResource extends Resource
                     ])
                     ->columns(1),
 
-                Forms\Components\Section::make('الحالة')
+                Section::make('الحالة')
                     ->schema(static::getStatusFormFields())
                     ->columns(2),
             ]);
@@ -227,17 +240,17 @@ abstract class BaseTeacherEarningResource extends Resource
     protected static function getStatusFormFields(): array
     {
         return [
-            Forms\Components\Toggle::make('is_finalized')
+            Toggle::make('is_finalized')
                 ->label('تم التأكيد')
                 ->helperText('هل تم تأكيد هذا الربح؟')
                 ->disabled(),
 
-            Forms\Components\Toggle::make('is_disputed')
+            Toggle::make('is_disputed')
                 ->label('معترض عليه')
                 ->helperText('هل يوجد اعتراض على هذا الربح؟')
                 ->disabled(),
 
-            Forms\Components\Textarea::make('dispute_notes')
+            Textarea::make('dispute_notes')
                 ->label('ملاحظات الاعتراض')
                 ->rows(3)
                 ->disabled()
@@ -255,8 +268,8 @@ abstract class BaseTeacherEarningResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions());
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions());
     }
 
     /**
@@ -292,11 +305,11 @@ abstract class BaseTeacherEarningResource extends Resource
                 ->date('M Y')
                 ->sortable(),
 
-            Tables\Columns\IconColumn::make('is_finalized')
+            IconColumn::make('is_finalized')
                 ->label('مؤكد')
                 ->boolean(),
 
-            Tables\Columns\IconColumn::make('is_disputed')
+            IconColumn::make('is_disputed')
                 ->label('معترض')
                 ->boolean()
                 ->trueColor('danger')
@@ -316,26 +329,26 @@ abstract class BaseTeacherEarningResource extends Resource
     protected static function getTableFilters(): array
     {
         return [
-            Tables\Filters\SelectFilter::make('teacher_type')
+            SelectFilter::make('teacher_type')
                 ->label('نوع المعلم')
                 ->options([
                     QuranTeacherProfile::class => 'معلم قرآن',
                     AcademicTeacherProfile::class => 'معلم أكاديمي',
                 ]),
 
-            Tables\Filters\TernaryFilter::make('is_finalized')
+            TernaryFilter::make('is_finalized')
                 ->label('الحالة')
                 ->placeholder('الكل')
                 ->trueLabel('مؤكد')
                 ->falseLabel('غير مؤكد'),
 
-            Tables\Filters\TernaryFilter::make('is_disputed')
+            TernaryFilter::make('is_disputed')
                 ->label('اعتراض')
                 ->placeholder('الكل')
                 ->trueLabel('معترض عليه')
                 ->falseLabel('غير معترض'),
 
-            Tables\Filters\Filter::make('unpaid')
+            Filter::make('unpaid')
                 ->label('غير محصّل')
                 ->query(fn (Builder $query) => $query->unpaid()),
         ];
@@ -348,9 +361,9 @@ abstract class BaseTeacherEarningResource extends Resource
     /**
      * Get finalize action for earnings.
      */
-    protected static function getFinalizeAction(): Tables\Actions\Action
+    protected static function getFinalizeAction(): Action
     {
-        return Tables\Actions\Action::make('finalize')
+        return Action::make('finalize')
             ->label('تأكيد')
             ->icon('heroicon-o-check-circle')
             ->color('success')
@@ -364,15 +377,15 @@ abstract class BaseTeacherEarningResource extends Resource
     /**
      * Get dispute action for earnings.
      */
-    protected static function getDisputeAction(): Tables\Actions\Action
+    protected static function getDisputeAction(): Action
     {
-        return Tables\Actions\Action::make('dispute')
+        return Action::make('dispute')
             ->label('اعتراض')
             ->icon('heroicon-o-exclamation-triangle')
             ->color('warning')
             ->visible(fn ($record) => ! $record->is_disputed)
-            ->form([
-                Forms\Components\Textarea::make('dispute_notes')
+            ->schema([
+                Textarea::make('dispute_notes')
                     ->label('سبب الاعتراض')
                     ->required()
                     ->maxLength(1000)
@@ -387,9 +400,9 @@ abstract class BaseTeacherEarningResource extends Resource
     /**
      * Get resolve dispute action for earnings.
      */
-    protected static function getResolveDisputeAction(): Tables\Actions\Action
+    protected static function getResolveDisputeAction(): Action
     {
-        return Tables\Actions\Action::make('resolve_dispute')
+        return Action::make('resolve_dispute')
             ->label('حل الاعتراض')
             ->icon('heroicon-o-check-badge')
             ->color('success')
@@ -398,11 +411,11 @@ abstract class BaseTeacherEarningResource extends Resource
             ->modalHeading('حل الاعتراض')
             ->modalDescription('هل أنت متأكد من حل هذا الاعتراض وتأكيد الربح؟')
             ->modalSubmitActionLabel('نعم، حل الاعتراض')
-            ->form([
-                Forms\Components\Placeholder::make('current_dispute_notes')
+            ->schema([
+                Placeholder::make('current_dispute_notes')
                     ->label('سبب الاعتراض الحالي')
                     ->content(fn ($record) => $record->dispute_notes ?? '-'),
-                Forms\Components\Textarea::make('resolution_notes')
+                Textarea::make('resolution_notes')
                     ->label('ملاحظات الحل')
                     ->helperText('أضف ملاحظات توضح كيف تم حل الاعتراض (الحد الأقصى 500 حرف)')
                     ->maxLength(500)
@@ -432,9 +445,9 @@ abstract class BaseTeacherEarningResource extends Resource
     /**
      * Get finalize bulk action.
      */
-    protected static function getFinalizeBulkAction(): Tables\Actions\BulkAction
+    protected static function getFinalizeBulkAction(): BulkAction
     {
-        return Tables\Actions\BulkAction::make('finalize_selected')
+        return BulkAction::make('finalize_selected')
             ->label('تأكيد المحدد')
             ->icon('heroicon-o-check-circle')
             ->color('success')

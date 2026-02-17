@@ -2,6 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
+use Log;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Illuminate\Http\RedirectResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Http;
 use App\Enums\SessionStatus;
 use App\Http\Requests\StartRecordingRequest;
 use App\Http\Requests\StopRecordingRequest;
@@ -65,8 +71,8 @@ class InteractiveCourseRecordingController extends Controller
                 'session' => $courseSession->load('course'),
             ], 'تم بدء التسجيل بنجاح');
 
-        } catch (\Exception $e) {
-            \Log::error('Failed to start recording', [
+        } catch (Exception $e) {
+            Log::error('Failed to start recording', [
                 'session_id' => $courseSession->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -142,8 +148,8 @@ class InteractiveCourseRecordingController extends Controller
                 return $this->serverError('فشل إيقاف التسجيل');
             }
 
-        } catch (\Exception $e) {
-            \Log::error('Failed to stop recording', [
+        } catch (Exception $e) {
+            Log::error('Failed to stop recording', [
                 'session_id' => $courseSession->id,
                 'recording_id' => $activeRecording->id,
                 'error' => $e->getMessage(),
@@ -228,7 +234,7 @@ class InteractiveCourseRecordingController extends Controller
     /**
      * Download a recording
      */
-    public function downloadRecording(Request $request, $recordingId): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
+    public function downloadRecording(Request $request, $recordingId): BinaryFileResponse|RedirectResponse
     {
         $user = Auth::user();
 
@@ -277,7 +283,7 @@ class InteractiveCourseRecordingController extends Controller
     /**
      * Stream a recording (for in-browser playback)
      */
-    public function streamRecording(Request $request, $recordingId): \Symfony\Component\HttpFoundation\StreamedResponse|\Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
+    public function streamRecording(Request $request, $recordingId): StreamedResponse|BinaryFileResponse|RedirectResponse
     {
         $user = Auth::user();
 
@@ -321,7 +327,7 @@ class InteractiveCourseRecordingController extends Controller
             // Proxy mode: fetch from remote and stream through Laravel
             // This provides more control but uses Laravel server bandwidth
             try {
-                $response = \Http::withOptions(['stream' => true])->get($remoteUrl);
+                $response = Http::withOptions(['stream' => true])->get($remoteUrl);
 
                 if (! $response->successful()) {
                     abort(404, 'فشل في تحميل ملف التسجيل من الخادم');
@@ -334,8 +340,8 @@ class InteractiveCourseRecordingController extends Controller
                     'Content-Disposition' => 'inline; filename="'.($recording->file_name ?? 'recording.mp4').'"',
                     'Accept-Ranges' => 'bytes',
                 ]);
-            } catch (\Exception $e) {
-                \Log::error('Failed to proxy remote recording', [
+            } catch (Exception $e) {
+                Log::error('Failed to proxy remote recording', [
                     'recording_id' => $recording->id,
                     'remote_url' => $remoteUrl,
                     'error' => $e->getMessage(),

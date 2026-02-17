@@ -2,11 +2,18 @@
 
 namespace App\Filament\Supervisor\Resources\MonitoredSessionReportsResource\Pages;
 
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Tables\Columns\TextColumn;
+use BackedEnum;
+use ValueError;
+use Filament\Tables\Filters\SelectFilter;
+use App\Models\User;
+use Filament\Tables\Filters\Filter;
+use Filament\Actions\ViewAction;
 use App\Enums\AttendanceStatus;
 use App\Filament\Supervisor\Resources\MonitoredSessionReportsResource;
 use App\Models\AcademicSessionReport;
 use App\Models\StudentSessionReport;
-use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -103,23 +110,23 @@ class ListMonitoredSessionReports extends ListRecords
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('session.title')
+                TextColumn::make('session.title')
                     ->label('الجلسة')
                     ->searchable()
                     ->sortable()
                     ->limit(30),
 
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('teacher.name')
+                TextColumn::make('teacher.name')
                     ->label('المعلم')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('new_memorization_degree')
+                TextColumn::make('new_memorization_degree')
                     ->label('الحفظ')
                     ->numeric()
                     ->sortable()
@@ -131,7 +138,7 @@ class ListMonitoredSessionReports extends ListRecords
                         default => 'danger',
                     }),
 
-                Tables\Columns\TextColumn::make('reservation_degree')
+                TextColumn::make('reservation_degree')
                     ->label('المراجعة')
                     ->numeric()
                     ->sortable()
@@ -143,11 +150,11 @@ class ListMonitoredSessionReports extends ListRecords
                         default => 'danger',
                     }),
 
-                Tables\Columns\TextColumn::make('attendance_status')
+                TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
                     ->color(function (mixed $state): string {
-                        $value = $state instanceof \BackedEnum ? $state->value : (string) $state;
+                        $value = $state instanceof BackedEnum ? $state->value : (string) $state;
 
                         return match ($value) {
                             AttendanceStatus::ATTENDED->value => 'success',
@@ -166,85 +173,85 @@ class ListMonitoredSessionReports extends ListRecords
                         }
                         try {
                             return AttendanceStatus::from((string) $state)->label();
-                        } catch (\ValueError $e) {
+                        } catch (ValueError $e) {
                             return (string) $state;
                         }
                     }),
 
-                Tables\Columns\TextColumn::make('attendance_percentage')
+                TextColumn::make('attendance_percentage')
                     ->label('النسبة')
                     ->formatStateUsing(fn ($state): string => ($state ?? 0).'%')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('التاريخ')
                     ->dateTime('Y-m-d')
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('attendance_status')
+                SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')
                     ->options(AttendanceStatus::options()),
 
-                Tables\Filters\SelectFilter::make('teacher_id')
+                SelectFilter::make('teacher_id')
                     ->label('المعلم')
                     ->options(function () {
                         $teacherIds = MonitoredSessionReportsResource::getAssignedQuranTeacherIds();
 
-                        return \App\Models\User::whereIn('id', $teacherIds)
+                        return User::whereIn('id', $teacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
                     })
                     ->searchable()
                     ->preload(),
 
-                Tables\Filters\Filter::make('has_evaluation')
+                Filter::make('has_evaluation')
                     ->label('تم التقييم')
                     ->query(fn (Builder $query): Builder => $query->where(function ($q) {
                         $q->whereNotNull('new_memorization_degree')
                             ->orWhereNotNull('reservation_degree');
                     })),
 
-                Tables\Filters\Filter::make('low_score')
+                Filter::make('low_score')
                     ->label('درجات منخفضة')
                     ->query(fn (Builder $query): Builder => $query->where(function ($q) {
                         $q->where('new_memorization_degree', '<', 6)
                             ->orWhere('reservation_degree', '<', 6);
                     })),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
+            ->recordActions([
+                ViewAction::make()
                     ->label('عرض')
                     ->url(fn ($record): string => route('filament.supervisor.resources.monitored-session-reports.view', [
                         'record' => $record->id,
                         'type' => 'quran',
                     ])),
             ])
-            ->bulkActions([]);
+            ->toolbarActions([]);
     }
 
     protected function getAcademicTable(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('session.title')
+                TextColumn::make('session.title')
                     ->label('الجلسة')
                     ->searchable()
                     ->sortable()
                     ->limit(30),
 
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('teacher.name')
+                TextColumn::make('teacher.name')
                     ->label('المعلم')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('homework_degree')
+                TextColumn::make('homework_degree')
                     ->label('الواجب')
                     ->numeric()
                     ->sortable()
@@ -256,11 +263,11 @@ class ListMonitoredSessionReports extends ListRecords
                         default => 'danger',
                     }),
 
-                Tables\Columns\TextColumn::make('attendance_status')
+                TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
                     ->color(function (mixed $state): string {
-                        $value = $state instanceof \BackedEnum ? $state->value : (string) $state;
+                        $value = $state instanceof BackedEnum ? $state->value : (string) $state;
 
                         return match ($value) {
                             AttendanceStatus::ATTENDED->value => 'success',
@@ -279,55 +286,55 @@ class ListMonitoredSessionReports extends ListRecords
                         }
                         try {
                             return AttendanceStatus::from((string) $state)->label();
-                        } catch (\ValueError $e) {
+                        } catch (ValueError $e) {
                             return (string) $state;
                         }
                     }),
 
-                Tables\Columns\TextColumn::make('attendance_percentage')
+                TextColumn::make('attendance_percentage')
                     ->label('النسبة')
                     ->formatStateUsing(fn ($state): string => ($state ?? 0).'%')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('التاريخ')
                     ->dateTime('Y-m-d')
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('attendance_status')
+                SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')
                     ->options(AttendanceStatus::options()),
 
-                Tables\Filters\SelectFilter::make('teacher_id')
+                SelectFilter::make('teacher_id')
                     ->label('المعلم')
                     ->options(function () {
                         $teacherIds = MonitoredSessionReportsResource::getAssignedAcademicTeacherIds();
 
-                        return \App\Models\User::whereIn('id', $teacherIds)
+                        return User::whereIn('id', $teacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
                     })
                     ->searchable()
                     ->preload(),
 
-                Tables\Filters\Filter::make('has_homework_grade')
+                Filter::make('has_homework_grade')
                     ->label('تم تقييم الواجب')
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('homework_degree')),
 
-                Tables\Filters\Filter::make('low_score')
+                Filter::make('low_score')
                     ->label('درجات منخفضة')
                     ->query(fn (Builder $query): Builder => $query->where('homework_degree', '<', 6)),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
+            ->recordActions([
+                ViewAction::make()
                     ->label('عرض')
                     ->url(fn ($record): string => route('filament.supervisor.resources.monitored-session-reports.view', [
                         'record' => $record->id,
                         'type' => 'academic',
                     ])),
             ])
-            ->bulkActions([]);
+            ->toolbarActions([]);
     }
 }

@@ -2,14 +2,36 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use App\Models\QuranTeacherProfile;
+use Exception;
+use Log;
+use App\Models\User;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Forms\Components\DatePicker;
+use App\Filament\Resources\QuranIndividualCircleResource\Pages\ListQuranIndividualCircles;
+use App\Filament\Resources\QuranIndividualCircleResource\Pages\CreateQuranIndividualCircle;
+use App\Filament\Resources\QuranIndividualCircleResource\Pages\ViewQuranIndividualCircle;
+use App\Filament\Resources\QuranIndividualCircleResource\Pages\EditQuranIndividualCircle;
 use App\Enums\UserType;
 use App\Filament\Resources\QuranIndividualCircleResource\Pages;
 use App\Filament\Shared\Resources\BaseQuranIndividualCircleResource;
 use App\Models\QuranIndividualCircle;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
@@ -17,8 +39,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -50,7 +70,7 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
 
     protected static ?string $navigationLabel = 'الحلقات الفردية';
 
-    protected static ?string $navigationGroup = 'إدارة القرآن';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 4;
 
@@ -92,7 +112,7 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                                 try {
                                     $academyId = AcademyContextService::getCurrentAcademyId();
 
-                                    $teachers = \App\Models\QuranTeacherProfile::when($academyId, function ($query) use ($academyId) {
+                                    $teachers = QuranTeacherProfile::when($academyId, function ($query) use ($academyId) {
                                         return $query->where('academy_id', $academyId);
                                     })
                                         ->whereHas('user', fn ($q) => $q->where('active_status', true))
@@ -108,8 +128,8 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
 
                                         return [$userId => $fullName];
                                     })->toArray();
-                                } catch (\Exception $e) {
-                                    \Log::error('Error loading teachers: '.$e->getMessage());
+                                } catch (Exception $e) {
+                                    Log::error('Error loading teachers: '.$e->getMessage());
 
                                     return ['0' => 'خطأ في تحميل المعلمين'];
                                 }
@@ -123,7 +143,7 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                             ->options(function () {
                                 $academyId = AcademyContextService::getCurrentAcademyId();
 
-                                return \App\Models\User::where('user_type', UserType::STUDENT->value)
+                                return User::where('user_type', UserType::STUDENT->value)
                                     ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
                                     ->with('studentProfile')
                                     ->limit(100)
@@ -167,11 +187,11 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
     {
         return [
             ActionGroup::make([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض'),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
-                Tables\Actions\Action::make('toggle_status')
+                Action::make('toggle_status')
                     ->label(fn (QuranIndividualCircle $record) => $record->is_active ? 'إيقاف' : 'تفعيل')
                     ->icon(fn (QuranIndividualCircle $record) => $record->is_active ? 'heroicon-o-pause-circle' : 'heroicon-o-play-circle')
                     ->color(fn (QuranIndividualCircle $record) => $record->is_active ? 'warning' : 'success')
@@ -184,17 +204,17 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                     ->action(fn (QuranIndividualCircle $record) => $record->update([
                         'is_active' => ! $record->is_active,
                     ])),
-                Tables\Actions\Action::make('view_sessions')
+                Action::make('view_sessions')
                     ->label('الجلسات')
                     ->icon('heroicon-o-calendar-days')
                     ->url(fn (QuranIndividualCircle $record): string => QuranSessionResource::getUrl('index', [
                         'tableFilters[individual_circle_id][value]' => $record->id,
                     ])),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف'),
-                Tables\Actions\RestoreAction::make()
+                RestoreAction::make()
                     ->label('استعادة'),
-                Tables\Actions\ForceDeleteAction::make()
+                ForceDeleteAction::make()
                     ->label('حذف نهائي'),
             ]),
         ];
@@ -206,12 +226,12 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make()
+            BulkActionGroup::make([
+                DeleteBulkAction::make()
                     ->label('حذف المحدد'),
-                Tables\Actions\RestoreBulkAction::make()
+                RestoreBulkAction::make()
                     ->label('استعادة المحدد'),
-                Tables\Actions\ForceDeleteBulkAction::make()
+                ForceDeleteBulkAction::make()
                     ->label('حذف نهائي للمحدد'),
             ]),
         ];
@@ -281,7 +301,8 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                 ->searchable()
                 ->sortable(),
 
-            BadgeColumn::make('specialization')
+            TextColumn::make('specialization')
+                ->badge()
                 ->label('التخصص')
                 ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::SPECIALIZATIONS[$state] ?? $state)
                 ->colors([
@@ -292,7 +313,8 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                     'primary' => 'complete',
                 ]),
 
-            BadgeColumn::make('memorization_level')
+            TextColumn::make('memorization_level')
+                ->badge()
                 ->label('المستوى')
                 ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::MEMORIZATION_LEVELS[$state] ?? $state)
                 ->color('gray'),
@@ -303,7 +325,7 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                 ->alignCenter()
                 ->sortable(),
 
-            Tables\Columns\IconColumn::make('is_active')
+            IconColumn::make('is_active')
                 ->label('الحالة')
                 ->boolean()
                 ->trueIcon('heroicon-o-check-circle')
@@ -329,7 +351,7 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
     protected static function getTableFilters(): array
     {
         return [
-            Tables\Filters\TernaryFilter::make('is_active')
+            TernaryFilter::make('is_active')
                 ->label('الحالة')
                 ->trueLabel('نشطة')
                 ->falseLabel('غير نشطة')
@@ -344,10 +366,10 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
             Filter::make('created_at')
                 ->columnSpan(2)
                 ->columns(2)
-                ->form([
-                    Forms\Components\DatePicker::make('from')
+                ->schema([
+                    DatePicker::make('from')
                         ->label('من تاريخ'),
-                    Forms\Components\DatePicker::make('until')
+                    DatePicker::make('until')
                         ->label('إلى تاريخ'),
                 ])
                 ->query(function (Builder $query, array $data): Builder {
@@ -387,10 +409,10 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuranIndividualCircles::route('/'),
-            'create' => Pages\CreateQuranIndividualCircle::route('/create'),
-            'view' => Pages\ViewQuranIndividualCircle::route('/{record}'),
-            'edit' => Pages\EditQuranIndividualCircle::route('/{record}/edit'),
+            'index' => ListQuranIndividualCircles::route('/'),
+            'create' => CreateQuranIndividualCircle::route('/create'),
+            'view' => ViewQuranIndividualCircle::route('/{record}'),
+            'edit' => EditQuranIndividualCircle::route('/{record}/edit'),
         ];
     }
 }

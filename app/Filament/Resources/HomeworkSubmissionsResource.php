@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\HomeworkSubmissionsResource\Pages\ListHomeworkSubmissions;
 use App\Filament\Resources\HomeworkSubmissionsResource\Pages;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\InteractiveCourseHomeworkSubmission;
@@ -23,7 +24,7 @@ class HomeworkSubmissionsResource extends BaseResource
 {
     protected static ?string $model = AcademicHomeworkSubmission::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-check';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-check';
 
     protected static ?string $navigationLabel = 'تسليمات الواجبات';
 
@@ -31,7 +32,7 @@ class HomeworkSubmissionsResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'تسليمات الواجبات';
 
-    protected static ?string $navigationGroup = 'التقارير والحضور';
+    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والحضور';
 
     protected static ?int $navigationSort = 10;
 
@@ -87,7 +88,7 @@ class HomeworkSubmissionsResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListHomeworkSubmissions::route('/'),
+            'index' => ListHomeworkSubmissions::route('/'),
         ];
     }
 }

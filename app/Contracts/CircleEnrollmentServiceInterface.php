@@ -2,6 +2,7 @@
 
 namespace App\Contracts;
 
+use Exception;
 use App\Models\QuranCircle;
 use App\Models\QuranSubscription;
 use App\Models\User;
@@ -21,7 +22,7 @@ interface CircleEnrollmentServiceInterface
      * @param  QuranCircle  $circle  The circle to enroll in
      * @return array Result with success status and message/error
      *
-     * @throws \Exception If enrollment fails
+     * @throws Exception If enrollment fails
      */
     public function enroll(User $user, QuranCircle $circle): array;
 
@@ -32,7 +33,7 @@ interface CircleEnrollmentServiceInterface
      * @param  QuranCircle  $circle  The circle to leave
      * @return array Result with success status and message/error
      *
-     * @throws \Exception If leave fails
+     * @throws Exception If leave fails
      */
     public function leave(User $user, QuranCircle $circle): array;
 

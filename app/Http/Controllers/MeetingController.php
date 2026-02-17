@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Enums\UserType;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
@@ -91,7 +92,7 @@ class MeetingController extends Controller
                 ],
             ], true, 200);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to create/get meeting', [
                 'error' => $e->getMessage(),
                 'session_id' => $sessionId,

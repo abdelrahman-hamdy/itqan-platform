@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AcademyManagementResource\Pages;
 
+use Filament\Actions\EditAction;
 use App\Filament\Resources\AcademyManagementResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,7 +14,7 @@ class ViewAcademyManagement extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            EditAction::make(),
         ];
     }
 }

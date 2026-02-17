@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 
+use Exception;
+use Log;
 use App\Filament\Resources\AcademicTeacherProfileResource;
 use App\Models\User;
 use App\Services\AcademyContextService;
@@ -24,7 +26,7 @@ class CreateAcademicTeacherProfile extends CreateRecord
             $currentAcademyId = AcademyContextService::getCurrentAcademyId();
 
             if (! $currentAcademyId) {
-                throw new \Exception('لا يمكن إنشاء مدرس بدون تحديد أكاديمية. يرجى اختيار أكاديمية من القائمة أعلاه.');
+                throw new Exception('لا يمكن إنشاء مدرس بدون تحديد أكاديمية. يرجى اختيار أكاديمية من القائمة أعلاه.');
             }
 
             $data['academy_id'] = $currentAcademyId;
@@ -70,9 +72,9 @@ class CreateAcademicTeacherProfile extends CreateRecord
                     ->title('تم إنشاء حساب المعلم بنجاح')
                     ->body('يمكن للمعلم الآن تسجيل الدخول باستخدام البريد الإلكتروني وكلمة المرور.')
                     ->send();
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Log error but don't fail the teacher creation
-                \Log::error('Failed to create user account for academic teacher', [
+                Log::error('Failed to create user account for academic teacher', [
                     'teacher_id' => $teacherProfile->id,
                     'error' => $e->getMessage(),
                 ]);

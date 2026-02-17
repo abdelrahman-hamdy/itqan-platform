@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Models\QuranCircleEnrollment;
 use App\Enums\CircleEnrollmentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
@@ -66,7 +67,7 @@ class CircleController extends Controller
         $studentId = $request->user()?->id;
         $enrolledCircleIds = [];
         if ($studentId) {
-            $enrolledCircleIds = \App\Models\QuranCircleEnrollment::where('student_id', $studentId)
+            $enrolledCircleIds = QuranCircleEnrollment::where('student_id', $studentId)
                 ->where('status', 'enrolled')
                 ->pluck('circle_id')
                 ->toArray();

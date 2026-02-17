@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Models\InteractiveCourseSession;
 use App\Services\Traits\SessionMeetingTrait;
@@ -77,7 +78,7 @@ class InteractiveCourseSessionMeetingService
         $sessionTiming = $this->getSessionTiming($session);
 
         if (! $forceCreate && ! $sessionTiming['is_available']) {
-            throw new \Exception($sessionTiming['message']);
+            throw new Exception($sessionTiming['message']);
         }
 
         if (! $session->meeting_room_name) {
@@ -115,7 +116,7 @@ class InteractiveCourseSessionMeetingService
     public function generateParticipantToken(InteractiveCourseSession $session, $user, array $permissions = []): string
     {
         if (! $session->meeting_room_name) {
-            throw new \Exception('لا يوجد رابط اجتماع لهذه الجلسة');
+            throw new Exception('لا يوجد رابط اجتماع لهذه الجلسة');
         }
 
         $defaultPermissions = [
@@ -161,7 +162,7 @@ class InteractiveCourseSessionMeetingService
             ]);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to end interactive course meeting', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -241,7 +242,7 @@ class InteractiveCourseSessionMeetingService
 
                 $results['sessions_processed']++;
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results['errors'][] = [
                     'session_id' => $session->id,
                     'error' => $e->getMessage(),
@@ -278,7 +279,7 @@ class InteractiveCourseSessionMeetingService
                     $results['meetings_terminated']++;
                 }
                 $results['sessions_processed']++;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results['errors'][] = [
                     'session_id' => $session->id,
                     'error' => $e->getMessage(),

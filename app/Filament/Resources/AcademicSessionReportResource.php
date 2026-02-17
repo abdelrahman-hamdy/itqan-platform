@@ -2,10 +2,25 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use App\Models\User;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Tables\Filters\SelectFilter;
+use App\Filament\Resources\AcademicSessionReportResource\Pages\ListAcademicSessionReports;
+use App\Filament\Resources\AcademicSessionReportResource\Pages\CreateAcademicSessionReport;
+use App\Filament\Resources\AcademicSessionReportResource\Pages\ViewAcademicSessionReport;
+use App\Filament\Resources\AcademicSessionReportResource\Pages\EditAcademicSessionReport;
 use App\Filament\Resources\AcademicSessionReportResource\Pages;
 use App\Filament\Shared\Resources\BaseAcademicSessionReportResource;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,9 +37,9 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static ?string $navigationGroup = 'التقارير والحضور';
+    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والحضور';
 
     protected static ?int $navigationSort = 2;
 
@@ -47,38 +62,38 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     {
         return Section::make('معلومات الجلسة')
             ->schema([
-                Forms\Components\Select::make('session_id')
+                Select::make('session_id')
                     ->relationship('session', 'title')
                     ->label('الجلسة')
                     ->required()
                     ->searchable()
                     ->preload(),
 
-                Forms\Components\Select::make('student_id')
+                Select::make('student_id')
                     ->label('الطالب')
                     ->required()
                     ->searchable()
                     ->preload()
                     ->options(function () {
-                        return \App\Models\User::whereHas('studentProfile')
+                        return User::whereHas('studentProfile')
                             ->get()
                             ->mapWithKeys(fn ($user) => [
                                 $user->id => $user->display_name ?? $user->name ?? 'طالب #'.$user->id,
                             ])
                             ->toArray();
                     })
-                    ->getOptionLabelUsing(fn ($value) => \App\Models\User::find($value)?->display_name
-                        ?? \App\Models\User::find($value)?->name
+                    ->getOptionLabelUsing(fn ($value) => User::find($value)?->display_name
+                        ?? User::find($value)?->name
                         ?? 'طالب #'.$value
                     ),
 
-                Forms\Components\Select::make('teacher_id')
+                Select::make('teacher_id')
                     ->label('المعلم')
                     ->required()
                     ->searchable()
                     ->preload()
                     ->options(function () {
-                        return \App\Models\User::whereHas('quranTeacherProfile')
+                        return User::whereHas('quranTeacherProfile')
                             ->orWhereHas('academicTeacherProfile')
                             ->get()
                             ->mapWithKeys(fn ($user) => [
@@ -86,12 +101,12 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
                             ])
                             ->toArray();
                     })
-                    ->getOptionLabelUsing(fn ($value) => \App\Models\User::find($value)?->display_name
-                        ?? \App\Models\User::find($value)?->name
+                    ->getOptionLabelUsing(fn ($value) => User::find($value)?->display_name
+                        ?? User::find($value)?->name
                         ?? 'معلم #'.$value
                     ),
 
-                Forms\Components\Select::make('academy_id')
+                Select::make('academy_id')
                     ->relationship('academy', 'name')
                     ->label('الأكاديمية')
                     ->required()
@@ -106,8 +121,8 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
+            ViewAction::make(),
+            EditAction::make(),
         ];
     }
 
@@ -117,8 +132,8 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
             ]),
         ];
     }
@@ -145,31 +160,31 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     {
         return Section::make('تفاصيل الحضور')
             ->schema([
-                Forms\Components\DateTimePicker::make('meeting_enter_time')
+                DateTimePicker::make('meeting_enter_time')
                     ->label('وقت الدخول للجلسة')
                     ->live(),
 
-                Forms\Components\DateTimePicker::make('meeting_leave_time')
+                DateTimePicker::make('meeting_leave_time')
                     ->label('وقت الخروج من الجلسة')
                     ->after('meeting_enter_time'),
 
-                Forms\Components\TextInput::make('actual_attendance_minutes')
+                TextInput::make('actual_attendance_minutes')
                     ->label('دقائق الحضور الفعلي')
                     ->numeric()
                     ->default(0)
                     ->suffix('دقيقة'),
 
-                Forms\Components\Toggle::make('is_late')
+                Toggle::make('is_late')
                     ->label('الطالب متأخر'),
 
-                Forms\Components\TextInput::make('late_minutes')
+                TextInput::make('late_minutes')
                     ->label('دقائق التأخير')
                     ->numeric()
                     ->default(0)
                     ->suffix('دقيقة')
-                    ->visible(fn (Forms\Get $get) => $get('is_late')),
+                    ->visible(fn (Get $get) => $get('is_late')),
 
-                Forms\Components\TextInput::make('attendance_percentage')
+                TextInput::make('attendance_percentage')
                     ->label('نسبة الحضور')
                     ->numeric()
                     ->minValue(0)
@@ -186,10 +201,10 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     {
         return Section::make('معلومات النظام')
             ->schema([
-                Forms\Components\DateTimePicker::make('evaluated_at')
+                DateTimePicker::make('evaluated_at')
                     ->label('تاريخ التقييم'),
 
-                Forms\Components\Toggle::make('is_calculated')
+                Toggle::make('is_calculated')
                     ->label('محسوب تلقائياً')
                     ->default(true),
             ])->columns(3);
@@ -256,7 +271,7 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
         return [
             ...parent::getTableFilters(),
 
-            Tables\Filters\SelectFilter::make('teacher_id')
+            SelectFilter::make('teacher_id')
                 ->label('المعلم')
                 ->relationship('teacher', 'first_name', fn (Builder $query) => $query->whereIn('user_type', ['quran_teacher', 'academic_teacher']))
                 ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->first_name ?? 'معلم #'.$record->id)
@@ -272,10 +287,10 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAcademicSessionReports::route('/'),
-            'create' => Pages\CreateAcademicSessionReport::route('/create'),
-            'view' => Pages\ViewAcademicSessionReport::route('/{record}'),
-            'edit' => Pages\EditAcademicSessionReport::route('/{record}/edit'),
+            'index' => ListAcademicSessionReports::route('/'),
+            'create' => CreateAcademicSessionReport::route('/create'),
+            'view' => ViewAcademicSessionReport::route('/{record}'),
+            'edit' => EditAcademicSessionReport::route('/{record}/edit'),
         ];
     }
 }

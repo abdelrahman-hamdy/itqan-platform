@@ -2,6 +2,32 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\Action;
+use App\Filament\Pages\ObserveSessionPage;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Schemas\Components\Grid;
+use App\Enums\AttendanceStatus;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Columns\TextColumn;
+use App\Filament\Resources\AcademicSessionResource\Pages\ListAcademicSessions;
+use App\Filament\Resources\AcademicSessionResource\Pages\CreateAcademicSession;
+use App\Filament\Resources\AcademicSessionResource\Pages\ViewAcademicSession;
+use App\Filament\Resources\AcademicSessionResource\Pages\EditAcademicSession;
 use App\Enums\SessionStatus;
 use App\Filament\Resources\AcademicSessionResource\Pages;
 use App\Filament\Shared\Resources\BaseAcademicSessionResource;
@@ -9,8 +35,6 @@ use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicTeacherProfile;
 use App\Models\User;
 use Filament\Forms;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables;
 use Filament\Tables\Filters\Filter;
@@ -42,7 +66,7 @@ class AcademicSessionResource extends BaseAcademicSessionResource
 
     protected static ?string $navigationLabel = 'الجلسات الأكاديمية';
 
-    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
 
     protected static ?int $navigationSort = 2;
 
@@ -66,24 +90,24 @@ class AcademicSessionResource extends BaseAcademicSessionResource
         return Section::make('معلومات الجلسة')
             ->schema([
                 // Hidden academy_id - auto-set from context
-                Forms\Components\Hidden::make('academy_id')
+                Hidden::make('academy_id')
                     ->default(fn () => auth()->user()->academy_id),
 
-                Forms\Components\TextInput::make('session_code')
+                TextInput::make('session_code')
                     ->label('رمز الجلسة')
                     ->disabled()
                     ->dehydrated(false),
 
-                Forms\Components\Select::make('status')
+                Select::make('status')
                     ->label('حالة الجلسة')
                     ->options(SessionStatus::options())
                     ->default(SessionStatus::SCHEDULED->value)
                     ->required(),
 
-                Forms\Components\Hidden::make('session_type')
+                Hidden::make('session_type')
                     ->default('individual'),
 
-                Forms\Components\Select::make('academic_teacher_id')
+                Select::make('academic_teacher_id')
                     ->relationship('academicTeacher', 'id')
                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->user ? trim(($record->user->first_name ?? '').' '.($record->user->last_name ?? '')) ?: 'معلم #'.$record->id : 'معلم #'.$record->id)
                     ->label('المعلم')
@@ -93,7 +117,7 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                     ->disabled(fn ($record) => $record !== null)
                     ->dehydrated(),
 
-                Forms\Components\Select::make('student_id')
+                Select::make('student_id')
                     ->relationship('student', 'id')
                     ->getOptionLabelFromRecordUsing(fn ($record) => trim(($record->first_name ?? '').' '.($record->last_name ?? '')) ?: 'طالب #'.$record->id)
                     ->label('الطالب')
@@ -102,7 +126,7 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                     ->disabled(fn ($record) => $record !== null)
                     ->dehydrated(),
 
-                Forms\Components\Hidden::make('academic_subscription_id'),
+                Hidden::make('academic_subscription_id'),
             ])->columns(2);
     }
 
@@ -112,36 +136,36 @@ class AcademicSessionResource extends BaseAcademicSessionResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ActionGroup::make([
-                Tables\Actions\Action::make('observe_meeting')
+            ActionGroup::make([
+                Action::make('observe_meeting')
                     ->label('مراقبة الجلسة')
                     ->icon('heroicon-o-eye')
                     ->color('info')
                     ->visible(fn ($record): bool => $record->meeting_room_name
                         && in_array(
-                            $record->status instanceof \App\Enums\SessionStatus ? $record->status : \App\Enums\SessionStatus::tryFrom($record->status),
-                            [\App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING]
+                            $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
+                            [SessionStatus::READY, SessionStatus::ONGOING]
                         ))
-                    ->url(fn ($record): string => \App\Filament\Pages\ObserveSessionPage::getUrl().'?'.http_build_query([
+                    ->url(fn ($record): string => ObserveSessionPage::getUrl().'?'.http_build_query([
                         'sessionId' => $record->id,
                         'sessionType' => 'academic',
                     ]))
                     ->openUrlInNewTab(),
 
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض'),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف'),
 
                 static::makeStartSessionAction(),
                 static::makeCompleteSessionAction(),
                 static::makeJoinMeetingAction(),
 
-                Tables\Actions\RestoreAction::make()
+                RestoreAction::make()
                     ->label(__('filament.actions.restore')),
-                Tables\Actions\ForceDeleteAction::make()
+                ForceDeleteAction::make()
                     ->label(__('filament.actions.force_delete')),
             ]),
         ];
@@ -153,11 +177,11 @@ class AcademicSessionResource extends BaseAcademicSessionResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
-                Tables\Actions\RestoreBulkAction::make()
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+                RestoreBulkAction::make()
                     ->label(__('filament.actions.restore_selected')),
-                Tables\Actions\ForceDeleteBulkAction::make()
+                ForceDeleteBulkAction::make()
                     ->label(__('filament.actions.force_delete_selected')),
             ]),
         ];
@@ -212,14 +236,14 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                 ->label('حالة الحضور')
                 ->options(array_merge(
                     [SessionStatus::SCHEDULED->value => SessionStatus::SCHEDULED->label()],
-                    \App\Enums\AttendanceStatus::options()
+                    AttendanceStatus::options()
                 )),
 
             Filter::make('filter_by')
-                ->form([
-                    Forms\Components\Grid::make(2)
+                ->schema([
+                    Grid::make(2)
                         ->schema([
-                            Forms\Components\Select::make('filter_type')
+                            Select::make('filter_type')
                                 ->label('تصفية حسب')
                                 ->options([
                                     'teacher' => 'المعلم',
@@ -227,11 +251,11 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                                     'individual_lesson' => 'الدرس الفردي',
                                 ])
                                 ->live()
-                                ->afterStateUpdated(fn (Forms\Set $set) => $set('filter_value', null)),
+                                ->afterStateUpdated(fn (Set $set) => $set('filter_value', null)),
 
-                            Forms\Components\Select::make('filter_value')
+                            Select::make('filter_value')
                                 ->label('القيمة')
-                                ->options(function (Forms\Get $get) {
+                                ->options(function (Get $get) {
                                     return match ($get('filter_type')) {
                                         'teacher' => AcademicTeacherProfile::query()
                                             ->with('user')
@@ -261,7 +285,7 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                                     };
                                 })
                                 ->searchable()
-                                ->visible(fn (Forms\Get $get) => filled($get('filter_type'))),
+                                ->visible(fn (Get $get) => filled($get('filter_type'))),
                         ]),
                 ])
                 ->query(function (Builder $query, array $data): Builder {
@@ -282,12 +306,12 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                 ->columnSpan(2),
 
             Filter::make('date_range')
-                ->form([
-                    Forms\Components\Grid::make(2)
+                ->schema([
+                    Grid::make(2)
                         ->schema([
-                            Forms\Components\DatePicker::make('from')
+                            DatePicker::make('from')
                                 ->label('من تاريخ'),
-                            Forms\Components\DatePicker::make('until')
+                            DatePicker::make('until')
                                 ->label('إلى تاريخ'),
                         ]),
                 ])
@@ -312,7 +336,7 @@ class AcademicSessionResource extends BaseAcademicSessionResource
         $columns = parent::getTableColumns();
 
         // Insert teacher column after title
-        $teacherColumn = Tables\Columns\TextColumn::make('academicTeacher.user.id')
+        $teacherColumn = TextColumn::make('academicTeacher.user.id')
             ->label('المعلم')
             ->formatStateUsing(fn ($record) => $record->academicTeacher?->user
                     ? trim(($record->academicTeacher->user->first_name ?? '').' '.($record->academicTeacher->user->last_name ?? '')) ?: 'معلم #'.$record->academicTeacher->id
@@ -339,10 +363,10 @@ class AcademicSessionResource extends BaseAcademicSessionResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAcademicSessions::route('/'),
-            'create' => Pages\CreateAcademicSession::route('/create'),
-            'view' => Pages\ViewAcademicSession::route('/{record}'),
-            'edit' => Pages\EditAcademicSession::route('/{record}/edit'),
+            'index' => ListAcademicSessions::route('/'),
+            'create' => CreateAcademicSession::route('/create'),
+            'view' => ViewAcademicSession::route('/{record}'),
+            'edit' => EditAcademicSession::route('/{record}/edit'),
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
@@ -110,7 +111,7 @@ class CleanTestData extends Command
             $this->performPostDeletionVerification($testUserIds, $testStudentIds);
 
             return self::SUCCESS;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('❌ Deletion failed: ' . $e->getMessage());
             $this->error('Transaction rolled back - no data was deleted');
             return self::FAILURE;

@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands\Archived;
 
+use Exception;
+use App\Models\Academy;
 use App\Enums\InteractiveCourseStatus;
 use App\Models\AcademicIndividualLesson;
 use App\Models\ChatGroup;
@@ -176,7 +178,7 @@ class MigrateToSupervisedChats extends Command
                     $conversation->delete();
                 }
                 $this->deletedConversations++;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->errors++;
                 Log::error('Error deleting conversation', [
                     'conversation_id' => $conversation->id,
@@ -198,7 +200,7 @@ class MigrateToSupervisedChats extends Command
 
         $academy = null;
         if ($this->option('academy')) {
-            $academy = \App\Models\Academy::where('subdomain', $this->option('academy'))->first();
+            $academy = Academy::where('subdomain', $this->option('academy'))->first();
             if (! $academy) {
                 $this->error("Academy not found: {$this->option('academy')}");
 
@@ -245,7 +247,7 @@ class MigrateToSupervisedChats extends Command
                         $this->createdGroups++;
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->errors++;
                 Log::error('Error creating Quran circle group', [
                     'circle_id' => $circle->id,
@@ -283,7 +285,7 @@ class MigrateToSupervisedChats extends Command
                         $this->createdGroups++;
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->errors++;
                 Log::error('Error creating Quran individual group', [
                     'circle_id' => $circle->id,
@@ -321,7 +323,7 @@ class MigrateToSupervisedChats extends Command
                         $this->createdGroups++;
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->errors++;
                 Log::error('Error creating academic lesson group', [
                     'lesson_id' => $lesson->id,
@@ -359,7 +361,7 @@ class MigrateToSupervisedChats extends Command
                         $this->createdGroups++;
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->errors++;
                 Log::error('Error creating interactive course group', [
                     'course_id' => $course->id,

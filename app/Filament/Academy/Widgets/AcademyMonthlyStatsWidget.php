@@ -18,9 +18,9 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class AcademyMonthlyStatsWidget extends BaseWidget
 {
-    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+    protected string $view = 'filament.widgets.collapsible-stats-overview-widget';
 
-    protected static ?string $pollingInterval = '60s';
+    protected ?string $pollingInterval = '60s';
 
     protected static ?int $sort = 2;
 

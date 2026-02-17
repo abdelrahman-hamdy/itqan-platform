@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Contracts\RecordingCapable;
 use App\Enums\RecordingStatus;
 use App\Models\InteractiveCourseSession;
@@ -95,7 +96,7 @@ class StopExpiredRecordingsCommand extends Command
                         ]);
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $errorCount++;
                 Log::error('[RECORDINGS] Failed to stop recording', [
                     'session_id' => $session->id,

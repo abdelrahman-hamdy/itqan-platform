@@ -2,12 +2,30 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Notifications\Notification;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\AcademicGradeLevelResource\Pages\ListAcademicGradeLevels;
+use App\Filament\Resources\AcademicGradeLevelResource\Pages\CreateAcademicGradeLevel;
+use App\Filament\Resources\AcademicGradeLevelResource\Pages\ViewAcademicGradeLevel;
+use App\Filament\Resources\AcademicGradeLevelResource\Pages\EditAcademicGradeLevel;
 use App\Enums\UserType;
 use App\Filament\Resources\AcademicGradeLevelResource\Pages;
 use App\Models\AcademicGradeLevel;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,11 +35,11 @@ class AcademicGradeLevelResource extends BaseResource
 {
     protected static ?string $model = AcademicGradeLevel::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $navigationLabel = 'الصفوف الدراسية';
 
-    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
 
     protected static ?string $modelLabel = 'صف دراسي';
 
@@ -51,34 +69,34 @@ class AcademicGradeLevelResource extends BaseResource
         return $query;
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات الصف الدراسي')
+        return $schema
+            ->components([
+                Section::make('معلومات الصف الدراسي')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('name')
+                                TextInput::make('name')
                                     ->label('اسم الصف (عربي)')
                                     ->required()
                                     ->maxLength(255)
                                     ->placeholder('مثل: الصف الأول، الصف الثاني، الصف الثالث'),
 
-                                Forms\Components\TextInput::make('name_en')
+                                TextInput::make('name_en')
                                     ->label('اسم الصف (إنجليزي)')
                                     ->maxLength(255)
                                     ->placeholder('Primary, Middle, High School'),
                             ]),
 
-                        Forms\Components\Textarea::make('description')
+                        Textarea::make('description')
                             ->label('وصف الصف (عربي)')
                             ->maxLength(500)
                             ->rows(3)
                             ->placeholder('وصف تفصيلي للصف الدراسي ومتطلباته')
                             ->columnSpanFull(),
 
-                        Forms\Components\Textarea::make('description_en')
+                        Textarea::make('description_en')
                             ->label('وصف الصف (إنجليزي)')
                             ->maxLength(500)
                             ->rows(3)
@@ -86,14 +104,14 @@ class AcademicGradeLevelResource extends BaseResource
                             ->columnSpanFull(),
                     ]),
 
-                Forms\Components\Section::make('الإعدادات الإضافية')
+                Section::make('الإعدادات الإضافية')
                     ->schema([
-                        Forms\Components\Toggle::make('is_active')
+                        Toggle::make('is_active')
                             ->label('نشط')
                             ->default(true)
                             ->helperText('هل هذا الصف متاح للتسجيل؟'),
 
-                        Forms\Components\Textarea::make('notes')
+                        Textarea::make('notes')
                             ->label('ملاحظات إدارية')
                             ->maxLength(1000)
                             ->rows(3)
@@ -110,31 +128,31 @@ class AcademicGradeLevelResource extends BaseResource
         return $table
             ->columns([
                 static::getAcademyColumn(), // Add academy column when viewing all academies
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('اسم الصف')
                     ->searchable()
                     ->sortable()
                     ->weight('medium'),
 
-                Tables\Columns\TextColumn::make('name_en')
+                TextColumn::make('name_en')
                     ->label('الاسم بالإنجليزية')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('description')
+                TextColumn::make('description')
                     ->label('الوصف (عربي)')
                     ->limit(50)
-                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                    ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
 
                         return strlen($state) > 50 ? $state : null;
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('description_en')
+                TextColumn::make('description_en')
                     ->label('الوصف (إنجليزي)')
                     ->limit(50)
-                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                    ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
 
                         return strlen($state) > 50 ? $state : null;
@@ -143,35 +161,35 @@ class AcademicGradeLevelResource extends BaseResource
 
                 static::getAcademyColumn(),
 
-                Tables\Columns\IconColumn::make('is_active')
+                IconColumn::make('is_active')
                     ->label('نشط')
                     ->boolean()
                     ->trueColor('success')
                     ->falseColor('danger')
                     ->alignCenter(),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('is_active')
+                TernaryFilter::make('is_active')
                     ->label('حالة النشاط')
                     ->placeholder('الكل')
                     ->trueLabel('نشط')
                     ->falseLabel('غير نشط'),
 
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
+            ->recordActions([
+                ViewAction::make()
                     ->label('عرض'),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف')
-                    ->before(function (AcademicGradeLevel $record, Tables\Actions\DeleteAction $action) {
+                    ->before(function (AcademicGradeLevel $record, DeleteAction $action) {
                         $dependencies = [];
 
                         // Note: students() pivot table doesn't exist yet - skip check
@@ -189,7 +207,7 @@ class AcademicGradeLevelResource extends BaseResource
                         }
 
                         if (! empty($dependencies)) {
-                            \Filament\Notifications\Notification::make()
+                            Notification::make()
                                 ->danger()
                                 ->title('لا يمكن حذف الصف الدراسي')
                                 ->body('يوجد سجلات مرتبطة: '.implode('، ', $dependencies))
@@ -200,11 +218,11 @@ class AcademicGradeLevelResource extends BaseResource
                         }
                     }),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد')
-                        ->before(function ($records, Tables\Actions\DeleteBulkAction $action) {
+                        ->before(function ($records, DeleteBulkAction $action) {
                             $blockedRecords = [];
 
                             foreach ($records as $record) {
@@ -219,7 +237,7 @@ class AcademicGradeLevelResource extends BaseResource
                             }
 
                             if (! empty($blockedRecords)) {
-                                \Filament\Notifications\Notification::make()
+                                Notification::make()
                                     ->danger()
                                     ->title('لا يمكن حذف بعض الصفوف')
                                     ->body('الصفوف التالية لديها سجلات مرتبطة: '.implode('، ', $blockedRecords))
@@ -237,10 +255,10 @@ class AcademicGradeLevelResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAcademicGradeLevels::route('/'),
-            'create' => Pages\CreateAcademicGradeLevel::route('/create'),
-            'view' => Pages\ViewAcademicGradeLevel::route('/{record}'),
-            'edit' => Pages\EditAcademicGradeLevel::route('/{record}/edit'),
+            'index' => ListAcademicGradeLevels::route('/'),
+            'create' => CreateAcademicGradeLevel::route('/create'),
+            'view' => ViewAcademicGradeLevel::route('/{record}'),
+            'edit' => EditAcademicGradeLevel::route('/{record}/edit'),
         ];
     }
 }

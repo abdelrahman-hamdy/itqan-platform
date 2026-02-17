@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -124,7 +125,7 @@ class UpdateSessionStatusesCommand extends Command
 
             return self::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('Session status update failed: '.$e->getMessage());
 
             if ($isVerbose) {
@@ -182,7 +183,7 @@ class UpdateSessionStatusesCommand extends Command
                     }
                 }
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $stats['errors']++;
                 $stats['details'][] = "Error processing {$sessionType} {$session->id}: {$e->getMessage()}";
 

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Archived;
 
+use Exception;
 use App\Models\AcademicGradeLevel;
 use App\Models\StudentProfile;
 use Illuminate\Console\Command;
@@ -130,7 +131,7 @@ class RepairOrphanedStudentProfiles extends Command
                 ]);
                 $updated++;
                 $this->line("    ✅ Assigned {$profile->full_name} to {$defaultGradeLevel->name}");
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->error("    ❌ Failed to assign {$profile->full_name}: {$e->getMessage()}");
             }
         }

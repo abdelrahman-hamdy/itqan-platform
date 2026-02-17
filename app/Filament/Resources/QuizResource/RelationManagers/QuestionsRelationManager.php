@@ -2,8 +2,19 @@
 
 namespace App\Filament\Resources\QuizResource\RelationManagers;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\CreateAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -48,20 +59,20 @@ class QuestionsRelationManager extends RelationManager
         return $data;
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Textarea::make('question_text')
+        return $schema
+            ->components([
+                Textarea::make('question_text')
                     ->label('نص السؤال')
                     ->required()
                     ->rows(3)
                     ->columnSpanFull(),
 
-                Forms\Components\Repeater::make('options')
+                Repeater::make('options')
                     ->label('الخيارات')
                     ->simple(
-                        Forms\Components\TextInput::make('option')
+                        TextInput::make('option')
                             ->required()
                             ->placeholder('أدخل نص الخيار')
                             ->live(onBlur: true),
@@ -72,7 +83,7 @@ class QuestionsRelationManager extends RelationManager
                     ->columnSpanFull()
                     ->reorderable(false)
                     ->live()
-                    ->afterStateHydrated(function (Forms\Components\Repeater $component, $state) {
+                    ->afterStateHydrated(function (Repeater $component, $state) {
                         // Convert indexed array from DB to keyed array for form
                         if (is_array($state) && ! empty($state)) {
                             $keyed = [];
@@ -83,9 +94,9 @@ class QuestionsRelationManager extends RelationManager
                         }
                     }),
 
-                Forms\Components\Select::make('correct_option')
+                Select::make('correct_option')
                     ->label('الإجابة الصحيحة')
-                    ->options(function (Forms\Get $get): array {
+                    ->options(function (Get $get): array {
                         $options = $get('options') ?? [];
                         $result = [];
                         $counter = 0;
@@ -102,7 +113,7 @@ class QuestionsRelationManager extends RelationManager
                     ->required()
                     ->helperText('اختر الإجابة الصحيحة من الخيارات أعلاه'),
 
-                Forms\Components\TextInput::make('order')
+                TextInput::make('order')
                     ->label('الترتيب')
                     ->numeric()
                     ->default(0)
@@ -116,17 +127,17 @@ class QuestionsRelationManager extends RelationManager
             ->recordTitleAttribute('question_text')
             ->reorderable('order')
             ->columns([
-                Tables\Columns\TextColumn::make('order')
+                TextColumn::make('order')
                     ->label('#')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('question_text')
+                TextColumn::make('question_text')
                     ->label('السؤال')
                     ->limit(50)
                     ->wrap()
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('options')
+                TextColumn::make('options')
                     ->label('عدد الخيارات')
                     ->formatStateUsing(function ($state) {
                         $options = is_string($state) ? json_decode($state, true) : $state;
@@ -134,7 +145,7 @@ class QuestionsRelationManager extends RelationManager
                         return count($options ?? []).' خيارات';
                     }),
 
-                Tables\Columns\TextColumn::make('correct_option')
+                TextColumn::make('correct_option')
                     ->label('الإجابة الصحيحة')
                     ->formatStateUsing(fn ($state) => 'الخيار '.((int) $state + 1)),
             ])
@@ -142,21 +153,21 @@ class QuestionsRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
-                    ->mutateFormDataUsing(function (array $data): array {
+                CreateAction::make()
+                    ->mutateDataUsing(function (array $data): array {
                         return $this->normalizeQuestionData($data);
                     }),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make()
-                    ->mutateFormDataUsing(function (array $data): array {
+            ->recordActions([
+                EditAction::make()
+                    ->mutateDataUsing(function (array $data): array {
                         return $this->normalizeQuestionData($data);
                     }),
-                Tables\Actions\DeleteAction::make(),
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('order');

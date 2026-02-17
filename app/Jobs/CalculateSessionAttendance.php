@@ -2,6 +2,11 @@
 
 namespace App\Jobs;
 
+use Exception;
+use App\Models\StudentSessionReport;
+use App\Models\AcademicSessionReport;
+use App\Models\InteractiveSessionReport;
+use Throwable;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Jobs\Traits\TenantAwareJob;
@@ -150,7 +155,7 @@ class CalculateSessionAttendance implements ShouldQueue
                 try {
                     $this->calculateAttendance($session, $attendance);
                     $processed++;
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Log::error('Failed to calculate attendance', [
                         'session_id' => $session->id,
                         'user_id' => $attendance->user_id,
@@ -377,7 +382,7 @@ class CalculateSessionAttendance implements ShouldQueue
                 'report_class' => class_basename($reportClass),
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to sync attendance to report', [
                 'session_id' => $session->id,
                 'user_id' => $attendance->user_id,
@@ -394,15 +399,15 @@ class CalculateSessionAttendance implements ShouldQueue
         $sessionClass = get_class($session);
 
         if (str_contains($sessionClass, 'QuranSession')) {
-            return \App\Models\StudentSessionReport::class;
+            return StudentSessionReport::class;
         }
 
         if (str_contains($sessionClass, 'AcademicSession')) {
-            return \App\Models\AcademicSessionReport::class;
+            return AcademicSessionReport::class;
         }
 
         if (str_contains($sessionClass, 'InteractiveCourseSession')) {
-            return \App\Models\InteractiveSessionReport::class;
+            return InteractiveSessionReport::class;
         }
 
         return null;
@@ -411,7 +416,7 @@ class CalculateSessionAttendance implements ShouldQueue
     /**
      * Handle a job failure.
      */
-    public function failed(\Throwable $exception): void
+    public function failed(Throwable $exception): void
     {
         Log::error('CalculateSessionAttendance job failed permanently', [
             'error' => $exception->getMessage(),

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\HasHomeworkEvaluation;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -31,7 +32,7 @@ class AcademicSessionReport extends BaseSessionReport
     public function __construct(array $attributes = [])
     {
         $this->fillable = array_merge(parent::$baseFillable, $this->fillable);
-        \Illuminate\Database\Eloquent\Model::__construct($attributes);
+        Model::__construct($attributes);
     }
 
     /**

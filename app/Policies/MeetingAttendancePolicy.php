@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\InteractiveCourseSession;
 use App\Enums\UserType;
 use App\Models\MeetingAttendance;
 use App\Models\User;
@@ -126,7 +127,7 @@ class MeetingAttendancePolicy
         }
 
         // For InteractiveCourseSession
-        if ($session instanceof \App\Models\InteractiveCourseSession) {
+        if ($session instanceof InteractiveCourseSession) {
             $course = $session->course;
 
             return $course && $course->assigned_teacher_id === $user->academicTeacherProfile?->id;
@@ -175,7 +176,7 @@ class MeetingAttendancePolicy
         }
 
         // For InteractiveCourseSession, get academy through course
-        if ($session instanceof \App\Models\InteractiveCourseSession) {
+        if ($session instanceof InteractiveCourseSession) {
             $academyId = $session->course?->academy_id;
             if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
                 return true; // Super admin can access all

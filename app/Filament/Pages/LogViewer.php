@@ -7,9 +7,9 @@ use Filament\Pages\Page;
 
 class LogViewer extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-text';
 
-    protected static ?string $navigationGroup = 'أدوات المطور';
+    protected static string | \UnitEnum | null $navigationGroup = 'أدوات المطور';
 
     protected static ?string $navigationLabel = 'سجلات النظام';
 
@@ -17,7 +17,7 @@ class LogViewer extends Page
 
     protected static ?int $navigationSort = 2;
 
-    protected static string $view = 'filament.pages.log-viewer';
+    protected string $view = 'filament.pages.log-viewer';
 
     public static function canAccess(): bool
     {

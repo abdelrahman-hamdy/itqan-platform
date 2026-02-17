@@ -2,15 +2,23 @@
 
 namespace App\Filament\Resources\MeetingAttendanceResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use App\Services\AttendanceCalculationService;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use ValueError;
+use App\Models\MeetingAttendance;
 use App\Enums\AttendanceStatus;
 use App\Filament\Resources\MeetingAttendanceResource;
 use Filament\Actions;
 use Filament\Infolists\Components;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
- * @property \App\Models\MeetingAttendance $record
+ * @property MeetingAttendance $record
  */
 class ViewMeetingAttendance extends ViewRecord
 {
@@ -27,9 +35,9 @@ class ViewMeetingAttendance extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
-            Actions\Action::make('recalculate')
+            Action::make('recalculate')
                 ->label('إعادة حساب الحضور')
                 ->icon('heroicon-o-calculator')
                 ->color('warning')
@@ -39,7 +47,7 @@ class ViewMeetingAttendance extends ViewRecord
                 ->action(function () {
                     $session = $this->record->session;
                     if (! $session) {
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('لا يمكن إعادة الحساب')
                             ->body('لم يتم العثور على الجلسة المرتبطة.')
                             ->danger()
@@ -48,12 +56,12 @@ class ViewMeetingAttendance extends ViewRecord
                         return;
                     }
 
-                    $calculationService = app(\App\Services\AttendanceCalculationService::class);
+                    $calculationService = app(AttendanceCalculationService::class);
                     $calculationService->recalculateAttendance($session);
 
                     $this->record->refresh();
 
-                    \Filament\Notifications\Notification::make()
+                    Notification::make()
                         ->title('تم إعادة الحساب')
                         ->body('تم إعادة حساب الحضور بنجاح.')
                         ->success()
@@ -62,19 +70,19 @@ class ViewMeetingAttendance extends ViewRecord
         ];
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
         return $infolist
             ->schema([
-                Components\Section::make('معلومات الحضور')
+                Section::make('معلومات الحضور')
                     ->schema([
-                        Components\TextEntry::make('user.name')
+                        TextEntry::make('user.name')
                             ->label('المستخدم'),
-                        Components\TextEntry::make('user_type')
+                        TextEntry::make('user_type')
                             ->label('نوع المستخدم')
                             ->badge()
                             ->formatStateUsing(fn (string $state): string => __("enums.attendance_user_type.{$state}") ?? $state),
-                        Components\TextEntry::make('session_type')
+                        TextEntry::make('session_type')
                             ->label('نوع الجلسة')
                             ->badge()
                             ->formatStateUsing(function (?string $state): string {
@@ -93,7 +101,7 @@ class ViewMeetingAttendance extends ViewRecord
                                 'group' => 'info',
                                 default => 'gray',
                             }),
-                        Components\TextEntry::make('attendance_status')
+                        TextEntry::make('attendance_status')
                             ->label('حالة الحضور')
                             ->badge()
                             ->formatStateUsing(function (mixed $state): string {
@@ -105,7 +113,7 @@ class ViewMeetingAttendance extends ViewRecord
                                 }
                                 try {
                                     return AttendanceStatus::from($state)->label();
-                                } catch (\ValueError $e) {
+                                } catch (ValueError $e) {
                                     return (string) $state;
                                 }
                             })
@@ -118,32 +126,32 @@ class ViewMeetingAttendance extends ViewRecord
                             }),
                     ])->columns(4),
 
-                Components\Section::make('تفاصيل التوقيت')
+                Section::make('تفاصيل التوقيت')
                     ->schema([
-                        Components\TextEntry::make('first_join_time')
+                        TextEntry::make('first_join_time')
                             ->label('أول وقت دخول')
                             ->dateTime(),
-                        Components\TextEntry::make('last_leave_time')
+                        TextEntry::make('last_leave_time')
                             ->label('آخر وقت خروج')
                             ->dateTime(),
-                        Components\TextEntry::make('total_duration_minutes')
+                        TextEntry::make('total_duration_minutes')
                             ->label('إجمالي المدة')
                             ->suffix(' دقيقة'),
-                        Components\TextEntry::make('attendance_percentage')
+                        TextEntry::make('attendance_percentage')
                             ->label('نسبة الحضور')
                             ->suffix('%'),
-                        Components\TextEntry::make('join_count')
+                        TextEntry::make('join_count')
                             ->label('عدد مرات الدخول'),
-                        Components\TextEntry::make('leave_count')
+                        TextEntry::make('leave_count')
                             ->label('عدد مرات الخروج'),
-                        Components\TextEntry::make('last_heartbeat_at')
+                        TextEntry::make('last_heartbeat_at')
                             ->label('آخر نبض')
                             ->dateTime(),
                     ])->columns(3),
 
-                Components\Section::make('دورات الدخول والخروج')
+                Section::make('دورات الدخول والخروج')
                     ->schema([
-                        Components\TextEntry::make('join_leave_cycles')
+                        TextEntry::make('join_leave_cycles')
                             ->label('السجل')
                             ->formatStateUsing(function ($state) {
                                 if (empty($state)) {

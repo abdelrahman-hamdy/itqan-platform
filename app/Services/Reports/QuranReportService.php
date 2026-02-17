@@ -2,6 +2,7 @@
 
 namespace App\Services\Reports;
 
+use Carbon\Carbon;
 use App\DTOs\Reports\AttendanceDTO;
 use App\DTOs\Reports\PerformanceDTO;
 use App\DTOs\Reports\ProgressDTO;
@@ -155,7 +156,7 @@ class QuranReportService extends BaseReportService
         $enrolledStudent = $circle->students()->where('users.id', $student->id)->first();
 
         $enrolledAt = $enrolledStudent?->pivot?->enrolled_at
-            ? \Carbon\Carbon::parse($enrolledStudent->pivot->enrolled_at)
+            ? Carbon::parse($enrolledStudent->pivot->enrolled_at)
             : null;
 
         // Get sessions since student enrollment with optional date filter

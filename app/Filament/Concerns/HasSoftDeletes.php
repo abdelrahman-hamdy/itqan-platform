@@ -2,6 +2,11 @@
 
 namespace App\Filament\Concerns;
 
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -23,9 +28,9 @@ trait HasSoftDeletes
     /**
      * Get the TrashedFilter for the table
      */
-    protected static function getSoftDeletesFilter(): Tables\Filters\TrashedFilter
+    protected static function getSoftDeletesFilter(): TrashedFilter
     {
-        return Tables\Filters\TrashedFilter::make()
+        return TrashedFilter::make()
             ->label(__('filament.filters.trashed'));
     }
 
@@ -35,9 +40,9 @@ trait HasSoftDeletes
     protected static function getSoftDeletesTableActions(): array
     {
         return [
-            Tables\Actions\RestoreAction::make()
+            RestoreAction::make()
                 ->label(__('filament.actions.restore')),
-            Tables\Actions\ForceDeleteAction::make()
+            ForceDeleteAction::make()
                 ->label(__('filament.actions.force_delete')),
         ];
     }
@@ -48,9 +53,9 @@ trait HasSoftDeletes
     protected static function getSoftDeletesBulkActions(): array
     {
         return [
-            Tables\Actions\RestoreBulkAction::make()
+            RestoreBulkAction::make()
                 ->label(__('filament.actions.restore_selected')),
-            Tables\Actions\ForceDeleteBulkAction::make()
+            ForceDeleteBulkAction::make()
                 ->label(__('filament.actions.force_delete_selected')),
         ];
     }

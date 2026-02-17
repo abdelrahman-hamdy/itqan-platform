@@ -14,13 +14,13 @@ class SessionsChartWidget extends ChartWidget
 {
     protected static bool $isDiscoverable = false;
 
-    protected static ?string $heading = 'الجلسات خلال الأسبوع';
+    protected ?string $heading = 'الجلسات خلال الأسبوع';
 
     protected static ?int $sort = 3;
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $maxHeight = '300px';
+    protected ?string $maxHeight = '300px';
 
     protected function getData(): array
     {

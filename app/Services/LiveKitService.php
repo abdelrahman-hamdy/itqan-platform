@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Contracts\LiveKitServiceInterface;
 use App\Models\Academy;
 use App\Models\User;
@@ -59,7 +60,7 @@ class LiveKitService implements LiveKitServiceInterface
 
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit is not properly configured. Please check API credentials.');
+                throw new Exception('LiveKit is not properly configured. Please check API credentials.');
             }
 
             // SIMPLIFIED APPROACH: Skip SDK room creation/checking
@@ -105,7 +106,7 @@ class LiveKitService implements LiveKitServiceInterface
                 'auto_create_on_join' => true,
             ];
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Could not pre-create LiveKit room via API (will auto-create on join)', [
                 'error' => $e->getMessage(),
                 'session_id' => $sessionId,

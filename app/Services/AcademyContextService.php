@@ -2,6 +2,10 @@
 
 namespace App\Services;
 
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
+use App\Enums\Timezone;
+use Carbon\Carbon;
 use App\Constants\DefaultAcademy;
 use App\Models\Academy;
 use App\Models\User;
@@ -182,7 +186,7 @@ class AcademyContextService
     /**
      * Get all academies available for super admin selection
      */
-    public static function getAvailableAcademies(): \Illuminate\Database\Eloquent\Collection
+    public static function getAvailableAcademies(): Collection
     {
         return Cache::remember('academies:all', 600, function () {
             return Academy::orderBy('name')->get();
@@ -222,7 +226,7 @@ class AcademyContextService
                     ->orderBy('created_at')
                     ->first();
             });
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             // Handle case where database tables don't exist (e.g., during testing)
             return null;
         }
@@ -320,7 +324,7 @@ class AcademyContextService
 
         if ($academy && $academy->timezone) {
             // If timezone is a Timezone enum instance, get its value
-            if ($academy->timezone instanceof \App\Enums\Timezone) {
+            if ($academy->timezone instanceof Timezone) {
                 return $academy->timezone->value;
             }
 
@@ -340,9 +344,9 @@ class AcademyContextService
      *
      * Note: Database storage should still use UTC, Laravel handles conversion
      */
-    public static function nowInAcademyTimezone(): \Carbon\Carbon
+    public static function nowInAcademyTimezone(): Carbon
     {
-        return \Carbon\Carbon::now(self::getTimezone());
+        return Carbon::now(self::getTimezone());
     }
 
     /**
@@ -351,15 +355,15 @@ class AcademyContextService
      * Use this when parsing user input that should be interpreted
      * in the academy's local time zone (e.g., form inputs)
      */
-    public static function parseInAcademyTimezone(string $datetime): \Carbon\Carbon
+    public static function parseInAcademyTimezone(string $datetime): Carbon
     {
-        return \Carbon\Carbon::parse($datetime, self::getTimezone());
+        return Carbon::parse($datetime, self::getTimezone());
     }
 
     /**
      * Convert a UTC datetime to academy timezone for display
      */
-    public static function toAcademyTimezone(\Carbon\Carbon $datetime): \Carbon\Carbon
+    public static function toAcademyTimezone(Carbon $datetime): Carbon
     {
         return $datetime->copy()->setTimezone(self::getTimezone());
     }
@@ -371,10 +375,10 @@ class AcademyContextService
      * It just stores the time value as-is, stripping the timezone information.
      * Always use this method before saving datetime fields to ensure consistent UTC storage.
      *
-     * @param  \Carbon\Carbon  $datetime  A Carbon instance (should be in academy timezone)
-     * @return \Carbon\Carbon The same moment in time, but represented in UTC
+     * @param Carbon $datetime A Carbon instance (should be in academy timezone)
+     * @return Carbon The same moment in time, but represented in UTC
      */
-    public static function toUtcForStorage(\Carbon\Carbon $datetime): \Carbon\Carbon
+    public static function toUtcForStorage(Carbon $datetime): Carbon
     {
         return $datetime->copy()->utc();
     }

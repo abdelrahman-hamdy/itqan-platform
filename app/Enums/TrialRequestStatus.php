@@ -91,7 +91,7 @@ enum TrialRequestStatus: string
     }
 
     /**
-     * Get color options for Filament BadgeColumn
+     * Get color options for Filament TextColumn badge
      */
     public static function colorOptions(): array
     {

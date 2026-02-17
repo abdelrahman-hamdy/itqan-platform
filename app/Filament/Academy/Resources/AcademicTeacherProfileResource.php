@@ -1,5 +1,12 @@
 <?php
 namespace App\Filament\Academy\Resources;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Tables\Columns\ImageColumn;
+use App\Filament\Academy\Resources\AcademicTeacherProfileResource\Pages\ListAcademicTeacherProfiles;
+use App\Filament\Academy\Resources\AcademicTeacherProfileResource\Pages\CreateAcademicTeacherProfile;
+use App\Filament\Academy\Resources\AcademicTeacherProfileResource\Pages\ViewAcademicTeacherProfile;
+use App\Filament\Academy\Resources\AcademicTeacherProfileResource\Pages\EditAcademicTeacherProfile;
 use App\Enums\UserType;
 use App\Filament\Academy\Resources\AcademicTeacherProfileResource\Pages;
 use App\Filament\Shared\Resources\Profiles\BaseAcademicTeacherProfileResource;
@@ -12,11 +19,11 @@ class AcademicTeacherProfileResource extends BaseAcademicTeacherProfileResource 
         return $query->where('academy_id', Auth::user()->academy_id);
     }
     protected static function getTableActions(): array {
-        return [Tables\Actions\ViewAction::make(), Tables\Actions\EditAction::make()];
+        return [ViewAction::make(), EditAction::make()];
     }
     protected static function getTableBulkActions(): array { return []; }
     protected static function getTableColumns(): array {
-        return array_merge([Tables\Columns\ImageColumn::make('avatar')->label('الصورة')->circular()
+        return array_merge([ImageColumn::make('avatar')->label('الصورة')->circular()
             ->defaultImageUrl(fn($record) => config('services.ui_avatars.base_url').'?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff')],
             parent::getTableColumns());
     }
@@ -25,9 +32,9 @@ class AcademicTeacherProfileResource extends BaseAcademicTeacherProfileResource 
     }
     public static function canDelete($record): bool { return false; }
     public static function getPages(): array {
-        return ['index' => Pages\ListAcademicTeacherProfiles::route('/'),
-            'create' => Pages\CreateAcademicTeacherProfile::route('/create'),
-            'view' => Pages\ViewAcademicTeacherProfile::route('/{record}'),
-            'edit' => Pages\EditAcademicTeacherProfile::route('/{record}/edit')];
+        return ['index' => ListAcademicTeacherProfiles::route('/'),
+            'create' => CreateAcademicTeacherProfile::route('/create'),
+            'view' => ViewAcademicTeacherProfile::route('/{record}'),
+            'edit' => EditAcademicTeacherProfile::route('/{record}/edit')];
     }
 }

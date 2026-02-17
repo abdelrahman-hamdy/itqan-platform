@@ -2,6 +2,7 @@
 
 namespace App\Services\Webhook\LiveKit;
 
+use Exception;
 use App\Enums\MeetingEventType;
 use App\Models\BaseSession;
 use App\Models\MeetingAttendanceEvent;
@@ -160,7 +161,7 @@ class ParticipantLeftHandler extends AbstractLiveKitEventHandler
     {
         try {
             $this->attendanceService->handleUserLeave($session, $user);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logError('Failed to update attendance record', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Services\Traits\SessionMeetingTrait;
@@ -79,7 +80,7 @@ class AcademicSessionMeetingService
         $sessionTiming = $this->getSessionTiming($session);
 
         if (! $forceCreate && ! $sessionTiming['is_available']) {
-            throw new \Exception($sessionTiming['message']);
+            throw new Exception($sessionTiming['message']);
         }
 
         if (! $session->meeting_room_name) {
@@ -145,7 +146,7 @@ class AcademicSessionMeetingService
                     'room_name' => $session->meeting_room_name,
                 ]);
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results['errors']++;
                 Log::error('Failed to auto-create meeting for academic session', [
                     'session_id' => $session->id,
@@ -165,7 +166,7 @@ class AcademicSessionMeetingService
             try {
                 $this->cleanupExpiredSession($session);
                 $results['cleaned']++;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::error('Failed to cleanup expired academic session', [
                     'session_id' => $session->id,
                     'error' => $e->getMessage(),
@@ -236,7 +237,7 @@ class AcademicSessionMeetingService
 
                 $results['sessions_processed']++;
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results['errors'][] = [
                     'session_id' => $session->id,
                     'error' => $e->getMessage(),
@@ -281,7 +282,7 @@ class AcademicSessionMeetingService
                     'status' => $session->status->value,
                 ]);
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results['errors'][] = [
                     'session_id' => $session->id,
                     'error' => $e->getMessage(),

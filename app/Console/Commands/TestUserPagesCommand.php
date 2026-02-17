@@ -2,6 +2,9 @@
 
 namespace App\Console\Commands;
 
+use Exception;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Enums\UserType;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
@@ -398,7 +401,7 @@ class TestUserPagesCommand extends Command
                     'status' => $statusCode,
                 ];
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->errors[] = [
                 'role' => $role,
                 'user_id' => $user->id,
@@ -416,7 +419,7 @@ class TestUserPagesCommand extends Command
         try {
             // Use Laravel's testing capabilities
             $response = $this->laravel->handle(
-                \Illuminate\Http\Request::create(
+                Request::create(
                     "http://{$this->subdomain}.".config('app.domain').$url,
                     'GET',
                     [],
@@ -432,12 +435,12 @@ class TestUserPagesCommand extends Command
                 'status' => $response->getStatusCode(),
                 'error' => $response->getStatusCode() >= 400 ? $this->extractError($response) : null,
             ];
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        } catch (HttpException $e) {
             return [
                 'status' => $e->getStatusCode(),
                 'error' => $e->getMessage(),
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'status' => 500,
                 'error' => $e->getMessage(),

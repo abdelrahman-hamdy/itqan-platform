@@ -2,6 +2,8 @@
 
 namespace App\Observers;
 
+use Exception;
+use App\Constants\DefaultAcademy;
 use App\Enums\HomeworkSubmissionStatus;
 use App\Enums\NotificationType;
 use App\Models\AcademicHomeworkSubmission;
@@ -77,7 +79,7 @@ class HomeworkSubmissionObserver
                 ['submission_id' => $submission->id, 'homework_id' => $homework->id],
                 false
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send homework submitted notification', [
                 'submission_id' => $submission->id,
                 'error' => $e->getMessage(),
@@ -124,7 +126,7 @@ class HomeworkSubmissionObserver
                 'submission_id' => $submission->id,
                 'homework_id' => $homework->id,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send homework graded notification', [
                 'submission_id' => $submission->id,
                 'error' => $e->getMessage(),
@@ -171,7 +173,7 @@ class HomeworkSubmissionObserver
     private function getStudentHomeworkUrl(Model $submission): string
     {
         $student = $submission->student;
-        $subdomain = $student?->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+        $subdomain = $student?->academy?->subdomain ?? DefaultAcademy::subdomain();
 
         $type = match (true) {
             $submission instanceof AcademicHomeworkSubmission => 'academic',
@@ -206,7 +208,7 @@ class HomeworkSubmissionObserver
                     );
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send parent notification', [
                 'student_id' => $student->id,
                 'error' => $e->getMessage(),

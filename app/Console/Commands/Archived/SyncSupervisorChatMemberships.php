@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands\Archived;
 
+use App\Models\Academy;
+use Exception;
 use App\Models\ChatGroup;
 use App\Models\ChatGroupMember;
 use App\Services\SupervisorResolutionService;
@@ -70,7 +72,7 @@ class SyncSupervisorChatMemberships extends Command
     {
         $academy = null;
         if ($this->option('academy')) {
-            $academy = \App\Models\Academy::where('subdomain', $this->option('academy'))->first();
+            $academy = Academy::where('subdomain', $this->option('academy'))->first();
             if (! $academy) {
                 $this->error("Academy not found: {$this->option('academy')}");
 
@@ -142,7 +144,7 @@ class SyncSupervisorChatMemberships extends Command
 
         $academy = null;
         if ($this->option('academy')) {
-            $academy = \App\Models\Academy::where('subdomain', $this->option('academy'))->first();
+            $academy = Academy::where('subdomain', $this->option('academy'))->first();
         }
 
         $query = ChatGroup::where('is_active', true)->whereNull('supervisor_id');
@@ -194,7 +196,7 @@ class SyncSupervisorChatMemberships extends Command
                 }
 
                 $this->updatedGroups++;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->errors++;
                 Log::error('Error adding supervisor to group', [
                     'group_id' => $group->id,
@@ -216,7 +218,7 @@ class SyncSupervisorChatMemberships extends Command
 
         $academy = null;
         if ($this->option('academy')) {
-            $academy = \App\Models\Academy::where('subdomain', $this->option('academy'))->first();
+            $academy = Academy::where('subdomain', $this->option('academy'))->first();
         }
 
         $query = ChatGroup::where('is_active', true)->whereNotNull('supervisor_id');
@@ -290,7 +292,7 @@ class SyncSupervisorChatMemberships extends Command
                 }
 
                 $this->updatedGroups++;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->errors++;
                 Log::error('Error updating supervisor for group', [
                     'group_id' => $group->id,

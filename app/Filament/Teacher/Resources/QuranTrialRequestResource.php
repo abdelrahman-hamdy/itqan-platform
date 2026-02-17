@@ -2,21 +2,29 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Carbon\Carbon;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Filament\Actions\BulkAction;
+use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages\ListQuranTrialRequests;
+use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages\ViewQuranTrialRequest;
+use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages\EditQuranTrialRequest;
 use App\Enums\TrialRequestStatus;
 use App\Filament\Shared\Resources\BaseQuranTrialRequestResource;
 use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages;
 use App\Models\QuranTrialRequest;
 use App\Services\AcademyContextService;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -39,7 +47,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
 
     protected static ?string $navigationLabel = 'طلبات الجلسات التجريبية';
 
-    protected static ?string $navigationGroup = 'جلساتي';
+    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 5;
 
@@ -162,9 +170,9 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                                     if (! $state) {
                                         return 'لم يتم الجدولة';
                                     }
-                                    $timezone = \App\Services\AcademyContextService::getTimezone();
+                                    $timezone = AcademyContextService::getTimezone();
 
-                                    return \Carbon\Carbon::parse($state)->setTimezone($timezone)->format('Y-m-d h:i A');
+                                    return Carbon::parse($state)->setTimezone($timezone)->format('Y-m-d h:i A');
                                 }),
                         ]),
 
@@ -189,14 +197,14 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
     {
         return [
             ActionGroup::make([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض')
                     ->icon('heroicon-m-eye'),
 
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل')
                     ->icon('heroicon-m-pencil')
-                    ->mutateFormDataUsing(function (array $data): array {
+                    ->mutateDataUsing(function (array $data): array {
                         // Only allow teachers to update specific fields
                         return [
                             'status' => $data['status'] ?? null,
@@ -206,12 +214,12 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                         ];
                     }),
 
-                Tables\Actions\Action::make('schedule_session')
+                Action::make('schedule_session')
                     ->label('جدولة الجلسة')
                     ->icon('heroicon-m-calendar')
                     ->color('info')
                     ->visible(fn (QuranTrialRequest $record): bool => $record->status === TrialRequestStatus::PENDING)
-                    ->form([
+                    ->schema([
                         DateTimePicker::make('scheduled_at')
                             ->label('موعد الجلسة التجريبية')
                             ->required()
@@ -231,7 +239,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                         static::executeScheduleAction($record, $data);
                     })
                     ->successNotificationTitle('تم جدولة الجلسة بنجاح')
-                    ->successNotification(fn ($record) => \Filament\Notifications\Notification::make()
+                    ->successNotification(fn ($record) => Notification::make()
                         ->success()
                         ->title('تم جدولة الجلسة التجريبية')
                         ->body("تم إنشاء غرفة اجتماع LiveKit للطالب {$record->student_name}")
@@ -246,7 +254,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkAction::make('bulk_cancel')
+            BulkAction::make('bulk_cancel')
                 ->label('إلغاء جماعي')
                 ->icon('heroicon-m-x-circle')
                 ->color('danger')
@@ -291,7 +299,8 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                 ->searchable()
                 ->copyable(),
 
-            BadgeColumn::make('status')
+            TextColumn::make('status')
+                ->badge()
                 ->label('الحالة')
                 ->formatStateUsing(fn (TrialRequestStatus $state): string => $state->label())
                 ->color(fn (TrialRequestStatus $state): string => $state->color()),
@@ -299,7 +308,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
             TextColumn::make('trialSession.scheduled_at')
                 ->label('موعد الجلسة')
                 ->dateTime('d/m/Y h:i A')
-                ->timezone(fn ($record) => $record->academy?->timezone?->value ?? \App\Services\AcademyContextService::getTimezone())
+                ->timezone(fn ($record) => $record->academy?->timezone?->value ?? AcademyContextService::getTimezone())
                 ->sortable()
                 ->placeholder('غير مجدول'),
 
@@ -381,9 +390,9 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuranTrialRequests::route('/'),
-            'view' => Pages\ViewQuranTrialRequest::route('/{record}'),
-            'edit' => Pages\EditQuranTrialRequest::route('/{record}/edit'),
+            'index' => ListQuranTrialRequests::route('/'),
+            'view' => ViewQuranTrialRequest::route('/{record}'),
+            'edit' => EditQuranTrialRequest::route('/{record}/edit'),
         ];
     }
 }

@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Auth;
 
 class AcademicTeacherOverviewWidget extends BaseWidget
 {
-    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+    protected string $view = 'filament.widgets.collapsible-stats-overview-widget';
 
     // Prevent auto-display on dashboard - Dashboard explicitly adds this widget
     protected static bool $isDiscoverable = false;
@@ -30,7 +30,7 @@ class AcademicTeacherOverviewWidget extends BaseWidget
         return 'نظرة عامة';
     }
 
-    protected static ?string $pollingInterval = '60s';
+    protected ?string $pollingInterval = '60s';
 
     protected static bool $isLazy = false;
 

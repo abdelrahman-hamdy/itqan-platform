@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\Filament\Supervisor\Widgets;
 
+use Exception;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Illuminate\Contracts\View\View;
 use App\Enums\CalendarSessionType;
 use App\Enums\SessionDuration;
 use App\Filament\Shared\Traits\CalendarWidgetBehavior;
@@ -368,7 +374,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             }
 
             return $result->shouldRevert();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Notification::make()
                 ->title('خطأ')
                 ->body('حدث خطأ أثناء تحديث الموعد')
@@ -419,7 +425,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             }
 
             return $result->shouldRevert();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Notification::make()
                 ->title('خطأ')
                 ->body('حدث خطأ أثناء تحديث المدة')
@@ -437,7 +443,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
     {
         try {
             $this->record = $this->resolveRecord($event['id']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->record = null;
         }
 
@@ -594,20 +600,20 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             ->icon('heroicon-o-pencil-square')
             ->modalHeading('تعديل الجلسة')
             ->modalDescription('تعديل المعلومات الأساسية للجلسة')
-            ->form(function (array $arguments): array {
+            ->schema(function (array $arguments): array {
                 $record = $this->resolveRecordFromArguments($arguments);
                 $timezone = AcademyContextService::getTimezone();
                 $scheduledAt = $record?->scheduled_at?->copy()->setTimezone($timezone);
 
                 return [
-                    Forms\Components\TextInput::make('title')
+                    TextInput::make('title')
                         ->label('عنوان الجلسة')
                         ->default($record?->title)
                         ->maxLength(255),
 
-                    Forms\Components\Grid::make(2)
+                    Grid::make(2)
                         ->schema([
-                            Forms\Components\DatePicker::make('scheduled_date')
+                            DatePicker::make('scheduled_date')
                                 ->label('تاريخ الجلسة')
                                 ->default($scheduledAt?->format('Y-m-d'))
                                 ->required()
@@ -616,7 +622,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                                 ->displayFormat('Y/m/d')
                                 ->closeOnDateSelection(),
 
-                            Forms\Components\Select::make('scheduled_time')
+                            Select::make('scheduled_time')
                                 ->label('وقت الجلسة')
                                 ->default($scheduledAt?->format('H:i'))
                                 ->required()
@@ -639,7 +645,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                                 ->native(false),
                         ]),
 
-                    Forms\Components\Select::make('duration_minutes')
+                    Select::make('duration_minutes')
                         ->label('مدة الجلسة')
                         ->default($record?->duration_minutes ?? 60)
                         ->required()
@@ -798,7 +804,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
     /**
      * Get widget header with timezone information
      */
-    public function getHeader(): ?\Illuminate\Contracts\View\View
+    public function getHeader(): ?View
     {
         return view('filament.widgets.calendar-timezone-info', [
             'timezoneNotice' => $this->getTimezoneNotice(),

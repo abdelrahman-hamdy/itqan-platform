@@ -2,6 +2,7 @@
 
 namespace App\Services\Calendar;
 
+use BackedEnum;
 use Illuminate\Support\Collection;
 
 class CalendarFilterService
@@ -36,7 +37,7 @@ class CalendarFilterService
         return $events->filter(function ($event) use ($statusFilters) {
             $eventStatus = $event['status'] ?? null;
             // Convert enum to string if needed
-            if ($eventStatus instanceof \BackedEnum) {
+            if ($eventStatus instanceof BackedEnum) {
                 $eventStatus = $eventStatus->value;
             } elseif (is_object($eventStatus)) {
                 $eventStatus = $eventStatus->name ?? null;

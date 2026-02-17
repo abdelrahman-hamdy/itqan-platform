@@ -2,23 +2,31 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Illuminate\Database\Eloquent\Model;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Carbon\Carbon;
+use App\Services\SessionNamingService;
+use App\Models\QuranSession;
+use Exception;
+use Log;
+use Filament\Infolists\Components\TextEntry;
 use App\Enums\SessionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Models\QuranTrialRequest;
 use App\Services\AcademyContextService;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -34,7 +42,7 @@ abstract class BaseQuranTrialRequestResource extends Resource
 {
     protected static ?string $model = QuranTrialRequest::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $modelLabel = 'طلب جلسة تجريبية';
 
@@ -73,12 +81,12 @@ abstract class BaseQuranTrialRequestResource extends Resource
         return true;
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return true;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return false;
     }
@@ -110,9 +118,9 @@ abstract class BaseQuranTrialRequestResource extends Resource
     // Shared Form Definition
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema(static::getFormSchema());
+        return $schema->components(static::getFormSchema());
     }
 
     /**
@@ -186,10 +194,10 @@ abstract class BaseQuranTrialRequestResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
-            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions());
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions());
     }
 
     /**
@@ -211,7 +219,8 @@ abstract class BaseQuranTrialRequestResource extends Resource
                 ->searchable()
                 ->sortable(),
 
-            BadgeColumn::make('status')
+            TextColumn::make('status')
+                ->badge()
                 ->label('الحالة')
                 ->formatStateUsing(fn (TrialRequestStatus $state): string => $state->label())
                 ->colors(TrialRequestStatus::colorOptions()),
@@ -225,7 +234,7 @@ abstract class BaseQuranTrialRequestResource extends Resource
             TextColumn::make('trialSession.scheduled_at')
                 ->label('موعد الجلسة')
                 ->dateTime('d/m/Y h:i A')
-                ->timezone(fn ($record) => $record->academy?->timezone?->value ?? \App\Services\AcademyContextService::getTimezone())
+                ->timezone(fn ($record) => $record->academy?->timezone?->value ?? AcademyContextService::getTimezone())
                 ->sortable()
                 ->placeholder('لم يتم الجدولة'),
 
@@ -276,14 +285,14 @@ abstract class BaseQuranTrialRequestResource extends Resource
     /**
      * Create the schedule trial session action - shared logic.
      */
-    protected static function makeScheduleAction(): Tables\Actions\Action
+    protected static function makeScheduleAction(): Action
     {
-        return Tables\Actions\Action::make('schedule')
+        return Action::make('schedule')
             ->label('جدولة')
             ->icon('heroicon-o-calendar')
             ->color('warning')
             ->visible(fn (QuranTrialRequest $record) => $record->canBeScheduled())
-            ->form([
+            ->schema([
                 DateTimePicker::make('scheduled_at')
                     ->label('موعد الجلسة')
                     ->required()
@@ -301,7 +310,7 @@ abstract class BaseQuranTrialRequestResource extends Resource
                 static::executeScheduleAction($record, $data);
             })
             ->successNotificationTitle('تم جدولة الجلسة بنجاح')
-            ->successNotification(fn ($record) => \Filament\Notifications\Notification::make()
+            ->successNotification(fn ($record) => Notification::make()
                 ->success()
                 ->title('تم جدولة الجلسة التجريبية')
                 ->body("تم إنشاء غرفة اجتماع LiveKit للطالب {$record->student_name}")
@@ -315,7 +324,7 @@ abstract class BaseQuranTrialRequestResource extends Resource
     {
         try {
             // Parse the datetime in academy timezone
-            $scheduledAt = \Carbon\Carbon::parse($data['scheduled_at'], AcademyContextService::getTimezone());
+            $scheduledAt = Carbon::parse($data['scheduled_at'], AcademyContextService::getTimezone());
             $teacherResponse = $data['teacher_response'] ?? 'تم جدولة الجلسة التجريبية';
 
             // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
@@ -325,10 +334,10 @@ abstract class BaseQuranTrialRequestResource extends Resource
             $sessionCode = 'TR-'.str_pad($record->teacher_id, 3, '0', STR_PAD_LEFT).'-'.$scheduledAt->format('Ymd-Hi');
 
             // Use naming service for consistent session naming
-            $namingService = app(\App\Services\SessionNamingService::class);
+            $namingService = app(SessionNamingService::class);
 
             // Create QuranSession with LiveKit integration
-            $session = \App\Models\QuranSession::create([
+            $session = QuranSession::create([
                 'academy_id' => $record->academy_id,
                 'session_code' => $sessionCode,
                 'session_type' => 'trial',
@@ -349,8 +358,8 @@ abstract class BaseQuranTrialRequestResource extends Resource
             $session->generateMeetingLink();
 
             // Status sync happens automatically via QuranSessionObserver
-        } catch (\Exception $e) {
-            \Log::error('Trial session creation failed', [
+        } catch (Exception $e) {
+            Log::error('Trial session creation failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'trial_request_id' => $record->id,
@@ -364,83 +373,83 @@ abstract class BaseQuranTrialRequestResource extends Resource
     // Shared Infolist Definition
     // ========================================
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
-                Infolists\Components\Section::make('معلومات الطلب')
+        return $schema
+            ->components([
+                Section::make('معلومات الطلب')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('request_code')
+                                TextEntry::make('request_code')
                                     ->label('رقم الطلب')
                                     ->copyable(),
 
-                                Infolists\Components\TextEntry::make('status')
+                                TextEntry::make('status')
                                     ->label('الحالة')
                                     ->formatStateUsing(fn (TrialRequestStatus $state): string => $state->label())
                                     ->badge()
                                     ->color(fn (TrialRequestStatus $state): string => $state->color()),
 
-                                Infolists\Components\TextEntry::make('created_at')
+                                TextEntry::make('created_at')
                                     ->label('تاريخ الطلب')
                                     ->dateTime('d/m/Y h:i A')
-                                    ->timezone(fn ($record) => $record->academy?->timezone?->value ?? \App\Services\AcademyContextService::getTimezone()),
+                                    ->timezone(fn ($record) => $record->academy?->timezone?->value ?? AcademyContextService::getTimezone()),
                             ]),
                     ]),
 
-                Infolists\Components\Section::make('معلومات الطالب والمعلم')
+                Section::make('معلومات الطالب والمعلم')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('student.name')
+                                TextEntry::make('student.name')
                                     ->label('الطالب'),
 
-                                Infolists\Components\TextEntry::make('teacher.full_name')
+                                TextEntry::make('teacher.full_name')
                                     ->label('المعلم'),
                             ]),
                     ]),
 
-                Infolists\Components\Section::make('تفاصيل التعلم')
+                Section::make('تفاصيل التعلم')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('current_level')
+                                TextEntry::make('current_level')
                                     ->label('المستوى الحالي')
                                     ->formatStateUsing(fn (string $state): string => QuranTrialRequest::LEVELS[$state] ?? $state),
 
-                                Infolists\Components\TextEntry::make('preferred_time')
+                                TextEntry::make('preferred_time')
                                     ->label('الوقت المفضل')
                                     ->formatStateUsing(fn (?string $state): string => $state ? (QuranTrialRequest::TIMES[$state] ?? $state) : '-'),
                             ]),
 
-                        Infolists\Components\TextEntry::make('notes')
+                        TextEntry::make('notes')
                             ->label('ملاحظات الطالب')
                             ->columnSpanFull(),
                     ]),
 
-                Infolists\Components\Section::make('تفاصيل الجلسة')
+                Section::make('تفاصيل الجلسة')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('trialSession.scheduled_at')
+                                TextEntry::make('trialSession.scheduled_at')
                                     ->label('موعد الجلسة')
                                     ->dateTime('d/m/Y h:i A')
-                                    ->timezone(fn ($record) => $record->academy?->timezone?->value ?? \App\Services\AcademyContextService::getTimezone())
+                                    ->timezone(fn ($record) => $record->academy?->timezone?->value ?? AcademyContextService::getTimezone())
                                     ->placeholder('لم يتم تحديد موعد'),
 
-                                Infolists\Components\TextEntry::make('trialSession.meeting.room_name')
+                                TextEntry::make('trialSession.meeting.room_name')
                                     ->label('غرفة الاجتماع')
                                     ->placeholder('لم يتم إنشاء غرفة')
                                     ->formatStateUsing(fn ($state) => $state ? "LiveKit: {$state}" : '-'),
 
-                                Infolists\Components\TextEntry::make('trialSession.status')
+                                TextEntry::make('trialSession.status')
                                     ->label('حالة الجلسة')
                                     ->badge()
                                     ->formatStateUsing(fn ($state) => $state?->label() ?? '-')
                                     ->color(fn ($state) => $state?->color() ?? 'gray'),
 
-                                Infolists\Components\TextEntry::make('rating')
+                                TextEntry::make('rating')
                                     ->label('التقييم')
                                     ->formatStateUsing(function ($state) {
                                         if (! $state) {
@@ -457,11 +466,11 @@ abstract class BaseQuranTrialRequestResource extends Resource
                                     }),
                             ]),
 
-                        Infolists\Components\TextEntry::make('feedback')
+                        TextEntry::make('feedback')
                             ->label('ملاحظات الجلسة')
                             ->columnSpanFull(),
 
-                        Infolists\Components\TextEntry::make('admin_report')
+                        TextEntry::make('admin_report')
                             ->label('تقرير للإدارة')
                             ->helperText('تقرير داخلي للإدارة والمشرفين فقط')
                             ->columnSpanFull(),

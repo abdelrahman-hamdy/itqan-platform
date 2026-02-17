@@ -2,6 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Collection;
+use ValueError;
+use Exception;
+use Carbon\Carbon;
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\DifficultyLevel;
 use App\Enums\SessionSubscriptionStatus;
@@ -47,8 +52,8 @@ use Illuminate\Support\Facades\DB;
  * @property bool $status
  * @property string|null $enrollment_status
  * @property array|null $learning_objectives
- * @property \Carbon\Carbon|null $last_session_at
- * @property \Carbon\Carbon|null $next_session_at
+ * @property Carbon|null $last_session_at
+ * @property Carbon|null $next_session_at
  * @property bool $recording_enabled
  * @property bool $attendance_required
  * @property bool $makeup_sessions_allowed
@@ -56,9 +61,9 @@ use Illuminate\Support\Facades\DB;
  * @property string|null $schedule_time
  * @property array|null $schedule_days
  * @property string|null $supervisor_notes
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property \Carbon\Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 class QuranCircle extends Model
 {
@@ -185,7 +190,7 @@ class QuranCircle extends Model
 
     public function students(): BelongsToMany
     {
-        return $this->belongsToMany(\App\Models\User::class, 'quran_circle_students', 'circle_id', 'student_id')
+        return $this->belongsToMany(User::class, 'quran_circle_students', 'circle_id', 'student_id')
             ->withPivot([
                 'enrolled_at',
                 'status',
@@ -207,7 +212,7 @@ class QuranCircle extends Model
         return $this->hasMany(QuranSession::class, 'circle_id');
     }
 
-    public function schedule(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function schedule(): HasOne
     {
         return $this->hasOne(QuranCircleSchedule::class, 'circle_id');
     }
@@ -225,7 +230,7 @@ class QuranCircle extends Model
         return $this->hasMany(Payment::class, 'circle_id');
     }
 
-    public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    public function quizAssignments(): MorphMany
     {
         return $this->morphMany(QuizAssignment::class, 'assignable');
     }
@@ -277,7 +282,7 @@ class QuranCircle extends Model
      * Get all active subscriptions for this circle
      * (For group circles, there can be multiple - one per enrolled student)
      */
-    public function getActiveSubscriptionsAttribute(): \Illuminate\Database\Eloquent\Collection
+    public function getActiveSubscriptionsAttribute(): Collection
     {
         // Get from polymorphic relationship
         $linkedActive = $this->linkedSubscriptions()
@@ -492,7 +497,7 @@ class QuranCircle extends Model
             $level = DifficultyLevel::from($this->memorization_level);
 
             return $level->label();
-        } catch (\ValueError $e) {
+        } catch (ValueError $e) {
             // Fallback for any legacy values
             $levels = [
                 'beginner' => 'مبتدئ',
@@ -568,7 +573,7 @@ class QuranCircle extends Model
                 ->map(function ($day) {
                     try {
                         return WeekDays::from(strtolower($day))->label();
-                    } catch (\ValueError $e) {
+                    } catch (ValueError $e) {
                         return $day; // Fallback to original value if not a valid enum
                     }
                 });
@@ -619,11 +624,11 @@ class QuranCircle extends Model
     public function enrollStudent(User $student, array $additionalData = []): self
     {
         if ($this->is_full) {
-            throw new \Exception('الحلقة مكتملة العدد');
+            throw new Exception('الحلقة مكتملة العدد');
         }
 
         if (! $this->canEnrollStudent($student)) {
-            throw new \Exception('لا يمكن تسجيل هذا الطالب في الحلقة');
+            throw new Exception('لا يمكن تسجيل هذا الطالب في الحلقة');
         }
 
         $pivotData = array_merge([
@@ -683,7 +688,7 @@ class QuranCircle extends Model
     public function start(): self
     {
         if (! $this->can_start) {
-            throw new \Exception('عدد الطلاب غير كافي لبدء الحلقة');
+            throw new Exception('عدد الطلاب غير كافي لبدء الحلقة');
         }
 
         $this->update([
@@ -1027,7 +1032,7 @@ class QuranCircle extends Model
         });
     }
 
-    public static function getOpenForEnrollment(int $academyId, array $filters = []): \Illuminate\Database\Eloquent\Collection
+    public static function getOpenForEnrollment(int $academyId, array $filters = []): Collection
     {
         $query = self::where('academy_id', $academyId)
             ->openForEnrollment()
@@ -1058,7 +1063,7 @@ class QuranCircle extends Model
             ->get();
     }
 
-    public static function getStartingSoon(int $academyId, int $days = 7): \Illuminate\Database\Eloquent\Collection
+    public static function getStartingSoon(int $academyId, int $days = 7): Collection
     {
         return self::where('academy_id', $academyId)
             ->startingSoon($days)

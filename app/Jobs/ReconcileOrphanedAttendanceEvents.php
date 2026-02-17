@@ -2,6 +2,9 @@
 
 namespace App\Jobs;
 
+use Cache;
+use Exception;
+use Throwable;
 use App\Enums\MeetingEventType;
 use App\Jobs\Traits\TenantAwareJob;
 use App\Models\Academy;
@@ -128,7 +131,7 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
                         ]);
 
                         // Clear attendance status cache
-                        \Cache::forget("attendance_status_{$event->session_id}_{$event->user_id}");
+                        Cache::forget("attendance_status_{$event->session_id}_{$event->user_id}");
 
                         Log::info('Closed orphaned attendance event', [
                             'event_id' => $event->id,
@@ -139,7 +142,7 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
                         ]);
 
                         $closedCount++;
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         Log::error('Error reconciling attendance event', [
                             'event_id' => $event->id,
                             'error' => $e->getMessage(),
@@ -184,7 +187,7 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
             }
 
             return false;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Error checking if participant in room', [
                 'error' => $e->getMessage(),
                 'event_id' => $event->id,
@@ -198,7 +201,7 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
     /**
      * Handle a job failure.
      */
-    public function failed(\Throwable $exception): void
+    public function failed(Throwable $exception): void
     {
         Log::error('ReconcileOrphanedAttendanceEvents job failed permanently', [
             'error' => $exception->getMessage(),

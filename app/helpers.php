@@ -1,12 +1,19 @@
 <?php
 
+use App\Models\Academy;
+use App\Services\AcademyContextService;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use App\Enums\UserType;
+use App\Helpers\FaviconHelper;
+
 if (! function_exists('current_academy')) {
     /**
      * Get the current academy from the resolved tenant
      */
-    function current_academy(): ?\App\Models\Academy
+    function current_academy(): ?Academy
     {
-        return \App\Services\AcademyContextService::getCurrentAcademy();
+        return AcademyContextService::getCurrentAcademy();
     }
 }
 
@@ -14,7 +21,7 @@ if (! function_exists('academy_url')) {
     /**
      * Generate URL for an academy
      */
-    function academy_url(\App\Models\Academy $academy, string $path = '/'): string
+    function academy_url(Academy $academy, string $path = '/'): string
     {
         $protocol = app()->environment('local') ? 'http' : 'https';
 
@@ -26,7 +33,7 @@ if (! function_exists('humanize_time_remaining_arabic')) {
     /**
      * Humanize the time remaining until a session in Arabic
      */
-    function humanize_time_remaining_arabic(\Carbon\Carbon $sessionTime): array
+    function humanize_time_remaining_arabic(Carbon $sessionTime): array
     {
         $now = now();
         $diff = $now->diffInMinutes($sessionTime, false);
@@ -126,16 +133,16 @@ if (! function_exists('can_test_meetings')) {
      */
     function can_test_meetings(): bool
     {
-        if (! \Illuminate\Support\Facades\Auth::check()) {
+        if (! Auth::check()) {
             return false;
         }
 
-        $user = \Illuminate\Support\Facades\Auth::user();
+        $user = Auth::user();
 
         // Allow super admins and admins to test meetings
-        return $user->hasRole([\App\Enums\UserType::SUPER_ADMIN->value, \App\Enums\UserType::ADMIN->value]) ||
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]) ||
                request()->has('test_mode') &&
-               ($user->hasRole([\App\Enums\UserType::QURAN_TEACHER->value, \App\Enums\UserType::ACADEMIC_TEACHER->value, \App\Enums\UserType::SUPERVISOR->value, \App\Enums\UserType::STUDENT->value]) || app()->environment('local'));
+               ($user->hasRole([UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::SUPERVISOR->value, UserType::STUDENT->value]) || app()->environment('local'));
     }
 }
 
@@ -143,12 +150,12 @@ if (! function_exists('getFavicon')) {
     /**
      * Get the favicon URL for the current academy
      *
-     * @param \App\Models\Academy|null $academy Academy instance (auto-resolves if null)
+     * @param Academy|null $academy Academy instance (auto-resolves if null)
      * @return string Favicon URL
      */
-    function getFavicon(?\App\Models\Academy $academy = null): string
+    function getFavicon(?Academy $academy = null): string
     {
-        return \App\Helpers\FaviconHelper::get($academy);
+        return FaviconHelper::get($academy);
     }
 }
 
@@ -156,12 +163,12 @@ if (! function_exists('getFaviconLinkTag')) {
     /**
      * Get favicon HTML link tag
      *
-     * @param \App\Models\Academy|null $academy Academy instance (auto-resolves if null)
+     * @param Academy|null $academy Academy instance (auto-resolves if null)
      * @return string HTML link tag
      */
-    function getFaviconLinkTag(?\App\Models\Academy $academy = null): string
+    function getFaviconLinkTag(?Academy $academy = null): string
     {
-        return \App\Helpers\FaviconHelper::linkTag($academy);
+        return FaviconHelper::linkTag($academy);
     }
 }
 
@@ -169,12 +176,12 @@ if (! function_exists('hasCustomFavicon')) {
     /**
      * Check if academy has a custom favicon
      *
-     * @param \App\Models\Academy|null $academy Academy instance (auto-resolves if null)
+     * @param Academy|null $academy Academy instance (auto-resolves if null)
      * @return bool True if academy has custom favicon
      */
-    function hasCustomFavicon(?\App\Models\Academy $academy = null): bool
+    function hasCustomFavicon(?Academy $academy = null): bool
     {
-        return \App\Helpers\FaviconHelper::hasCustom($academy);
+        return FaviconHelper::hasCustom($academy);
     }
 }
 

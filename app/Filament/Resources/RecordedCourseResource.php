@@ -2,6 +2,26 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Actions\ReplicateAction;
+use Filament\Forms\Components\Toggle;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Utilities\Get;
+use App\Filament\Resources\RecordedCourseResource\Pages\ListRecordedCourses;
+use App\Filament\Resources\RecordedCourseResource\Pages\CreateRecordedCourse;
+use App\Filament\Resources\RecordedCourseResource\Pages\EditRecordedCourse;
+use App\Filament\Resources\RecordedCourseResource\Pages\ViewRecordedCourse;
 use App\Filament\Resources\RecordedCourseResource\Pages;
 use App\Filament\Shared\Resources\Courses\BaseRecordedCourseResource;
 use App\Models\AcademicGradeLevel;
@@ -11,7 +31,6 @@ use App\Models\RecordedCourse;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Forms\Get;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -37,10 +56,10 @@ class RecordedCourseResource extends BaseRecordedCourseResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ReplicateAction::make()
+            ReplicateAction::make()
                 ->label('نسخ الدورة')
-                ->form([
-                    Forms\Components\Toggle::make('copy_sections')
+                ->schema([
+                    Toggle::make('copy_sections')
                         ->label('نسخ الأقسام والدروس')
                         ->default(true)
                         ->helperText('نسخ جميع الأقسام والدروس مع الدورة'),
@@ -66,12 +85,12 @@ class RecordedCourseResource extends BaseRecordedCourseResource
                     }
                 })
                 ->successNotificationTitle('تم نسخ الدورة بنجاح'),
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
-            Tables\Actions\DeleteAction::make(),
-            Tables\Actions\RestoreAction::make()
+            ViewAction::make(),
+            EditAction::make(),
+            DeleteAction::make(),
+            RestoreAction::make()
                 ->label(__('filament.actions.restore')),
-            Tables\Actions\ForceDeleteAction::make()
+            ForceDeleteAction::make()
                 ->label(__('filament.actions.force_delete')),
         ];
     }
@@ -79,21 +98,21 @@ class RecordedCourseResource extends BaseRecordedCourseResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
-                Tables\Actions\RestoreBulkAction::make()
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+                RestoreBulkAction::make()
                     ->label(__('filament.actions.restore_selected')),
-                Tables\Actions\ForceDeleteBulkAction::make()
+                ForceDeleteBulkAction::make()
                     ->label(__('filament.actions.force_delete_selected')),
             ]),
         ];
     }
 
-    protected static function getAcademyFormField(): ?Forms\Components\Select
+    protected static function getAcademyFormField(): ?Select
     {
         $currentAcademy = AcademyContextService::getCurrentAcademy();
 
-        return Forms\Components\Select::make('academy_id')
+        return Select::make('academy_id')
             ->label('الأكاديمية')
             ->options(Academy::pluck('name', 'id'))
             ->default($currentAcademy?->id)
@@ -102,7 +121,7 @@ class RecordedCourseResource extends BaseRecordedCourseResource
             ->live();
     }
 
-    protected static function getInstructorFormField(): ?Forms\Components\Select
+    protected static function getInstructorFormField(): ?Select
     {
         // Admin panel doesn't require instructor field
         return null;
@@ -114,7 +133,7 @@ class RecordedCourseResource extends BaseRecordedCourseResource
             static::getAcademyFormField(),
 
             // Admin-specific fields
-            Forms\Components\Section::make('الوسائط')
+            Section::make('الوسائط')
                 ->schema([
                     SpatieMediaLibraryFileUpload::make('thumbnail_url')
                         ->label('صورة مصغرة')
@@ -134,17 +153,17 @@ class RecordedCourseResource extends BaseRecordedCourseResource
                         ->helperText('أقصى حجم: 50 ميجابايت لكل ملف'),
                 ])->columns(2),
 
-            Forms\Components\Section::make('ملاحظات')
+            Section::make('ملاحظات')
                 ->schema([
-                    Forms\Components\Grid::make(2)
+                    Grid::make(2)
                         ->schema([
-                            Forms\Components\Textarea::make('admin_notes')
+                            Textarea::make('admin_notes')
                                 ->label('ملاحظات الإدارة')
                                 ->rows(3)
                                 ->maxLength(1000)
                                 ->helperText('ملاحظات داخلية للإدارة'),
 
-                            Forms\Components\Textarea::make('supervisor_notes')
+                            Textarea::make('supervisor_notes')
                                 ->label('ملاحظات المشرف')
                                 ->rows(3)
                                 ->maxLength(2000)
@@ -207,10 +226,10 @@ class RecordedCourseResource extends BaseRecordedCourseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListRecordedCourses::route('/'),
-            'create' => Pages\CreateRecordedCourse::route('/create'),
-            'edit' => Pages\EditRecordedCourse::route('/{record}/edit'),
-            'view' => Pages\ViewRecordedCourse::route('/{record}'),
+            'index' => ListRecordedCourses::route('/'),
+            'create' => CreateRecordedCourse::route('/create'),
+            'edit' => EditRecordedCourse::route('/{record}/edit'),
+            'view' => ViewRecordedCourse::route('/{record}'),
         ];
     }
 }

@@ -2,12 +2,23 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use App\Models\User;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Tables\Filters\SelectFilter;
+use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\ListInteractiveSessionReports;
+use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\CreateInteractiveSessionReport;
+use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\ViewInteractiveSessionReport;
+use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\EditInteractiveSessionReport;
 use App\Enums\UserType;
 use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages;
 use App\Filament\Shared\Resources\BaseInteractiveSessionReportResource;
 use App\Models\InteractiveSessionReport;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -26,7 +37,7 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationGroup = 'التقارير والتقييمات';
+    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والتقييمات';
 
     protected static ?int $navigationSort = 2;
 
@@ -58,7 +69,7 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     {
         return Section::make('معلومات الجلسة')
             ->schema([
-                Forms\Components\Select::make('session_id')
+                Select::make('session_id')
                     ->relationship('session', 'id', fn (Builder $query) => $query->whereHas('course', fn ($q) => $q->where('assigned_teacher_id', Auth::user()->academicTeacherProfile?->id)
                     )
                     )
@@ -69,9 +80,9 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->course?->name.' - '.$record->scheduled_date?->format('Y-m-d')
                     ),
 
-                Forms\Components\Select::make('student_id')
+                Select::make('student_id')
                     ->label('الطالب')
-                    ->options(fn () => \App\Models\User::query()
+                    ->options(fn () => User::query()
                         ->where('user_type', UserType::STUDENT->value)
                         ->whereNotNull('name')
                         ->pluck('name', 'id')
@@ -88,9 +99,9 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
-            Tables\Actions\EditAction::make()
+            EditAction::make()
                 ->label('تقييم'),
         ];
     }
@@ -101,8 +112,8 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
             ]),
         ];
     }
@@ -119,7 +130,7 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
         return [
             ...parent::getTableFilters(),
 
-            Tables\Filters\SelectFilter::make('session_id')
+            SelectFilter::make('session_id')
                 ->label('الجلسة')
                 ->relationship('session', 'id')
                 ->getOptionLabelFromRecordUsing(fn ($record) => $record->course?->name.' - '.$record->scheduled_date?->format('Y-m-d')
@@ -182,10 +193,10 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListInteractiveSessionReports::route('/'),
-            'create' => Pages\CreateInteractiveSessionReport::route('/create'),
-            'view' => Pages\ViewInteractiveSessionReport::route('/{record}'),
-            'edit' => Pages\EditInteractiveSessionReport::route('/{record}/edit'),
+            'index' => ListInteractiveSessionReports::route('/'),
+            'create' => CreateInteractiveSessionReport::route('/create'),
+            'view' => ViewInteractiveSessionReport::route('/{record}'),
+            'edit' => EditInteractiveSessionReport::route('/{record}/edit'),
         ];
     }
 }

@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
+use App\Services\Payment\InvoiceService;
+use App\Services\PaymentService;
+use App\Services\Payment\AcademyPaymentGatewayFactory;
 use App\Constants\DefaultAcademy;
 use App\Http\Requests\ProcessCourseEnrollmentPaymentRequest;
 use App\Http\Traits\Api\ApiResponses;
@@ -128,7 +132,7 @@ class PaymentController extends Controller
                 } else {
                     // Mark payment as failed
                     $payment->markAsFailed($gatewayResult['error'], $gatewayResult['data'] ?? []);
-                    throw new \Exception($gatewayResult['error']);
+                    throw new Exception($gatewayResult['error']);
                 }
             });
 
@@ -138,7 +142,7 @@ class PaymentController extends Controller
                 'redirect_url' => route('courses.learn', $course),
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->error('فشل في عملية الدفع: '.$e->getMessage(), 400);
         }
     }
@@ -206,7 +210,7 @@ class PaymentController extends Controller
             abort(404, 'لا يمكن تحميل فاتورة لدفعة غير مكتملة');
         }
 
-        $invoiceService = app(\App\Services\Payment\InvoiceService::class);
+        $invoiceService = app(InvoiceService::class);
         $pdfPath = $invoiceService->getOrGeneratePdf($payment);
 
         if (! $pdfPath || ! Storage::disk('local')->exists($pdfPath)) {
@@ -284,7 +288,7 @@ class PaymentController extends Controller
     {
         switch ($payment->payment_gateway) {
             case 'easykash':
-                $paymentService = app(\App\Services\PaymentService::class);
+                $paymentService = app(PaymentService::class);
 
                 return $paymentService->processPayment($payment);
             case 'moyasar':
@@ -400,7 +404,7 @@ class PaymentController extends Controller
 
         try {
             // Call Paymob API to get full transaction details including card token
-            $gateway = app(\App\Services\Payment\AcademyPaymentGatewayFactory::class)
+            $gateway = app(AcademyPaymentGatewayFactory::class)
                 ->getGateway($academy, 'paymob');
 
             $verifyResult = $gateway->verifyPayment($transactionId);
@@ -488,7 +492,7 @@ class PaymentController extends Controller
             return redirect()->route('student.payments', ['subdomain' => $subdomain])
                 ->with('success', __('student.saved_payment_methods.card_saved_success'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('payments')->error('Failed to save card from callback', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),

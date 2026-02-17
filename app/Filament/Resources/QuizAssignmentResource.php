@@ -2,14 +2,31 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\QuizAssignmentResource\Pages\ListQuizAssignments;
+use App\Filament\Resources\QuizAssignmentResource\Pages\CreateQuizAssignment;
+use App\Filament\Resources\QuizAssignmentResource\Pages\EditQuizAssignment;
 use App\Enums\QuizAssignableType;
 use App\Filament\Resources\QuizAssignmentResource\Pages;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,9 +35,9 @@ class QuizAssignmentResource extends BaseResource
 {
     protected static ?string $model = QuizAssignment::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-plus';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-plus';
 
-    protected static ?string $navigationGroup = 'إدارة الاختبارات';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة الاختبارات';
 
     protected static ?string $navigationLabel = 'تعيين الاختبارات';
 
@@ -28,15 +45,15 @@ class QuizAssignmentResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'تعيينات الاختبارات';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         $currentAcademy = AcademyContextService::getCurrentAcademy();
 
-        return $form
-            ->schema([
-                Forms\Components\Section::make('تعيين الاختبار')
+        return $schema
+            ->components([
+                Section::make('تعيين الاختبار')
                     ->schema([
-                        Forms\Components\Select::make('quiz_id')
+                        Select::make('quiz_id')
                             ->label('الاختبار')
                             ->options(function () use ($currentAcademy) {
                                 $query = Quiz::active();
@@ -50,14 +67,14 @@ class QuizAssignmentResource extends BaseResource
                             ->searchable()
                             ->preload(),
 
-                        Forms\Components\Select::make('assignable_type')
+                        Select::make('assignable_type')
                             ->label('نوع الجهة')
                             ->options(QuizAssignableType::options())
                             ->required()
                             ->live()
-                            ->afterStateUpdated(fn (Forms\Set $set) => $set('assignable_id', null)),
+                            ->afterStateUpdated(fn (Set $set) => $set('assignable_id', null)),
 
-                        Forms\Components\Select::make('assignable_id')
+                        Select::make('assignable_id')
                             ->label('الجهة')
                             ->searchable()
                             ->preload()
@@ -155,14 +172,14 @@ class QuizAssignmentResource extends BaseResource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('إعدادات التوفر')
+                Section::make('إعدادات التوفر')
                     ->schema([
-                        Forms\Components\Toggle::make('is_visible')
+                        Toggle::make('is_visible')
                             ->label('مرئي للطلاب')
                             ->default(true)
                             ->helperText('إخفاء الاختبار عن الطلاب مؤقتاً'),
 
-                        Forms\Components\TextInput::make('max_attempts')
+                        TextInput::make('max_attempts')
                             ->label('عدد المحاولات المسموحة')
                             ->numeric()
                             ->default(1)
@@ -170,7 +187,7 @@ class QuizAssignmentResource extends BaseResource
                             ->maxValue(10)
                             ->required(),
 
-                        Forms\Components\DateTimePicker::make('available_from')
+                        DateTimePicker::make('available_from')
                             ->label('متاح من')
                             ->native(false)
                             ->seconds(false)
@@ -178,7 +195,7 @@ class QuizAssignmentResource extends BaseResource
                             ->placeholder('اتركه فارغاً للإتاحة فوراً')
                             ->helperText('تاريخ ووقت بدء إتاحة الاختبار للطلاب'),
 
-                        Forms\Components\DateTimePicker::make('available_until')
+                        DateTimePicker::make('available_until')
                             ->label('متاح حتى')
                             ->native(false)
                             ->seconds(false)
@@ -195,18 +212,18 @@ class QuizAssignmentResource extends BaseResource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('quiz.title')
+                TextColumn::make('quiz.title')
                     ->label('الاختبار')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('assignable_type')
+                TextColumn::make('assignable_type')
                     ->label('نوع الجهة')
                     ->formatStateUsing(fn ($state) => QuizAssignableType::tryFrom($state)?->label() ?? $state)
                     ->icon(fn ($state) => QuizAssignableType::tryFrom($state)?->icon())
                     ->color(fn ($state) => QuizAssignableType::tryFrom($state)?->color()),
 
-                Tables\Columns\TextColumn::make('assignable')
+                TextColumn::make('assignable')
                     ->label('الجهة')
                     ->formatStateUsing(function ($record) {
                         $assignable = $record->assignable;
@@ -217,45 +234,45 @@ class QuizAssignmentResource extends BaseResource
                         return $assignable->title ?? $assignable->name ?? $assignable->id;
                     }),
 
-                Tables\Columns\IconColumn::make('is_visible')
+                IconColumn::make('is_visible')
                     ->label('مرئي')
                     ->boolean(),
 
-                Tables\Columns\TextColumn::make('max_attempts')
+                TextColumn::make('max_attempts')
                     ->label('المحاولات')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('attempts_count')
+                TextColumn::make('attempts_count')
                     ->label('عدد التقديمات')
                     ->counts('attempts'),
 
-                Tables\Columns\TextColumn::make('available_from')
+                TextColumn::make('available_from')
                     ->label('متاح من')
                     ->dateTime('Y-m-d H:i')
                     ->placeholder('فوري'),
 
-                Tables\Columns\TextColumn::make('available_until')
+                TextColumn::make('available_until')
                     ->label('متاح حتى')
                     ->dateTime('Y-m-d H:i')
                     ->placeholder('دائم'),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('assignable_type')
+                SelectFilter::make('assignable_type')
                     ->label('نوع الجهة')
                     ->options(QuizAssignableType::options()),
 
-                Tables\Filters\TernaryFilter::make('is_visible')
+                TernaryFilter::make('is_visible')
                     ->label('الحالة')
                     ->trueLabel('مرئي')
                     ->falseLabel('مخفي'),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -270,9 +287,9 @@ class QuizAssignmentResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuizAssignments::route('/'),
-            'create' => Pages\CreateQuizAssignment::route('/create'),
-            'edit' => Pages\EditQuizAssignment::route('/{record}/edit'),
+            'index' => ListQuizAssignments::route('/'),
+            'create' => CreateQuizAssignment::route('/create'),
+            'edit' => EditQuizAssignment::route('/{record}/edit'),
         ];
     }
 

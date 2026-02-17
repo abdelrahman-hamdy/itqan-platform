@@ -2,6 +2,10 @@
 
 namespace App\Filament\Shared\Traits;
 
+use App\Models\CourseSubscription;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Forms\Components\TextInput;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -9,8 +13,6 @@ use App\Models\BaseSubscription;
 use App\Services\SubscriptionService;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -39,7 +41,7 @@ trait HasSubscriptionActions
     {
         $modelClass = static::getModel();
 
-        return $modelClass !== \App\Models\CourseSubscription::class;
+        return $modelClass !== CourseSubscription::class;
     }
 
     /**
@@ -78,7 +80,7 @@ trait HasSubscriptionActions
             ->modalHeading('إلغاء طلب الاشتراك المعلق')
             ->modalDescription('هل أنت متأكد من إلغاء طلب الاشتراك هذا؟ هذا الإجراء لا يمكن التراجع عنه.')
             ->modalSubmitActionLabel('نعم، إلغاء الطلب')
-            ->form([
+            ->schema([
                 Textarea::make('cancellation_reason')
                     ->label('سبب الإلغاء (اختياري)')
                     ->placeholder('مثال: لم يتم الدفع خلال المهلة المحددة')
@@ -265,8 +267,8 @@ trait HasSubscriptionActions
             ->requiresConfirmation()
             ->modalHeading('تمديد مدة الاشتراك')
             ->modalDescription('منح الطالب فترة إضافية للوصول إلى الاشتراك')
-            ->form([
-                \Filament\Forms\Components\TextInput::make('extend_days')
+            ->schema([
+                TextInput::make('extend_days')
                     ->label('عدد الأيام')
                     ->numeric()
                     ->required()

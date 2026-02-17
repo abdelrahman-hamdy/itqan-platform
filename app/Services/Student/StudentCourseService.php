@@ -2,6 +2,7 @@
 
 namespace App\Services\Student;
 
+use Exception;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Models\AcademicGradeLevel;
@@ -34,7 +35,7 @@ class StudentCourseService
 
         // Ensure user has a student profile
         if (! $user->studentProfile) {
-            throw new \Exception('يجب إكمال الملف الشخصي للطالب أولاً');
+            throw new Exception('يجب إكمال الملف الشخصي للطالب أولاً');
         }
 
         $studentId = $user->studentProfile->id;
@@ -147,7 +148,7 @@ class StudentCourseService
         }
 
         if (! $user->studentProfile) {
-            throw new \Exception('يجب إكمال الملف الشخصي للطالب أولاً');
+            throw new Exception('يجب إكمال الملف الشخصي للطالب أولاً');
         }
 
         $studentId = $user->studentProfile->id;
@@ -246,7 +247,7 @@ class StudentCourseService
         // Get the student profile
         $studentProfile = $user->studentProfile;
         if (! $studentProfile) {
-            throw new \Exception('Student profile not found');
+            throw new Exception('Student profile not found');
         }
 
         // Verify enrollment in the course

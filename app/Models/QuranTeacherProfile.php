@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\EducationalQualification;
+use Illuminate\Support\Collection;
 use App\Enums\CircleEnrollmentStatus;
 use App\Models\Traits\HasReviews;
 use App\Models\Traits\ScopedToAcademy;
@@ -49,7 +51,7 @@ class QuranTeacherProfile extends Model
         'available_days' => 'array',
         'languages' => 'array',
         'package_ids' => 'array',
-        'educational_qualification' => \App\Enums\EducationalQualification::class,
+        'educational_qualification' => EducationalQualification::class,
         // 'is_active' removed - use User.active_status instead
         'offers_trial_sessions' => 'boolean',
         'rating' => 'decimal:2',
@@ -153,7 +155,7 @@ class QuranTeacherProfile extends Model
      * Get the packages this teacher can offer
      * Note: QuranTeacherProfile doesn't have packages - returns empty collection for API compatibility
      */
-    public function packages(): \Illuminate\Support\Collection
+    public function packages(): Collection
     {
         return collect();
     }

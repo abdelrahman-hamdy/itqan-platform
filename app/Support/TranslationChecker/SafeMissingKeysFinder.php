@@ -2,6 +2,7 @@
 
 namespace App\Support\TranslationChecker;
 
+use Bottelet\TranslationChecker\Extractor\ExtractorFactory;
 use Bottelet\TranslationChecker\Dto\TranslationCollection;
 use Bottelet\TranslationChecker\Dto\TranslationItem;
 use Bottelet\TranslationChecker\Extractor\RegexExtractor;
@@ -34,7 +35,7 @@ class SafeMissingKeysFinder extends MissingKeysFinder
                     if (str_ends_with($file->getFilename(), '.blade.php')) {
                         $translationKeys = $regexExtractor->extractFromFile($file);
                     } else {
-                        $extractor = \Bottelet\TranslationChecker\Extractor\ExtractorFactory::createExtractorForFile($file);
+                        $extractor = ExtractorFactory::createExtractorForFile($file);
                         $translationKeys = $extractor->extractFromFile($file);
                     }
                 } catch (Throwable $e) {

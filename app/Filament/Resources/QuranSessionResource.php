@@ -2,6 +2,26 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Actions\Action;
+use App\Filament\Pages\ObserveSessionPage;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Forms\Components\DatePicker;
+use App\Filament\Resources\QuranSessionResource\Pages\ListQuranSessions;
+use App\Filament\Resources\QuranSessionResource\Pages\CreateQuranSession;
+use App\Filament\Resources\QuranSessionResource\Pages\ViewQuranSession;
+use App\Filament\Resources\QuranSessionResource\Pages\EditQuranSession;
 use App\Enums\SessionStatus;
 use App\Filament\Resources\QuranSessionResource\Pages;
 use App\Filament\Shared\Resources\BaseQuranSessionResource;
@@ -10,11 +30,8 @@ use App\Models\QuranIndividualCircle;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -44,7 +61,7 @@ class QuranSessionResource extends BaseQuranSessionResource
 
     protected static ?string $navigationLabel = 'جلسات القرآن';
 
-    protected static ?string $navigationGroup = 'إدارة القرآن';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 7;
 
@@ -69,7 +86,7 @@ class QuranSessionResource extends BaseQuranSessionResource
             ->schema([
                 Grid::make(2)
                     ->schema([
-                        Forms\Components\Select::make('quran_teacher_id')
+                        Select::make('quran_teacher_id')
                             ->relationship('quranTeacher', 'id')
                             ->getOptionLabelFromRecordUsing(fn ($record) => trim(($record->first_name ?? '').' '.($record->last_name ?? '')) ?: 'معلم #'.$record->id
                             )
@@ -78,14 +95,14 @@ class QuranSessionResource extends BaseQuranSessionResource
                             ->preload()
                             ->required(),
 
-                        Forms\Components\Select::make('circle_id')
+                        Select::make('circle_id')
                             ->relationship('circle', 'name')
                             ->label('الحلقة الجماعية')
                             ->searchable()
                             ->preload()
-                            ->visible(fn (Forms\Get $get) => $get('session_type') === 'group'),
+                            ->visible(fn (Get $get) => $get('session_type') === 'group'),
 
-                        Forms\Components\Select::make('individual_circle_id')
+                        Select::make('individual_circle_id')
                             ->relationship('individualCircle', 'id', fn ($query) => $query->with(['student', 'quranTeacher']))
                             ->label('الحلقة الفردية')
                             ->getOptionLabelFromRecordUsing(function ($record) {
@@ -100,7 +117,7 @@ class QuranSessionResource extends BaseQuranSessionResource
                             })
                             ->searchable()
                             ->preload()
-                            ->visible(fn (Forms\Get $get) => $get('session_type') === 'individual'),
+                            ->visible(fn (Get $get) => $get('session_type') === 'individual'),
                     ]),
             ]);
     }
@@ -111,27 +128,27 @@ class QuranSessionResource extends BaseQuranSessionResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\Action::make('observe_meeting')
+            Action::make('observe_meeting')
                 ->label('مراقبة الجلسة')
                 ->icon('heroicon-o-eye')
                 ->color('info')
                 ->visible(fn ($record): bool => $record->meeting_room_name
                     && in_array(
-                        $record->status instanceof \App\Enums\SessionStatus ? $record->status : \App\Enums\SessionStatus::tryFrom($record->status),
-                        [\App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING]
+                        $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
+                        [SessionStatus::READY, SessionStatus::ONGOING]
                     ))
-                ->url(fn ($record): string => \App\Filament\Pages\ObserveSessionPage::getUrl().'?'.http_build_query([
+                ->url(fn ($record): string => ObserveSessionPage::getUrl().'?'.http_build_query([
                     'sessionId' => $record->id,
                     'sessionType' => 'quran',
                 ]))
                 ->openUrlInNewTab(),
-            Tables\Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
-            Tables\Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
-            Tables\Actions\RestoreAction::make()
+            RestoreAction::make()
                 ->label(__('filament.actions.restore')),
-            Tables\Actions\ForceDeleteAction::make()
+            ForceDeleteAction::make()
                 ->label(__('filament.actions.force_delete')),
         ];
     }
@@ -142,11 +159,11 @@ class QuranSessionResource extends BaseQuranSessionResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
-                Tables\Actions\RestoreBulkAction::make()
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+                RestoreBulkAction::make()
                     ->label(__('filament.actions.restore_selected')),
-                Tables\Actions\ForceDeleteBulkAction::make()
+                ForceDeleteBulkAction::make()
                     ->label(__('filament.actions.force_delete_selected')),
             ]),
         ];
@@ -235,7 +252,8 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->placeholder('جماعية')
                 ->toggleable(),
 
-            BadgeColumn::make('session_type')
+            TextColumn::make('session_type')
+                ->badge()
                 ->label('النوع')
                 ->formatStateUsing(fn (string $state): string => static::formatSessionType($state))
                 ->colors([
@@ -258,7 +276,8 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->sortable()
                 ->toggleable(),
 
-            BadgeColumn::make('status')
+            TextColumn::make('status')
+                ->badge()
                 ->label('الحالة')
                 ->formatStateUsing(function ($state): string {
                     if ($state instanceof SessionStatus) {
@@ -298,10 +317,10 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->options(static::getSessionTypeOptions()),
 
             Filter::make('filter_by')
-                ->form([
-                    Forms\Components\Grid::make(2)
+                ->schema([
+                    Grid::make(2)
                         ->schema([
-                            Forms\Components\Select::make('filter_type')
+                            Select::make('filter_type')
                                 ->label('تصفية حسب')
                                 ->options([
                                     'group_circle' => 'الحلقة الجماعية',
@@ -310,11 +329,11 @@ class QuranSessionResource extends BaseQuranSessionResource
                                     'student' => 'الطالب',
                                 ])
                                 ->live()
-                                ->afterStateUpdated(fn (Forms\Set $set) => $set('filter_value', null)),
+                                ->afterStateUpdated(fn (Set $set) => $set('filter_value', null)),
 
-                            Forms\Components\Select::make('filter_value')
+                            Select::make('filter_value')
                                 ->label('القيمة')
-                                ->options(function (Forms\Get $get) {
+                                ->options(function (Get $get) {
                                     return match ($get('filter_type')) {
                                         'group_circle' => QuranCircle::query()
                                             ->pluck('name', 'id')
@@ -345,7 +364,7 @@ class QuranSessionResource extends BaseQuranSessionResource
                                     };
                                 })
                                 ->searchable()
-                                ->visible(fn (Forms\Get $get) => filled($get('filter_type'))),
+                                ->visible(fn (Get $get) => filled($get('filter_type'))),
                         ]),
                 ])
                 ->query(function (Builder $query, array $data): Builder {
@@ -367,12 +386,12 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->columnSpan(2),
 
             Filter::make('date_range')
-                ->form([
-                    Forms\Components\Grid::make(2)
+                ->schema([
+                    Grid::make(2)
                         ->schema([
-                            Forms\Components\DatePicker::make('from')
+                            DatePicker::make('from')
                                 ->label('من تاريخ'),
-                            Forms\Components\DatePicker::make('until')
+                            DatePicker::make('until')
                                 ->label('إلى تاريخ'),
                         ]),
                 ])
@@ -401,10 +420,10 @@ class QuranSessionResource extends BaseQuranSessionResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuranSessions::route('/'),
-            'create' => Pages\CreateQuranSession::route('/create'),
-            'view' => Pages\ViewQuranSession::route('/{record}'),
-            'edit' => Pages\EditQuranSession::route('/{record}/edit'),
+            'index' => ListQuranSessions::route('/'),
+            'create' => CreateQuranSession::route('/create'),
+            'view' => ViewQuranSession::route('/{record}'),
+            'edit' => EditQuranSession::route('/{record}/edit'),
         ];
     }
 }

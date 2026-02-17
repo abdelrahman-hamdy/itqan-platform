@@ -2,11 +2,31 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
+use App\Filament\Resources\TeacherReviewResource\Pages\ListTeacherReviews;
+use App\Filament\Resources\TeacherReviewResource\Pages\CreateTeacherReview;
+use App\Filament\Resources\TeacherReviewResource\Pages\ViewTeacherReview;
+use App\Filament\Resources\TeacherReviewResource\Pages\EditTeacherReview;
 use App\Enums\ReviewStatus;
 use App\Filament\Resources\TeacherReviewResource\Pages;
 use App\Filament\Shared\Resources\BaseTeacherReviewResource;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,7 +45,7 @@ class TeacherReviewResource extends BaseTeacherReviewResource
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationGroup = 'إعدادات المعلمين';
+    protected static string | \UnitEnum | null $navigationGroup = 'إعدادات المعلمين';
 
     protected static ?int $navigationSort = 1;
 
@@ -49,26 +69,26 @@ class TeacherReviewResource extends BaseTeacherReviewResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\Action::make('approve')
+            Action::make('approve')
                 ->label('اعتماد')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->visible(fn ($record) => ! $record->is_approved && ! $record->trashed())
                 ->action(fn ($record) => $record->approve()),
 
-            Tables\Actions\Action::make('reject')
+            Action::make('reject')
                 ->label('رفض')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->visible(fn ($record) => $record->is_approved && ! $record->trashed())
                 ->action(fn ($record) => $record->reject()),
 
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
-            Tables\Actions\DeleteAction::make(),
-            Tables\Actions\RestoreAction::make()
+            ViewAction::make(),
+            EditAction::make(),
+            DeleteAction::make(),
+            RestoreAction::make()
                 ->label(__('filament.actions.restore')),
-            Tables\Actions\ForceDeleteAction::make()
+            ForceDeleteAction::make()
                 ->label(__('filament.actions.force_delete')),
         ];
     }
@@ -79,23 +99,23 @@ class TeacherReviewResource extends BaseTeacherReviewResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\BulkAction::make('approve_selected')
+            BulkActionGroup::make([
+                BulkAction::make('approve_selected')
                     ->label('اعتماد المحدد')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->action(fn ($records) => $records->each->approve()),
 
-                Tables\Actions\BulkAction::make('reject_selected')
+                BulkAction::make('reject_selected')
                     ->label('رفض المحدد')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->action(fn ($records) => $records->each->reject()),
 
-                Tables\Actions\DeleteBulkAction::make(),
-                Tables\Actions\RestoreBulkAction::make()
+                DeleteBulkAction::make(),
+                RestoreBulkAction::make()
                     ->label(__('filament.actions.restore_selected')),
-                Tables\Actions\ForceDeleteBulkAction::make()
+                ForceDeleteBulkAction::make()
                     ->label(__('filament.actions.force_delete_selected')),
             ]),
         ];
@@ -140,13 +160,13 @@ class TeacherReviewResource extends BaseTeacherReviewResource
     // Form Override (SuperAdmin-specific)
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات التقييم')
+        return $schema
+            ->components([
+                Section::make('معلومات التقييم')
                     ->schema([
-                        Forms\Components\Select::make('student_id')
+                        Select::make('student_id')
                             ->label('الطالب')
                             ->relationship('student', 'name')
                             ->searchable()
@@ -154,12 +174,12 @@ class TeacherReviewResource extends BaseTeacherReviewResource
                             ->required()
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('reviewable_type')
+                        TextInput::make('reviewable_type')
                             ->label('نوع المعلم')
                             ->formatStateUsing(fn ($state) => static::formatTeacherType($state))
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('rating')
+                        TextInput::make('rating')
                             ->label('التقييم')
                             ->numeric()
                             ->minValue(1)
@@ -167,16 +187,16 @@ class TeacherReviewResource extends BaseTeacherReviewResource
                             ->required()
                             ->suffix('/ 5'),
 
-                        Forms\Components\Textarea::make('comment')
+                        Textarea::make('comment')
                             ->label('التعليق')
                             ->rows(4)
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('حالة الموافقة')
+                Section::make('حالة الموافقة')
                     ->schema([
-                        Forms\Components\Toggle::make('is_approved')
+                        Toggle::make('is_approved')
                             ->label('معتمد')
                             ->helperText('تفعيل هذا الخيار سينشر التقييم ليكون مرئياً للجميع'),
                     ]),
@@ -247,10 +267,10 @@ class TeacherReviewResource extends BaseTeacherReviewResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTeacherReviews::route('/'),
-            'create' => Pages\CreateTeacherReview::route('/create'),
-            'view' => Pages\ViewTeacherReview::route('/{record}'),
-            'edit' => Pages\EditTeacherReview::route('/{record}/edit'),
+            'index' => ListTeacherReviews::route('/'),
+            'create' => CreateTeacherReview::route('/create'),
+            'view' => ViewTeacherReview::route('/{record}'),
+            'edit' => EditTeacherReview::route('/{record}/edit'),
         ];
     }
 }

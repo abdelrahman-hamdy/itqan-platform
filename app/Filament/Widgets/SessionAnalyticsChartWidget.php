@@ -10,13 +10,13 @@ use Filament\Widgets\ChartWidget;
 
 class SessionAnalyticsChartWidget extends ChartWidget
 {
-    protected static ?string $heading = 'تحليل الجلسات التعليمية';
+    protected ?string $heading = 'تحليل الجلسات التعليمية';
 
     protected static ?int $sort = 4;
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $maxHeight = '300px';
+    protected ?string $maxHeight = '300px';
 
     public ?string $filter = '30';
 

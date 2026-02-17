@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment;
 
+use Exception;
 use App\Contracts\Payment\SupportsRecurringPayments;
 use App\Contracts\Payment\SupportsTokenization;
 use App\Models\Academy;
@@ -253,7 +254,7 @@ class PaymentMethodService
                 if ($gateway instanceof SupportsTokenization) {
                     $gateway->deleteToken($paymentMethod->token);
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::warning('Failed to delete token from gateway', [
                     'payment_method_id' => $paymentMethod->id,
                     'gateway' => $paymentMethod->gateway,
@@ -345,7 +346,7 @@ class PaymentMethodService
             ]);
 
             return $result;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Exception charging saved payment method', [
                 'payment_method_id' => $paymentMethod->id,
                 'error' => $e->getMessage(),
@@ -426,7 +427,7 @@ class PaymentMethodService
             }
 
             return $result;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Exception during tokenization', [
                 'user_id' => $user->id,
                 'gateway' => $gateway,

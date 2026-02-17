@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AcademicTeacherProfile;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Models\AcademicSession;
@@ -150,7 +151,7 @@ class MeetingObserverService
             return [];
         }
 
-        return \App\Models\AcademicTeacherProfile::whereIn('user_id', $userIds)
+        return AcademicTeacherProfile::whereIn('user_id', $userIds)
             ->pluck('id')
             ->toArray();
     }

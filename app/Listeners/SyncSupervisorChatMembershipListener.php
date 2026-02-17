@@ -2,6 +2,8 @@
 
 namespace App\Listeners;
 
+use Exception;
+use Throwable;
 use App\Events\SupervisorAssignmentChangedEvent;
 use App\Models\User;
 use App\Services\SupervisedChatGroupService;
@@ -45,7 +47,7 @@ class SyncSupervisorChatMembershipListener implements ShouldQueue
             } else {
                 $this->handleUnassignment($event, $teacher);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('SyncSupervisorChatMembership failed', [
                 'supervisor_profile_id' => $event->supervisorProfile->id,
                 'teacher_id' => $event->teacherId,
@@ -122,7 +124,7 @@ class SyncSupervisorChatMembershipListener implements ShouldQueue
     /**
      * Handle a job failure.
      */
-    public function failed(SupervisorAssignmentChangedEvent $event, \Throwable $exception): void
+    public function failed(SupervisorAssignmentChangedEvent $event, Throwable $exception): void
     {
         Log::error('SyncSupervisorChatMembershipListener job failed', [
             'supervisor_profile_id' => $event->supervisorProfile->id,

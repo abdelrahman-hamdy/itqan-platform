@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
+use App\Models\StudentSessionReport;
+use App\Models\AcademicSessionReport;
+use BackedEnum;
 use App\Enums\AttendanceStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
@@ -360,11 +363,11 @@ class ReportController extends Controller
         $sessionIds = $completedSessions->pluck('id');
 
         if ($type === 'quran') {
-            $reports = \App\Models\StudentSessionReport::whereIn('session_id', $sessionIds)
+            $reports = StudentSessionReport::whereIn('session_id', $sessionIds)
                 ->where('student_id', $studentId)
                 ->get();
         } else {
-            $reports = \App\Models\AcademicSessionReport::whereIn('session_id', $sessionIds)
+            $reports = AcademicSessionReport::whereIn('session_id', $sessionIds)
                 ->where('student_id', $studentId)
                 ->get();
         }
@@ -373,7 +376,7 @@ class ReportController extends Controller
 
         $attended = $reports->filter(function ($report) {
             $status = $report->attendance_status;
-            if ($status instanceof \BackedEnum) {
+            if ($status instanceof BackedEnum) {
                 $status = $status->value;
             }
 
@@ -382,7 +385,7 @@ class ReportController extends Controller
 
         $missed = $reports->filter(function ($report) {
             $status = $report->attendance_status;
-            if ($status instanceof \BackedEnum) {
+            if ($status instanceof BackedEnum) {
                 $status = $status->value;
             }
 
@@ -405,14 +408,14 @@ class ReportController extends Controller
     protected function calculateOverallAttendanceRate(int $studentUserId): float
     {
         // Get Quran session attendance from reports
-        $quranReports = \App\Models\StudentSessionReport::where('student_id', $studentUserId)
+        $quranReports = StudentSessionReport::where('student_id', $studentUserId)
             ->whereHas('session', function ($q) {
                 $q->countable();
             })
             ->get();
 
         // Get Academic session attendance from reports
-        $academicReports = \App\Models\AcademicSessionReport::where('student_id', $studentUserId)
+        $academicReports = AcademicSessionReport::where('student_id', $studentUserId)
             ->whereHas('session', function ($q) {
                 $q->countable();
             })
@@ -427,7 +430,7 @@ class ReportController extends Controller
         // Count attended (includes late) from reports
         $quranAttended = $quranReports->filter(function ($report) {
             $status = $report->attendance_status;
-            if ($status instanceof \BackedEnum) {
+            if ($status instanceof BackedEnum) {
                 $status = $status->value;
             }
 
@@ -436,7 +439,7 @@ class ReportController extends Controller
 
         $academicAttended = $academicReports->filter(function ($report) {
             $status = $report->attendance_status;
-            if ($status instanceof \BackedEnum) {
+            if ($status instanceof BackedEnum) {
                 $status = $status->value;
             }
 
@@ -495,7 +498,7 @@ class ReportController extends Controller
         // Count actual attendance from reports
         $attended = $reports->filter(function ($report) {
             $status = $report->attendance_status;
-            if ($status instanceof \BackedEnum) {
+            if ($status instanceof BackedEnum) {
                 $status = $status->value;
             }
 
@@ -504,7 +507,7 @@ class ReportController extends Controller
 
         $missed = $reports->filter(function ($report) {
             $status = $report->attendance_status;
-            if ($status instanceof \BackedEnum) {
+            if ($status instanceof BackedEnum) {
                 $status = $status->value;
             }
 

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Notifications\Admin\RenewalBatchFailureNotification;
 use App\Services\CronJobLogger;
 use App\Services\SubscriptionRenewalService;
@@ -82,7 +83,7 @@ class ProcessSubscriptionRenewalsCommand extends Command
 
             return self::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('Subscription renewal processing failed: '.$e->getMessage());
 
             if ($isVerbose) {
@@ -224,7 +225,7 @@ class ProcessSubscriptionRenewalsCommand extends Command
                         'successful' => $results['successful'] ?? 0,
                         'admin_email' => $adminEmail,
                     ]);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->error("Failed to send bulk failure alert: {$e->getMessage()}");
                     Log::error('Failed to send bulk failure alert', [
                         'error' => $e->getMessage(),

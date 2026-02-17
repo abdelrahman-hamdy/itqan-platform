@@ -2,6 +2,9 @@
 
 namespace App\Services\Calendar;
 
+use BackedEnum;
+use Exception;
+use App\Enums\SessionStatus;
 use App\Constants\DefaultAcademy;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -19,7 +22,7 @@ class EventFormattingService
 
             // Convert enum status to string value
             $status = $session->status;
-            if ($status instanceof \BackedEnum) {
+            if ($status instanceof BackedEnum) {
                 $status = $status->value;
             } elseif (is_object($status)) {
                 $status = $status->name ?? 'unknown';
@@ -78,7 +81,7 @@ class EventFormattingService
 
             // Convert enum status to string value
             $status = $session->status;
-            if ($status instanceof \BackedEnum) {
+            if ($status instanceof BackedEnum) {
                 $status = $status->value;
             } elseif (is_object($status)) {
                 $status = $status->name ?? 'unknown';
@@ -91,7 +94,7 @@ class EventFormattingService
                     $subdomain = auth()->user()?->academy?->subdomain ?? DefaultAcademy::subdomain();
                     $sessionUrl = route('interactive-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id]);
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Keep default '#' if route doesn't exist
             }
 
@@ -141,7 +144,7 @@ class EventFormattingService
 
             // Convert enum status to string value
             $status = $session->status;
-            if ($status instanceof \BackedEnum) {
+            if ($status instanceof BackedEnum) {
                 $status = $status->value;
             } elseif (is_object($status)) {
                 $status = $status->name ?? 'unknown';
@@ -154,7 +157,7 @@ class EventFormattingService
                     $subdomain = auth()->user()?->academy?->subdomain ?? DefaultAcademy::subdomain();
                     $sessionUrl = route('student.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id]);
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Keep default '#' if route doesn't exist or fails
             }
 
@@ -247,11 +250,11 @@ class EventFormattingService
         // Use enum hexColor() for consistent colors
         $status = $session->status;
 
-        if ($status instanceof \App\Enums\SessionStatus) {
+        if ($status instanceof SessionStatus) {
             return $status->hexColor();
         }
 
-        $statusEnum = \App\Enums\SessionStatus::tryFrom($status);
+        $statusEnum = SessionStatus::tryFrom($status);
 
         return $statusEnum?->hexColor() ?? '#6366F1';
     }
@@ -281,7 +284,7 @@ class EventFormattingService
 
                 return '#';
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return '#';
         }
 

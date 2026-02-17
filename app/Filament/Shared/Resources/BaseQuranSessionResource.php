@@ -2,6 +2,11 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Tables\Enums\FiltersLayout;
 use App\Enums\QuranSurah;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
@@ -10,14 +15,10 @@ use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Components\CheckboxList;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -35,7 +36,7 @@ abstract class BaseQuranSessionResource extends BaseResource
 {
     protected static ?string $model = QuranSession::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-book-open';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-book-open';
 
     protected static ?string $modelLabel = 'جلسة قرآن';
 
@@ -88,7 +89,7 @@ abstract class BaseQuranSessionResource extends BaseResource
     // Shared Form Definition
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         $schema = [];
 
@@ -113,7 +114,7 @@ abstract class BaseQuranSessionResource extends BaseResource
         // Add additional sections from child classes
         $schema = array_merge($schema, static::getAdditionalFormSections());
 
-        return $form->schema($schema);
+        return $form->components($schema);
     }
 
     /**
@@ -154,7 +155,7 @@ abstract class BaseQuranSessionResource extends BaseResource
             ->schema([
                 Grid::make(2)
                     ->schema([
-                        Forms\Components\DateTimePicker::make('scheduled_at')
+                        DateTimePicker::make('scheduled_at')
                             ->label('موعد الجلسة')
                             ->timezone(AcademyContextService::getTimezone())
                             ->native(false)
@@ -308,10 +309,10 @@ abstract class BaseQuranSessionResource extends BaseResource
             ->columns(static::getTableColumns())
             ->defaultSort('scheduled_at', 'desc')
             ->filters(static::getTableFilters())
-            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions());
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions());
     }
 
     /**
@@ -333,7 +334,8 @@ abstract class BaseQuranSessionResource extends BaseResource
                 ->searchable()
                 ->limit(30),
 
-            BadgeColumn::make('session_type')
+            TextColumn::make('session_type')
+                ->badge()
                 ->label('نوع الجلسة')
                 ->formatStateUsing(fn (string $state): string => static::formatSessionType($state))
                 ->colors([
@@ -354,7 +356,8 @@ abstract class BaseQuranSessionResource extends BaseResource
                 ->sortable()
                 ->toggleable(),
 
-            BadgeColumn::make('status')
+            TextColumn::make('status')
+                ->badge()
                 ->label('الحالة')
                 ->formatStateUsing(function ($state): string {
                     if ($state instanceof SessionStatus) {

@@ -2,6 +2,13 @@
 
 namespace App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages;
 
+use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Infolists\Components\TextEntry;
 use App\Enums\SessionStatus;
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource;
 use App\Models\AcademicSession;
@@ -10,12 +17,11 @@ use App\Models\QuranSession;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @property \App\Models\QuranSession|\App\Models\AcademicSession|\App\Models\InteractiveCourseSession $record
+ * @property QuranSession|AcademicSession|InteractiveCourseSession $record
  */
 class ViewMonitoredSession extends ViewRecord
 {
@@ -48,12 +54,12 @@ class ViewMonitoredSession extends ViewRecord
         $type = $this->getSessionType();
 
         return [
-            Actions\Action::make('add_note')
+            Action::make('add_note')
                 ->label('إضافة ملاحظة')
                 ->icon('heroicon-o-pencil-square')
                 ->color('gray')
-                ->form([
-                    Forms\Components\Textarea::make('supervisor_notes')
+                ->schema([
+                    Textarea::make('supervisor_notes')
                         ->label('ملاحظات المشرف')
                         ->rows(4)
                         ->default(fn () => $this->record->supervisor_notes),
@@ -65,7 +71,7 @@ class ViewMonitoredSession extends ViewRecord
                     $this->refreshFormData(['supervisor_notes']);
                 }),
 
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل')
                 ->color('primary')
                 ->url(fn () => route('filament.supervisor.resources.monitored-all-sessions.edit', [
@@ -73,14 +79,14 @@ class ViewMonitoredSession extends ViewRecord
                     'type' => $type,
                 ])),
 
-            Actions\DeleteAction::make()
+            DeleteAction::make()
                 ->label('حذف')
                 ->color('danger')
                 ->successRedirectUrl(fn () => MonitoredAllSessionsResource::getUrl('index')),
         ];
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
         $type = $this->getSessionType();
 
@@ -91,19 +97,19 @@ class ViewMonitoredSession extends ViewRecord
         };
     }
 
-    protected function getQuranInfolist(Infolist $infolist): Infolist
+    protected function getQuranInfolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
-                Infolists\Components\Section::make('معلومات الجلسة')
+        return $schema
+            ->components([
+                Section::make('معلومات الجلسة')
                     ->schema([
-                        Infolists\Components\TextEntry::make('session_code')
+                        TextEntry::make('session_code')
                             ->label('رمز الجلسة'),
 
-                        Infolists\Components\TextEntry::make('title')
+                        TextEntry::make('title')
                             ->label('العنوان'),
 
-                        Infolists\Components\TextEntry::make('session_type')
+                        TextEntry::make('session_type')
                             ->label('نوع الجلسة')
                             ->badge()
                             ->formatStateUsing(fn (string $state): string => match ($state) {
@@ -113,56 +119,56 @@ class ViewMonitoredSession extends ViewRecord
                                 default => $state,
                             }),
 
-                        Infolists\Components\TextEntry::make('status')
+                        TextEntry::make('status')
                             ->label('الحالة')
                             ->badge()
                             ->formatStateUsing(fn ($state): string => $state instanceof SessionStatus ? $state->label() : (SessionStatus::tryFrom($state)?->label() ?? $state)),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('المعلم والحلقة')
+                Section::make('المعلم والحلقة')
                     ->schema([
-                        Infolists\Components\TextEntry::make('quranTeacher.name')
+                        TextEntry::make('quranTeacher.name')
                             ->label('المعلم')
                             ->placeholder('غير محدد'),
 
-                        Infolists\Components\TextEntry::make('circle.name')
+                        TextEntry::make('circle.name')
                             ->label('الحلقة')
                             ->placeholder('جلسة فردية'),
 
-                        Infolists\Components\TextEntry::make('student.name')
+                        TextEntry::make('student.name')
                             ->label('الطالب')
                             ->placeholder('جلسة جماعية')
                             ->visible(fn ($record) => in_array($record->session_type, ['individual', 'trial'])),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('التوقيت')
+                Section::make('التوقيت')
                     ->schema([
-                        Infolists\Components\TextEntry::make('scheduled_at')
+                        TextEntry::make('scheduled_at')
                             ->label('موعد الجلسة')
                             ->dateTime('Y-m-d H:i'),
 
-                        Infolists\Components\TextEntry::make('duration_minutes')
+                        TextEntry::make('duration_minutes')
                             ->label('المدة')
                             ->suffix(' دقيقة'),
 
-                        Infolists\Components\TextEntry::make('started_at')
+                        TextEntry::make('started_at')
                             ->label('وقت البدء')
                             ->dateTime('Y-m-d H:i')
                             ->placeholder('لم تبدأ'),
 
-                        Infolists\Components\TextEntry::make('ended_at')
+                        TextEntry::make('ended_at')
                             ->label('وقت الانتهاء')
                             ->dateTime('Y-m-d H:i')
                             ->placeholder('لم تنتهِ'),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('ملاحظات')
+                Section::make('ملاحظات')
                     ->schema([
-                        Infolists\Components\TextEntry::make('session_notes')
+                        TextEntry::make('session_notes')
                             ->label('ملاحظات المعلم')
                             ->placeholder('لا توجد ملاحظات'),
 
-                        Infolists\Components\TextEntry::make('supervisor_notes')
+                        TextEntry::make('supervisor_notes')
                             ->label('ملاحظات المشرف')
                             ->placeholder('لا توجد ملاحظات')
                             ->color('warning'),
@@ -170,19 +176,19 @@ class ViewMonitoredSession extends ViewRecord
             ]);
     }
 
-    protected function getAcademicInfolist(Infolist $infolist): Infolist
+    protected function getAcademicInfolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
-                Infolists\Components\Section::make('معلومات الجلسة')
+        return $schema
+            ->components([
+                Section::make('معلومات الجلسة')
                     ->schema([
-                        Infolists\Components\TextEntry::make('session_code')
+                        TextEntry::make('session_code')
                             ->label('رمز الجلسة'),
 
-                        Infolists\Components\TextEntry::make('title')
+                        TextEntry::make('title')
                             ->label('العنوان'),
 
-                        Infolists\Components\TextEntry::make('session_type')
+                        TextEntry::make('session_type')
                             ->label('نوع الجلسة')
                             ->badge()
                             ->formatStateUsing(fn (string $state): string => match ($state) {
@@ -191,59 +197,59 @@ class ViewMonitoredSession extends ViewRecord
                                 default => $state,
                             }),
 
-                        Infolists\Components\TextEntry::make('status')
+                        TextEntry::make('status')
                             ->label('الحالة')
                             ->badge()
                             ->formatStateUsing(fn ($state): string => $state instanceof SessionStatus ? $state->label() : (SessionStatus::tryFrom($state)?->label() ?? $state)),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('المعلم والدرس')
+                Section::make('المعلم والدرس')
                     ->schema([
-                        Infolists\Components\TextEntry::make('academicTeacher.user.name')
+                        TextEntry::make('academicTeacher.user.name')
                             ->label('المعلم')
                             ->placeholder('غير محدد'),
 
-                        Infolists\Components\TextEntry::make('academicIndividualLesson.name')
+                        TextEntry::make('academicIndividualLesson.name')
                             ->label('الدرس')
                             ->placeholder('غير محدد'),
 
-                        Infolists\Components\TextEntry::make('academicIndividualLesson.academicSubject.name')
+                        TextEntry::make('academicIndividualLesson.academicSubject.name')
                             ->label('المادة')
                             ->placeholder('غير محددة'),
 
-                        Infolists\Components\TextEntry::make('student.name')
+                        TextEntry::make('student.name')
                             ->label('الطالب')
                             ->placeholder('غير محدد'),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('التوقيت')
+                Section::make('التوقيت')
                     ->schema([
-                        Infolists\Components\TextEntry::make('scheduled_at')
+                        TextEntry::make('scheduled_at')
                             ->label('موعد الجلسة')
                             ->dateTime('Y-m-d H:i'),
 
-                        Infolists\Components\TextEntry::make('duration_minutes')
+                        TextEntry::make('duration_minutes')
                             ->label('المدة')
                             ->suffix(' دقيقة'),
 
-                        Infolists\Components\TextEntry::make('started_at')
+                        TextEntry::make('started_at')
                             ->label('وقت البدء')
                             ->dateTime('Y-m-d H:i')
                             ->placeholder('لم تبدأ'),
 
-                        Infolists\Components\TextEntry::make('ended_at')
+                        TextEntry::make('ended_at')
                             ->label('وقت الانتهاء')
                             ->dateTime('Y-m-d H:i')
                             ->placeholder('لم تنتهِ'),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('ملاحظات')
+                Section::make('ملاحظات')
                     ->schema([
-                        Infolists\Components\TextEntry::make('session_notes')
+                        TextEntry::make('session_notes')
                             ->label('ملاحظات المعلم')
                             ->placeholder('لا توجد ملاحظات'),
 
-                        Infolists\Components\TextEntry::make('supervisor_notes')
+                        TextEntry::make('supervisor_notes')
                             ->label('ملاحظات المشرف')
                             ->placeholder('لا توجد ملاحظات')
                             ->color('warning'),
@@ -251,74 +257,74 @@ class ViewMonitoredSession extends ViewRecord
             ]);
     }
 
-    protected function getInteractiveInfolist(Infolist $infolist): Infolist
+    protected function getInteractiveInfolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
-                Infolists\Components\Section::make('معلومات الجلسة')
+        return $schema
+            ->components([
+                Section::make('معلومات الجلسة')
                     ->schema([
-                        Infolists\Components\TextEntry::make('session_code')
+                        TextEntry::make('session_code')
                             ->label('رمز الجلسة'),
 
-                        Infolists\Components\TextEntry::make('title')
+                        TextEntry::make('title')
                             ->label('العنوان'),
 
-                        Infolists\Components\TextEntry::make('session_number')
+                        TextEntry::make('session_number')
                             ->label('رقم الجلسة'),
 
-                        Infolists\Components\TextEntry::make('status')
+                        TextEntry::make('status')
                             ->label('الحالة')
                             ->badge()
                             ->formatStateUsing(fn ($state): string => $state instanceof SessionStatus ? $state->label() : (SessionStatus::tryFrom($state)?->label() ?? $state)),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('الدورة والمعلم')
+                Section::make('الدورة والمعلم')
                     ->schema([
-                        Infolists\Components\TextEntry::make('course.title')
+                        TextEntry::make('course.title')
                             ->label('الدورة'),
 
-                        Infolists\Components\TextEntry::make('course.assignedTeacher.user.name')
+                        TextEntry::make('course.assignedTeacher.user.name')
                             ->label('المعلم')
                             ->placeholder('غير محدد'),
 
-                        Infolists\Components\TextEntry::make('course.subject.name')
+                        TextEntry::make('course.subject.name')
                             ->label('المادة')
                             ->placeholder('غير محددة'),
 
-                        Infolists\Components\TextEntry::make('attendance_count')
+                        TextEntry::make('attendance_count')
                             ->label('عدد الحضور')
                             ->badge()
                             ->color('info'),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('التوقيت')
+                Section::make('التوقيت')
                     ->schema([
-                        Infolists\Components\TextEntry::make('scheduled_at')
+                        TextEntry::make('scheduled_at')
                             ->label('موعد الجلسة')
                             ->dateTime('Y-m-d H:i'),
 
-                        Infolists\Components\TextEntry::make('duration_minutes')
+                        TextEntry::make('duration_minutes')
                             ->label('المدة')
                             ->suffix(' دقيقة'),
 
-                        Infolists\Components\TextEntry::make('started_at')
+                        TextEntry::make('started_at')
                             ->label('وقت البدء')
                             ->dateTime('Y-m-d H:i')
                             ->placeholder('لم تبدأ'),
 
-                        Infolists\Components\TextEntry::make('ended_at')
+                        TextEntry::make('ended_at')
                             ->label('وقت الانتهاء')
                             ->dateTime('Y-m-d H:i')
                             ->placeholder('لم تنتهِ'),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('ملاحظات')
+                Section::make('ملاحظات')
                     ->schema([
-                        Infolists\Components\TextEntry::make('session_notes')
+                        TextEntry::make('session_notes')
                             ->label('ملاحظات المعلم')
                             ->placeholder('لا توجد ملاحظات'),
 
-                        Infolists\Components\TextEntry::make('supervisor_notes')
+                        TextEntry::make('supervisor_notes')
                             ->label('ملاحظات المشرف')
                             ->placeholder('لا توجد ملاحظات')
                             ->color('warning'),

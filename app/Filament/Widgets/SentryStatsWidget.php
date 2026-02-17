@@ -7,7 +7,7 @@ use Filament\Widgets\Widget;
 
 class SentryStatsWidget extends Widget
 {
-    protected static string $view = 'filament.widgets.sentry-stats-widget';
+    protected string $view = 'filament.widgets.sentry-stats-widget';
 
     protected int|string|array $columnSpan = 'full';
 

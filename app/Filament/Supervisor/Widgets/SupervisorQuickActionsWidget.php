@@ -22,7 +22,7 @@ class SupervisorQuickActionsWidget extends Widget
 {
     protected static bool $isDiscoverable = false;
 
-    protected static string $view = 'filament.supervisor.widgets.quick-actions';
+    protected string $view = 'filament.supervisor.widgets.quick-actions';
 
     protected static ?int $sort = 2;
 

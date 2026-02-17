@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources\AcademicSubjectResource\Pages;
 
+use Filament\Actions\CreateAction;
+use Filament\Schemas\Components\Tabs\Tab;
+use App\Models\AcademicSubject;
 use App\Filament\Resources\AcademicSubjectResource;
 use App\Services\AcademyContextService;
 use Filament\Actions;
-use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -18,7 +20,7 @@ class ListAcademicSubjects extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
+            CreateAction::make()
                 ->label('إضافة مادة جديدة')
                 ->icon('heroicon-o-plus'),
         ];
@@ -31,7 +33,7 @@ class ListAcademicSubjects extends ListRecords
                 ->badge(function () {
                     $academyId = AcademyContextService::getCurrentAcademyId();
 
-                    return $academyId ? \App\Models\AcademicSubject::where('academy_id', $academyId)->count() : 0;
+                    return $academyId ? AcademicSubject::where('academy_id', $academyId)->count() : 0;
                 }),
 
             'active' => Tab::make('نشطة')
@@ -39,7 +41,7 @@ class ListAcademicSubjects extends ListRecords
                 ->badge(function () {
                     $academyId = AcademyContextService::getCurrentAcademyId();
 
-                    return $academyId ? \App\Models\AcademicSubject::where('academy_id', $academyId)->where('is_active', true)->count() : 0;
+                    return $academyId ? AcademicSubject::where('academy_id', $academyId)->where('is_active', true)->count() : 0;
                 })
                 ->badgeColor('success'),
 
@@ -48,7 +50,7 @@ class ListAcademicSubjects extends ListRecords
                 ->badge(function () {
                     $academyId = AcademyContextService::getCurrentAcademyId();
 
-                    return $academyId ? \App\Models\AcademicSubject::where('academy_id', $academyId)->where('is_active', false)->count() : 0;
+                    return $academyId ? AcademicSubject::where('academy_id', $academyId)->where('is_active', false)->count() : 0;
                 })
                 ->badgeColor('danger'),
         ];

@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment\DTOs;
 
+use InvalidArgumentException;
 use App\Models\Payment;
 
 /**
@@ -42,7 +43,7 @@ readonly class PaymentIntent
         if ($payment->payer) {
             $payerEmail = $payment->payer->email ?? $payment->user?->email;
             if (! $payerEmail) {
-                throw new \InvalidArgumentException('Payment requires a valid customer email address');
+                throw new InvalidArgumentException('Payment requires a valid customer email address');
             }
 
             $billingData = [

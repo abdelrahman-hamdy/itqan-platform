@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\AcademyContextService;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\EnrollmentStatus;
 use App\Enums\InteractiveCourseStatus;
@@ -91,7 +93,7 @@ class InteractiveCourse extends Model
 
         static::creating(function ($model) {
             if (empty($model->course_code)) {
-                $academyId = $model->academy_id ?? \App\Services\AcademyContextService::getCurrentAcademyId() ?? \App\Services\AcademyContextService::getDefaultAcademy()?->id ?? 2;
+                $academyId = $model->academy_id ?? AcademyContextService::getCurrentAcademyId() ?? AcademyContextService::getDefaultAcademy()?->id ?? 2;
                 $count = static::where('academy_id', $academyId)->count() + 1;
                 $model->course_code = 'IC-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
             }
@@ -218,7 +220,7 @@ class InteractiveCourse extends Model
             ->where('enrollment_status', EnrollmentStatus::ENROLLED);
     }
 
-    public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    public function quizAssignments(): MorphMany
     {
         return $this->morphMany(QuizAssignment::class, 'assignable');
     }
@@ -226,7 +228,7 @@ class InteractiveCourse extends Model
     /**
      * Get all quizzes assigned to this course through quiz assignments
      */
-    public function quizzes(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    public function quizzes(): HasManyThrough
     {
         return $this->hasManyThrough(
             Quiz::class,

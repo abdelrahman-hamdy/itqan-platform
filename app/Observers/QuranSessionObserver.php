@@ -2,6 +2,8 @@
 
 namespace App\Observers;
 
+use Exception;
+use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Models\QuranSession;
@@ -83,7 +85,7 @@ class QuranSessionObserver
                 'session_id' => $session->id,
                 'session_type' => $session->session_type,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle Quran session cancellation', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -117,7 +119,7 @@ class QuranSessionObserver
                 // Send notification to student
                 $this->notificationService->send(
                     $student,
-                    \App\Enums\NotificationType::HOMEWORK_ASSIGNED,
+                    NotificationType::HOMEWORK_ASSIGNED,
                     [
                         'session_title' => $quranSession->title ?? 'جلسة قرآنية',
                         'teacher_name' => $quranSession->quranTeacher?->user->name ?? 'المعلم',
@@ -143,7 +145,7 @@ class QuranSessionObserver
                 'session_id' => $quranSession->id,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             \Log::error('Failed to send Quran homework assigned notifications', [
                 'session_id' => $quranSession->id,
                 'error' => $e->getMessage(),

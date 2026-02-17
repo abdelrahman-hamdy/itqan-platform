@@ -2,11 +2,28 @@
 
 namespace App\Filament\Shared\Resources\Profiles;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\TextInput;
+use Closure;
+use Filament\Facades\Filament;
+use App\Models\User;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Schemas\Components\Component;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use App\Enums\UserType;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Models\ParentProfile;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -28,11 +45,11 @@ abstract class BaseParentProfileResource extends Resource
 
     protected static ?string $tenantOwnershipRelationshipName = 'user';
 
-    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user-group';
 
     protected static ?string $navigationLabel = 'أولياء الأمور';
 
-    protected static ?string $navigationGroup = 'إدارة المستخدمين';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المستخدمين';
 
     protected static ?string $modelLabel = 'ولي أمر';
 
@@ -61,10 +78,10 @@ abstract class BaseParentProfileResource extends Resource
     // Shared Form Implementation
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 static::getPersonalInfoSection(),
                 static::getAdditionalInfoSection(),
                 static::getContactInfoSection(),
@@ -72,23 +89,23 @@ abstract class BaseParentProfileResource extends Resource
             ]);
     }
 
-    protected static function getPersonalInfoSection(): Forms\Components\Section
+    protected static function getPersonalInfoSection(): Section
     {
-        return Forms\Components\Section::make('المعلومات الشخصية')
+        return Section::make('المعلومات الشخصية')
             ->schema([
-                Forms\Components\Grid::make(2)
+                Grid::make(2)
                     ->schema([
-                        Forms\Components\TextInput::make('email')
+                        TextInput::make('email')
                             ->label('البريد الإلكتروني')
                             ->email()
                             ->required()
                             ->rule(function ($livewire) {
-                                return function (string $attribute, $value, \Closure $fail) use ($livewire) {
+                                return function (string $attribute, $value, Closure $fail) use ($livewire) {
                                     // Get current academy from tenant context
-                                    $academyId = \Filament\Facades\Filament::getTenant()?->id;
+                                    $academyId = Filament::getTenant()?->id;
 
                                     // Check if email exists in parent_profiles table for this academy
-                                    $parentProfileQuery = \App\Models\ParentProfile::where('email', $value)
+                                    $parentProfileQuery = ParentProfile::where('email', $value)
                                         ->where('academy_id', $academyId);
 
                                     if ($livewire->record ?? null) {
@@ -102,7 +119,7 @@ abstract class BaseParentProfileResource extends Resource
                                     }
 
                                     // Check if email exists in users table for this academy
-                                    $userQuery = \App\Models\User::where('email', $value)
+                                    $userQuery = User::where('email', $value)
                                         ->where('academy_id', $academyId);
 
                                     if ($livewire->record ?? null) {
@@ -116,18 +133,18 @@ abstract class BaseParentProfileResource extends Resource
                             })
                             ->maxLength(255)
                             ->helperText('سيستخدم ولي الأمر هذا البريد للدخول إلى المنصة'),
-                        Forms\Components\TextInput::make('first_name')
+                        TextInput::make('first_name')
                             ->label('الاسم الأول')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('last_name')
+                        TextInput::make('last_name')
                             ->label('اسم العائلة')
                             ->required()
                             ->maxLength(255),
                         static::getPhoneInput()
                             ->required(),
                     ]),
-                Forms\Components\FileUpload::make('avatar')
+                FileUpload::make('avatar')
                     ->label('الصورة الشخصية')
                     ->image()
                     ->imageEditor()
@@ -137,35 +154,35 @@ abstract class BaseParentProfileResource extends Resource
             ]);
     }
 
-    protected static function getAdditionalInfoSection(): Forms\Components\Section
+    protected static function getAdditionalInfoSection(): Section
     {
-        return Forms\Components\Section::make('معلومات إضافية')
+        return Section::make('معلومات إضافية')
             ->schema([
-                Forms\Components\Grid::make(2)
+                Grid::make(2)
                     ->schema([
-                        Forms\Components\TextInput::make('parent_code')
+                        TextInput::make('parent_code')
                             ->label('رمز ولي الأمر')
                             ->disabled()
                             ->dehydrated(false),
-                        Forms\Components\TextInput::make('occupation')
+                        TextInput::make('occupation')
                             ->label('المهنة')
                             ->maxLength(255),
                     ]),
-                Forms\Components\Textarea::make('address')
+                Textarea::make('address')
                     ->label('العنوان')
                     ->rows(3)
                     ->maxLength(500),
             ]);
     }
 
-    protected static function getContactInfoSection(): Forms\Components\Section
+    protected static function getContactInfoSection(): Section
     {
-        return Forms\Components\Section::make('معلومات الاتصال')
+        return Section::make('معلومات الاتصال')
             ->schema([
-                Forms\Components\Grid::make(2)
+                Grid::make(2)
                     ->schema([
                         static::getPhoneInput('secondary_phone', 'رقم هاتف ثانوي'),
-                        Forms\Components\Select::make('preferred_contact_method')
+                        Select::make('preferred_contact_method')
                             ->label('طريقة الاتصال المفضلة')
                             ->options([
                                 'phone' => 'هاتف',
@@ -175,7 +192,7 @@ abstract class BaseParentProfileResource extends Resource
                             ])
                             ->default('phone'),
                     ]),
-                Forms\Components\Textarea::make('admin_notes')
+                Textarea::make('admin_notes')
                     ->label('ملاحظات الإدارة')
                     ->rows(3)
                     ->maxLength(1000)
@@ -184,11 +201,11 @@ abstract class BaseParentProfileResource extends Resource
             ]);
     }
 
-    protected static function getAccountStatusSection(): Forms\Components\Section
+    protected static function getAccountStatusSection(): Section
     {
-        return Forms\Components\Section::make('حالة الحساب')
+        return Section::make('حالة الحساب')
             ->schema([
-                Forms\Components\Toggle::make('user_active_status')
+                Toggle::make('user_active_status')
                     ->label('الحساب نشط')
                     ->helperText('عند تعطيل الحساب، لن يتمكن ولي الأمر من تسجيل الدخول')
                     ->default(true)
@@ -211,8 +228,8 @@ abstract class BaseParentProfileResource extends Resource
         return $table
             ->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions());
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions());
     }
 
     protected static function getTableColumns(): array
@@ -242,13 +259,13 @@ abstract class BaseParentProfileResource extends Resource
                 ->copyable()
                 ->toggleable(),
 
-            Tables\Columns\IconColumn::make('has_students')
+            IconColumn::make('has_students')
                 ->label('مرتبط بطلاب')
                 ->boolean()
                 ->getStateUsing(fn ($record) => $record->students()->exists())
                 ->toggleable(),
 
-            Tables\Columns\IconColumn::make('user.active_status')
+            IconColumn::make('user.active_status')
                 ->label('نشط')
                 ->boolean()
                 ->trueIcon('heroicon-o-check-circle')
@@ -269,7 +286,7 @@ abstract class BaseParentProfileResource extends Resource
     protected static function getTableFilters(): array
     {
         return [
-            Tables\Filters\TernaryFilter::make('has_students')
+            TernaryFilter::make('has_students')
                 ->label('مرتبط بطلاب')
                 ->placeholder('جميع أولياء الأمور')
                 ->trueLabel('لديه طلاب')
@@ -279,7 +296,7 @@ abstract class BaseParentProfileResource extends Resource
                     false: fn (Builder $query) => $query->doesntHave('students'),
                 ),
 
-            Tables\Filters\TernaryFilter::make('active_status')
+            TernaryFilter::make('active_status')
                 ->label('حالة الحساب')
                 ->placeholder('جميع الحسابات')
                 ->trueLabel('نشط')
@@ -289,7 +306,7 @@ abstract class BaseParentProfileResource extends Resource
                     false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', false)),
                 ),
 
-            Tables\Filters\TrashedFilter::make()
+            TrashedFilter::make()
                 ->label(__('filament.filters.trashed')),
         ];
     }
@@ -298,9 +315,9 @@ abstract class BaseParentProfileResource extends Resource
     // Shared Actions
     // ========================================
 
-    protected static function getToggleActiveAction(): Tables\Actions\Action
+    protected static function getToggleActiveAction(): Action
     {
-        return Tables\Actions\Action::make('toggleActive')
+        return Action::make('toggleActive')
             ->label(fn ($record) => $record->user?->active_status ? 'تعطيل' : 'تفعيل')
             ->icon(fn ($record) => $record->user?->active_status ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
             ->color(fn ($record) => $record->user?->active_status ? 'danger' : 'success')
@@ -316,9 +333,9 @@ abstract class BaseParentProfileResource extends Resource
             });
     }
 
-    protected static function getActivateBulkAction(): Tables\Actions\BulkAction
+    protected static function getActivateBulkAction(): BulkAction
     {
-        return Tables\Actions\BulkAction::make('activate')
+        return BulkAction::make('activate')
             ->label('تفعيل المحددين')
             ->icon('heroicon-o-check-circle')
             ->color('success')
@@ -326,9 +343,9 @@ abstract class BaseParentProfileResource extends Resource
             ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => true])));
     }
 
-    protected static function getDeactivateBulkAction(): Tables\Actions\BulkAction
+    protected static function getDeactivateBulkAction(): BulkAction
     {
-        return Tables\Actions\BulkAction::make('deactivate')
+        return BulkAction::make('deactivate')
             ->label('تعطيل المحددين')
             ->icon('heroicon-o-x-circle')
             ->color('danger')
@@ -352,9 +369,9 @@ abstract class BaseParentProfileResource extends Resource
     // Helper Methods
     // ========================================
 
-    protected static function getPhoneInput(string $name = 'phone', string $label = 'رقم الهاتف'): Forms\Components\Component
+    protected static function getPhoneInput(string $name = 'phone', string $label = 'رقم الهاتف'): Component
     {
-        return \Ysfkaya\FilamentPhoneInput\Forms\PhoneInput::make($name)
+        return PhoneInput::make($name)
             ->label($label)
             ->defaultCountry('SA')
             ->initialCountry('sa')

@@ -55,10 +55,10 @@ class StudentProfile extends Model
                 // Get academy ID from grade level or user
                 $academyId = 1; // Default fallback
                 if ($model->grade_level_id) {
-                    $gradeLevel = \App\Models\AcademicGradeLevel::find($model->grade_level_id);
+                    $gradeLevel = AcademicGradeLevel::find($model->grade_level_id);
                     $academyId = $gradeLevel ? $gradeLevel->academy_id : 1;
                 } elseif ($model->user_id) {
-                    $user = \App\Models\User::find($model->user_id);
+                    $user = User::find($model->user_id);
                     $academyId = $user ? $user->academy_id : 1;
                 }
 

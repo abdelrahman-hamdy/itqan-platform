@@ -2,6 +2,9 @@
 
 namespace App\Policies;
 
+use App\Models\QuranSubscription;
+use App\Models\AcademicSubscription;
+use App\Services\AcademyContextService;
 use App\Enums\UserType;
 use App\Models\StudentProfile;
 use App\Models\User;
@@ -131,7 +134,7 @@ class StudentProfilePolicy
 
         // Check Quran teacher - subscriptions use student_id (User ID) and quran_teacher_id (User ID)
         if ($user->hasRole([UserType::QURAN_TEACHER->value])) {
-            if (\App\Models\QuranSubscription::where('student_id', $studentUserId)
+            if (QuranSubscription::where('student_id', $studentUserId)
                 ->where('quran_teacher_id', $user->id)
                 ->exists()) {
                 return true;
@@ -140,7 +143,7 @@ class StudentProfilePolicy
 
         // Check Academic teacher - subscriptions use student_id (User ID) and teacher_id (Profile ID)
         if ($user->academicTeacherProfile) {
-            if (\App\Models\AcademicSubscription::where('student_id', $studentUserId)
+            if (AcademicSubscription::where('student_id', $studentUserId)
                 ->where('teacher_id', $user->academicTeacherProfile->id)
                 ->exists()) {
                 return true;
@@ -180,7 +183,7 @@ class StudentProfilePolicy
 
         // For super_admin, use the selected academy context
         if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
-            $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
+            $userAcademyId = AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view (no specific academy selected), allow access
             if (! $userAcademyId) {
                 return true;

@@ -2,16 +2,28 @@
 
 namespace App\Filament\Resources\InteractiveCourseResource\RelationManagers;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Textarea;
+use Filament\Actions\CreateAction;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\InteractiveCourseEnrollment;
 use App\Models\StudentProfile;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -29,13 +41,13 @@ class EnrollmentsRelationManager extends RelationManager
 
     protected static ?string $pluralModelLabel = 'التسجيلات';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات التسجيل')
+        return $schema
+            ->components([
+                Section::make('معلومات التسجيل')
                     ->schema([
-                        Forms\Components\Select::make('student_id')
+                        Select::make('student_id')
                             ->label('الطالب')
                             ->options(function () {
                                 $academyId = AcademyContextService::getCurrentAcademyId();
@@ -55,12 +67,12 @@ class EnrollmentsRelationManager extends RelationManager
                             ->required()
                             ->disabledOn('edit'),
 
-                        Forms\Components\DatePicker::make('enrollment_date')
+                        DatePicker::make('enrollment_date')
                             ->label('تاريخ التسجيل')
                             ->default(now())
                             ->required(),
 
-                        Forms\Components\Select::make('enrollment_status')
+                        Select::make('enrollment_status')
                             ->label('حالة التسجيل')
                             ->options(EnrollmentStatus::options())
                             ->default(EnrollmentStatus::PENDING->value)
@@ -68,21 +80,21 @@ class EnrollmentsRelationManager extends RelationManager
                     ])
                     ->columns(3),
 
-                Forms\Components\Section::make('معلومات الدفع')
+                Section::make('معلومات الدفع')
                     ->schema([
-                        Forms\Components\Select::make('payment_status')
+                        Select::make('payment_status')
                             ->label('حالة الدفع')
                             ->options(SubscriptionPaymentStatus::options())
                             ->default(SubscriptionPaymentStatus::PENDING->value)
                             ->required(),
 
-                        Forms\Components\TextInput::make('payment_amount')
+                        TextInput::make('payment_amount')
                             ->label('المبلغ')
                             ->numeric()
                             ->prefix(getCurrencyCode())
                             ->default(fn () => $this->getOwnerRecord()->student_price ?? 0),
 
-                        Forms\Components\TextInput::make('discount_applied')
+                        TextInput::make('discount_applied')
                             ->label('الخصم')
                             ->numeric()
                             ->prefix(getCurrencyCode())
@@ -90,21 +102,21 @@ class EnrollmentsRelationManager extends RelationManager
                     ])
                     ->columns(3),
 
-                Forms\Components\Section::make('التقدم الأكاديمي')
+                Section::make('التقدم الأكاديمي')
                     ->schema([
-                        Forms\Components\TextInput::make('attendance_count')
+                        TextInput::make('attendance_count')
                             ->label('الحضور')
                             ->numeric()
                             ->default(0)
                             ->minValue(0),
 
-                        Forms\Components\TextInput::make('total_possible_attendance')
+                        TextInput::make('total_possible_attendance')
                             ->label('إجمالي الجلسات')
                             ->numeric()
                             ->default(fn () => $this->getOwnerRecord()->total_sessions ?? 0)
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('completion_percentage')
+                        TextInput::make('completion_percentage')
                             ->label('نسبة الإتمام')
                             ->numeric()
                             ->suffix('%')
@@ -112,7 +124,7 @@ class EnrollmentsRelationManager extends RelationManager
                             ->minValue(0)
                             ->maxValue(100),
 
-                        Forms\Components\TextInput::make('final_grade')
+                        TextInput::make('final_grade')
                             ->label('الدرجة النهائية')
                             ->numeric()
                             ->suffix('%')
@@ -122,13 +134,13 @@ class EnrollmentsRelationManager extends RelationManager
                     ])
                     ->columns(4),
 
-                Forms\Components\Section::make('الشهادات والملاحظات')
+                Section::make('الشهادات والملاحظات')
                     ->schema([
-                        Forms\Components\Toggle::make('certificate_issued')
+                        Toggle::make('certificate_issued')
                             ->label('تم إصدار الشهادة')
                             ->default(false),
 
-                        Forms\Components\Textarea::make('notes')
+                        Textarea::make('notes')
                             ->label('ملاحظات')
                             ->rows(2)
                             ->columnSpanFull(),
@@ -158,7 +170,8 @@ class EnrollmentsRelationManager extends RelationManager
                     ->date('Y-m-d')
                     ->sortable(),
 
-                BadgeColumn::make('enrollment_status')
+                TextColumn::make('enrollment_status')
+                    ->badge()
                     ->label('حالة التسجيل')
                     ->formatStateUsing(function ($state): string {
                         if ($state instanceof EnrollmentStatus) {
@@ -175,7 +188,8 @@ class EnrollmentsRelationManager extends RelationManager
                         'danger' => fn ($state) => $state === EnrollmentStatus::CANCELLED || $state === EnrollmentStatus::CANCELLED->value,
                     ]),
 
-                BadgeColumn::make('payment_status')
+                TextColumn::make('payment_status')
+                    ->badge()
                     ->label('حالة الدفع')
                     ->formatStateUsing(function ($state): string {
                         if ($state instanceof SubscriptionPaymentStatus) {
@@ -239,9 +253,9 @@ class EnrollmentsRelationManager extends RelationManager
                     ->falseLabel('لم تصدر'),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->label('تسجيل طالب')
-                    ->mutateFormDataUsing(function (array $data): array {
+                    ->mutateDataUsing(function (array $data): array {
                         $data['academy_id'] = AcademyContextService::getCurrentAcademyId();
                         $data['enrolled_by'] = auth()->id();
                         $data['total_possible_attendance'] = $this->getOwnerRecord()->total_sessions ?? 0;
@@ -249,12 +263,12 @@ class EnrollmentsRelationManager extends RelationManager
                         return $data;
                     }),
             ])
-            ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\EditAction::make()
+            ->recordActions([
+                ActionGroup::make([
+                    EditAction::make()
                         ->label('تعديل'),
 
-                    Tables\Actions\Action::make('activate')
+                    Action::make('activate')
                         ->label('تفعيل التسجيل')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
@@ -268,7 +282,7 @@ class EnrollmentsRelationManager extends RelationManager
                             $record->payment_status === SubscriptionPaymentStatus::PAID
                         ),
 
-                    Tables\Actions\Action::make('mark_paid')
+                    Action::make('mark_paid')
                         ->label('تأكيد الدفع')
                         ->icon('heroicon-o-banknotes')
                         ->color('success')
@@ -281,12 +295,12 @@ class EnrollmentsRelationManager extends RelationManager
                         ->visible(fn (InteractiveCourseEnrollment $record): bool => $record->payment_status !== SubscriptionPaymentStatus::PAID
                         ),
 
-                    Tables\Actions\Action::make('complete')
+                    Action::make('complete')
                         ->label('إتمام الدورة')
                         ->icon('heroicon-o-trophy')
                         ->color('primary')
-                        ->form([
-                            Forms\Components\TextInput::make('final_grade')
+                        ->schema([
+                            TextInput::make('final_grade')
                                 ->label('الدرجة النهائية')
                                 ->numeric()
                                 ->suffix('%')
@@ -304,7 +318,7 @@ class EnrollmentsRelationManager extends RelationManager
                         ->visible(fn (InteractiveCourseEnrollment $record): bool => $record->enrollment_status === EnrollmentStatus::ENROLLED
                         ),
 
-                    Tables\Actions\Action::make('issue_certificate')
+                    Action::make('issue_certificate')
                         ->label('إصدار شهادة')
                         ->icon('heroicon-o-document-check')
                         ->color('info')
@@ -319,7 +333,7 @@ class EnrollmentsRelationManager extends RelationManager
                             ! $record->certificate_issued
                         ),
 
-                    Tables\Actions\Action::make('cancel')
+                    Action::make('cancel')
                         ->label('إلغاء التسجيل')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
@@ -332,13 +346,13 @@ class EnrollmentsRelationManager extends RelationManager
                         ->visible(fn (InteractiveCourseEnrollment $record): bool => $record->enrollment_status->canCancel()
                         ),
 
-                    Tables\Actions\DeleteAction::make()
+                    DeleteAction::make()
                         ->label('حذف'),
                 ]),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد'),
                 ]),
             ])

@@ -2,6 +2,17 @@
 
 namespace App\Filament\Shared\Resources\Financial;
 
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Forms\Components\DatePicker;
+use Filament\Actions\Action;
+use Exception;
+use Filament\Tables\Table;
 use App\Enums\PaymentStatus;
 use App\Filament\Resources\BaseResource;
 use App\Models\Payment;
@@ -15,7 +26,7 @@ use Illuminate\Support\Facades\Storage;
 abstract class BasePaymentResource extends BaseResource
 {
     protected static ?string $model = Payment::class;
-    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-banknotes';
     protected static ?string $modelLabel = 'دفعة';
     protected static ?string $pluralModelLabel = 'المدفوعات';
 
@@ -23,10 +34,10 @@ abstract class BasePaymentResource extends BaseResource
     abstract protected static function scopeEloquentQuery(Builder $query): Builder;
     abstract protected static function getTableActions(): array;
     abstract protected static function getTableBulkActions(): array;
-    abstract protected static function getAcademyFormField(): ?Forms\Components\Select;
+    abstract protected static function getAcademyFormField(): ?Select;
 
     // Shared form sections
-    protected static function getPaymentInfoSection(): Forms\Components\Section
+    protected static function getPaymentInfoSection(): Section
     {
         $schema = [];
 
@@ -37,7 +48,7 @@ abstract class BasePaymentResource extends BaseResource
         }
 
         $schema = array_merge($schema, [
-            Forms\Components\Select::make('user_id')
+            Select::make('user_id')
                 ->label('المستخدم')
                 ->relationship(
                     'user',
@@ -49,7 +60,7 @@ abstract class BasePaymentResource extends BaseResource
                 ->required()
                 ->preload(),
 
-            Forms\Components\TextInput::make('payment_code')
+            TextInput::make('payment_code')
                 ->label('رمز الدفعة')
                 ->maxLength(255)
                 ->default(fn () => 'PAY-'.uniqid())
@@ -57,55 +68,55 @@ abstract class BasePaymentResource extends BaseResource
                 ->dehydrated(),
         ]);
 
-        return Forms\Components\Section::make('معلومات الدفعة')
+        return Section::make('معلومات الدفعة')
             ->schema($schema)
             ->columns(2);
     }
 
-    protected static function getAmountDetailsSection(): Forms\Components\Section
+    protected static function getAmountDetailsSection(): Section
     {
-        return Forms\Components\Section::make('تفاصيل المبلغ')
+        return Section::make('تفاصيل المبلغ')
             ->schema([
-                Forms\Components\TextInput::make('amount')
+                TextInput::make('amount')
                     ->label('المبلغ')
                     ->required()
                     ->numeric()
                     ->prefix(getCurrencySymbol())
                     ->live(onBlur: true),
 
-                Forms\Components\TextInput::make('currency')
+                TextInput::make('currency')
                     ->label('العملة')
                     ->required()
                     ->maxLength(3)
                     ->default(getCurrencyCode()),
 
-                Forms\Components\TextInput::make('discount_amount')
+                TextInput::make('discount_amount')
                     ->label('مبلغ الخصم')
                     ->numeric()
                     ->prefix(getCurrencySymbol())
                     ->default(0),
 
-                Forms\Components\TextInput::make('tax_percentage')
+                TextInput::make('tax_percentage')
                     ->label('نسبة الضريبة (%)')
                     ->numeric()
                     ->suffix('%')
                     ->default(15),
 
-                Forms\Components\TextInput::make('tax_amount')
+                TextInput::make('tax_amount')
                     ->label('مبلغ الضريبة')
                     ->numeric()
                     ->prefix(getCurrencySymbol())
                     ->disabled()
                     ->dehydrated(),
 
-                Forms\Components\TextInput::make('fees')
+                TextInput::make('fees')
                     ->label('الرسوم')
                     ->numeric()
                     ->prefix(getCurrencySymbol())
                     ->disabled()
                     ->dehydrated(),
 
-                Forms\Components\TextInput::make('net_amount')
+                TextInput::make('net_amount')
                     ->label('المبلغ الصافي')
                     ->numeric()
                     ->prefix(getCurrencySymbol())
@@ -114,38 +125,38 @@ abstract class BasePaymentResource extends BaseResource
             ])->columns(2);
     }
 
-    protected static function getPaymentStatusSection(): Forms\Components\Section
+    protected static function getPaymentStatusSection(): Section
     {
-        return Forms\Components\Section::make('حالة الدفع')
+        return Section::make('حالة الدفع')
             ->schema([
-                Forms\Components\Select::make('status')
+                Select::make('status')
                     ->label(__('filament.status'))
                     ->required()
                     ->options(PaymentStatus::options())
                     ->default(PaymentStatus::PENDING->value),
 
-                Forms\Components\TextInput::make('payment_gateway')
+                TextInput::make('payment_gateway')
                     ->label('بوابة الدفع')
                     ->disabled()
                     ->dehydrated(),
 
-                Forms\Components\TextInput::make('payment_method')
+                TextInput::make('payment_method')
                     ->label('طريقة الدفع')
                     ->disabled()
                     ->dehydrated(),
             ])->columns(3);
     }
 
-    protected static function getGatewayInfoSection(): Forms\Components\Section
+    protected static function getGatewayInfoSection(): Section
     {
-        return Forms\Components\Section::make('معلومات البوابة')
+        return Section::make('معلومات البوابة')
             ->schema([
-                Forms\Components\TextInput::make('gateway_transaction_id')
+                TextInput::make('gateway_transaction_id')
                     ->label('معرف المعاملة')
                     ->maxLength(255)
                     ->disabled(),
 
-                Forms\Components\TextInput::make('receipt_number')
+                TextInput::make('receipt_number')
                     ->label('رقم الإيصال')
                     ->maxLength(255)
                     ->disabled(),
@@ -154,15 +165,15 @@ abstract class BasePaymentResource extends BaseResource
             ->collapsed();
     }
 
-    protected static function getNotesSection(): Forms\Components\Section
+    protected static function getNotesSection(): Section
     {
-        return Forms\Components\Section::make('ملاحظات إضافية')
+        return Section::make('ملاحظات إضافية')
             ->schema([
-                Forms\Components\Textarea::make('notes')
+                Textarea::make('notes')
                     ->label('ملاحظات')
                     ->rows(3),
 
-                Forms\Components\Textarea::make('failure_reason')
+                Textarea::make('failure_reason')
                     ->label('سبب الفشل')
                     ->rows(3)
                     ->visible(fn ($record) => $record?->is_failed ?? false),
@@ -176,13 +187,13 @@ abstract class BasePaymentResource extends BaseResource
         return [
             static::getAcademyColumn(),
 
-            Tables\Columns\TextColumn::make('payment_code')
+            TextColumn::make('payment_code')
                 ->label('رمز الدفعة')
                 ->searchable()
                 ->copyable()
                 ->sortable(),
 
-            Tables\Columns\TextColumn::make('user.first_name')
+            TextColumn::make('user.first_name')
                 ->label('المستخدم')
                 ->formatStateUsing(fn ($record) => $record->user?->name ?? 'مستخدم غير محدد')
                 ->searchable(query: function (Builder $query, string $search): Builder {
@@ -194,35 +205,35 @@ abstract class BasePaymentResource extends BaseResource
                 })
                 ->sortable(),
 
-            Tables\Columns\TextColumn::make('amount')
+            TextColumn::make('amount')
                 ->label('المبلغ')
                 ->money(fn ($record) => $record->currency ?? config('currencies.default', 'SAR'))
                 ->sortable(),
 
-            Tables\Columns\TextColumn::make('payment_gateway')
+            TextColumn::make('payment_gateway')
                 ->label('بوابة الدفع')
                 ->badge()
                 ->color('gray'),
 
-            Tables\Columns\TextColumn::make('status')
+            TextColumn::make('status')
                 ->label(__('filament.status'))
                 ->badge()
                 ->formatStateUsing(fn ($state) => $state instanceof PaymentStatus ? $state->label() : (PaymentStatus::tryFrom($state)?->label() ?? $state))
                 ->color(fn ($state) => $state instanceof PaymentStatus ? $state->color() : (PaymentStatus::tryFrom($state)?->color() ?? 'gray')),
 
-            Tables\Columns\TextColumn::make('paid_at')
+            TextColumn::make('paid_at')
                 ->label('تاريخ الدفع')
                 ->dateTime('Y-m-d H:i')
                 ->sortable()
                 ->placeholder('-'),
 
-            Tables\Columns\TextColumn::make('receipt_number')
+            TextColumn::make('receipt_number')
                 ->label('رقم الإيصال')
                 ->searchable()
                 ->toggleable()
                 ->copyable(),
 
-            Tables\Columns\TextColumn::make('created_at')
+            TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')
                 ->dateTime()
                 ->sortable()
@@ -234,16 +245,16 @@ abstract class BasePaymentResource extends BaseResource
     protected static function getSharedFilters(): array
     {
         return [
-            Tables\Filters\SelectFilter::make('status')
+            SelectFilter::make('status')
                 ->label(__('filament.status'))
                 ->options(PaymentStatus::options())
                 ->multiple(),
 
-            Tables\Filters\Filter::make('paid_at')
-                ->form([
-                    Forms\Components\DatePicker::make('from')
+            Filter::make('paid_at')
+                ->schema([
+                    DatePicker::make('from')
                         ->label(__('filament.filters.from_date')),
-                    Forms\Components\DatePicker::make('until')
+                    DatePicker::make('until')
                         ->label(__('filament.filters.to_date')),
                 ])
                 ->query(function (Builder $query, array $data): Builder {
@@ -272,9 +283,9 @@ abstract class BasePaymentResource extends BaseResource
     }
 
     // Shared actions
-    protected static function getMarkCompletedAction(): Tables\Actions\Action
+    protected static function getMarkCompletedAction(): Action
     {
-        return Tables\Actions\Action::make('mark_completed')
+        return Action::make('mark_completed')
             ->label('تأكيد الدفع')
             ->icon('heroicon-o-check-circle')
             ->color('success')
@@ -290,9 +301,9 @@ abstract class BasePaymentResource extends BaseResource
             });
     }
 
-    protected static function getGenerateInvoiceAction(): Tables\Actions\Action
+    protected static function getGenerateInvoiceAction(): Action
     {
-        return Tables\Actions\Action::make('generate_invoice')
+        return Action::make('generate_invoice')
             ->label('إنشاء فاتورة')
             ->icon('heroicon-o-document-text')
             ->color('info')
@@ -307,7 +318,7 @@ abstract class BasePaymentResource extends BaseResource
                         ->title('تم إنشاء الفاتورة')
                         ->body("رقم الفاتورة: {$invoiceNumber}")
                         ->send();
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Notification::make()
                         ->danger()
                         ->title('خطأ في إنشاء الفاتورة')
@@ -317,9 +328,9 @@ abstract class BasePaymentResource extends BaseResource
             });
     }
 
-    protected static function getDownloadInvoiceAction(): Tables\Actions\Action
+    protected static function getDownloadInvoiceAction(): Action
     {
-        return Tables\Actions\Action::make('download_invoice')
+        return Action::make('download_invoice')
             ->label('تحميل الفاتورة')
             ->icon('heroicon-o-arrow-down-tray')
             ->color('success')
@@ -337,7 +348,7 @@ abstract class BasePaymentResource extends BaseResource
                     if ($pdfPath && Storage::disk('local')->exists($pdfPath)) {
                         return Storage::disk('local')->download($pdfPath, 'invoice-'.$record->payment_code.'.pdf');
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     // Fall through to error
                 }
 
@@ -357,13 +368,13 @@ abstract class BasePaymentResource extends BaseResource
         return static::scopeEloquentQuery($query);
     }
 
-    public static function table(Tables\Table $table): Tables\Table
+    public static function table(Table $table): Table
     {
         return $table
             ->columns(static::getSharedTableColumns())
             ->filters(static::getSharedFilters())
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions())
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions())
             ->defaultSort('created_at', 'desc');
     }
 }

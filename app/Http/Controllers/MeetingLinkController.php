@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
@@ -62,7 +63,7 @@ class MeetingLinkController extends Controller
                 'meeting_id' => $session->meeting_id,
             ], __('meetings.link.updated_success'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError(__('meetings.link.update_error').': '.$e->getMessage());
         }
     }
@@ -111,7 +112,7 @@ class MeetingLinkController extends Controller
                 'meeting_link' => $trialRequest->meeting_link,
             ], __('meetings.link.updated_success'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError(__('meetings.link.update_error').': '.$e->getMessage());
         }
     }
@@ -145,7 +146,7 @@ class MeetingLinkController extends Controller
                 'meeting_id' => $session->meeting_id,
             ], __('meetings.link.created_success'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError(__('meetings.link.create_error').': '.$e->getMessage());
         }
     }
@@ -204,7 +205,7 @@ class MeetingLinkController extends Controller
 
         // Validate URL format
         if (! filter_var($url, FILTER_VALIDATE_URL)) {
-            throw new \Exception(__('meetings.link.invalid_format'));
+            throw new Exception(__('meetings.link.invalid_format'));
         }
 
         // Additional validation for known platforms

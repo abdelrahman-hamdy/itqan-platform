@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment;
 
+use Throwable;
 use App\Services\Payment\DTOs\InvoiceData;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -37,7 +38,7 @@ class InvoicePdfGenerator
             ]);
 
             return $path;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Failed to generate invoice PDF', [
                 'invoice_number' => $invoice->invoiceNumber,
                 'payment_id' => $invoice->paymentId,

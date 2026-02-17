@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use Exception;
+use Throwable;
 use App\Models\BaseSession;
 use App\Services\EarningsCalculationService;
 use Illuminate\Bus\Queueable;
@@ -98,7 +100,7 @@ class CalculateSessionEarningsJob implements ShouldQueue
                     'session_type' => $this->sessionType,
                 ]);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to calculate session earnings', [
                 'session_id' => $this->sessionId,
                 'session_type' => $this->sessionType,
@@ -114,7 +116,7 @@ class CalculateSessionEarningsJob implements ShouldQueue
     /**
      * The job failed to process.
      */
-    public function failed(\Throwable $exception): void
+    public function failed(Throwable $exception): void
     {
         Log::error('CalculateSessionEarningsJob failed permanently', [
             'session_id' => $this->sessionId,

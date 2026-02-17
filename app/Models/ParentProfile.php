@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RelationshipType;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -34,7 +35,7 @@ class ParentProfile extends Model
      * Get the attributes that should be cast.
      */
     protected $casts = [
-        'relationship_type' => \App\Enums\RelationshipType::class,
+        'relationship_type' => RelationshipType::class,
     ];
 
     /**

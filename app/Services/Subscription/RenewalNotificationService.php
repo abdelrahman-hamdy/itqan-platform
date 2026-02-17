@@ -2,6 +2,8 @@
 
 namespace App\Services\Subscription;
 
+use App\Constants\DefaultAcademy;
+use Exception;
 use App\Models\BaseSubscription;
 use App\Models\SavedPaymentMethod;
 use App\Services\NotificationService;
@@ -57,7 +59,7 @@ class RenewalNotificationService
                 })
                 ->exists();
 
-            $subdomain = $subscription->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+            $subdomain = $subscription->academy?->subdomain ?? DefaultAcademy::subdomain();
 
             $notificationData = [
                 'subscription_id' => $subscription->id,
@@ -85,7 +87,7 @@ class RenewalNotificationService
                 'days_until_renewal' => $daysUntilRenewal,
                 'has_saved_card' => $hasSavedCard,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to send renewal reminder', [
                 'subscription_id' => $subscription->id,
                 'error' => $e->getMessage(),
@@ -104,7 +106,7 @@ class RenewalNotificationService
         }
 
         try {
-            $subdomain = $subscription->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+            $subdomain = $subscription->academy?->subdomain ?? DefaultAcademy::subdomain();
 
             $this->notificationService->sendSubscriptionRenewedNotification($student, [
                 'subscription_id' => $subscription->id,
@@ -121,7 +123,7 @@ class RenewalNotificationService
                 'student_id' => $student->id,
                 'amount' => $amount,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to send renewal success notification', [
                 'subscription_id' => $subscription->id,
                 'error' => $e->getMessage(),
@@ -140,7 +142,7 @@ class RenewalNotificationService
         }
 
         try {
-            $subdomain = $subscription->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+            $subdomain = $subscription->academy?->subdomain ?? DefaultAcademy::subdomain();
 
             $this->notificationService->sendPaymentFailedNotification($student, [
                 'subscription_id' => $subscription->id,
@@ -157,7 +159,7 @@ class RenewalNotificationService
                 'student_id' => $student->id,
                 'reason' => $reason,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to send payment failed notification', [
                 'subscription_id' => $subscription->id,
                 'error' => $e->getMessage(),

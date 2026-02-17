@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use ValueError;
+
 /**
  * Educational Qualification Enum
  *
@@ -54,7 +56,7 @@ enum EducationalQualification: string
 
         try {
             return self::from($value)->label();
-        } catch (\ValueError $e) {
+        } catch (ValueError $e) {
             return $value;
         }
     }

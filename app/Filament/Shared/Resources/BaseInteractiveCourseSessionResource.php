@@ -2,13 +2,25 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Schemas\Components\Section;
+use Illuminate\Database\Eloquent\Model;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Actions\Action;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Models\InteractiveCourseSession;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Form;
 use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -26,7 +38,7 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
 {
     protected static ?string $model = InteractiveCourseSession::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $modelLabel = 'جلسة دورة تفاعلية';
 
@@ -79,12 +91,12 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
         return true;
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return true;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return true;
     }
@@ -93,7 +105,7 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
     // Shared Form Definition
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         $schema = [];
 
@@ -112,7 +124,7 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
         // Add additional sections from child classes
         $schema = array_merge($schema, static::getAdditionalFormSections());
 
-        return $form->schema($schema);
+        return $form->components($schema);
     }
 
     /**
@@ -122,9 +134,9 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
     {
         return Section::make('التوقيت والحالة')
             ->schema([
-                Forms\Components\Grid::make(2)
+                Grid::make(2)
                     ->schema([
-                        Forms\Components\DateTimePicker::make('scheduled_at')
+                        DateTimePicker::make('scheduled_at')
                             ->label('موعد الجلسة')
                             ->required()
                             ->native(false)
@@ -132,13 +144,13 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
                             ->timezone(fn () => AcademyContextService::getTimezone())
                             ->displayFormat('Y-m-d H:i'),
 
-                        Forms\Components\Select::make('duration_minutes')
+                        Select::make('duration_minutes')
                             ->label('مدة الجلسة')
                             ->options(SessionDuration::options())
                             ->default(60)
                             ->required(),
 
-                        Forms\Components\Select::make('status')
+                        Select::make('status')
                             ->label('حالة الجلسة')
                             ->options(SessionStatus::options())
                             ->default(SessionStatus::SCHEDULED->value)
@@ -154,19 +166,19 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
     {
         return Section::make('محتوى الجلسة')
             ->schema([
-                Forms\Components\TextInput::make('title')
+                TextInput::make('title')
                     ->label('عنوان الجلسة')
                     ->required()
                     ->maxLength(255)
                     ->columnSpanFull(),
 
-                Forms\Components\Textarea::make('description')
+                Textarea::make('description')
                     ->label('وصف الجلسة')
                     ->helperText('أهداف ومحتوى الجلسة')
                     ->rows(3)
                     ->columnSpanFull(),
 
-                Forms\Components\Textarea::make('lesson_content')
+                Textarea::make('lesson_content')
                     ->label('محتوى الدرس')
                     ->rows(4)
                     ->columnSpanFull(),
@@ -180,18 +192,18 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
     {
         return Section::make('الواجبات')
             ->schema([
-                Forms\Components\Toggle::make('homework_assigned')
+                Toggle::make('homework_assigned')
                     ->label('يوجد واجب منزلي')
                     ->default(false)
                     ->live(),
 
-                Forms\Components\Textarea::make('homework_description')
+                Textarea::make('homework_description')
                     ->label('وصف الواجب')
                     ->rows(3)
                     ->visible(fn ($get) => $get('homework_assigned'))
                     ->columnSpanFull(),
 
-                Forms\Components\FileUpload::make('homework_file')
+                FileUpload::make('homework_file')
                     ->label('ملف الواجب')
                     ->directory('interactive-course-homework')
                     ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'])
@@ -218,8 +230,8 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
             ->columns(static::getTableColumns())
             ->defaultSort('scheduled_at', 'desc')
             ->filters(static::getTableFilters())
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions())
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions())
             ->emptyStateHeading('لا توجد جلسات')
             ->emptyStateDescription('لم يتم جدولة أي جلسات بعد.')
             ->emptyStateIcon('heroicon-o-academic-cap');
@@ -262,7 +274,8 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
                 ->suffix(' دقيقة')
                 ->sortable(),
 
-            Tables\Columns\BadgeColumn::make('status')
+            TextColumn::make('status')
+                ->badge()
                 ->label('الحالة')
                 ->colors(SessionStatus::colorOptions())
                 ->formatStateUsing(function ($state): string {
@@ -274,7 +287,7 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
                     return $statusEnum?->label() ?? $state;
                 }),
 
-            Tables\Columns\IconColumn::make('homework_assigned')
+            IconColumn::make('homework_assigned')
                 ->label('واجب')
                 ->boolean(),
 
@@ -296,15 +309,15 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
                 ->label('الحالة')
                 ->options(SessionStatus::options()),
 
-            Tables\Filters\Filter::make('scheduled_today')
+            Filter::make('scheduled_today')
                 ->label('جلسات اليوم')
                 ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
 
-            Tables\Filters\Filter::make('scheduled_this_week')
+            Filter::make('scheduled_this_week')
                 ->label('جلسات هذا الأسبوع')
                 ->query(fn (Builder $query): Builder => $query->thisWeek()),
 
-            Tables\Filters\TernaryFilter::make('homework_assigned')
+            TernaryFilter::make('homework_assigned')
                 ->label('الواجبات')
                 ->placeholder('الكل')
                 ->trueLabel('بها واجبات')
@@ -319,9 +332,9 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
     /**
      * Create start session action.
      */
-    protected static function makeStartSessionAction(): Tables\Actions\Action
+    protected static function makeStartSessionAction(): Action
     {
-        return Tables\Actions\Action::make('start_session')
+        return Action::make('start_session')
             ->label('بدء الجلسة')
             ->icon('heroicon-o-play')
             ->color('success')
@@ -335,9 +348,9 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
     /**
      * Create complete session action.
      */
-    protected static function makeCompleteSessionAction(): Tables\Actions\Action
+    protected static function makeCompleteSessionAction(): Action
     {
-        return Tables\Actions\Action::make('complete_session')
+        return Action::make('complete_session')
             ->label('إنهاء الجلسة')
             ->icon('heroicon-o-check')
             ->color('success')
@@ -349,11 +362,11 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
     /**
      * Create cancel session action.
      */
-    protected static function makeCancelSessionAction(string $cancelledBy = 'admin'): Tables\Actions\Action
+    protected static function makeCancelSessionAction(string $cancelledBy = 'admin'): Action
     {
         $label = $cancelledBy === 'teacher' ? 'ألغيت بواسطة المعلم' : 'ألغيت بواسطة المدير';
 
-        return Tables\Actions\Action::make('cancel_session')
+        return Action::make('cancel_session')
             ->label('إلغاء الجلسة')
             ->icon('heroicon-o-x-mark')
             ->color('danger')
@@ -368,9 +381,9 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
     /**
      * Create join meeting action.
      */
-    protected static function makeJoinMeetingAction(): Tables\Actions\Action
+    protected static function makeJoinMeetingAction(): Action
     {
-        return Tables\Actions\Action::make('join_meeting')
+        return Action::make('join_meeting')
             ->label('دخول الاجتماع')
             ->icon('heroicon-o-video-camera')
             ->url(fn (InteractiveCourseSession $record): string => $record->meeting_link ?? '#')

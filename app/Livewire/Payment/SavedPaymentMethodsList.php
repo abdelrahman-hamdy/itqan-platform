@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Payment;
 
+use Exception;
+use Illuminate\Support\Collection;
 use App\Constants\DefaultAcademy;
 use App\Models\Academy;
 use App\Models\SavedPaymentMethod;
@@ -19,7 +21,7 @@ use Livewire\Component;
  * Used on the student/parent payments page to show saved cards
  * and allow adding/removing payment methods.
  *
- * @property \Illuminate\Support\Collection $paymentMethods
+ * @property Collection $paymentMethods
  */
 class SavedPaymentMethodsList extends Component
 {
@@ -113,7 +115,7 @@ class SavedPaymentMethodsList extends Component
                 $this->errorMessage = $result['error'] ?? __('student.saved_payment_methods.load_form_error');
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to initiate add card', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
@@ -178,7 +180,7 @@ class SavedPaymentMethodsList extends Component
 
             $this->dispatch('payment-method-deleted');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to delete payment method', [
                 'method_id' => $this->deleteMethodId,
                 'user_id' => Auth::id(),
@@ -220,7 +222,7 @@ class SavedPaymentMethodsList extends Component
 
             $this->dispatch('payment-method-updated');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to set default payment method', [
                 'method_id' => $methodId,
                 'user_id' => Auth::id(),

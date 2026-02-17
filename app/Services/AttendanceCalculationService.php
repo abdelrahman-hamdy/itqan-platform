@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Contracts\MeetingCapable;
 use App\Enums\AttendanceStatus;
 use App\Models\MeetingAttendance;
@@ -46,7 +47,7 @@ class AttendanceCalculationService
 
             return $attendance;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle user join', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,
@@ -93,7 +94,7 @@ class AttendanceCalculationService
 
             return $attendance;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle user leave', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,
@@ -130,7 +131,7 @@ class AttendanceCalculationService
 
             return $attendance;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle user join (polymorphic)', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,
@@ -189,7 +190,7 @@ class AttendanceCalculationService
 
             return $attendance;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle user leave (polymorphic)', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,
@@ -230,7 +231,7 @@ class AttendanceCalculationService
                             'total_duration' => $attendance->total_duration_minutes,
                         ];
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $results['errors'][] = [
                         'user_id' => $attendance->user_id,
                         'error' => $e->getMessage(),
@@ -249,7 +250,7 @@ class AttendanceCalculationService
                 'total_attendances' => $attendances->count(),
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $results['errors'][] = [
                 'general' => $e->getMessage(),
             ];
@@ -419,7 +420,7 @@ class AttendanceCalculationService
                     $results['errors'][$session->id] = $sessionResults['errors'];
                 }
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results['errors'][$session->id] = [$e->getMessage()];
                 Log::error('Failed to process completed session', [
                     'session_id' => $session->id,

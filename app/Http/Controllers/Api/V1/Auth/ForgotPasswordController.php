@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\Notifications\ResetPasswordNotification;
+use Exception;
+use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\User;
@@ -62,14 +65,14 @@ class ForgotPasswordController extends Controller
 
         // Send reset email
         try {
-            $user->notify(new \App\Notifications\ResetPasswordNotification($token, $academy));
+            $user->notify(new ResetPasswordNotification($token, $academy));
 
             Log::info('Password reset email sent', [
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'academy_id' => $academy->id,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send password reset email', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
@@ -120,7 +123,7 @@ class ForgotPasswordController extends Controller
         }
 
         // Check if token is expired (60 minutes)
-        $createdAt = \Carbon\Carbon::parse($record->created_at);
+        $createdAt = Carbon::parse($record->created_at);
         if ($createdAt->diffInMinutes(now()) > 60) {
             return $this->error(
                 __('Reset token has expired. Please request a new one.'),
@@ -175,7 +178,7 @@ class ForgotPasswordController extends Controller
         }
 
         // Check if token is expired (60 minutes)
-        $createdAt = \Carbon\Carbon::parse($record->created_at);
+        $createdAt = Carbon::parse($record->created_at);
         if ($createdAt->diffInMinutes(now()) > 60) {
             return $this->error(
                 __('Reset token has expired. Please request a new one.'),
@@ -215,7 +218,7 @@ class ForgotPasswordController extends Controller
                 'email' => $user->email,
                 'academy_id' => $academy->id,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to send password changed notification', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),

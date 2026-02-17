@@ -2,6 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Services\ParentNotificationService;
+use App\Constants\DefaultAcademy;
+use Exception;
 use App\Enums\NotificationType;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
@@ -18,7 +21,7 @@ class CheckExpiringSubscriptions extends Command
     public function handle()
     {
         $notificationService = app(NotificationService::class);
-        $parentNotificationService = app(\App\Services\ParentNotificationService::class);
+        $parentNotificationService = app(ParentNotificationService::class);
         $count = 0;
 
         $this->info('Checking for expiring subscriptions...');
@@ -42,7 +45,7 @@ class CheckExpiringSubscriptions extends Command
                                 continue;
                             }
 
-                            $subdomain = $subscription->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+                            $subdomain = $subscription->academy?->subdomain ?? DefaultAcademy::subdomain();
 
                             $notificationService->send(
                                 $subscription->student,
@@ -66,7 +69,7 @@ class CheckExpiringSubscriptions extends Command
                             $count++;
 
                             $this->line("  - Sent to {$subscription->student->full_name} (Quran - {$days} days)");
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             $this->error("  - Failed for Quran subscription {$subscription->id}: {$e->getMessage()}");
                         }
                     }
@@ -84,7 +87,7 @@ class CheckExpiringSubscriptions extends Command
                                 continue;
                             }
 
-                            $subdomain = $subscription->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+                            $subdomain = $subscription->academy?->subdomain ?? DefaultAcademy::subdomain();
 
                             $notificationService->send(
                                 $subscription->student,
@@ -105,7 +108,7 @@ class CheckExpiringSubscriptions extends Command
                             $count++;
 
                             $this->line("  - Sent to {$subscription->student->full_name} (Academic - {$days} days)");
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             $this->error("  - Failed for Academic subscription {$subscription->id}: {$e->getMessage()}");
                         }
                     }

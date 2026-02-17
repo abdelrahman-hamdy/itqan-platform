@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources\AcademyGeneralSettingsResource\Pages;
 
+use Exception;
+use Filament\Schemas\Schema;
+use Filament\Actions\Action;
 use App\Filament\Resources\AcademyGeneralSettingsResource;
 use App\Models\AcademicSettings;
 use App\Models\Academy;
@@ -10,14 +13,13 @@ use App\Services\AcademyContextService;
 use Filament\Actions;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * @property Form $form
+ * @property \Filament\Schemas\Schema $form
  */
 class ManageAcademyGeneralSettings extends Page implements HasForms
 {
@@ -25,7 +27,7 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
 
     protected static string $resource = AcademyGeneralSettingsResource::class;
 
-    protected static string $view = 'filament.resources.academy-general-settings-resource.pages.manage-academy-general-settings';
+    protected string $view = 'filament.resources.academy-general-settings-resource.pages.manage-academy-general-settings';
 
     public ?array $data = [];
 
@@ -47,13 +49,13 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
         $academyId = AcademyContextService::getCurrentAcademyId();
 
         if (! $academyId) {
-            throw new \Exception('لا يوجد سياق أكاديمية متاح. يرجى اختيار أكاديمية أولاً.');
+            throw new Exception('لا يوجد سياق أكاديمية متاح. يرجى اختيار أكاديمية أولاً.');
         }
 
         $academy = Academy::find($academyId);
 
         if (! $academy) {
-            throw new \Exception('الأكاديمية المختارة غير موجودة.');
+            throw new Exception('الأكاديمية المختارة غير موجودة.');
         }
 
         // Prepare form data
@@ -92,9 +94,9 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
         $this->form->fill($formData);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return AcademyGeneralSettingsResource::form($form)
+        return AcademyGeneralSettingsResource::form($schema)
             ->statePath('data');
     }
 
@@ -162,7 +164,7 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
                 ->success()
                 ->send();
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error saving general settings', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -180,7 +182,7 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
     protected function getFormActions(): array
     {
         return [
-            Actions\Action::make('save')
+            Action::make('save')
                 ->label('حفظ الإعدادات')
                 ->action('save')
                 ->keyBindings(['mod+s'])

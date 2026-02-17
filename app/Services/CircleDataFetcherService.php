@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Carbon\Carbon;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\QuranCircle;
@@ -77,7 +78,7 @@ class CircleDataFetcherService
         $enrollment = $studentInCircle?->pivot;
 
         $enrolledAt = $enrollment && $enrollment->enrolled_at
-            ? \Carbon\Carbon::parse($enrollment->enrolled_at)
+            ? Carbon::parse($enrollment->enrolled_at)
             : null;
 
         // Get sessions since student enrollment with optional date filter

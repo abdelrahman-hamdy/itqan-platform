@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use Exception;
+use Log;
+use Carbon\Carbon;
+use App\Models\AcademicSubject;
+use App\Models\AcademicGradeLevel;
 use App\Enums\EducationalQualification;
 use App\Enums\UserType;
 use App\Http\Controllers\Controller;
@@ -99,8 +104,8 @@ class RegisterController extends Controller
             // Send email verification notification
             try {
                 $user->sendEmailVerificationNotification();
-            } catch (\Exception $e) {
-                \Log::error('Failed to send student verification email', [
+            } catch (Exception $e) {
+                Log::error('Failed to send student verification email', [
                     'user_id' => $user->id,
                     'email' => $user->email,
                     'error' => $e->getMessage(),
@@ -256,8 +261,8 @@ class RegisterController extends Controller
             // Send email verification notification
             try {
                 $user->sendEmailVerificationNotification();
-            } catch (\Exception $e) {
-                \Log::error('Failed to send parent verification email', [
+            } catch (Exception $e) {
+                Log::error('Failed to send parent verification email', [
                     'user_id' => $user->id,
                     'email' => $user->email,
                     'error' => $e->getMessage(),
@@ -328,7 +333,7 @@ class RegisterController extends Controller
                 $teacherType = $tokenData['teacher_type'] ?? null;
 
                 // Check if token is expired (1 hour)
-                $createdAt = \Carbon\Carbon::parse($tokenData['created_at']);
+                $createdAt = Carbon::parse($tokenData['created_at']);
                 if ($createdAt->diffInHours(now()) > 1) {
                     return $this->error(
                         __('Registration session expired. Please start over.'),
@@ -336,7 +341,7 @@ class RegisterController extends Controller
                         'REGISTRATION_EXPIRED'
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return $this->error(
                     __('Invalid registration token. Please start over.'),
                     400,
@@ -440,8 +445,8 @@ class RegisterController extends Controller
             // Wrap in try-catch to not fail registration if email fails
             try {
                 $user->sendEmailVerificationNotification();
-            } catch (\Exception $e) {
-                \Log::error('Failed to send teacher verification email', [
+            } catch (Exception $e) {
+                Log::error('Failed to send teacher verification email', [
                     'user_id' => $user->id,
                     'email' => $user->email,
                     'error' => $e->getMessage(),
@@ -473,7 +478,7 @@ class RegisterController extends Controller
             return $this->error(__('Academy not found'), 404);
         }
 
-        $subjects = \App\Models\AcademicSubject::where('academy_id', $academy->id)
+        $subjects = AcademicSubject::where('academy_id', $academy->id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'name_en']);
@@ -494,7 +499,7 @@ class RegisterController extends Controller
             return $this->error(__('Academy not found'), 404);
         }
 
-        $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $academy->id)
+        $gradeLevels = AcademicGradeLevel::where('academy_id', $academy->id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'name_en']);

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Archived;
 
+use Illuminate\Notifications\Messages\MailMessage;
 use App\Models\Academy;
 use App\Models\User;
 use App\Notifications\TeacherAccountActivatedNotification;
@@ -63,11 +64,11 @@ class SendTestTeacherActivationEmail extends Command
                     $this->testUser = $testUser;
                 }
 
-                public function toMail(object $notifiable): \Illuminate\Notifications\Messages\MailMessage
+                public function toMail(object $notifiable): MailMessage
                 {
                     $loginUrl = $this->getLoginUrl();
 
-                    return (new \Illuminate\Notifications\Messages\MailMessage)
+                    return (new MailMessage)
                         ->subject('تم تفعيل حسابك - '.$this->academy->name)
                         ->view('emails.teacher-account-activated', [
                             'user' => $this->testUser,

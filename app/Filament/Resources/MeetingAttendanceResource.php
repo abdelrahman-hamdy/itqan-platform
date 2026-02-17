@@ -2,13 +2,37 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Utilities\Get;
+use App\Models\User;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Toggle;
+use Filament\Tables\Columns\TextColumn;
+use ValueError;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use App\Models\AcademicIndividualLesson;
+use App\Models\InteractiveCourse;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
+use App\Filament\Resources\MeetingAttendanceResource\Pages\ListMeetingAttendances;
+use App\Filament\Resources\MeetingAttendanceResource\Pages\ViewMeetingAttendance;
+use App\Filament\Resources\MeetingAttendanceResource\Pages\EditMeetingAttendance;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionDuration;
 use App\Filament\Resources\MeetingAttendanceResource\Pages;
 use App\Models\MeetingAttendance;
 use Carbon\Carbon;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
@@ -18,7 +42,7 @@ class MeetingAttendanceResource extends BaseResource
 {
     protected static ?string $model = MeetingAttendance::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user-group';
 
     protected static ?string $navigationLabel = 'سجل الحضور';
 
@@ -26,7 +50,7 @@ class MeetingAttendanceResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'سجل الحضور';
 
-    protected static ?string $navigationGroup = 'التقارير والحضور';
+    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والحضور';
 
     protected static ?int $navigationSort = 4;
 
@@ -41,33 +65,33 @@ class MeetingAttendanceResource extends BaseResource
             ->with(['session', 'user']);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات الحضور')
+        return $schema
+            ->components([
+                Section::make('معلومات الحضور')
                     ->schema([
-                        Forms\Components\TextInput::make('session_id')
+                        TextInput::make('session_id')
                             ->label('معرف الجلسة')
                             ->numeric()
                             ->required()
                             ->disabled(),
-                        Forms\Components\Select::make('user_type')
+                        Select::make('user_type')
                             ->label('نوع المستخدم')
                             ->options(__('enums.attendance_user_type'))
                             ->required()
                             ->live()
-                            ->afterStateUpdated(fn (Forms\Set $set) => $set('user_id', null)),
-                        Forms\Components\Select::make('user_id')
+                            ->afterStateUpdated(fn (Set $set) => $set('user_id', null)),
+                        Select::make('user_id')
                             ->label('المستخدم')
                             ->required()
                             ->searchable()
                             ->preload()
-                            ->options(function (Forms\Get $get) {
+                            ->options(function (Get $get) {
                                 $userType = $get('user_type');
 
                                 if ($userType === 'teacher') {
-                                    return \App\Models\User::where(function ($query) {
+                                    return User::where(function ($query) {
                                         $query->whereHas('quranTeacherProfile')
                                             ->orWhereHas('academicTeacherProfile');
                                     })
@@ -79,7 +103,7 @@ class MeetingAttendanceResource extends BaseResource
                                 }
 
                                 if ($userType === 'student') {
-                                    return \App\Models\User::whereHas('studentProfile')
+                                    return User::whereHas('studentProfile')
                                         ->get()
                                         ->mapWithKeys(fn ($user) => [
                                             $user->id => $user->display_name ?? $user->name ?? 'طالب #'.$user->id,
@@ -89,13 +113,13 @@ class MeetingAttendanceResource extends BaseResource
 
                                 return [];
                             })
-                            ->getOptionLabelUsing(fn ($value) => \App\Models\User::find($value)?->display_name
-                                ?? \App\Models\User::find($value)?->name
+                            ->getOptionLabelUsing(fn ($value) => User::find($value)?->display_name
+                                ?? User::find($value)?->name
                                 ?? 'مستخدم #'.$value
                             )
-                            ->disabled(fn (Forms\Get $get) => ! $get('user_type'))
-                            ->helperText(fn (Forms\Get $get) => ! $get('user_type') ? 'اختر نوع المستخدم أولاً' : null),
-                        Forms\Components\Select::make('session_type')
+                            ->disabled(fn (Get $get) => ! $get('user_type'))
+                            ->helperText(fn (Get $get) => ! $get('user_type') ? 'اختر نوع المستخدم أولاً' : null),
+                        Select::make('session_type')
                             ->label('نوع الجلسة')
                             ->options(__('enums.session_type'))
                             ->disabled()
@@ -103,69 +127,69 @@ class MeetingAttendanceResource extends BaseResource
                             ->helperText('يتم تحديده تلقائياً من الجلسة'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('تفاصيل الحضور والوقت')
+                Section::make('تفاصيل الحضور والوقت')
                     ->schema([
-                        Forms\Components\DateTimePicker::make('first_join_time')
+                        DateTimePicker::make('first_join_time')
                             ->label('أول وقت دخول'),
-                        Forms\Components\DateTimePicker::make('last_leave_time')
+                        DateTimePicker::make('last_leave_time')
                             ->label('آخر وقت خروج'),
-                        Forms\Components\TextInput::make('total_duration_minutes')
+                        TextInput::make('total_duration_minutes')
                             ->label('إجمالي المدة (دقيقة)')
                             ->numeric()
                             ->default(0)
                             ->suffix('دقيقة'),
-                        Forms\Components\TextInput::make('join_count')
+                        TextInput::make('join_count')
                             ->label('عدد مرات الدخول')
                             ->numeric()
                             ->default(0),
-                        Forms\Components\TextInput::make('leave_count')
+                        TextInput::make('leave_count')
                             ->label('عدد مرات الخروج')
                             ->numeric()
                             ->default(0),
-                        Forms\Components\DateTimePicker::make('session_start_time')
+                        DateTimePicker::make('session_start_time')
                             ->label('وقت بدء الجلسة')
                             ->live()
-                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                            ->afterStateUpdated(function (Set $set, Get $get, $state) {
                                 $duration = $get('session_duration_minutes');
                                 if ($state && $duration) {
                                     $endTime = Carbon::parse($state)->addMinutes((int) $duration);
                                     $set('session_end_time', $endTime->format('Y-m-d H:i:s'));
                                 }
                             }),
-                        Forms\Components\Select::make('session_duration_minutes')
+                        Select::make('session_duration_minutes')
                             ->label('مدة الجلسة')
                             ->options(SessionDuration::options())
                             ->live()
-                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                            ->afterStateUpdated(function (Set $set, Get $get, $state) {
                                 $startTime = $get('session_start_time');
                                 if ($startTime && $state) {
                                     $endTime = Carbon::parse($startTime)->addMinutes((int) $state);
                                     $set('session_end_time', $endTime->format('Y-m-d H:i:s'));
                                 }
                             }),
-                        Forms\Components\DateTimePicker::make('session_end_time')
+                        DateTimePicker::make('session_end_time')
                             ->label('وقت انتهاء الجلسة')
                             ->disabled()
                             ->dehydrated()
                             ->helperText('يتم حسابه تلقائياً من وقت البدء والمدة'),
                     ])->columns(3),
 
-                Forms\Components\Section::make('حالة الحضور والحساب')
+                Section::make('حالة الحضور والحساب')
                     ->schema([
-                        Forms\Components\Select::make('attendance_status')
+                        Select::make('attendance_status')
                             ->label('حالة الحضور')
                             ->options(AttendanceStatus::options())
                             ->required(),
-                        Forms\Components\TextInput::make('attendance_percentage')
+                        TextInput::make('attendance_percentage')
                             ->label('نسبة الحضور')
                             ->numeric()
                             ->minValue(0)
                             ->maxValue(100)
                             ->suffix('%')
                             ->default(0),
-                        Forms\Components\DateTimePicker::make('attendance_calculated_at')
+                        DateTimePicker::make('attendance_calculated_at')
                             ->label('تاريخ الحساب'),
-                        Forms\Components\Toggle::make('is_calculated')
+                        Toggle::make('is_calculated')
                             ->label('محسوب تلقائياً')
                             ->default(true),
                     ])->columns(2),
@@ -177,11 +201,11 @@ class MeetingAttendanceResource extends BaseResource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('session.title')
+                TextColumn::make('session.title')
                     ->label('الجلسة')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('user.name')
+                TextColumn::make('user.name')
                     ->label('المستخدم')
                     ->formatStateUsing(fn ($record) => $record->user?->display_name
                         ?? $record->user?->name
@@ -189,7 +213,7 @@ class MeetingAttendanceResource extends BaseResource
                     )
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('user_type')
+                TextColumn::make('user_type')
                     ->label('النوع')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => __("enums.attendance_user_type.{$state}") ?? $state)
@@ -198,7 +222,7 @@ class MeetingAttendanceResource extends BaseResource
                         'teacher' => 'success',
                         default => 'gray',
                     }),
-                Tables\Columns\TextColumn::make('session_type')
+                TextColumn::make('session_type')
                     ->label('نوع الجلسة')
                     ->badge()
                     ->formatStateUsing(function (?string $state): string {
@@ -218,7 +242,7 @@ class MeetingAttendanceResource extends BaseResource
                         default => 'gray',
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('attendance_status')
+                TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
                     ->color(fn (mixed $state): string => match (true) {
@@ -237,43 +261,43 @@ class MeetingAttendanceResource extends BaseResource
                         }
                         try {
                             return AttendanceStatus::from($state)->label();
-                        } catch (\ValueError $e) {
+                        } catch (ValueError $e) {
                             return (string) $state;
                         }
                     }),
-                Tables\Columns\TextColumn::make('attendance_percentage')
+                TextColumn::make('attendance_percentage')
                     ->label('نسبة الحضور')
                     ->numeric()
                     ->sortable()
                     ->formatStateUsing(fn (string $state): string => $state.'%')
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('total_duration_minutes')
+                TextColumn::make('total_duration_minutes')
                     ->label('وقت الحضور (دقيقة)')
                     ->numeric()
                     ->sortable()
                     ->suffix(' د')
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\IconColumn::make('is_calculated')
+                IconColumn::make('is_calculated')
                     ->label('محسوب تلقائياً')
                     ->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('attendance_status')
+                SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')
                     ->options(AttendanceStatus::options()),
-                Tables\Filters\SelectFilter::make('user_type')
+                SelectFilter::make('user_type')
                     ->label('نوع المستخدم')
                     ->options(__('enums.attendance_user_type')),
-                Tables\Filters\Filter::make('session_source')
-                    ->form([
-                        Forms\Components\Select::make('session_type')
+                Filter::make('session_source')
+                    ->schema([
+                        Select::make('session_type')
                             ->label('نوع الجلسة')
                             ->options(__('enums.session_type'))
                             ->live()
-                            ->afterStateUpdated(fn (Forms\Set $set) => $set('source_id', null)),
-                        Forms\Components\Select::make('source_id')
-                            ->label(fn (Forms\Get $get): string => match ($get('session_type')) {
+                            ->afterStateUpdated(fn (Set $set) => $set('source_id', null)),
+                        Select::make('source_id')
+                            ->label(fn (Get $get): string => match ($get('session_type')) {
                                 'quran' => 'الحلقة',
                                 'academic' => 'الدرس',
                                 'interactive' => 'الدورة',
@@ -281,19 +305,19 @@ class MeetingAttendanceResource extends BaseResource
                             })
                             ->searchable()
                             ->preload()
-                            ->options(function (Forms\Get $get): array {
+                            ->options(function (Get $get): array {
                                 return match ($get('session_type')) {
                                     'quran' => static::getQuranSourceOptions(),
-                                    'academic' => \App\Models\AcademicIndividualLesson::query()
+                                    'academic' => AcademicIndividualLesson::query()
                                         ->pluck('name', 'id')
                                         ->toArray(),
-                                    'interactive' => \App\Models\InteractiveCourse::query()
+                                    'interactive' => InteractiveCourse::query()
                                         ->pluck('title', 'id')
                                         ->toArray(),
                                     default => [],
                                 };
                             })
-                            ->visible(fn (Forms\Get $get): bool => filled($get('session_type'))),
+                            ->visible(fn (Get $get): bool => filled($get('session_type'))),
                     ])
                     ->columns(2)
                     ->columnSpan(2)
@@ -346,13 +370,13 @@ class MeetingAttendanceResource extends BaseResource
                     }),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                ViewAction::make(),
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -362,12 +386,12 @@ class MeetingAttendanceResource extends BaseResource
     {
         $options = [];
 
-        $circles = \App\Models\QuranCircle::query()->pluck('name', 'id');
+        $circles = QuranCircle::query()->pluck('name', 'id');
         foreach ($circles as $id => $name) {
             $options["circle:{$id}"] = 'حلقة جماعية: '.($name ?: "#{$id}");
         }
 
-        $individuals = \App\Models\QuranIndividualCircle::query()->pluck('name', 'id');
+        $individuals = QuranIndividualCircle::query()->pluck('name', 'id');
         foreach ($individuals as $id => $name) {
             $options["individual:{$id}"] = 'حلقة فردية: '.($name ?: "#{$id}");
         }
@@ -385,9 +409,9 @@ class MeetingAttendanceResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListMeetingAttendances::route('/'),
-            'view' => Pages\ViewMeetingAttendance::route('/{record}'),
-            'edit' => Pages\EditMeetingAttendance::route('/{record}/edit'),
+            'index' => ListMeetingAttendances::route('/'),
+            'view' => ViewMeetingAttendance::route('/{record}'),
+            'edit' => EditMeetingAttendance::route('/{record}/edit'),
         ];
     }
 }

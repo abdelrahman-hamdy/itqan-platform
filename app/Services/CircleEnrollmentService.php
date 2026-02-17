@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Contracts\CircleEnrollmentServiceInterface;
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -36,7 +37,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      * @param  QuranCircle  $circle  The circle to enroll in
      * @return array Result with success status and message
      *
-     * @throws \Exception If enrollment fails
+     * @throws Exception If enrollment fails
      */
     public function enroll(User $user, QuranCircle $circle, bool $createSubscription = true, ?string $paymentGateway = null): array
     {
@@ -250,7 +251,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                 'error_type' => 'capacity_exceeded',
                 'available_slots' => $e->getAvailableSlots(),
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('[CircleEnrollment] Error creating pending subscription', [
                 'user_id' => $user->id,
                 'circle_id' => $circle->id,
@@ -377,7 +378,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                 'error_type' => 'capacity_exceeded',
                 'available_slots' => $e->getAvailableSlots(),
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('[CircleEnrollment] Error enrolling student in free circle', [
                 'user_id' => $user->id,
                 'circle_id' => $circle->id,
@@ -482,7 +483,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                 'success' => true,
                 'message' => __('circles.enrollment_success'),
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('[CircleEnrollment] Error completing enrollment after payment', [
                 'subscription_id' => $subscription->id,
                 'user_id' => $user->id,
@@ -510,7 +511,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      * @param  bool  $cancelSubscription  Whether to also cancel linked subscription (default: true)
      * @return array Result with success status and message
      *
-     * @throws \Exception If leave fails
+     * @throws Exception If leave fails
      */
     public function leave(User $user, QuranCircle $circle, bool $cancelSubscription = true): array
     {
@@ -568,7 +569,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                 'success' => true,
                 'message' => 'تم إلغاء تسجيلك من الحلقة بنجاح',
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error removing student from circle', [
                 'user_id' => $user->id,
                 'circle_id' => $circle->id,

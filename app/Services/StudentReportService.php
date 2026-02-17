@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\SessionStatus;
 use App\Enums\AttendanceStatus;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
@@ -22,9 +23,9 @@ class StudentReportService
     {
         return DB::transaction(function () use ($session, $student) {
             // Determine if session is in a final state
-            $sessionStatus = $session->status instanceof \App\Enums\SessionStatus
+            $sessionStatus = $session->status instanceof SessionStatus
                 ? $session->status
-                : \App\Enums\SessionStatus::from($session->status);
+                : SessionStatus::from($session->status);
             $isSessionComplete = $sessionStatus->isFinal();
 
             if (! $isSessionComplete) {

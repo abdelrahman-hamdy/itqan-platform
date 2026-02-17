@@ -2,6 +2,7 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use App\Models\AcademicTeacherProfile;
 use App\Filament\Shared\BaseTeacherResource as SharedBaseTeacherResource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -29,7 +30,7 @@ abstract class BaseAcademicTeacherResource extends SharedBaseTeacherResource
     /**
      * Get current Academic teacher's profile
      */
-    protected static function getCurrentAcademicTeacherProfile(): ?\App\Models\AcademicTeacherProfile
+    protected static function getCurrentAcademicTeacherProfile(): ?AcademicTeacherProfile
     {
         $user = auth()->user();
 

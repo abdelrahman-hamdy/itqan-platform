@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Traits;
 
+use Exception;
 use App\Models\Academy;
 use Illuminate\Support\Facades\Log;
 
@@ -54,7 +55,7 @@ trait TenantAwareJob
 
             try {
                 $results[$academy->id] = $processor($academy);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::error("[TenantAwareJob] Error processing academy {$academy->id}: {$e->getMessage()}");
                 $results[$academy->id] = ['error' => $e->getMessage()];
             }

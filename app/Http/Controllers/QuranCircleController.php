@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
@@ -132,7 +133,7 @@ class QuranCircleController extends Controller
                 })->exists();
 
             if ($conflictingCircles) {
-                throw new \Exception('المعلم لديه دائرة أخرى في نفس الوقت المحدد');
+                throw new Exception('المعلم لديه دائرة أخرى في نفس الوقت المحدد');
             }
 
             $circleData = array_merge($validated, [
@@ -164,7 +165,7 @@ class QuranCircleController extends Controller
                 ->route('academies.quran.circles.show', [$academy->slug, $circle->id])
                 ->with('success', 'تم إنشاء دائرة القرآن بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             if ($request->expectsJson()) {
@@ -265,7 +266,7 @@ class QuranCircleController extends Controller
                 ->route('academies.quran.circles.show', [$circle->academy->slug, $circle->id])
                 ->with('success', 'تم تحديث دائرة القرآن بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             if ($request->expectsJson()) {
                 return $this->serverError('حدث خطأ أثناء تحديث دائرة القرآن');
             }
@@ -285,7 +286,7 @@ class QuranCircleController extends Controller
 
         try {
             if ($circle->status !== 'planning') {
-                throw new \Exception('لا يمكن تفعيل هذه الدائرة في حالتها الحالية');
+                throw new Exception('لا يمكن تفعيل هذه الدائرة في حالتها الحالية');
             }
 
             $circle->update([
@@ -299,7 +300,7 @@ class QuranCircleController extends Controller
 
             return back()->with('success', 'تم نشر دائرة القرآن للتسجيل');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             if (request()->expectsJson()) {
                 return $this->error($e->getMessage(), 422);
             }
@@ -317,11 +318,11 @@ class QuranCircleController extends Controller
 
         try {
             if (! in_array($circle->status, ['pending', 'planning'])) {
-                throw new \Exception('لا يمكن بدء هذه الدائرة في حالتها الحالية');
+                throw new Exception('لا يمكن بدء هذه الدائرة في حالتها الحالية');
             }
 
             if ($circle->enrolled_students < 3) {
-                throw new \Exception('يجب أن يكون لديك على الأقل 3 طلاب مسجلين لبدء الدائرة');
+                throw new Exception('يجب أن يكون لديك على الأقل 3 طلاب مسجلين لبدء الدائرة');
             }
 
             $circle->update([
@@ -336,7 +337,7 @@ class QuranCircleController extends Controller
 
             return back()->with('success', 'تم بدء دائرة القرآن بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             if (request()->expectsJson()) {
                 return $this->error($e->getMessage(), 422);
             }
@@ -354,7 +355,7 @@ class QuranCircleController extends Controller
 
         try {
             if ($circle->status !== 'active') {
-                throw new \Exception('لا يمكن إكمال هذه الدائرة في حالتها الحالية');
+                throw new Exception('لا يمكن إكمال هذه الدائرة في حالتها الحالية');
             }
 
             DB::beginTransaction();
@@ -388,7 +389,7 @@ class QuranCircleController extends Controller
 
             return back()->with('success', 'تم إكمال دائرة القرآن وإصدار الشهادات');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             if (request()->expectsJson()) {
@@ -408,7 +409,7 @@ class QuranCircleController extends Controller
 
         try {
             if (in_array($circle->status, ['completed', 'cancelled'])) {
-                throw new \Exception('الدائرة مكتملة أو ملغية بالفعل');
+                throw new Exception('الدائرة مكتملة أو ملغية بالفعل');
             }
 
             DB::beginTransaction();
@@ -439,7 +440,7 @@ class QuranCircleController extends Controller
 
             return back()->with('info', 'تم إلغاء دائرة القرآن');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             if ($request->expectsJson()) {
@@ -459,11 +460,11 @@ class QuranCircleController extends Controller
 
         try {
             if ($circle->enrollment_status !== CircleEnrollmentStatus::OPEN) {
-                throw new \Exception('التسجيل مغلق لهذه الدائرة');
+                throw new Exception('التسجيل مغلق لهذه الدائرة');
             }
 
             if ($circle->enrolled_students >= $circle->max_students) {
-                throw new \Exception('الدائرة ممتلئة');
+                throw new Exception('الدائرة ممتلئة');
             }
 
             $student = User::findOrFail($request->student_id);
@@ -473,7 +474,7 @@ class QuranCircleController extends Controller
 
             // Check if student already enrolled
             if ($circle->enrollments()->where('student_id', $student->id)->exists()) {
-                throw new \Exception('الطالب مسجل بالفعل في هذه الدائرة');
+                throw new Exception('الطالب مسجل بالفعل في هذه الدائرة');
             }
 
             DB::beginTransaction();
@@ -497,7 +498,7 @@ class QuranCircleController extends Controller
 
             return back()->with('success', 'تم تسجيل الطالب في الدائرة بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             if ($request->expectsJson()) {

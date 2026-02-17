@@ -2,6 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Academy;
+use Exception;
+use App\Models\VideoSettings;
+use App\Models\QuranSession;
 use App\Enums\SessionStatus;
 use App\Services\AutoMeetingCreationService;
 use App\Services\CronJobLogger;
@@ -60,7 +64,7 @@ class CreateScheduledMeetingsCommand extends Command
 
             if ($academyId) {
                 // Process specific academy
-                $academy = \App\Models\Academy::find($academyId);
+                $academy = Academy::find($academyId);
                 if (! $academy) {
                     $this->error("❌ Academy with ID {$academyId} not found");
 
@@ -113,7 +117,7 @@ class CreateScheduledMeetingsCommand extends Command
 
             return self::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('💥 Fatal error during meeting creation: '.$e->getMessage());
 
             if ($this->getOutput()->isVerbose()) {
@@ -196,9 +200,9 @@ class CreateScheduledMeetingsCommand extends Command
     /**
      * Simulate processing for dry run mode - single academy
      */
-    private function simulateAcademyProcessing(\App\Models\Academy $academy): array
+    private function simulateAcademyProcessing(Academy $academy): array
     {
-        $videoSettings = \App\Models\VideoSettings::forAcademy($academy);
+        $videoSettings = VideoSettings::forAcademy($academy);
 
         if (! $videoSettings->shouldAutoCreateMeetings()) {
             $this->warn('  ⚠️  Auto meeting creation is disabled for this academy');
@@ -217,7 +221,7 @@ class CreateScheduledMeetingsCommand extends Command
         $now = now();
         $endTime = $now->copy()->addHours(config('business.meetings.lookahead_hours', 2));
 
-        $eligibleCount = \App\Models\QuranSession::where('academy_id', $academy->id)
+        $eligibleCount = QuranSession::where('academy_id', $academy->id)
             ->where('status', SessionStatus::SCHEDULED)
             ->whereNull('meeting_room_name')
             ->whereNotNull('scheduled_at')
@@ -241,7 +245,7 @@ class CreateScheduledMeetingsCommand extends Command
      */
     private function simulateAllAcademiesProcessing(): array
     {
-        $academies = \App\Models\Academy::where('is_active', true)->get();
+        $academies = Academy::where('is_active', true)->get();
         $totalSessions = 0;
         $totalMeetings = 0;
 

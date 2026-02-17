@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Models\User;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -49,7 +50,7 @@ class CalendarController extends Controller
     /**
      * Get calendar data for a specific month.
      *
-     * @param  \App\Models\User  $user
+     * @param User $user
      */
     protected function getCalendarData(Request $request, $user, int $year, int $month): JsonResponse
     {

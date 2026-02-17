@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Enums\NotificationType;
 use App\Enums\UserType;
 use App\Models\User;
@@ -258,7 +259,7 @@ class TestAllNotifications extends Command
                         ['test' => true, 'notification_type' => $typeName]
                     );
                     $this->line("│ <fg=green>✓ Sent to {$user->name} ({$user->email})</>");
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->results['failed'][] = [
                         'type' => $typeName,
                         'issue' => 'Send failed: '.$e->getMessage(),

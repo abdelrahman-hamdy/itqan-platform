@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Contracts\StudentStatisticsServiceInterface;
 use App\Enums\AttendanceStatus;
 use App\Enums\EnrollmentStatus;
@@ -263,7 +264,7 @@ class StudentStatisticsService implements StudentStatisticsServiceInterface
                         ->whereNotNull('submitted_at');
                 })
                 ->count();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Error counting pending quizzes', ['error' => $e->getMessage()]);
 
             return 0;

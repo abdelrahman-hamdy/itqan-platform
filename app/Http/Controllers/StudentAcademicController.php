@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcademicSubscription;
+use App\Models\AcademicSubject;
+use App\Models\AcademicGradeLevel;
+use App\Models\AcademicPackage;
 use App\Constants\DefaultAcademy;
 use App\Models\AcademicTeacherProfile;
 use App\Services\Student\StudentAcademicService;
@@ -24,7 +28,7 @@ class StudentAcademicController extends Controller
         $academy = $user->academy;
 
         // Authorize viewing subscriptions
-        $this->authorize('viewAny', \App\Models\AcademicSubscription::class);
+        $this->authorize('viewAny', AcademicSubscription::class);
 
         // Get student's academic subscriptions with teacher info using service
         $mySubscriptions = $this->academicService->getSubscriptionsByTeacher($user);
@@ -33,12 +37,12 @@ class StudentAcademicController extends Controller
         $activeSubscriptionsCount = $mySubscriptions->count();
 
         // Get all subjects and grade levels for filters
-        $subjects = \App\Models\AcademicSubject::where('academy_id', $academy->id)
+        $subjects = AcademicSubject::where('academy_id', $academy->id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $academy->id)
+        $gradeLevels = AcademicGradeLevel::where('academy_id', $academy->id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -93,7 +97,7 @@ class StudentAcademicController extends Controller
             ->appends($request->except('page'));
 
         // Get all active packages for calculating minimum price
-        $allPackages = \App\Models\AcademicPackage::where('academy_id', $academy->id)
+        $allPackages = AcademicPackage::where('academy_id', $academy->id)
             ->where('is_active', true)
             ->get();
 

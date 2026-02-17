@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
+use Log;
 use App\Constants\DefaultAcademy;
 use App\Enums\EnrollmentStatus;
 use App\Enums\EnrollmentType;
@@ -299,7 +301,7 @@ class RecordedCourseController extends Controller
      */
     public function enrollApi(Request $request, $subdomain, $courseId): JsonResponse
     {
-        $this->authorize('enroll', \App\Models\CourseSubscription::class);
+        $this->authorize('enroll', CourseSubscription::class);
 
         $academy = $this->getCurrentAcademy();
         $course = RecordedCourse::where('id', $courseId)
@@ -359,8 +361,8 @@ class RecordedCourseController extends Controller
                 'redirect_url' => route('courses.learn', ['subdomain' => $subdomain, 'id' => $course->id]),
             ], true, 200);
 
-        } catch (\Exception $e) {
-            \Log::error('Course enrollment error: '.$e->getMessage(), [
+        } catch (Exception $e) {
+            Log::error('Course enrollment error: '.$e->getMessage(), [
                 'course_id' => $course->id,
                 'user_id' => $user->id,
                 'error' => $e->getTraceAsString(),

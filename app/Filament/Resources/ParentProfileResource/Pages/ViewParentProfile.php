@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ParentProfileResource\Pages;
 
+use Filament\Actions\EditAction;
 use App\Filament\Resources\ParentProfileResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,7 +14,7 @@ class ViewParentProfile extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            EditAction::make(),
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Constants\DefaultAcademy;
 use App\Contracts\SearchServiceInterface;
 use App\Enums\SessionSubscriptionStatus;
@@ -24,7 +25,7 @@ class SearchService implements SearchServiceInterface
     {
         try {
             return route($name, $parameters);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return '#';
         }
     }

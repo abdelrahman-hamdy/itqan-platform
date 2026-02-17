@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use Throwable;
+use Illuminate\Contracts\Http\Kernel;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
@@ -164,7 +166,7 @@ class TestRoutesCommand extends Command
                         'status' => $result['status'],
                     ];
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $this->errors[] = [
                     'user_type' => $userType,
                     'uri' => $uri,
@@ -198,7 +200,7 @@ class TestRoutesCommand extends Command
 
         try {
             // Handle the request through the kernel
-            $kernel = app(\Illuminate\Contracts\Http\Kernel::class);
+            $kernel = app(Kernel::class);
             $response = $kernel->handle($request);
 
             $status = $response->getStatusCode();
@@ -223,7 +225,7 @@ class TestRoutesCommand extends Command
                 'status' => $status,
                 'error' => $error,
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'status' => 500,
                 'error' => $e->getMessage(),

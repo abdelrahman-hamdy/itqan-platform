@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\BusinessServiceRequestResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
 use App\Filament\Resources\BusinessServiceRequestResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,12 +15,12 @@ class ViewBusinessServiceRequest extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل')
                 ->icon('heroicon-o-pencil-square')
                 ->color('warning'),
 
-            Actions\DeleteAction::make()
+            DeleteAction::make()
                 ->label('حذف')
                 ->icon('heroicon-o-trash')
                 ->color('danger')

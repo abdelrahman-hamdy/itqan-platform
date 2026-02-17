@@ -2,18 +2,34 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use App\Models\User;
+use App\Models\QuranTeacherProfile;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use App\Filament\Resources\QuranTrialRequestResource\Pages\ListQuranTrialRequests;
+use App\Filament\Resources\QuranTrialRequestResource\Pages\CreateQuranTrialRequest;
+use App\Filament\Resources\QuranTrialRequestResource\Pages\ViewQuranTrialRequest;
+use App\Filament\Resources\QuranTrialRequestResource\Pages\EditQuranTrialRequest;
 use App\Enums\UserType;
 use App\Filament\Resources\QuranTrialRequestResource\Pages;
 use App\Filament\Shared\Resources\BaseQuranTrialRequestResource;
 use App\Models\QuranTrialRequest;
 use App\Services\AcademyContextService;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables;
-use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -45,7 +61,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
 
     protected static ?string $navigationLabel = 'طلبات الجلسات التجريبية';
 
-    protected static ?string $navigationGroup = 'إدارة القرآن';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 8;
 
@@ -78,7 +94,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                                 ->options(function () {
                                     $academyId = AcademyContextService::getCurrentAcademyId();
 
-                                    return \App\Models\User::where('user_type', UserType::STUDENT->value)
+                                    return User::where('user_type', UserType::STUDENT->value)
                                         ->where('academy_id', $academyId)
                                         ->get()
                                         ->pluck('name', 'id');
@@ -92,7 +108,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                                 ->options(function () {
                                     $academyId = AcademyContextService::getCurrentAcademyId();
 
-                                    $teachers = \App\Models\QuranTeacherProfile::where('academy_id', $academyId)
+                                    $teachers = QuranTeacherProfile::where('academy_id', $academyId)
                                         ->active()
                                         ->get();
 
@@ -145,12 +161,12 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
     {
         return [
             ActionGroup::make([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                ViewAction::make(),
+                EditAction::make(),
 
                 static::makeScheduleAction(),
 
-                Tables\Actions\Action::make('cancel')
+                Action::make('cancel')
                     ->label('إلغاء الطلب')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
@@ -161,10 +177,10 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                     ->action(fn (QuranTrialRequest $record) => $record->cancel())
                     ->successNotificationTitle('تم إلغاء الطلب'),
 
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make()
+                DeleteAction::make(),
+                RestoreAction::make()
                     ->label(__('filament.actions.restore')),
-                Tables\Actions\ForceDeleteAction::make()
+                ForceDeleteAction::make()
                     ->label(__('filament.actions.force_delete')),
             ]),
         ];
@@ -176,11 +192,11 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
-                Tables\Actions\RestoreBulkAction::make()
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+                RestoreBulkAction::make()
                     ->label(__('filament.actions.restore_selected')),
-                Tables\Actions\ForceDeleteBulkAction::make()
+                ForceDeleteBulkAction::make()
                     ->label(__('filament.actions.force_delete_selected')),
             ]),
         ];
@@ -223,7 +239,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                 ->options(function () {
                     $academyId = AcademyContextService::getCurrentAcademyId();
 
-                    return \App\Models\QuranTeacherProfile::where('academy_id', $academyId)
+                    return QuranTeacherProfile::where('academy_id', $academyId)
                         ->active()
                         ->get()
                         ->mapWithKeys(function ($teacher) {
@@ -234,7 +250,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                 ->preload(),
 
             Filter::make('scheduled_date')
-                ->form([
+                ->schema([
                     DatePicker::make('scheduled_from')
                         ->label('من تاريخ'),
                     DatePicker::make('scheduled_until')
@@ -264,10 +280,10 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuranTrialRequests::route('/'),
-            'create' => Pages\CreateQuranTrialRequest::route('/create'),
-            'view' => Pages\ViewQuranTrialRequest::route('/{record}'),
-            'edit' => Pages\EditQuranTrialRequest::route('/{record}/edit'),
+            'index' => ListQuranTrialRequests::route('/'),
+            'create' => CreateQuranTrialRequest::route('/create'),
+            'view' => ViewQuranTrialRequest::route('/{record}'),
+            'edit' => EditQuranTrialRequest::route('/{record}/edit'),
         ];
     }
 }

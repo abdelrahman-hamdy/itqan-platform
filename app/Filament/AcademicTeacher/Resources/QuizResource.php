@@ -2,6 +2,9 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use App\Filament\AcademicTeacher\Resources\QuizResource\Pages\ListQuizzes;
+use App\Filament\AcademicTeacher\Resources\QuizResource\Pages\CreateQuiz;
+use App\Filament\AcademicTeacher\Resources\QuizResource\Pages\EditQuiz;
 use App\Enums\QuizAssignableType;
 use App\Filament\AcademicTeacher\Resources\QuizResource\Pages;
 use App\Filament\Shared\Resources\BaseQuizResource;
@@ -56,9 +59,9 @@ class QuizResource extends BaseQuizResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuizzes::route('/'),
-            'create' => Pages\CreateQuiz::route('/create'),
-            'edit' => Pages\EditQuiz::route('/{record}/edit'),
+            'index' => ListQuizzes::route('/'),
+            'create' => CreateQuiz::route('/create'),
+            'edit' => EditQuiz::route('/{record}/edit'),
         ];
     }
 }

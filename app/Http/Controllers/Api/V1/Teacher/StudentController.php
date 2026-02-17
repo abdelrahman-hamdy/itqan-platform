@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
+use App\Models\AcademicSessionReport;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
@@ -289,7 +290,7 @@ class StudentController extends Controller
             }
 
             // Create or update report
-            \App\Models\AcademicSessionReport::updateOrCreate(
+            AcademicSessionReport::updateOrCreate(
                 ['academic_session_id' => $session->id],
                 [
                     'rating' => $request->rating,

@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
+use Exception;
+use Illuminate\Http\JsonResponse;
+use App\Models\AcademicSettings;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\UserType;
 use App\Http\Traits\Api\ApiResponses;
@@ -28,7 +33,7 @@ class PublicAcademicPackageController extends Controller
     /**
      * Display academic packages and teachers for browsing
      */
-    public function index(Request $request, $subdomain): \Illuminate\View\View
+    public function index(Request $request, $subdomain): View
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
 
@@ -73,7 +78,7 @@ class PublicAcademicPackageController extends Controller
     /**
      * Show subscription booking form for specific package and teacher
      */
-    public function showSubscriptionForm(Request $request, $subdomain, $teacherId, $packageId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+    public function showSubscriptionForm(Request $request, $subdomain, $teacherId, $packageId): View|RedirectResponse
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
 
@@ -134,7 +139,7 @@ class PublicAcademicPackageController extends Controller
     /**
      * Submit subscription request for academic package
      */
-    public function submitSubscriptionRequest(Request $request, $subdomain, $teacherId, $packageId): \Illuminate\Http\RedirectResponse
+    public function submitSubscriptionRequest(Request $request, $subdomain, $teacherId, $packageId): RedirectResponse
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
 
@@ -408,7 +413,7 @@ class PublicAcademicPackageController extends Controller
                 'subscription' => $subscription->id,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             Log::error('Failed to create academic subscription', [
@@ -440,7 +445,7 @@ class PublicAcademicPackageController extends Controller
     /**
      * Show teacher profile for academic packages
      */
-    public function showTeacher(Request $request, $subdomain, $teacherId): \Illuminate\View\View
+    public function showTeacher(Request $request, $subdomain, $teacherId): View
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
 
@@ -471,7 +476,7 @@ class PublicAcademicPackageController extends Controller
             'total_students' => $teacher->total_students ?? 0,
             'total_sessions' => $teacher->total_sessions ?? 0,
             'years_experience' => $teacher->experience_years ?? 0,
-            'active_subscriptions' => \App\Models\AcademicSubscription::where('teacher_id', $teacher->id)
+            'active_subscriptions' => AcademicSubscription::where('teacher_id', $teacher->id)
                 ->whereIn('status', [
                     SessionSubscriptionStatus::ACTIVE->value,
                     SessionSubscriptionStatus::PENDING->value,
@@ -490,7 +495,7 @@ class PublicAcademicPackageController extends Controller
     /**
      * API: Get teachers available for a specific package
      */
-    public function getPackageTeachers(Request $request, $subdomain, $packageId): \Illuminate\Http\JsonResponse
+    public function getPackageTeachers(Request $request, $subdomain, $packageId): JsonResponse
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
 
@@ -560,7 +565,7 @@ class PublicAcademicPackageController extends Controller
         }
 
         // If teacher has no packages assigned, check academy default packages
-        $academySettings = \App\Models\AcademicSettings::where('academy_id', $academy->id)->first();
+        $academySettings = AcademicSettings::where('academy_id', $academy->id)->first();
 
         if ($academySettings && ! empty($academySettings->default_package_ids)) {
             $defaultPackageIds = $academySettings->default_package_ids;

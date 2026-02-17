@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\BusinessServiceCategory;
 use App\Models\BusinessServiceRequest;
@@ -74,7 +75,7 @@ class BusinessServiceController extends Controller
                 'request_id' => $serviceRequest->id,
             ], true, 200);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.');
         }
     }

@@ -2,6 +2,8 @@
 
 namespace App\Contracts;
 
+use InvalidArgumentException;
+use Exception;
 use App\Enums\BillingCycle;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
@@ -36,7 +38,7 @@ interface SubscriptionServiceInterface
      * @param  string  $type  Subscription type (quran, academic, course)
      * @return string Fully qualified model class name
      *
-     * @throws \InvalidArgumentException If subscription type is unknown
+     * @throws InvalidArgumentException If subscription type is unknown
      */
     public function getModelClass(string $type): string;
 
@@ -96,7 +98,7 @@ interface SubscriptionServiceInterface
      * @param  float|null  $amountPaid  The amount paid (updates final_price if provided)
      * @return BaseSubscription The refreshed subscription instance
      *
-     * @throws \Exception If subscription is not in pending state
+     * @throws Exception If subscription is not in pending state
      */
     public function activate(BaseSubscription $subscription, ?float $amountPaid = null): BaseSubscription;
 
@@ -109,7 +111,7 @@ interface SubscriptionServiceInterface
      * @param  string|null  $reason  Optional cancellation reason
      * @return BaseSubscription The refreshed subscription instance
      *
-     * @throws \Exception If subscription cannot be cancelled in current state
+     * @throws Exception If subscription cannot be cancelled in current state
      */
     public function cancel(BaseSubscription $subscription, ?string $reason = null): BaseSubscription;
 
@@ -250,7 +252,7 @@ interface SubscriptionServiceInterface
      * @param  bool  $enabled  Whether auto-renewal should be enabled
      * @return BaseSubscription The refreshed subscription instance
      *
-     * @throws \Exception If billing cycle does not support auto-renewal
+     * @throws Exception If billing cycle does not support auto-renewal
      */
     public function toggleAutoRenewal(BaseSubscription $subscription, bool $enabled): BaseSubscription;
 }

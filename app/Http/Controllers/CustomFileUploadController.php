@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\ValidationException;
+use Exception;
 use App\Http\Requests\CustomFileUploadRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Services\AcademyContextService;
@@ -39,7 +42,7 @@ class CustomFileUploadController extends Controller
      */
     private const MAX_FILE_SIZE = 51200;
 
-    public function upload(CustomFileUploadRequest $request): \Illuminate\Http\JsonResponse
+    public function upload(CustomFileUploadRequest $request): JsonResponse
     {
 
         try {
@@ -66,9 +69,9 @@ class CustomFileUploadController extends Controller
                     'url' => Storage::disk($disk)->url($path),
                 ]);
             }
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return $this->validationError($e->errors(), 'فشل التحقق من الملف');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             report($e);
 
             return $this->serverError('حدث خطأ أثناء رفع الملف');

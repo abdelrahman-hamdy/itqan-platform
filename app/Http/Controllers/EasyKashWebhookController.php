@@ -2,6 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Database\QueryException;
+use InvalidArgumentException;
+use Throwable;
+use App\Models\QuranSubscription;
+use App\Enums\SubscriptionPaymentStatus;
+use App\Enums\SessionSubscriptionStatus;
+use App\Services\Payment\InvoiceService;
+use App\Services\NotificationService;
+use App\Enums\NotificationType;
+use Exception;
+use App\Models\QuranTeacherProfile;
+use App\Models\AcademicSubscription;
+use App\Models\CourseSubscription;
+use App\Models\InteractiveCourseEnrollment;
+use App\Services\Payment\AcademyPaymentGatewayFactory;
 use App\Constants\DefaultAcademy;
 use App\Enums\PaymentStatus;
 use App\Http\Traits\Api\ApiResponses;
@@ -106,7 +121,7 @@ class EasyKashWebhookController extends Controller
                 'status' => 'error',
                 'message' => $e->getMessage(),
             ], 400);
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Log::channel('payments')->error('Database error during EasyKash webhook processing', [
                 'error' => $e->getMessage(),
                 'code' => $e->getCode(),
@@ -116,7 +131,7 @@ class EasyKashWebhookController extends Controller
                 'status' => 'error',
                 'message' => 'Database error occurred',
             ], 500);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             Log::channel('payments')->error('Invalid EasyKash webhook data', [
                 'error' => $e->getMessage(),
             ]);
@@ -125,7 +140,7 @@ class EasyKashWebhookController extends Controller
                 'status' => 'error',
                 'message' => 'Invalid data format',
             ], 400);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('payments')->critical('Unexpected EasyKash webhook processing error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -380,11 +395,11 @@ class EasyKashWebhookController extends Controller
             ]);
 
             // Legacy fallback: direct subscription_id lookup (for Quran subscriptions)
-            $subscription = \App\Models\QuranSubscription::find($payment->subscription_id);
+            $subscription = QuranSubscription::find($payment->subscription_id);
             if ($subscription && $subscription->payment_status->value !== 'paid') {
                 $subscription->update([
-                    'payment_status' => \App\Enums\SubscriptionPaymentStatus::PAID,
-                    'status' => \App\Enums\SessionSubscriptionStatus::ACTIVE,
+                    'payment_status' => SubscriptionPaymentStatus::PAID,
+                    'status' => SessionSubscriptionStatus::ACTIVE,
                     'last_payment_at' => now(),
                     'last_payment_amount' => $payment->amount,
                 ]);
@@ -431,17 +446,17 @@ class EasyKashWebhookController extends Controller
     private function generateInvoice(Payment $payment): void
     {
         try {
-            $invoiceService = app(\App\Services\Payment\InvoiceService::class);
+            $invoiceService = app(InvoiceService::class);
             $result = $invoiceService->generateInvoiceWithPdf($payment);
             $invoiceData = $result['invoice'];
 
             // Send invoice notification
             $user = $payment->user;
             if ($user) {
-                $notificationService = app(\App\Services\NotificationService::class);
+                $notificationService = app(NotificationService::class);
                 $notificationService->send(
                     $user,
-                    \App\Enums\NotificationType::INVOICE_GENERATED,
+                    NotificationType::INVOICE_GENERATED,
                     [
                         'invoice_number' => $invoiceData->invoiceNumber,
                         'amount' => $invoiceData->amount,
@@ -457,7 +472,7 @@ class EasyKashWebhookController extends Controller
                 'payment_id' => $payment->id,
                 'invoice_number' => $invoiceData->invoiceNumber,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('payments')->error('EasyKash: failed to generate invoice', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
@@ -489,7 +504,7 @@ class EasyKashWebhookController extends Controller
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             // Get subscription name if available
             $subscriptionName = __('payments.notifications.payment');
@@ -528,7 +543,7 @@ class EasyKashWebhookController extends Controller
                 'payment_id' => $payment->id,
                 'user_id' => $user->id,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send EasyKash payment success notification', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
@@ -714,7 +729,7 @@ class EasyKashWebhookController extends Controller
                     }
 
                     // Redirect directly to subscriptions page (consistent with Paymob)
-                    $subdomain = $payment->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+                    $subdomain = $payment->academy?->subdomain ?? DefaultAcademy::subdomain();
                     $redirectUrl = route('student.subscriptions', ['subdomain' => $subdomain]);
 
                     Log::channel('payments')->info('EasyKash callback: redirecting to subscriptions', [
@@ -736,7 +751,7 @@ class EasyKashWebhookController extends Controller
                         'customer_reference' => $customerReference,
                     ]);
 
-                    $subdomain = $payment->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+                    $subdomain = $payment->academy?->subdomain ?? DefaultAcademy::subdomain();
                     $redirectUrl = route('student.subscriptions', ['subdomain' => $subdomain]);
 
                     Log::channel('payments')->info('EasyKash callback: redirecting after verification failure', [
@@ -748,7 +763,7 @@ class EasyKashWebhookController extends Controller
                     return redirect()->to($redirectUrl)
                         ->with('warning', 'تم استلام الدفع وسيتم التحقق منه قريباً');
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Exception during verification, but payment might still be valid
                 // Redirect to subscriptions page, let webhook handle activation later
                 Log::channel('payments')->error('EasyKash callback: verification failed with exception', [
@@ -757,7 +772,7 @@ class EasyKashWebhookController extends Controller
                     'trace' => $e->getTraceAsString(),
                 ]);
 
-                $subdomain = $payment->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+                $subdomain = $payment->academy?->subdomain ?? DefaultAcademy::subdomain();
                 $redirectUrl = route('student.subscriptions', ['subdomain' => $subdomain]);
 
                 Log::channel('payments')->info('EasyKash callback: redirecting after exception', [
@@ -839,7 +854,7 @@ class EasyKashWebhookController extends Controller
      */
     private function getQuranSubscriptionRedirectUrl(Payment $payment, string $tenantUrl): ?string
     {
-        $subscription = \App\Models\QuranSubscription::find($payment->subscription_id);
+        $subscription = QuranSubscription::find($payment->subscription_id);
 
         if (! $subscription) {
             return null;
@@ -847,7 +862,7 @@ class EasyKashWebhookController extends Controller
 
         // Get the QuranTeacherProfile ID (not user_id)
         // The quran_teacher_id in subscription is actually the user_id
-        $teacherProfile = \App\Models\QuranTeacherProfile::where('user_id', $subscription->quran_teacher_id)->first();
+        $teacherProfile = QuranTeacherProfile::where('user_id', $subscription->quran_teacher_id)->first();
 
         if (! $teacherProfile) {
             return null;
@@ -877,7 +892,7 @@ class EasyKashWebhookController extends Controller
         // Try to find by payable or metadata
         $subscription = null;
 
-        if ($payment->payable_type === \App\Models\AcademicSubscription::class) {
+        if ($payment->payable_type === AcademicSubscription::class) {
             $subscription = $payment->payable;
         }
 
@@ -907,7 +922,7 @@ class EasyKashWebhookController extends Controller
     {
         $subscription = null;
 
-        if ($payment->payable_type === \App\Models\CourseSubscription::class) {
+        if ($payment->payable_type === CourseSubscription::class) {
             $subscription = $payment->payable;
         }
 
@@ -940,8 +955,8 @@ class EasyKashWebhookController extends Controller
         }
 
         // Handle based on payable type
-        if ($payable instanceof \App\Models\QuranSubscription) {
-            $teacherProfile = \App\Models\QuranTeacherProfile::where('user_id', $payable->quran_teacher_id)->first();
+        if ($payable instanceof QuranSubscription) {
+            $teacherProfile = QuranTeacherProfile::where('user_id', $payable->quran_teacher_id)->first();
             if ($teacherProfile && $payable->package_id) {
                 $url = $tenantUrl.'/quran-teachers/'.$teacherProfile->id.'/subscribe/'.$payable->package_id;
                 $period = $this->getBillingCyclePeriod($payable->billing_cycle ?? null);
@@ -950,7 +965,7 @@ class EasyKashWebhookController extends Controller
             }
         }
 
-        if ($payable instanceof \App\Models\AcademicSubscription) {
+        if ($payable instanceof AcademicSubscription) {
             if ($payable->teacher_id && $payable->academic_package_id) {
                 $url = $tenantUrl.'/academic-packages/teachers/'.$payable->teacher_id.'/subscribe/'.$payable->academic_package_id;
                 $period = $this->getBillingCyclePeriod($payable->billing_cycle ?? null);
@@ -959,7 +974,7 @@ class EasyKashWebhookController extends Controller
             }
         }
 
-        if ($payable instanceof \App\Models\CourseSubscription) {
+        if ($payable instanceof CourseSubscription) {
             if ($payable->interactive_course_id) {
                 return $tenantUrl.'/interactive-courses/'.$payable->interactive_course_id;
             }
@@ -968,7 +983,7 @@ class EasyKashWebhookController extends Controller
             }
         }
 
-        if ($payable instanceof \App\Models\InteractiveCourseEnrollment) {
+        if ($payable instanceof InteractiveCourseEnrollment) {
             return $tenantUrl.'/interactive-courses/'.$payable->course_id;
         }
 
@@ -1027,14 +1042,14 @@ class EasyKashWebhookController extends Controller
         $academy = $payment->academy;
 
         if ($academy) {
-            $factory = app(\App\Services\Payment\AcademyPaymentGatewayFactory::class);
+            $factory = app(AcademyPaymentGatewayFactory::class);
 
             try {
                 $gateway = $factory->getGateway($academy, 'easykash');
                 if ($gateway instanceof EasyKashGateway) {
                     return $gateway;
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::channel('payments')->warning('Could not get academy-specific gateway', [
                     'academy_id' => $academy->id,
                     'error' => $e->getMessage(),

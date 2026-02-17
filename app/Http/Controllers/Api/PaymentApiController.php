@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use Exception;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Payment;
@@ -100,7 +101,7 @@ class PaymentApiController extends Controller
 
             return $this->error($result->getErrorMessage() ?? 'فشل إنشاء عملية الدفع', 400);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Payment intent creation failed', [
                 'error' => $e->getMessage(),
                 'user_id' => $user->id,
@@ -168,7 +169,7 @@ class PaymentApiController extends Controller
                 'error_code' => $result->getErrorCode(),
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Saved card charge failed', [
                 'error' => $e->getMessage(),
                 'user_id' => $user->id,
@@ -244,7 +245,7 @@ class PaymentApiController extends Controller
 
             return $this->error('فشل حذف طريقة الدفع', 400);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Delete saved payment method failed', [
                 'error' => $e->getMessage(),
                 'method_id' => $id,
@@ -282,7 +283,7 @@ class PaymentApiController extends Controller
                 'message' => 'تم تعيين طريقة الدفع كافتراضية',
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Set default payment method failed', [
                 'error' => $e->getMessage(),
                 'method_id' => $id,

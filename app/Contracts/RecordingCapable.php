@@ -2,6 +2,8 @@
 
 namespace App\Contracts;
 
+use Illuminate\Database\Eloquent\Collection;
+use App\Models\SessionRecording;
 use App\Models\User;
 
 /**
@@ -65,12 +67,12 @@ interface RecordingCapable
     /**
      * Get all completed recordings for this session
      */
-    public function getRecordings(): \Illuminate\Database\Eloquent\Collection;
+    public function getRecordings(): Collection;
 
     /**
      * Get the active/latest recording record
      */
-    public function getActiveRecording(): ?\App\Models\SessionRecording;
+    public function getActiveRecording(): ?SessionRecording;
 
     /**
      * Check if a user can start/stop recording for this session

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use Filament\Tables\Columns\TextColumn;
 use App\Enums\InteractiveCourseStatus;
 use App\Enums\UserType;
 use App\Models\InteractiveCourse;
@@ -37,27 +38,27 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
         return $table
             ->query(fn () => $this->record->responsibilities()->with('responsable'))
             ->columns([
-                Tables\Columns\TextColumn::make('type_label')
+                TextColumn::make('type_label')
                     ->label('النوع')
                     ->getStateUsing(fn ($record) => $this->getTypeLabel($record))
                     ->badge()
                     ->color(fn ($state) => $this->getTypeColor($state)),
 
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('الاسم')
                     ->getStateUsing(fn ($record) => $this->getResourceName($record)),
 
-                Tables\Columns\TextColumn::make('details')
+                TextColumn::make('details')
                     ->label('التفاصيل')
                     ->getStateUsing(fn ($record) => $this->getResourceDetails($record)),
 
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->label('الحالة')
                     ->getStateUsing(fn ($record) => $this->getResourceStatus($record))
                     ->badge()
                     ->color(fn ($state) => $state === 'نشط' ? 'success' : 'warning'),
 
-                Tables\Columns\TextColumn::make('count')
+                TextColumn::make('count')
                     ->label('العدد')
                     ->getStateUsing(fn ($record) => $this->getResourceCount($record))
                     ->alignCenter(),

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use Exception;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
@@ -64,7 +65,7 @@ class StudentReportController extends Controller
                 ],
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error fetching student report', [
                 'report_id' => $reportId,
                 'error' => $e->getMessage(),
@@ -109,7 +110,7 @@ class StudentReportController extends Controller
                 ],
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error fetching student info', [
                 'student_id' => $studentId,
                 'error' => $e->getMessage(),
@@ -236,7 +237,7 @@ class StudentReportController extends Controller
                 ],
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error updating student evaluation', [
                 'request_data' => $request->all(),
                 'error' => $e->getMessage(),
@@ -268,7 +269,7 @@ class StudentReportController extends Controller
                 'reports_count' => $reports->count(),
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error generating session reports', [
                 'session_id' => $sessionId,
                 'error' => $e->getMessage(),
@@ -299,7 +300,7 @@ class StudentReportController extends Controller
                 'stats' => $stats,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error fetching session stats', [
                 'session_id' => $sessionId,
                 'error' => $e->getMessage(),

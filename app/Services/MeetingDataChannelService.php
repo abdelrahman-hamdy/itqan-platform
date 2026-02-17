@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Exception;
+use App\Events\MeetingCommandEvent;
 use App\Models\QuranSession;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
@@ -117,7 +119,7 @@ class MeetingDataChannelService
                 'message' => 'LiveKit data channel delivery simulated (implement based on your LiveKit service)',
                 'attempts' => 1,
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('LiveKit data channel send failed', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -140,11 +142,11 @@ class MeetingDataChannelService
         try {
             $channelName = "meeting.{$session->id}";
 
-            broadcast(new \App\Events\MeetingCommandEvent($session, $commandData))
+            broadcast(new MeetingCommandEvent($session, $commandData))
                 ->toOthers();
 
             return ['status' => 'success', 'channel' => $channelName];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('WebSocket broadcast failed', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -187,7 +189,7 @@ class MeetingDataChannelService
                         json_encode($currentState)
                     );
                 }
-            } catch (\Exception $redisError) {
+            } catch (Exception $redisError) {
                 Log::warning('Redis unavailable, using cache fallback', [
                     'session_id' => $session->id,
                     'redis_error' => $redisError->getMessage(),
@@ -195,7 +197,7 @@ class MeetingDataChannelService
             }
 
             return ['status' => 'success', 'state_updated' => true];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Database state update failed', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -232,7 +234,7 @@ class MeetingDataChannelService
                     $existingEvents = array_slice($existingEvents, 0, 20);
                     Cache::put($sseKey, $existingEvents, now()->addHour());
                 }
-            } catch (\Exception $redisError) {
+            } catch (Exception $redisError) {
                 Log::warning('Redis unavailable for SSE, using cache fallback', [
                     'session_id' => $session->id,
                     'redis_error' => $redisError->getMessage(),
@@ -246,7 +248,7 @@ class MeetingDataChannelService
             }
 
             return ['status' => 'success', 'sse_queued' => true];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return ['status' => 'failed', 'error' => $e->getMessage()];
         }
     }
@@ -280,7 +282,7 @@ class MeetingDataChannelService
                 $acks[$participant->id] = $acknowledgment;
                 Cache::put($ackKey, $acks, now()->addHour());
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Redis unavailable for acknowledgments, using cache', [
                 'session_id' => $session->id,
                 'message_id' => $messageId,
@@ -439,7 +441,7 @@ class MeetingDataChannelService
                 // Cache fallback
                 Cache::put($commandKey, $commandData, now()->addHour());
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Redis unavailable for command persistence, using cache', [
                 'session_id' => $session->id,
                 'message_id' => $messageId,
@@ -476,7 +478,7 @@ class MeetingDataChannelService
             } else {
                 $acks = Cache::get($ackKey, []);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $acks = Cache::get($ackKey, []);
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\View\View;
 use App\Models\BusinessServiceCategory;
 
 class PlatformController extends Controller
@@ -9,7 +10,7 @@ class PlatformController extends Controller
     /**
      * Show the platform landing page
      */
-    public function home(): \Illuminate\View\View
+    public function home(): View
     {
         // Fetch first 9 active service categories
         $services = BusinessServiceCategory::active()
@@ -23,7 +24,7 @@ class PlatformController extends Controller
     /**
      * Show the platform about page
      */
-    public function about(): \Illuminate\View\View
+    public function about(): View
     {
         return view('platform.about');
     }
@@ -31,7 +32,7 @@ class PlatformController extends Controller
     /**
      * Show the platform features page
      */
-    public function features(): \Illuminate\View\View
+    public function features(): View
     {
         return view('platform.features');
     }
@@ -39,7 +40,7 @@ class PlatformController extends Controller
     /**
      * Show the platform contact page
      */
-    public function contact(): \Illuminate\View\View
+    public function contact(): View
     {
         return view('platform.contact');
     }

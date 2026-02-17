@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\InteractiveCourseEnrollment;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class RequestInteractiveCourseCertificateRequest extends FormRequest
@@ -22,7 +24,7 @@ class RequestInteractiveCourseCertificateRequest extends FormRequest
             return false;
         }
 
-        $enrollment = \App\Models\InteractiveCourseEnrollment::find($enrollmentId);
+        $enrollment = InteractiveCourseEnrollment::find($enrollmentId);
 
         // Check if student owns this enrollment
         return $enrollment && $enrollment->student_id === $this->user()->id;
@@ -31,7 +33,7 @@ class RequestInteractiveCourseCertificateRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

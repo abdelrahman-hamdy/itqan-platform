@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi\Reports;
 
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\QuranSession;
@@ -164,8 +166,8 @@ class ParentQuranReportController extends BaseParentReportController
     /**
      * Get Quran attendance stats.
      *
-     * @param  \Illuminate\Support\Carbon  $startDate
-     * @param  \Illuminate\Support\Carbon  $endDate
+     * @param Carbon $startDate
+     * @param Carbon $endDate
      */
     protected function getQuranAttendance(int $studentUserId, $startDate, $endDate): array
     {
@@ -250,7 +252,7 @@ class ParentQuranReportController extends BaseParentReportController
      * Calculate subscription attendance from session reports.
      *
      * @param  QuranSubscription  $subscription
-     * @param  \Illuminate\Support\Collection  $completedSessions
+     * @param Collection $completedSessions
      */
     protected function calculateSubscriptionAttendance($subscription, $completedSessions): array
     {

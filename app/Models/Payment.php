@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Services\Payment\DTOs\InvoiceData;
+use App\Services\Payment\InvoiceService;
+use Illuminate\Support\Str;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Traits\ScopedToAcademy;
@@ -282,7 +285,7 @@ class Payment extends Model
         }
 
         // Update subscription's purchase_source from payment metadata
-        if ($this->payable instanceof \App\Models\BaseSubscription) {
+        if ($this->payable instanceof BaseSubscription) {
             $metadata = is_string($this->metadata) ? json_decode($this->metadata, true) : ($this->metadata ?? []);
             $purchaseSource = $metadata['purchase_source'] ?? 'web';
 
@@ -333,9 +336,9 @@ class Payment extends Model
      * Returns an InvoiceData DTO with structured invoice information
      * including invoice number, line items, and financial breakdown.
      */
-    public function generateInvoiceData(): \App\Services\Payment\DTOs\InvoiceData
+    public function generateInvoiceData(): InvoiceData
     {
-        $invoiceService = app(\App\Services\Payment\InvoiceService::class);
+        $invoiceService = app(InvoiceService::class);
 
         return $invoiceService->generateInvoice($this);
     }
@@ -343,9 +346,9 @@ class Payment extends Model
     /**
      * Get existing invoice data for this payment without generating a new one.
      */
-    public function getInvoiceData(): ?\App\Services\Payment\DTOs\InvoiceData
+    public function getInvoiceData(): ?InvoiceData
     {
-        $invoiceService = app(\App\Services\Payment\InvoiceService::class);
+        $invoiceService = app(InvoiceService::class);
 
         return $invoiceService->getInvoice($this);
     }
@@ -440,7 +443,7 @@ class Payment extends Model
         $timestamp = now()->format('ymdHis'); // 20260216143052
 
         // Use alphanumeric random string (62^4 = 14.7M combinations vs mt_rand's 10K)
-        $random = strtoupper(\Illuminate\Support\Str::random(4));
+        $random = strtoupper(Str::random(4));
 
         // Format: PREFIX-ACADEMY-TIMESTAMP-RANDOM
         return "{$prefix}-".str_pad($academyId, 2, '0', STR_PAD_LEFT)."-{$timestamp}-{$random}";

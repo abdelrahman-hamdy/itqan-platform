@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Archived;
 
+use Exception;
 use App\Models\QuranCircle;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
@@ -93,7 +94,7 @@ class MigrateQuranSystemData extends Command
 
             $this->showResults($results, $isDryRun);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             $this->error('❌ Migration failed: '.$e->getMessage());
 

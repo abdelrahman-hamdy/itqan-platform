@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use Exception;
+use Throwable;
 use App\Models\AcademicSession;
 use App\Models\QuranSession;
 use App\Models\User;
@@ -108,9 +110,9 @@ class RetryAttendanceOperation implements ShouldQueue
                 ]);
 
                 // Throw exception to trigger another retry
-                throw new \Exception('Attendance operation failed');
+                throw new Exception('Attendance operation failed');
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Attendance operation retry failed', [
                 'session_id' => $this->sessionId,
                 'user_id' => $this->userId,
@@ -127,7 +129,7 @@ class RetryAttendanceOperation implements ShouldQueue
     /**
      * Handle a job failure.
      */
-    public function failed(\Throwable $exception): void
+    public function failed(Throwable $exception): void
     {
         Log::error('RetryAttendanceOperation job failed permanently', [
             'session_id' => $this->sessionId,

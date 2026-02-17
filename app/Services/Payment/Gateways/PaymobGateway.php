@@ -2,6 +2,8 @@
 
 namespace App\Services\Payment\Gateways;
 
+use Exception;
+use Carbon\Carbon;
 use App\Contracts\Payment\SupportsRecurringPayments;
 use App\Contracts\Payment\SupportsRefunds;
 use App\Contracts\Payment\SupportsTokenization;
@@ -330,7 +332,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
                     'save_card_requested' => $intent->saveCard ?? false,
                 ],
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('payments')->error('Paymob exception', [
                 'message' => $e->getMessage(),
                 'intent' => $intent->toSafeLogArray(),
@@ -407,7 +409,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
                 transactionId: $transactionId,
                 rawResponse: $txn,
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('payments')->error('Paymob verification exception', [
                 'transaction_id' => $transactionId,
                 'message' => $e->getMessage(),
@@ -529,7 +531,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
                 'client_secret' => $clientSecret,
                 'intention_id' => $data['id'] ?? null,
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('payments')->error('Paymob tokenization iframe exception', [
                 'user_id' => $userId,
                 'message' => $e->getMessage(),
@@ -646,7 +648,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
                 holderName: $cardData['holder_name'] ?? null,
                 rawResponse: $tokenData,
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('payments')->error('Paymob tokenization exception', [
                 'user_id' => $userId,
                 'message' => $e->getMessage(),
@@ -793,7 +795,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
                 transactionId: (string) ($txnData['id'] ?? ''),
                 rawResponse: $txnData,
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('payments')->error('Paymob token charge exception', [
                 'message' => $e->getMessage(),
             ]);
@@ -931,7 +933,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
                 transactionId: $transactionId,
                 rawResponse: $response['data'] ?? [],
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('payments')->error('Paymob refund exception', [
                 'transaction_id' => $transactionId,
                 'message' => $e->getMessage(),
@@ -1014,7 +1016,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
                 transactionId: $transactionId,
                 rawResponse: $response['data'] ?? [],
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('payments')->error('Paymob void exception', [
                 'transaction_id' => $transactionId,
                 'message' => $e->getMessage(),
@@ -1053,7 +1055,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
 
             // Check if within void window (24 hours)
             if (isset($txn['created_at'])) {
-                $createdAt = \Carbon\Carbon::parse($txn['created_at']);
+                $createdAt = Carbon::parse($txn['created_at']);
                 $hoursSinceCreation = now()->diffInHours($createdAt);
 
                 if ($hoursSinceCreation > 24) {
@@ -1062,7 +1064,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
             }
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -1099,7 +1101,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
             }
 
             return null;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('payments')->error('Paymob order inquiry exception', [
                 'order_id' => $orderId,
                 'message' => $e->getMessage(),

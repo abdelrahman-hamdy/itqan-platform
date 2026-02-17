@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Services\AcademyContextService;
 use App\Enums\UserType;
 use App\Models\QuranIndividualCircle;
 use App\Models\User;
@@ -109,7 +110,7 @@ class QuranIndividualCirclePolicy
     private function sameAcademy(User $user, QuranIndividualCircle $circle): bool
     {
         if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
-            $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
+            $userAcademyId = AcademyContextService::getCurrentAcademyId();
             if (! $userAcademyId) {
                 return true;
             }

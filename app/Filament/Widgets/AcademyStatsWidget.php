@@ -8,7 +8,7 @@ use Filament\Widgets\ChartWidget;
 
 class AcademyStatsWidget extends ChartWidget
 {
-    protected static ?string $heading = 'إحصائيات الأكاديميات';
+    protected ?string $heading = 'إحصائيات الأكاديميات';
 
     protected static ?int $sort = 2;
 

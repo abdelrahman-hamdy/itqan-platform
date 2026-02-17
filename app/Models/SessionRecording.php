@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use App\Enums\RecordingStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,9 +20,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property int $recordable_id ID of the recorded session
  * @property string $recording_id LiveKit Egress recording ID
  * @property string $meeting_room LiveKit room name
- * @property \App\Enums\RecordingStatus $status recording|processing|completed|failed|deleted
- * @property \Carbon\Carbon $started_at When recording started
- * @property \Carbon\Carbon|null $ended_at When recording ended
+ * @property RecordingStatus $status recording|processing|completed|failed|deleted
+ * @property Carbon $started_at When recording started
+ * @property Carbon|null $ended_at When recording ended
  * @property int|null $duration Duration in seconds
  * @property string|null $file_path Path to recording file
  * @property string|null $file_name File name
@@ -29,8 +30,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string $file_format File format (mp4, webm, etc.)
  * @property array|null $metadata Additional metadata
  * @property string|null $processing_error Error message if failed
- * @property \Carbon\Carbon|null $processed_at When processing completed
- * @property \Carbon\Carbon|null $completed_at When recording became available
+ * @property Carbon|null $processed_at When processing completed
+ * @property Carbon|null $completed_at When recording became available
  */
 class SessionRecording extends Model
 {

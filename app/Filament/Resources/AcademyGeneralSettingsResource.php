@@ -2,6 +2,14 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use ValueError;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use App\Filament\Resources\AcademyGeneralSettingsResource\Pages\ManageAcademyGeneralSettings;
+use App\Filament\Resources\AcademyGeneralSettingsResource\Pages\EditGeneralSettings;
 use App\Enums\Country;
 use App\Enums\Currency;
 use App\Enums\NotificationCategory;
@@ -14,16 +22,11 @@ use App\Models\Academy;
 use App\Models\QuranPackage;
 use App\Services\AcademyContextService;
 use Filament\Forms\Components\CheckboxList;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
-use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -33,7 +36,7 @@ class AcademyGeneralSettingsResource extends BaseResource
 {
     protected static ?string $model = Academy::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-globe-alt';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-globe-alt';
 
     protected static ?string $navigationLabel = 'الإعدادات العامة';
 
@@ -41,7 +44,7 @@ class AcademyGeneralSettingsResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'الإعدادات العامة';
 
-    protected static ?string $navigationGroup = 'إدارة الأكاديميات';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة الأكاديميات';
 
     protected static ?int $navigationSort = 2;
 
@@ -82,10 +85,10 @@ class AcademyGeneralSettingsResource extends BaseResource
         return $academyContextService->getCurrentAcademyId() !== null;
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 // Panel 0: Basic Academy Information
                 Section::make('معلومات الأكاديمية')
                     ->description('الاسم والمعلومات الأساسية للأكاديمية')
@@ -356,11 +359,11 @@ class AcademyGeneralSettingsResource extends BaseResource
             ]);
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
-                InfolistSection::make('الإعدادات الإقليمية')
+        return $schema
+            ->components([
+                Section::make('الإعدادات الإقليمية')
                     ->description('إعدادات البلد والعملة والمنطقة الزمنية للأكاديمية')
                     ->schema([
                         TextEntry::make('name')
@@ -376,7 +379,7 @@ class AcademyGeneralSettingsResource extends BaseResource
 
                                 try {
                                     return Country::from($state)->label();
-                                } catch (\ValueError $e) {
+                                } catch (ValueError $e) {
                                     return $state;
                                 }
                             }),
@@ -390,7 +393,7 @@ class AcademyGeneralSettingsResource extends BaseResource
 
                                 try {
                                     return Currency::from($state)->label();
-                                } catch (\ValueError $e) {
+                                } catch (ValueError $e) {
                                     return $state;
                                 }
                             }),
@@ -404,14 +407,14 @@ class AcademyGeneralSettingsResource extends BaseResource
 
                                 try {
                                     return Timezone::from($state)->label();
-                                } catch (\ValueError $e) {
+                                } catch (ValueError $e) {
                                     return $state;
                                 }
                             }),
                     ])
                     ->columns(2),
 
-                InfolistSection::make('معلومات إضافية')
+                Section::make('معلومات إضافية')
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('تاريخ الإنشاء')
@@ -450,7 +453,7 @@ class AcademyGeneralSettingsResource extends BaseResource
 
                         try {
                             return Country::from($state)->label();
-                        } catch (\ValueError $e) {
+                        } catch (ValueError $e) {
                             return $state;
                         }
                     }),
@@ -464,7 +467,7 @@ class AcademyGeneralSettingsResource extends BaseResource
 
                         try {
                             return Currency::from($state)->label();
-                        } catch (\ValueError $e) {
+                        } catch (ValueError $e) {
                             return $state;
                         }
                     }),
@@ -478,7 +481,7 @@ class AcademyGeneralSettingsResource extends BaseResource
 
                         try {
                             return Timezone::from($state)->label();
-                        } catch (\ValueError $e) {
+                        } catch (ValueError $e) {
                             return $state;
                         }
                     }),
@@ -487,9 +490,9 @@ class AcademyGeneralSettingsResource extends BaseResource
                     ->label('آخر تحديث')
                     ->dateTime('Y-m-d H:i'),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                ViewAction::make(),
+                EditAction::make(),
             ])
             ->paginated(false)
             ->poll('30s');
@@ -498,8 +501,8 @@ class AcademyGeneralSettingsResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageAcademyGeneralSettings::route('/'),
-            'edit' => Pages\EditGeneralSettings::route('/{record}/edit'),
+            'index' => ManageAcademyGeneralSettings::route('/'),
+            'edit' => EditGeneralSettings::route('/{record}/edit'),
         ];
     }
 

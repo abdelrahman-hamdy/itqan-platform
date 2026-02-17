@@ -2,6 +2,11 @@
 
 namespace App\Models\Traits;
 
+use Namu\WireChat\Models\Conversation;
+use Namu\WireChat\Models\Participant;
+use Exception;
+use Log;
+use Namu\WireChat\Models\Message;
 use App\Enums\UserType;
 use App\Models\User;
 
@@ -94,7 +99,7 @@ trait HasChatIntegration
         // The Chatable trait provides access to WireChat functionality
         try {
             // Try to find an existing private conversation between these two users
-            $conversation = \Namu\WireChat\Models\Conversation::where('type', 'private')
+            $conversation = Conversation::where('type', 'private')
                 ->whereHas('participants', function ($query) {
                     $query->where('participantable_id', $this->id)
                         ->where('participantable_type', User::class);
@@ -111,19 +116,19 @@ trait HasChatIntegration
 
             // If no conversation exists, create a new one
             // Note: 'type' is not in fillable, so we need to set it directly
-            $newConversation = new \Namu\WireChat\Models\Conversation;
+            $newConversation = new Conversation;
             $newConversation->type = 'private';
             $newConversation->save();
 
             // Add both participants
-            \Namu\WireChat\Models\Participant::create([
+            Participant::create([
                 'conversation_id' => $newConversation->id,
                 'participantable_id' => $this->id,
                 'participantable_type' => User::class,
                 'role' => 'participant',
             ]);
 
-            \Namu\WireChat\Models\Participant::create([
+            Participant::create([
                 'conversation_id' => $newConversation->id,
                 'participantable_id' => $otherUser->id,
                 'participantable_type' => User::class,
@@ -131,9 +136,9 @@ trait HasChatIntegration
             ]);
 
             return $newConversation;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Fallback: just return null if conversation creation fails
-            \Log::error('Error creating private conversation', [
+            Log::error('Error creating private conversation', [
                 'user_id' => $this->id,
                 'other_user_id' => $otherUser->id,
                 'error' => $e->getMessage(),
@@ -153,7 +158,7 @@ trait HasChatIntegration
         $userType = static::class;
 
         // Get all conversations where this user is a participant
-        $participants = \Namu\WireChat\Models\Participant::query()
+        $participants = Participant::query()
             ->where('participantable_id', $userId)
             ->where('participantable_type', $userType)
             ->whereNull('exited_at')
@@ -165,7 +170,7 @@ trait HasChatIntegration
             // Count messages in this conversation that:
             // 1. Were created after the user last read the conversation
             // 2. Were NOT sent by the user themselves
-            $query = \Namu\WireChat\Models\Message::query()
+            $query = Message::query()
                 ->where('conversation_id', $participant->conversation_id)
                 ->whereNull('deleted_at')
                 ->where(function ($q) use ($userId, $userType) {

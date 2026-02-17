@@ -2,14 +2,22 @@
 
 namespace App\Filament\Resources\StudentProgressResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\IconEntry;
+use Illuminate\Support\HtmlString;
+use App\Models\CourseSubscription;
 use App\Filament\Resources\StudentProgressResource;
 use Filament\Actions;
 use Filament\Infolists\Components;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
- * @property \App\Models\CourseSubscription $record
+ * @property CourseSubscription $record
  */
 class ViewStudentProgress extends ViewRecord
 {
@@ -26,10 +34,10 @@ class ViewStudentProgress extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
 
-            Actions\Action::make('markComplete')
+            Action::make('markComplete')
                 ->label('تحديد كمكتمل')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
@@ -39,7 +47,7 @@ class ViewStudentProgress extends ViewRecord
                 ->action(fn () => $this->record->markAsCompleted())
                 ->visible(fn () => ! $this->record->isCompleted()),
 
-            Actions\Action::make('issueCertificate')
+            Action::make('issueCertificate')
                 ->label('إصدار شهادة')
                 ->icon('heroicon-o-academic-cap')
                 ->color('primary')
@@ -49,7 +57,7 @@ class ViewStudentProgress extends ViewRecord
                 ->action(fn () => $this->record->issueCertificateForCourse())
                 ->visible(fn () => $this->record->can_earn_certificate),
 
-            Actions\Action::make('recalculateProgress')
+            Action::make('recalculateProgress')
                 ->label('إعادة حساب التقدم')
                 ->icon('heroicon-o-arrow-path')
                 ->color('gray')
@@ -60,37 +68,37 @@ class ViewStudentProgress extends ViewRecord
         ];
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
         return $infolist
             ->schema([
                 // Section 1: Basic Info
-                Components\Section::make('معلومات أساسية')
+                Section::make('معلومات أساسية')
                     ->schema([
-                        Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Components\TextEntry::make('student.name')
+                                TextEntry::make('student.name')
                                     ->label('الطالب')
                                     ->icon('heroicon-o-user')
                                     ->weight('bold'),
 
-                                Components\TextEntry::make('recordedCourse.title')
+                                TextEntry::make('recordedCourse.title')
                                     ->label('الدورة')
                                     ->icon('heroicon-o-academic-cap'),
                             ]),
 
-                        Components\TextEntry::make('access_status')
+                        TextEntry::make('access_status')
                             ->label('حالة الوصول')
                             ->badge()
                             ->color('info'),
                     ]),
 
                 // Section 2: Progress Statistics
-                Components\Section::make('إحصائيات التقدم')
+                Section::make('إحصائيات التقدم')
                     ->schema([
-                        Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Components\TextEntry::make('progress_percentage')
+                                TextEntry::make('progress_percentage')
                                     ->label('نسبة الإكمال')
                                     ->suffix('%')
                                     ->badge()
@@ -102,12 +110,12 @@ class ViewStudentProgress extends ViewRecord
                                         default => 'gray',
                                     }),
 
-                                Components\TextEntry::make('lessons_count')
+                                TextEntry::make('lessons_count')
                                     ->label('الدروس المكتملة')
                                     ->getStateUsing(fn ($record) => "{$record->completed_lessons} / {$record->total_lessons}")
                                     ->icon('heroicon-o-book-open'),
 
-                                Components\IconEntry::make('certificate_issued')
+                                IconEntry::make('certificate_issued')
                                     ->label('شهادة صادرة')
                                     ->boolean()
                                     ->trueIcon('heroicon-o-academic-cap')
@@ -117,7 +125,7 @@ class ViewStudentProgress extends ViewRecord
                             ]),
 
                         // Progress bar visualization
-                        Components\TextEntry::make('progress_percentage')
+                        TextEntry::make('progress_percentage')
                             ->label('شريط التقدم')
                             ->formatStateUsing(function ($state) {
                                 $percentage = (int) $state;
@@ -128,7 +136,7 @@ class ViewStudentProgress extends ViewRecord
                                     default => 'bg-gray-300',
                                 };
 
-                                return new \Illuminate\Support\HtmlString(
+                                return new HtmlString(
                                     "<div class='w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700'>
                                         <div class='{$color} h-4 rounded-full transition-all duration-500' style='width: {$percentage}%'></div>
                                     </div>
@@ -140,28 +148,28 @@ class ViewStudentProgress extends ViewRecord
                     ]),
 
                 // Section 3: Dates
-                Components\Section::make('التواريخ')
+                Section::make('التواريخ')
                     ->schema([
-                        Components\Grid::make(4)
+                        Grid::make(4)
                             ->schema([
-                                Components\TextEntry::make('created_at')
+                                TextEntry::make('created_at')
                                     ->label('تاريخ التسجيل')
                                     ->dateTime('Y-m-d H:i')
                                     ->icon('heroicon-o-calendar'),
 
-                                Components\TextEntry::make('last_accessed_at')
+                                TextEntry::make('last_accessed_at')
                                     ->label('آخر دخول')
                                     ->since()
                                     ->icon('heroicon-o-clock')
                                     ->placeholder('لم يدخل بعد'),
 
-                                Components\TextEntry::make('completion_date')
+                                TextEntry::make('completion_date')
                                     ->label('تاريخ الإكمال')
                                     ->dateTime('Y-m-d H:i')
                                     ->icon('heroicon-o-check-badge')
                                     ->placeholder('لم يكتمل بعد'),
 
-                                Components\TextEntry::make('ends_at')
+                                TextEntry::make('ends_at')
                                     ->label('تاريخ انتهاء الوصول')
                                     ->dateTime('Y-m-d')
                                     ->icon('heroicon-o-calendar-days')
@@ -171,20 +179,20 @@ class ViewStudentProgress extends ViewRecord
                     ->collapsible(),
 
                 // Section 4: Course Details
-                Components\Section::make('تفاصيل الدورة')
+                Section::make('تفاصيل الدورة')
                     ->schema([
-                        Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Components\TextEntry::make('recordedCourse.instructor.name')
+                                TextEntry::make('recordedCourse.instructor.name')
                                     ->label('المدرب')
                                     ->icon('heroicon-o-user-circle')
                                     ->placeholder('غير محدد'),
 
-                                Components\TextEntry::make('total_duration_formatted')
+                                TextEntry::make('total_duration_formatted')
                                     ->label('مدة الدورة الكلية')
                                     ->icon('heroicon-o-clock'),
 
-                                Components\TextEntry::make('recordedCourse.level')
+                                TextEntry::make('recordedCourse.level')
                                     ->label('مستوى الدورة')
                                     ->badge()
                                     ->formatStateUsing(fn ($state) => match ($state) {

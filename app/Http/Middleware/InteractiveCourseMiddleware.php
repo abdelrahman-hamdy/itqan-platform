@@ -14,7 +14,7 @@ class InteractiveCourseMiddleware
      * Handle an incoming request for interactive course access.
      * Routes users to appropriate controller method based on their role.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param Closure(Request):Response $next
      */
     public function handle(Request $request, Closure $next): Response
     {

@@ -2,6 +2,10 @@
 
 namespace App\Models\Traits;
 
+use App\Enums\SessionStatus;
+use Exception;
+use App\Models\QuranSubscription;
+use App\Models\AcademicSubscription;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -64,7 +68,7 @@ trait CountsTowardsSubscription
     public function countsTowardsSubscription(): bool
     {
         // CANCELLED sessions never count (students cannot cancel themselves)
-        if ($this->status === \App\Enums\SessionStatus::CANCELLED) {
+        if ($this->status === SessionStatus::CANCELLED) {
             return false;
         }
 
@@ -111,7 +115,7 @@ trait CountsTowardsSubscription
             $session = static::lockForUpdate()->find($this->id);
 
             if (! $session) {
-                throw new \Exception("Session {$this->id} not found");
+                throw new Exception("Session {$this->id} not found");
             }
 
             // Check if this session was already counted
@@ -130,7 +134,7 @@ trait CountsTowardsSubscription
 
                     Log::info("Session {$this->session_code} ({$this->id}) counted towards subscription {$subscription->id}");
 
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Log::warning("Failed to update subscription usage for session {$this->session_code} ({$this->id}): ".$e->getMessage());
                     throw $e; // Re-throw to rollback the transaction
                 }
@@ -201,7 +205,7 @@ trait CountsTowardsSubscription
 
                 Log::info("Session {$this->session_code} ({$this->id}) subscription usage reversed from subscription {$subscription->id}");
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::warning("Failed to reverse subscription usage for session {$this->session_code} ({$this->id}): ".$e->getMessage());
                 throw $e; // Re-throw to rollback the transaction
             }
@@ -224,7 +228,7 @@ trait CountsTowardsSubscription
      * For QuranSession (group): return enrollment->activeSubscription for the student
      * For AcademicSession: return $this->academicIndividualLesson?->activeSubscription
      *
-     * @return \App\Models\QuranSubscription|\App\Models\AcademicSubscription|null
+     * @return QuranSubscription|AcademicSubscription|null
      */
     abstract protected function getSubscriptionForCounting();
 }

@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources\QuranTeacherProfileResource\Pages;
 
+use Filament\Actions\DeleteAction;
+use App\Models\QuranTeacherProfile;
 use App\Filament\Resources\QuranTeacherProfileResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 /**
- * @property \App\Models\QuranTeacherProfile $record
+ * @property QuranTeacherProfile $record
  */
 class EditQuranTeacherProfile extends EditRecord
 {
@@ -16,7 +18,7 @@ class EditQuranTeacherProfile extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 

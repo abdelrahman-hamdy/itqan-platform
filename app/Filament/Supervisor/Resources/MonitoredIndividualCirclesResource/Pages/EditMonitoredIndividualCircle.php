@@ -2,6 +2,8 @@
 
 namespace App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource\Pages;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
 use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -13,9 +15,9 @@ class EditMonitoredIndividualCircle extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
-            Actions\DeleteAction::make()
+            DeleteAction::make()
                 ->label('حذف'),
         ];
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\UserType;
 use App\Models\Academy;
@@ -123,7 +124,7 @@ class QuranSubscriptionPaymentController extends Controller
             $payment = Payment::create([
                 'academy_id' => $academy->id,
                 'user_id' => $user->id,
-                'payable_type' => \App\Models\QuranSubscription::class,
+                'payable_type' => QuranSubscription::class,
                 'payable_id' => $subscription->id,
                 'payment_code' => Payment::generatePaymentCode($academy->id, 'QSP'),
                 'payment_method' => $gateway,
@@ -169,7 +170,7 @@ class QuranSubscriptionPaymentController extends Controller
             // Fallback
             return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             Log::error('Quran subscription payment failed', [

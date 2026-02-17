@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
+use InvalidArgumentException;
+use App\Models\QuranSession;
+use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
 use App\Enums\CalendarSessionType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -41,14 +45,14 @@ final readonly class CalendarEventId
      *
      * @param  string  $eventId  Event ID in format '{prefix}-{id}'
      *
-     * @throws \InvalidArgumentException If format is invalid
+     * @throws InvalidArgumentException If format is invalid
      */
     public static function fromString(string $eventId): self
     {
         $parts = explode('-', $eventId, 2);
 
         if (count($parts) !== 2) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 "Invalid event ID format: '{$eventId}'. Expected format: '{prefix}-{id}'"
             );
         }
@@ -56,7 +60,7 @@ final readonly class CalendarEventId
         [$prefix, $idString] = $parts;
 
         if (! is_numeric($idString)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 "Invalid event ID: '{$eventId}'. ID portion must be numeric."
             );
         }
@@ -81,10 +85,10 @@ final readonly class CalendarEventId
     public static function fromModel(Model $model): self
     {
         $type = match (true) {
-            $model instanceof \App\Models\QuranSession => CalendarSessionType::fromQuranSession($model),
-            $model instanceof \App\Models\AcademicSession => CalendarSessionType::ACADEMIC_PRIVATE,
-            $model instanceof \App\Models\InteractiveCourseSession => CalendarSessionType::INTERACTIVE_COURSE,
-            default => throw new \InvalidArgumentException(
+            $model instanceof QuranSession => CalendarSessionType::fromQuranSession($model),
+            $model instanceof AcademicSession => CalendarSessionType::ACADEMIC_PRIVATE,
+            $model instanceof InteractiveCourseSession => CalendarSessionType::INTERACTIVE_COURSE,
+            default => throw new InvalidArgumentException(
                 'Unsupported model type: '.get_class($model)
             ),
         };

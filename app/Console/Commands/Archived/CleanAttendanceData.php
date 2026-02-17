@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands\Archived;
 
+use Carbon\Carbon;
+use Exception;
 use App\Models\MeetingAttendance;
 use App\Models\MeetingAttendanceEvent;
 use Illuminate\Console\Command;
@@ -57,7 +59,7 @@ class CleanAttendanceData extends Command
         if ($all) {
             $this->warn('⚠️  You are about to delete ALL attendance data');
         } elseif ($before) {
-            $date = \Carbon\Carbon::parse($before);
+            $date = Carbon::parse($before);
             $eventsQuery->where('created_at', '<', $date);
             $attendanceQuery->where('created_at', '<', $date);
             $this->info("Targeting data created before: {$date->toDateString()}");
@@ -146,7 +148,7 @@ class CleanAttendanceData extends Command
 
             return 0;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             $bar->finish();
             $this->newLine(2);

@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Models\ParentProfile;
 use App\Models\StudentProfile;
 
 class StudentProfileObserver
@@ -26,7 +27,7 @@ class StudentProfileObserver
 
             // Remove from old parent's students relationship
             if ($oldParentId) {
-                $oldParent = \App\Models\ParentProfile::find($oldParentId);
+                $oldParent = ParentProfile::find($oldParentId);
                 if ($oldParent) {
                     $oldParent->students()->detach($studentProfile->id);
                 }
@@ -34,7 +35,7 @@ class StudentProfileObserver
 
             // Add to new parent's students relationship
             if ($newParentId) {
-                $newParent = \App\Models\ParentProfile::find($newParentId);
+                $newParent = ParentProfile::find($newParentId);
                 if ($newParent && ! $newParent->students()->where('student_profiles.id', $studentProfile->id)->exists()) {
                     $newParent->students()->attach($studentProfile->id, [
                         'relationship_type' => 'other', // Default relationship type
@@ -51,7 +52,7 @@ class StudentProfileObserver
     {
         // Remove student from parent's students relationship when deleted
         if ($studentProfile->parent_id) {
-            $parent = \App\Models\ParentProfile::find($studentProfile->parent_id);
+            $parent = ParentProfile::find($studentProfile->parent_id);
             if ($parent) {
                 $parent->students()->detach($studentProfile->id);
             }

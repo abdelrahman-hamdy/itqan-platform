@@ -2,6 +2,11 @@
 
 namespace App\Services;
 
+use Exception;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Response;
+use App\Models\QuranCircle;
 use App\Contracts\CertificateServiceInterface;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
@@ -57,7 +62,7 @@ class CertificateService implements CertificateServiceInterface
 
         // Verify completion
         if ($subscription->progress_percentage < 100) {
-            throw new \Exception('Student must complete 100% of the course to receive a certificate.');
+            throw new Exception('Student must complete 100% of the course to receive a certificate.');
         }
 
         $course = $subscription->recordedCourse;
@@ -114,7 +119,7 @@ class CertificateService implements CertificateServiceInterface
 
         // Verify completion
         if ($enrollment->enrollment_status !== EnrollmentStatus::COMPLETED) {
-            throw new \Exception('Student must complete the course to receive a certificate.');
+            throw new Exception('Student must complete the course to receive a certificate.');
         }
 
         $course = $enrollment->course;
@@ -176,12 +181,12 @@ class CertificateService implements CertificateServiceInterface
         // Ensure it's a QuranSubscription or AcademicSubscription
         if (! ($subscriptionable instanceof QuranSubscription) &&
             ! ($subscriptionable instanceof AcademicSubscription)) {
-            throw new \Exception('Invalid subscription type for manual certificate.');
+            throw new Exception('Invalid subscription type for manual certificate.');
         }
 
         // Check if certificate already issued
         if ($subscriptionable->certificate_issued || $this->repository->existsForSubscription($subscriptionable)) {
-            throw new \Exception('Certificate already issued for this subscription.');
+            throw new Exception('Certificate already issued for this subscription.');
         }
 
         $academy = $subscriptionable->academy;
@@ -288,7 +293,7 @@ class CertificateService implements CertificateServiceInterface
     /**
      * Download certificate
      */
-    public function downloadCertificate(Certificate $certificate): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function downloadCertificate(Certificate $certificate): BinaryFileResponse
     {
         if (! $certificate->fileExists()) {
             // Regenerate if file doesn't exist
@@ -297,7 +302,7 @@ class CertificateService implements CertificateServiceInterface
             $this->repository->update($certificate, ['file_path' => $filePath]);
         }
 
-        return \Illuminate\Support\Facades\Storage::download(
+        return Storage::download(
             $certificate->file_path,
             "{$certificate->certificate_number}.pdf"
         );
@@ -306,7 +311,7 @@ class CertificateService implements CertificateServiceInterface
     /**
      * Stream certificate (view in browser)
      */
-    public function streamCertificate(Certificate $certificate): \Illuminate\Http\Response|\Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function streamCertificate(Certificate $certificate): Response|BinaryFileResponse
     {
         if (! $certificate->fileExists()) {
             // Regenerate if file doesn't exist
@@ -318,7 +323,7 @@ class CertificateService implements CertificateServiceInterface
                 ->header('Content-Disposition', 'inline; filename="'.$certificate->certificate_number.'.pdf"');
         }
 
-        return response()->file(\Illuminate\Support\Facades\Storage::path($certificate->file_path));
+        return response()->file(Storage::path($certificate->file_path));
     }
 
     /**
@@ -344,7 +349,7 @@ class CertificateService implements CertificateServiceInterface
      * certificates directly linked to the QuranCircle model
      */
     public function issueGroupCircleCertificate(
-        \App\Models\QuranCircle $circle,
+        QuranCircle $circle,
         User $student,
         string $achievementText,
         CertificateTemplateStyle|string $templateStyle,
@@ -362,7 +367,7 @@ class CertificateService implements CertificateServiceInterface
             'academy_id' => $academy->id,
             'student_id' => $student->id,
             'teacher_id' => $circle->quran_teacher_id,
-            'certificateable_type' => \App\Models\QuranCircle::class,
+            'certificateable_type' => QuranCircle::class,
             'certificateable_id' => $circle->id,
             'certificate_type' => CertificateType::QURAN_SUBSCRIPTION,
             'template_style' => $templateStyle,

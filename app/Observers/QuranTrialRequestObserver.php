@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use Exception;
 use App\Enums\TrialRequestStatus;
 use App\Models\QuranTrialRequest;
 use App\Services\StudentDashboardService;
@@ -68,7 +69,7 @@ class QuranTrialRequestObserver
                 TrialRequestStatus::CANCELLED => $this->handleCancelled($trialRequest),
                 default => null, // No notification for other status changes
             };
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send trial request notification', [
                 'trial_request_id' => $trialRequest->id,
                 'new_status' => $newStatus->value,
@@ -125,7 +126,7 @@ class QuranTrialRequestObserver
                 'student_id' => $trialRequest->student_id,
                 'academy_id' => $trialRequest->academy_id,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to clear student dashboard cache', [
                 'trial_request_id' => $trialRequest->id,
                 'error' => $e->getMessage(),

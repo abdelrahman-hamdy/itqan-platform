@@ -17,7 +17,7 @@ class ObserveSession extends Page
 {
     protected static string $resource = MonitoredAllSessionsResource::class;
 
-    protected static string $view = 'filament.supervisor.pages.observe-session';
+    protected string $view = 'filament.supervisor.pages.observe-session';
 
     public Model $record;
 

@@ -2,6 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Database\QueryException;
+use Log;
+use Exception;
 use App\Enums\UserType;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Academy;
@@ -19,7 +25,7 @@ class ParentRegistrationController extends Controller
 {
     use ApiResponses;
 
-    public function showRegistrationForm(): \Illuminate\View\View
+    public function showRegistrationForm(): View
     {
         $academyContextService = app(AcademyContextService::class);
         $academy = $academyContextService->getCurrentAcademy();
@@ -31,7 +37,7 @@ class ParentRegistrationController extends Controller
      * Verify student codes by parent phone number
      * API endpoint for real-time verification during registration
      */
-    public function verifyStudentCodes(Request $request): \Illuminate\Http\JsonResponse
+    public function verifyStudentCodes(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'parent_phone' => 'required|string',
@@ -125,7 +131,7 @@ class ParentRegistrationController extends Controller
     /**
      * Register a new parent account
      */
-    public function register(Request $request): \Illuminate\Http\RedirectResponse
+    public function register(Request $request): RedirectResponse
     {
         $academyContextService = app(AcademyContextService::class);
         $academyId = $academyContextService->getCurrentAcademyId();
@@ -320,9 +326,9 @@ class ParentRegistrationController extends Controller
             return redirect()->route('parent.profile')
                 ->with('success', 'تم إنشاء حسابك بنجاح! مرحباً بك في المنصة.');
 
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             DB::rollBack();
-            \Log::error('Parent registration failed', [
+            Log::error('Parent registration failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -347,9 +353,9 @@ class ParentRegistrationController extends Controller
             return back()
                 ->withErrors(['error' => 'حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى.'])
                 ->withInput();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
-            \Log::error('Parent registration failed', [
+            Log::error('Parent registration failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

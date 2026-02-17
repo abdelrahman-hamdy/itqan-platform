@@ -42,7 +42,7 @@ class DatabaseNotifications extends BaseDatabaseNotifications
      */
     private function getRelevantCategories(): ?array
     {
-        $panelId = Filament::getCurrentPanel()?->getId();
+        $panelId = Filament::getCurrentOrDefaultPanel()?->getId();
 
         return match ($panelId) {
             // Admin and Academy see everything

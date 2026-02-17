@@ -14,9 +14,9 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class QuranOverviewWidget extends BaseWidget
 {
-    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+    protected string $view = 'filament.widgets.collapsible-stats-overview-widget';
 
-    protected static ?string $pollingInterval = '30s';
+    protected ?string $pollingInterval = '30s';
 
     protected static bool $isLazy = false;
 

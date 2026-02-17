@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Calendar;
 
+use Exception;
 use App\Enums\CalendarSessionType;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -105,7 +106,7 @@ class CalendarEventHandler
                     'duration_minutes' => $session->duration_minutes ?? 60,
                     'teacher_id' => $this->getTeacherId($session, $eventId->type),
                 ], $session->id, $this->getSessionTypeForConflict($eventId->type));
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return EventHandlerResult::revert($e->getMessage(), 'conflict');
             }
 
@@ -138,7 +139,7 @@ class CalendarEventHandler
 
                 return EventHandlerResult::success(__('calendar.event.updated_successfully'));
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Calendar event drop failed', [
                 'event_id' => $eventId->toString(),
                 'error' => $e->getMessage(),
@@ -198,7 +199,7 @@ class CalendarEventHandler
                     'duration_minutes' => $newDuration,
                     'teacher_id' => $this->getTeacherId($session, $eventId->type),
                 ], $session->id, $this->getSessionTypeForConflict($eventId->type));
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return EventHandlerResult::revert($e->getMessage(), 'conflict');
             }
 
@@ -220,7 +221,7 @@ class CalendarEventHandler
 
                 return EventHandlerResult::success(__('calendar.event.duration_updated', ['duration' => $newDuration]));
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Calendar event resize failed', [
                 'event_id' => $eventId->toString(),
                 'error' => $e->getMessage(),

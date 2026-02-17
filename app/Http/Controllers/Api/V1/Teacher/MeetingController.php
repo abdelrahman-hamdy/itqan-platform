@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
@@ -70,7 +71,7 @@ class MeetingController extends Controller
                 'meeting_link' => $session->meeting_link,
                 'room_name' => $roomName,
             ], __('Meeting created successfully'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->error(__('Failed to create meeting.'), 500, 'MEETING_CREATE_FAILED');
         }
     }
@@ -130,7 +131,7 @@ class MeetingController extends Controller
                     'is_teacher' => true,
                 ],
             ], __('Token generated successfully'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->error(__('Failed to generate token.'), 500, 'TOKEN_GENERATE_FAILED');
         }
     }

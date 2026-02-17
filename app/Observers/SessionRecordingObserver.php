@@ -2,6 +2,8 @@
 
 namespace App\Observers;
 
+use App\Enums\RecordingStatus;
+use Throwable;
 use App\Models\SessionRecording;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -46,7 +48,7 @@ class SessionRecordingObserver
         $newStatus = $recording->status;
 
         // Handle both string and enum values
-        $statusValue = $newStatus instanceof \App\Enums\RecordingStatus
+        $statusValue = $newStatus instanceof RecordingStatus
             ? $newStatus->value
             : $newStatus;
 
@@ -109,7 +111,7 @@ class SessionRecordingObserver
                 'remote_url' => $recording->getRemoteUrl(),
             ]);
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Log but do not prevent the model operation from completing
             Log::error('Failed to delete recording storage file', [
                 'recording_id' => $recording->id,

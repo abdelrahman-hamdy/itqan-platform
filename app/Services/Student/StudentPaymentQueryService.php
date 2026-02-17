@@ -2,6 +2,7 @@
 
 namespace App\Services\Student;
 
+use Illuminate\Database\Eloquent\Collection;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\User;
@@ -94,7 +95,7 @@ class StudentPaymentQueryService
     /**
      * Get recent payments for a student.
      */
-    public function getRecentPayments(User $user, int $limit = 5): \Illuminate\Database\Eloquent\Collection
+    public function getRecentPayments(User $user, int $limit = 5): Collection
     {
         $academy = $user->academy;
 
@@ -109,7 +110,7 @@ class StudentPaymentQueryService
     /**
      * Get payments by subscription type.
      */
-    public function getPaymentsBySubscriptionType(User $user, string $subscriptionType): \Illuminate\Database\Eloquent\Collection
+    public function getPaymentsBySubscriptionType(User $user, string $subscriptionType): Collection
     {
         $academy = $user->academy;
 

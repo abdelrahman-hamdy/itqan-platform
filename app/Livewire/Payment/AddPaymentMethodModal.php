@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Payment;
 
+use Exception;
 use App\Constants\DefaultAcademy;
 use App\Models\Academy;
 use App\Services\Payment\AcademyPaymentGatewayFactory;
@@ -38,7 +39,7 @@ class AddPaymentMethodModal extends Component
             $academy = $user->academy ?? Academy::where('subdomain', DefaultAcademy::subdomain())->first();
 
             if (! $academy) {
-                throw new \Exception('Academy not found');
+                throw new Exception('Academy not found');
             }
 
             // Get gateway factory
@@ -76,7 +77,7 @@ class AddPaymentMethodModal extends Component
                 $this->isLoading = false;
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to initiate add card', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),

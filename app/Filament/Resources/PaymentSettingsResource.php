@@ -2,18 +2,23 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Facades\Filament;
+use Illuminate\Database\Eloquent\Builder;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Actions\EditAction;
+use App\Filament\Resources\PaymentSettingsResource\Pages\ManagePaymentSettings;
+use App\Filament\Resources\PaymentSettingsResource\Pages\EditPaymentSettings;
 use App\Enums\UserType;
 use App\Filament\Resources\PaymentSettingsResource\Pages;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
 use Filament\Forms\Components\CheckboxList;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -23,7 +28,7 @@ class PaymentSettingsResource extends BaseResource
 {
     protected static ?string $model = Academy::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-credit-card';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-credit-card';
 
     protected static ?string $navigationLabel = 'إعدادات الدفع';
 
@@ -38,7 +43,7 @@ class PaymentSettingsResource extends BaseResource
      */
     public static function getNavigationGroup(): ?string
     {
-        $panel = \Filament\Facades\Filament::getCurrentPanel();
+        $panel = Filament::getCurrentOrDefaultPanel();
 
         if ($panel?->getId() === 'admin') {
             return 'إدارة الأكاديميات';
@@ -60,7 +65,7 @@ class PaymentSettingsResource extends BaseResource
     public static function canAccess(): bool
     {
         // For Academy panel with tenant routing, always accessible
-        if (\Filament\Facades\Filament::getTenant() !== null) {
+        if (Filament::getTenant() !== null) {
             return true;
         }
 
@@ -95,11 +100,11 @@ class PaymentSettingsResource extends BaseResource
      * The model IS the tenant (Academy), so it can't scope by academy relationship.
      * In Academy panel: show only the current tenant. In Admin panel: use context service.
      */
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         $query = static::getModel()::query();
 
-        $tenant = \Filament\Facades\Filament::getTenant();
+        $tenant = Filament::getTenant();
         if ($tenant) {
             $query->where('id', $tenant->id);
         } else {
@@ -120,10 +125,10 @@ class PaymentSettingsResource extends BaseResource
         return $academyContextService->getCurrentAcademyId() !== null;
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 // Default Gateway Settings
                 Section::make('إعدادات البوابة الافتراضية')
                     ->description('اختر البوابة الافتراضية للدفع والبوابات المفعلة لهذه الأكاديمية')
@@ -252,7 +257,7 @@ class PaymentSettingsResource extends BaseResource
                 Academy::query()
                     ->when(
                         // For Academy panel with tenant routing
-                        \Filament\Facades\Filament::getTenant()?->id,
+                        Filament::getTenant()?->id,
                         fn ($query, $academyId) => $query->where('id', $academyId),
                         // For Admin panel with session-based context
                         fn ($query) => $query->when(
@@ -305,8 +310,8 @@ class PaymentSettingsResource extends BaseResource
                     ->label('آخر تحديث')
                     ->dateTime('Y-m-d H:i'),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
             ->paginated(false)
             ->poll('30s');
@@ -315,8 +320,8 @@ class PaymentSettingsResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManagePaymentSettings::route('/'),
-            'edit' => Pages\EditPaymentSettings::route('/{record}/edit'),
+            'index' => ManagePaymentSettings::route('/'),
+            'edit' => EditPaymentSettings::route('/{record}/edit'),
         ];
     }
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\AcademicSession;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateAcademicSessionEvaluationRequest extends FormRequest
@@ -27,7 +29,7 @@ class UpdateAcademicSessionEvaluationRequest extends FormRequest
 
         // If it's a string (ID), load the model
         if (is_string($sessionParam) || is_numeric($sessionParam)) {
-            $session = \App\Models\AcademicSession::find($sessionParam);
+            $session = AcademicSession::find($sessionParam);
         } else {
             $session = $sessionParam;
         }
@@ -39,7 +41,7 @@ class UpdateAcademicSessionEvaluationRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

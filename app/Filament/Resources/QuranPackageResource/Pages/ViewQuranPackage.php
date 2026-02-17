@@ -2,12 +2,15 @@
 
 namespace App\Filament\Resources\QuranPackageResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use App\Models\QuranPackage;
 use App\Filament\Resources\QuranPackageResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
- * @property \App\Models\QuranPackage $record
+ * @property QuranPackage $record
  */
 class ViewQuranPackage extends ViewRecord
 {
@@ -21,16 +24,16 @@ class ViewQuranPackage extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
-            Actions\Action::make('activate')
+            Action::make('activate')
                 ->label('تفعيل الباقة')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->requiresConfirmation()
                 ->action(fn () => $this->record->update(['is_active' => true]))
                 ->visible(fn () => ! $this->record->is_active),
-            Actions\Action::make('deactivate')
+            Action::make('deactivate')
                 ->label('إلغاء تفعيل الباقة')
                 ->icon('heroicon-o-x-circle')
                 ->color('warning')

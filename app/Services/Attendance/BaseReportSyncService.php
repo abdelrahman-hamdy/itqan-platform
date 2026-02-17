@@ -2,6 +2,7 @@
 
 namespace App\Services\Attendance;
 
+use Exception;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
@@ -144,7 +145,7 @@ abstract class BaseReportSyncService
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle user join', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,
@@ -180,7 +181,7 @@ abstract class BaseReportSyncService
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle user leave', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,
@@ -378,7 +379,7 @@ abstract class BaseReportSyncService
                 'percentage' => $attendancePercentage,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to sync attendance to report', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,
@@ -414,7 +415,7 @@ abstract class BaseReportSyncService
                         $results['reports_updated']++;
                         $results['calculated_count']++;
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $results['errors'][] = [
                         'user_id' => $attendance->user_id,
                         'error' => $e->getMessage(),
@@ -428,7 +429,7 @@ abstract class BaseReportSyncService
                 'reports_updated' => $results['reports_updated'],
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $results['errors'][] = [
                 'general' => $e->getMessage(),
             ];
@@ -527,7 +528,7 @@ abstract class BaseReportSyncService
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to override attendance status', [
                 'session_id' => $session->id,
                 'student_id' => $student->id,

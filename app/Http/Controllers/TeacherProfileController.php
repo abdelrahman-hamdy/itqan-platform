@@ -2,6 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use Storage;
+use App\Models\QuranTrialRequest;
+use App\Models\QuranSubscription;
+use App\Models\QuranSession;
+use App\Models\AcademicSubscription;
+use App\Models\QuranIndividualCircle;
+use App\Models\InteractiveCourseEnrollment;
+use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
 use App\Constants\DefaultAcademy;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -139,8 +148,8 @@ class TeacherProfileController extends Controller
         // Handle avatar upload
         if ($request->hasFile('avatar')) {
             // Delete old avatar if exists
-            if ($teacherProfile->avatar && \Storage::disk('public')->exists($teacherProfile->avatar)) {
-                \Storage::disk('public')->delete($teacherProfile->avatar);
+            if ($teacherProfile->avatar && Storage::disk('public')->exists($teacherProfile->avatar)) {
+                Storage::disk('public')->delete($teacherProfile->avatar);
             }
 
             $path = $request->file('avatar')->store(
@@ -152,8 +161,8 @@ class TeacherProfileController extends Controller
 
         // Handle preview video removal
         if ($request->boolean('remove_preview_video')) {
-            if ($teacherProfile->preview_video && \Storage::disk('public')->exists($teacherProfile->preview_video)) {
-                \Storage::disk('public')->delete($teacherProfile->preview_video);
+            if ($teacherProfile->preview_video && Storage::disk('public')->exists($teacherProfile->preview_video)) {
+                Storage::disk('public')->delete($teacherProfile->preview_video);
             }
             $validated['preview_video'] = null;
         }
@@ -161,8 +170,8 @@ class TeacherProfileController extends Controller
         // Handle preview video upload
         if ($request->hasFile('preview_video')) {
             // Delete old video if exists
-            if ($teacherProfile->preview_video && \Storage::disk('public')->exists($teacherProfile->preview_video)) {
-                \Storage::disk('public')->delete($teacherProfile->preview_video);
+            if ($teacherProfile->preview_video && Storage::disk('public')->exists($teacherProfile->preview_video)) {
+                Storage::disk('public')->delete($teacherProfile->preview_video);
             }
 
             $path = $request->file('preview_video')->store(
@@ -216,7 +225,7 @@ class TeacherProfileController extends Controller
             ->get();
 
         // Get pending and scheduled trial requests
-        $pendingTrialRequests = \App\Models\QuranTrialRequest::where('teacher_id', $teacherProfile->id)
+        $pendingTrialRequests = QuranTrialRequest::where('teacher_id', $teacherProfile->id)
             ->where('academy_id', $academy->id)
             ->whereIn('status', [
                 TrialRequestStatus::PENDING->value,
@@ -228,7 +237,7 @@ class TeacherProfileController extends Controller
             ->get();
 
         // Get active subscriptions
-        $activeSubscriptions = \App\Models\QuranSubscription::where('quran_teacher_id', $user->id)
+        $activeSubscriptions = QuranSubscription::where('quran_teacher_id', $user->id)
             ->where('academy_id', $academy->id)
             ->whereIn('status', [
                 SessionSubscriptionStatus::ACTIVE->value,
@@ -241,7 +250,7 @@ class TeacherProfileController extends Controller
             ->get();
 
         // Get recent sessions
-        $recentSessions = \App\Models\QuranSession::where('quran_teacher_id', $user->id)
+        $recentSessions = QuranSession::where('quran_teacher_id', $user->id)
             ->where('academy_id', $academy->id)
             ->whereIn('status', [
                 SessionStatus::SCHEDULED->value,
@@ -285,7 +294,7 @@ class TeacherProfileController extends Controller
         $assignedRecordedCourses = collect(); // Empty for now
 
         // Get private academic lessons (subscriptions)
-        $privateLessons = \App\Models\AcademicSubscription::where('teacher_id', $teacherProfile->id)
+        $privateLessons = AcademicSubscription::where('teacher_id', $teacherProfile->id)
             ->where('academy_id', $academy->id)
             ->with(['student', 'subject', 'gradeLevel'])
             ->orderBy('created_at', 'desc')
@@ -332,7 +341,7 @@ class TeacherProfileController extends Controller
             ->count();
 
         // Also count individual circle students
-        $individualStudents = \App\Models\QuranIndividualCircle::where('quran_teacher_id', $teacherProfile->id)
+        $individualStudents = QuranIndividualCircle::where('quran_teacher_id', $teacherProfile->id)
             ->distinct('student_id')
             ->count('student_id');
 
@@ -344,12 +353,12 @@ class TeacherProfileController extends Controller
             ->count();
 
         // This month sessions - count completed and ongoing sessions
-        $thisMonthSessions = \App\Models\QuranSession::where('quran_teacher_id', $user->id)
+        $thisMonthSessions = QuranSession::where('quran_teacher_id', $user->id)
             ->whereMonth('scheduled_at', $currentMonth->month)
             ->whereYear('scheduled_at', $currentMonth->year)
             ->whereIn('status', [
-                \App\Enums\SessionStatus::COMPLETED,
-                \App\Enums\SessionStatus::ONGOING,
+                SessionStatus::COMPLETED,
+                SessionStatus::ONGOING,
             ])
             ->count();
 
@@ -374,12 +383,12 @@ class TeacherProfileController extends Controller
         $courseIds = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
             ->pluck('id');
 
-        $totalStudents = \App\Models\InteractiveCourseEnrollment::whereIn('course_id', $courseIds)
+        $totalStudents = InteractiveCourseEnrollment::whereIn('course_id', $courseIds)
             ->distinct('student_id')
             ->count('student_id');
 
         // Also count private lesson students
-        $privateLessonStudents = \App\Models\AcademicSubscription::where('teacher_id', $teacherProfile->id)
+        $privateLessonStudents = AcademicSubscription::where('teacher_id', $teacherProfile->id)
             ->distinct('student_id')
             ->count('student_id');
 
@@ -391,21 +400,21 @@ class TeacherProfileController extends Controller
             ->count();
 
         // This month sessions - count academic sessions and interactive course sessions
-        $academicSessionCount = \App\Models\AcademicSession::where('academic_teacher_id', $teacherProfile->id)
+        $academicSessionCount = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
             ->whereMonth('scheduled_at', $currentMonth->month)
             ->whereYear('scheduled_at', $currentMonth->year)
             ->whereIn('status', [
-                \App\Enums\SessionStatus::COMPLETED,
-                \App\Enums\SessionStatus::ONGOING,
+                SessionStatus::COMPLETED,
+                SessionStatus::ONGOING,
             ])
             ->count();
 
-        $interactiveSessionCount = \App\Models\InteractiveCourseSession::whereIn('course_id', $courseIds)
+        $interactiveSessionCount = InteractiveCourseSession::whereIn('course_id', $courseIds)
             ->whereMonth('scheduled_at', $currentMonth->month)
             ->whereYear('scheduled_at', $currentMonth->year)
             ->whereIn('status', [
-                \App\Enums\SessionStatus::COMPLETED,
-                \App\Enums\SessionStatus::ONGOING,
+                SessionStatus::COMPLETED,
+                SessionStatus::ONGOING,
             ])
             ->count();
 
@@ -430,7 +439,7 @@ class TeacherProfileController extends Controller
     {
         $academyId = $user->academy_id ?? 1;
         // Use full class name for polymorphic teacher_type column
-        $teacherType = $teacherProfile instanceof \App\Models\QuranTeacherProfile
+        $teacherType = $teacherProfile instanceof QuranTeacherProfile
             ? QuranTeacherProfile::class
             : AcademicTeacherProfile::class;
 
@@ -450,12 +459,12 @@ class TeacherProfileController extends Controller
         $upcomingSessions = collect();
 
         // Determine teacher type and get appropriate sessions
-        if ($teacherProfile instanceof \App\Models\QuranTeacherProfile) {
+        if ($teacherProfile instanceof QuranTeacherProfile) {
             // Quran teacher - get QuranSessions
-            $upcomingSessions = \App\Models\QuranSession::where('quran_teacher_id', $user->id)
+            $upcomingSessions = QuranSession::where('quran_teacher_id', $user->id)
                 ->whereIn('status', [
-                    \App\Enums\SessionStatus::SCHEDULED,
-                    \App\Enums\SessionStatus::READY,
+                    SessionStatus::SCHEDULED,
+                    SessionStatus::READY,
                 ])
                 ->where('scheduled_at', '>=', now())
                 ->orderBy('scheduled_at')
@@ -469,12 +478,12 @@ class TeacherProfileController extends Controller
                     'duration' => $session->duration_minutes,
                     'status' => $session->status->value,
                 ]);
-        } elseif ($teacherProfile instanceof \App\Models\AcademicTeacherProfile) {
+        } elseif ($teacherProfile instanceof AcademicTeacherProfile) {
             // Academic teacher - get AcademicSessions and InteractiveCourseSessions
-            $academicSessions = \App\Models\AcademicSession::where('academic_teacher_id', $teacherProfile->id)
+            $academicSessions = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
                 ->whereIn('status', [
-                    \App\Enums\SessionStatus::SCHEDULED,
-                    \App\Enums\SessionStatus::READY,
+                    SessionStatus::SCHEDULED,
+                    SessionStatus::READY,
                 ])
                 ->where('scheduled_at', '>=', now())
                 ->orderBy('scheduled_at')
@@ -489,12 +498,12 @@ class TeacherProfileController extends Controller
                     'status' => $session->status->value,
                 ]);
 
-            $interactiveSessions = \App\Models\InteractiveCourseSession::whereHas('course', function ($query) use ($teacherProfile) {
+            $interactiveSessions = InteractiveCourseSession::whereHas('course', function ($query) use ($teacherProfile) {
                 $query->where('assigned_teacher_id', $teacherProfile->id);
             })
                 ->whereIn('status', [
-                    \App\Enums\SessionStatus::SCHEDULED,
-                    \App\Enums\SessionStatus::READY,
+                    SessionStatus::SCHEDULED,
+                    SessionStatus::READY,
                 ])
                 ->where('scheduled_date', '>=', now()->toDateString())
                 ->orderBy('scheduled_date')

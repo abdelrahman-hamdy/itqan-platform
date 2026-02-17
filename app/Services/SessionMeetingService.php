@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Models\QuranSession;
 use App\Services\Traits\SessionMeetingTrait;
@@ -70,7 +71,7 @@ class SessionMeetingService
         $sessionTiming = $this->getSessionTiming($session);
 
         if (! $forceCreate && ! $sessionTiming['is_available']) {
-            throw new \Exception($sessionTiming['message']);
+            throw new Exception($sessionTiming['message']);
         }
 
         if (! $session->meeting_room_name) {
@@ -136,7 +137,7 @@ class SessionMeetingService
                     'room_name' => $session->meeting_room_name,
                 ]);
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results['errors']++;
                 Log::error('Failed to auto-create meeting for Quran session', [
                     'session_id' => $session->id,
@@ -156,7 +157,7 @@ class SessionMeetingService
             try {
                 $this->cleanupExpiredSession($session);
                 $results['cleaned']++;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::error('Failed to cleanup expired Quran session', [
                     'session_id' => $session->id,
                     'error' => $e->getMessage(),
@@ -227,7 +228,7 @@ class SessionMeetingService
 
                 $results['sessions_processed']++;
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results['errors'][] = [
                     'session_id' => $session->id,
                     'error' => $e->getMessage(),
@@ -271,7 +272,7 @@ class SessionMeetingService
                     'status' => $session->status->value,
                 ]);
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results['errors'][] = [
                     'session_id' => $session->id,
                     'error' => $e->getMessage(),

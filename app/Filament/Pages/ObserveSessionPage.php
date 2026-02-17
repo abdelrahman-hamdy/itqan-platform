@@ -19,11 +19,11 @@ use Livewire\Attributes\Url;
  */
 class ObserveSessionPage extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-eye';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-eye';
 
     protected static ?string $slug = 'observe-session';
 
-    protected static string $view = 'filament.supervisor.pages.observe-session';
+    protected string $view = 'filament.supervisor.pages.observe-session';
 
     protected static bool $shouldRegisterNavigation = false;
 

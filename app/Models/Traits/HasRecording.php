@@ -2,6 +2,8 @@
 
 namespace App\Models\Traits;
 
+use Illuminate\Database\Eloquent\Collection;
+use Exception;
 use App\Enums\RecordingStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
@@ -148,7 +150,7 @@ trait HasRecording
     /**
      * Get all recordings for this session
      */
-    public function getRecordings(): \Illuminate\Database\Eloquent\Collection
+    public function getRecordings(): Collection
     {
         return $this->recordings()
             ->orderBy('created_at', 'desc')
@@ -249,12 +251,12 @@ trait HasRecording
      *
      * @return SessionRecording The created recording record
      *
-     * @throws \Exception If recording cannot be started
+     * @throws Exception If recording cannot be started
      */
     public function startRecording(): SessionRecording
     {
         if (! $this->canBeRecorded()) {
-            throw new \Exception('This session cannot be recorded at this time');
+            throw new Exception('This session cannot be recorded at this time');
         }
 
         try {
@@ -262,14 +264,14 @@ trait HasRecording
 
             return $recordingService->startRecording($this);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to start recording', [
                 'session_type' => $this->getMeetingSessionType(),
                 'session_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);
 
-            throw new \Exception('Failed to start recording: '.$e->getMessage());
+            throw new Exception('Failed to start recording: '.$e->getMessage());
         }
     }
 
@@ -291,7 +293,7 @@ trait HasRecording
 
             return $recordingService->stopRecording($activeRecording);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to stop recording', [
                 'session_type' => $this->getMeetingSessionType(),
                 'session_id' => $this->id,

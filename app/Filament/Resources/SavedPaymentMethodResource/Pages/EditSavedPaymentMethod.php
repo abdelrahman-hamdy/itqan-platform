@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources\SavedPaymentMethodResource\Pages;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
 use App\Filament\Resources\SavedPaymentMethodResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -13,13 +16,13 @@ class EditSavedPaymentMethod extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
 
-            Actions\DeleteAction::make()
+            DeleteAction::make()
                 ->label('حذف'),
 
-            Actions\RestoreAction::make()
+            RestoreAction::make()
                 ->label('استعادة'),
         ];
     }

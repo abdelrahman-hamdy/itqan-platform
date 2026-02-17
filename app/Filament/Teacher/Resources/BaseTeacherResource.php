@@ -2,6 +2,7 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use App\Models\QuranTeacherProfile;
 use App\Filament\Shared\BaseTeacherResource as SharedBaseTeacherResource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -29,7 +30,7 @@ abstract class BaseTeacherResource extends SharedBaseTeacherResource
     /**
      * Get current Quran teacher's profile
      */
-    protected static function getCurrentQuranTeacherProfile(): ?\App\Models\QuranTeacherProfile
+    protected static function getCurrentQuranTeacherProfile(): ?QuranTeacherProfile
     {
         $user = auth()->user();
 

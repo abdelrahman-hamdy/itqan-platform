@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Models\QuizAssignment;
 use App\Services\CronJobLogger;
 use Illuminate\Console\Command;
@@ -68,7 +69,7 @@ class SendQuizDeadlineRemindersCommand extends Command
 
             return self::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('Quiz deadline reminder processing failed: '.$e->getMessage());
 
             if ($isVerbose) {
@@ -122,7 +123,7 @@ class SendQuizDeadlineRemindersCommand extends Command
                     $this->processAssignmentReminder($assignment, '1h', $isDryRun, $isVerbose, $results);
                 }
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results['errors'][] = [
                     'assignment_id' => $assignment->id,
                     'quiz_title' => $assignment->quiz?->title ?? 'Unknown',

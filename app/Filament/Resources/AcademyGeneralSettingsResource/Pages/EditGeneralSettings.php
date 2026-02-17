@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AcademyGeneralSettingsResource\Pages;
 
+use Filament\Actions\ViewAction;
 use App\Filament\Resources\AcademyGeneralSettingsResource;
 use App\Models\Academy;
 use App\Models\AcademySettings;
@@ -9,7 +10,7 @@ use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 /**
- * @property \App\Models\Academy $record
+ * @property Academy $record
  */
 class EditGeneralSettings extends EditRecord
 {
@@ -18,7 +19,7 @@ class EditGeneralSettings extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make(),
+            ViewAction::make(),
         ];
     }
 

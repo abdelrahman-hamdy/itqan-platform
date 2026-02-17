@@ -2,11 +2,26 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Actions\ViewAction;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\IconEntry;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
+use App\Models\AcademicIndividualLesson;
+use App\Models\InteractiveCourse;
+use App\Filament\Supervisor\Resources\MonitoredQuizAssignmentsResource\Pages\ListMonitoredQuizAssignments;
+use App\Filament\Supervisor\Resources\MonitoredQuizAssignmentsResource\Pages\ViewMonitoredQuizAssignment;
 use App\Enums\QuizAssignableType;
 use App\Filament\Supervisor\Resources\MonitoredQuizAssignmentsResource\Pages;
 use App\Models\QuizAssignment;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,7 +36,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
 {
     protected static ?string $model = QuizAssignment::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-list';
 
     protected static ?string $navigationLabel = 'تعيينات الاختبارات';
 
@@ -29,7 +44,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'تعيينات الاختبارات';
 
-    protected static ?string $navigationGroup = 'الاختبارات';
+    protected static string | \UnitEnum | null $navigationGroup = 'الاختبارات';
 
     protected static ?int $navigationSort = 2;
 
@@ -61,19 +76,19 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('quiz.title')
+                TextColumn::make('quiz.title')
                     ->label('الاختبار')
                     ->searchable()
                     ->sortable()
                     ->limit(40),
 
-                Tables\Columns\TextColumn::make('assignable_type')
+                TextColumn::make('assignable_type')
                     ->label('نوع الجهة')
                     ->formatStateUsing(fn ($state) => QuizAssignableType::tryFrom($state)?->label() ?? $state)
                     ->icon(fn ($state) => QuizAssignableType::tryFrom($state)?->icon())
                     ->color(fn ($state) => QuizAssignableType::tryFrom($state)?->color()),
 
-                Tables\Columns\TextColumn::make('assignable')
+                TextColumn::make('assignable')
                     ->label('الجهة')
                     ->formatStateUsing(function ($record) {
                         $assignable = $record->assignable;
@@ -84,7 +99,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
                         return $assignable->title ?? $assignable->name ?? $assignable->id;
                     }),
 
-                Tables\Columns\TextColumn::make('teacher')
+                TextColumn::make('teacher')
                     ->label('المعلم')
                     ->getStateUsing(function ($record) {
                         $assignable = $record->assignable;
@@ -107,34 +122,34 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
                     })
                     ->searchable(false),
 
-                Tables\Columns\IconColumn::make('is_visible')
+                IconColumn::make('is_visible')
                     ->label('مرئي')
                     ->boolean()
                     ->alignCenter(),
 
-                Tables\Columns\TextColumn::make('max_attempts')
+                TextColumn::make('max_attempts')
                     ->label('المحاولات')
                     ->alignCenter()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('attempts_count')
+                TextColumn::make('attempts_count')
                     ->label('التقديمات')
                     ->counts('attempts')
                     ->alignCenter(),
 
-                Tables\Columns\TextColumn::make('available_from')
+                TextColumn::make('available_from')
                     ->label('متاح من')
                     ->dateTime('Y-m-d H:i')
                     ->placeholder('فوري')
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('available_until')
+                TextColumn::make('available_until')
                     ->label('متاح حتى')
                     ->dateTime('Y-m-d H:i')
                     ->placeholder('دائم')
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d H:i')
                     ->sortable()
@@ -142,91 +157,91 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('assignable_type')
+                SelectFilter::make('assignable_type')
                     ->label('نوع الجهة')
                     ->options(QuizAssignableType::options()),
 
-                Tables\Filters\TernaryFilter::make('is_visible')
+                TernaryFilter::make('is_visible')
                     ->label('الحالة')
                     ->trueLabel('مرئي')
                     ->falseLabel('مخفي'),
 
-                Tables\Filters\Filter::make('has_deadline')
+                Filter::make('has_deadline')
                     ->label('له موعد نهائي')
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('available_until')),
 
-                Tables\Filters\Filter::make('deadline_passed')
+                Filter::make('deadline_passed')
                     ->label('انتهى موعده')
                     ->query(fn (Builder $query): Builder => $query->where('available_until', '<', now())),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
+            ->recordActions([
+                ViewAction::make()
                     ->label('عرض'),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 // No bulk actions for supervisors
             ]);
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
-                Infolists\Components\Section::make('معلومات الاختبار')
+        return $schema
+            ->components([
+                Section::make('معلومات الاختبار')
                     ->schema([
-                        Infolists\Components\TextEntry::make('quiz.title')
+                        TextEntry::make('quiz.title')
                             ->label('عنوان الاختبار'),
-                        Infolists\Components\TextEntry::make('quiz.description')
+                        TextEntry::make('quiz.description')
                             ->label('وصف الاختبار')
                             ->placeholder('لا يوجد وصف'),
-                        Infolists\Components\TextEntry::make('quiz.duration_minutes')
+                        TextEntry::make('quiz.duration_minutes')
                             ->label('مدة الاختبار')
                             ->formatStateUsing(fn ($state) => $state ? "{$state} دقيقة" : 'غير محدد'),
-                        Infolists\Components\TextEntry::make('quiz.passing_score')
+                        TextEntry::make('quiz.passing_score')
                             ->label('درجة النجاح')
                             ->formatStateUsing(fn ($state) => "{$state}%"),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('معلومات التعيين')
+                Section::make('معلومات التعيين')
                     ->schema([
-                        Infolists\Components\TextEntry::make('assignable_type')
+                        TextEntry::make('assignable_type')
                             ->label('نوع الجهة')
                             ->formatStateUsing(fn ($state) => QuizAssignableType::tryFrom($state)?->label() ?? $state),
-                        Infolists\Components\TextEntry::make('assignable.title')
+                        TextEntry::make('assignable.title')
                             ->label('الجهة')
                             ->getStateUsing(function ($record) {
                                 $assignable = $record->assignable;
 
                                 return $assignable->title ?? $assignable->name ?? '-';
                             }),
-                        Infolists\Components\IconEntry::make('is_visible')
+                        IconEntry::make('is_visible')
                             ->label('مرئي للطلاب')
                             ->boolean(),
-                        Infolists\Components\TextEntry::make('max_attempts')
+                        TextEntry::make('max_attempts')
                             ->label('عدد المحاولات'),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('فترة الإتاحة')
+                Section::make('فترة الإتاحة')
                     ->schema([
-                        Infolists\Components\TextEntry::make('available_from')
+                        TextEntry::make('available_from')
                             ->label('متاح من')
                             ->dateTime('Y-m-d H:i')
                             ->placeholder('فوري'),
-                        Infolists\Components\TextEntry::make('available_until')
+                        TextEntry::make('available_until')
                             ->label('متاح حتى')
                             ->dateTime('Y-m-d H:i')
                             ->placeholder('دائم'),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('إحصائيات')
+                Section::make('إحصائيات')
                     ->schema([
-                        Infolists\Components\TextEntry::make('attempts_count')
+                        TextEntry::make('attempts_count')
                             ->label('عدد التقديمات')
                             ->getStateUsing(fn ($record) => $record->attempts()->count()),
-                        Infolists\Components\TextEntry::make('passed_count')
+                        TextEntry::make('passed_count')
                             ->label('عدد الناجحين')
                             ->getStateUsing(fn ($record) => $record->attempts()->where('passed', true)->count()),
-                        Infolists\Components\TextEntry::make('created_at')
+                        TextEntry::make('created_at')
                             ->label('تاريخ الإنشاء')
                             ->dateTime('Y-m-d H:i'),
                     ])->columns(3),
@@ -272,7 +287,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
             if (! empty($quranTeacherIds)) {
                 $q->orWhere(function (Builder $sub) use ($quranTeacherIds, $academy) {
                     $sub->where('assignable_type', QuizAssignableType::QURAN_CIRCLE->value)
-                        ->whereHasMorph('assignable', [\App\Models\QuranCircle::class], function (Builder $morph) use ($quranTeacherIds, $academy) {
+                        ->whereHasMorph('assignable', [QuranCircle::class], function (Builder $morph) use ($quranTeacherIds, $academy) {
                             $morph->whereIn('quran_teacher_id', $quranTeacherIds);
                             if ($academy) {
                                 $morph->where('academy_id', $academy->id);
@@ -283,7 +298,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
                 // Quran Individual Circles - filter by quran_teacher_id and academy
                 $q->orWhere(function (Builder $sub) use ($quranTeacherIds, $academy) {
                     $sub->where('assignable_type', QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE->value)
-                        ->whereHasMorph('assignable', [\App\Models\QuranIndividualCircle::class], function (Builder $morph) use ($quranTeacherIds, $academy) {
+                        ->whereHasMorph('assignable', [QuranIndividualCircle::class], function (Builder $morph) use ($quranTeacherIds, $academy) {
                             $morph->whereIn('quran_teacher_id', $quranTeacherIds);
                             if ($academy) {
                                 $morph->where('academy_id', $academy->id);
@@ -296,7 +311,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
             if (! empty($academicProfileIds)) {
                 $q->orWhere(function (Builder $sub) use ($academicProfileIds, $academy) {
                     $sub->where('assignable_type', QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON->value)
-                        ->whereHasMorph('assignable', [\App\Models\AcademicIndividualLesson::class], function (Builder $morph) use ($academicProfileIds, $academy) {
+                        ->whereHasMorph('assignable', [AcademicIndividualLesson::class], function (Builder $morph) use ($academicProfileIds, $academy) {
                             $morph->whereIn('academic_teacher_id', $academicProfileIds);
                             if ($academy) {
                                 $morph->where('academy_id', $academy->id);
@@ -307,7 +322,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
                 // Interactive Courses - filter by assigned_teacher_id (profile IDs) and academy
                 $q->orWhere(function (Builder $sub) use ($academicProfileIds, $academy) {
                     $sub->where('assignable_type', QuizAssignableType::INTERACTIVE_COURSE->value)
-                        ->whereHasMorph('assignable', [\App\Models\InteractiveCourse::class], function (Builder $morph) use ($academicProfileIds, $academy) {
+                        ->whereHasMorph('assignable', [InteractiveCourse::class], function (Builder $morph) use ($academicProfileIds, $academy) {
                             $morph->whereIn('assigned_teacher_id', $academicProfileIds);
                             if ($academy) {
                                 $morph->where('academy_id', $academy->id);
@@ -333,8 +348,8 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListMonitoredQuizAssignments::route('/'),
-            'view' => Pages\ViewMonitoredQuizAssignment::route('/{record}'),
+            'index' => ListMonitoredQuizAssignments::route('/'),
+            'view' => ViewMonitoredQuizAssignment::route('/{record}'),
         ];
     }
 }

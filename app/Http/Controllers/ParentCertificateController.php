@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Models\Certificate;
 use App\Services\ParentChildVerificationService;
 use App\Services\ParentDataService;
@@ -41,7 +42,7 @@ class ParentCertificateController extends Controller
 
         // Get child USER IDs from middleware (session-based selection)
         // Note: Certificate.student_id references User.id, not StudentProfile.id
-        $childUserIds = \App\Http\Middleware\ChildSelectionMiddleware::getChildUserIds();
+        $childUserIds = ChildSelectionMiddleware::getChildUserIds();
 
         // Build certificates query
         $query = Certificate::whereIn('student_id', $childUserIds)

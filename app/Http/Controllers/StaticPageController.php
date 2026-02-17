@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\View\View;
 use App\Models\Academy;
 use Illuminate\Http\Request;
 
@@ -10,7 +11,7 @@ class StaticPageController extends Controller
     /**
      * Display the Terms & Conditions page
      */
-    public function terms(Request $request): \Illuminate\View\View
+    public function terms(Request $request): View
     {
         $academy = $request->academy ?? Academy::first();
 
@@ -24,7 +25,7 @@ class StaticPageController extends Controller
     /**
      * Display the Privacy Policy page
      */
-    public function privacyPolicy(Request $request): \Illuminate\View\View
+    public function privacyPolicy(Request $request): View
     {
         $academy = $request->academy ?? Academy::first();
 
@@ -38,7 +39,7 @@ class StaticPageController extends Controller
     /**
      * Display the About Us page
      */
-    public function aboutUs(Request $request): \Illuminate\View\View
+    public function aboutUs(Request $request): View
     {
         $academy = $request->academy ?? Academy::first();
 

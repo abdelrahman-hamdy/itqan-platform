@@ -2,6 +2,7 @@
 
 namespace App\Http\Traits\Api;
 
+use DateTimeInterface;
 use App\Enums\Api\ErrorCode;
 use App\Http\Helpers\PaginationHelper;
 use Illuminate\Http\JsonResponse;
@@ -273,7 +274,7 @@ trait ApiResponses
      *
      * Used for mobile apps to determine if cached data is still fresh.
      *
-     * @param  \DateTimeInterface|string|null  $lastUpdated  Last modification timestamp
+     * @param DateTimeInterface|string|null $lastUpdated Last modification timestamp
      * @return array Meta array with last_updated field
      */
     protected function getMetaWithLastUpdated($lastUpdated = null): array
@@ -281,7 +282,7 @@ trait ApiResponses
         $meta = $this->getBaseMeta();
 
         if ($lastUpdated) {
-            $meta['last_updated'] = $lastUpdated instanceof \DateTimeInterface
+            $meta['last_updated'] = $lastUpdated instanceof DateTimeInterface
                 ? $lastUpdated->format('c')
                 : $lastUpdated;
         }
@@ -294,7 +295,7 @@ trait ApiResponses
      *
      * @param  mixed  $data  Response data
      * @param  string|null  $message  Success message
-     * @param  \DateTimeInterface|string|null  $lastUpdated  Last modification timestamp
+     * @param DateTimeInterface|string|null $lastUpdated Last modification timestamp
      * @param  int  $status  HTTP status code
      */
     protected function successCacheable(

@@ -2,6 +2,8 @@
 
 namespace App\Policies;
 
+use App\Models\CourseSubscription;
+use App\Services\AcademyContextService;
 use App\Enums\EnrollmentStatus;
 use App\Enums\UserType;
 use App\Models\Lesson;
@@ -118,7 +120,7 @@ class LessonPolicy
             return false;
         }
 
-        $enrollment = \App\Models\CourseSubscription::where('student_id', $user->id)
+        $enrollment = CourseSubscription::where('student_id', $user->id)
             ->where('recorded_course_id', $course->id)
             ->where('status', EnrollmentStatus::ENROLLED->value)
             ->first();
@@ -145,7 +147,7 @@ class LessonPolicy
         $studentUserIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
 
         // Check if any of parent's children are enrolled
-        return \App\Models\CourseSubscription::where('recorded_course_id', $course->id)
+        return CourseSubscription::where('recorded_course_id', $course->id)
             ->whereIn('student_id', $studentUserIds)
             ->where('status', EnrollmentStatus::ENROLLED->value)
             ->exists();
@@ -163,7 +165,7 @@ class LessonPolicy
 
         // For super_admin, use the selected academy context
         if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
-            $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
+            $userAcademyId = AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view, allow access
             if (! $userAcademyId) {
                 return true;

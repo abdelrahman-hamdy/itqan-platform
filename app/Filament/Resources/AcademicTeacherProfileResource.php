@@ -1,5 +1,19 @@
 <?php
 namespace App\Filament\Resources;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Tables\Columns\ImageColumn;
+use App\Filament\Resources\AcademicTeacherProfileResource\Pages\ListAcademicTeacherProfiles;
+use App\Filament\Resources\AcademicTeacherProfileResource\Pages\CreateAcademicTeacherProfile;
+use App\Filament\Resources\AcademicTeacherProfileResource\Pages\ViewAcademicTeacherProfile;
+use App\Filament\Resources\AcademicTeacherProfileResource\Pages\EditAcademicTeacherProfile;
 use App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 use App\Filament\Shared\Resources\Profiles\BaseAcademicTeacherProfileResource;
 use Filament\Tables;
@@ -11,23 +25,23 @@ class AcademicTeacherProfileResource extends BaseAcademicTeacherProfileResource 
         return $query->withoutGlobalScopes([SoftDeletingScope::class]);
     }
     protected static function getTableActions(): array {
-        return [Tables\Actions\ViewAction::make(), Tables\Actions\EditAction::make(), Tables\Actions\DeleteAction::make(),
-            Tables\Actions\RestoreAction::make(), Tables\Actions\ForceDeleteAction::make()];
+        return [ViewAction::make(), EditAction::make(), DeleteAction::make(),
+            RestoreAction::make(), ForceDeleteAction::make()];
     }
     protected static function getTableBulkActions(): array {
-        return [Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make(),
-            Tables\Actions\RestoreBulkAction::make(), Tables\Actions\ForceDeleteBulkAction::make()])];
+        return [BulkActionGroup::make([DeleteBulkAction::make(),
+            RestoreBulkAction::make(), ForceDeleteBulkAction::make()])];
     }
     protected static function getTableColumns(): array {
         return array_merge([static::getAcademyColumn()], 
-            [Tables\Columns\ImageColumn::make('avatar')->label('الصورة')->circular()
+            [ImageColumn::make('avatar')->label('الصورة')->circular()
                 ->defaultImageUrl(fn($record) => config('services.ui_avatars.base_url').'?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff')],
             parent::getTableColumns());
     }
     public static function getPages(): array {
-        return ['index' => Pages\ListAcademicTeacherProfiles::route('/'),
-            'create' => Pages\CreateAcademicTeacherProfile::route('/create'),
-            'view' => Pages\ViewAcademicTeacherProfile::route('/{record}'),
-            'edit' => Pages\EditAcademicTeacherProfile::route('/{record}/edit')];
+        return ['index' => ListAcademicTeacherProfiles::route('/'),
+            'create' => CreateAcademicTeacherProfile::route('/create'),
+            'view' => ViewAcademicTeacherProfile::route('/{record}'),
+            'edit' => EditAcademicTeacherProfile::route('/{record}/edit')];
     }
 }

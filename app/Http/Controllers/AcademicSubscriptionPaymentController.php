@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\UserType;
 use App\Models\AcademicSubscription;
@@ -114,7 +115,7 @@ class AcademicSubscriptionPaymentController extends Controller
             DB::beginTransaction();
 
             // Cancel any previous pending payments for this subscription
-            Payment::where('payable_type', \App\Models\AcademicSubscription::class)
+            Payment::where('payable_type', AcademicSubscription::class)
                 ->where('payable_id', $subscription->id)
                 ->where('payment_type', 'subscription')
                 ->where('status', 'pending')
@@ -124,7 +125,7 @@ class AcademicSubscriptionPaymentController extends Controller
             $payment = Payment::create([
                 'academy_id' => $academy->id,
                 'user_id' => $user->id,
-                'payable_type' => \App\Models\AcademicSubscription::class,
+                'payable_type' => AcademicSubscription::class,
                 'payable_id' => $subscription->id,
                 'payment_code' => Payment::generatePaymentCode($academy->id, 'ASP'),
                 'payment_method' => $gateway,
@@ -170,7 +171,7 @@ class AcademicSubscriptionPaymentController extends Controller
             // Fallback
             return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             Log::error('Academic subscription payment failed', [

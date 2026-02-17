@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Services\AcademyContextService;
 use App\Contracts\MeetingCapable;
 use App\Enums\UserType;
 use App\Models\AcademicSession;
@@ -258,7 +259,7 @@ class SessionPolicy
     {
         // For super_admin, use the selected academy context
         if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
-            $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
+            $userAcademyId = AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view (no specific academy selected), allow access
             if (! $userAcademyId) {
                 return true;

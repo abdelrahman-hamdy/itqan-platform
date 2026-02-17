@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcademicSubscription;
+use App\Models\Academy;
+use App\Models\AcademicSession;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Http\Requests\UpdateLessonSettingsRequest;
@@ -27,7 +30,7 @@ class AcademicIndividualLessonController extends Controller
      */
     public function index(Request $request, $subdomain = null): View
     {
-        $this->authorize('viewAny', \App\Models\AcademicIndividualLesson::class);
+        $this->authorize('viewAny', AcademicIndividualLesson::class);
 
         $user = Auth::user();
 
@@ -38,7 +41,7 @@ class AcademicIndividualLessonController extends Controller
         }
 
         // Use AcademicSubscription for consistency with show view and profile page
-        $subscriptions = \App\Models\AcademicSubscription::where('teacher_id', $teacherProfile->id)
+        $subscriptions = AcademicSubscription::where('teacher_id', $teacherProfile->id)
             ->where('academy_id', $user->academy_id)
             ->with(['student', 'subject', 'gradeLevel'])
             ->when($request->status, function ($query, $status) {
@@ -58,13 +61,13 @@ class AcademicIndividualLessonController extends Controller
         $user = Auth::user();
 
         // Resolve academy from subdomain
-        $tenantAcademy = \App\Models\Academy::where('subdomain', $subdomain)->first();
+        $tenantAcademy = Academy::where('subdomain', $subdomain)->first();
         if (! $tenantAcademy) {
             abort(404);
         }
 
         // Fetch subscription (private lesson) and validate tenant academy
-        $subscription = \App\Models\AcademicSubscription::findOrFail($lesson);
+        $subscription = AcademicSubscription::findOrFail($lesson);
 
         if ((int) $subscription->academy_id !== (int) $tenantAcademy->id) {
             abort(404);
@@ -98,13 +101,13 @@ class AcademicIndividualLessonController extends Controller
         ]);
 
         // Get sessions for this subscription (matching Quran circle pattern)
-        $upcomingSessions = \App\Models\AcademicSession::where('academic_subscription_id', $subscription->id)
+        $upcomingSessions = AcademicSession::where('academic_subscription_id', $subscription->id)
             ->active()
             ->orderBy('scheduled_at')
             ->with(['student', 'academicTeacher'])
             ->get();
 
-        $pastSessions = \App\Models\AcademicSession::where('academic_subscription_id', $subscription->id)
+        $pastSessions = AcademicSession::where('academic_subscription_id', $subscription->id)
             ->final()
             ->orderBy('scheduled_at', 'desc')
             ->with(['student', 'academicTeacher'])
@@ -183,7 +186,7 @@ class AcademicIndividualLessonController extends Controller
      */
     public function interactiveCoursesIndex(Request $request, $subdomain = null): View
     {
-        $this->authorize('viewAny', \App\Models\InteractiveCourse::class);
+        $this->authorize('viewAny', InteractiveCourse::class);
 
         $user = Auth::user();
 

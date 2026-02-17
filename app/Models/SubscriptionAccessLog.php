@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 
 class SubscriptionAccessLog extends Model
@@ -28,7 +30,7 @@ class SubscriptionAccessLog extends Model
     /**
      * Get the subscription that this log belongs to (polymorphic).
      */
-    public function subscription(): \Illuminate\Database\Eloquent\Relations\MorphTo
+    public function subscription(): MorphTo
     {
         return $this->morphTo();
     }
@@ -36,7 +38,7 @@ class SubscriptionAccessLog extends Model
     /**
      * Get the user who accessed the subscription.
      */
-    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
@@ -44,8 +46,8 @@ class SubscriptionAccessLog extends Model
     /**
      * Get the tenant this log belongs to.
      */
-    public function tenant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function tenant(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Tenant::class);
+        return $this->belongsTo(Tenant::class);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Helpers;
 
+use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 
@@ -81,7 +82,7 @@ class PaginationHelper
      *
      * Returns both the sliced items and pagination metadata
      *
-     * @param  array|\Illuminate\Support\Collection  $items  Items to paginate
+     * @param array|Collection $items Items to paginate
      * @param  Request  $request  Request with page/per_page parameters
      * @param  int|null  $perPage  Override per_page from request
      * @return array{items: array, pagination: array}

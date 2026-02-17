@@ -2,6 +2,7 @@
 
 namespace App\Filament\Academy\Resources\PaymentResource\Pages;
 
+use Filament\Actions\CreateAction;
 use App\Filament\Academy\Resources\PaymentResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -13,7 +14,7 @@ class ListPayments extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
+            CreateAction::make()
                 ->label('إضافة دفعة جديدة'),
         ];
     }

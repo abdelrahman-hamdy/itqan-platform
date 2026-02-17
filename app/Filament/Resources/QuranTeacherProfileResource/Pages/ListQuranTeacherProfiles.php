@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\QuranTeacherProfileResource\Pages;
 
+use Filament\Actions\CreateAction;
+use App\Filament\Resources\QuranTeacherProfileResource\Widgets\QuranTeachersStatsWidget;
 use App\Filament\Resources\QuranTeacherProfileResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -13,7 +15,7 @@ class ListQuranTeacherProfiles extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
+            CreateAction::make()
                 ->label('إضافة معلم جديد'),
         ];
     }
@@ -26,7 +28,7 @@ class ListQuranTeacherProfiles extends ListRecords
     protected function getHeaderWidgets(): array
     {
         return [
-            QuranTeacherProfileResource\Widgets\QuranTeachersStatsWidget::class,
+            QuranTeachersStatsWidget::class,
         ];
     }
 }

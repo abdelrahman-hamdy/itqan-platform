@@ -12,7 +12,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class PlatformOverviewWidget extends BaseWidget
 {
-    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+    protected string $view = 'filament.widgets.collapsible-stats-overview-widget';
 
     protected static bool $isDiscoverable = false;
 

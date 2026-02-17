@@ -2,6 +2,13 @@
 
 namespace App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Infolists\Components\TextEntry;
+use App\Services\AcademyContextService;
+use Filament\Infolists\Components\IconEntry;
 use App\Enums\AttendanceStatus;
 use App\Enums\QuranSurah;
 use App\Enums\SessionStatus;
@@ -9,7 +16,6 @@ use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Teacher\Resources\QuranSessionResource;
 use Filament\Actions;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewQuranSession extends ViewRecord
@@ -19,7 +25,7 @@ class ViewQuranSession extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
         ];
     }
@@ -29,20 +35,20 @@ class ViewQuranSession extends ViewRecord
         return $this->getRecord()->title ?? 'تفاصيل جلسة القرآن';
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
         return $infolist
             ->schema([
-                Infolists\Components\Section::make('معلومات الجلسة')
+                Section::make('معلومات الجلسة')
                     ->schema([
-                        Infolists\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Infolists\Components\TextEntry::make('session_code')
+                                TextEntry::make('session_code')
                                     ->label('رمز الجلسة')
                                     ->copyable(),
-                                Infolists\Components\TextEntry::make('title')
+                                TextEntry::make('title')
                                     ->label('العنوان'),
-                                Infolists\Components\TextEntry::make('session_type')
+                                TextEntry::make('session_type')
                                     ->label('نوع الجلسة')
                                     ->badge()
                                     ->formatStateUsing(fn (string $state): string => match ($state) {
@@ -58,22 +64,22 @@ class ViewQuranSession extends ViewRecord
                                         default => 'gray',
                                     }),
                             ]),
-                        Infolists\Components\TextEntry::make('student.name')
+                        TextEntry::make('student.name')
                             ->label('الطالب'),
                     ]),
 
-                Infolists\Components\Section::make('التوقيت والحالة')
+                Section::make('التوقيت والحالة')
                     ->schema([
-                        Infolists\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Infolists\Components\TextEntry::make('scheduled_at')
+                                TextEntry::make('scheduled_at')
                                     ->label('موعد الجلسة')
                                     ->dateTime('Y-m-d H:i')
-                                    ->timezone(\App\Services\AcademyContextService::getTimezone()),
-                                Infolists\Components\TextEntry::make('duration_minutes')
+                                    ->timezone(AcademyContextService::getTimezone()),
+                                TextEntry::make('duration_minutes')
                                     ->label('المدة')
                                     ->suffix(' دقيقة'),
-                                Infolists\Components\TextEntry::make('status')
+                                TextEntry::make('status')
                                     ->label('الحالة')
                                     ->badge()
                                     ->formatStateUsing(function ($state): string {
@@ -92,7 +98,7 @@ class ViewQuranSession extends ViewRecord
                                         return SessionStatus::tryFrom($state)?->color() ?? 'gray';
                                     }),
                             ]),
-                        Infolists\Components\TextEntry::make('attendance_status')
+                        TextEntry::make('attendance_status')
                             ->label('حالة الحضور')
                             ->badge()
                             ->formatStateUsing(fn (?string $state): string => match ($state) {
@@ -112,29 +118,29 @@ class ViewQuranSession extends ViewRecord
                             }),
                     ]),
 
-                Infolists\Components\Section::make('الواجب المنزلي')
+                Section::make('الواجب المنزلي')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\IconEntry::make('sessionHomework.has_new_memorization')
+                                IconEntry::make('sessionHomework.has_new_memorization')
                                     ->label('حفظ جديد')
                                     ->boolean(),
-                                Infolists\Components\TextEntry::make('sessionHomework.new_memorization_surah')
+                                TextEntry::make('sessionHomework.new_memorization_surah')
                                     ->label('سورة الحفظ')
                                     ->formatStateUsing(fn ($state) => $state ? QuranSurah::from($state)->value : '-')
                                     ->visible(fn ($record) => $record->sessionHomework?->has_new_memorization),
                             ]),
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\IconEntry::make('sessionHomework.has_review')
+                                IconEntry::make('sessionHomework.has_review')
                                     ->label('مراجعة')
                                     ->boolean(),
-                                Infolists\Components\TextEntry::make('sessionHomework.review_surah')
+                                TextEntry::make('sessionHomework.review_surah')
                                     ->label('سورة المراجعة')
                                     ->formatStateUsing(fn ($state) => $state ? QuranSurah::from($state)->value : '-')
                                     ->visible(fn ($record) => $record->sessionHomework?->has_review),
                             ]),
-                        Infolists\Components\TextEntry::make('sessionHomework.additional_instructions')
+                        TextEntry::make('sessionHomework.additional_instructions')
                             ->label('تعليمات إضافية')
                             ->placeholder('لا توجد')
                             ->columnSpanFull(),
@@ -142,13 +148,13 @@ class ViewQuranSession extends ViewRecord
                     ->collapsed()
                     ->visible(fn ($record) => $record->sessionHomework !== null),
 
-                Infolists\Components\Section::make('المحتوى')
+                Section::make('المحتوى')
                     ->schema([
-                        Infolists\Components\TextEntry::make('description')
+                        TextEntry::make('description')
                             ->label('وصف الجلسة')
                             ->columnSpanFull()
                             ->placeholder('لا يوجد وصف'),
-                        Infolists\Components\TextEntry::make('lesson_content')
+                        TextEntry::make('lesson_content')
                             ->label('محتوى الدرس')
                             ->columnSpanFull()
                             ->placeholder('لا يوجد محتوى'),

@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use ValueError;
+
 /**
  * Gradient Palette Enum
  *
@@ -115,7 +117,7 @@ enum GradientPalette: string
             $tailwindColor = TailwindColor::from($colorName);
 
             return $tailwindColor->getHexValue((int) $shade);
-        } catch (\ValueError $e) {
+        } catch (ValueError $e) {
             // Fallback to a default color if the color is not found in TailwindColor enum
             return '#3B82F6'; // blue-500
         }
@@ -134,7 +136,7 @@ enum GradientPalette: string
         try {
             $fromTailwindColor = TailwindColor::from($fromColorName);
             $result['from'] = $fromTailwindColor->getHexValue((int) $fromShade);
-        } catch (\ValueError $e) {
+        } catch (ValueError $e) {
             // Keep default
         }
 
@@ -143,7 +145,7 @@ enum GradientPalette: string
         try {
             $toTailwindColor = TailwindColor::from($toColorName);
             $result['to'] = $toTailwindColor->getHexValue((int) $toShade);
-        } catch (\ValueError $e) {
+        } catch (ValueError $e) {
             // Keep default
         }
 

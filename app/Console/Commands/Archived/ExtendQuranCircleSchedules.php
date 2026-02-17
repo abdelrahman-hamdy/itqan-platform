@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Archived;
 
+use Exception;
 use App\Models\QuranCircleSchedule;
 use Illuminate\Console\Command;
 
@@ -70,7 +71,7 @@ class ExtendQuranCircleSchedules extends Command
 
                 $this->line("\n✓ Circle ID {$schedule->circle_id}: Generated {$generated} sessions");
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->error("\n✗ Circle ID {$schedule->circle_id}: {$e->getMessage()}");
             }
 

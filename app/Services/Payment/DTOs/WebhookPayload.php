@@ -2,6 +2,10 @@
 
 namespace App\Services\Payment\DTOs;
 
+use DateTimeInterface;
+use Log;
+use DateTime;
+use App\Models\Payment;
 use App\Enums\PaymentResultStatus;
 
 /**
@@ -28,7 +32,7 @@ readonly class WebhookPayload
         public ?string $errorMessage = null,
         public ?string $cardBrand = null,
         public ?string $cardLastFour = null,
-        public ?\DateTimeInterface $processedAt = null,
+        public ?DateTimeInterface $processedAt = null,
         public array $rawPayload = [],
         public array $metadata = [],
         // Tokenization fields
@@ -59,7 +63,7 @@ readonly class WebhookPayload
         // Handle refund flag gracefully (refunds not supported but gateway may send flag)
         $refundDetected = $obj['is_refunded'] ?? false;
         if ($refundDetected) {
-            \Log::channel('payments')->warning('Paymob refund detected but platform does not support refunds', [
+            Log::channel('payments')->warning('Paymob refund detected but platform does not support refunds', [
                 'transaction_id' => $obj['id'] ?? null,
                 'merchant_order_id' => $merchantOrderId ?? null,
             ]);
@@ -133,7 +137,7 @@ readonly class WebhookPayload
             errorMessage: $isSuccess ? null : ($obj['data']['message'] ?? 'Payment failed'),
             cardBrand: $cardBrand,
             cardLastFour: $cardLastFour,
-            processedAt: isset($obj['created_at']) ? new \DateTime($obj['created_at']) : now(),
+            processedAt: isset($obj['created_at']) ? new DateTime($obj['created_at']) : now(),
             rawPayload: $data,
             metadata: $metadata,
             cardToken: $cardToken,
@@ -155,7 +159,7 @@ readonly class WebhookPayload
         // Handle refund status gracefully (refunds not supported but gateway may send)
         $refundDetected = $statusString === 'REFUNDED';
         if ($refundDetected) {
-            \Log::channel('payments')->warning('EasyKash refund detected but platform does not support refunds', [
+            Log::channel('payments')->warning('EasyKash refund detected but platform does not support refunds', [
                 'easykash_ref' => $data['easykashRef'] ?? null,
                 'customer_reference' => $data['customerReference'] ?? null,
             ]);
@@ -211,7 +215,7 @@ readonly class WebhookPayload
         // Determine currency from payment record or academy (don't hardcode)
         $currency = 'EGP'; // Default for EasyKash (Egypt-based)
         if ($paymentId) {
-            $payment = \App\Models\Payment::find($paymentId);
+            $payment = Payment::find($paymentId);
             if ($payment) {
                 $currency = $payment->currency ?? $payment->academy?->currency?->value ?? 'EGP';
                 $academyId = $academyId ?? $payment->academy_id;
@@ -250,7 +254,7 @@ readonly class WebhookPayload
             cardBrand: null, // EasyKash doesn't provide card details in webhook
             cardLastFour: null,
             processedAt: isset($data['Timestamp'])
-                ? \DateTime::createFromFormat('U', $data['Timestamp'])
+                ? DateTime::createFromFormat('U', $data['Timestamp'])
                 : now(),
             rawPayload: $data,
             metadata: $metadata,

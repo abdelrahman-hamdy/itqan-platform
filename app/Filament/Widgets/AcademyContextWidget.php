@@ -7,7 +7,7 @@ use Filament\Widgets\Widget;
 
 class AcademyContextWidget extends Widget
 {
-    protected static string $view = 'filament.widgets.academy-context-widget';
+    protected string $view = 'filament.widgets.academy-context-widget';
 
     protected int|string|array $columnSpan = 'full';
 

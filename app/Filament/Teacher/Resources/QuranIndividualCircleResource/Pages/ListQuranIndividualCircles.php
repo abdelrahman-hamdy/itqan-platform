@@ -2,6 +2,7 @@
 
 namespace App\Filament\Teacher\Resources\QuranIndividualCircleResource\Pages;
 
+use Filament\Actions\CreateAction;
 use App\Filament\Teacher\Resources\QuranIndividualCircleResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -13,7 +14,7 @@ class ListQuranIndividualCircles extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
+            CreateAction::make()
                 ->label('إضافة حلقة فردية'),
         ];
     }

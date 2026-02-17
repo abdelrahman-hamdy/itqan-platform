@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -114,7 +115,7 @@ class CronJobLogger
     /**
      * Log cron job error
      */
-    public function logCronError(string $jobName, array $executionData, \Exception $exception): void
+    public function logCronError(string $jobName, array $executionData, Exception $exception): void
     {
         $endTime = microtime(true);
         $executionTime = round($endTime - $executionData['start_time'], 2);
@@ -216,7 +217,7 @@ class CronJobLogger
                                 $summary[$jobName]['recent_errors']++;
                             }
                         }
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         // Skip unparseable dates
                     }
                 }

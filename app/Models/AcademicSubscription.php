@@ -2,6 +2,13 @@
 
 namespace App\Models;
 
+use Exception;
+use Log;
+use App\Enums\SessionStatus;
+use App\Services\NotificationService;
+use App\Enums\NotificationType;
+use App\Enums\LessonStatus;
+use Carbon\Carbon;
 use App\Constants\DefaultAcademy;
 use App\Enums\BillingCycle;
 use App\Enums\SessionSubscriptionStatus;
@@ -43,7 +50,7 @@ use Illuminate\Support\Facades\DB;
  * @property bool $auto_create_google_meet
  * @property bool $has_trial_session
  * @property bool $trial_session_used
- * @property \Carbon\Carbon|null $trial_session_date
+ * @property Carbon|null $trial_session_date
  * @property string|null $trial_session_status
  * @property int $total_sessions_scheduled
  * @property int $total_sessions_completed
@@ -562,7 +569,7 @@ class AcademicSubscription extends BaseSubscription
     public function useTrialSession(): self
     {
         if (! $this->trial_available) {
-            throw new \Exception('لا توجد جلسة تجريبية متاحة');
+            throw new Exception('لا توجد جلسة تجريبية متاحة');
         }
 
         $this->update([
@@ -578,7 +585,7 @@ class AcademicSubscription extends BaseSubscription
      * Use a session from the subscription (decrement remaining, increment used)
      * Aligned with QuranSubscription::useSession() pattern
      *
-     * @throws \Exception If no sessions remaining
+     * @throws Exception If no sessions remaining
      */
     public function useSession(): self
     {
@@ -586,11 +593,11 @@ class AcademicSubscription extends BaseSubscription
             $subscription = static::lockForUpdate()->find($this->id);
 
             if (! $subscription) {
-                throw new \Exception('الاشتراك غير موجود');
+                throw new Exception('الاشتراك غير موجود');
             }
 
             if ($subscription->sessions_remaining <= 0) {
-                throw new \Exception('لا توجد جلسات متبقية في الاشتراك');
+                throw new Exception('لا توجد جلسات متبقية في الاشتراك');
             }
 
             $subscription->update([
@@ -626,7 +633,7 @@ class AcademicSubscription extends BaseSubscription
             $subscription = static::lockForUpdate()->find($this->id);
 
             if (! $subscription) {
-                throw new \Exception('الاشتراك غير موجود');
+                throw new Exception('الاشتراك غير موجود');
             }
 
             $subscription->update([
@@ -645,7 +652,7 @@ class AcademicSubscription extends BaseSubscription
                 ]);
             }
 
-            \Log::info("Session returned to Academic subscription {$subscription->id}");
+            Log::info("Session returned to Academic subscription {$subscription->id}");
 
             $this->refresh();
 
@@ -685,7 +692,7 @@ class AcademicSubscription extends BaseSubscription
         $lastSessionNumber = AcademicSession::where('academic_subscription_id', $this->id)
             ->count();
 
-        \Log::info('Creating sessions for renewed subscription', [
+        Log::info('Creating sessions for renewed subscription', [
             'subscription_id' => $this->id,
             'sessions_per_month' => $sessionsPerMonth,
             'billing_cycle' => $this->billing_cycle->value,
@@ -705,7 +712,7 @@ class AcademicSubscription extends BaseSubscription
                 'student_id' => $this->student_id,
                 'session_code' => 'AS-'.$this->id.'-'.str_pad($sessionNumber, 3, '0', STR_PAD_LEFT),
                 'session_type' => 'individual',
-                'status' => \App\Enums\SessionStatus::UNSCHEDULED,
+                'status' => SessionStatus::UNSCHEDULED,
                 'title' => "جلسة {$sessionNumber} - {$this->subject_name}",
                 'description' => "جلسة في مادة {$this->subject_name} - {$this->grade_level_name}",
                 'duration_minutes' => $this->session_duration_minutes ?? 60,
@@ -716,7 +723,7 @@ class AcademicSubscription extends BaseSubscription
         // Update subscription totals using Eloquent increment method
         $this->increment('total_sessions_scheduled', $totalNewSessions);
 
-        \Log::info('Renewal session creation complete', [
+        Log::info('Renewal session creation complete', [
             'subscription_id' => $this->id,
             'new_sessions_created' => $totalNewSessions,
             'total_sessions_now' => $this->total_sessions_scheduled + $totalNewSessions,
@@ -912,7 +919,7 @@ class AcademicSubscription extends BaseSubscription
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             $subscriptionUrl = route('student.academic-subscriptions.show', [
                 'subdomain' => $this->academy->subdomain ?? DefaultAcademy::subdomain(),
@@ -929,7 +936,7 @@ class AcademicSubscription extends BaseSubscription
 
             $notificationService->send(
                 $this->student,
-                \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
+                NotificationType::SUBSCRIPTION_ACTIVATED,
                 [
                     'subscription_name' => $subscriptionName,
                     'subscription_type' => $subscriptionTypeLabel,
@@ -957,7 +964,7 @@ class AcademicSubscription extends BaseSubscription
 
                     $notificationService->send(
                         $teacherUser,
-                        \App\Enums\NotificationType::NEW_STUDENT_SUBSCRIPTION_TEACHER,
+                        NotificationType::NEW_STUDENT_SUBSCRIPTION_TEACHER,
                         [
                             'student_name' => $this->student->full_name,
                             'subscription_name' => $subscriptionName,
@@ -978,7 +985,7 @@ class AcademicSubscription extends BaseSubscription
             if ($this->student->studentProfile && $this->student->studentProfile->parent) {
                 $notificationService->send(
                     $this->student->studentProfile->parent->user,
-                    \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
+                    NotificationType::SUBSCRIPTION_ACTIVATED,
                     [
                         'subscription_name' => $subscriptionName,
                         'student_name' => $this->student->full_name,
@@ -996,7 +1003,7 @@ class AcademicSubscription extends BaseSubscription
                     false
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             \Illuminate\Support\Facades\Log::error('Failed to send academic subscription activated notification', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),
@@ -1014,7 +1021,7 @@ class AcademicSubscription extends BaseSubscription
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             $subscriptionUrl = route('student.academic-subscriptions.show', [
                 'subdomain' => $this->academy->subdomain ?? DefaultAcademy::subdomain(),
@@ -1023,7 +1030,7 @@ class AcademicSubscription extends BaseSubscription
 
             $notificationService->send(
                 $this->student,
-                \App\Enums\NotificationType::SUBSCRIPTION_EXPIRED,
+                NotificationType::SUBSCRIPTION_EXPIRED,
                 [
                     'subscription_type' => 'أكاديمي',
                     'subject_name' => $this->subject_name ?? 'الموضوع',
@@ -1043,7 +1050,7 @@ class AcademicSubscription extends BaseSubscription
             if ($this->student->studentProfile && $this->student->studentProfile->parent) {
                 $notificationService->send(
                     $this->student->studentProfile->parent->user,
-                    \App\Enums\NotificationType::SUBSCRIPTION_EXPIRED,
+                    NotificationType::SUBSCRIPTION_EXPIRED,
                     [
                         'student_name' => $this->student->full_name,
                         'subscription_type' => 'أكاديمي',
@@ -1060,7 +1067,7 @@ class AcademicSubscription extends BaseSubscription
                     true
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             \Illuminate\Support\Facades\Log::error('Failed to send academic subscription expired notification', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),
@@ -1098,7 +1105,7 @@ class AcademicSubscription extends BaseSubscription
                 'last_payment_date' => now(),
             ]);
 
-            \Log::info('[AcademicSubscription] Activated from payment', [
+            Log::info('[AcademicSubscription] Activated from payment', [
                 'subscription_id' => $this->id,
                 'subscription_type' => $this->subscription_type,
                 'starts_at' => $startsAt->toDateTimeString(),
@@ -1146,7 +1153,7 @@ class AcademicSubscription extends BaseSubscription
             'sessions_remaining' => $sessionsPerMonth,
             'default_duration_minutes' => $this->session_duration_minutes ?? 60,
             'preferred_times' => $this->weekly_schedule,
-            'status' => \App\Enums\LessonStatus::ACTIVE,
+            'status' => LessonStatus::ACTIVE,
             'recording_enabled' => false,
             'created_by' => $this->student_id,
         ]);
@@ -1165,7 +1172,7 @@ class AcademicSubscription extends BaseSubscription
                 'student_id' => $this->student_id,
                 'session_code' => 'AS-'.$this->id.'-'.str_pad($i, 3, '0', STR_PAD_LEFT),
                 'session_type' => 'individual',
-                'status' => \App\Enums\SessionStatus::UNSCHEDULED,
+                'status' => SessionStatus::UNSCHEDULED,
                 'title' => "جلسة {$i} - {$subjectName}",
                 'description' => "جلسة في مادة {$subjectName} - {$gradeLevelName}",
                 'duration_minutes' => $this->session_duration_minutes ?? 60,
@@ -1173,7 +1180,7 @@ class AcademicSubscription extends BaseSubscription
             ]);
         }
 
-        \Log::info('[AcademicSubscription] Lesson and sessions created', [
+        Log::info('[AcademicSubscription] Lesson and sessions created', [
             'subscription_id' => $this->id,
             'lesson_id' => $lesson->id,
             'total_sessions' => $totalSessions,

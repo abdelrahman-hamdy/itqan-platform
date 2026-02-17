@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\View\View;
+use App\Models\User;
+use Illuminate\Support\Collection;
 use App\Enums\SessionStatus;
 use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Http\Requests\GetParentCalendarEventsRequest;
@@ -35,7 +38,7 @@ class ParentCalendarController extends Controller
      *
      * Uses the student calendar view with parent layout.
      */
-    public function index(Request $request): \Illuminate\View\View
+    public function index(Request $request): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -89,14 +92,14 @@ class ParentCalendarController extends Controller
      * Get events for multiple children
      * Optimized to avoid N+1 by eager loading users in a single query.
      *
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     private function getChildrenEvents(array $childUserIds, Carbon $startDate, Carbon $endDate)
     {
         $allEvents = collect();
 
         // Eager load all child users at once to avoid N+1
-        $childUsers = \App\Models\User::whereIn('id', $childUserIds)->get()->keyBy('id');
+        $childUsers = User::whereIn('id', $childUserIds)->get()->keyBy('id');
 
         foreach ($childUserIds as $childUserId) {
             $childUser = $childUsers->get($childUserId);
@@ -130,7 +133,7 @@ class ParentCalendarController extends Controller
         ];
 
         // Eager load all child users at once to avoid N+1
-        $childUsers = \App\Models\User::whereIn('id', $childUserIds)->get();
+        $childUsers = User::whereIn('id', $childUserIds)->get();
 
         foreach ($childUsers as $childUser) {
             $stats = $this->calendarService->getCalendarStats($childUser, $date);

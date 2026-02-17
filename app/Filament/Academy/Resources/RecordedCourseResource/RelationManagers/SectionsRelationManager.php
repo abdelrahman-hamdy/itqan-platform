@@ -2,8 +2,20 @@
 
 namespace App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\Toggle;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Actions\CreateAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -18,40 +30,40 @@ class SectionsRelationManager extends RelationManager
 
     protected static ?string $pluralModelLabel = 'الأقسام';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('title')
+        return $schema
+            ->components([
+                TextInput::make('title')
                     ->label('عنوان القسم')
                     ->required()
                     ->maxLength(255)
                     ->placeholder('مثال: المقدمة')
                     ->columnSpanFull(),
 
-                Forms\Components\Textarea::make('description')
+                Textarea::make('description')
                     ->label('وصف القسم')
                     ->rows(3)
                     ->placeholder('وصف مختصر لمحتوى هذا القسم')
                     ->columnSpanFull(),
 
-                Forms\Components\Grid::make(3)
+                Grid::make(3)
                     ->schema([
-                        Forms\Components\TextInput::make('order')
+                        TextInput::make('order')
                             ->label('الترتيب')
                             ->numeric()
                             ->default(1)
                             ->required()
                             ->minValue(1),
 
-                        Forms\Components\TextInput::make('duration_minutes')
+                        TextInput::make('duration_minutes')
                             ->label('المدة (دقيقة)')
                             ->numeric()
                             ->default(0)
                             ->minValue(0)
                             ->helperText('المدة الإجمالية لجميع دروس هذا القسم'),
 
-                        Forms\Components\TextInput::make('lessons_count')
+                        TextInput::make('lessons_count')
                             ->label('عدد الدروس')
                             ->numeric()
                             ->default(0)
@@ -59,14 +71,14 @@ class SectionsRelationManager extends RelationManager
                             ->helperText('سيتم تحديثه تلقائياً عند إضافة الدروس'),
                     ]),
 
-                Forms\Components\Grid::make(2)
+                Grid::make(2)
                     ->schema([
-                        Forms\Components\Toggle::make('is_published')
+                        Toggle::make('is_published')
                             ->label('منشور')
                             ->default(true)
                             ->helperText('القسم مرئي للطلاب'),
 
-                        Forms\Components\Toggle::make('is_free_preview')
+                        Toggle::make('is_free_preview')
                             ->label('معاينة مجانية')
                             ->default(false)
                             ->helperText('يمكن للطلاب مشاهدة هذا القسم مجاناً'),
@@ -79,23 +91,23 @@ class SectionsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('title')
             ->columns([
-                Tables\Columns\TextColumn::make('order')
+                TextColumn::make('order')
                     ->label('الترتيب')
                     ->sortable()
                     ->width(80),
 
-                Tables\Columns\TextColumn::make('title')
+                TextColumn::make('title')
                     ->label('عنوان القسم')
                     ->searchable()
                     ->limit(50)
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('lessons_count')
+                TextColumn::make('lessons_count')
                     ->label('عدد الدروس')
                     ->alignCenter()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('duration_minutes')
+                TextColumn::make('duration_minutes')
                     ->label('المدة')
                     ->formatStateUsing(fn (int $state): string => $state >= 60
                             ? floor($state / 60).' ساعة '.($state % 60).' دقيقة'
@@ -103,48 +115,48 @@ class SectionsRelationManager extends RelationManager
                     )
                     ->sortable(),
 
-                Tables\Columns\IconColumn::make('is_published')
+                IconColumn::make('is_published')
                     ->label('منشور')
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle'),
 
-                Tables\Columns\IconColumn::make('is_free_preview')
+                IconColumn::make('is_free_preview')
                     ->label('معاينة مجانية')
                     ->boolean()
                     ->trueIcon('heroicon-o-eye')
                     ->falseIcon('heroicon-o-eye-slash'),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('is_published')
+                TernaryFilter::make('is_published')
                     ->label('منشور')
                     ->placeholder('الكل')
                     ->trueLabel('منشور')
                     ->falseLabel('غير منشور'),
 
-                Tables\Filters\TernaryFilter::make('is_free_preview')
+                TernaryFilter::make('is_free_preview')
                     ->label('معاينة مجانية')
                     ->placeholder('الكل')
                     ->trueLabel('معاينة مجانية')
                     ->falseLabel('مدفوع'),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->label('إضافة قسم جديد'),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('order');

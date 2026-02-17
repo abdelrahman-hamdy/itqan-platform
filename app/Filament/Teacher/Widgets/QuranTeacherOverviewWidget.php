@@ -16,12 +16,12 @@ use Illuminate\Support\Facades\Auth;
 
 class QuranTeacherOverviewWidget extends BaseWidget
 {
-    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+    protected string $view = 'filament.widgets.collapsible-stats-overview-widget';
 
     // Prevent auto-discovery - Dashboard explicitly adds this widget
     protected static bool $isDiscoverable = false;
 
-    protected static ?string $pollingInterval = '60s';
+    protected ?string $pollingInterval = '60s';
 
     protected static bool $isLazy = false;
 

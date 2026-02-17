@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
+use BackedEnum;
 use App\Contracts\MeetingCapable;
 use App\Enums\SessionStatus;
 use App\Http\Traits\Api\ApiResponses;
@@ -105,7 +107,7 @@ class UnifiedMeetingController extends Controller
                 'session_id' => $session->id,
             ], __('meetings.api.meeting_created'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to create unified meeting', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -153,7 +155,7 @@ class UnifiedMeetingController extends Controller
                 $now = now();
                 $academyTzRaw = $session->academy?->timezone;
                 // Handle timezone as enum or string
-                $academyTz = $academyTzRaw instanceof \BackedEnum ? $academyTzRaw->value : ($academyTzRaw ?? 'Asia/Riyadh');
+                $academyTz = $academyTzRaw instanceof BackedEnum ? $academyTzRaw->value : ($academyTzRaw ?? 'Asia/Riyadh');
                 $nowInAcademyTz = $now->copy()->setTimezone($academyTz);
                 $scheduledAt = $session->scheduled_at;
                 $statusData = $session->getStatusDisplayData();
@@ -166,7 +168,7 @@ class UnifiedMeetingController extends Controller
                     'user_type' => $user->user_type,
                     'session_id' => $session->id,
                     'session_type' => $sessionType,
-                    'session_status' => $session->status instanceof \BackedEnum ? $session->status->value : $session->status,
+                    'session_status' => $session->status instanceof BackedEnum ? $session->status->value : $session->status,
                     'scheduled_at' => $scheduledAt?->toIso8601String(),
                     'scheduled_at_tz' => $scheduledAt?->timezone->getName(),
                     'now_utc' => $now->toIso8601String(),
@@ -215,7 +217,7 @@ class UnifiedMeetingController extends Controller
                 'meeting_config' => $session->getMeetingConfiguration(),
             ], __('meetings.api.token_created'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to generate participant token', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -270,7 +272,7 @@ class UnifiedMeetingController extends Controller
 
             return $this->success($roomInfo);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to get room info', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -334,7 +336,7 @@ class UnifiedMeetingController extends Controller
                 return $this->serverError(__('meetings.api.meeting_end_failed'));
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to end meeting', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -402,7 +404,7 @@ class UnifiedMeetingController extends Controller
 
             return $this->success(null, __('meetings.api.logout_success'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to record leave', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),

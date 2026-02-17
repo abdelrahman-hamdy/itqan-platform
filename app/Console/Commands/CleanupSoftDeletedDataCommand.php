@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\MeetingAttendanceEvent;
@@ -110,7 +111,7 @@ class CleanupSoftDeletedDataCommand extends Command
 
             return self::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('Data cleanup failed: '.$e->getMessage());
 
             if ($isVerbose) {

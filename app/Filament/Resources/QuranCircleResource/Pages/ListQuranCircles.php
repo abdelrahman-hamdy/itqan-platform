@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\QuranCircleResource\Pages;
 
+use Filament\Actions\CreateAction;
 use App\Filament\Resources\QuranCircleResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -13,7 +14,7 @@ class ListQuranCircles extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
+            CreateAction::make()
                 ->label('إضافة دائرة قرآن جديدة'),
         ];
     }

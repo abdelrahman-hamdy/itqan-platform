@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\SupervisorProfileResource\Pages;
 
+use Filament\Actions\DeleteAction;
+use App\Models\SupervisorProfile;
 use App\Filament\Resources\SupervisorProfileResource;
 use App\Models\SupervisorResponsibility;
 use App\Models\User;
@@ -10,7 +12,7 @@ use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * @property \App\Models\SupervisorProfile $record
+ * @property SupervisorProfile $record
  */
 class EditSupervisorProfile extends EditRecord
 {
@@ -19,7 +21,7 @@ class EditSupervisorProfile extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 

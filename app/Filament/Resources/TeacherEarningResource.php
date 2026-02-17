@@ -2,6 +2,28 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Facades\Filament;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Table;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
+use DB;
+use Filament\Tables\Filters\Filter;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Filters\Indicator;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Textarea;
+use App\Filament\Resources\TeacherEarningResource\Pages\ListTeacherEarnings;
+use App\Filament\Resources\TeacherEarningResource\Pages\ViewTeacherEarning;
 use App\Filament\Resources\TeacherEarningResource\Pages;
 use App\Filament\Shared\Resources\BaseTeacherEarningResource;
 use App\Models\AcademicTeacherProfile;
@@ -25,7 +47,7 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationGroup = 'إعدادات المعلمين';
+    protected static string | \UnitEnum | null $navigationGroup = 'إعدادات المعلمين';
 
     protected static ?int $navigationSort = 2;
 
@@ -49,14 +71,14 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make(),
+            ViewAction::make(),
             static::getFinalizeAction(),
             static::getDisputeAction(),
             static::getResolveDisputeAction(),
-            Tables\Actions\DeleteAction::make(),
-            Tables\Actions\RestoreAction::make()
+            DeleteAction::make(),
+            RestoreAction::make()
                 ->label(__('filament.actions.restore')),
-            Tables\Actions\ForceDeleteAction::make()
+            ForceDeleteAction::make()
                 ->label(__('filament.actions.force_delete')),
         ];
     }
@@ -67,12 +89,12 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
+            BulkActionGroup::make([
                 static::getFinalizeBulkAction(),
-                Tables\Actions\DeleteBulkAction::make(),
-                Tables\Actions\RestoreBulkAction::make()
+                DeleteBulkAction::make(),
+                RestoreBulkAction::make()
                     ->label(__('filament.actions.restore_selected')),
-                Tables\Actions\ForceDeleteBulkAction::make()
+                ForceDeleteBulkAction::make()
                     ->label(__('filament.actions.force_delete_selected')),
             ]),
         ];
@@ -118,7 +140,7 @@ class TeacherEarningResource extends BaseTeacherEarningResource
             ->label('الأكاديمية')
             ->sortable()
             ->searchable()
-            ->visible(fn () => \Filament\Facades\Filament::getTenant() === null)
+            ->visible(fn () => Filament::getTenant() === null)
             ->placeholder('غير محدد');
     }
 
@@ -159,11 +181,11 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                 ->date('M Y')
                 ->sortable(),
 
-            Tables\Columns\IconColumn::make('is_finalized')
+            IconColumn::make('is_finalized')
                 ->label('مؤكد')
                 ->boolean(),
 
-            Tables\Columns\IconColumn::make('is_disputed')
+            IconColumn::make('is_disputed')
                 ->label('معترض')
                 ->boolean()
                 ->trueColor('danger')
@@ -181,10 +203,10 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     // Table Override with Filters Layout
     // ========================================
 
-    public static function table(Tables\Table $table): Tables\Table
+    public static function table(Table $table): Table
     {
         return parent::table($table)
-            ->filtersLayout(Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(3);
     }
 
@@ -195,19 +217,19 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     protected static function getTableFilters(): array
     {
         return [
-            Tables\Filters\SelectFilter::make('teacher')
+            SelectFilter::make('teacher')
                 ->label('المعلم')
                 ->options(function () {
                     // Get all teachers with composite keys (type_id format)
                     $options = [];
 
-                    $quranTeachers = \App\Models\QuranTeacherProfile::with('user')->get();
+                    $quranTeachers = QuranTeacherProfile::with('user')->get();
                     foreach ($quranTeachers as $teacher) {
                         $key = 'quran_'.$teacher->id;
                         $options[$key] = $teacher->user->name.' (قرآن)';
                     }
 
-                    $academicTeachers = \App\Models\AcademicTeacherProfile::with('user')->get();
+                    $academicTeachers = AcademicTeacherProfile::with('user')->get();
                     foreach ($academicTeachers as $teacher) {
                         $key = 'academic_'.$teacher->id;
                         $options[$key] = $teacher->user->name.' (أكاديمي)';
@@ -235,13 +257,13 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                         return $query->where(function ($query) use ($quranIds, $academicIds) {
                             if (! empty($quranIds)) {
                                 $query->orWhere(function ($q) use ($quranIds) {
-                                    $q->where('teacher_type', \App\Models\QuranTeacherProfile::class)
+                                    $q->where('teacher_type', QuranTeacherProfile::class)
                                         ->whereIn('teacher_id', $quranIds);
                                 });
                             }
                             if (! empty($academicIds)) {
                                 $query->orWhere(function ($q) use ($academicIds) {
-                                    $q->where('teacher_type', \App\Models\AcademicTeacherProfile::class)
+                                    $q->where('teacher_type', AcademicTeacherProfile::class)
                                         ->whereIn('teacher_id', $academicIds);
                                 });
                             }
@@ -251,7 +273,7 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                     return $query;
                 }),
 
-            Tables\Filters\SelectFilter::make('teacher_type')
+            SelectFilter::make('teacher_type')
                 ->label('نوع المعلم')
                 ->options([
                     QuranTeacherProfile::class => 'معلم قرآن',
@@ -259,11 +281,11 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                 ])
                 ->multiple(),
 
-            Tables\Filters\SelectFilter::make('earning_month')
+            SelectFilter::make('earning_month')
                 ->label('الشهر')
                 ->options(function () {
                     // Get last 24 months of earnings using GROUP BY
-                    $months = \DB::table('teacher_earnings')
+                    $months = DB::table('teacher_earnings')
                         ->selectRaw('DATE_FORMAT(earning_month, "%Y-%m") as month_key, DATE_FORMAT(earning_month, "%M %Y") as month_label, MAX(earning_month) as sort_date')
                         ->groupBy('month_key', 'month_label')
                         ->orderBy('sort_date', 'desc')
@@ -285,7 +307,7 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                     return $query;
                 }),
 
-            Tables\Filters\SelectFilter::make('status')
+            SelectFilter::make('status')
                 ->label('الحالة')
                 ->options([
                     'finalized' => 'مؤكد',
@@ -301,7 +323,7 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                     };
                 }),
 
-            Tables\Filters\SelectFilter::make('calculation_method')
+            SelectFilter::make('calculation_method')
                 ->label('طريقة الحساب')
                 ->options([
                     'individual_rate' => __('earnings.calculation_methods.individual_rate'),
@@ -312,15 +334,15 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                 ])
                 ->multiple(),
 
-            Tables\Filters\Filter::make('amount_range')
-                ->form([
-                    Forms\Components\Grid::make(2)
+            Filter::make('amount_range')
+                ->schema([
+                    Grid::make(2)
                         ->schema([
-                            Forms\Components\TextInput::make('amount_from')
+                            TextInput::make('amount_from')
                                 ->label('من')
                                 ->numeric()
                                 ->prefix(getCurrencySymbol()),
-                            Forms\Components\TextInput::make('amount_to')
+                            TextInput::make('amount_to')
                                 ->label('إلى')
                                 ->numeric()
                                 ->prefix(getCurrencySymbol()),
@@ -341,12 +363,12 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                     $indicators = [];
 
                     if ($data['amount_from'] ?? null) {
-                        $indicators[] = Tables\Filters\Indicator::make('من: '.number_format($data['amount_from'], 2).' '.getCurrencySymbol())
+                        $indicators[] = Indicator::make('من: '.number_format($data['amount_from'], 2).' '.getCurrencySymbol())
                             ->removeField('amount_from');
                     }
 
                     if ($data['amount_to'] ?? null) {
-                        $indicators[] = Tables\Filters\Indicator::make('إلى: '.number_format($data['amount_to'], 2).' '.getCurrencySymbol())
+                        $indicators[] = Indicator::make('إلى: '.number_format($data['amount_to'], 2).' '.getCurrencySymbol())
                             ->removeField('amount_to');
                     }
 
@@ -362,15 +384,15 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     protected static function getStatusFormFields(): array
     {
         return [
-            Forms\Components\Toggle::make('is_finalized')
+            Toggle::make('is_finalized')
                 ->label('تم التأكيد')
                 ->helperText('هل تم تأكيد هذا الربح؟'),
 
-            Forms\Components\Toggle::make('is_disputed')
+            Toggle::make('is_disputed')
                 ->label('معترض عليه')
                 ->helperText('هل يوجد اعتراض على هذا الربح؟'),
 
-            Forms\Components\Textarea::make('dispute_notes')
+            Textarea::make('dispute_notes')
                 ->label('ملاحظات الاعتراض')
                 ->rows(3)
                 ->maxLength(2000)
@@ -386,8 +408,8 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTeacherEarnings::route('/'),
-            'view' => Pages\ViewTeacherEarning::route('/{record}'),
+            'index' => ListTeacherEarnings::route('/'),
+            'view' => ViewTeacherEarning::route('/{record}'),
         ];
     }
 }

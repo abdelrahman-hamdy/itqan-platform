@@ -2,6 +2,17 @@
 
 namespace App\Providers\Filament;
 
+use Filament\Facades\Filament;
+use App\Filament\Resources\QuranTrialRequestResource;
+use App\Filament\Resources\TeacherReviewResource;
+use App\Filament\Resources\TeacherEarningResource;
+use App\Filament\Resources\PaymentSettingsResource;
+use App\Filament\Academy\Pages\Dashboard;
+use App\Filament\Academy\Widgets\AcademyStatsWidget;
+use App\Filament\Academy\Widgets\AcademyMonthlyStatsWidget;
+use App\Filament\Academy\Widgets\AcademyUserAnalyticsChartWidget;
+use App\Filament\Academy\Widgets\AcademySessionAnalyticsChartWidget;
+use App\Filament\Pages\Auth\Login;
 use App\Filament\Academy\Resources\AcademicPackageResource;
 use App\Filament\Academy\Resources\AcademicSubscriptionResource;
 use App\Filament\Academy\Resources\AcademicTeacherProfileResource;
@@ -51,7 +62,7 @@ class AcademyPanelProvider extends PanelProvider
                 'gray' => Color::Gray,
             ])
             ->font('Tajawal') // Arabic font
-            ->favicon(fn () => getFavicon(\Filament\Facades\Filament::getTenant()))
+            ->favicon(fn () => getFavicon(Filament::getTenant()))
             ->brandName('لوحة إدارة الأكاديمية')
             ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'blue', 'panelType' => 'academy']))
             ->navigationGroups([
@@ -76,7 +87,7 @@ class AcademyPanelProvider extends PanelProvider
                 QuranCircleResource::class,
                 QuranSubscriptionResource::class,
                 QuranPackageResource::class,
-                \App\Filament\Resources\QuranTrialRequestResource::class,
+                QuranTrialRequestResource::class,
 
                 // إدارة التعليم الأكاديمي
                 InteractiveCourseResource::class,
@@ -91,22 +102,22 @@ class AcademyPanelProvider extends PanelProvider
                 SavedPaymentMethodResource::class,
 
                 // إعدادات المعلمين - Teacher Settings
-                \App\Filament\Resources\TeacherReviewResource::class,
-                \App\Filament\Resources\TeacherEarningResource::class,
+                TeacherReviewResource::class,
+                TeacherEarningResource::class,
 
                 // الإعدادات
-                \App\Filament\Resources\PaymentSettingsResource::class,
+                PaymentSettingsResource::class,
             ])
             ->discoverPages(in: app_path('Filament/Academy/Pages'), for: 'App\\Filament\\Academy\\Pages')
             ->pages([
-                \App\Filament\Academy\Pages\Dashboard::class,
+                Dashboard::class,
             ])
             ->widgets([
                 // Main stats widgets - same structure as super admin but scoped to academy
-                \App\Filament\Academy\Widgets\AcademyStatsWidget::class,
-                \App\Filament\Academy\Widgets\AcademyMonthlyStatsWidget::class,
-                \App\Filament\Academy\Widgets\AcademyUserAnalyticsChartWidget::class,
-                \App\Filament\Academy\Widgets\AcademySessionAnalyticsChartWidget::class,
+                AcademyStatsWidget::class,
+                AcademyMonthlyStatsWidget::class,
+                AcademyUserAnalyticsChartWidget::class,
+                AcademySessionAnalyticsChartWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -127,7 +138,7 @@ class AcademyPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->sidebarCollapsibleOnDesktop()
-            ->login(\App\Filament\Pages\Auth\Login::class)
+            ->login(Login::class)
             ->profile()
             ->renderHook(
                 'panels::topbar.start',

@@ -2,11 +2,16 @@
 
 namespace App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\IconEntry;
 use App\Enums\SessionStatus;
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource;
 use Filament\Actions;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewInteractiveCourseSession extends ViewRecord
@@ -16,7 +21,7 @@ class ViewInteractiveCourseSession extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
         ];
     }
@@ -26,42 +31,42 @@ class ViewInteractiveCourseSession extends ViewRecord
         return $this->getRecord()->title ?? 'تفاصيل جلسة الدورة التفاعلية';
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
         return $infolist
             ->schema([
-                Infolists\Components\Section::make('معلومات الجلسة')
+                Section::make('معلومات الجلسة')
                     ->schema([
-                        Infolists\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Infolists\Components\TextEntry::make('session_code')
+                                TextEntry::make('session_code')
                                     ->label('رمز الجلسة')
                                     ->copyable(),
-                                Infolists\Components\TextEntry::make('title')
+                                TextEntry::make('title')
                                     ->label('العنوان'),
-                                Infolists\Components\TextEntry::make('session_number')
+                                TextEntry::make('session_number')
                                     ->label('رقم الجلسة'),
                             ]),
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('course.title')
+                                TextEntry::make('course.title')
                                     ->label('الدورة'),
-                                Infolists\Components\TextEntry::make('course.course_code')
+                                TextEntry::make('course.course_code')
                                     ->label('رمز الدورة'),
                             ]),
                     ]),
 
-                Infolists\Components\Section::make('التوقيت والحالة')
+                Section::make('التوقيت والحالة')
                     ->schema([
-                        Infolists\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Infolists\Components\TextEntry::make('scheduled_at')
+                                TextEntry::make('scheduled_at')
                                     ->label('موعد الجلسة')
                                     ->dateTime('Y-m-d H:i'),
-                                Infolists\Components\TextEntry::make('duration_minutes')
+                                TextEntry::make('duration_minutes')
                                     ->label('المدة')
                                     ->suffix(' دقيقة'),
-                                Infolists\Components\TextEntry::make('status')
+                                TextEntry::make('status')
                                     ->label('الحالة')
                                     ->badge()
                                     ->formatStateUsing(function ($state): string {
@@ -80,29 +85,29 @@ class ViewInteractiveCourseSession extends ViewRecord
                                         return SessionStatus::tryFrom($state)?->color() ?? 'gray';
                                     }),
                             ]),
-                        Infolists\Components\TextEntry::make('attendance_count')
+                        TextEntry::make('attendance_count')
                             ->label('عدد الحضور'),
                     ]),
 
-                Infolists\Components\Section::make('المحتوى')
+                Section::make('المحتوى')
                     ->schema([
-                        Infolists\Components\TextEntry::make('description')
+                        TextEntry::make('description')
                             ->label('وصف الجلسة')
                             ->columnSpanFull()
                             ->placeholder('لا يوجد وصف'),
-                        Infolists\Components\TextEntry::make('lesson_content')
+                        TextEntry::make('lesson_content')
                             ->label('محتوى الدرس')
                             ->columnSpanFull()
                             ->placeholder('لا يوجد محتوى'),
                     ])
                     ->collapsed(),
 
-                Infolists\Components\Section::make('الواجب')
+                Section::make('الواجب')
                     ->schema([
-                        Infolists\Components\IconEntry::make('homework_assigned')
+                        IconEntry::make('homework_assigned')
                             ->label('يوجد واجب')
                             ->boolean(),
-                        Infolists\Components\TextEntry::make('homework_description')
+                        TextEntry::make('homework_description')
                             ->label('وصف الواجب')
                             ->placeholder('لا يوجد')
                             ->visible(fn ($record) => $record->homework_assigned),

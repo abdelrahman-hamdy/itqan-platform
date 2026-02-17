@@ -2,6 +2,9 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use App\Filament\Teacher\Resources\QuizAssignmentResource\Pages\ListQuizAssignments;
+use App\Filament\Teacher\Resources\QuizAssignmentResource\Pages\CreateQuizAssignment;
+use App\Filament\Teacher\Resources\QuizAssignmentResource\Pages\EditQuizAssignment;
 use App\Enums\QuizAssignableType;
 use App\Filament\Shared\Resources\BaseQuizAssignmentResource;
 use App\Filament\Teacher\Resources\QuizAssignmentResource\Pages;
@@ -116,9 +119,9 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuizAssignments::route('/'),
-            'create' => Pages\CreateQuizAssignment::route('/create'),
-            'edit' => Pages\EditQuizAssignment::route('/{record}/edit'),
+            'index' => ListQuizAssignments::route('/'),
+            'create' => CreateQuizAssignment::route('/create'),
+            'edit' => EditQuizAssignment::route('/{record}/edit'),
         ];
     }
 }

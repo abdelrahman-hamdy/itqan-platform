@@ -2,6 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ParentProfile;
+use Log;
+use App\Enums\RelationshipType;
+use App\Models\QuranSubscription;
+use App\Models\AcademicSubscription;
+use App\Models\CourseSubscription;
+use App\Models\QuranSession;
+use App\Models\AcademicSession;
+use App\Models\Certificate;
+use App\Models\Payment;
+use Illuminate\Support\Collection;
+use App\Models\QuranCircle;
+use App\Models\InteractiveCourse;
+use App\Models\RecordedCourse;
+use App\Models\QuranTrialRequest;
 use App\Constants\DefaultAcademy;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
@@ -25,7 +40,7 @@ class ParentProfileController extends Controller
      */
     public function index(Request $request): View
     {
-        $this->authorize('viewDashboard', \App\Models\ParentProfile::class);
+        $this->authorize('viewDashboard', ParentProfile::class);
 
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -49,7 +64,7 @@ class ParentProfileController extends Controller
             ? [$selectedChild->user_id]
             : $children->pluck('user_id')->toArray();
 
-        \Log::info('[Parent Profile] Children IDs collected', [
+        Log::info('[Parent Profile] Children IDs collected', [
             'children_count' => $children->count(),
             'selected_child_id' => $selectedChild?->id,
             'children_profile_ids' => $childrenProfileIds,
@@ -114,7 +129,7 @@ class ParentProfileController extends Controller
     /**
      * Show edit profile form
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function edit(): View|RedirectResponse
     {
@@ -127,7 +142,7 @@ class ParentProfileController extends Controller
         }
 
         // Get relationship type options
-        $relationshipTypes = \App\Enums\RelationshipType::cases();
+        $relationshipTypes = RelationshipType::cases();
 
         return view('parent.edit-profile', compact('parent', 'relationshipTypes'));
     }
@@ -180,15 +195,15 @@ class ParentProfileController extends Controller
             return 0;
         }
 
-        $quranCount = \App\Models\QuranSubscription::whereIn('student_id', $childrenIds)
+        $quranCount = QuranSubscription::whereIn('student_id', $childrenIds)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
-        $academicCount = \App\Models\AcademicSubscription::whereIn('student_id', $childrenIds)
+        $academicCount = AcademicSubscription::whereIn('student_id', $childrenIds)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
-        $courseCount = \App\Models\CourseSubscription::whereIn('student_id', $childrenIds)
+        $courseCount = CourseSubscription::whereIn('student_id', $childrenIds)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
@@ -204,12 +219,12 @@ class ParentProfileController extends Controller
             return 0;
         }
 
-        $quranCount = \App\Models\QuranSession::whereIn('student_id', $childrenIds)
+        $quranCount = QuranSession::whereIn('student_id', $childrenIds)
             ->where('scheduled_at', '>=', now())
             ->upcoming()
             ->count();
 
-        $academicCount = \App\Models\AcademicSession::whereIn('student_id', $childrenIds)
+        $academicCount = AcademicSession::whereIn('student_id', $childrenIds)
             ->where('scheduled_at', '>=', now())
             ->upcoming()
             ->count();
@@ -229,7 +244,7 @@ class ParentProfileController extends Controller
         }
 
         // Certificate.student_id references User.id
-        return \App\Models\Certificate::whereIn('student_id', $childrenUserIds)->count();
+        return Certificate::whereIn('student_id', $childrenUserIds)->count();
     }
 
     /**
@@ -244,7 +259,7 @@ class ParentProfileController extends Controller
         }
 
         // Payment.user_id references User.id
-        return \App\Models\Payment::whereIn('user_id', $childrenUserIds)
+        return Payment::whereIn('user_id', $childrenUserIds)
             ->where('status', SessionStatus::COMPLETED->value)
             ->count();
     }
@@ -259,11 +274,11 @@ class ParentProfileController extends Controller
         }
 
         // Get all completed sessions for these children
-        $quranSessions = \App\Models\QuranSession::whereIn('student_id', $childrenIds)
+        $quranSessions = QuranSession::whereIn('student_id', $childrenIds)
             ->where('status', SessionStatus::COMPLETED->value)
             ->get();
 
-        $academicSessions = \App\Models\AcademicSession::whereIn('student_id', $childrenIds)
+        $academicSessions = AcademicSession::whereIn('student_id', $childrenIds)
             ->where('status', SessionStatus::COMPLETED->value)
             ->get();
 
@@ -290,23 +305,23 @@ class ParentProfileController extends Controller
     private function getChildStats(int $userId): array
     {
         // All these models use User.id for student_id
-        $quranSubscriptions = \App\Models\QuranSubscription::where('student_id', $userId)
+        $quranSubscriptions = QuranSubscription::where('student_id', $userId)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
-        $academicSubscriptions = \App\Models\AcademicSubscription::where('student_id', $userId)
+        $academicSubscriptions = AcademicSubscription::where('student_id', $userId)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
         // Certificate.student_id references User.id
-        $certificates = \App\Models\Certificate::where('student_id', $userId)->count();
+        $certificates = Certificate::where('student_id', $userId)->count();
 
-        $upcomingSessions = \App\Models\QuranSession::where('student_id', $userId)
+        $upcomingSessions = QuranSession::where('student_id', $userId)
             ->where('scheduled_at', '>=', now())
             ->upcoming()
             ->count();
 
-        $upcomingSessions += \App\Models\AcademicSession::where('student_id', $userId)
+        $upcomingSessions += AcademicSession::where('student_id', $userId)
             ->where('scheduled_at', '>=', now())
             ->upcoming()
             ->count();
@@ -327,7 +342,7 @@ class ParentProfileController extends Controller
             return 0;
         }
 
-        return \App\Models\QuranSubscription::whereIn('student_id', $childrenIds)
+        return QuranSubscription::whereIn('student_id', $childrenIds)
             ->whereIn('subscription_type', ['circle', 'group'])
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
@@ -342,7 +357,7 @@ class ParentProfileController extends Controller
             return 0;
         }
 
-        return \App\Models\QuranSubscription::whereIn('student_id', $childrenIds)
+        return QuranSubscription::whereIn('student_id', $childrenIds)
             ->where('subscription_type', 'individual')
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
@@ -357,7 +372,7 @@ class ParentProfileController extends Controller
             return 0;
         }
 
-        return \App\Models\CourseSubscription::whereIn('student_id', $childrenIds)
+        return CourseSubscription::whereIn('student_id', $childrenIds)
             ->where('course_type', 'interactive')
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
@@ -372,7 +387,7 @@ class ParentProfileController extends Controller
             return 0;
         }
 
-        return \App\Models\AcademicSubscription::whereIn('student_id', $childrenIds)
+        return AcademicSubscription::whereIn('student_id', $childrenIds)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
     }
@@ -381,14 +396,14 @@ class ParentProfileController extends Controller
      * Get Quran circles for children (group circles)
      * Uses the students relationship on QuranCircle to find enrolled circles
      */
-    private function getQuranCircles(array $childrenIds): \Illuminate\Support\Collection
+    private function getQuranCircles(array $childrenIds): Collection
     {
         if (empty($childrenIds)) {
             return collect();
         }
 
         // Get circles where students are enrolled via pivot table
-        return \App\Models\QuranCircle::whereHas('students', function ($query) use ($childrenIds) {
+        return QuranCircle::whereHas('students', function ($query) use ($childrenIds) {
             $query->whereIn('users.id', $childrenIds);
         })
             // Note: 'quranTeacher' on QuranCircle returns User directly, so no '.user' needed
@@ -400,13 +415,13 @@ class ParentProfileController extends Controller
     /**
      * Get Quran private subscriptions for children (individual circles)
      */
-    private function getQuranPrivateSubscriptions(array $childrenIds): \Illuminate\Support\Collection
+    private function getQuranPrivateSubscriptions(array $childrenIds): Collection
     {
         if (empty($childrenIds)) {
             return collect();
         }
 
-        return \App\Models\QuranSubscription::whereIn('student_id', $childrenIds)
+        return QuranSubscription::whereIn('student_id', $childrenIds)
             ->where('subscription_type', 'individual')
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             // Note: 'student' relationship returns User directly (not StudentProfile), so no '.user' needed
@@ -417,20 +432,20 @@ class ParentProfileController extends Controller
     /**
      * Get interactive courses for children
      */
-    private function getInteractiveCourses(array $childrenIds): \Illuminate\Support\Collection
+    private function getInteractiveCourses(array $childrenIds): Collection
     {
         if (empty($childrenIds)) {
             return collect();
         }
 
-        $courseIds = \App\Models\CourseSubscription::whereIn('student_id', $childrenIds)
+        $courseIds = CourseSubscription::whereIn('student_id', $childrenIds)
             ->where('course_type', 'interactive')
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereNotNull('interactive_course_id')
             ->pluck('interactive_course_id')
             ->unique();
 
-        return \App\Models\InteractiveCourse::whereIn('id', $courseIds)
+        return InteractiveCourse::whereIn('id', $courseIds)
             ->with(['assignedTeacher.user', 'sessions', 'enrollments' => fn ($q) => $q->whereIn('student_id', $childrenIds)])
             ->get();
     }
@@ -438,13 +453,13 @@ class ParentProfileController extends Controller
     /**
      * Get academic subscriptions for children
      */
-    private function getAcademicSubscriptions(array $childrenIds): \Illuminate\Support\Collection
+    private function getAcademicSubscriptions(array $childrenIds): Collection
     {
         if (empty($childrenIds)) {
             return collect();
         }
 
-        return \App\Models\AcademicSubscription::whereIn('student_id', $childrenIds)
+        return AcademicSubscription::whereIn('student_id', $childrenIds)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->with(['academicTeacher.user', 'subject', 'gradeLevel', 'student'])
             ->get();
@@ -453,20 +468,20 @@ class ParentProfileController extends Controller
     /**
      * Get recorded courses for children
      */
-    private function getRecordedCourses(array $childrenIds): \Illuminate\Support\Collection
+    private function getRecordedCourses(array $childrenIds): Collection
     {
         if (empty($childrenIds)) {
             return collect();
         }
 
-        $courseIds = \App\Models\CourseSubscription::whereIn('student_id', $childrenIds)
+        $courseIds = CourseSubscription::whereIn('student_id', $childrenIds)
             ->where('course_type', 'recorded')
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereNotNull('recorded_course_id')
             ->pluck('recorded_course_id')
             ->unique();
 
-        return \App\Models\RecordedCourse::whereIn('id', $courseIds)
+        return RecordedCourse::whereIn('id', $courseIds)
             ->with(['teacher.user', 'lessons'])
             ->get();
     }
@@ -474,13 +489,13 @@ class ParentProfileController extends Controller
     /**
      * Get Quran trial requests for children
      */
-    private function getQuranTrialRequests(array $childrenIds): \Illuminate\Support\Collection
+    private function getQuranTrialRequests(array $childrenIds): Collection
     {
         if (empty($childrenIds)) {
             return collect();
         }
 
-        return \App\Models\QuranTrialRequest::whereIn('student_id', $childrenIds)
+        return QuranTrialRequest::whereIn('student_id', $childrenIds)
             ->with(['teacher.user', 'student', 'trialSession'])
             ->orderBy('created_at', 'desc')
             ->limit(6)
@@ -493,12 +508,12 @@ class ParentProfileController extends Controller
     private function getUpcomingSessions(array $childrenIds, int $limit = 5): array
     {
         if (empty($childrenIds)) {
-            \Log::info('[Parent Upcoming Sessions] No children IDs provided');
+            Log::info('[Parent Upcoming Sessions] No children IDs provided');
 
             return [];
         }
 
-        \Log::info('[Parent Upcoming Sessions] Searching for sessions', [
+        Log::info('[Parent Upcoming Sessions] Searching for sessions', [
             'children_ids' => $childrenIds,
             'limit' => $limit,
             'today' => today()->toDateString(),
@@ -509,7 +524,7 @@ class ParentProfileController extends Controller
         // Get Quran sessions (both individual and group)
         // Individual sessions: linked via student_id directly
         // Group sessions: linked via circle_id → quran_circle_students pivot table
-        $quranSessions = \App\Models\QuranSession::where(function ($query) use ($childrenIds) {
+        $quranSessions = QuranSession::where(function ($query) use ($childrenIds) {
             // Individual sessions (student_id is set)
             $query->whereIn('student_id', $childrenIds)
                 // OR Group sessions (via circle enrollment)
@@ -524,7 +539,7 @@ class ParentProfileController extends Controller
             ->limit($limit * 2)
             ->get();
 
-        \Log::info('[Parent Upcoming Sessions] Quran sessions found', [
+        Log::info('[Parent Upcoming Sessions] Quran sessions found', [
             'count' => $quranSessions->count(),
             'sessions' => $quranSessions->map(fn ($s) => [
                 'id' => $s->id,
@@ -559,7 +574,7 @@ class ParentProfileController extends Controller
         }
 
         // Get upcoming Academic sessions
-        $academicSessions = \App\Models\AcademicSession::whereIn('student_id', $childrenIds)
+        $academicSessions = AcademicSession::whereIn('student_id', $childrenIds)
             ->whereNotNull('scheduled_at')
             ->whereDate('scheduled_at', '>=', today())
             ->whereNotIn('status', [SessionStatus::COMPLETED->value, SessionStatus::CANCELLED->value])
@@ -568,7 +583,7 @@ class ParentProfileController extends Controller
             ->limit($limit * 2) // Get more than needed
             ->get();
 
-        \Log::info('[Parent Upcoming Sessions] Academic sessions found', [
+        Log::info('[Parent Upcoming Sessions] Academic sessions found', [
             'count' => $academicSessions->count(),
             'sessions' => $academicSessions->map(fn ($s) => [
                 'id' => $s->id,
@@ -595,7 +610,7 @@ class ParentProfileController extends Controller
 
         $finalSessions = array_slice($sessions, 0, $limit);
 
-        \Log::info('[Parent Upcoming Sessions] Final result', [
+        Log::info('[Parent Upcoming Sessions] Final result', [
             'total_found' => count($sessions),
             'returned' => count($finalSessions),
             'sessions' => array_map(fn ($s) => [

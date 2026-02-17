@@ -9,15 +9,15 @@ use Illuminate\Support\Facades\Auth;
 
 class Profile extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-user-circle';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user-circle';
 
-    protected static string $view = 'filament.academy.pages.profile';
+    protected string $view = 'filament.academy.pages.profile';
 
     protected static ?string $navigationLabel = 'ملفي الشخصي';
 
     protected static ?string $title = 'ملفي الشخصي';
 
-    protected static ?string $navigationGroup = 'ملفي الشخصي';
+    protected static string | \UnitEnum | null $navigationGroup = 'ملفي الشخصي';
 
     protected static ?int $navigationSort = 1;
 

@@ -2,6 +2,7 @@
 
 namespace App\Services\Webhook\LiveKit;
 
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -62,7 +63,7 @@ class LiveKitEventDispatcher
             $handler->handle($data);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('livekit')->error("Error handling event: {$eventType}", [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),

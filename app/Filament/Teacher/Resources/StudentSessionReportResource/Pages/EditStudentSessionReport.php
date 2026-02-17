@@ -2,6 +2,7 @@
 
 namespace App\Filament\Teacher\Resources\StudentSessionReportResource\Pages;
 
+use Filament\Actions\ViewAction;
 use App\Filament\Teacher\Resources\StudentSessionReportResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -13,7 +14,7 @@ class EditStudentSessionReport extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
         ];
     }

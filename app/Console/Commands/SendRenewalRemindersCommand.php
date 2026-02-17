@@ -2,6 +2,11 @@
 
 namespace App\Console\Commands;
 
+use Exception;
+use App\Models\QuranSubscription;
+use App\Enums\SessionSubscriptionStatus;
+use Illuminate\Support\Facades\DB;
+use App\Models\AcademicSubscription;
 use App\Services\CronJobLogger;
 use App\Services\SubscriptionRenewalService;
 use Illuminate\Console\Command;
@@ -73,7 +78,7 @@ class SendRenewalRemindersCommand extends Command
 
             return self::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('Renewal reminder processing failed: '.$e->getMessage());
 
             if ($isVerbose) {
@@ -113,17 +118,17 @@ class SendRenewalRemindersCommand extends Command
         $allActive = collect();
 
         // Query Quran subscriptions
-        $quranSubs = \App\Models\QuranSubscription::where('auto_renew', true)
-            ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE)
-            ->whereIn(\Illuminate\Support\Facades\DB::raw('DATE(next_billing_date)'), [$sevenDayTarget, $threeDayTarget])
+        $quranSubs = QuranSubscription::where('auto_renew', true)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->whereIn(DB::raw('DATE(next_billing_date)'), [$sevenDayTarget, $threeDayTarget])
             ->with('student.user')
             ->get();
         $allActive = $allActive->merge($quranSubs);
 
         // Query Academic subscriptions
-        $academicSubs = \App\Models\AcademicSubscription::where('auto_renew', true)
-            ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE)
-            ->whereIn(\Illuminate\Support\Facades\DB::raw('DATE(next_billing_date)'), [$sevenDayTarget, $threeDayTarget])
+        $academicSubs = AcademicSubscription::where('auto_renew', true)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->whereIn(DB::raw('DATE(next_billing_date)'), [$sevenDayTarget, $threeDayTarget])
             ->with('student.user')
             ->get();
         $allActive = $allActive->merge($academicSubs);

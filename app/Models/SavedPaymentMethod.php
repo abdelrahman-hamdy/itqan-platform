@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -43,7 +44,7 @@ use Illuminate\Support\Carbon;
  *
  * @property-read Academy $academy
  * @property-read User $user
- * @property-read \Illuminate\Database\Eloquent\Collection|Payment[] $payments
+ * @property-read Collection|Payment[] $payments
  */
 class SavedPaymentMethod extends Model
 {

@@ -2,6 +2,8 @@
 
 namespace App\Filament\AcademicTeacher\Widgets;
 
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\Action;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use Filament\Tables;
@@ -38,35 +40,35 @@ class RecentAcademicSessionsWidget extends BaseWidget
                     ->limit(5)
             )
             ->columns([
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->placeholder('غير محدد')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('academicIndividualLesson.academicSubject.name')
+                TextColumn::make('academicIndividualLesson.academicSubject.name')
                     ->label('المادة')
                     ->placeholder('غير محدد'),
 
-                Tables\Columns\TextColumn::make('scheduled_at')
+                TextColumn::make('scheduled_at')
                     ->label('الموعد')
                     ->dateTime('D d M - H:i')
                     ->sortable()
                     ->color(fn ($record) => $record->scheduled_at->isToday() ? 'success' : 'gray')
                     ->description(fn ($record) => $record->scheduled_at->isToday() ? 'اليوم' : ($record->scheduled_at->isTomorrow() ? 'غداً' : '')),
 
-                Tables\Columns\TextColumn::make('duration_minutes')
+                TextColumn::make('duration_minutes')
                     ->label('المدة')
                     ->suffix(' دقيقة')
                     ->alignCenter(),
 
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
                     ->formatStateUsing(fn ($state) => $state instanceof SessionStatus ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof SessionStatus ? $state->color() : 'gray'),
             ])
-            ->actions([
-                Tables\Actions\Action::make('view')
+            ->recordActions([
+                Action::make('view')
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
                     ->url(fn ($record) => route('filament.academic-teacher.resources.academic-sessions.view', [

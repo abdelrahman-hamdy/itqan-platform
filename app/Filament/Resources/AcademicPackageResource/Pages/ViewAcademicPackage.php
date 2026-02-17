@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\AcademicPackageResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
 use App\Filament\Resources\AcademicPackageResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,8 +15,8 @@ class ViewAcademicPackage extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
-            Actions\DeleteAction::make(),
+            EditAction::make(),
+            DeleteAction::make(),
         ];
     }
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources\Api\V1\Teacher;
 
+use App\Models\QuranTeacherProfile;
+use App\Models\AcademicTeacherProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
@@ -36,8 +38,8 @@ class TeacherCollection extends ResourceCollection
     protected function getTypeBreakdown(): array
     {
         return [
-            'quran' => $this->collection->filter(fn ($teacher) => $teacher->resource instanceof \App\Models\QuranTeacherProfile)->count(),
-            'academic' => $this->collection->filter(fn ($teacher) => $teacher->resource instanceof \App\Models\AcademicTeacherProfile)->count(),
+            'quran' => $this->collection->filter(fn ($teacher) => $teacher->resource instanceof QuranTeacherProfile)->count(),
+            'academic' => $this->collection->filter(fn ($teacher) => $teacher->resource instanceof AcademicTeacherProfile)->count(),
         ];
     }
 

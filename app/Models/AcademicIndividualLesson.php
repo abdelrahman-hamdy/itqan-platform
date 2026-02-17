@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use DB;
+use Log;
 use App\Enums\LessonStatus;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -135,7 +138,7 @@ class AcademicIndividualLesson extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    public function quizAssignments(): MorphMany
     {
         return $this->morphMany(QuizAssignment::class, 'assignable');
     }
@@ -210,7 +213,7 @@ class AcademicIndividualLesson extends Model
      */
     public function handleSessionCancelled(): void
     {
-        \DB::transaction(function () {
+        DB::transaction(function () {
             $lesson = static::lockForUpdate()->find($this->id);
 
             if (! $lesson) {
@@ -234,7 +237,7 @@ class AcademicIndividualLesson extends Model
                 'sessions_completed' => $completed,
             ]);
 
-            \Log::info("Lesson {$lesson->id} remaining sessions incremented due to cancellation", [
+            Log::info("Lesson {$lesson->id} remaining sessions incremented due to cancellation", [
                 'lesson_id' => $lesson->id,
                 'new_remaining' => $lesson->sessions_remaining,
             ]);

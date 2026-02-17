@@ -2,6 +2,7 @@
 
 namespace App\Services\Webhook\LiveKit;
 
+use Exception;
 use App\Enums\MeetingEventType;
 use App\Models\BaseSession;
 use App\Models\MeetingAttendanceEvent;
@@ -123,7 +124,7 @@ class ParticipantJoinedHandler extends AbstractLiveKitEventHandler
     {
         try {
             $this->attendanceService->handleUserJoin($session, $user);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logError('Failed to initialize attendance', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,

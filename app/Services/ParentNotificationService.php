@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\QuizAttempt;
+use Illuminate\Support\Collection;
 use App\Constants\DefaultAcademy;
 use App\Enums\NotificationType;
 use App\Models\AcademicHomework;
@@ -200,7 +202,7 @@ class ParentNotificationService
     /**
      * Send quiz graded notification
      */
-    public function sendQuizGraded(\App\Models\QuizAttempt $quizAttempt): void
+    public function sendQuizGraded(QuizAttempt $quizAttempt): void
     {
         // Get student
         $studentProfile = $quizAttempt->studentProfile;
@@ -244,7 +246,7 @@ class ParentNotificationService
     /**
      * Get all parents linked to a student
      */
-    public function getParentsForStudent(User $student): \Illuminate\Support\Collection
+    public function getParentsForStudent(User $student): Collection
     {
         $studentProfile = $student->studentProfileUnscoped;
         if (! $studentProfile) {

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Concerns;
 
+use Closure;
+use Exception;
 use App\Services\AcademyContextService;
 use Illuminate\Support\Facades\Auth;
 
@@ -55,9 +57,9 @@ trait TenantAwareFileUpload
      * Useful when the academy context might not be available at form definition time.
      *
      * @param  string  $baseDirectory  The base directory
-     * @return \Closure A closure that returns the tenant-prefixed path
+     * @return Closure A closure that returns the tenant-prefixed path
      */
-    protected static function getTenantDirectoryLazy(string $baseDirectory): \Closure
+    protected static function getTenantDirectoryLazy(string $baseDirectory): Closure
     {
         return function () use ($baseDirectory): string {
             return static::getTenantDirectory($baseDirectory);
@@ -82,7 +84,7 @@ trait TenantAwareFileUpload
             if ($academyId) {
                 return $academyId;
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Service not available, continue to fallback
         }
 

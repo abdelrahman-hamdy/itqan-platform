@@ -2,6 +2,30 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Toggle;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages\ListMonitoredInteractiveCourses;
+use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages\CreateMonitoredInteractiveCourse;
+use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages\ViewMonitoredInteractiveCourse;
+use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages\EditMonitoredInteractiveCourse;
 use App\Enums\DifficultyLevel;
 use App\Enums\InteractiveCourseStatus;
 use App\Enums\SessionDuration;
@@ -9,9 +33,7 @@ use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages;
 use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -26,7 +48,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
 {
     protected static ?string $model = InteractiveCourse::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-video-camera';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-video-camera';
 
     protected static ?string $navigationLabel = 'الدورات التفاعلية';
 
@@ -34,7 +56,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'الدورات التفاعلية';
 
-    protected static ?string $navigationGroup = 'الدورات التفاعلية';
+    protected static string | \UnitEnum | null $navigationGroup = 'الدورات التفاعلية';
 
     protected static ?int $navigationSort = 1;
 
@@ -47,63 +69,63 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
         return static::hasDerivedInteractiveCourses();
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات الدورة الأساسية')
+        return $schema
+            ->components([
+                Section::make('معلومات الدورة الأساسية')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('course_code')
+                                TextInput::make('course_code')
                                     ->label('رمز الدورة')
                                     ->disabled()
                                     ->dehydrated(false),
 
-                                Forms\Components\TextInput::make('title')
+                                TextInput::make('title')
                                     ->label('عنوان الدورة')
                                     ->required()
                                     ->maxLength(255),
 
-                                Forms\Components\TextInput::make('title_en')
+                                TextInput::make('title_en')
                                     ->label('عنوان الدورة (إنجليزي)')
                                     ->maxLength(255),
                             ]),
 
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\Textarea::make('description')
+                                Textarea::make('description')
                                     ->label('وصف الدورة')
                                     ->required()
                                     ->maxLength(1000)
                                     ->rows(4),
 
-                                Forms\Components\Textarea::make('description_en')
+                                Textarea::make('description_en')
                                     ->label('وصف الدورة (إنجليزي)')
                                     ->maxLength(1000)
                                     ->rows(4),
                             ]),
                     ]),
 
-                Forms\Components\Section::make('التخصص والمستوى')
+                Section::make('التخصص والمستوى')
                     ->schema([
-                        Forms\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Forms\Components\Select::make('subject_id')
+                                Select::make('subject_id')
                                     ->relationship('subject', 'name')
                                     ->label('المادة الدراسية')
                                     ->required()
                                     ->searchable()
                                     ->preload(),
 
-                                Forms\Components\Select::make('grade_level_id')
+                                Select::make('grade_level_id')
                                     ->relationship('gradeLevel', 'name')
                                     ->label('المرحلة الدراسية')
                                     ->required()
                                     ->searchable()
                                     ->preload(),
 
-                                Forms\Components\Select::make('assigned_teacher_id')
+                                Select::make('assigned_teacher_id')
                                     ->label('المعلم المعين')
                                     ->options(function () {
                                         $profileIds = static::getAssignedAcademicTeacherProfileIds();
@@ -126,11 +148,11 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                             ]),
                     ]),
 
-                Forms\Components\Section::make('إعدادات الدورة')
+                Section::make('إعدادات الدورة')
                     ->schema([
-                        Forms\Components\Grid::make(4)
+                        Grid::make(4)
                             ->schema([
-                                Forms\Components\TextInput::make('total_sessions')
+                                TextInput::make('total_sessions')
                                     ->label('إجمالي الجلسات')
                                     ->numeric()
                                     ->minValue(1)
@@ -139,7 +161,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                                     ->required()
                                     ->suffix('جلسة'),
 
-                                Forms\Components\TextInput::make('sessions_per_week')
+                                TextInput::make('sessions_per_week')
                                     ->label('الجلسات أسبوعياً')
                                     ->numeric()
                                     ->minValue(1)
@@ -148,22 +170,22 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                                     ->required()
                                     ->suffix('جلسة'),
 
-                                Forms\Components\TextInput::make('duration_weeks')
+                                TextInput::make('duration_weeks')
                                     ->label('مدة الدورة (أسابيع)')
                                     ->numeric()
                                     ->disabled()
                                     ->dehydrated(false),
 
-                                Forms\Components\Select::make('session_duration_minutes')
+                                Select::make('session_duration_minutes')
                                     ->label('مدة الجلسة (دقيقة)')
                                     ->options(SessionDuration::options())
                                     ->default(SessionDuration::SIXTY_MINUTES->value)
                                     ->required(),
                             ]),
 
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('max_students')
+                                TextInput::make('max_students')
                                     ->label('أقصى عدد طلاب')
                                     ->numeric()
                                     ->minValue(1)
@@ -172,7 +194,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                                     ->required()
                                     ->suffix('طالب'),
 
-                                Forms\Components\Select::make('difficulty_level')
+                                Select::make('difficulty_level')
                                     ->label('مستوى الصعوبة')
                                     ->options(DifficultyLevel::options())
                                     ->default(DifficultyLevel::BEGINNER->value)
@@ -180,11 +202,11 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                             ]),
                     ]),
 
-                Forms\Components\Section::make('الإعدادات المالية')
+                Section::make('الإعدادات المالية')
                     ->schema([
-                        Forms\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Forms\Components\TextInput::make('student_price')
+                                TextInput::make('student_price')
                                     ->label('سعر الدورة للطالب')
                                     ->numeric()
                                     ->minValue(0)
@@ -192,7 +214,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                                     ->required()
                                     ->prefix(getCurrencyCode()),
 
-                                Forms\Components\TextInput::make('teacher_payment')
+                                TextInput::make('teacher_payment')
                                     ->label('دفع المعلم')
                                     ->numeric()
                                     ->minValue(0)
@@ -200,7 +222,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                                     ->required()
                                     ->prefix(getCurrencyCode()),
 
-                                Forms\Components\Select::make('payment_type')
+                                Select::make('payment_type')
                                     ->label('نوع دفع المعلم')
                                     ->options([
                                         'fixed_amount' => 'مبلغ ثابت',
@@ -212,26 +234,26 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                             ]),
                     ]),
 
-                Forms\Components\Section::make('التواريخ والجدولة')
+                Section::make('التواريخ والجدولة')
                     ->schema([
-                        Forms\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Forms\Components\DatePicker::make('start_date')
+                                DatePicker::make('start_date')
                                     ->label('تاريخ البداية')
                                     ->required(),
 
-                                Forms\Components\DatePicker::make('end_date')
+                                DatePicker::make('end_date')
                                     ->label('تاريخ النهاية')
                                     ->disabled()
                                     ->dehydrated(false),
 
-                                Forms\Components\DatePicker::make('enrollment_deadline')
+                                DatePicker::make('enrollment_deadline')
                                     ->label('آخر موعد للتسجيل')
                                     ->before('start_date')
                                     ->helperText('اتركه فارغاً للسماح بالتسجيل طوال فترة الدورة'),
                             ]),
 
-                        Forms\Components\KeyValue::make('schedule')
+                        KeyValue::make('schedule')
                             ->label('الجدول الأسبوعي')
                             ->keyLabel('اليوم')
                             ->valueLabel('التوقيت')
@@ -242,12 +264,12 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                             ->columnSpanFull(),
                     ]),
 
-                Forms\Components\Section::make('محتوى الدورة والأهداف')
+                Section::make('محتوى الدورة والأهداف')
                     ->schema([
-                        Forms\Components\Repeater::make('learning_outcomes')
+                        Repeater::make('learning_outcomes')
                             ->label('مخرجات التعلم')
                             ->schema([
-                                Forms\Components\TextInput::make('outcome')
+                                TextInput::make('outcome')
                                     ->label('المخرج')
                                     ->required(),
                             ])
@@ -256,10 +278,10 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                             ->collapsed()
                             ->columnSpanFull(),
 
-                        Forms\Components\Repeater::make('prerequisites')
+                        Repeater::make('prerequisites')
                             ->label('المتطلبات المسبقة')
                             ->schema([
-                                Forms\Components\TextInput::make('prerequisite')
+                                TextInput::make('prerequisite')
                                     ->label('المتطلب')
                                     ->required(),
                             ])
@@ -268,35 +290,35 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                             ->collapsed()
                             ->columnSpanFull(),
 
-                        Forms\Components\Textarea::make('course_outline')
+                        Textarea::make('course_outline')
                             ->label('مخطط الدورة')
                             ->rows(5)
                             ->columnSpanFull(),
                     ]),
 
-                Forms\Components\Section::make('حالة الدورة والإعدادات')
+                Section::make('حالة الدورة والإعدادات')
                     ->schema([
-                        Forms\Components\Toggle::make('is_published')
+                        Toggle::make('is_published')
                             ->label('مفعل للنشر')
                             ->default(false)
                             ->helperText('هل يمكن للطلاب رؤية هذه الدورة والتسجيل فيها؟'),
 
-                        Forms\Components\Select::make('status')
+                        Select::make('status')
                             ->label('حالة الدورة')
                             ->options(InteractiveCourseStatus::options())
                             ->default(InteractiveCourseStatus::PUBLISHED->value)
                             ->required()
                             ->helperText('حالة الدورة الحالية'),
 
-                        Forms\Components\Toggle::make('recording_enabled')
+                        Toggle::make('recording_enabled')
                             ->label('تسجيل جلسات الدورة')
                             ->default(true)
                             ->helperText('تفعيل تسجيل جميع جلسات هذه الدورة'),
                     ])->columns(3),
 
-                Forms\Components\Section::make('ملاحظات المشرف')
+                Section::make('ملاحظات المشرف')
                     ->schema([
-                        Forms\Components\Textarea::make('supervisor_notes')
+                        Textarea::make('supervisor_notes')
                             ->label('ملاحظات المشرف')
                             ->rows(4)
                             ->helperText('ملاحظات المشرف الخاصة بهذه الدورة'),
@@ -323,11 +345,13 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                         return strlen($state) > 30 ? $state : null;
                     }),
 
-                BadgeColumn::make('subject.name')
+                TextColumn::make('subject.name')
+                    ->badge()
                     ->label('المادة')
                     ->color('info'),
 
-                BadgeColumn::make('gradeLevel.name')
+                TextColumn::make('gradeLevel.name')
+                    ->badge()
                     ->label('المرحلة')
                     ->color('success'),
 
@@ -342,7 +366,8 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                         return $record->assignedTeacher->user?->name ?? $record->assignedTeacher->full_name ?? 'غير محدد';
                     }),
 
-                BadgeColumn::make('course_type_in_arabic')
+                TextColumn::make('course_type_in_arabic')
+                    ->badge()
                     ->label('النوع')
                     ->color(fn (string $state): string => match ($state) {
                         'مكثف' => 'warning',
@@ -371,7 +396,8 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                     ->sortable()
                     ->toggleable(),
 
-                BadgeColumn::make('status')
+                TextColumn::make('status')
+                    ->badge()
                     ->label('الحالة')
                     ->colors(InteractiveCourseStatus::colorOptions())
                     ->formatStateUsing(function ($state): string {
@@ -406,63 +432,63 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('subject_id')
+                SelectFilter::make('subject_id')
                     ->label('المادة')
                     ->relationship('subject', 'name')
                     ->searchable()
                     ->preload(),
 
-                Tables\Filters\SelectFilter::make('grade_level_id')
+                SelectFilter::make('grade_level_id')
                     ->label('المرحلة')
                     ->relationship('gradeLevel', 'name')
                     ->searchable()
                     ->preload(),
 
-                Tables\Filters\SelectFilter::make('status')
+                SelectFilter::make('status')
                     ->label('الحالة')
                     ->options(InteractiveCourseStatus::options()),
 
-                Tables\Filters\SelectFilter::make('difficulty_level')
+                SelectFilter::make('difficulty_level')
                     ->label('مستوى الصعوبة')
                     ->options(DifficultyLevel::options()),
 
-                Tables\Filters\TernaryFilter::make('is_published')
+                TernaryFilter::make('is_published')
                     ->label('منشور')
                     ->trueLabel('منشور')
                     ->falseLabel('غير منشور'),
 
-                Tables\Filters\Filter::make('upcoming')
+                Filter::make('upcoming')
                     ->label('القادمة')
                     ->query(fn (Builder $query) => $query->where('start_date', '>', now()))
                     ->toggle(),
 
-                Tables\Filters\Filter::make('ongoing')
+                Filter::make('ongoing')
                     ->label('الجارية')
                     ->query(fn (Builder $query) => $query
                         ->where('start_date', '<=', now())
                         ->where('end_date', '>=', now()))
                     ->toggle(),
             ])
-            ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make()
+            ->recordActions([
+                ActionGroup::make([
+                    ViewAction::make()
                         ->label('عرض'),
-                    Tables\Actions\EditAction::make()
+                    EditAction::make()
                         ->label('تعديل'),
-                    Tables\Actions\Action::make('view_sessions')
+                    Action::make('view_sessions')
                         ->label('الجلسات')
                         ->icon('heroicon-o-calendar-days')
                         ->url(fn (InteractiveCourse $record): string => MonitoredAllSessionsResource::getUrl('index', [
                             'activeTab' => 'interactive',
                             'tableFilters[course_id][value]' => $record->id,
                         ])),
-                    Tables\Actions\DeleteAction::make()
+                    DeleteAction::make()
                         ->label('حذف'),
                 ]),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد'),
                 ]),
             ]);
@@ -504,10 +530,10 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListMonitoredInteractiveCourses::route('/'),
-            'create' => Pages\CreateMonitoredInteractiveCourse::route('/create'),
-            'view' => Pages\ViewMonitoredInteractiveCourse::route('/{record}'),
-            'edit' => Pages\EditMonitoredInteractiveCourse::route('/{record}/edit'),
+            'index' => ListMonitoredInteractiveCourses::route('/'),
+            'create' => CreateMonitoredInteractiveCourse::route('/create'),
+            'view' => ViewMonitoredInteractiveCourse::route('/{record}'),
+            'edit' => EditMonitoredInteractiveCourse::route('/{record}/edit'),
         ];
     }
 

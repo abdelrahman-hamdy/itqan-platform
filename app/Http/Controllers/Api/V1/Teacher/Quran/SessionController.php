@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher\Quran;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
@@ -207,7 +208,7 @@ class SessionController extends Controller
                     'ended_at' => $session->ended_at->toISOString(),
                 ],
             ], __('Session completed successfully'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
 
             return $this->error(__('Failed to complete session.'), 500, 'COMPLETE_FAILED');
@@ -437,7 +438,7 @@ class SessionController extends Controller
                     'evaluation' => $this->formatEvaluation($session->fresh(['reports'])),
                 ],
             ], __('Evaluation submitted successfully'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
 
             return $this->error(__('Failed to submit evaluation.'), 500, 'EVALUATION_FAILED');

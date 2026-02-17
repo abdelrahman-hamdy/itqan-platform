@@ -16,7 +16,7 @@ class AcademicQuickActionsWidget extends Widget
     // Prevent auto-discovery - Dashboard explicitly adds this widget
     protected static bool $isDiscoverable = false;
 
-    protected static string $view = 'filament.academic-teacher.widgets.quick-actions';
+    protected string $view = 'filament.academic-teacher.widgets.quick-actions';
 
     protected static ?int $sort = 2;
 

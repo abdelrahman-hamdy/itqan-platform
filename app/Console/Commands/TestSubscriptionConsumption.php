@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use Exception;
+use App\Models\Academy;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicIndividualLesson;
@@ -46,7 +48,7 @@ class TestSubscriptionConsumption extends Command
 
             return $this->results['failed'] === 0 ? self::SUCCESS : self::FAILURE;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error("Test suite failed: {$e->getMessage()}");
             $this->cleanup();
             return self::FAILURE;
@@ -55,24 +57,24 @@ class TestSubscriptionConsumption extends Command
 
     private function setupTestEnvironment()
     {
-        $this->academy = \App\Models\Academy::first();
+        $this->academy = Academy::first();
         if (!$this->academy) {
-            throw new \Exception('No academy found');
+            throw new Exception('No academy found');
         }
 
         $this->student = User::where('email', 'abdelrahman260598@gmail.com')->first();
         if (!$this->student) {
-            throw new \Exception('Test student not found');
+            throw new Exception('Test student not found');
         }
 
         $this->quranTeacher = User::whereHas('quranTeacherProfile')->first();
         if (!$this->quranTeacher) {
-            throw new \Exception('No Quran teacher found');
+            throw new Exception('No Quran teacher found');
         }
 
         $this->academicTeacher = User::whereHas('academicTeacherProfile')->first();
         if (!$this->academicTeacher) {
-            throw new \Exception('No academic teacher found');
+            throw new Exception('No academic teacher found');
         }
 
         $this->info("Academy: {$this->academy->name}");
@@ -160,7 +162,7 @@ class TestSubscriptionConsumption extends Command
 
             DB::commit();
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             $this->recordFailure('Individual Quran', $e->getMessage());
         }
@@ -235,7 +237,7 @@ class TestSubscriptionConsumption extends Command
 
             DB::commit();
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             $this->recordFailure('Academic Lesson', $e->getMessage());
         }
@@ -370,7 +372,7 @@ class TestSubscriptionConsumption extends Command
             DB::commit();
             $this->info("✅ Cleanup completed ({$deleted} records deleted)");
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             $this->warn("⚠️  Cleanup failed: {$e->getMessage()}");
         }
@@ -408,7 +410,7 @@ class TestSubscriptionConsumption extends Command
             $this->info("✅ Cleaned up {$deleted} test records");
             return self::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             $this->error("Cleanup failed: {$e->getMessage()}");
             return self::FAILURE;

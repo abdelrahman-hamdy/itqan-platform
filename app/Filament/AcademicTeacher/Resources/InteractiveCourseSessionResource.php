@@ -2,11 +2,27 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
+use App\Enums\SessionStatus;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages\ListInteractiveCourseSessions;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages\CreateInteractiveCourseSession;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages\ViewInteractiveCourseSession;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages\EditInteractiveCourseSession;
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages;
 use App\Filament\Shared\Resources\BaseInteractiveCourseSessionResource;
 use App\Models\InteractiveCourseSession;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -25,7 +41,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationGroup = 'جلساتي';
+    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 2;
 
@@ -69,7 +85,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     {
         return Section::make('معلومات الجلسة الأساسية')
             ->schema([
-                Forms\Components\Select::make('course_id')
+                Select::make('course_id')
                     ->relationship('course', 'title', function ($query) {
                         $teacherProfile = static::getCurrentAcademicTeacherProfile();
                         if ($teacherProfile) {
@@ -81,12 +97,12 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
                     ->searchable()
                     ->preload(),
 
-                Forms\Components\TextInput::make('session_code')
+                TextInput::make('session_code')
                     ->label('رمز الجلسة')
                     ->disabled()
                     ->dehydrated(false),
 
-                Forms\Components\TextInput::make('session_number')
+                TextInput::make('session_number')
                     ->label('رقم الجلسة')
                     ->required()
                     ->numeric()
@@ -101,10 +117,10 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ActionGroup::make([
-                Tables\Actions\ViewAction::make()
+            ActionGroup::make([
+                ViewAction::make()
                     ->label('عرض'),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
 
                 static::makeStartSessionAction(),
@@ -121,8 +137,8 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
             ]),
         ];
     }
@@ -148,7 +164,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     {
         return Section::make('معلومات الحضور')
             ->schema([
-                Forms\Components\TextInput::make('attendance_count')
+                TextInput::make('attendance_count')
                     ->label('عدد الحضور')
                     ->numeric()
                     ->minValue(0)
@@ -171,7 +187,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
         $columns = parent::getTableColumns();
 
         // Add attendance count before created_at
-        $attendanceColumn = Tables\Columns\TextColumn::make('attendance_count')
+        $attendanceColumn = TextColumn::make('attendance_count')
             ->label('عدد الحضور')
             ->numeric()
             ->sortable();
@@ -200,7 +216,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
         return [
             ...parent::getTableFilters(),
 
-            Tables\Filters\SelectFilter::make('course_id')
+            SelectFilter::make('course_id')
                 ->label('الدورة')
                 ->relationship('course', 'title', function ($query) {
                     $teacherProfile = static::getCurrentAcademicTeacherProfile();
@@ -240,7 +256,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     /**
      * Get the current logged-in teacher's profile.
      */
-    protected static function getCurrentAcademicTeacherProfile(): ?\App\Models\AcademicTeacherProfile
+    protected static function getCurrentAcademicTeacherProfile(): ?AcademicTeacherProfile
     {
         return Auth::user()?->academicTeacherProfile;
     }
@@ -248,7 +264,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     /**
      * Get the current teacher's academy.
      */
-    protected static function getCurrentTeacherAcademy(): ?\App\Models\Academy
+    protected static function getCurrentTeacherAcademy(): ?Academy
     {
         return Auth::user()?->academy;
     }
@@ -297,7 +313,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
 
         // Only allow deletion of scheduled sessions
         return $record->course?->assigned_teacher_id === $user->academicTeacherProfile->id &&
-               $record->status === \App\Enums\SessionStatus::SCHEDULED;
+               $record->status === SessionStatus::SCHEDULED;
     }
 
     // ========================================
@@ -307,10 +323,10 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListInteractiveCourseSessions::route('/'),
-            'create' => Pages\CreateInteractiveCourseSession::route('/create'),
-            'view' => Pages\ViewInteractiveCourseSession::route('/{record}'),
-            'edit' => Pages\EditInteractiveCourseSession::route('/{record}/edit'),
+            'index' => ListInteractiveCourseSessions::route('/'),
+            'create' => CreateInteractiveCourseSession::route('/create'),
+            'view' => ViewInteractiveCourseSession::route('/{record}'),
+            'edit' => EditInteractiveCourseSession::route('/{record}/edit'),
         ];
     }
 }

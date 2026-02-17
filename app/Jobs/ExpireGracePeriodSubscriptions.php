@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use Carbon\Carbon;
+use Exception;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\AcademicSubscription;
@@ -47,7 +49,7 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
                     return false;
                 }
 
-                $expiresAt = \Carbon\Carbon::parse($metadata['grace_period_expires_at']);
+                $expiresAt = Carbon::parse($metadata['grace_period_expires_at']);
 
                 return $expiresAt->isPast();
             });
@@ -69,7 +71,7 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
                     return false;
                 }
 
-                $expiresAt = \Carbon\Carbon::parse($metadata['grace_period_expires_at']);
+                $expiresAt = Carbon::parse($metadata['grace_period_expires_at']);
 
                 return $expiresAt->isPast();
             });
@@ -93,7 +95,7 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
     {
         $metadata = $subscription->metadata ?? [];
         $gracePeriodExpiresAt = isset($metadata['grace_period_expires_at'])
-            ? \Carbon\Carbon::parse($metadata['grace_period_expires_at'])
+            ? Carbon::parse($metadata['grace_period_expires_at'])
             : null;
 
         // Update subscription status
@@ -111,7 +113,7 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
                 'انتهت فترة السماح بعد فشل التجديد التلقائي. يرجى الاشتراك مرة أخرى لاستئناف الخدمة.',
                 $gracePeriodExpiresAt
             ));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send subscription cancelled notification', [
                 'subscription_id' => $subscription->id,
                 'subscription_type' => $type,

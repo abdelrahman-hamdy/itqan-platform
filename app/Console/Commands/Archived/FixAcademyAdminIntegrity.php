@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Archived;
 
+use Exception;
 use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -199,7 +200,7 @@ class FixAcademyAdminIntegrity extends Command
                 DB::commit();
                 $this->newLine();
                 $this->info("Fixed {$fixed} issues. Run with --dry-run to verify.");
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 DB::rollBack();
                 $this->error('Error fixing issues: '.$e->getMessage());
 

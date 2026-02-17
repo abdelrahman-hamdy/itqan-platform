@@ -2,11 +2,34 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use App\Filament\Resources\CourseReviewResource\Pages\ListCourseReviews;
+use App\Filament\Resources\CourseReviewResource\Pages\CreateCourseReview;
+use App\Filament\Resources\CourseReviewResource\Pages\ViewCourseReview;
+use App\Filament\Resources\CourseReviewResource\Pages\EditCourseReview;
 use App\Enums\ReviewStatus;
 use App\Filament\Resources\CourseReviewResource\Pages;
 use App\Models\CourseReview;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,7 +39,7 @@ class CourseReviewResource extends BaseResource
 {
     protected static ?string $model = CourseReview::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-ellipsis';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-chat-bubble-left-ellipsis';
 
     protected static ?string $navigationLabel = 'تقييمات الدورات';
 
@@ -24,7 +47,7 @@ class CourseReviewResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'تقييمات الدورات';
 
-    protected static ?string $navigationGroup = 'التقييمات والمراجعات';
+    protected static string | \UnitEnum | null $navigationGroup = 'التقييمات والمراجعات';
 
     protected static ?int $navigationSort = 2;
 
@@ -58,13 +81,13 @@ class CourseReviewResource extends BaseResource
         return 'warning';
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات التقييم')
+        return $schema
+            ->components([
+                Section::make('معلومات التقييم')
                     ->schema([
-                        Forms\Components\Select::make('user_id')
+                        Select::make('user_id')
                             ->label('الطالب')
                             ->relationship('user', 'name')
                             ->searchable()
@@ -72,7 +95,7 @@ class CourseReviewResource extends BaseResource
                             ->required()
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('reviewable_type')
+                        TextInput::make('reviewable_type')
                             ->label('نوع الدورة')
                             ->formatStateUsing(fn ($state) => match ($state) {
                                 'App\\Models\\RecordedCourse' => 'دورة مسجلة',
@@ -81,7 +104,7 @@ class CourseReviewResource extends BaseResource
                             })
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('rating')
+                        TextInput::make('rating')
                             ->label('التقييم')
                             ->numeric()
                             ->minValue(1)
@@ -89,16 +112,16 @@ class CourseReviewResource extends BaseResource
                             ->required()
                             ->suffix('/ 5'),
 
-                        Forms\Components\Textarea::make('review')
+                        Textarea::make('review')
                             ->label('التعليق')
                             ->rows(4)
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('حالة الموافقة')
+                Section::make('حالة الموافقة')
                     ->schema([
-                        Forms\Components\Toggle::make('is_approved')
+                        Toggle::make('is_approved')
                             ->label('معتمد')
                             ->helperText('تفعيل هذا الخيار سينشر التقييم ليكون مرئياً للجميع'),
                     ]),
@@ -109,17 +132,17 @@ class CourseReviewResource extends BaseResource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')
+                TextColumn::make('user.name')
                     ->label('الطالب')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('reviewable.title')
+                TextColumn::make('reviewable.title')
                     ->label('الدورة')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('reviewable_type')
+                TextColumn::make('reviewable_type')
                     ->label('نوع الدورة')
                     ->formatStateUsing(fn ($state) => match ($state) {
                         'App\\Models\\RecordedCourse' => 'مسجلة',
@@ -133,37 +156,37 @@ class CourseReviewResource extends BaseResource
                         default => 'gray',
                     }),
 
-                Tables\Columns\TextColumn::make('rating')
+                TextColumn::make('rating')
                     ->label('التقييم')
                     ->formatStateUsing(fn ($state) => str_repeat('★', $state).str_repeat('☆', 5 - $state))
                     ->color('warning'),
 
-                Tables\Columns\TextColumn::make('review')
+                TextColumn::make('review')
                     ->label('التعليق')
                     ->limit(50)
                     ->tooltip(fn ($record) => $record->review),
 
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
                     ->formatStateUsing(fn ($record) => $record->status->label())
                     ->color(fn ($record) => $record->status->color())
                     ->icon(fn ($record) => $record->status->icon()),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ التقييم')
                     ->dateTime('Y-m-d H:i')
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('is_approved')
+                SelectFilter::make('is_approved')
                     ->label('حالة الاعتماد')
                     ->options([
                         '1' => ReviewStatus::APPROVED->label(),
                         '0' => ReviewStatus::PENDING->label(),
                     ]),
 
-                Tables\Filters\SelectFilter::make('rating')
+                SelectFilter::make('rating')
                     ->label('التقييم')
                     ->options([
                         '5' => '5 نجوم',
@@ -173,42 +196,42 @@ class CourseReviewResource extends BaseResource
                         '1' => '1 نجمة',
                     ]),
 
-                Tables\Filters\SelectFilter::make('reviewable_type')
+                SelectFilter::make('reviewable_type')
                     ->label('نوع الدورة')
                     ->options([
                         'App\\Models\\RecordedCourse' => 'دورة مسجلة',
                         'App\\Models\\InteractiveCourse' => 'دورة تفاعلية',
                     ]),
 
-                Tables\Filters\TrashedFilter::make()
+                TrashedFilter::make()
                     ->label(__('filament.filters.trashed')),
             ])
-            ->actions([
-                Tables\Actions\Action::make('approve')
+            ->recordActions([
+                Action::make('approve')
                     ->label('اعتماد')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn ($record) => ! $record->is_approved)
                     ->action(fn ($record) => $record->approve()),
 
-                Tables\Actions\Action::make('reject')
+                Action::make('reject')
                     ->label('رفض')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->visible(fn ($record) => $record->is_approved)
                     ->action(fn ($record) => $record->reject()),
 
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make()
+                ViewAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
+                RestoreAction::make()
                     ->label(__('filament.actions.restore')),
-                Tables\Actions\ForceDeleteAction::make()
+                ForceDeleteAction::make()
                     ->label(__('filament.actions.force_delete')),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('approve_selected')
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    BulkAction::make('approve_selected')
                         ->label('اعتماد المحدد')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
@@ -216,7 +239,7 @@ class CourseReviewResource extends BaseResource
                             $records->each->approve();
                         }),
 
-                    Tables\Actions\BulkAction::make('reject_selected')
+                    BulkAction::make('reject_selected')
                         ->label('رفض المحدد')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
@@ -224,10 +247,10 @@ class CourseReviewResource extends BaseResource
                             $records->each->reject();
                         }),
 
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make()
+                    DeleteBulkAction::make(),
+                    RestoreBulkAction::make()
                         ->label(__('filament.actions.restore_selected')),
-                    Tables\Actions\ForceDeleteBulkAction::make()
+                    ForceDeleteBulkAction::make()
                         ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ])
@@ -242,10 +265,10 @@ class CourseReviewResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCourseReviews::route('/'),
-            'create' => Pages\CreateCourseReview::route('/create'),
-            'view' => Pages\ViewCourseReview::route('/{record}'),
-            'edit' => Pages\EditCourseReview::route('/{record}/edit'),
+            'index' => ListCourseReviews::route('/'),
+            'create' => CreateCourseReview::route('/create'),
+            'view' => ViewCourseReview::route('/{record}'),
+            'edit' => EditCourseReview::route('/{record}/edit'),
         ];
     }
 }

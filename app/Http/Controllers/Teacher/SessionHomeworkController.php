@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use Exception;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
@@ -54,7 +55,7 @@ class SessionHomeworkController extends Controller
                 ],
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error fetching session homework', [
                 'session_id' => $sessionId,
                 'error' => $e->getMessage(),
@@ -150,7 +151,7 @@ class SessionHomeworkController extends Controller
                 ],
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error creating/updating session homework', [
                 'session_id' => $sessionId,
                 'request_data' => $request->all(),
@@ -185,7 +186,7 @@ class SessionHomeworkController extends Controller
 
             return $this->success(null, 'تم حذف الواجب بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error deleting session homework', [
                 'session_id' => $sessionId,
                 'error' => $e->getMessage(),

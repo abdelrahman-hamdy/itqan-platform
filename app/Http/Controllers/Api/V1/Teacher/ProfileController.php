@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
+use Log;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Rules\PasswordRules;
@@ -125,7 +126,7 @@ class ProfileController extends Controller
         $data = $validator->validated();
 
         // Debug: Log received data
-        \Log::info('Teacher Profile Update - Received data', [
+        Log::info('Teacher Profile Update - Received data', [
             'user_id' => $user->id,
             'quran_bio_arabic' => $data['quran_bio_arabic'] ?? 'NOT_SET',
             'quran_bio_english' => $data['quran_bio_english'] ?? 'NOT_SET',
@@ -182,7 +183,7 @@ class ProfileController extends Controller
             }
 
             if (! empty($quranUpdates)) {
-                \Log::info('Teacher Profile Update - Quran updates to apply', [
+                Log::info('Teacher Profile Update - Quran updates to apply', [
                     'user_id' => $user->id,
                     'quran_updates' => $quranUpdates,
                 ]);
@@ -190,7 +191,7 @@ class ProfileController extends Controller
 
                 // Verify the update
                 $user->quranTeacherProfile->refresh();
-                \Log::info('Teacher Profile Update - After save', [
+                Log::info('Teacher Profile Update - After save', [
                     'user_id' => $user->id,
                     'bio_arabic' => $user->quranTeacherProfile->bio_arabic,
                     'bio_english' => $user->quranTeacherProfile->bio_english,

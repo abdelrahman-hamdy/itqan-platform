@@ -2,13 +2,16 @@
 
 namespace App\Filament\Resources\QuranPackageResource\Pages;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
+use App\Models\QuranPackage;
 use App\Filament\Resources\QuranPackageResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * @property \App\Models\QuranPackage $record
+ * @property QuranPackage $record
  */
 class EditQuranPackage extends EditRecord
 {
@@ -22,9 +25,9 @@ class EditQuranPackage extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
-            Actions\DeleteAction::make()
+            DeleteAction::make()
                 ->label('حذف'),
         ];
     }

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Enums\NotificationType;
 use App\Enums\PaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -87,7 +88,7 @@ class SendMissedPaymentNotifications extends Command
                 } else {
                     $this->line("  Would send payment notification to {$user->email}");
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->error("Failed to send payment notification for payment {$payment->id}: {$e->getMessage()}");
 
                 Log::error('Failed to send missed payment notification', [
@@ -161,7 +162,7 @@ class SendMissedPaymentNotifications extends Command
                 } else {
                     $this->line("  Would send subscription notification to {$student->email}");
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->error("Failed to send subscription notification for payment {$payment->id}: {$e->getMessage()}");
 
                 Log::error('Failed to send missed subscription notification', [

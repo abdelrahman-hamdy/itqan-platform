@@ -2,6 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Database\QueryException;
+use InvalidArgumentException;
+use Throwable;
+use Exception;
+use App\Models\BaseSession;
+use App\Contracts\RecordingCapable;
+use App\Models\Academy;
+use Carbon\Carbon;
+use App\Models\MeetingAttendanceEvent;
+use Cache;
+use App\Jobs\ProcessDelayedLeaveEvent;
+use App\Models\AcademicSession;
+use App\Jobs\RetryAttendanceOperation;
+use Agence104\LiveKit\RoomServiceClient;
+use App\Models\InteractiveCourseSession;
 use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
 use App\Exceptions\WebhookValidationException;
@@ -98,7 +113,7 @@ class LiveKitWebhookController extends Controller
             $e->report();
 
             return response($e->getMessage(), 401);
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Log::error('Database error handling LiveKit webhook', [
                 'error' => $e->getMessage(),
                 'code' => $e->getCode(),
@@ -106,14 +121,14 @@ class LiveKitWebhookController extends Controller
             ]);
 
             return response('Database error', 500);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             Log::warning('Invalid webhook data from LiveKit', [
                 'error' => $e->getMessage(),
                 'event' => $request->input('event'),
             ]);
 
             return response('Invalid data', 400);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Unexpected error handling LiveKit webhook', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -198,7 +213,7 @@ class LiveKitWebhookController extends Controller
             // NOTE: Auto-recording is now triggered on participant_joined, not room_started
             // This ensures recording starts only when someone actually joins AND session time has started
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle room started event', [
                 'session_id' => $session->id,
                 'room_name' => $roomName,
@@ -210,11 +225,11 @@ class LiveKitWebhookController extends Controller
     /**
      * Try to start auto-recording if session supports it and has it enabled
      */
-    private function tryStartAutoRecording(\App\Models\BaseSession $session, string $roomName): void
+    private function tryStartAutoRecording(BaseSession $session, string $roomName): void
     {
         try {
             // Check if session implements RecordingCapable interface
-            if (! ($session instanceof \App\Contracts\RecordingCapable)) {
+            if (! ($session instanceof RecordingCapable)) {
                 Log::debug('Auto-recording skipped: Session does not implement RecordingCapable', [
                     'session_id' => $session->id,
                 ]);
@@ -268,7 +283,7 @@ class LiveKitWebhookController extends Controller
                 'egress_id' => $recording->recording_id,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Log error but don't fail the webhook - recording is optional
             Log::error('Failed to start auto-recording', [
                 'session_id' => $session->id,
@@ -315,11 +330,11 @@ class LiveKitWebhookController extends Controller
             $this->sessionMeetingService->removeSessionPersistence($session);
 
             // Stop any active recording when room closes
-            if ($session instanceof \App\Contracts\RecordingCapable && $session->isRecording()) {
+            if ($session instanceof RecordingCapable && $session->isRecording()) {
                 try {
                     $session->stopRecording();
                     Log::info('Recording stopped on room finished', ['session_id' => $session->id]);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Log::error('Failed to stop recording on room finished', [
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),
@@ -335,7 +350,7 @@ class LiveKitWebhookController extends Controller
                 'ended_at' => now(),
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle room finished event', [
                 'session_id' => $session->id ?? 'unknown',
                 'room_name' => $roomName,
@@ -365,7 +380,7 @@ class LiveKitWebhookController extends Controller
 
         // Set tenant context for multi-tenancy support in queued jobs
         if ($session->academy_id) {
-            $academy = \App\Models\Academy::find($session->academy_id);
+            $academy = Academy::find($session->academy_id);
             if ($academy) {
                 app()->instance('current_academy', $academy);
             }
@@ -406,11 +421,11 @@ class LiveKitWebhookController extends Controller
             // LiveKit sends 'joinedAt' in camelCase, not 'joined_at'
             // Always use UTC for storage, convert to academy timezone only for display
             $joinedAt = isset($participantData['joinedAt'])
-                ? \Carbon\Carbon::createFromTimestamp($participantData['joinedAt'], 'UTC')
+                ? Carbon::createFromTimestamp($participantData['joinedAt'], 'UTC')
                 : now('UTC');
 
             // Create immutable event log entry
-            $event = \App\Models\MeetingAttendanceEvent::create([
+            $event = MeetingAttendanceEvent::create([
                 'event_id' => $data['id'],
                 'event_type' => MeetingEventType::JOINED,
                 'event_timestamp' => $joinedAt,
@@ -438,7 +453,7 @@ class LiveKitWebhookController extends Controller
             ]);
 
             // Clear any cached attendance status
-            \Cache::forget("attendance_status_{$session->id}_{$userId}");
+            Cache::forget("attendance_status_{$session->id}_{$userId}");
 
             // Try to start recording when first participant joins
             $participantCount = $data['room']['num_participants'] ?? 0;
@@ -446,7 +461,7 @@ class LiveKitWebhookController extends Controller
                 $this->tryStartAutoRecording($session, $roomName);
             }
 
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             if ($e->getCode() === '23000') {
                 // Genuine duplicate (unique constraint violation) - safely ignore
                 Log::channel('webhook')->info('Duplicate join webhook ignored', [
@@ -464,7 +479,7 @@ class LiveKitWebhookController extends Controller
                     'code' => $e->getCode(),
                 ]);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('webhook')->error('Failed to handle participant joined event', [
                 'session_id' => $session->id ?? 'unknown',
                 'room_name' => $roomName,
@@ -497,7 +512,7 @@ class LiveKitWebhookController extends Controller
 
         // Set tenant context for multi-tenancy support in queued jobs
         if ($session->academy_id) {
-            $academy = \App\Models\Academy::find($session->academy_id);
+            $academy = Academy::find($session->academy_id);
             if ($academy) {
                 app()->instance('current_academy', $academy);
             }
@@ -529,11 +544,11 @@ class LiveKitWebhookController extends Controller
             // Use webhook creation time as leave timestamp (source of truth)
             // Always use UTC for storage, convert to academy timezone only for display
             $leftAt = isset($data['createdAt'])
-                ? \Carbon\Carbon::createFromTimestamp($data['createdAt'], 'UTC')
+                ? Carbon::createFromTimestamp($data['createdAt'], 'UTC')
                 : now('UTC');
 
             // Find the matching join event by participant_sid
-            $joinEvent = \App\Models\MeetingAttendanceEvent::where('session_id', $session->id)
+            $joinEvent = MeetingAttendanceEvent::where('session_id', $session->id)
                 ->where('session_type', get_class($session))
                 ->where('user_id', $userId)
                 ->where('participant_sid', $participantSid)
@@ -554,7 +569,7 @@ class LiveKitWebhookController extends Controller
                 // This is non-blocking and allows the webhook to respond immediately
                 \Log::info('[WEBHOOK] Leave arrived before join - dispatching delayed job');
 
-                \App\Jobs\ProcessDelayedLeaveEvent::dispatch(
+                ProcessDelayedLeaveEvent::dispatch(
                     $session->id,
                     get_class($session),
                     $userId,
@@ -587,7 +602,7 @@ class LiveKitWebhookController extends Controller
             ]);
 
             // Clear any cached attendance status
-            \Cache::forget("attendance_status_{$session->id}_{$userId}");
+            Cache::forget("attendance_status_{$session->id}_{$userId}");
 
             // Check if room is now empty
             $remainingParticipants = $data['room']['num_participants'] ?? 0;
@@ -595,20 +610,20 @@ class LiveKitWebhookController extends Controller
                 $this->handleEmptyRoom($session, $roomName);
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('webhook')->error('Failed to handle participant left event', [
                 'session_id' => $session->id ?? 'unknown',
                 'room_name' => $roomName,
                 'participant_identity' => $participantIdentity,
                 'error' => $e->getMessage(),
-                'code' => $e instanceof \Illuminate\Database\QueryException ? $e->getCode() : null,
+                'code' => $e instanceof QueryException ? $e->getCode() : null,
             ]);
 
             // ENHANCEMENT: Queue retry job for failed operation
             if ($userId && $session) {
-                $sessionType = $session instanceof \App\Models\AcademicSession ? 'academic' : 'quran';
+                $sessionType = $session instanceof AcademicSession ? 'academic' : 'quran';
 
-                \App\Jobs\RetryAttendanceOperation::dispatch(
+                RetryAttendanceOperation::dispatch(
                     $session->id,
                     $sessionType,
                     $userId,
@@ -650,7 +665,7 @@ class LiveKitWebhookController extends Controller
                 'recording_id' => $data['egress']['egress_id'] ?? 'unknown',
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle recording started event', [
                 'session_id' => $session->id ?? 'unknown',
                 'room_name' => $roomName,
@@ -693,7 +708,7 @@ class LiveKitWebhookController extends Controller
                 'file_size' => $fileSize,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle recording finished event', [
                 'session_id' => $session->id ?? 'unknown',
                 'room_name' => $roomName,
@@ -705,7 +720,7 @@ class LiveKitWebhookController extends Controller
     /**
      * Close a join event with leave timestamp and calculate duration
      */
-    private function closeJoinEvent(\App\Models\MeetingAttendanceEvent $joinEvent, \Carbon\Carbon $leftAt, string $leaveEventId): void
+    private function closeJoinEvent(MeetingAttendanceEvent $joinEvent, Carbon $leftAt, string $leaveEventId): void
     {
         $durationMinutes = $joinEvent->event_timestamp->diffInMinutes($leftAt);
 
@@ -726,7 +741,7 @@ class LiveKitWebhookController extends Controller
     /**
      * Handle empty room scenario
      */
-    private function handleEmptyRoom(\App\Models\BaseSession $session, string $roomName): void
+    private function handleEmptyRoom(BaseSession $session, string $roomName): void
     {
         try {
             // Check if session should persist even when empty
@@ -759,7 +774,7 @@ class LiveKitWebhookController extends Controller
                 'session_status' => $sessionTiming['status'],
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle empty room', [
                 'session_id' => $session->id,
                 'room_name' => $roomName,
@@ -834,7 +849,7 @@ class LiveKitWebhookController extends Controller
 
             // Immediately mute the track server-side
             try {
-                $roomService = new \Agence104\LiveKit\RoomServiceClient(
+                $roomService = new RoomServiceClient(
                     config('livekit.api_url'),
                     config('livekit.api_key'),
                     config('livekit.api_secret')
@@ -852,7 +867,7 @@ class LiveKitWebhookController extends Controller
                     'track_type' => $trackType,
                 ]);
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::error('Failed to enforce permission by muting track', [
                     'participant' => $participantIdentity,
                     'track_sid' => $trackSid,
@@ -874,9 +889,9 @@ class LiveKitWebhookController extends Controller
      * Find session by room name across all session types
      *
      * @param  string  $roomName  LiveKit room name
-     * @return \App\Models\BaseSession|null The session model (QuranSession, InteractiveCourseSession, or AcademicSession)
+     * @return BaseSession|null The session model (QuranSession, InteractiveCourseSession, or AcademicSession)
      */
-    private function findSessionByRoomName(string $roomName): ?\App\Models\BaseSession
+    private function findSessionByRoomName(string $roomName): ?BaseSession
     {
         // Search QuranSession first (most common)
         $session = QuranSession::where('meeting_room_name', $roomName)->first();
@@ -885,13 +900,13 @@ class LiveKitWebhookController extends Controller
         }
 
         // Search InteractiveCourseSession
-        $session = \App\Models\InteractiveCourseSession::where('meeting_room_name', $roomName)->first();
+        $session = InteractiveCourseSession::where('meeting_room_name', $roomName)->first();
         if ($session) {
             return $session;
         }
 
         // Search AcademicSession
-        $session = \App\Models\AcademicSession::where('meeting_room_name', $roomName)->first();
+        $session = AcademicSession::where('meeting_room_name', $roomName)->first();
         if ($session) {
             return $session;
         }
@@ -1025,7 +1040,7 @@ class LiveKitWebhookController extends Controller
 
         } catch (WebhookValidationException $e) {
             throw $e;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error validating LiveKit webhook signature', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -1054,7 +1069,7 @@ class LiveKitWebhookController extends Controller
             // Delegate to RecordingService for processing
             $this->recordingService->processEgressWebhook($data);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to handle egress_ended webhook', [
                 'error' => $e->getMessage(),
                 'data' => $data,

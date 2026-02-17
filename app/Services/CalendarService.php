@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use BackedEnum;
 use App\Contracts\CalendarServiceInterface;
 use App\Models\User;
 use App\Services\Calendar\CalendarFilterService;
@@ -185,7 +186,7 @@ class CalendarService implements CalendarServiceInterface
             'by_status' => $events->countBy(function ($event) {
                 // Convert Enum to string if needed
                 $status = $event['status'] ?? 'unknown';
-                if ($status instanceof \BackedEnum) {
+                if ($status instanceof BackedEnum) {
                     return $status->value;
                 }
 

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use InvalidArgumentException;
+use App\Services\Payment\DTOs\AcademyPaymentSettings;
 use App\Constants\DefaultAcademy;
 use App\Enums\Country;
 use App\Enums\Currency;
@@ -152,12 +154,12 @@ class Academy extends Model
     /**
      * Assign an admin to this academy
      *
-     * @throws \InvalidArgumentException If user is not an admin
+     * @throws InvalidArgumentException If user is not an admin
      */
     public function assignAdmin(User $admin): void
     {
         if ($admin->user_type !== UserType::ADMIN->value) {
-            throw new \InvalidArgumentException('User must be an admin');
+            throw new InvalidArgumentException('User must be an admin');
         }
 
         $this->update(['admin_id' => $admin->id]);
@@ -219,9 +221,9 @@ class Academy extends Model
     /**
      * Get payment settings as a DTO for easier access.
      */
-    public function getPaymentSettings(): \App\Services\Payment\DTOs\AcademyPaymentSettings
+    public function getPaymentSettings(): AcademyPaymentSettings
     {
-        return \App\Services\Payment\DTOs\AcademyPaymentSettings::fromArray(
+        return AcademyPaymentSettings::fromArray(
             $this->payment_settings
         );
     }

@@ -2,15 +2,27 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\IconColumn;
+use App\Filament\Teacher\Resources\QuranIndividualCircleResource\RelationManagers\SessionsRelationManager;
+use App\Filament\Teacher\Resources\QuranIndividualCircleResource\Pages\ListQuranIndividualCircles;
+use App\Filament\Teacher\Resources\QuranIndividualCircleResource\Pages\CreateQuranIndividualCircle;
+use App\Filament\Teacher\Resources\QuranIndividualCircleResource\Pages\ViewQuranIndividualCircle;
+use App\Filament\Teacher\Resources\QuranIndividualCircleResource\Pages\EditQuranIndividualCircle;
 use App\Filament\Shared\Resources\BaseQuranIndividualCircleResource;
 use App\Filament\Teacher\Resources\QuranIndividualCircleResource\Pages;
 use App\Models\QuranIndividualCircle;
 use Filament\Forms;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
-use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -30,13 +42,13 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationIcon = 'heroicon-o-user-circle';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user-circle';
 
     protected static ?string $navigationLabel = 'حلقاتي الفردية';
 
     protected static ?string $pluralModelLabel = 'حلقاتي الفردية';
 
-    protected static ?string $navigationGroup = 'جلساتي';
+    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 3;
 
@@ -63,13 +75,13 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
             ->schema([
                 Grid::make(2)
                     ->schema([
-                        Forms\Components\Select::make('student_id')
+                        Select::make('student_id')
                             ->relationship('student', 'name')
                             ->label('الطالب')
                             ->disabled()
                             ->dehydrated(false),
 
-                        Forms\Components\TextInput::make('name')
+                        TextInput::make('name')
                             ->label('اسم الحلقة')
                             ->disabled(),
                     ]),
@@ -83,13 +95,13 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
     {
         return [
             ActionGroup::make([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض'),
 
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
 
-                Tables\Actions\Action::make('view_circle')
+                Action::make('view_circle')
                     ->label('عرض تفاصيل الحلقة')
                     ->icon('heroicon-o-eye')
                     ->color('info')
@@ -125,7 +137,7 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                 ->schema([
                     Grid::make(2)
                         ->schema([
-                            Forms\Components\TextInput::make('default_duration_minutes')
+                            TextInput::make('default_duration_minutes')
                                 ->label('مدة الجلسة الافتراضية (بالدقائق)')
                                 ->numeric()
                                 ->minValue(15)
@@ -134,12 +146,12 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                                 ->disabled()
                                 ->helperText('يتم تحديدها من الباقة المشترك بها'),
 
-                            Forms\Components\TextInput::make('meeting_link')
+                            TextInput::make('meeting_link')
                                 ->label('رابط الاجتماع')
                                 ->url()
                                 ->maxLength(255),
 
-                            Forms\Components\TextInput::make('meeting_id')
+                            TextInput::make('meeting_id')
                                 ->label('معرف الاجتماع')
                                 ->maxLength(255),
                         ]),
@@ -147,7 +159,7 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
 
             Section::make('ملاحظات')
                 ->schema([
-                    Forms\Components\Textarea::make('teacher_notes')
+                    Textarea::make('teacher_notes')
                         ->label('ملاحظات المعلم')
                         ->rows(4)
                         ->columnSpanFull(),
@@ -184,7 +196,8 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                 ->searchable()
                 ->sortable(),
 
-            Tables\Columns\BadgeColumn::make('specialization')
+            TextColumn::make('specialization')
+                ->badge()
                 ->label('التخصص')
                 ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::SPECIALIZATIONS[$state] ?? $state)
                 ->colors([
@@ -195,7 +208,8 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                     'primary' => 'complete',
                 ]),
 
-            Tables\Columns\BadgeColumn::make('memorization_level')
+            TextColumn::make('memorization_level')
+                ->badge()
                 ->label('المستوى')
                 ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::MEMORIZATION_LEVELS[$state] ?? $state)
                 ->color('gray'),
@@ -206,7 +220,7 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                 ->alignCenter()
                 ->sortable(),
 
-            Tables\Columns\IconColumn::make('is_active')
+            IconColumn::make('is_active')
                 ->label('الحالة')
                 ->boolean()
                 ->trueIcon('heroicon-o-check-circle')
@@ -239,7 +253,7 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Teacher\Resources\QuranIndividualCircleResource\RelationManagers\SessionsRelationManager::class,
+            SessionsRelationManager::class,
         ];
     }
 
@@ -291,10 +305,10 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuranIndividualCircles::route('/'),
-            'create' => Pages\CreateQuranIndividualCircle::route('/create'),
-            'view' => Pages\ViewQuranIndividualCircle::route('/{record}'),
-            'edit' => Pages\EditQuranIndividualCircle::route('/{record}/edit'),
+            'index' => ListQuranIndividualCircles::route('/'),
+            'create' => CreateQuranIndividualCircle::route('/create'),
+            'view' => ViewQuranIndividualCircle::route('/{record}'),
+            'edit' => EditQuranIndividualCircle::route('/{record}/edit'),
         ];
     }
 }

@@ -79,7 +79,7 @@ trait AttendanceCalculatorTrait
         int $sessionDurationMinutes,
         int $actualAttendanceMinutes,
         ?int $graceMinutes = null
-    ): \App\Enums\AttendanceStatus {
+    ): AttendanceStatus {
         $graceMinutes = $graceMinutes ?? config('business.attendance.grace_period_minutes', 15);
         $status = $this->calculateAttendanceStatus(
             $firstJoinTime,
@@ -89,7 +89,7 @@ trait AttendanceCalculatorTrait
             $graceMinutes
         );
 
-        return \App\Enums\AttendanceStatus::from($status);
+        return AttendanceStatus::from($status);
     }
 
     /**

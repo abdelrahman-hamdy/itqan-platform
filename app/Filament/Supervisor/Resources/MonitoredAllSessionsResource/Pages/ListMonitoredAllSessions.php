@@ -2,6 +2,29 @@
 
 namespace App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages;
 
+use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Utilities\Get;
+use App\Models\User;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
+use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Textarea;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use App\Enums\AttendanceStatus;
+use App\Models\AcademicTeacherProfile;
+use App\Models\AcademicIndividualLesson;
+use App\Models\InteractiveCourse;
 use App\Enums\SessionStatus;
 use App\Filament\Shared\Tables\SessionTableColumns;
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource;
@@ -10,7 +33,6 @@ use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -23,9 +45,9 @@ class ListMonitoredAllSessions extends ListRecords
     /**
      * Build the "Observe Meeting" action for a given session type.
      */
-    protected function getObserveAction(string $sessionType): Tables\Actions\Action
+    protected function getObserveAction(string $sessionType): Action
     {
-        return Tables\Actions\Action::make('observe_meeting')
+        return Action::make('observe_meeting')
             ->label(__('supervisor.observation.observe_session'))
             ->icon('heroicon-o-eye')
             ->color('info')
@@ -44,7 +66,7 @@ class ListMonitoredAllSessions extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\CreateAction::make()
+            CreateAction::make()
                 ->label('إضافة جلسة')
                 ->url(fn () => route('filament.supervisor.resources.monitored-all-sessions.create')),
         ];
@@ -157,11 +179,11 @@ class ListMonitoredAllSessions extends ListRecords
             ->columns(SessionTableColumns::getQuranSessionColumns())
             ->defaultSort('scheduled_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
+                SelectFilter::make('status')
                     ->label('الحالة')
                     ->options(SessionStatus::options()),
 
-                Tables\Filters\SelectFilter::make('session_type')
+                SelectFilter::make('session_type')
                     ->label('نوع الجلسة')
                     ->options([
                         'individual' => 'فردية',
@@ -169,11 +191,11 @@ class ListMonitoredAllSessions extends ListRecords
                         'trial' => 'تجريبية',
                     ]),
 
-                Tables\Filters\Filter::make('filter_by')
-                    ->form([
-                        Forms\Components\Grid::make(2)
+                Filter::make('filter_by')
+                    ->schema([
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\Select::make('filter_type')
+                                Select::make('filter_type')
                                     ->label('تصفية حسب')
                                     ->options([
                                         'teacher' => 'المعلم',
@@ -182,31 +204,31 @@ class ListMonitoredAllSessions extends ListRecords
                                         'individual_circle' => 'الحلقة الفردية',
                                     ])
                                     ->live()
-                                    ->afterStateUpdated(fn (Forms\Set $set) => $set('filter_value', null)),
+                                    ->afterStateUpdated(fn (Set $set) => $set('filter_value', null)),
 
-                                Forms\Components\Select::make('filter_value')
+                                Select::make('filter_value')
                                     ->label('القيمة')
-                                    ->options(function (Forms\Get $get) {
+                                    ->options(function (Get $get) {
                                         $teacherIds = MonitoredAllSessionsResource::getAssignedQuranTeacherIds();
 
                                         return match ($get('filter_type')) {
-                                            'teacher' => \App\Models\User::whereIn('id', $teacherIds)
+                                            'teacher' => User::whereIn('id', $teacherIds)
                                                 ->get()
                                                 ->mapWithKeys(fn ($u) => [
                                                     $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'معلم #'.$u->id,
                                                 ])
                                                 ->toArray(),
-                                            'student' => \App\Models\User::query()
+                                            'student' => User::query()
                                                 ->where('user_type', 'student')
                                                 ->get()
                                                 ->mapWithKeys(fn ($u) => [
                                                     $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
                                                 ])
                                                 ->toArray(),
-                                            'group_circle' => \App\Models\QuranCircle::query()
+                                            'group_circle' => QuranCircle::query()
                                                 ->pluck('name', 'id')
                                                 ->toArray(),
-                                            'individual_circle' => \App\Models\QuranIndividualCircle::query()
+                                            'individual_circle' => QuranIndividualCircle::query()
                                                 ->with(['student', 'quranTeacher'])
                                                 ->get()
                                                 ->mapWithKeys(fn ($ic) => [
@@ -218,7 +240,7 @@ class ListMonitoredAllSessions extends ListRecords
                                         };
                                     })
                                     ->searchable()
-                                    ->visible(fn (Forms\Get $get) => filled($get('filter_type'))),
+                                    ->visible(fn (Get $get) => filled($get('filter_type'))),
                             ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -239,13 +261,13 @@ class ListMonitoredAllSessions extends ListRecords
                     })
                     ->columnSpan(2),
 
-                Tables\Filters\Filter::make('date_range')
-                    ->form([
-                        Forms\Components\Grid::make(2)
+                Filter::make('date_range')
+                    ->schema([
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\DatePicker::make('from')
+                                DatePicker::make('from')
                                     ->label('من تاريخ'),
-                                Forms\Components\DatePicker::make('until')
+                                DatePicker::make('until')
                                     ->label('إلى تاريخ'),
                             ]),
                     ])
@@ -256,28 +278,28 @@ class ListMonitoredAllSessions extends ListRecords
                     })
                     ->columnSpan(2),
             ])
-            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->actions([
+            ->recordActions([
                 $this->getObserveAction('quran'),
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض')
                     ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.view', [
                         'record' => $record->id,
                         'type' => 'quran',
                     ])),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل')
                     ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.edit', [
                         'record' => $record->id,
                         'type' => 'quran',
                     ])),
-                Tables\Actions\Action::make('add_note')
+                Action::make('add_note')
                     ->label('ملاحظة')
                     ->icon('heroicon-o-pencil-square')
                     ->color('warning')
-                    ->form([
-                        Forms\Components\Textarea::make('supervisor_notes')
+                    ->schema([
+                        Textarea::make('supervisor_notes')
                             ->label('ملاحظات المشرف')
                             ->rows(4)
                             ->default(fn ($record) => $record->supervisor_notes),
@@ -287,11 +309,11 @@ class ListMonitoredAllSessions extends ListRecords
                             'supervisor_notes' => $data['supervisor_notes'],
                         ]);
                     }),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف'),
             ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                DeleteBulkAction::make(),
             ]);
     }
 
@@ -301,22 +323,22 @@ class ListMonitoredAllSessions extends ListRecords
             ->columns(SessionTableColumns::getAcademicSessionColumns())
             ->defaultSort('scheduled_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
+                SelectFilter::make('status')
                     ->label('الحالة')
                     ->options(SessionStatus::options()),
 
-                Tables\Filters\SelectFilter::make('attendance_status')
+                SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')
                     ->options(array_merge(
                         [SessionStatus::SCHEDULED->value => SessionStatus::SCHEDULED->label()],
-                        \App\Enums\AttendanceStatus::options()
+                        AttendanceStatus::options()
                     )),
 
-                Tables\Filters\Filter::make('filter_by')
-                    ->form([
-                        Forms\Components\Grid::make(2)
+                Filter::make('filter_by')
+                    ->schema([
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\Select::make('filter_type')
+                                Select::make('filter_type')
                                     ->label('تصفية حسب')
                                     ->options([
                                         'teacher' => 'المعلم',
@@ -324,15 +346,15 @@ class ListMonitoredAllSessions extends ListRecords
                                         'individual_lesson' => 'الدرس الفردي',
                                     ])
                                     ->live()
-                                    ->afterStateUpdated(fn (Forms\Set $set) => $set('filter_value', null)),
+                                    ->afterStateUpdated(fn (Set $set) => $set('filter_value', null)),
 
-                                Forms\Components\Select::make('filter_value')
+                                Select::make('filter_value')
                                     ->label('القيمة')
-                                    ->options(function (Forms\Get $get) {
+                                    ->options(function (Get $get) {
                                         $profileIds = MonitoredAllSessionsResource::getAssignedAcademicTeacherProfileIds();
 
                                         return match ($get('filter_type')) {
-                                            'teacher' => \App\Models\AcademicTeacherProfile::whereIn('id', $profileIds)
+                                            'teacher' => AcademicTeacherProfile::whereIn('id', $profileIds)
                                                 ->with('user')
                                                 ->get()
                                                 ->mapWithKeys(fn ($profile) => [
@@ -341,14 +363,14 @@ class ListMonitoredAllSessions extends ListRecords
                                                         : 'معلم #'.$profile->id,
                                                 ])
                                                 ->toArray(),
-                                            'student' => \App\Models\User::query()
+                                            'student' => User::query()
                                                 ->where('user_type', 'student')
                                                 ->get()
                                                 ->mapWithKeys(fn ($u) => [
                                                     $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
                                                 ])
                                                 ->toArray(),
-                                            'individual_lesson' => \App\Models\AcademicIndividualLesson::query()
+                                            'individual_lesson' => AcademicIndividualLesson::query()
                                                 ->with(['student', 'academicTeacher.user'])
                                                 ->get()
                                                 ->mapWithKeys(fn ($lesson) => [
@@ -360,7 +382,7 @@ class ListMonitoredAllSessions extends ListRecords
                                         };
                                     })
                                     ->searchable()
-                                    ->visible(fn (Forms\Get $get) => filled($get('filter_type'))),
+                                    ->visible(fn (Get $get) => filled($get('filter_type'))),
                             ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -380,13 +402,13 @@ class ListMonitoredAllSessions extends ListRecords
                     })
                     ->columnSpan(2),
 
-                Tables\Filters\Filter::make('date_range')
-                    ->form([
-                        Forms\Components\Grid::make(2)
+                Filter::make('date_range')
+                    ->schema([
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\DatePicker::make('from')
+                                DatePicker::make('from')
                                     ->label('من تاريخ'),
-                                Forms\Components\DatePicker::make('until')
+                                DatePicker::make('until')
                                     ->label('إلى تاريخ'),
                             ]),
                     ])
@@ -397,28 +419,28 @@ class ListMonitoredAllSessions extends ListRecords
                     })
                     ->columnSpan(2),
             ])
-            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->actions([
+            ->recordActions([
                 $this->getObserveAction('academic'),
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض')
                     ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.view', [
                         'record' => $record->id,
                         'type' => 'academic',
                     ])),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل')
                     ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.edit', [
                         'record' => $record->id,
                         'type' => 'academic',
                     ])),
-                Tables\Actions\Action::make('add_note')
+                Action::make('add_note')
                     ->label('ملاحظة')
                     ->icon('heroicon-o-pencil-square')
                     ->color('warning')
-                    ->form([
-                        Forms\Components\Textarea::make('supervisor_notes')
+                    ->schema([
+                        Textarea::make('supervisor_notes')
                             ->label('ملاحظات المشرف')
                             ->rows(4)
                             ->default(fn ($record) => $record->supervisor_notes),
@@ -428,11 +450,11 @@ class ListMonitoredAllSessions extends ListRecords
                             'supervisor_notes' => $data['supervisor_notes'],
                         ]);
                     }),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف'),
             ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                DeleteBulkAction::make(),
             ]);
     }
 
@@ -442,36 +464,36 @@ class ListMonitoredAllSessions extends ListRecords
             ->columns(SessionTableColumns::getInteractiveCourseSessionColumns())
             ->defaultSort('scheduled_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
+                SelectFilter::make('status')
                     ->label('الحالة')
                     ->options(SessionStatus::options()),
 
-                Tables\Filters\Filter::make('filter_by')
-                    ->form([
-                        Forms\Components\Grid::make(2)
+                Filter::make('filter_by')
+                    ->schema([
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\Select::make('filter_type')
+                                Select::make('filter_type')
                                     ->label('تصفية حسب')
                                     ->options([
                                         'course' => 'الدورة',
                                     ])
                                     ->live()
-                                    ->afterStateUpdated(fn (Forms\Set $set) => $set('filter_value', null)),
+                                    ->afterStateUpdated(fn (Set $set) => $set('filter_value', null)),
 
-                                Forms\Components\Select::make('filter_value')
+                                Select::make('filter_value')
                                     ->label('القيمة')
-                                    ->options(function (Forms\Get $get) {
+                                    ->options(function (Get $get) {
                                         $courseIds = MonitoredAllSessionsResource::getDerivedInteractiveCourseIds();
 
                                         return match ($get('filter_type')) {
-                                            'course' => \App\Models\InteractiveCourse::whereIn('id', $courseIds)
+                                            'course' => InteractiveCourse::whereIn('id', $courseIds)
                                                 ->pluck('title', 'id')
                                                 ->toArray(),
                                             default => [],
                                         };
                                     })
                                     ->searchable()
-                                    ->visible(fn (Forms\Get $get) => filled($get('filter_type'))),
+                                    ->visible(fn (Get $get) => filled($get('filter_type'))),
                             ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -489,13 +511,13 @@ class ListMonitoredAllSessions extends ListRecords
                     })
                     ->columnSpan(2),
 
-                Tables\Filters\Filter::make('date_range')
-                    ->form([
-                        Forms\Components\Grid::make(2)
+                Filter::make('date_range')
+                    ->schema([
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\DatePicker::make('from')
+                                DatePicker::make('from')
                                     ->label('من تاريخ'),
-                                Forms\Components\DatePicker::make('until')
+                                DatePicker::make('until')
                                     ->label('إلى تاريخ'),
                             ]),
                     ])
@@ -506,28 +528,28 @@ class ListMonitoredAllSessions extends ListRecords
                     })
                     ->columnSpan(2),
             ])
-            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->actions([
+            ->recordActions([
                 $this->getObserveAction('interactive'),
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض')
                     ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.view', [
                         'record' => $record->id,
                         'type' => 'interactive',
                     ])),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل')
                     ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.edit', [
                         'record' => $record->id,
                         'type' => 'interactive',
                     ])),
-                Tables\Actions\Action::make('add_note')
+                Action::make('add_note')
                     ->label('ملاحظة')
                     ->icon('heroicon-o-pencil-square')
                     ->color('warning')
-                    ->form([
-                        Forms\Components\Textarea::make('supervisor_notes')
+                    ->schema([
+                        Textarea::make('supervisor_notes')
                             ->label('ملاحظات المشرف')
                             ->rows(4)
                             ->default(fn ($record) => $record->supervisor_notes),
@@ -537,11 +559,11 @@ class ListMonitoredAllSessions extends ListRecords
                             'supervisor_notes' => $data['supervisor_notes'],
                         ]);
                     }),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف'),
             ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                DeleteBulkAction::make(),
             ]);
     }
 }

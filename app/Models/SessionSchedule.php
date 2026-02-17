@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Exception;
+use Log;
 use App\Enums\SessionStatus;
 use App\Models\Traits\ScopedToAcademy;
 use App\Services\AcademyContextService;
@@ -354,8 +356,8 @@ class SessionSchedule extends Model
 
             return true;
 
-        } catch (\Exception $e) {
-            \Log::error('Failed to create session from template', [
+        } catch (Exception $e) {
+            Log::error('Failed to create session from template', [
                 'schedule_id' => $this->id,
                 'date' => $date->toDateString(),
                 'template' => $template,

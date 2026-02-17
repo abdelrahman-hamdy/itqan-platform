@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\AcademicSubjectResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
 use App\Filament\Resources\AcademicSubjectResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -15,9 +17,9 @@ class ViewAcademicSubject extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
-            Actions\DeleteAction::make()
+            DeleteAction::make()
                 ->label('حذف'),
         ];
     }

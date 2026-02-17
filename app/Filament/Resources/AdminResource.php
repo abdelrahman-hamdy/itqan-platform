@@ -2,6 +2,35 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\FileUpload;
+use App\Rules\PasswordRules;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use App\Filament\Resources\AdminResource\Pages\ListAdmins;
+use App\Filament\Resources\AdminResource\Pages\CreateAdmin;
+use App\Filament\Resources\AdminResource\Pages\ViewAdmin;
+use App\Filament\Resources\AdminResource\Pages\EditAdmin;
 use App\Enums\UserType;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\AdminResource\Pages;
@@ -9,7 +38,6 @@ use App\Models\Academy;
 use App\Models\User;
 use App\Services\AcademyAdminSyncService;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,9 +49,9 @@ class AdminResource extends BaseResource
 
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-shield-check';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-shield-check';
 
-    protected static ?string $navigationGroup = 'إدارة المستخدمين';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المستخدمين';
 
     protected static ?string $navigationLabel = 'المديرون';
 
@@ -43,38 +71,38 @@ class AdminResource extends BaseResource
             ->where('user_type', UserType::ADMIN->value);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('المعلومات الأساسية')
+        return $schema
+            ->components([
+                Section::make('المعلومات الأساسية')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('email')
+                                TextInput::make('email')
                                     ->label('البريد الإلكتروني')
                                     ->email()
                                     ->required()
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(255),
-                                Forms\Components\TextInput::make('admin_code')
+                                TextInput::make('admin_code')
                                     ->label('رمز المدير')
                                     ->disabled()
                                     ->dehydrated(false)
                                     ->helperText('يتم إنشاء هذا الرمز تلقائياً')
                                     ->visible(fn (string $operation): bool => $operation !== 'create'),
-                                Forms\Components\TextInput::make('first_name')
+                                TextInput::make('first_name')
                                     ->label('الاسم الأول')
                                     ->required()
                                     ->maxLength(255),
-                                Forms\Components\TextInput::make('last_name')
+                                TextInput::make('last_name')
                                     ->label('اسم العائلة')
                                     ->required()
                                     ->maxLength(255),
                                 static::getPhoneInput()
                                     ->required(),
                             ]),
-                        Forms\Components\FileUpload::make('avatar')
+                        FileUpload::make('avatar')
                             ->label('الصورة الشخصية')
                             ->image()
                             ->imageEditor()
@@ -82,11 +110,11 @@ class AdminResource extends BaseResource
                             ->directory(static::getTenantDirectoryLazy('avatars/admins'))
                             ->maxSize(2048),
                     ]),
-                Forms\Components\Section::make('معلومات الحساب')
+                Section::make('معلومات الحساب')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('password')
+                                TextInput::make('password')
                                     ->label('كلمة المرور')
                                     ->password()
                                     ->revealable()
@@ -94,9 +122,9 @@ class AdminResource extends BaseResource
                                     ->required(fn (string $context): bool => $context === 'create')
                                     ->minLength(6)
                                     ->maxLength(255)
-                                    ->rules([\App\Rules\PasswordRules::rule()])
-                                    ->helperText(fn (string $context): ?string => $context === 'edit' ? 'اترك الحقل فارغاً للإبقاء على كلمة المرور الحالية' : \App\Rules\PasswordRules::description()),
-                                Forms\Components\TextInput::make('password_confirmation')
+                                    ->rules([PasswordRules::rule()])
+                                    ->helperText(fn (string $context): ?string => $context === 'edit' ? 'اترك الحقل فارغاً للإبقاء على كلمة المرور الحالية' : PasswordRules::description()),
+                                TextInput::make('password_confirmation')
                                     ->label('تأكيد كلمة المرور')
                                     ->password()
                                     ->revealable()
@@ -104,15 +132,15 @@ class AdminResource extends BaseResource
                                     ->required(fn (string $context, $get): bool => $context === 'create' || filled($get('password')))
                                     ->same('password')
                                     ->maxLength(255),
-                                Forms\Components\Hidden::make('user_type')
+                                Hidden::make('user_type')
                                     ->default('admin')
                                     ->dehydrated(),
-                                Forms\Components\Toggle::make('active_status')
+                                Toggle::make('active_status')
                                     ->label('الحساب مفعل')
                                     ->helperText('عطل هذا الخيار لإيقاف وصول المدير للوحة التحكم')
                                     ->default(true),
                             ]),
-                        Forms\Components\Select::make('academy_id')
+                        Select::make('academy_id')
                             ->label('تعيين لإدارة أكاديمية')
                             ->options(function (?User $record) {
                                 // Show only academies without admin OR current admin's academy
@@ -126,7 +154,7 @@ class AdminResource extends BaseResource
                             ->required()
                             ->dehydrated(true)
                             ->helperText('حدد الأكاديمية التي سيديرها هذا المدير'),
-                        Forms\Components\Textarea::make('notes')
+                        Textarea::make('notes')
                             ->label('ملاحظات')
                             ->rows(3)
                             ->maxLength(1000),
@@ -138,22 +166,22 @@ class AdminResource extends BaseResource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('avatar')
+                ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular(),
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('الاسم الكامل')
                     ->searchable(['first_name', 'last_name'])
                     ->sortable(),
-                Tables\Columns\TextColumn::make('email')
+                TextColumn::make('email')
                     ->label('البريد الإلكتروني')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('phone')
+                TextColumn::make('phone')
                     ->label('رقم الهاتف')
                     ->searchable(),
                 static::getAcademyColumn(),
-                Tables\Columns\IconColumn::make('active_status')
+                IconColumn::make('active_status')
                     ->label('الحالة')
                     ->boolean()
                     ->getStateUsing(fn ($record) => (bool) $record->active_status)
@@ -161,45 +189,45 @@ class AdminResource extends BaseResource
                     ->falseColor('danger')
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle'),
-                Tables\Columns\TextColumn::make('last_login_at')
+                TextColumn::make('last_login_at')
                     ->label('آخر تسجيل دخول')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('user_type')
+                SelectFilter::make('user_type')
                     ->label('نوع المستخدم')
                     ->options([
                         'admin' => 'مدير',
                     ]),
-                Tables\Filters\TernaryFilter::make('active_status')
+                TernaryFilter::make('active_status')
                     ->label('الحالة')
                     ->trueLabel('نشط')
                     ->falseLabel('غير نشط'),
-                Tables\Filters\TrashedFilter::make()
+                TrashedFilter::make()
                     ->label(__('filament.filters.trashed')),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make()
+            ->recordActions([
+                ViewAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
+                RestoreAction::make()
                     ->label(__('filament.actions.restore')),
-                Tables\Actions\ForceDeleteAction::make()
+                ForceDeleteAction::make()
                     ->label(__('filament.actions.force_delete')),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    RestoreBulkAction::make()
                         ->label(__('filament.actions.restore_selected')),
-                    Tables\Actions\ForceDeleteBulkAction::make()
+                    ForceDeleteBulkAction::make()
                         ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
@@ -215,10 +243,10 @@ class AdminResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAdmins::route('/'),
-            'create' => Pages\CreateAdmin::route('/create'),
-            'view' => Pages\ViewAdmin::route('/{record}'),
-            'edit' => Pages\EditAdmin::route('/{record}/edit'),
+            'index' => ListAdmins::route('/'),
+            'create' => CreateAdmin::route('/create'),
+            'view' => ViewAdmin::route('/{record}'),
+            'edit' => EditAdmin::route('/{record}/edit'),
         ];
     }
 }

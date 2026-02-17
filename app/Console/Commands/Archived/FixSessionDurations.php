@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands\Archived;
 
+use Exception;
+use App\Models\QuranCircleSchedule;
 use App\Models\QuranSession;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -73,7 +75,7 @@ class FixSessionDurations extends Command
                 DB::rollBack();
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             $this->error('❌ Error: '.$e->getMessage());
 
@@ -125,7 +127,7 @@ class FixSessionDurations extends Command
                         $fixed++;
                     }
 
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->error("  Error fixing session {$session->id}: ".$e->getMessage());
                     $errors++;
                 }
@@ -166,7 +168,7 @@ class FixSessionDurations extends Command
                         $fixed++;
                     }
 
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->error("  Error fixing session {$session->id}: ".$e->getMessage());
                     $errors++;
                 }
@@ -178,7 +180,7 @@ class FixSessionDurations extends Command
 
     private function fixScheduleDefaults(bool $isDryRun, ?string $circleId): array
     {
-        $query = \App\Models\QuranCircleSchedule::query();
+        $query = QuranCircleSchedule::query();
 
         if ($circleId) {
             $query->where('circle_id', $circleId);
@@ -203,7 +205,7 @@ class FixSessionDurations extends Command
                         $fixed++;
                     }
 
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->error("  Error fixing schedule {$schedule->id}: ".$e->getMessage());
                     $errors++;
                 }

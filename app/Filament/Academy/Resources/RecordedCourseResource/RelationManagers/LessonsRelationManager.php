@@ -2,9 +2,29 @@
 
 namespace App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\KeyValue;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Actions\CreateAction;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 use App\Models\CourseSection;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -19,22 +39,22 @@ class LessonsRelationManager extends RelationManager
 
     protected static ?string $pluralModelLabel = 'الدروس';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات الدرس')
+        return $schema
+            ->components([
+                Section::make('معلومات الدرس')
                     ->schema([
-                        Forms\Components\TextInput::make('title')
+                        TextInput::make('title')
                             ->label('عنوان الدرس')
                             ->required()
                             ->maxLength(255)
                             ->placeholder('أدخل عنوان الدرس')
                             ->columnSpanFull(),
 
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\Select::make('course_section_id')
+                                Select::make('course_section_id')
                                     ->label('القسم')
                                     ->options(function () {
                                         return CourseSection::where('recorded_course_id', $this->getOwnerRecord()->id)
@@ -44,7 +64,7 @@ class LessonsRelationManager extends RelationManager
                                     ->searchable()
                                     ->placeholder('اختر القسم'),
 
-                                Forms\Components\TextInput::make('lesson_code')
+                                TextInput::make('lesson_code')
                                     ->label('رمز الدرس')
                                     ->required()
                                     ->unique(ignoreRecord: true)
@@ -53,32 +73,32 @@ class LessonsRelationManager extends RelationManager
                                     ->helperText('رمز فريد للدرس'),
                             ]),
 
-                        Forms\Components\Textarea::make('description')
+                        Textarea::make('description')
                             ->label('وصف الدرس')
                             ->rows(3)
                             ->placeholder('وصف مختصر لمحتوى الدرس')
                             ->columnSpanFull(),
                     ]),
 
-                Forms\Components\Section::make('محتوى الفيديو')
+                Section::make('محتوى الفيديو')
                     ->schema([
-                        Forms\Components\TextInput::make('video_url')
+                        TextInput::make('video_url')
                             ->label('رابط الفيديو')
                             ->required()
                             ->url()
                             ->placeholder('https://example.com/video.mp4')
                             ->helperText('رابط مباشر للفيديو'),
 
-                        Forms\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Forms\Components\TextInput::make('video_duration_seconds')
+                                TextInput::make('video_duration_seconds')
                                     ->label('مدة الفيديو (ثانية)')
                                     ->numeric()
                                     ->default(0)
                                     ->minValue(0)
                                     ->placeholder('3600'),
 
-                                Forms\Components\TextInput::make('video_size_mb')
+                                TextInput::make('video_size_mb')
                                     ->label('حجم الفيديو (ميجا)')
                                     ->numeric()
                                     ->default(0)
@@ -86,7 +106,7 @@ class LessonsRelationManager extends RelationManager
                                     ->step(0.01)
                                     ->placeholder('150.5'),
 
-                                Forms\Components\Select::make('video_quality')
+                                Select::make('video_quality')
                                     ->label('جودة الفيديو')
                                     ->options([
                                         '480p' => '480p',
@@ -98,24 +118,24 @@ class LessonsRelationManager extends RelationManager
                                     ->required(),
                             ]),
 
-                        Forms\Components\RichEditor::make('transcript')
+                        RichEditor::make('transcript')
                             ->label('نص الفيديو (Transcript)')
                             ->placeholder('النص المكتوب لمحتوى الفيديو')
                             ->columnSpanFull(),
                     ]),
 
-                Forms\Components\Section::make('إعدادات الدرس')
+                Section::make('إعدادات الدرس')
                     ->schema([
-                        Forms\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Forms\Components\TextInput::make('order')
+                                TextInput::make('order')
                                     ->label('الترتيب')
                                     ->numeric()
                                     ->default(1)
                                     ->required()
                                     ->minValue(1),
 
-                                Forms\Components\Select::make('lesson_type')
+                                Select::make('lesson_type')
                                     ->label('نوع الدرس')
                                     ->options([
                                         'video' => 'فيديو',
@@ -126,7 +146,7 @@ class LessonsRelationManager extends RelationManager
                                     ->default('video')
                                     ->required(),
 
-                                Forms\Components\Select::make('difficulty_level')
+                                Select::make('difficulty_level')
                                     ->label('مستوى الصعوبة')
                                     ->options([
                                         'very_easy' => 'سهل جداً',
@@ -139,61 +159,61 @@ class LessonsRelationManager extends RelationManager
                                     ->required(),
                             ]),
 
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('estimated_study_time_minutes')
+                                TextInput::make('estimated_study_time_minutes')
                                     ->label('وقت الدراسة المقدر (دقيقة)')
                                     ->numeric()
                                     ->default(30)
                                     ->minValue(0)
                                     ->helperText('الوقت المقدر لإكمال الدرس'),
 
-                                Forms\Components\TagsInput::make('learning_objectives')
+                                TagsInput::make('learning_objectives')
                                     ->label('أهداف التعلم')
                                     ->placeholder('أضف هدف تعليمي')
                                     ->helperText('اضغط Enter لإضافة هدف جديد'),
                             ]),
 
-                        Forms\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Forms\Components\Toggle::make('is_published')
+                                Toggle::make('is_published')
                                     ->label('منشور')
                                     ->default(true)
                                     ->helperText('الدرس مرئي للطلاب'),
 
-                                Forms\Components\Toggle::make('is_free_preview')
+                                Toggle::make('is_free_preview')
                                     ->label('معاينة مجانية')
                                     ->default(false)
                                     ->helperText('يمكن مشاهدته بدون اشتراك'),
 
-                                Forms\Components\Toggle::make('is_downloadable')
+                                Toggle::make('is_downloadable')
                                     ->label('قابل للتحميل')
                                     ->default(false)
                                     ->helperText('السماح بتحميل الفيديو'),
                             ]),
                     ]),
 
-                Forms\Components\Section::make('محتوى إضافي')
+                Section::make('محتوى إضافي')
                     ->schema([
-                        Forms\Components\RichEditor::make('notes')
+                        RichEditor::make('notes')
                             ->label('ملاحظات إضافية')
                             ->placeholder('ملاحظات مهمة للدرس')
                             ->columnSpanFull(),
 
-                        Forms\Components\KeyValue::make('attachments')
+                        KeyValue::make('attachments')
                             ->label('المرفقات')
                             ->keyLabel('اسم الملف')
                             ->valueLabel('رابط الملف')
                             ->addActionLabel('إضافة مرفق')
                             ->columnSpanFull(),
 
-                        Forms\Components\KeyValue::make('assignment_requirements')
+                        KeyValue::make('assignment_requirements')
                             ->label('متطلبات المهمة')
                             ->keyLabel('المتطلب')
                             ->valueLabel('الوصف')
                             ->addActionLabel('إضافة متطلب')
                             ->columnSpanFull()
-                            ->visible(fn (Forms\Get $get): bool => $get('lesson_type') === 'assignment'),
+                            ->visible(fn (Get $get): bool => $get('lesson_type') === 'assignment'),
                     ]),
             ]);
     }
@@ -203,23 +223,24 @@ class LessonsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('title')
             ->columns([
-                Tables\Columns\TextColumn::make('order')
+                TextColumn::make('order')
                     ->label('الترتيب')
                     ->sortable()
                     ->width(80),
 
-                Tables\Columns\TextColumn::make('title')
+                TextColumn::make('title')
                     ->label('عنوان الدرس')
                     ->searchable()
                     ->limit(50)
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('section.title')
+                TextColumn::make('section.title')
                     ->label('القسم')
                     ->sortable()
                     ->limit(30),
 
-                Tables\Columns\BadgeColumn::make('lesson_type')
+                TextColumn::make('lesson_type')
+                    ->badge()
                     ->label('النوع')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'video' => 'فيديو',
@@ -235,7 +256,7 @@ class LessonsRelationManager extends RelationManager
                         'info' => 'reading',
                     ]),
 
-                Tables\Columns\TextColumn::make('video_duration_seconds')
+                TextColumn::make('video_duration_seconds')
                     ->label('المدة')
                     ->formatStateUsing(fn (int $state): string => $state >= 3600
                             ? floor($state / 3600).'س '.floor(($state % 3600) / 60).'د'
@@ -243,7 +264,8 @@ class LessonsRelationManager extends RelationManager
                     )
                     ->sortable(),
 
-                Tables\Columns\BadgeColumn::make('difficulty_level')
+                TextColumn::make('difficulty_level')
+                    ->badge()
                     ->label('الصعوبة')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'easy' => 'سهل',
@@ -257,37 +279,37 @@ class LessonsRelationManager extends RelationManager
                         'danger' => 'hard',
                     ]),
 
-                Tables\Columns\IconColumn::make('is_published')
+                IconColumn::make('is_published')
                     ->label('منشور')
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle'),
 
-                Tables\Columns\IconColumn::make('is_free_preview')
+                IconColumn::make('is_free_preview')
                     ->label('مجاني')
                     ->boolean()
                     ->trueIcon('heroicon-o-eye')
                     ->falseIcon('heroicon-o-eye-slash'),
 
-                Tables\Columns\TextColumn::make('view_count')
+                TextColumn::make('view_count')
                     ->label('المشاهدات')
                     ->numeric()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('course_section_id')
+                SelectFilter::make('course_section_id')
                     ->label('القسم')
                     ->relationship('section', 'title')
                     ->multiple(),
 
-                Tables\Filters\SelectFilter::make('lesson_type')
+                SelectFilter::make('lesson_type')
                     ->label('نوع الدرس')
                     ->options([
                         'video' => 'فيديو',
@@ -297,7 +319,7 @@ class LessonsRelationManager extends RelationManager
                     ])
                     ->multiple(),
 
-                Tables\Filters\SelectFilter::make('difficulty_level')
+                SelectFilter::make('difficulty_level')
                     ->label('مستوى الصعوبة')
                     ->options([
                         'very_easy' => 'سهل جداً',
@@ -308,38 +330,38 @@ class LessonsRelationManager extends RelationManager
                     ])
                     ->multiple(),
 
-                Tables\Filters\TernaryFilter::make('is_published')
+                TernaryFilter::make('is_published')
                     ->label('منشور')
                     ->placeholder('الكل')
                     ->trueLabel('منشور')
                     ->falseLabel('غير منشور'),
 
-                Tables\Filters\TernaryFilter::make('is_free_preview')
+                TernaryFilter::make('is_free_preview')
                     ->label('معاينة مجانية')
                     ->placeholder('الكل')
                     ->trueLabel('مجاني')
                     ->falseLabel('مدفوع'),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->label('إضافة درس جديد')
-                    ->mutateFormDataUsing(function (array $data): array {
+                    ->mutateDataUsing(function (array $data): array {
                         $data['recorded_course_id'] = $this->getOwnerRecord()->id;
 
                         return $data;
                     }),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
+            ->recordActions([
+                ViewAction::make()
                     ->label('عرض'),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف'),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('order')

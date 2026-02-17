@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Archived;
 
+use Exception;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
 use App\Models\User;
@@ -102,7 +103,7 @@ class FixOrphanedTeacherAccounts extends Command
                         $user->update(['active_status' => false]);
 
                         $this->info('  ✅ Created Academic Teacher Profile');
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $this->error('  ❌ Failed to create profile: '.$e->getMessage());
                     }
                 }
@@ -160,7 +161,7 @@ class FixOrphanedTeacherAccounts extends Command
                         $user->update(['active_status' => false]);
 
                         $this->info('  ✅ Created Quran Teacher Profile');
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $this->error('  ❌ Failed to create profile: '.$e->getMessage());
                     }
                 }

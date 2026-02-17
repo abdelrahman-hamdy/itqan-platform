@@ -2,6 +2,9 @@
 
 namespace App\Filament\Concerns;
 
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms;
 
 trait HasUserDataFields
@@ -13,21 +16,21 @@ trait HasUserDataFields
     protected static function getUserDataFormSchema(): array
     {
         return [
-            Forms\Components\Section::make('معلومات الحساب')
+            Section::make('معلومات الحساب')
                 ->schema([
-                    Forms\Components\Grid::make(2)
+                    Grid::make(2)
                         ->schema([
-                            Forms\Components\TextInput::make('user_first_name')
+                            TextInput::make('user_first_name')
                                 ->label('الاسم الأول')
                                 ->required()
                                 ->maxLength(255)
                                 ->dehydrated(false),
-                            Forms\Components\TextInput::make('user_last_name')
+                            TextInput::make('user_last_name')
                                 ->label('اسم العائلة')
                                 ->required()
                                 ->maxLength(255)
                                 ->dehydrated(false),
-                            Forms\Components\TextInput::make('user_email')
+                            TextInput::make('user_email')
                                 ->label('البريد الإلكتروني')
                                 ->email()
                                 ->required()

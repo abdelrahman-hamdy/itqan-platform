@@ -2,6 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use BadMethodCallException;
+use Illuminate\Database\Eloquent\Collection;
+use App\Services\SessionNamingService;
 use App\Contracts\MeetingCapable;
 use App\Enums\SessionStatus;
 use App\Models\Traits\HasAttendanceTracking;
@@ -210,7 +216,7 @@ abstract class BaseSession extends Model implements MeetingCapable
      * Meeting data is stored directly on sessions (no separate model)
      * Use getMeetingAttribute() accessor instead
      */
-    public function meeting(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function meeting(): HasOne
     {
         // This is a stub relationship for larastan - meeting data is on the session itself
         // Return a HasOne that always returns null (using User as a concrete model placeholder)
@@ -252,7 +258,7 @@ abstract class BaseSession extends Model implements MeetingCapable
     /**
      * Get all recordings for this session
      */
-    public function recordings(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    public function recordings(): MorphMany
     {
         return $this->morphMany(SessionRecording::class, 'recordable');
     }
@@ -261,12 +267,12 @@ abstract class BaseSession extends Model implements MeetingCapable
      * Get all attendance records for this session
      * Note: This is a base relationship - child classes may override with specific attendance models
      */
-    public function attendanceRecords(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function attendanceRecords(): HasMany
     {
         // This method should be overridden in child classes to return the correct attendance model
         // For example: AcademicSession returns AcademicSessionAttendance
         // This base implementation serves as a fallback and documentation
-        throw new \BadMethodCallException(
+        throw new BadMethodCallException(
             'attendanceRecords() must be implemented in child class: '.static::class
         );
     }
@@ -324,7 +330,7 @@ abstract class BaseSession extends Model implements MeetingCapable
      * Get all participants who should have access to this meeting (MeetingCapable interface)
      * Must be implemented by child classes
      */
-    abstract public function getMeetingParticipants(): \Illuminate\Database\Eloquent\Collection;
+    abstract public function getMeetingParticipants(): Collection;
 
     // ========================================
     // ABSTRACT METHODS (Must be implemented by child classes)
@@ -442,7 +448,7 @@ abstract class BaseSession extends Model implements MeetingCapable
      */
     public function getDisplayNameForAudience(string $audience): string
     {
-        return app(\App\Services\SessionNamingService::class)->getDisplayName($this, $audience);
+        return app(SessionNamingService::class)->getDisplayName($this, $audience);
     }
 
     /**

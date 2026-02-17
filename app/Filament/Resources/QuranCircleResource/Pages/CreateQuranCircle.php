@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\QuranCircleResource\Pages;
 
+use App\Models\QuranCircle;
 use App\Filament\Resources\QuranCircleResource;
 use App\Services\AcademyContextService;
 use Filament\Resources\Pages\CreateRecord;
@@ -23,7 +24,7 @@ class CreateQuranCircle extends CreateRecord
         $data['created_by'] = Auth::id();
 
         // Generate circle code using the model method
-        $data['circle_code'] = \App\Models\QuranCircle::generateCircleCode($data['academy_id']);
+        $data['circle_code'] = QuranCircle::generateCircleCode($data['academy_id']);
 
         // Set initial counters only
         $data['enrolled_students'] = 0;

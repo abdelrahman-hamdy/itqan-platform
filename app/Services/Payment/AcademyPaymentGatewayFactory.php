@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment;
 
+use Exception;
 use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Models\Academy;
 use App\Services\Payment\Gateways\EasyKashGateway;
@@ -78,7 +79,7 @@ class AcademyPaymentGatewayFactory
                 if ($gateway->isConfigured()) {
                     $availableGateways[$gatewayName] = $gateway;
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Gateway not available, skip it
                 continue;
             }
@@ -104,7 +105,7 @@ class AcademyPaymentGatewayFactory
             $gateway = $this->getGateway($academy, $gatewayName);
 
             return $gateway->isConfigured();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }

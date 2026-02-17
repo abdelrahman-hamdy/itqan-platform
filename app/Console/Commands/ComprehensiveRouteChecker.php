@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use Illuminate\Http\Request;
+use Illuminate\Contracts\Http\Kernel;
 use App\Enums\UserType;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
@@ -347,7 +349,7 @@ class ComprehensiveRouteChecker extends Command
 
         try {
             // Use Laravel's testing request
-            $request = \Illuminate\Http\Request::create($uri, 'GET');
+            $request = Request::create($uri, 'GET');
 
             // Authenticate
             Auth::guard('web')->login($user);
@@ -361,7 +363,7 @@ class ComprehensiveRouteChecker extends Command
             }
 
             // Handle request
-            $kernel = app(\Illuminate\Contracts\Http\Kernel::class);
+            $kernel = app(Kernel::class);
             $response = $kernel->handle($request);
             $status = $response->getStatusCode();
             $kernel->terminate($request, $response);

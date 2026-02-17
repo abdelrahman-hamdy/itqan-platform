@@ -2,6 +2,9 @@
 
 namespace App\Services\Attendance;
 
+use InvalidArgumentException;
+use Illuminate\Support\Collection;
+use App\Models\InteractiveCourse;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\InteractiveCourseSession;
@@ -81,7 +84,7 @@ class InteractiveReportService extends BaseReportSyncService
         ?string $notes = null
     ): InteractiveSessionReport {
         if ($grade < 0 || $grade > 10) {
-            throw new \InvalidArgumentException('Homework grade must be between 0 and 10');
+            throw new InvalidArgumentException('Homework grade must be between 0 and 10');
         }
 
         $report->update([
@@ -97,7 +100,7 @@ class InteractiveReportService extends BaseReportSyncService
     /**
      * Get students for an Interactive session
      */
-    protected function getSessionStudents(InteractiveCourseSession $session): \Illuminate\Support\Collection
+    protected function getSessionStudents(InteractiveCourseSession $session): Collection
     {
         if ($session->course) {
             return $session->course->enrollments->pluck('student')->filter();
@@ -109,9 +112,9 @@ class InteractiveReportService extends BaseReportSyncService
     /**
      * Create reports for all students enrolled in an interactive course session
      *
-     * @return \Illuminate\Support\Collection Collection of created reports
+     * @return Collection Collection of created reports
      */
-    public function createReportsForSession(InteractiveCourseSession $session): \Illuminate\Support\Collection
+    public function createReportsForSession(InteractiveCourseSession $session): Collection
     {
         $students = $this->getSessionStudents($session);
         $reports = collect();
@@ -152,7 +155,7 @@ class InteractiveReportService extends BaseReportSyncService
     /**
      * Calculate performance metrics for an interactive course
      */
-    public function calculatePerformance(\App\Models\InteractiveCourse $course, ?int $studentId = null): array
+    public function calculatePerformance(InteractiveCourse $course, ?int $studentId = null): array
     {
         $sessions = $course->sessions()->with('studentReports')->get();
 
@@ -191,7 +194,7 @@ class InteractiveReportService extends BaseReportSyncService
     /**
      * Calculate attendance metrics for an interactive course
      */
-    public function calculateAttendance(\App\Models\InteractiveCourse $course, ?int $studentId = null): array
+    public function calculateAttendance(InteractiveCourse $course, ?int $studentId = null): array
     {
         $sessions = $course->sessions()->with('studentReports')->get();
         $completedSessions = $sessions->filter(function ($session) {
@@ -259,7 +262,7 @@ class InteractiveReportService extends BaseReportSyncService
     /**
      * Calculate progress metrics for an interactive course
      */
-    public function calculateProgress(\App\Models\InteractiveCourse $course): array
+    public function calculateProgress(InteractiveCourse $course): array
     {
         $sessions = $course->sessions()->with('studentReports')->get();
         $totalSessions = $sessions->count();
@@ -336,7 +339,7 @@ class InteractiveReportService extends BaseReportSyncService
         if (isset($data['homework_degree'])) {
             $grade = (float) $data['homework_degree'];
             if ($grade < 0 || $grade > 10) {
-                throw new \InvalidArgumentException('Homework degree must be between 0 and 10');
+                throw new InvalidArgumentException('Homework degree must be between 0 and 10');
             }
             $updateData['homework_degree'] = $grade;
         }

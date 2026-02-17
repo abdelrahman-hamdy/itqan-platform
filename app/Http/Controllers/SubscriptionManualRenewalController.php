@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
+use App\Enums\PaymentStatus;
+use Exception;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\AcademicSubscription;
@@ -45,7 +48,7 @@ class SubscriptionManualRenewalController extends Controller
         // Check grace period
         $metadata = $subscription->metadata ?? [];
         $gracePeriodExpiresAt = isset($metadata['grace_period_expires_at'])
-            ? \Carbon\Carbon::parse($metadata['grace_period_expires_at'])
+            ? Carbon::parse($metadata['grace_period_expires_at'])
             : null;
 
         if (!$gracePeriodExpiresAt) {
@@ -94,7 +97,7 @@ class SubscriptionManualRenewalController extends Controller
         // Verify grace period not expired
         $metadata = $subscription->metadata ?? [];
         $gracePeriodExpiresAt = isset($metadata['grace_period_expires_at'])
-            ? \Carbon\Carbon::parse($metadata['grace_period_expires_at'])
+            ? Carbon::parse($metadata['grace_period_expires_at'])
             : null;
 
         if (!$gracePeriodExpiresAt || $gracePeriodExpiresAt->isPast()) {
@@ -117,7 +120,7 @@ class SubscriptionManualRenewalController extends Controller
                 'amount' => $renewalAmount,
                 'net_amount' => $renewalAmount,
                 'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
-                'status' => \App\Enums\PaymentStatus::PENDING,
+                'status' => PaymentStatus::PENDING,
                 'notes' => 'تجديد يدوي خلال فترة السماح',
                 'payable_type' => get_class($subscription),
                 'payable_id' => $subscription->id,
@@ -155,7 +158,7 @@ class SubscriptionManualRenewalController extends Controller
 
                 return back()->with('error', $result['error'] ?? 'فشل الدفع. يرجى المحاولة مرة أخرى.');
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Manual renewal failed', [
                 'subscription_id' => $subscription->id,
                 'error' => $e->getMessage(),

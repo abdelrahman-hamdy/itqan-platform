@@ -2,6 +2,11 @@
 
 namespace App\Observers;
 
+use Exception;
+use App\Services\Notification\NotificationUrlBuilder;
+use Carbon\Carbon;
+use App\Models\User;
+use App\Enums\UserType;
 use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Jobs\CalculateSessionEarningsJob;
@@ -53,7 +58,7 @@ class BaseSessionObserver
                             'session_id' => $session->id,
                             'room_name' => $session->meeting_room_name,
                         ]);
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         Log::error('Failed to auto-create meeting room', [
                             'session_id' => $session->id,
                             'error' => $e->getMessage(),
@@ -110,7 +115,7 @@ class BaseSessionObserver
                         'session_id' => $session->id,
                         'new_room' => $session->meeting_room_name,
                     ]);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Log::error('Failed to regenerate meeting for rescheduled session', [
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),
@@ -144,7 +149,7 @@ class BaseSessionObserver
                     ]);
 
                     dispatch(new CalculateSessionEarningsJob($session));
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Log::error('Failed to dispatch earnings calculation job', [
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),
@@ -166,13 +171,13 @@ class BaseSessionObserver
     {
         try {
             $notificationService = app(NotificationService::class);
-            $urlBuilder = app(\App\Services\Notification\NotificationUrlBuilder::class);
+            $urlBuilder = app(NotificationUrlBuilder::class);
 
             $data = [
                 'session_title' => $session->title ?? class_basename($session),
                 'session_type' => class_basename($session),
-                'old_time' => $oldTime ? \Carbon\Carbon::parse($oldTime)->format('Y-m-d H:i') : '',
-                'new_time' => $newTime ? \Carbon\Carbon::parse($newTime)->format('Y-m-d H:i') : '',
+                'old_time' => $oldTime ? Carbon::parse($oldTime)->format('Y-m-d H:i') : '',
+                'new_time' => $newTime ? Carbon::parse($newTime)->format('Y-m-d H:i') : '',
             ];
 
             $metadata = ['session_id' => $session->id, 'session_type' => get_class($session)];
@@ -181,7 +186,7 @@ class BaseSessionObserver
             if (method_exists($session, 'student') && $session->student) {
                 $student = $session->student;
 
-                if ($student instanceof \App\Models\User) {
+                if ($student instanceof User) {
                     $actionUrl = $urlBuilder->getSessionUrl($session, $student);
                     $notificationService->send($student, NotificationType::SESSION_RESCHEDULED, $data, $actionUrl, $metadata, true);
                 } elseif (method_exists($student, 'user') && $student->user) {
@@ -190,7 +195,7 @@ class BaseSessionObserver
                     $notificationService->send($student->user, NotificationType::SESSION_RESCHEDULED, $data, $actionUrl, $metadata, true);
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send session rescheduled notifications', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -205,7 +210,7 @@ class BaseSessionObserver
     {
         try {
             $notificationService = app(NotificationService::class);
-            $urlBuilder = app(\App\Services\Notification\NotificationUrlBuilder::class);
+            $urlBuilder = app(NotificationUrlBuilder::class);
 
             $academyId = $session->academy_id;
             if (! $academyId) {
@@ -213,8 +218,8 @@ class BaseSessionObserver
             }
 
             // Find academy admins
-            $admins = \App\Models\User::where('academy_id', $academyId)
-                ->where('user_type', \App\Enums\UserType::ADMIN->value)
+            $admins = User::where('academy_id', $academyId)
+                ->where('user_type', UserType::ADMIN->value)
                 ->get();
 
             if ($admins->isEmpty()) {
@@ -238,7 +243,7 @@ class BaseSessionObserver
                     true
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send session cancelled admin notification', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -271,7 +276,7 @@ class BaseSessionObserver
                         'session_id' => $session->id,
                         'room_name' => $session->meeting_room_name,
                     ]);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Log::error('Failed to create meeting for new session', [
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),

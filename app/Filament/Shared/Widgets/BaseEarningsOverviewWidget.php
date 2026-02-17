@@ -15,7 +15,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
  */
 abstract class BaseEarningsOverviewWidget extends BaseWidget
 {
-    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+    protected string $view = 'filament.widgets.collapsible-stats-overview-widget';
 
     // Prevent auto-discovery - not needed on main dashboard
     protected static bool $isDiscoverable = false;

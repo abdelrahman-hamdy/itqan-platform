@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\SessionStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\UserType;
 use App\Models\InteractiveCourseSession;
@@ -108,7 +109,7 @@ class InteractiveCourseSessionPolicy
         }
 
         // Cannot delete completed sessions
-        return $session->status !== \App\Enums\SessionStatus::COMPLETED;
+        return $session->status !== SessionStatus::COMPLETED;
     }
 
     /**

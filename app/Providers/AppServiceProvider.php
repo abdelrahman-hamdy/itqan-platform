@@ -2,6 +2,51 @@
 
 namespace App\Providers;
 
+use Laravel\Telescope\TelescopeApplicationServiceProvider;
+use Bottelet\TranslationChecker\TranslationManager;
+use App\Contracts\SessionStatusServiceInterface;
+use App\Services\UnifiedSessionStatusService;
+use App\Contracts\UnifiedSessionStatusServiceInterface;
+use App\Contracts\EarningsCalculationServiceInterface;
+use App\Services\EarningsCalculationService;
+use App\Contracts\MeetingAttendanceServiceInterface;
+use App\Services\MeetingAttendanceService;
+use App\Contracts\HomeworkServiceInterface;
+use App\Services\HomeworkService;
+use App\Contracts\StudentDashboardServiceInterface;
+use App\Services\StudentDashboardService;
+use App\Contracts\QuizServiceInterface;
+use App\Services\QuizService;
+use App\Contracts\SearchServiceInterface;
+use App\Services\SearchService;
+use App\Contracts\StudentStatisticsServiceInterface;
+use App\Services\StudentStatisticsService;
+use App\Contracts\CircleEnrollmentServiceInterface;
+use App\Services\CircleEnrollmentService;
+use App\Contracts\SubscriptionServiceInterface;
+use App\Services\SubscriptionService;
+use App\Contracts\NotificationServiceInterface;
+use App\Services\NotificationService;
+use App\Contracts\AutoMeetingCreationServiceInterface;
+use App\Services\AutoMeetingCreationService;
+use App\Contracts\RecordingServiceInterface;
+use App\Services\RecordingService;
+use App\Contracts\ChatPermissionServiceInterface;
+use App\Services\ChatPermissionService;
+use Filament\Http\Controllers\RedirectToTenantController;
+use App\Http\Middleware\CustomAuthenticate;
+use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\TenantMiddleware;
+use App\Http\Middleware\AcademyContext;
+use App\Http\Middleware\ResolveTenantFromSubdomain;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use App\Models\AcademicHomeworkSubmission;
+use App\Observers\HomeworkSubmissionObserver;
+use App\Models\InteractiveCourseHomeworkSubmission;
+use App\Livewire\Chat\Info;
+use App\Livewire\Filament\DatabaseNotifications;
+use App\Policies\CertificatePolicy;
+use App\Models\QuizAttempt;
 use App\Contracts\LiveKitServiceInterface;
 use App\Health\Checks\LogFilesCheck;
 use App\Health\Checks\MediaLibrarySizeCheck;
@@ -88,34 +133,34 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Register dev-only providers conditionally
-        if (class_exists(\Laravel\Telescope\TelescopeApplicationServiceProvider::class)) {
-            $this->app->register(\App\Providers\TelescopeServiceProvider::class);
+        if (class_exists(TelescopeApplicationServiceProvider::class)) {
+            $this->app->register(TelescopeServiceProvider::class);
         }
-        if (class_exists(\Bottelet\TranslationChecker\TranslationManager::class)) {
-            $this->app->register(\App\Providers\TranslationCheckerServiceProvider::class);
+        if (class_exists(TranslationManager::class)) {
+            $this->app->register(TranslationCheckerServiceProvider::class);
         }
 
         // Bind service interfaces to implementations
         $this->app->bind(LiveKitServiceInterface::class, LiveKitService::class);
-        $this->app->bind(\App\Contracts\SessionStatusServiceInterface::class, \App\Services\UnifiedSessionStatusService::class);
-        $this->app->bind(\App\Contracts\UnifiedSessionStatusServiceInterface::class, \App\Services\UnifiedSessionStatusService::class);
-        $this->app->bind(\App\Contracts\EarningsCalculationServiceInterface::class, \App\Services\EarningsCalculationService::class);
-        $this->app->bind(\App\Contracts\MeetingAttendanceServiceInterface::class, \App\Services\MeetingAttendanceService::class);
-        $this->app->bind(\App\Contracts\HomeworkServiceInterface::class, \App\Services\HomeworkService::class);
-        $this->app->bind(\App\Contracts\StudentDashboardServiceInterface::class, \App\Services\StudentDashboardService::class);
-        $this->app->bind(\App\Contracts\QuizServiceInterface::class, \App\Services\QuizService::class);
-        $this->app->bind(\App\Contracts\SearchServiceInterface::class, \App\Services\SearchService::class);
-        $this->app->bind(\App\Contracts\StudentStatisticsServiceInterface::class, \App\Services\StudentStatisticsService::class);
-        $this->app->bind(\App\Contracts\CircleEnrollmentServiceInterface::class, \App\Services\CircleEnrollmentService::class);
-        $this->app->bind(\App\Contracts\SubscriptionServiceInterface::class, \App\Services\SubscriptionService::class);
-        $this->app->bind(\App\Contracts\NotificationServiceInterface::class, \App\Services\NotificationService::class);
-        $this->app->bind(\App\Contracts\AutoMeetingCreationServiceInterface::class, \App\Services\AutoMeetingCreationService::class);
-        $this->app->bind(\App\Contracts\RecordingServiceInterface::class, \App\Services\RecordingService::class);
-        $this->app->bind(\App\Contracts\ChatPermissionServiceInterface::class, \App\Services\ChatPermissionService::class);
+        $this->app->bind(SessionStatusServiceInterface::class, UnifiedSessionStatusService::class);
+        $this->app->bind(UnifiedSessionStatusServiceInterface::class, UnifiedSessionStatusService::class);
+        $this->app->bind(EarningsCalculationServiceInterface::class, EarningsCalculationService::class);
+        $this->app->bind(MeetingAttendanceServiceInterface::class, MeetingAttendanceService::class);
+        $this->app->bind(HomeworkServiceInterface::class, HomeworkService::class);
+        $this->app->bind(StudentDashboardServiceInterface::class, StudentDashboardService::class);
+        $this->app->bind(QuizServiceInterface::class, QuizService::class);
+        $this->app->bind(SearchServiceInterface::class, SearchService::class);
+        $this->app->bind(StudentStatisticsServiceInterface::class, StudentStatisticsService::class);
+        $this->app->bind(CircleEnrollmentServiceInterface::class, CircleEnrollmentService::class);
+        $this->app->bind(SubscriptionServiceInterface::class, SubscriptionService::class);
+        $this->app->bind(NotificationServiceInterface::class, NotificationService::class);
+        $this->app->bind(AutoMeetingCreationServiceInterface::class, AutoMeetingCreationService::class);
+        $this->app->bind(RecordingServiceInterface::class, RecordingService::class);
+        $this->app->bind(ChatPermissionServiceInterface::class, ChatPermissionService::class);
 
         // Override Filament's RedirectToTenantController to fix Livewire redirect return type issue
         $this->app->bind(
-            \Filament\Http\Controllers\RedirectToTenantController::class,
+            RedirectToTenantController::class,
             \App\Http\Controllers\Filament\RedirectToTenantController::class
         );
     }
@@ -134,11 +179,11 @@ class AppServiceProvider extends ServiceProvider
         }
 
         // Register middleware aliases
-        Route::aliasMiddleware('auth', \App\Http\Middleware\CustomAuthenticate::class);
-        Route::aliasMiddleware('role', \App\Http\Middleware\RoleMiddleware::class);
-        Route::aliasMiddleware('tenant', \App\Http\Middleware\TenantMiddleware::class);
-        Route::aliasMiddleware('academy.context', \App\Http\Middleware\AcademyContext::class);
-        Route::aliasMiddleware('resolve.tenant', \App\Http\Middleware\ResolveTenantFromSubdomain::class);
+        Route::aliasMiddleware('auth', CustomAuthenticate::class);
+        Route::aliasMiddleware('role', RoleMiddleware::class);
+        Route::aliasMiddleware('tenant', TenantMiddleware::class);
+        Route::aliasMiddleware('academy.context', AcademyContext::class);
+        Route::aliasMiddleware('resolve.tenant', ResolveTenantFromSubdomain::class);
 
         // Share academy context with all views
         View::composer('*', function ($view) {
@@ -148,13 +193,13 @@ class AppServiceProvider extends ServiceProvider
 
         // Register morph map for polymorphic relationships
         // This ensures consistent database values instead of full class names
-        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
-            'quran_session' => \App\Models\QuranSession::class,
-            'academic_session' => \App\Models\AcademicSession::class,
-            'interactive_course_session' => \App\Models\InteractiveCourseSession::class,
-            'quran_subscription' => \App\Models\QuranSubscription::class,
-            'academic_subscription' => \App\Models\AcademicSubscription::class,
-            'course_subscription' => \App\Models\CourseSubscription::class,
+        Relation::morphMap([
+            'quran_session' => QuranSession::class,
+            'academic_session' => AcademicSession::class,
+            'interactive_course_session' => InteractiveCourseSession::class,
+            'quran_subscription' => QuranSubscription::class,
+            'academic_subscription' => AcademicSubscription::class,
+            'course_subscription' => CourseSubscription::class,
         ]);
 
         // Register Media Observer to handle UTF-8 filename sanitization
@@ -220,16 +265,16 @@ class AppServiceProvider extends ServiceProvider
         SessionRecording::observe(SessionRecordingObserver::class);
 
         // Register Homework Submission Observers for submission/grading notifications
-        \App\Models\AcademicHomeworkSubmission::observe(\App\Observers\HomeworkSubmissionObserver::class);
-        \App\Models\InteractiveCourseHomeworkSubmission::observe(\App\Observers\HomeworkSubmissionObserver::class);
+        AcademicHomeworkSubmission::observe(HomeworkSubmissionObserver::class);
+        InteractiveCourseHomeworkSubmission::observe(HomeworkSubmissionObserver::class);
 
         // Override WireChat Info component with custom implementation
-        Livewire::component('wirechat.chat.info', \App\Livewire\Chat\Info::class);
+        Livewire::component('wirechat.chat.info', Info::class);
 
         // Override Filament DatabaseNotifications with custom per-panel category filtering
         // Must run after Filament registers its components (after all providers boot)
         $this->app->booted(function () {
-            Livewire::component('filament.livewire.database-notifications', \App\Livewire\Filament\DatabaseNotifications::class);
+            Livewire::component('filament.livewire.database-notifications', DatabaseNotifications::class);
         });
 
         // Register policies for authorization
@@ -252,12 +297,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Payment::class, PaymentPolicy::class);
 
         // Certificate policy
-        Gate::policy(Certificate::class, \App\Policies\CertificatePolicy::class);
+        Gate::policy(Certificate::class, CertificatePolicy::class);
 
         // Homework and Quiz policies
         Gate::policy(InteractiveCourseHomework::class, HomeworkPolicy::class);
         Gate::policy(QuizAssignment::class, QuizAssignmentPolicy::class);
-        Gate::policy(\App\Models\QuizAttempt::class, QuizAttemptPolicy::class);
+        Gate::policy(QuizAttempt::class, QuizAttemptPolicy::class);
 
         // Interactive Course policies
         Gate::policy(InteractiveCourse::class, InteractiveCoursePolicy::class);

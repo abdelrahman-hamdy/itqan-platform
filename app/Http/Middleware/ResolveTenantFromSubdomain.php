@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use Exception;
+use Log;
 use App\Models\Academy;
 use Closure;
 use Illuminate\Http\Request;
@@ -13,7 +15,7 @@ class ResolveTenantFromSubdomain
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param Closure(Request):Response $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -69,9 +71,9 @@ class ResolveTenantFromSubdomain
                     }
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Log the error but don't break the request
-            \Log::warning('Tenant resolution failed: '.$e->getMessage());
+            Log::warning('Tenant resolution failed: '.$e->getMessage());
         }
 
         return $next($request);

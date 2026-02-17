@@ -2,6 +2,18 @@
 
 namespace App\Filament\Teacher\Actions;
 
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Exception;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
@@ -21,8 +33,8 @@ class SessionSchedulingActions
             ->label('جدولة سريعة')
             ->icon('heroicon-o-calendar-days')
             ->color('primary')
-            ->form([
-                Forms\Components\Select::make('circle_type')
+            ->schema([
+                Select::make('circle_type')
                     ->label('نوع الحلقة')
                     ->options([
                         'individual' => 'حلقة فردية',
@@ -30,11 +42,11 @@ class SessionSchedulingActions
                     ])
                     ->required()
                     ->live()
-                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('circle_id', null)),
+                    ->afterStateUpdated(fn ($state, Set $set) => $set('circle_id', null)),
 
-                Forms\Components\Select::make('circle_id')
+                Select::make('circle_id')
                     ->label('اختر الحلقة')
-                    ->options(function (Forms\Get $get) {
+                    ->options(function (Get $get) {
                         $type = $get('circle_type');
                         if (! $type) {
                             return [];
@@ -56,7 +68,7 @@ class SessionSchedulingActions
                     })
                     ->required()
                     ->live()
-                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                    ->afterStateUpdated(function ($state, Set $set, Get $get) {
                         // Auto-update duration when circle is selected
                         $circleType = $get('circle_type');
 
@@ -75,9 +87,9 @@ class SessionSchedulingActions
                         }
                     }),
 
-                Forms\Components\Section::make('تفاصيل الجدولة')
+                Section::make('تفاصيل الجدولة')
                     ->schema([
-                        Forms\Components\Select::make('schedule_pattern')
+                        Select::make('schedule_pattern')
                             ->label('نمط الجدولة')
                             ->options([
                                 'single' => 'جلسة واحدة',
@@ -89,7 +101,7 @@ class SessionSchedulingActions
                             ->default('single'),
 
                         // Single session fields
-                        Forms\Components\DateTimePicker::make('single_datetime')
+                        DateTimePicker::make('single_datetime')
                             ->label('تاريخ ووقت الجلسة')
                             ->seconds(false)
                             ->minutesStep(15)
@@ -97,12 +109,12 @@ class SessionSchedulingActions
                             ->timezone(AcademyContextService::getTimezone())
                             ->displayFormat('Y-m-d H:i')
                             ->required()
-                            ->visible(fn (Forms\Get $get) => $get('schedule_pattern') === 'single'),
+                            ->visible(fn (Get $get) => $get('schedule_pattern') === 'single'),
 
                         // Weekly pattern fields
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\Select::make('weekly_day')
+                                Select::make('weekly_day')
                                     ->label('اليوم')
                                     ->options([
                                         'sunday' => 'الأحد',
@@ -115,21 +127,21 @@ class SessionSchedulingActions
                                     ])
                                     ->required(),
 
-                                Forms\Components\TimePicker::make('weekly_time')
+                                TimePicker::make('weekly_time')
                                     ->label('الوقت')
                                     ->seconds(false)
                                     ->minutesStep(15)
                                     ->required(),
                             ])
-                            ->visible(fn (Forms\Get $get) => $get('schedule_pattern') === 'weekly'),
+                            ->visible(fn (Get $get) => $get('schedule_pattern') === 'weekly'),
 
                         // Multiple days fields
-                        Forms\Components\Repeater::make('multiple_slots')
+                        Repeater::make('multiple_slots')
                             ->label('الأوقات المتعددة')
                             ->schema([
-                                Forms\Components\Grid::make(2)
+                                Grid::make(2)
                                     ->schema([
-                                        Forms\Components\Select::make('day')
+                                        Select::make('day')
                                             ->label('اليوم')
                                             ->options([
                                                 'sunday' => 'الأحد',
@@ -142,7 +154,7 @@ class SessionSchedulingActions
                                             ])
                                             ->required(),
 
-                                        Forms\Components\TimePicker::make('time')
+                                        TimePicker::make('time')
                                             ->label('الوقت')
                                             ->seconds(false)
                                             ->minutesStep(15)
@@ -151,29 +163,29 @@ class SessionSchedulingActions
                             ])
                             ->minItems(1)
                             ->maxItems(7)
-                            ->visible(fn (Forms\Get $get) => $get('schedule_pattern') === 'multiple_days'),
+                            ->visible(fn (Get $get) => $get('schedule_pattern') === 'multiple_days'),
 
                         // Date range for recurring patterns
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\DatePicker::make('start_date')
+                                DatePicker::make('start_date')
                                     ->label('تاريخ البداية')
                                     ->required()
                                     ->default(today())
                                     ->minDate(today()),
 
-                                Forms\Components\DatePicker::make('end_date')
+                                DatePicker::make('end_date')
                                     ->label('تاريخ النهاية')
                                     ->required()
                                     ->after('start_date')
                                     ->default(today()->addMonth()),
                             ])
-                            ->visible(fn (Forms\Get $get) => in_array($get('schedule_pattern'), ['weekly', 'multiple_days'])),
+                            ->visible(fn (Get $get) => in_array($get('schedule_pattern'), ['weekly', 'multiple_days'])),
 
-                        Forms\Components\TextInput::make('duration_minutes')
+                        TextInput::make('duration_minutes')
                             ->label('مدة الجلسة (بالدقائق)')
                             ->numeric()
-                            ->default(function (Forms\Get $get) {
+                            ->default(function (Get $get) {
                                 $circleType = $get('circle_type');
                                 $circleId = $get('circle_id');
 
@@ -197,7 +209,7 @@ class SessionSchedulingActions
                             ->maxValue(180)
                             ->required()
                             ->live()
-                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                            ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                 // Auto-update when circle changes
                                 $circleType = $get('circle_type');
                                 $circleId = $get('circle_id');
@@ -219,11 +231,11 @@ class SessionSchedulingActions
                                 }
                             }),
 
-                        Forms\Components\TextInput::make('title')
+                        TextInput::make('title')
                             ->label('عنوان الجلسة (اختياري)')
                             ->maxLength(255),
 
-                        Forms\Components\Textarea::make('description')
+                        Textarea::make('description')
                             ->label('وصف الجلسة (اختياري)')
                             ->rows(3)
                             ->maxLength(500),
@@ -289,7 +301,7 @@ class SessionSchedulingActions
                         ->success()
                         ->send();
 
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Notification::make()
                         ->title('خطأ في إنشاء الجلسات')
                         ->body($e->getMessage())
@@ -308,8 +320,8 @@ class SessionSchedulingActions
             ->requiresConfirmation()
             ->modalHeading('إعادة تعيين جلسات الحلقة')
             ->modalDescription('هل أنت متأكد من حذف جميع الجلسات المجدولة لهذه الحلقة؟ لن يمكن التراجع عن هذا الإجراء.')
-            ->form([
-                Forms\Components\Select::make('circle_type')
+            ->schema([
+                Select::make('circle_type')
                     ->label('نوع الحلقة')
                     ->options([
                         'individual' => 'حلقة فردية',
@@ -318,9 +330,9 @@ class SessionSchedulingActions
                     ->required()
                     ->live(),
 
-                Forms\Components\Select::make('circle_id')
+                Select::make('circle_id')
                     ->label('اختر الحلقة')
-                    ->options(function (Forms\Get $get) {
+                    ->options(function (Get $get) {
                         $type = $get('circle_type');
                         if (! $type) {
                             return [];
@@ -361,7 +373,7 @@ class SessionSchedulingActions
                         ->success()
                         ->send();
 
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Notification::make()
                         ->title('خطأ في حذف الجلسات')
                         ->body($e->getMessage())
@@ -377,12 +389,12 @@ class SessionSchedulingActions
             ->label('نسخ جدول جلسات')
             ->icon('heroicon-o-document-duplicate')
             ->color('info')
-            ->form([
-                Forms\Components\Grid::make(2)
+            ->schema([
+                Grid::make(2)
                     ->schema([
-                        Forms\Components\Section::make('نسخ من')
+                        Section::make('نسخ من')
                             ->schema([
-                                Forms\Components\Select::make('source_circle_type')
+                                Select::make('source_circle_type')
                                     ->label('نوع الحلقة المصدر')
                                     ->options([
                                         'individual' => 'حلقة فردية',
@@ -391,9 +403,9 @@ class SessionSchedulingActions
                                     ->required()
                                     ->live(),
 
-                                Forms\Components\Select::make('source_circle_id')
+                                Select::make('source_circle_id')
                                     ->label('الحلقة المصدر')
-                                    ->options(function (Forms\Get $get) {
+                                    ->options(function (Get $get) {
                                         $type = $get('source_circle_type');
                                         if (! $type) {
                                             return [];
@@ -417,9 +429,9 @@ class SessionSchedulingActions
                                     ->searchable(),
                             ]),
 
-                        Forms\Components\Section::make('نسخ إلى')
+                        Section::make('نسخ إلى')
                             ->schema([
-                                Forms\Components\Select::make('target_circle_type')
+                                Select::make('target_circle_type')
                                     ->label('نوع الحلقة الهدف')
                                     ->options([
                                         'individual' => 'حلقة فردية',
@@ -428,9 +440,9 @@ class SessionSchedulingActions
                                     ->required()
                                     ->live(),
 
-                                Forms\Components\Select::make('target_circle_id')
+                                Select::make('target_circle_id')
                                     ->label('الحلقة الهدف')
-                                    ->options(function (Forms\Get $get) {
+                                    ->options(function (Get $get) {
                                         $type = $get('target_circle_type');
                                         if (! $type) {
                                             return [];
@@ -455,15 +467,15 @@ class SessionSchedulingActions
                             ]),
                     ]),
 
-                Forms\Components\Grid::make(2)
+                Grid::make(2)
                     ->schema([
-                        Forms\Components\DatePicker::make('start_date')
+                        DatePicker::make('start_date')
                             ->label('تاريخ البداية للنسخ')
                             ->required()
                             ->default(today())
                             ->minDate(today()),
 
-                        Forms\Components\DatePicker::make('end_date')
+                        DatePicker::make('end_date')
                             ->label('تاريخ النهاية للنسخ')
                             ->required()
                             ->after('start_date')

@@ -2,10 +2,29 @@
 
 namespace App\Filament\Resources;
 
+use App\Services\AcademyContextService;
+use Illuminate\Database\Eloquent\Model;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ColorColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\BusinessServiceCategoryResource\Pages\ListBusinessServiceCategories;
+use App\Filament\Resources\BusinessServiceCategoryResource\Pages\CreateBusinessServiceCategory;
+use App\Filament\Resources\BusinessServiceCategoryResource\Pages\EditBusinessServiceCategory;
 use App\Filament\Resources\BusinessServiceCategoryResource\Pages;
 use App\Models\BusinessServiceCategory;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -14,9 +33,9 @@ class BusinessServiceCategoryResource extends Resource
 {
     protected static ?string $model = BusinessServiceCategory::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationGroup = 'خدمات الأعمال';
+    protected static string | \UnitEnum | null $navigationGroup = 'خدمات الأعمال';
 
     protected static ?string $navigationLabel = 'تصنيفات الخدمات';
 
@@ -31,7 +50,7 @@ class BusinessServiceCategoryResource extends Resource
      */
     public static function canAccess(): bool
     {
-        return \App\Services\AcademyContextService::isSuperAdmin();
+        return AcademyContextService::isSuperAdmin();
     }
 
     /**
@@ -39,55 +58,55 @@ class BusinessServiceCategoryResource extends Resource
      */
     public static function canCreate(): bool
     {
-        return \App\Services\AcademyContextService::isSuperAdmin();
+        return AcademyContextService::isSuperAdmin();
     }
 
     /**
      * Check if the current user can edit records
      */
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
-        return \App\Services\AcademyContextService::isSuperAdmin();
+        return AcademyContextService::isSuperAdmin();
     }
 
     /**
      * Check if the current user can delete records
      */
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
-        return \App\Services\AcademyContextService::isSuperAdmin();
+        return AcademyContextService::isSuperAdmin();
     }
 
     /**
      * Check if the current user can view records
      */
-    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canView(Model $record): bool
     {
-        return \App\Services\AcademyContextService::isSuperAdmin();
+        return AcademyContextService::isSuperAdmin();
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات التصنيف')
+        return $schema
+            ->components([
+                Section::make('معلومات التصنيف')
                     ->schema([
-                        Forms\Components\TextInput::make('name')
+                        TextInput::make('name')
                             ->label('اسم التصنيف')
                             ->required()
                             ->maxLength(255)
                             ->placeholder('مثال: تصميم شعارات'),
 
-                        Forms\Components\Textarea::make('description')
+                        Textarea::make('description')
                             ->label('وصف التصنيف')
                             ->maxLength(500)
                             ->placeholder('وصف مختصر للخدمات المقدمة في هذا التصنيف'),
 
-                        Forms\Components\ColorPicker::make('color')
+                        ColorPicker::make('color')
                             ->label('لون التصنيف')
                             ->default('#3B82F6'),
 
-                        Forms\Components\Select::make('icon')
+                        Select::make('icon')
                             ->label('أيقونة التصنيف')
                             ->searchable()
                             ->options([
@@ -225,7 +244,7 @@ class BusinessServiceCategoryResource extends Resource
                             ])
                             ->helperText('اختر أيقونة تناسب نوع الخدمة'),
 
-                        Forms\Components\Toggle::make('is_active')
+                        Toggle::make('is_active')
                             ->label('نشط')
                             ->default(true)
                             ->helperText('إظهار هذا التصنيف في الواجهة الأمامية'),
@@ -238,23 +257,23 @@ class BusinessServiceCategoryResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('اسم التصنيف')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('description')
+                TextColumn::make('description')
                     ->label('الوصف')
                     ->limit(50)
                     ->searchable(),
 
-                Tables\Columns\ColorColumn::make('color')
+                ColorColumn::make('color')
                     ->label('اللون'),
 
-                Tables\Columns\IconColumn::make('icon')
+                IconColumn::make('icon')
                     ->label('الأيقونة'),
 
-                Tables\Columns\IconColumn::make('is_active')
+                IconColumn::make('is_active')
                     ->label('الحالة')
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
@@ -262,38 +281,38 @@ class BusinessServiceCategoryResource extends Resource
                     ->trueColor('success')
                     ->falseColor('danger'),
 
-                Tables\Columns\TextColumn::make('serviceRequests_count')
+                TextColumn::make('serviceRequests_count')
                     ->label('عدد الطلبات')
                     ->counts('serviceRequests')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('portfolioItems_count')
+                TextColumn::make('portfolioItems_count')
                     ->label('عدد أعمال البورتفوليو')
                     ->counts('portfolioItems')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('is_active')
+                TernaryFilter::make('is_active')
                     ->label('الحالة')
                     ->placeholder('جميع التصنيفات')
                     ->trueLabel('التصنيفات النشطة فقط')
                     ->falseLabel('التصنيفات غير النشطة فقط'),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make()
+            ->recordActions([
+                EditAction::make()
                     ->label('تعديل'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف'),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد'),
                 ]),
             ])
@@ -310,9 +329,9 @@ class BusinessServiceCategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListBusinessServiceCategories::route('/'),
-            'create' => Pages\CreateBusinessServiceCategory::route('/create'),
-            'edit' => Pages\EditBusinessServiceCategory::route('/{record}/edit'),
+            'index' => ListBusinessServiceCategories::route('/'),
+            'create' => CreateBusinessServiceCategory::route('/create'),
+            'edit' => EditBusinessServiceCategory::route('/{record}/edit'),
         ];
     }
 }

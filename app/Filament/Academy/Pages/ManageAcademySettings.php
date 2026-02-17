@@ -2,18 +2,18 @@
 
 namespace App\Filament\Academy\Pages;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
 use App\Enums\UserType;
 use App\Models\Academy;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 
@@ -21,11 +21,11 @@ class ManageAcademySettings extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static string $view = 'filament.academy.pages.manage-academy-settings';
+    protected string $view = 'filament.academy.pages.manage-academy-settings';
 
-    protected static ?string $navigationGroup = 'الإعدادات';
+    protected static string | \UnitEnum | null $navigationGroup = 'الإعدادات';
 
     protected static ?string $navigationLabel = 'إعدادات الأكاديمية';
 
@@ -43,10 +43,10 @@ class ManageAcademySettings extends Page implements HasForms
         $this->form->fill($academy->toArray());
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Section::make('معلومات القراءة فقط')
                     ->description('هذه المعلومات لا يمكن تعديلها')
                     ->collapsed()

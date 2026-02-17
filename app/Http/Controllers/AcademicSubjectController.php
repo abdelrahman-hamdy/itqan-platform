@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
@@ -57,7 +58,7 @@ class AcademicSubjectController extends Controller
 
             return $this->success($subjects, 'تم جلب قائمة المواد الأكاديمية بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب قائمة المواد');
         }
     }
@@ -88,7 +89,7 @@ class AcademicSubjectController extends Controller
 
             return $this->success($subject, 'تم جلب تفاصيل المادة بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب تفاصيل المادة');
         }
     }
@@ -147,7 +148,7 @@ class AcademicSubjectController extends Controller
 
             return $this->created($subject, 'تم إنشاء المادة الأكاديمية بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
 
             return $this->serverError('حدث خطأ أثناء إنشاء المادة');
@@ -203,7 +204,7 @@ class AcademicSubjectController extends Controller
 
             return $this->success($subject, 'تم تحديث بيانات المادة بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء تحديث بيانات المادة');
         }
     }
@@ -234,7 +235,7 @@ class AcademicSubjectController extends Controller
 
             return $this->success(null, 'تم حذف المادة بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء حذف المادة');
         }
     }
@@ -254,7 +255,7 @@ class AcademicSubjectController extends Controller
 
             return $this->success($subjects, 'تم جلب قائمة المواد بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب المواد');
         }
     }
@@ -274,7 +275,7 @@ class AcademicSubjectController extends Controller
 
             return $this->success($subjects, 'تم جلب قائمة المواد بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب المواد');
         }
     }

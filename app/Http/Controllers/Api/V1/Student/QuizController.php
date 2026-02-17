@@ -2,6 +2,15 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Models\QuranIndividualCircle;
+use App\Models\AcademicIndividualLesson;
+use App\Models\InteractiveCourseEnrollment;
+use App\Models\QuranCircle;
+use App\Models\AcademicSubscription;
+use App\Models\InteractiveCourse;
+use App\Models\RecordedCourse;
+use App\Models\User;
+use App\Models\StudentProfile;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Quiz;
@@ -615,8 +624,8 @@ class QuizController extends Controller
     /**
      * Get assignable IDs for the student (circles, courses, lessons they belong to).
      *
-     * @param  \App\Models\User  $user  The authenticated user (for subscriptions)
-     * @param  \App\Models\StudentProfile  $studentProfile  The student profile (for enrollments)
+     * @param User $user The authenticated user (for subscriptions)
+     * @param StudentProfile $studentProfile The student profile (for enrollments)
      */
     protected function getStudentAssignableIds($user, $studentProfile): array
     {
@@ -643,7 +652,7 @@ class QuizController extends Controller
 
         // Get Quran individual circles for the student
         // quran_individual_circles.student_id references User.id
-        $quranIndividualCircleIds = \App\Models\QuranIndividualCircle::where('student_id', $user->id)
+        $quranIndividualCircleIds = QuranIndividualCircle::where('student_id', $user->id)
             ->pluck('id')
             ->toArray();
         if (! empty($quranIndividualCircleIds)) {
@@ -652,7 +661,7 @@ class QuizController extends Controller
 
         // Get academic individual lessons for the student
         // academic_individual_lessons.student_id references User.id
-        $academicLessonIds = \App\Models\AcademicIndividualLesson::where('student_id', $user->id)
+        $academicLessonIds = AcademicIndividualLesson::where('student_id', $user->id)
             ->pluck('id')
             ->toArray();
         if (! empty($academicLessonIds)) {
@@ -661,7 +670,7 @@ class QuizController extends Controller
 
         // Get interactive courses the student is enrolled in
         // interactive_course_enrollments.student_id references StudentProfile.id
-        $interactiveCourseIds = \App\Models\InteractiveCourseEnrollment::where('student_id', $studentProfile->id)
+        $interactiveCourseIds = InteractiveCourseEnrollment::where('student_id', $studentProfile->id)
             ->pluck('course_id')
             ->toArray();
         if (! empty($interactiveCourseIds)) {
@@ -739,12 +748,12 @@ class QuizController extends Controller
         $type = get_class($assignable);
 
         return match ($type) {
-            \App\Models\QuranCircle::class => $assignable->name ?? 'حلقة قرآن',
-            \App\Models\QuranIndividualCircle::class => $assignable->name ?? 'حلقة فردية',
-            \App\Models\AcademicIndividualLesson::class => $assignable->subscription?->teacher?->user?->name ?? 'درس أكاديمي',
-            \App\Models\AcademicSubscription::class => ($assignable->subject_name ?? 'درس خاص').' - '.($assignable->teacher?->user?->name ?? ''),
-            \App\Models\InteractiveCourse::class => $assignable->name ?? 'دورة تفاعلية',
-            \App\Models\RecordedCourse::class => $assignable->name ?? 'دورة مسجلة',
+            QuranCircle::class => $assignable->name ?? 'حلقة قرآن',
+            QuranIndividualCircle::class => $assignable->name ?? 'حلقة فردية',
+            AcademicIndividualLesson::class => $assignable->subscription?->teacher?->user?->name ?? 'درس أكاديمي',
+            AcademicSubscription::class => ($assignable->subject_name ?? 'درس خاص').' - '.($assignable->teacher?->user?->name ?? ''),
+            InteractiveCourse::class => $assignable->name ?? 'دورة تفاعلية',
+            RecordedCourse::class => $assignable->name ?? 'دورة مسجلة',
             default => 'غير محدد',
         };
     }

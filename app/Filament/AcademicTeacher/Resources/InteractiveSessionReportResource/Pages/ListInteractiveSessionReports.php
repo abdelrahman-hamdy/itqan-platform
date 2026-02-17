@@ -2,6 +2,7 @@
 
 namespace App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages;
 
+use Filament\Actions\CreateAction;
 use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -13,7 +14,7 @@ class ListInteractiveSessionReports extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
+            CreateAction::make()
                 ->label('إضافة تقرير'),
         ];
     }

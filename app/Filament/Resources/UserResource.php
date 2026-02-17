@@ -2,13 +2,38 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use App\Rules\PasswordRules;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\BulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use App\Filament\Resources\UserResource\Pages\ListUsers;
 use App\Enums\UserType;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -29,9 +54,9 @@ class UserResource extends BaseResource
 
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-users';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-users';
 
-    protected static ?string $navigationGroup = 'إدارة المستخدمين';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المستخدمين';
 
     protected static ?string $navigationLabel = 'جميع المستخدمين';
 
@@ -63,34 +88,34 @@ class UserResource extends BaseResource
         return $query;
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('المعلومات الأساسية')
+        return $schema
+            ->components([
+                Section::make('المعلومات الأساسية')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('first_name')
+                                TextInput::make('first_name')
                                     ->label('الاسم الأول')
                                     ->required()
                                     ->maxLength(255),
-                                Forms\Components\TextInput::make('last_name')
+                                TextInput::make('last_name')
                                     ->label('الاسم الأخير')
                                     ->required()
                                     ->maxLength(255),
-                                Forms\Components\TextInput::make('email')
+                                TextInput::make('email')
                                     ->label('البريد الإلكتروني')
                                     ->email()
                                     ->required()
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(255),
-                                Forms\Components\TextInput::make('phone')
+                                TextInput::make('phone')
                                     ->label('رقم الهاتف')
                                     ->tel()
                                     ->maxLength(20),
                             ]),
-                        Forms\Components\FileUpload::make('avatar')
+                        FileUpload::make('avatar')
                             ->label('الصورة الشخصية')
                             ->image()
                             ->imageEditor()
@@ -99,9 +124,9 @@ class UserResource extends BaseResource
                             ->maxSize(2048),
                     ]),
 
-                Forms\Components\Section::make('معلومات الحساب')
+                Section::make('معلومات الحساب')
                     ->schema([
-                        Forms\Components\Select::make('user_type')
+                        Select::make('user_type')
                             ->label('نوع المستخدم')
                             ->options([
                                 'student' => 'طالب',
@@ -114,37 +139,37 @@ class UserResource extends BaseResource
                             ])
                             ->required()
                             ->searchable(),
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\Toggle::make('active_status')
+                                Toggle::make('active_status')
                                     ->label('حساب نشط')
                                     ->helperText('يجب أن يكون هذا الخيار مفعلاً للسماح للمستخدم بتسجيل الدخول')
                                     ->default(true),
-                                Forms\Components\Select::make('academy_id')
+                                Select::make('academy_id')
                                     ->label('الأكاديمية')
                                     ->relationship('academy', 'name')
                                     ->searchable()
                                     ->preload()
                                     ->required(),
                             ]),
-                        Forms\Components\TextInput::make('password')
+                        TextInput::make('password')
                             ->label('كلمة المرور')
                             ->password()
                             ->dehydrated(fn ($state) => filled($state))
                             ->required(fn (string $context): bool => $context === 'create')
                             ->minLength(6)
                             ->maxLength(255)
-                            ->rules([\App\Rules\PasswordRules::rule()])
-                            ->helperText(\App\Rules\PasswordRules::description()),
+                            ->rules([PasswordRules::rule()])
+                            ->helperText(PasswordRules::description()),
                     ]),
 
-                Forms\Components\Section::make('معلومات إضافية')
+                Section::make('معلومات إضافية')
                     ->schema([
-                        Forms\Components\Textarea::make('bio')
+                        Textarea::make('bio')
                             ->label('نبذة شخصية')
                             ->maxLength(1000)
                             ->rows(3),
-                        Forms\Components\DateTimePicker::make('last_login_at')
+                        DateTimePicker::make('last_login_at')
                             ->label('آخر تسجيل دخول')
                             ->disabled(),
                     ]),
@@ -155,26 +180,27 @@ class UserResource extends BaseResource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('avatar')
+                ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
                     ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->name ?? 'N/A').'&background=4169E1&color=fff'),
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('الاسم')
                     ->searchable(['first_name', 'last_name'])
                     ->sortable()
                     ->weight(FontWeight::Bold),
-                Tables\Columns\TextColumn::make('email')
+                TextColumn::make('email')
                     ->label('البريد الإلكتروني')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
-                Tables\Columns\TextColumn::make('phone')
+                TextColumn::make('phone')
                     ->label('رقم الهاتف')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
-                Tables\Columns\BadgeColumn::make('user_type')
+                TextColumn::make('user_type')
+                    ->badge()
                     ->label('نوع المستخدم')
                     ->colors([
                         'primary' => 'student',
@@ -197,26 +223,26 @@ class UserResource extends BaseResource
                             default => $state,
                         };
                     }),
-                Tables\Columns\IconColumn::make('active_status')
+                IconColumn::make('active_status')
                     ->label('نشط')
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
                     ->falseColor('danger'),
-                static::getAcademyColumn(),                Tables\Columns\TextColumn::make('last_login_at')
+                static::getAcademyColumn(),                TextColumn::make('last_login_at')
                     ->label(__('filament.last_login_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label(__('filament.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('user_type')
+                SelectFilter::make('user_type')
                     ->label('نوع المستخدم')
                     ->options([
                         'student' => 'طالب',
@@ -227,61 +253,61 @@ class UserResource extends BaseResource
                         'admin' => 'مدير',
                         'super_admin' => 'مدير عام',
                     ]),
-                Tables\Filters\TernaryFilter::make('active_status')
+                TernaryFilter::make('active_status')
                     ->label('حساب نشط'),
-                Tables\Filters\TrashedFilter::make()
+                TrashedFilter::make()
                     ->label(__('filament.filters.trashed')),
             ])
-            ->actions([
+            ->recordActions([
                 // Redirect to profile resource based on user type
-                Tables\Actions\Action::make('view_profile')
+                Action::make('view_profile')
                     ->label('عرض الملف')
                     ->icon('heroicon-o-eye')
                     ->url(fn (User $record) => static::getProfileUrl($record, 'view'))
                     ->visible(fn (User $record) => static::hasProfile($record)),
-                Tables\Actions\Action::make('edit_profile')
+                Action::make('edit_profile')
                     ->label('تعديل الملف')
                     ->icon('heroicon-o-pencil')
                     ->url(fn (User $record) => static::getProfileUrl($record, 'edit'))
                     ->visible(fn (User $record) => static::hasProfile($record)),
-                Tables\Actions\Action::make('activate')
+                Action::make('activate')
                     ->label('تفعيل')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
                     ->action(fn (User $record) => $record->update(['active_status' => true]))
                     ->visible(fn (User $record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]) && ! $record->active_status),
-                Tables\Actions\Action::make('deactivate')
+                Action::make('deactivate')
                     ->label('إيقاف')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
                     ->action(fn (User $record) => $record->update(['active_status' => false]))
                     ->visible(fn (User $record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]) && $record->active_status),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make()
+                DeleteAction::make(),
+                RestoreAction::make()
                     ->label(__('filament.actions.restore')),
-                Tables\Actions\ForceDeleteAction::make()
+                ForceDeleteAction::make()
                     ->label(__('filament.actions.force_delete')),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\BulkAction::make('activate')
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    BulkAction::make('activate')
                         ->label('تفعيل المحددين')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
                         ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]))->each(fn ($record) => $record->update(['active_status' => true]))),
-                    Tables\Actions\BulkAction::make('deactivate')
+                    BulkAction::make('deactivate')
                         ->label('إيقاف المحددين')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->requiresConfirmation()
                         ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]))->each(fn ($record) => $record->update(['active_status' => false]))),
-                    Tables\Actions\RestoreBulkAction::make()
+                    RestoreBulkAction::make()
                         ->label(__('filament.actions.restore_selected')),
-                    Tables\Actions\ForceDeleteBulkAction::make()
+                    ForceDeleteBulkAction::make()
                         ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
@@ -297,7 +323,7 @@ class UserResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListUsers::route('/'),
+            'index' => ListUsers::route('/'),
         ];
     }
 
@@ -323,19 +349,19 @@ class UserResource extends BaseResource
     {
         return match ($record->user_type) {
             'quran_teacher' => $record->quranTeacherProfile
-                ? \App\Filament\Resources\QuranTeacherProfileResource::getUrl($action, ['record' => $record->quranTeacherProfile])
+                ? QuranTeacherProfileResource::getUrl($action, ['record' => $record->quranTeacherProfile])
                 : null,
             'academic_teacher' => $record->academicTeacherProfile
-                ? \App\Filament\Resources\AcademicTeacherProfileResource::getUrl($action, ['record' => $record->academicTeacherProfile])
+                ? AcademicTeacherProfileResource::getUrl($action, ['record' => $record->academicTeacherProfile])
                 : null,
             'student' => $record->studentProfile
-                ? \App\Filament\Resources\StudentProfileResource::getUrl($action, ['record' => $record->studentProfile])
+                ? StudentProfileResource::getUrl($action, ['record' => $record->studentProfile])
                 : null,
             'parent' => $record->parentProfile
-                ? \App\Filament\Resources\ParentProfileResource::getUrl($action, ['record' => $record->parentProfile])
+                ? ParentProfileResource::getUrl($action, ['record' => $record->parentProfile])
                 : null,
             'supervisor' => $record->supervisorProfile
-                ? \App\Filament\Resources\SupervisorProfileResource::getUrl($action, ['record' => $record->supervisorProfile])
+                ? SupervisorProfileResource::getUrl($action, ['record' => $record->supervisorProfile])
                 : null,
             default => null,
         };

@@ -2,6 +2,8 @@
 
 namespace App\Services\Payment\Gateways;
 
+use InvalidArgumentException;
+use Exception;
 use App\Contracts\Payment\SupportsWebhooks;
 use App\Enums\PaymentFlowType;
 use App\Services\Payment\DTOs\PaymentIntent;
@@ -167,7 +169,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
             // Validate required fields
             $customerEmail = $intent->customerEmail;
             if (empty($customerEmail)) {
-                throw new \InvalidArgumentException('Customer email is required for EasyKash payments');
+                throw new InvalidArgumentException('Customer email is required for EasyKash payments');
             }
 
             $customerName = $intent->customerName;
@@ -295,7 +297,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                     'academy_id' => $intent->academyId,
                 ],
             );
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             Log::error('EasyKash invalid argument', [
                 'message' => $e->getMessage(),
                 'payment_id' => $intent->paymentId ?? null,
@@ -306,7 +308,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 errorMessage: $e->getMessage(),
                 errorMessageAr: __('payments.easykash.invalid_data', ['error' => $e->getMessage()]),
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('EasyKash exception', [
                 'message' => $e->getMessage(),
                 'intent' => $intent->toSafeLogArray(),
@@ -381,7 +383,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 transactionId: $txn['easykashRef'] ?? $transactionId,
                 rawResponse: $txn,
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('EasyKash verification exception', [
                 'transaction_id' => $transactionId,
                 'message' => $e->getMessage(),

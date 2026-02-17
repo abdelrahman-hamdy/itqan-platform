@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Enums\HomeworkSubmissionStatus;
 use App\Enums\SessionStatus;
 use App\Models\InteractiveCourse;
@@ -148,7 +149,7 @@ class StudentInteractiveCourseService
      * @param  int  $sessionId  The session ID
      * @param  string  $content  The homework content
      * @param  UploadedFile|null  $file  Optional file attachment
-     * @return array{success: bool, message: string, submission?: \App\Models\InteractiveCourseHomeworkSubmission}
+     * @return array{success: bool, message: string, submission?: InteractiveCourseHomeworkSubmission}
      */
     public function submitHomework(
         User $user,
@@ -237,7 +238,7 @@ class StudentInteractiveCourseService
                     'submission' => $submission,
                 ];
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to submit homework', [
                 'user_id' => $user->id,
                 'session_id' => $sessionId,
@@ -301,7 +302,7 @@ class StudentInteractiveCourseService
                 'success' => true,
                 'message' => 'تم إضافة التقييم بنجاح',
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to add session feedback', [
                 'user_id' => $user->id,
                 'session_id' => $sessionId,

@@ -2,14 +2,22 @@
 
 namespace App\Filament\Teacher\Resources\QuranCircleResource\RelationManagers;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Actions\CreateAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 use App\Enums\SessionStatus;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -23,11 +31,11 @@ class SessionsRelationManager extends RelationManager
 
     protected static ?string $pluralModelLabel = 'الجلسات';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\DateTimePicker::make('scheduled_at')
+        return $schema
+            ->components([
+                DateTimePicker::make('scheduled_at')
                     ->label('موعد الجلسة')
                     ->required()
                     ->native(false)
@@ -35,13 +43,13 @@ class SessionsRelationManager extends RelationManager
                     ->timezone(AcademyContextService::getTimezone())
                     ->displayFormat('Y-m-d H:i'),
 
-                Forms\Components\Select::make('status')
+                Select::make('status')
                     ->label('الحالة')
                     ->options(SessionStatus::options())
                     ->default(SessionStatus::SCHEDULED->value)
                     ->required(),
 
-                Forms\Components\Textarea::make('notes')
+                Textarea::make('notes')
                     ->label('ملاحظات')
                     ->rows(3),
             ]);
@@ -58,7 +66,8 @@ class SessionsRelationManager extends RelationManager
                     ->timezone(fn ($record) => $record->academy->timezone->value)
                     ->sortable(),
 
-                BadgeColumn::make('status')
+                TextColumn::make('status')
+                    ->badge()
                     ->label('الحالة')
                     ->colors(SessionStatus::colorOptions())
                     ->formatStateUsing(function ($state): string {
@@ -88,15 +97,15 @@ class SessionsRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->label('إضافة جلسة'),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make()
+            ->recordActions([
+                EditAction::make()
                     ->label('تعديل'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف'),
-                Tables\Actions\Action::make('start_session')
+                Action::make('start_session')
                     ->label('بدء الجلسة')
                     ->icon('heroicon-o-play')
                     ->color('success')
@@ -109,7 +118,7 @@ class SessionsRelationManager extends RelationManager
                             'started_at' => now(),
                         ]);
                     }),
-                Tables\Actions\Action::make('complete_session')
+                Action::make('complete_session')
                     ->label('إنهاء الجلسة')
                     ->icon('heroicon-o-check')
                     ->color('success')
@@ -123,9 +132,9 @@ class SessionsRelationManager extends RelationManager
                         ]);
                     }),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('scheduled_at', 'desc');

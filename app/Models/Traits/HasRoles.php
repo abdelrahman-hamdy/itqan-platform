@@ -2,6 +2,7 @@
 
 namespace App\Models\Traits;
 
+use App\Models\Academy;
 use App\Enums\UserType;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -91,13 +92,13 @@ trait HasRoles
      * Get the academy this admin is assigned to manage
      * Returns null if user is not an admin or not assigned
      */
-    public function getAdministratedAcademy(): ?\App\Models\Academy
+    public function getAdministratedAcademy(): ?Academy
     {
         if ($this->user_type !== UserType::ADMIN->value) {
             return null;
         }
 
-        return \App\Models\Academy::where('admin_id', $this->id)->first();
+        return Academy::where('admin_id', $this->id)->first();
     }
 
     /**

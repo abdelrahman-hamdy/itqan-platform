@@ -2,13 +2,19 @@
 
 namespace App\Filament\Resources\HomeworkSubmissionsResource\Pages;
 
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Actions\Action;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use App\Enums\HomeworkSubmissionStatus;
 use App\Filament\Resources\HomeworkSubmissionsResource;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -109,34 +115,34 @@ class ListHomeworkSubmissions extends ListRecords
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('homework.title')
+                TextColumn::make('homework.title')
                     ->label('الواجب')
                     ->searchable()
                     ->limit(30),
 
-                Tables\Columns\TextColumn::make('session.session_code')
+                TextColumn::make('session.session_code')
                     ->label('الجلسة')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('submitted_at')
+                TextColumn::make('submitted_at')
                     ->label('تاريخ التسليم')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('submission_status')
+                TextColumn::make('submission_status')
                     ->label('الحالة')
                     ->badge(),
 
-                Tables\Columns\TextColumn::make('score')
+                TextColumn::make('score')
                     ->label('الدرجة')
                     ->formatStateUsing(fn ($state, $record) => $state !== null ? "{$state}/{$record->max_score}" : '-'),
 
-                Tables\Columns\IconColumn::make('is_late')
+                IconColumn::make('is_late')
                     ->label('متأخر')
                     ->boolean()
                     ->trueIcon('heroicon-o-clock')
@@ -145,12 +151,12 @@ class ListHomeworkSubmissions extends ListRecords
                     ->falseColor('success'),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('submission_status')
+                SelectFilter::make('submission_status')
                     ->label('الحالة')
                     ->options(HomeworkSubmissionStatus::class),
             ])
-            ->actions([
-                Tables\Actions\Action::make('view')
+            ->recordActions([
+                Action::make('view')
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
                     ->color('info')
@@ -159,13 +165,13 @@ class ListHomeworkSubmissions extends ListRecords
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('إغلاق'),
 
-                Tables\Actions\Action::make('grade')
+                Action::make('grade')
                     ->label('تصحيح')
                     ->icon('heroicon-o-pencil-square')
                     ->color('success')
                     ->visible(fn ($record) => in_array($record->submission_status?->value ?? $record->submission_status, ['submitted', 'late']))
-                    ->form([
-                        Forms\Components\TextInput::make('score')
+                    ->schema([
+                        TextInput::make('score')
                             ->label('الدرجة (من 10)')
                             ->numeric()
                             ->required()
@@ -174,7 +180,7 @@ class ListHomeworkSubmissions extends ListRecords
                             ->step(0.5)
                             ->default(10)
                             ->suffix('/ 10'),
-                        Forms\Components\Textarea::make('teacher_feedback')
+                        Textarea::make('teacher_feedback')
                             ->label('ملاحظات المعلم')
                             ->rows(3),
                     ])
@@ -192,37 +198,37 @@ class ListHomeworkSubmissions extends ListRecords
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('homework.session.course.title')
+                TextColumn::make('homework.session.course.title')
                     ->label('الدورة')
                     ->searchable()
                     ->limit(30),
 
-                Tables\Columns\TextColumn::make('homework.title')
+                TextColumn::make('homework.title')
                     ->label('الواجب')
                     ->searchable()
                     ->limit(30),
 
-                Tables\Columns\TextColumn::make('submitted_at')
+                TextColumn::make('submitted_at')
                     ->label('تاريخ التسليم')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('submission_status')
+                TextColumn::make('submission_status')
                     ->label('الحالة')
                     ->badge(),
 
-                Tables\Columns\TextColumn::make('score')
+                TextColumn::make('score')
                     ->label('الدرجة')
                     ->formatStateUsing(fn ($state, $record) => $state !== null
                         ? "{$state}/".($record->max_score ?? 10)
                         : '-'),
 
-                Tables\Columns\IconColumn::make('is_late')
+                IconColumn::make('is_late')
                     ->label('متأخر')
                     ->boolean()
                     ->trueIcon('heroicon-o-clock')
@@ -231,12 +237,12 @@ class ListHomeworkSubmissions extends ListRecords
                     ->falseColor('success'),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('submission_status')
+                SelectFilter::make('submission_status')
                     ->label('الحالة')
                     ->options(HomeworkSubmissionStatus::class),
             ])
-            ->actions([
-                Tables\Actions\Action::make('view')
+            ->recordActions([
+                Action::make('view')
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
                     ->color('info')
@@ -245,13 +251,13 @@ class ListHomeworkSubmissions extends ListRecords
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('إغلاق'),
 
-                Tables\Actions\Action::make('grade')
+                Action::make('grade')
                     ->label('تصحيح')
                     ->icon('heroicon-o-pencil-square')
                     ->color('success')
                     ->visible(fn ($record) => in_array($record->submission_status?->value ?? $record->submission_status, ['submitted', 'late']))
-                    ->form([
-                        Forms\Components\TextInput::make('score')
+                    ->schema([
+                        TextInput::make('score')
                             ->label('الدرجة (من 10)')
                             ->numeric()
                             ->required()
@@ -260,7 +266,7 @@ class ListHomeworkSubmissions extends ListRecords
                             ->step(0.5)
                             ->default(10)
                             ->suffix('/ 10'),
-                        Forms\Components\Textarea::make('teacher_feedback')
+                        Textarea::make('teacher_feedback')
                             ->label('ملاحظات المعلم')
                             ->rows(3),
                     ])
@@ -279,7 +285,7 @@ class ListHomeworkSubmissions extends ListRecords
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('submission_type')
+                TextColumn::make('submission_type')
                     ->label('النوع')
                     ->badge()
                     ->formatStateUsing(fn ($state) => match ($state) {
@@ -293,7 +299,7 @@ class ListHomeworkSubmissions extends ListRecords
                         default => 'gray',
                     }),
 
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->searchable()
                     ->sortable()
@@ -308,12 +314,12 @@ class ListHomeworkSubmissions extends ListRecords
                         return $record->student?->name ?? '-';
                     }),
 
-                Tables\Columns\TextColumn::make('submitted_at')
+                TextColumn::make('submitted_at')
                     ->label('تاريخ التسليم')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('submission_status')
+                TextColumn::make('submission_status')
                     ->label('الحالة')
                     ->badge()
                     ->formatStateUsing(function ($state) {
@@ -331,13 +337,13 @@ class ListHomeworkSubmissions extends ListRecords
                         return HomeworkSubmissionStatus::tryFrom($state)?->getColor() ?? 'gray';
                     }),
 
-                Tables\Columns\TextColumn::make('score')
+                TextColumn::make('score')
                     ->label('الدرجة')
                     ->formatStateUsing(fn ($state, $record) => $state !== null
                         ? "{$state}/".($record->max_score ?? 10)
                         : '-'),
 
-                Tables\Columns\IconColumn::make('is_late')
+                IconColumn::make('is_late')
                     ->label('متأخر')
                     ->boolean()
                     ->trueIcon('heroicon-o-clock')
@@ -346,7 +352,7 @@ class ListHomeworkSubmissions extends ListRecords
                     ->falseColor('success'),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('submission_type')
+                SelectFilter::make('submission_type')
                     ->label('النوع')
                     ->options([
                         'academic' => 'أكاديمي',
@@ -354,7 +360,7 @@ class ListHomeworkSubmissions extends ListRecords
                     ])
                     ->attribute('submission_type'),
 
-                Tables\Filters\SelectFilter::make('submission_status')
+                SelectFilter::make('submission_status')
                     ->label('الحالة')
                     ->options([
                         'submitted' => 'تم التسليم',
@@ -363,8 +369,8 @@ class ListHomeworkSubmissions extends ListRecords
                     ])
                     ->attribute('submission_status'),
             ])
-            ->actions([
-                Tables\Actions\Action::make('view')
+            ->recordActions([
+                Action::make('view')
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
                     ->color('info')
@@ -383,7 +389,7 @@ class ListHomeworkSubmissions extends ListRecords
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('إغلاق'),
 
-                Tables\Actions\Action::make('grade')
+                Action::make('grade')
                     ->label('تصحيح')
                     ->icon('heroicon-o-pencil-square')
                     ->color('success')
@@ -395,8 +401,8 @@ class ListHomeworkSubmissions extends ListRecords
 
                         return in_array($status, ['submitted', 'late']);
                     })
-                    ->form([
-                        Forms\Components\TextInput::make('score')
+                    ->schema([
+                        TextInput::make('score')
                             ->label('الدرجة (من 10)')
                             ->numeric()
                             ->required()
@@ -405,7 +411,7 @@ class ListHomeworkSubmissions extends ListRecords
                             ->step(0.5)
                             ->default(10)
                             ->suffix('/ 10'),
-                        Forms\Components\Textarea::make('teacher_feedback')
+                        Textarea::make('teacher_feedback')
                             ->label('ملاحظات المعلم')
                             ->rows(3),
                     ])

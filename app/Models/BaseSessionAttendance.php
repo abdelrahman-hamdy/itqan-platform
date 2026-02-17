@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use App\Enums\AttendanceStatus;
 use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
@@ -22,21 +23,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $session_id
  * @property int $student_id
  * @property string $attendance_status
- * @property \Carbon\Carbon|null $join_time
- * @property \Carbon\Carbon|null $leave_time
- * @property \Carbon\Carbon|null $auto_join_time
- * @property \Carbon\Carbon|null $auto_leave_time
+ * @property Carbon|null $join_time
+ * @property Carbon|null $leave_time
+ * @property Carbon|null $auto_join_time
+ * @property Carbon|null $auto_leave_time
  * @property int|null $auto_duration_minutes
  * @property bool $auto_tracked
  * @property bool $manually_overridden
  * @property int|null $overridden_by
- * @property \Carbon\Carbon|null $overridden_at
+ * @property Carbon|null $overridden_at
  * @property string|null $override_reason
  * @property array|null $meeting_events
  * @property float|null $participation_score
  * @property string|null $notes
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 abstract class BaseSessionAttendance extends Model
 {

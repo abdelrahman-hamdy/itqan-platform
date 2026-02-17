@@ -2,6 +2,29 @@
 
 namespace App\Filament\Academy\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use App\Models\User;
+use App\Models\AcademicTeacherProfile;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Utilities\Get;
+use App\Models\AcademicSubject;
+use App\Models\AcademicGradeLevel;
+use App\Models\AcademicPackage;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\DatePicker;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Infolists\Components\TextEntry;
+use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages\ListAcademicSubscriptions;
+use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages\CreateAcademicSubscription;
+use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages\ViewAcademicSubscription;
+use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages\EditAcademicSubscription;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\UserType;
@@ -9,34 +32,32 @@ use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages;
 use App\Filament\Shared\Resources\BaseSubscriptionResource;
 use App\Models\AcademicSubscription;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 
 class AcademicSubscriptionResource extends BaseSubscriptionResource
 {
     protected static ?string $model = AcademicSubscription::class;
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
     protected static ?string $navigationLabel = 'الاشتراكات الأكاديمية';
     protected static ?string $modelLabel = 'اشتراك أكاديمي';
     protected static ?string $pluralModelLabel = 'الاشتراكات الأكاديمية';
-    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
     protected static ?int $navigationSort = 2;
 
-    protected static function getBasicInfoFormSection(): Forms\Components\Section
+    protected static function getBasicInfoFormSection(): Section
     {
-        return Forms\Components\Section::make('معلومات الاشتراك الأساسية')
+        return Section::make('معلومات الاشتراك الأساسية')
             ->schema([
-                Forms\Components\Select::make('student_id')
+                Select::make('student_id')
                     ->label('الطالب')
                     ->searchable()
                     ->preload(false)
                     ->getSearchResultsUsing(function (string $search) {
                         $academyId = auth()->user()->academy_id;
 
-                        return \App\Models\User::where('user_type', UserType::STUDENT->value)
+                        return User::where('user_type', UserType::STUDENT->value)
                             ->with('studentProfile')
                             ->whereHas('studentProfile.gradeLevel', fn ($q) => $q->where('academy_id', $academyId))
                             ->where(function ($q) use ($search) {
@@ -53,13 +74,13 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                             });
                     })
                     ->getOptionLabelUsing(function ($value) {
-                        $user = \App\Models\User::with('studentProfile')->find($value);
+                        $user = User::with('studentProfile')->find($value);
 
                         return $user?->studentProfile?->display_name ?? $user?->name ?? 'طالب #'.$value;
                     })
                     ->required(),
 
-                Forms\Components\Select::make('teacher_id')
+                Select::make('teacher_id')
                     ->label('المعلم')
                     ->required()
                     ->searchable()
@@ -67,7 +88,7 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                     ->getSearchResultsUsing(function (string $search) {
                         $academyId = auth()->user()->academy_id;
 
-                        return \App\Models\AcademicTeacherProfile::with('user')
+                        return AcademicTeacherProfile::with('user')
                             ->where('academy_id', $academyId)
                             ->where(function ($q) use ($search) {
                                 $q->whereHas('user', function ($uq) use ($search) {
@@ -82,24 +103,24 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                             ]);
                     })
                     ->getOptionLabelUsing(function ($value) {
-                        $teacher = \App\Models\AcademicTeacherProfile::with('user')->find($value);
+                        $teacher = AcademicTeacherProfile::with('user')->find($value);
 
                         return $teacher?->user?->name ?? $teacher?->full_name ?? 'معلم #'.$value;
                     })
                     ->live()
-                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                    ->afterStateUpdated(function ($state, Set $set) {
                         $set('subject_id', null);
                         $set('grade_level_id', null);
                     }),
 
-                Forms\Components\Select::make('subject_id')
+                Select::make('subject_id')
                     ->label('المادة الدراسية')
                     ->required()
                     ->searchable()
-                    ->options(function (Forms\Get $get) {
+                    ->options(function (Get $get) {
                         $teacherId = $get('teacher_id');
                         if ($teacherId) {
-                            $teacher = \App\Models\AcademicTeacherProfile::find($teacherId);
+                            $teacher = AcademicTeacherProfile::find($teacherId);
                             if ($teacher) {
                                 return $teacher->subjects->pluck('name', 'id')->toArray();
                             }
@@ -107,27 +128,27 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
 
                         $academyId = auth()->user()->academy_id;
 
-                        return \App\Models\AcademicSubject::where('academy_id', $academyId)
+                        return AcademicSubject::where('academy_id', $academyId)
                             ->pluck('name', 'id');
                     })
                     ->getOptionLabelUsing(function ($value, $record) {
                         if ($record?->subject_name) {
                             return $record->subject_name;
                         }
-                        $subject = \App\Models\AcademicSubject::find($value);
+                        $subject = AcademicSubject::find($value);
 
                         return $subject?->name ?? 'مادة #'.$value;
                     })
                     ->live(),
 
-                Forms\Components\Select::make('grade_level_id')
+                Select::make('grade_level_id')
                     ->label('المرحلة الدراسية')
                     ->required()
                     ->searchable()
-                    ->options(function (Forms\Get $get) {
+                    ->options(function (Get $get) {
                         $teacherId = $get('teacher_id');
                         if ($teacherId) {
-                            $teacher = \App\Models\AcademicTeacherProfile::find($teacherId);
+                            $teacher = AcademicTeacherProfile::find($teacherId);
                             if ($teacher) {
                                 return $teacher->gradeLevels->pluck('name', 'id')->toArray();
                             }
@@ -135,27 +156,27 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
 
                         $academyId = auth()->user()->academy_id;
 
-                        return \App\Models\AcademicGradeLevel::where('academy_id', $academyId)
+                        return AcademicGradeLevel::where('academy_id', $academyId)
                             ->pluck('name', 'id');
                     })
                     ->getOptionLabelUsing(function ($value, $record) {
                         if ($record?->grade_level_name) {
                             return $record->grade_level_name;
                         }
-                        $gradeLevel = \App\Models\AcademicGradeLevel::find($value);
+                        $gradeLevel = AcademicGradeLevel::find($value);
 
                         return $gradeLevel?->name ?? 'مرحلة #'.$value;
                     })
                     ->live(),
 
-                Forms\Components\Select::make('academic_package_id')
+                Select::make('academic_package_id')
                     ->label('الباقة الأكاديمية')
                     ->searchable()
                     ->preload(false)
                     ->getSearchResultsUsing(function (string $search) {
                         $academyId = auth()->user()->academy_id;
 
-                        return \App\Models\AcademicPackage::where('academy_id', $academyId)
+                        return AcademicPackage::where('academy_id', $academyId)
                             ->where('name', 'like', "%{$search}%")
                             ->limit(50)
                             ->pluck('name', 'id');
@@ -164,23 +185,23 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                         if ($record?->package_name_ar) {
                             return $record->package_name_ar;
                         }
-                        $package = \App\Models\AcademicPackage::find($value);
+                        $package = AcademicPackage::find($value);
 
                         return $package?->name ?? 'باقة #'.$value;
                     }),
             ])->columns(2);
     }
 
-    protected static function getPricingFormSection(): Forms\Components\Section
+    protected static function getPricingFormSection(): Section
     {
-        return Forms\Components\Section::make('تفاصيل الاشتراك')
+        return Section::make('تفاصيل الاشتراك')
             ->schema([
-                Forms\Components\TextInput::make('subscription_code')
+                TextInput::make('subscription_code')
                     ->label('رمز الاشتراك')
                     ->disabled()
                     ->dehydrated(false),
 
-                Forms\Components\Select::make('billing_cycle')
+                Select::make('billing_cycle')
                     ->label('دورة الفوترة')
                     ->options([
                         'monthly' => 'شهرياً',
@@ -190,7 +211,7 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                     ->default('monthly')
                     ->required(),
 
-                Forms\Components\TextInput::make('final_monthly_amount')
+                TextInput::make('final_monthly_amount')
                     ->label('سعر الاشتراك الشهري')
                     ->numeric()
                     ->suffix(getCurrencySymbol())
@@ -198,11 +219,11 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
             ])->columns(3);
     }
 
-    protected static function getSchedulingSection(): Forms\Components\Section
+    protected static function getSchedulingSection(): Section
     {
-        return Forms\Components\Section::make('جدولة الجلسات')
+        return Section::make('جدولة الجلسات')
             ->schema([
-                Forms\Components\TextInput::make('sessions_per_week')
+                TextInput::make('sessions_per_week')
                     ->label('عدد الجلسات أسبوعياً')
                     ->numeric()
                     ->default(2)
@@ -210,7 +231,7 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                     ->maxValue(7)
                     ->helperText('عدد الجلسات المجدولة كل أسبوع'),
 
-                Forms\Components\TextInput::make('sessions_per_month')
+                TextInput::make('sessions_per_month')
                     ->label('عدد الجلسات شهرياً')
                     ->numeric()
                     ->disabled()
@@ -218,35 +239,35 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
             ])->columns(2);
     }
 
-    protected static function getDatesPaymentSection(): Forms\Components\Section
+    protected static function getDatesPaymentSection(): Section
     {
-        return Forms\Components\Section::make('التواريخ والدفع')
+        return Section::make('التواريخ والدفع')
             ->schema([
-                Forms\Components\Grid::make(3)
+                Grid::make(3)
                     ->schema([
-                        Forms\Components\DatePicker::make('start_date')
+                        DatePicker::make('start_date')
                             ->label('تاريخ البدء')
                             ->default(now())
                             ->required()
                             ->live(),
 
-                        Forms\Components\DatePicker::make('end_date')
+                        DatePicker::make('end_date')
                             ->label('تاريخ الانتهاء')
                             ->after('start_date')
                             ->helperText('يمكنك تعديل التاريخ يدوياً أو استخدام زر "تمديد الاشتراك" لإضافة أيام محددة'),
 
-                        Forms\Components\DatePicker::make('next_billing_date')
+                        DatePicker::make('next_billing_date')
                             ->label('تاريخ الفوترة التالي'),
                     ]),
 
-                Forms\Components\Select::make('status')
+                Select::make('status')
                     ->label('حالة الاشتراك')
                     ->options(SessionSubscriptionStatus::options())
                     ->default(SessionSubscriptionStatus::ACTIVE->value)
                     ->required()
                     ->helperText('ملاحظة: تمديد الاشتراك يقوم تلقائياً بتفعيله'),
 
-                Forms\Components\Select::make('payment_status')
+                Select::make('payment_status')
                     ->label('حالة الدفع')
                     ->options(SubscriptionPaymentStatus::options())
                     ->default(SubscriptionPaymentStatus::PENDING->value)
@@ -256,10 +277,10 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
             ])->columns(3);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 static::getBasicInfoFormSection(),
                 static::getPricingFormSection(),
                 static::getSessionSettingsSection(),
@@ -273,30 +294,30 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     protected static function getTypeSpecificTableColumns(): array
     {
         return [
-            Tables\Columns\TextColumn::make('teacher.user.name')
+            TextColumn::make('teacher.user.name')
                 ->label('المعلم')
                 ->searchable()
                 ->sortable(),
 
-            Tables\Columns\TextColumn::make('subject.name')
+            TextColumn::make('subject.name')
                 ->label('المادة')
                 ->searchable(),
 
-            Tables\Columns\TextColumn::make('gradeLevel.name')
+            TextColumn::make('gradeLevel.name')
                 ->label('المرحلة')
                 ->searchable(),
 
-            Tables\Columns\TextColumn::make('final_monthly_amount')
+            TextColumn::make('final_monthly_amount')
                 ->label('المبلغ الشهري')
                 ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                 ->sortable(),
 
-            Tables\Columns\TextColumn::make('start_date')
+            TextColumn::make('start_date')
                 ->label('تاريخ البدء')
                 ->date()
                 ->sortable(),
 
-            Tables\Columns\TextColumn::make('next_billing_date')
+            TextColumn::make('next_billing_date')
                 ->label('الفوترة التالية')
                 ->date()
                 ->sortable(),
@@ -306,13 +327,13 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     protected static function getTypeSpecificFilters(): array
     {
         return [
-            Tables\Filters\SelectFilter::make('subject_id')
+            SelectFilter::make('subject_id')
                 ->label(__('filament.course.subject'))
                 ->relationship('subject', 'name')
                 ->searchable()
                 ->preload(),
 
-            Tables\Filters\SelectFilter::make('teacher_id')
+            SelectFilter::make('teacher_id')
                 ->label(__('filament.teacher'))
                 ->relationship('teacher.user', 'name')
                 ->searchable()
@@ -331,8 +352,8 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
+            ViewAction::make(),
+            EditAction::make(),
             static::getCancelPendingAction(),
             static::getPauseAction(),
             static::getResumeAction(),
@@ -342,7 +363,7 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
+            BulkActionGroup::make([
                 static::getBulkCancelPendingAction(),
             ]),
         ];
@@ -356,15 +377,15 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     protected static function getTypeSpecificInfolistSections(): array
     {
         return [
-            Infolists\Components\Section::make('معلومات الاشتراك')
+            Section::make('معلومات الاشتراك')
                 ->schema([
-                    Infolists\Components\Grid::make(2)
+                    Grid::make(2)
                         ->schema([
-                            Infolists\Components\TextEntry::make('subscription_code')->label('رمز الاشتراك'),
-                            Infolists\Components\TextEntry::make('package.name')->label('اسم الباقة'),
-                            Infolists\Components\TextEntry::make('student.name')->label('الطالب'),
-                            Infolists\Components\TextEntry::make('teacher.user.name')->label('المعلم'),
-                            Infolists\Components\TextEntry::make('status')
+                            TextEntry::make('subscription_code')->label('رمز الاشتراك'),
+                            TextEntry::make('package.name')->label('اسم الباقة'),
+                            TextEntry::make('student.name')->label('الطالب'),
+                            TextEntry::make('teacher.user.name')->label('المعلم'),
+                            TextEntry::make('status')
                                 ->label('حالة الاشتراك')
                                 ->badge()
                                 ->formatStateUsing(function (mixed $state): string {
@@ -403,7 +424,7 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                                         default => 'gray',
                                     };
                                 }),
-                            Infolists\Components\TextEntry::make('payment_status')
+                            TextEntry::make('payment_status')
                                 ->label('حالة الدفع')
                                 ->badge()
                                 ->formatStateUsing(function (mixed $state): string {
@@ -443,10 +464,10 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
         ];
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema(static::getTypeSpecificInfolistSections());
+        return $schema
+            ->components(static::getTypeSpecificInfolistSections());
     }
 
     public static function getRelations(): array
@@ -457,10 +478,10 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAcademicSubscriptions::route('/'),
-            'create' => Pages\CreateAcademicSubscription::route('/create'),
-            'view' => Pages\ViewAcademicSubscription::route('/{record}'),
-            'edit' => Pages\EditAcademicSubscription::route('/{record}/edit'),
+            'index' => ListAcademicSubscriptions::route('/'),
+            'create' => CreateAcademicSubscription::route('/create'),
+            'view' => ViewAcademicSubscription::route('/{record}'),
+            'edit' => EditAcademicSubscription::route('/{record}/edit'),
         ];
     }
 

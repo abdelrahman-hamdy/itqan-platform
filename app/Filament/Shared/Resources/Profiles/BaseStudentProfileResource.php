@@ -2,13 +2,23 @@
 
 namespace App\Filament\Shared\Resources\Profiles;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use App\Enums\Gender;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\BaseResource;
 use App\Helpers\CountryList;
 use App\Models\StudentProfile;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -29,11 +39,11 @@ abstract class BaseStudentProfileResource extends BaseResource
 
     protected static ?string $tenantOwnershipRelationshipName = 'gradeLevel';
 
-    protected static ?string $navigationIcon = 'heroicon-o-users';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-users';
 
     protected static ?string $navigationLabel = 'الطلاب';
 
-    protected static ?string $navigationGroup = 'إدارة المستخدمين';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المستخدمين';
 
     protected static ?string $modelLabel = 'طالب';
 
@@ -79,10 +89,10 @@ abstract class BaseStudentProfileResource extends BaseResource
     // Shared Form Implementation
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 static::getPersonalInfoSection(),
                 static::getAcademicInfoSection(),
                 static::getContactInfoSection(),
@@ -90,21 +100,21 @@ abstract class BaseStudentProfileResource extends BaseResource
             ]);
     }
 
-    protected static function getPersonalInfoSection(): Forms\Components\Section
+    protected static function getPersonalInfoSection(): Section
     {
-        return Forms\Components\Section::make('المعلومات الشخصية')
+        return Section::make('المعلومات الشخصية')
             ->schema([
-                Forms\Components\Grid::make(2)
+                Grid::make(2)
                     ->schema([
-                        Forms\Components\TextInput::make('first_name')
+                        TextInput::make('first_name')
                             ->label('الاسم الأول')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('last_name')
+                        TextInput::make('last_name')
                             ->label('الاسم الأخير')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('email')
+                        TextInput::make('email')
                             ->label('البريد الإلكتروني')
                             ->email()
                             ->required()
@@ -114,69 +124,69 @@ abstract class BaseStudentProfileResource extends BaseResource
                         static::getPhoneInput('phone', 'رقم الهاتف')
                             ->helperText('رقم الهاتف مع رمز الدولة'),
                     ]),
-                Forms\Components\FileUpload::make('avatar')
+                FileUpload::make('avatar')
                     ->label('الصورة الشخصية')
                     ->image()
                     ->imageEditor()
                     ->circleCropper()
                     ->directory(static::getTenantDirectoryLazy('avatars/students'))
                     ->maxSize(2048),
-                Forms\Components\Grid::make(3)
+                Grid::make(3)
                     ->schema([
-                        Forms\Components\DatePicker::make('birth_date')
+                        DatePicker::make('birth_date')
                             ->label('تاريخ الميلاد'),
-                        Forms\Components\Select::make('nationality')
+                        Select::make('nationality')
                             ->label('الجنسية')
                             ->options(CountryList::toSelectArray())
                             ->searchable()
                             ->preload()
                             ->required(),
-                        Forms\Components\Select::make('gender')
+                        Select::make('gender')
                             ->label('الجنس')
                             ->options(Gender::options()),
                     ]),
             ]);
     }
 
-    protected static function getAcademicInfoSection(): Forms\Components\Section
+    protected static function getAcademicInfoSection(): Section
     {
-        return Forms\Components\Section::make('المعلومات الأكاديمية')
+        return Section::make('المعلومات الأكاديمية')
             ->schema([
-                Forms\Components\Grid::make(2)
+                Grid::make(2)
                     ->schema([
-                        Forms\Components\Select::make('grade_level_id')
+                        Select::make('grade_level_id')
                             ->label('المرحلة الدراسية')
                             ->options(fn () => static::getGradeLevelOptions())
                             ->required()
                             ->searchable()
                             ->preload(),
-                        Forms\Components\DatePicker::make('enrollment_date')
+                        DatePicker::make('enrollment_date')
                             ->label('تاريخ التسجيل')
                             ->default(now()),
                     ]),
             ]);
     }
 
-    protected static function getContactInfoSection(): Forms\Components\Section
+    protected static function getContactInfoSection(): Section
     {
-        return Forms\Components\Section::make('معلومات الاتصال والطوارئ')
+        return Section::make('معلومات الاتصال والطوارئ')
             ->schema([
-                Forms\Components\Textarea::make('address')
+                Textarea::make('address')
                     ->label('العنوان')
                     ->maxLength(500)
                     ->rows(3)
                     ->columnSpanFull(),
-                Forms\Components\Grid::make(2)
+                Grid::make(2)
                     ->schema([
                         static::getPhoneInput('parent_phone', 'رقم هاتف ولي الأمر')
                             ->required()
                             ->helperText('رقم الهاتف مع رمز الدولة (مطلوب للربط مع حساب ولي الأمر)'),
-                        Forms\Components\TextInput::make('emergency_contact')
+                        TextInput::make('emergency_contact')
                             ->label('رقم الطوارئ (اختياري)')
                             ->tel()
                             ->maxLength(20),
                     ]),
-                Forms\Components\Select::make('parent_id')
+                Select::make('parent_id')
                     ->label('ولي الأمر')
                     ->relationship('parent', 'first_name')
                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->full_name.' ('.$record->parent_code.')')
@@ -187,11 +197,11 @@ abstract class BaseStudentProfileResource extends BaseResource
             ]);
     }
 
-    protected static function getNotesSection(): Forms\Components\Section
+    protected static function getNotesSection(): Section
     {
-        return Forms\Components\Section::make('ملاحظات إضافية')
+        return Section::make('ملاحظات إضافية')
             ->schema([
-                Forms\Components\Textarea::make('notes')
+                Textarea::make('notes')
                     ->label('ملاحظات')
                     ->maxLength(1000)
                     ->rows(3)
@@ -208,8 +218,8 @@ abstract class BaseStudentProfileResource extends BaseResource
         return $table
             ->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions())
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions())
             ->defaultSort('created_at', 'desc');
     }
 
@@ -259,17 +269,17 @@ abstract class BaseStudentProfileResource extends BaseResource
     protected static function getTableFilters(): array
     {
         return [
-            Tables\Filters\SelectFilter::make('grade_level_id')
+            SelectFilter::make('grade_level_id')
                 ->label('المرحلة الدراسية')
                 ->relationship('gradeLevel', 'name')
                 ->searchable()
                 ->preload(),
 
-            Tables\Filters\SelectFilter::make('gender')
+            SelectFilter::make('gender')
                 ->label('الجنس')
                 ->options(Gender::options()),
 
-            Tables\Filters\TrashedFilter::make()
+            TrashedFilter::make()
                 ->label(__('filament.filters.trashed')),
         ];
     }
@@ -293,8 +303,8 @@ abstract class BaseStudentProfileResource extends BaseResource
     protected static function getPhoneInput(
         string $name = 'phone',
         string $label = 'رقم الهاتف'
-    ): \Ysfkaya\FilamentPhoneInput\Forms\PhoneInput {
-        return \Ysfkaya\FilamentPhoneInput\Forms\PhoneInput::make($name)
+    ): PhoneInput {
+        return PhoneInput::make($name)
             ->label($label)
             ->defaultCountry('SA')
             ->initialCountry('sa')

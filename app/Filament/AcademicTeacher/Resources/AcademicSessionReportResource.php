@@ -2,12 +2,22 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use App\Models\User;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages\ListAcademicSessionReports;
+use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages\CreateAcademicSessionReport;
+use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages\ViewAcademicSessionReport;
+use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages\EditAcademicSessionReport;
 use App\Enums\UserType;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages;
 use App\Filament\Shared\Resources\BaseAcademicSessionReportResource;
 use App\Models\AcademicSessionReport;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -26,7 +36,7 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationGroup = 'التقارير والتقييمات';
+    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والتقييمات';
 
     protected static ?int $navigationSort = 1;
 
@@ -51,7 +61,7 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     {
         return Section::make('معلومات الجلسة')
             ->schema([
-                Forms\Components\Select::make('session_id')
+                Select::make('session_id')
                     ->relationship('session', 'title', fn (Builder $query) => $query->whereHas('academicTeacher', fn ($q) => $q->where('user_id', Auth::id()))
                     )
                     ->label('الجلسة')
@@ -59,9 +69,9 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
                     ->searchable()
                     ->preload(),
 
-                Forms\Components\Select::make('student_id')
+                Select::make('student_id')
                     ->label('الطالب')
-                    ->options(fn () => \App\Models\User::query()
+                    ->options(fn () => User::query()
                         ->where('user_type', UserType::STUDENT->value)
                         ->whereNotNull('name')
                         ->pluck('name', 'id')
@@ -78,9 +88,9 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
-            Tables\Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
         ];
     }
@@ -91,8 +101,8 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
             ]),
         ];
     }
@@ -150,10 +160,10 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAcademicSessionReports::route('/'),
-            'create' => Pages\CreateAcademicSessionReport::route('/create'),
-            'view' => Pages\ViewAcademicSessionReport::route('/{record}'),
-            'edit' => Pages\EditAcademicSessionReport::route('/{record}/edit'),
+            'index' => ListAcademicSessionReports::route('/'),
+            'create' => CreateAcademicSessionReport::route('/create'),
+            'view' => ViewAcademicSessionReport::route('/{record}'),
+            'edit' => EditAcademicSessionReport::route('/{record}/edit'),
         ];
     }
 }

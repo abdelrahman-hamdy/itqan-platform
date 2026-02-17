@@ -2,6 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use Filament\Facades\Filament;
+use App\Filament\Resources\HomeworkSubmissionsResource;
+use App\Filament\AcademicTeacher\Pages\Dashboard;
+use App\Filament\Shared\Pages\UnifiedTeacherCalendar;
+use App\Filament\Pages\Auth\Login;
+use Filament\Navigation\MenuItem;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
 use Filament\Http\Middleware\Authenticate;
@@ -38,7 +44,7 @@ class AcademicTeacherPanelProvider extends PanelProvider
                 'gray' => Color::Gray,
             ])
             ->font('Tajawal') // Arabic font
-            ->favicon(fn () => getFavicon(\Filament\Facades\Filament::getTenant()))
+            ->favicon(fn () => getFavicon(Filament::getTenant()))
             ->brandName('لوحة المعلم الأكاديمي')
             ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'blue', 'panelType' => 'academic-teacher']))
             ->navigationGroups([
@@ -56,12 +62,12 @@ class AcademicTeacherPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/AcademicTeacher/Resources'), for: 'App\\Filament\\AcademicTeacher\\Resources')
             ->resources([
-                \App\Filament\Resources\HomeworkSubmissionsResource::class,
+                HomeworkSubmissionsResource::class,
             ])
             ->discoverPages(in: app_path('Filament/AcademicTeacher/Pages'), for: 'App\\Filament\\AcademicTeacher\\Pages')
             ->pages([
-                \App\Filament\AcademicTeacher\Pages\Dashboard::class,
-                \App\Filament\Shared\Pages\UnifiedTeacherCalendar::class,
+                Dashboard::class,
+                UnifiedTeacherCalendar::class,
             ])
             ->discoverWidgets(in: app_path('Filament/AcademicTeacher/Widgets'), for: 'App\\Filament\\AcademicTeacher\\Widgets')
             ->discoverWidgets(in: app_path('Filament/Shared/Widgets'), for: 'App\\Filament\\Shared\\Widgets')
@@ -86,9 +92,9 @@ class AcademicTeacherPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->sidebarCollapsibleOnDesktop()
-            ->login(\App\Filament\Pages\Auth\Login::class)
+            ->login(Login::class)
             ->userMenuItems([
-                'profile-page' => \Filament\Navigation\MenuItem::make()
+                'profile-page' => MenuItem::make()
                     ->label('الملف الشخصي العام')
                     ->url(fn (): string => auth()->user()->academicTeacherProfile && auth()->user()->academy
                         ? route('academic-teachers.show', [

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use App\Enums\SessionRequestStatus;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,17 +30,17 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string|null $initial_message
  * @property string|null $teacher_response
  * @property string|null $latest_message
- * @property \Carbon\Carbon|null $last_activity_at
+ * @property Carbon|null $last_activity_at
  * @property bool $trial_session_completed
- * @property \Carbon\Carbon|null $trial_session_date
+ * @property Carbon|null $trial_session_date
  * @property string|null $trial_session_feedback
- * @property \Carbon\Carbon|null $teacher_responded_at
- * @property \Carbon\Carbon|null $agreed_at
- * @property \Carbon\Carbon|null $payment_completed_at
- * @property \Carbon\Carbon|null $expires_at
+ * @property Carbon|null $teacher_responded_at
+ * @property Carbon|null $agreed_at
+ * @property Carbon|null $payment_completed_at
+ * @property Carbon|null $expires_at
  * @property int|null $created_subscription_id
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class SessionRequest extends Model
 {

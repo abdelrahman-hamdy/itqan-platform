@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -11,7 +12,6 @@ class ExchangeRateService
     private string $apiUrl = 'https://open.er-api.com/v6/latest/';
 
     private int $cacheDuration = 3600; // 1 hour in seconds
-
     /**
      * Get exchange rate from currency A to currency B.
      * Cached for 1 hour to stay within free API limits.
@@ -20,7 +20,7 @@ class ExchangeRateService
      * @param  string  $to  Target currency (e.g., 'EGP')
      * @return float Exchange rate
      *
-     * @throws \Exception If API fails and no fallback available
+     * @throws Exception If API fails and no fallback available
      */
     public function getRate(string $from, string $to): float
     {
@@ -52,13 +52,13 @@ class ExchangeRateService
             $response = Http::timeout(5)->get($this->apiUrl.$from);
 
             if (! $response->successful()) {
-                throw new \Exception("Exchange rate API returned status {$response->status()}");
+                throw new Exception("Exchange rate API returned status {$response->status()}");
             }
 
             $data = $response->json();
 
             if (! isset($data['rates'][$to])) {
-                throw new \Exception("Currency {$to} not found in API response");
+                throw new Exception("Currency {$to} not found in API response");
             }
 
             $rate = (float) $data['rates'][$to];
@@ -76,7 +76,7 @@ class ExchangeRateService
 
             return $rate;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('payments')->error('Exchange rate API failed', [
                 'from' => $from,
                 'to' => $to,
@@ -106,7 +106,7 @@ class ExchangeRateService
                 return 12.69; // Emergency fallback (update periodically)
             }
 
-            throw new \Exception("No fallback rate available for {$from} to {$to}");
+            throw new Exception("No fallback rate available for {$from} to {$to}");
         }
 
         // Convert FROM → SAR → TO using config rates
@@ -132,7 +132,7 @@ class ExchangeRateService
         foreach ($targetCurrencies as $target) {
             try {
                 $rates[$target] = $this->getRate($baseCurrency, $target);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $rates[$target] = null;
             }
         }

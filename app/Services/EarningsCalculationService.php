@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use Illuminate\Database\QueryException;
+use InvalidArgumentException;
+use Throwable;
 use App\Contracts\EarningsCalculationServiceInterface;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
@@ -97,7 +100,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
 
                 return $earning;
             });
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Log::error('Database error calculating session earnings', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -106,14 +109,14 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
             report($e);
 
             return null;
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             Log::error('Invalid data for earnings calculation', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
             ]);
 
             return null;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::critical('Unexpected error calculating session earnings', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -219,7 +222,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
             $amount = $teacher->session_price_individual;
 
             if ($amount === null || $amount <= 0) {
-                report(new \InvalidArgumentException(
+                report(new InvalidArgumentException(
                     "Invalid session_price_individual for Quran teacher {$teacher->id}: ".
                     var_export($amount, true)." (session: {$session->id})"
                 ));
@@ -239,7 +242,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
             $amount = $teacher->session_price_group;
 
             if ($amount === null || $amount <= 0) {
-                report(new \InvalidArgumentException(
+                report(new InvalidArgumentException(
                     "Invalid session_price_group for Quran teacher {$teacher->id}: ".
                     var_export($amount, true)." (session: {$session->id})"
                 ));
@@ -278,7 +281,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
         $amount = $teacher->session_price_individual;
 
         if ($amount === null || $amount <= 0) {
-            report(new \InvalidArgumentException(
+            report(new InvalidArgumentException(
                 "Invalid session_price_individual for Academic teacher {$teacher->id}: ".
                 var_export($amount, true)." (session: {$session->id})"
             ));
@@ -324,7 +327,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
         $totalSessions = $course->total_sessions;
 
         if ($fixedAmount === null || $fixedAmount <= 0) {
-            report(new \InvalidArgumentException(
+            report(new InvalidArgumentException(
                 "Invalid teacher_fixed_amount for course {$course->id}: ".
                 var_export($fixedAmount, true)
             ));
@@ -337,7 +340,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
         }
 
         if ($totalSessions === null || $totalSessions <= 0) {
-            report(new \InvalidArgumentException(
+            report(new InvalidArgumentException(
                 "Invalid total_sessions for course {$course->id}: ".
                 var_export($totalSessions, true)
             ));
@@ -352,7 +355,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
         $perSessionAmount = $fixedAmount / $totalSessions;
 
         if ($perSessionAmount <= 0) {
-            report(new \InvalidArgumentException(
+            report(new InvalidArgumentException(
                 "Calculated per-session amount is invalid for course {$course->id}: {$perSessionAmount}"
             ));
             Log::error('Invalid calculated per-session amount', [
@@ -377,7 +380,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
         $enrolledCount = $course->enrollments()->count();
 
         if ($amountPerStudent === null || $amountPerStudent <= 0) {
-            report(new \InvalidArgumentException(
+            report(new InvalidArgumentException(
                 "Invalid amount_per_student for course {$course->id}: ".
                 var_export($amountPerStudent, true)
             ));
@@ -401,7 +404,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
         $totalAmount = $amountPerStudent * $enrolledCount;
 
         if ($totalAmount <= 0) {
-            report(new \InvalidArgumentException(
+            report(new InvalidArgumentException(
                 "Calculated per-student total is invalid for course {$course->id}: {$totalAmount}"
             ));
             Log::error('Invalid calculated per-student total', [
@@ -425,7 +428,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
         $amount = $course->amount_per_session;
 
         if ($amount === null || $amount <= 0) {
-            report(new \InvalidArgumentException(
+            report(new InvalidArgumentException(
                 "Invalid amount_per_session for course {$course->id}: ".
                 var_export($amount, true)
             ));

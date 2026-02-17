@@ -2,13 +2,26 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Forms\Components\DatePicker;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
+use Illuminate\Database\Eloquent\Model;
 use App\Constants\DefaultAcademy;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
 use App\Filament\Resources\BaseResource;
 use App\Models\Certificate;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,7 +37,7 @@ abstract class BaseCertificateResource extends BaseResource
 {
     protected static ?string $model = Certificate::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $navigationLabel = 'الشهادات الصادرة';
 
@@ -32,7 +45,7 @@ abstract class BaseCertificateResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'الشهادات';
 
-    protected static ?string $navigationGroup = 'الشهادات';
+    protected static string | \UnitEnum | null $navigationGroup = 'الشهادات';
 
     protected static ?int $navigationSort = 1;
 
@@ -52,41 +65,41 @@ abstract class BaseCertificateResource extends BaseResource
             });
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات الشهادة')
+        return $schema
+            ->components([
+                Section::make('معلومات الشهادة')
                     ->schema([
-                        Forms\Components\TextInput::make('certificate_number')
+                        TextInput::make('certificate_number')
                             ->label('رقم الشهادة')
                             ->disabled(),
 
-                        Forms\Components\Select::make('certificate_type')
+                        Select::make('certificate_type')
                             ->label('نوع الشهادة')
                             ->options(CertificateType::class)
                             ->disabled(),
 
-                        Forms\Components\Select::make('template_style')
+                        Select::make('template_style')
                             ->label('تصميم الشهادة')
                             ->options(CertificateTemplateStyle::class)
                             ->disabled(),
 
-                        Forms\Components\DateTimePicker::make('issued_at')
+                        DateTimePicker::make('issued_at')
                             ->label('تاريخ الإصدار')
                             ->disabled(),
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('معلومات الطالب')
+                Section::make('معلومات الطالب')
                     ->schema([
-                        Forms\Components\TextInput::make('student_name')
+                        TextInput::make('student_name')
                             ->label('الطالب')
                             ->formatStateUsing(fn ($record) => $record?->student?->name ?? '-')
                             ->disabled()
                             ->dehydrated(false),
 
-                        Forms\Components\TextInput::make('academy_name')
+                        TextInput::make('academy_name')
                             ->label('الأكاديمية')
                             ->formatStateUsing(fn ($record) => $record?->academy?->name ?? '-')
                             ->disabled()
@@ -94,9 +107,9 @@ abstract class BaseCertificateResource extends BaseResource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('نص الشهادة')
+                Section::make('نص الشهادة')
                     ->schema([
-                        Forms\Components\Textarea::make('certificate_text')
+                        Textarea::make('certificate_text')
                             ->label('نص الشهادة')
                             ->disabled()
                             ->rows(4)
@@ -111,7 +124,7 @@ abstract class BaseCertificateResource extends BaseResource
             ->columns([
                 static::getAcademyColumn(),
 
-                Tables\Columns\TextColumn::make('certificate_number')
+                TextColumn::make('certificate_number')
                     ->label('رقم الشهادة')
                     ->searchable()
                     ->copyable()
@@ -119,22 +132,22 @@ abstract class BaseCertificateResource extends BaseResource
                     ->fontFamily('mono')
                     ->size('sm'),
 
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->default('-')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('certificate_type')
+                TextColumn::make('certificate_type')
                     ->label('النوع')
                     ->badge()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('template_style')
+                TextColumn::make('template_style')
                     ->label('التصميم')
                     ->badge(),
 
-                Tables\Columns\IconColumn::make('is_manual')
+                IconColumn::make('is_manual')
                     ->label('يدوية')
                     ->boolean()
                     ->trueIcon('heroicon-o-pencil-square')
@@ -142,12 +155,12 @@ abstract class BaseCertificateResource extends BaseResource
                     ->trueColor('purple')
                     ->falseColor('blue'),
 
-                Tables\Columns\TextColumn::make('issued_at')
+                TextColumn::make('issued_at')
                     ->label('تاريخ الإصدار')
                     ->dateTime('d/m/Y h:i A')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('d/m/Y')
                     ->sortable()
@@ -155,25 +168,25 @@ abstract class BaseCertificateResource extends BaseResource
             ])
             ->defaultSort('issued_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('certificate_type')
+                SelectFilter::make('certificate_type')
                     ->label('نوع الشهادة')
                     ->options(CertificateType::class)
                     ->multiple(),
 
-                Tables\Filters\SelectFilter::make('template_style')
+                SelectFilter::make('template_style')
                     ->label('التصميم')
                     ->options(CertificateTemplateStyle::class)
                     ->multiple(),
 
-                Tables\Filters\Filter::make('is_manual')
+                Filter::make('is_manual')
                     ->label('يدوية فقط')
                     ->query(fn (Builder $query): Builder => $query->where('is_manual', true)),
 
-                Tables\Filters\Filter::make('issued_at')
-                    ->form([
-                        Forms\Components\DatePicker::make('issued_from')
+                Filter::make('issued_at')
+                    ->schema([
+                        DatePicker::make('issued_from')
                             ->label('من تاريخ'),
-                        Forms\Components\DatePicker::make('issued_until')
+                        DatePicker::make('issued_until')
                             ->label('إلى تاريخ'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -188,8 +201,8 @@ abstract class BaseCertificateResource extends BaseResource
                             );
                     }),
             ])
-            ->actions([
-                Tables\Actions\Action::make('view_pdf')
+            ->recordActions([
+                Action::make('view_pdf')
                     ->label('عرض PDF')
                     ->icon('heroicon-o-eye')
                     ->color('primary')
@@ -199,7 +212,7 @@ abstract class BaseCertificateResource extends BaseResource
                     ]))
                     ->openUrlInNewTab(),
 
-                Tables\Actions\Action::make('download')
+                Action::make('download')
                     ->label('تحميل')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
@@ -208,10 +221,10 @@ abstract class BaseCertificateResource extends BaseResource
                         'certificate' => $record->id,
                     ])),
 
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('التفاصيل'),
             ])
-            ->bulkActions([]);
+            ->toolbarActions([]);
     }
 
     public static function getRelations(): array
@@ -224,12 +237,12 @@ abstract class BaseCertificateResource extends BaseResource
         return false;
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return false;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return false;
     }

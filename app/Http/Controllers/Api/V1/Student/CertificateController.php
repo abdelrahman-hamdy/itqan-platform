@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Enums\CertificateTemplateStyle;
+use Exception;
+use App\Models\QuranCircle;
+use App\Models\InteractiveCourse;
+use App\Models\RecordedCourse;
 use App\Enums\CertificateType;
 use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
@@ -40,7 +45,7 @@ class CertificateController extends Controller
         return $this->success([
             'certificates' => $certificates->map(fn ($cert) => [
                 'id' => $cert->id,
-                'type' => $cert->certificate_type instanceof \App\Enums\CertificateType
+                'type' => $cert->certificate_type instanceof CertificateType
                     ? $cert->certificate_type->value
                     : $cert->certificate_type,
                 'title' => $this->getCertificateTitle($cert),
@@ -75,14 +80,14 @@ class CertificateController extends Controller
         return $this->success([
             'certificate' => [
                 'id' => $certificate->id,
-                'type' => $certificate->certificate_type instanceof \App\Enums\CertificateType
+                'type' => $certificate->certificate_type instanceof CertificateType
                     ? $certificate->certificate_type->value
                     : $certificate->certificate_type,
                 'title' => $this->getCertificateTitle($certificate),
                 'description' => $certificate->certificate_text,
                 'certificate_number' => $certificate->certificate_number,
                 'issued_at' => $certificate->issued_at?->toISOString(),
-                'template_style' => $certificate->template_style instanceof \App\Enums\CertificateTemplateStyle
+                'template_style' => $certificate->template_style instanceof CertificateTemplateStyle
                     ? $certificate->template_style->value
                     : $certificate->template_style,
                 'download_url' => route('api.v1.student.certificates.download', ['id' => $certificate->id]),
@@ -176,7 +181,7 @@ class CertificateController extends Controller
                 400,
                 'INVALID_TYPE'
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Certificate request failed', [
                 'user_id' => $user->id,
                 'type' => $type,
@@ -308,13 +313,13 @@ class CertificateController extends Controller
         $certificateable = $certificate->certificateable;
 
         if ($certificateable) {
-            if ($certificateable instanceof \App\Models\QuranCircle) {
+            if ($certificateable instanceof QuranCircle) {
                 return __('شهادة إتمام حلقة :name', ['name' => $certificateable->name]);
             }
-            if ($certificateable instanceof \App\Models\InteractiveCourse) {
+            if ($certificateable instanceof InteractiveCourse) {
                 return __('شهادة إتمام دورة :title', ['title' => $certificateable->title]);
             }
-            if ($certificateable instanceof \App\Models\RecordedCourse) {
+            if ($certificateable instanceof RecordedCourse) {
                 return __('شهادة إتمام دورة :title', ['title' => $certificateable->title]);
             }
         }

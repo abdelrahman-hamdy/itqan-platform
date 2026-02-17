@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\ParentProfileResource\Pages;
 
+use Exception;
+use Log;
 use App\Enums\UserType;
 use App\Filament\Resources\ParentProfileResource;
 use App\Models\User;
@@ -29,7 +31,7 @@ class CreateParentProfile extends CreateRecord
 
         // If no academy selected, throw error
         if (! $academyId) {
-            throw new \Exception('Please select an academy before creating a parent profile.');
+            throw new Exception('Please select an academy before creating a parent profile.');
         }
 
         // Set academy_id for the parent profile
@@ -76,9 +78,9 @@ class CreateParentProfile extends CreateRecord
                 ->title('تم إنشاء حساب ولي الأمر بنجاح')
                 ->body('تم إرسال رسالة دعوة إلى البريد الإلكتروني لولي الأمر لتعيين كلمة المرور.')
                 ->send();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Log error but don't fail the parent creation
-            \Log::error('Failed to create user account for parent', [
+            Log::error('Failed to create user account for parent', [
                 'parent_id' => $parentProfile->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),

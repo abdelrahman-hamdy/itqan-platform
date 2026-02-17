@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Enums\UserType;
 use App\Models\QuranSession;
 use App\Models\User;
@@ -99,7 +100,7 @@ class TestDataChannelCommand extends Command
             $this->line('Current state commands count: '.count($state['relevant_commands']));
 
             return 0;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error("Error: {$e->getMessage()}");
 
             return 1;

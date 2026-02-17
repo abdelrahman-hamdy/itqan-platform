@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use App\Enums\SessionSubscriptionStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,7 +26,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $circle_id
  * @property int $student_id
  * @property int|null $subscription_id
- * @property \Carbon\Carbon|null $enrolled_at
+ * @property Carbon|null $enrolled_at
  * @property string $status
  * @property int $attendance_count
  * @property int $missed_sessions
@@ -34,11 +35,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $progress_notes
  * @property float|null $parent_rating
  * @property float|null $student_rating
- * @property \Carbon\Carbon|null $completion_date
+ * @property Carbon|null $completion_date
  * @property bool $certificate_issued
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property \Carbon\Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 class QuranCircleEnrollment extends Model
 {

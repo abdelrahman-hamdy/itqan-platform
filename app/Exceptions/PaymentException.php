@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use Throwable;
 use Exception;
 
 /**
@@ -34,7 +35,7 @@ class PaymentException extends Exception
         string $errorCode = 'PAYMENT_ERROR',
         array $context = [],
         int $code = 0,
-        ?\Throwable $previous = null
+        ?Throwable $previous = null
     ) {
         parent::__construct($message, $code, $previous);
         $this->errorCode = $errorCode;

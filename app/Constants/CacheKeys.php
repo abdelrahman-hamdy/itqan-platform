@@ -2,6 +2,8 @@
 
 namespace App\Constants;
 
+use Cache;
+
 /**
  * Centralized cache key constants for consistent caching across the application.
  * Provides helper methods for generating dynamic cache keys.
@@ -80,7 +82,7 @@ final class CacheKeys
      */
     public static function forgetAttendance(int|string $sessionId, int|string $userId): void
     {
-        \Cache::forget(self::attendanceStatus($sessionId, $userId));
-        \Cache::forget(self::meetingAttendance($sessionId, $userId));
+        Cache::forget(self::attendanceStatus($sessionId, $userId));
+        Cache::forget(self::meetingAttendance($sessionId, $userId));
     }
 }

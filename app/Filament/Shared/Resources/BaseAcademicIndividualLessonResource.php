@@ -2,10 +2,13 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Schemas\Components\Section;
+use Illuminate\Database\Eloquent\Model;
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Repeater;
 use App\Models\AcademicIndividualLesson;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -22,7 +25,7 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
 {
     protected static ?string $model = AcademicIndividualLesson::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $modelLabel = 'درس فردي';
 
@@ -61,12 +64,12 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
         return true;
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return true;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return false;
     }
@@ -75,7 +78,7 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
     // Shared Form Definition
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         $schema = [];
 
@@ -91,7 +94,7 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
         // Add additional sections from child classes
         $schema = array_merge($schema, static::getAdditionalFormSections());
 
-        return $form->schema($schema);
+        return $form->components($schema);
     }
 
     /**
@@ -101,14 +104,14 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
     {
         return Section::make('إعدادات الجلسات')
             ->schema([
-                Forms\Components\TextInput::make('total_sessions')
+                TextInput::make('total_sessions')
                     ->label('عدد الجلسات الكلي')
                     ->numeric()
                     ->default(1)
                     ->minValue(1)
                     ->required(),
 
-                Forms\Components\TextInput::make('default_duration_minutes')
+                TextInput::make('default_duration_minutes')
                     ->label('مدة الجلسة (بالدقائق)')
                     ->numeric()
                     ->default(60)
@@ -126,10 +129,10 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
     {
         return Section::make('أهداف التعلم والمواد')
             ->schema([
-                Forms\Components\Repeater::make('learning_objectives')
+                Repeater::make('learning_objectives')
                     ->label('أهداف التعلم')
                     ->schema([
-                        Forms\Components\TextInput::make('objective')
+                        TextInput::make('objective')
                             ->label('الهدف')
                             ->required(),
                     ])
@@ -158,8 +161,8 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions())
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions())
             ->emptyStateHeading('لا توجد دروس فردية')
             ->emptyStateDescription('لم يتم إنشاء أي دروس فردية بعد.')
             ->emptyStateIcon('heroicon-o-academic-cap');

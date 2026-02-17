@@ -1,5 +1,8 @@
 <?php
 
+use App\Services\AcademyContextService;
+use Carbon\Carbon;
+
 if (! function_exists('getAcademyTimezone')) {
     /**
      * Get the current academy's timezone
@@ -17,8 +20,8 @@ if (! function_exists('getAcademyTimezone')) {
         }
 
         // Try to get from AcademyContextService
-        if (class_exists(\App\Services\AcademyContextService::class)) {
-            return \App\Services\AcademyContextService::getTimezone();
+        if (class_exists(AcademyContextService::class)) {
+            return AcademyContextService::getTimezone();
         }
 
         // Fallback to app timezone or UTC
@@ -30,7 +33,7 @@ if (! function_exists('nowInAcademyTimezone')) {
     /**
      * Get the current time in the academy's timezone
      */
-    function nowInAcademyTimezone(): \Carbon\Carbon
+    function nowInAcademyTimezone(): Carbon
     {
         return now()->setTimezone(getAcademyTimezone());
     }
@@ -40,15 +43,15 @@ if (! function_exists('toAcademyTimezone')) {
     /**
      * Convert a Carbon instance to the academy's timezone
      *
-     * @param  \Carbon\Carbon|\DateTime|string|null  $time
+     * @param Carbon|DateTime|string|null $time
      */
-    function toAcademyTimezone($time): ?\Carbon\Carbon
+    function toAcademyTimezone($time): ?Carbon
     {
         if (! $time) {
             return null;
         }
 
-        $carbon = $time instanceof \Carbon\Carbon ? $time->copy() : \Carbon\Carbon::parse($time);
+        $carbon = $time instanceof Carbon ? $time->copy() : Carbon::parse($time);
 
         return $carbon->setTimezone(getAcademyTimezone());
     }
@@ -58,7 +61,7 @@ if (! function_exists('formatTimeRemaining')) {
     /**
      * Format remaining time in a human-readable Arabic format
      *
-     * @param  \Carbon\Carbon|\DateTime|string  $targetTime  The target date/time
+     * @param Carbon|DateTime|string $targetTime The target date/time
      * @param  bool  $showSeconds  Whether to show seconds (default: false)
      * @return array Array containing formatted string and components
      */
@@ -77,7 +80,7 @@ if (! function_exists('formatTimeRemaining')) {
         }
 
         // Parse target time and ensure it's in academy timezone for comparison
-        $target = \Carbon\Carbon::parse($targetTime);
+        $target = Carbon::parse($targetTime);
         // Use academy timezone for "now" to ensure consistent comparisons
         $now = nowInAcademyTimezone();
         // Also convert target to academy timezone for display purposes
@@ -153,11 +156,11 @@ if (! function_exists('formatTimePassed')) {
     /**
      * Format time that has already passed in Arabic
      *
-     * @param  \Carbon\Carbon|\DateTime|string  $pastTime
+     * @param Carbon|DateTime|string $pastTime
      */
     function formatTimePassed($pastTime): string
     {
-        $past = \Carbon\Carbon::parse($pastTime);
+        $past = Carbon::parse($pastTime);
         // Use academy timezone for "now"
         $now = nowInAcademyTimezone();
 
@@ -193,7 +196,7 @@ if (! function_exists('getMeetingPreparationMessage')) {
     function getMeetingPreparationMessage($session, ?int $preparationMinutes = null): array
     {
         // Handle Carbon time directly
-        if ($session instanceof \Carbon\Carbon) {
+        if ($session instanceof Carbon) {
             $sessionTime = $session;
             $prepMinutes = $preparationMinutes ?? 10;
         }
@@ -256,7 +259,7 @@ if (! function_exists('formatTimeArabic')) {
      * Format time in Arabic 12-hour format
      * Automatically converts to academy timezone
      *
-     * @param  \Carbon\Carbon|\DateTime|string  $time
+     * @param Carbon|DateTime|string $time
      * @param  string|null  $timezone  Optional timezone override
      */
     function formatTimeArabic($time, ?string $timezone = null): string
@@ -266,7 +269,7 @@ if (! function_exists('formatTimeArabic')) {
         }
 
         // Parse the time and convert to appropriate timezone
-        $carbon = \Carbon\Carbon::parse($time);
+        $carbon = Carbon::parse($time);
         $tz = $timezone ?? getAcademyTimezone();
         $carbon = $carbon->setTimezone($tz);
 
@@ -291,7 +294,7 @@ if (! function_exists('formatDateArabic')) {
     /**
      * Format date in Arabic format with academy timezone
      *
-     * @param  \Carbon\Carbon|\DateTime|string  $date
+     * @param Carbon|DateTime|string $date
      * @param  string  $format  Date format (default: 'Y/m/d')
      * @param  string|null  $timezone  Optional timezone override
      */
@@ -301,7 +304,7 @@ if (! function_exists('formatDateArabic')) {
             return 'غير محدد';
         }
 
-        $carbon = \Carbon\Carbon::parse($date);
+        $carbon = Carbon::parse($date);
         $tz = $timezone ?? getAcademyTimezone();
         $carbon = $carbon->setTimezone($tz);
 
@@ -313,7 +316,7 @@ if (! function_exists('formatDateTimeArabic')) {
     /**
      * Format date and time together in Arabic format with academy timezone
      *
-     * @param  \Carbon\Carbon|\DateTime|string  $datetime
+     * @param Carbon|DateTime|string $datetime
      * @param  string|null  $timezone  Optional timezone override
      */
     function formatDateTimeArabic($datetime, ?string $timezone = null): string
@@ -322,7 +325,7 @@ if (! function_exists('formatDateTimeArabic')) {
             return 'غير محدد';
         }
 
-        $carbon = \Carbon\Carbon::parse($datetime);
+        $carbon = Carbon::parse($datetime);
         $tz = $timezone ?? getAcademyTimezone();
         $carbon = $carbon->setTimezone($tz);
 
@@ -338,15 +341,15 @@ if (! function_exists('toSaudiTime')) {
      * Convert datetime to Saudi Arabia timezone (Asia/Riyadh)
      * Alias for toAcademyTimezone() when academy uses Saudi timezone
      *
-     * @param  \Carbon\Carbon|\DateTime|string|null  $datetime
+     * @param Carbon|DateTime|string|null $datetime
      */
-    function toSaudiTime($datetime): ?\Carbon\Carbon
+    function toSaudiTime($datetime): ?Carbon
     {
         if (! $datetime) {
             return null;
         }
 
-        $carbon = $datetime instanceof \Carbon\Carbon ? $datetime : \Carbon\Carbon::parse($datetime);
+        $carbon = $datetime instanceof Carbon ? $datetime : Carbon::parse($datetime);
 
         return $carbon->copy()->setTimezone('Asia/Riyadh');
     }
@@ -356,7 +359,7 @@ if (! function_exists('formatSaudiTime')) {
     /**
      * Format datetime in Saudi timezone
      *
-     * @param  \Carbon\Carbon|\DateTime|string|null  $datetime
+     * @param Carbon|DateTime|string|null $datetime
      * @param  string  $format  Carbon format string (default: 'Y-m-d H:i:s')
      */
     function formatSaudiTime($datetime, string $format = 'Y-m-d H:i:s'): string
@@ -378,12 +381,12 @@ if (! function_exists('parseSaudiTime')) {
      *
      * @param  string  $timeString
      */
-    function parseSaudiTime(string $timeString): ?\Carbon\Carbon
+    function parseSaudiTime(string $timeString): ?Carbon
     {
         try {
             // Parse the string assuming Saudi timezone
-            return \Carbon\Carbon::parse($timeString, 'Asia/Riyadh');
-        } catch (\Exception $e) {
+            return Carbon::parse($timeString, 'Asia/Riyadh');
+        } catch (Exception $e) {
             return null;
         }
     }
@@ -394,10 +397,10 @@ if (! function_exists('parseAndConvertToUtc')) {
      * Parse datetime input in academy timezone and convert to UTC for storage
      * This is the correct way to handle form input before saving to database
      *
-     * @param  \Carbon\Carbon|\DateTime|string|null  $datetime
+     * @param Carbon|DateTime|string|null $datetime
      * @param  string|null  $fromTimezone  Optional timezone to parse from (defaults to academy timezone)
      */
-    function parseAndConvertToUtc($datetime, ?string $fromTimezone = null): ?\Carbon\Carbon
+    function parseAndConvertToUtc($datetime, ?string $fromTimezone = null): ?Carbon
     {
         if (! $datetime) {
             return null;
@@ -405,11 +408,11 @@ if (! function_exists('parseAndConvertToUtc')) {
 
         $timezone = $fromTimezone ?? getAcademyTimezone();
 
-        if ($datetime instanceof \Carbon\Carbon) {
+        if ($datetime instanceof Carbon) {
             return $datetime->copy()->setTimezone($timezone)->utc();
         }
 
         // Parse string in specified timezone, then convert to UTC
-        return \Carbon\Carbon::parse($datetime, $timezone)->utc();
+        return Carbon::parse($datetime, $timezone)->utc();
     }
 }

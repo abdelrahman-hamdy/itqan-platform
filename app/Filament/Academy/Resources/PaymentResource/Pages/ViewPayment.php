@@ -2,6 +2,7 @@
 
 namespace App\Filament\Academy\Resources\PaymentResource\Pages;
 
+use Filament\Actions\EditAction;
 use App\Filament\Academy\Resources\PaymentResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,7 +14,7 @@ class ViewPayment extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
         ];
     }

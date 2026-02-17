@@ -2,6 +2,20 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use App\Models\User;
+use Filament\Tables\Filters\Filter;
+use Filament\Forms\Components\DatePicker;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\IconEntry;
+use App\Filament\Supervisor\Resources\MonitoredCertificatesResource\Pages\ListMonitoredCertificates;
+use App\Filament\Supervisor\Resources\MonitoredCertificatesResource\Pages\ViewMonitoredCertificate;
 use App\Constants\DefaultAcademy;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
@@ -9,7 +23,6 @@ use App\Filament\Supervisor\Resources\MonitoredCertificatesResource\Pages;
 use App\Models\Certificate;
 use Filament\Forms;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,7 +37,7 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
 {
     protected static ?string $model = Certificate::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $navigationLabel = 'الشهادات';
 
@@ -32,7 +45,7 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'الشهادات';
 
-    protected static ?string $navigationGroup = 'التقارير';
+    protected static string | \UnitEnum | null $navigationGroup = 'التقارير';
 
     protected static ?int $navigationSort = 2;
 
@@ -64,7 +77,7 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('certificate_number')
+                TextColumn::make('certificate_number')
                     ->label('رقم الشهادة')
                     ->searchable()
                     ->copyable()
@@ -72,34 +85,34 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
                     ->fontFamily('mono')
                     ->size('sm'),
 
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->default('-')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('certificate_type')
+                TextColumn::make('certificate_type')
                     ->label('النوع')
                     ->badge()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('template_style')
+                TextColumn::make('template_style')
                     ->label('التصميم')
                     ->badge()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('teacher.name')
+                TextColumn::make('teacher.name')
                     ->label('المعلم')
                     ->default('-')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('issuedBy.name')
+                TextColumn::make('issuedBy.name')
                     ->label('أصدرها')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\IconColumn::make('is_manual')
+                IconColumn::make('is_manual')
                     ->label('يدوية')
                     ->boolean()
                     ->trueIcon('heroicon-o-pencil-square')
@@ -108,12 +121,12 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
                     ->falseColor('blue')
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('issued_at')
+                TextColumn::make('issued_at')
                     ->label('تاريخ الإصدار')
                     ->dateTime('d/m/Y')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('d/m/Y')
                     ->sortable()
@@ -121,17 +134,17 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
             ])
             ->defaultSort('issued_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('certificate_type')
+                SelectFilter::make('certificate_type')
                     ->label('نوع الشهادة')
                     ->options(CertificateType::class)
                     ->multiple(),
 
-                Tables\Filters\SelectFilter::make('template_style')
+                SelectFilter::make('template_style')
                     ->label('التصميم')
                     ->options(CertificateTemplateStyle::class)
                     ->multiple(),
 
-                Tables\Filters\SelectFilter::make('teacher_id')
+                SelectFilter::make('teacher_id')
                     ->label('المعلم')
                     ->options(function () {
                         $allTeacherIds = array_merge(
@@ -139,22 +152,22 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
                             static::getAssignedAcademicTeacherIds()
                         );
 
-                        return \App\Models\User::whereIn('id', $allTeacherIds)
+                        return User::whereIn('id', $allTeacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
                     })
                     ->searchable()
                     ->preload(),
 
-                Tables\Filters\Filter::make('is_manual')
+                Filter::make('is_manual')
                     ->label('يدوية فقط')
                     ->query(fn (Builder $query): Builder => $query->where('is_manual', true)),
 
-                Tables\Filters\Filter::make('issued_at')
-                    ->form([
-                        Forms\Components\DatePicker::make('issued_from')
+                Filter::make('issued_at')
+                    ->schema([
+                        DatePicker::make('issued_from')
                             ->label('من تاريخ'),
-                        Forms\Components\DatePicker::make('issued_until')
+                        DatePicker::make('issued_until')
                             ->label('إلى تاريخ'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -169,8 +182,8 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
                             );
                     }),
             ])
-            ->actions([
-                Tables\Actions\Action::make('view_pdf')
+            ->recordActions([
+                Action::make('view_pdf')
                     ->label('عرض PDF')
                     ->icon('heroicon-o-eye')
                     ->color('primary')
@@ -180,7 +193,7 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
                     ]))
                     ->openUrlInNewTab(),
 
-                Tables\Actions\Action::make('download')
+                Action::make('download')
                     ->label('تحميل')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
@@ -189,60 +202,60 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
                         'certificate' => $record->id,
                     ])),
 
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('التفاصيل'),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 // No bulk actions for supervisors
             ]);
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
-                Infolists\Components\Section::make('معلومات الشهادة')
+        return $schema
+            ->components([
+                Section::make('معلومات الشهادة')
                     ->schema([
-                        Infolists\Components\TextEntry::make('certificate_number')
+                        TextEntry::make('certificate_number')
                             ->label('رقم الشهادة')
                             ->copyable(),
-                        Infolists\Components\TextEntry::make('certificate_type')
+                        TextEntry::make('certificate_type')
                             ->label('نوع الشهادة')
                             ->badge(),
-                        Infolists\Components\TextEntry::make('template_style')
+                        TextEntry::make('template_style')
                             ->label('تصميم الشهادة')
                             ->badge(),
-                        Infolists\Components\TextEntry::make('issued_at')
+                        TextEntry::make('issued_at')
                             ->label('تاريخ الإصدار')
                             ->dateTime('d/m/Y h:i A'),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('معلومات الطالب والمعلم')
+                Section::make('معلومات الطالب والمعلم')
                     ->schema([
-                        Infolists\Components\TextEntry::make('student.name')
+                        TextEntry::make('student.name')
                             ->label('الطالب'),
-                        Infolists\Components\TextEntry::make('teacher.name')
+                        TextEntry::make('teacher.name')
                             ->label('المعلم')
                             ->placeholder('غير محدد'),
-                        Infolists\Components\TextEntry::make('issuedBy.name')
+                        TextEntry::make('issuedBy.name')
                             ->label('أصدرها'),
-                        Infolists\Components\TextEntry::make('academy.name')
+                        TextEntry::make('academy.name')
                             ->label('الأكاديمية'),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('نص الشهادة')
+                Section::make('نص الشهادة')
                     ->schema([
-                        Infolists\Components\TextEntry::make('certificate_text')
+                        TextEntry::make('certificate_text')
                             ->label('نص الشهادة')
                             ->columnSpanFull(),
                     ]),
 
-                Infolists\Components\Section::make('معلومات إضافية')
+                Section::make('معلومات إضافية')
                     ->schema([
-                        Infolists\Components\IconEntry::make('is_manual')
+                        IconEntry::make('is_manual')
                             ->label('شهادة يدوية')
                             ->boolean(),
-                        Infolists\Components\TextEntry::make('created_at')
+                        TextEntry::make('created_at')
                             ->label('تاريخ الإنشاء')
                             ->dateTime('d/m/Y h:i A'),
                     ])->columns(2),
@@ -291,8 +304,8 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListMonitoredCertificates::route('/'),
-            'view' => Pages\ViewMonitoredCertificate::route('/{record}'),
+            'index' => ListMonitoredCertificates::route('/'),
+            'view' => ViewMonitoredCertificate::route('/{record}'),
         ];
     }
 }

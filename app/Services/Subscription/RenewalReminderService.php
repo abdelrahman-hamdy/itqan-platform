@@ -2,6 +2,8 @@
 
 namespace App\Services\Subscription;
 
+use Illuminate\Database\QueryException;
+use Throwable;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
@@ -48,14 +50,14 @@ class RenewalReminderService
                 $this->notificationService->sendRenewalReminderNotification($subscription, 7);
                 $subscription->update(['renewal_reminder_sent_at' => now()]);
                 $results['sent']++;
-            } catch (\Illuminate\Database\QueryException $e) {
+            } catch (QueryException $e) {
                 $results['errors'][] = [
                     'subscription_id' => $subscription->id,
                     'days' => 7,
                     'error' => 'Database error: '.$e->getMessage(),
                     'type' => 'database',
                 ];
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $results['errors'][] = [
                     'subscription_id' => $subscription->id,
                     'days' => 7,
@@ -70,14 +72,14 @@ class RenewalReminderService
             try {
                 $this->notificationService->sendRenewalReminderNotification($subscription, 3);
                 $results['sent']++;
-            } catch (\Illuminate\Database\QueryException $e) {
+            } catch (QueryException $e) {
                 $results['errors'][] = [
                     'subscription_id' => $subscription->id,
                     'days' => 3,
                     'error' => 'Database error: '.$e->getMessage(),
                     'type' => 'database',
                 ];
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $results['errors'][] = [
                     'subscription_id' => $subscription->id,
                     'days' => 3,

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Archived;
 
+use Exception;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
 use App\Models\QuranSubscription;
@@ -78,7 +79,7 @@ class BackfillSubscriptionPackageDataCommand extends Command
 
             return self::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('Backfill failed: '.$e->getMessage());
             Log::error('Package data backfill failed', [
                 'error' => $e->getMessage(),
@@ -145,7 +146,7 @@ class BackfillSubscriptionPackageDataCommand extends Command
 
                     $results['updated']++;
 
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $results['errors']++;
                     Log::warning("Failed to backfill Quran subscription {$subscription->id}", [
                         'error' => $e->getMessage(),
@@ -218,7 +219,7 @@ class BackfillSubscriptionPackageDataCommand extends Command
 
                     $results['updated']++;
 
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $results['errors']++;
                     Log::warning("Failed to backfill Academic subscription {$subscription->id}", [
                         'error' => $e->getMessage(),
@@ -289,7 +290,7 @@ class BackfillSubscriptionPackageDataCommand extends Command
 
                     $results['updated']++;
 
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $results['errors']++;
                     Log::warning("Failed to backfill Course subscription {$subscription->id}", [
                         'error' => $e->getMessage(),

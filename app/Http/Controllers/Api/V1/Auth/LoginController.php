@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use Throwable;
+use Exception;
 use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
@@ -173,7 +175,7 @@ class LoginController extends Controller
                     'last_used_at' => now(),
                 ]
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::warning('Failed to store FCM token during login', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
@@ -199,7 +201,7 @@ class LoginController extends Controller
                 'platform' => $parsed['platform'] ?? 'Unknown',
                 'logged_in_at' => now(),
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Don't fail login if session tracking fails
             \Log::warning('Failed to create user session', [
                 'user_id' => $user->id,

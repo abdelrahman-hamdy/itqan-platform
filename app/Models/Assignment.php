@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,12 +17,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $instructions
  * @property string|null $type
  * @property float|null $max_score
- * @property \Carbon\Carbon|null $due_date
+ * @property Carbon|null $due_date
  * @property bool $is_active
  * @property bool $allow_late_submission
  * @property float|null $late_penalty_percentage
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class Assignment extends Model
 {

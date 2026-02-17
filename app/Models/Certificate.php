@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\NotificationService;
+use App\Enums\NotificationType;
+use Exception;
+use Illuminate\Support\Facades\Log;
 use App\Constants\DefaultAcademy;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
@@ -237,18 +241,18 @@ class Certificate extends Model
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             // Determine certificate context for notification
             $certificateContext = 'الشهادة';
             $actionUrl = $this->view_url;
 
             if ($this->certificateable) {
-                if ($this->certificateable instanceof \App\Models\QuranCircle) {
+                if ($this->certificateable instanceof QuranCircle) {
                     $certificateContext = 'حلقة '.$this->certificateable->name;
-                } elseif ($this->certificateable instanceof \App\Models\InteractiveCourse) {
+                } elseif ($this->certificateable instanceof InteractiveCourse) {
                     $certificateContext = 'دورة '.$this->certificateable->title;
-                } elseif ($this->certificateable instanceof \App\Models\RecordedCourse) {
+                } elseif ($this->certificateable instanceof RecordedCourse) {
                     $certificateContext = 'دورة '.$this->certificateable->title;
                 }
             }
@@ -258,7 +262,7 @@ class Certificate extends Model
 
             $notificationService->send(
                 $student,
-                \App\Enums\NotificationType::CERTIFICATE_EARNED,
+                NotificationType::CERTIFICATE_EARNED,
                 [
                     'teacher_name' => $teacherName,
                     'certificate_type' => $this->certificate_type->value ?? 'certificate',
@@ -280,7 +284,7 @@ class Certificate extends Model
             if ($student->studentProfile && $student->studentProfile->parent) {
                 $notificationService->send(
                     $student->studentProfile->parent->user,
-                    \App\Enums\NotificationType::CERTIFICATE_EARNED,
+                    NotificationType::CERTIFICATE_EARNED,
                     [
                         'teacher_name' => $teacherName,
                         'certificate_type' => $this->certificate_type->value ?? 'certificate',
@@ -299,8 +303,8 @@ class Certificate extends Model
                     'orange'  // Custom orange color
                 );
             }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send certificate notification', [
+        } catch (Exception $e) {
+            Log::error('Failed to send certificate notification', [
                 'certificate_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);

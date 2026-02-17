@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\QuranSubscriptionResource\Pages;
 
+use App\Models\QuranSubscription;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Filament\Resources\QuranSubscriptionResource;
@@ -26,7 +27,7 @@ class CreateQuranSubscription extends CreateRecord
         $data['created_by'] = Auth::id();
 
         // Generate subscription code
-        $data['subscription_code'] = \App\Models\QuranSubscription::generateSubscriptionCode($data['academy_id']);
+        $data['subscription_code'] = QuranSubscription::generateSubscriptionCode($data['academy_id']);
 
         // Calculate derived fields
         $data['total_price'] = $data['price_per_session'] * $data['total_sessions'];

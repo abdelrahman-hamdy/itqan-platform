@@ -288,7 +288,7 @@ class AcademicTeacherProfile extends Model
             return collect();
         }
 
-        return \App\Models\AcademicPackage::whereIn('id', $packageIds)
+        return AcademicPackage::whereIn('id', $packageIds)
             ->where('academy_id', $this->academy_id)
             ->where('is_active', true)
             ->get();

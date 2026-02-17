@@ -2,13 +2,13 @@
 
 namespace App\Filament\Supervisor\Widgets;
 
+use Filament\Actions\Action;
 use App\Enums\SessionStatus;
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -57,7 +57,8 @@ class TodaySessionsWidget extends BaseWidget
                     ->dateTime('H:i')
                     ->timezone(AcademyContextService::getTimezone()),
 
-                BadgeColumn::make('status')
+                TextColumn::make('status')
+                    ->badge()
                     ->label('الحالة')
                     ->colors(SessionStatus::colorOptions())
                     ->formatStateUsing(function ($state): string {
@@ -76,7 +77,7 @@ class TodaySessionsWidget extends BaseWidget
             ->emptyStateDescription('لا توجد جلسات مجدولة لهذا اليوم')
             ->emptyStateIcon('heroicon-o-calendar')
             ->headerActions([
-                Tables\Actions\Action::make('view_all')
+                Action::make('view_all')
                     ->label('عرض الكل')
                     ->url(MonitoredAllSessionsResource::getUrl('index'))
                     ->icon('heroicon-o-arrow-right')

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SupervisorProfileResource\Pages;
 
+use Filament\Actions\EditAction;
 use App\Filament\Resources\SupervisorProfileResource;
 use App\Filament\Widgets\SupervisorResponsibilitiesWidget;
 use Filament\Actions;
@@ -14,7 +15,7 @@ class ViewSupervisorProfile extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            EditAction::make(),
         ];
     }
 

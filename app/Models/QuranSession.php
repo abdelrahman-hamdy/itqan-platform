@@ -2,6 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+use DB;
+use Exception;
+use Carbon\Carbon;
+use App\Services\LiveKitService;
+use App\Services\NotificationService;
+use Illuminate\Database\Eloquent\Collection;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
@@ -58,9 +65,9 @@ use Illuminate\Support\Facades\Log;
  * @property int|null $mistakes_count Legacy quality metric
  * @property float|null $overall_rating Legacy quality metric
  * @property array|null $lesson_objectives Legacy field
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MeetingAttendance> $meetingAttendances
+ * @property-read Collection<int, MeetingAttendance> $meetingAttendances
  *
- * @method \Illuminate\Database\Eloquent\Relations\HasMany meetingAttendances()
+ * @method HasMany meetingAttendances()
  *
  * @see BaseSession Parent class with common session fields
  * @see CountsTowardsSubscription Trait for subscription logic
@@ -114,7 +121,7 @@ class QuranSession extends BaseSession
         $this->fillable = array_merge(parent::$baseFillable, $this->fillable);
 
         // Call grandparent (Model) constructor directly to avoid BaseSession overwriting fillable
-        \Illuminate\Database\Eloquent\Model::__construct($attributes);
+        Model::__construct($attributes);
     }
 
     /**
@@ -388,12 +395,12 @@ class QuranSession extends BaseSession
      */
     public function markAsCompleted(array $additionalData = []): bool
     {
-        return \DB::transaction(function () use ($additionalData) {
+        return DB::transaction(function () use ($additionalData) {
             // Lock the session row for update
             $session = self::lockForUpdate()->find($this->id);
 
             if (! $session) {
-                throw new \Exception("Session {$this->id} not found");
+                throw new Exception("Session {$this->id} not found");
             }
 
             if (! $session->status->canComplete()) {
@@ -594,7 +601,7 @@ class QuranSession extends BaseSession
                 'status' => $status,
                 'students_count' => $students->count(),
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to record session attendance', [
                 'session_id' => $this->id,
                 'status' => $status,
@@ -615,7 +622,7 @@ class QuranSession extends BaseSession
      * - For individual circles: checks both linkedSubscriptions() and subscription_id
      * - For group circles: checks the student's enrollment subscription_id
      *
-     * @return \App\Models\QuranSubscription|null
+     * @return QuranSubscription|null
      */
     protected function getSubscriptionForCounting()
     {
@@ -928,7 +935,7 @@ class QuranSession extends BaseSession
     public function start(): self
     {
         if ($this->status !== SessionStatus::SCHEDULED && $this->status !== SessionStatus::READY) {
-            throw new \Exception('لا يمكن بدء الجلسة. الحالة الحالية: '.$this->status_text);
+            throw new Exception('لا يمكن بدء الجلسة. الحالة الحالية: '.$this->status_text);
         }
 
         $this->update([
@@ -942,7 +949,7 @@ class QuranSession extends BaseSession
     public function complete(array $sessionData = []): self
     {
         if (! in_array($this->status, [SessionStatus::ONGOING, SessionStatus::SCHEDULED, SessionStatus::READY])) {
-            throw new \Exception('لا يمكن إنهاء الجلسة. الحالة الحالية: '.$this->status_text);
+            throw new Exception('لا يمكن إنهاء الجلسة. الحالة الحالية: '.$this->status_text);
         }
 
         $endTime = now();
@@ -972,7 +979,7 @@ class QuranSession extends BaseSession
     public function cancel(string $reason, ?User $cancelledBy = null): self
     {
         if (! $this->can_cancel) {
-            throw new \Exception('لا يمكن إلغاء الجلسة في هذا الوقت');
+            throw new Exception('لا يمكن إلغاء الجلسة في هذا الوقت');
         }
 
         $this->update([
@@ -985,7 +992,7 @@ class QuranSession extends BaseSession
         return $this;
     }
 
-    public function reschedule(\Carbon\Carbon $newDateTime, ?string $reason = null): bool
+    public function reschedule(Carbon $newDateTime, ?string $reason = null): bool
     {
         if (! $this->can_reschedule) {
             return false;
@@ -1011,7 +1018,7 @@ class QuranSession extends BaseSession
         return $this;
     }
 
-    public function createMakeupSession(\Carbon\Carbon $scheduledAt, array $additionalData = []): self
+    public function createMakeupSession(Carbon $scheduledAt, array $additionalData = []): self
     {
         // Get the session type key from the original session
         $sessionTypeKey = $this->getSessionTypeKey();
@@ -1056,10 +1063,10 @@ class QuranSession extends BaseSession
     public function startRecording(array $options = []): array
     {
         if (! $this->meeting_room_name) {
-            throw new \Exception('Meeting room not created yet');
+            throw new Exception('Meeting room not created yet');
         }
 
-        $livekitService = app(\App\Services\LiveKitService::class);
+        $livekitService = app(LiveKitService::class);
 
         $recordingOptions = [
             'layout' => $options['layout'] ?? 'grid',
@@ -1087,10 +1094,10 @@ class QuranSession extends BaseSession
     public function stopRecording(): array
     {
         if (! $this->meeting_data || ! isset($this->meeting_data['recording'])) {
-            throw new \Exception('No active recording found');
+            throw new Exception('No active recording found');
         }
 
-        $livekitService = app(\App\Services\LiveKitService::class);
+        $livekitService = app(LiveKitService::class);
         $recordingId = $this->meeting_data['recording']['recording_id'];
 
         $result = $livekitService->stopRecording($recordingId);
@@ -1116,7 +1123,7 @@ class QuranSession extends BaseSession
             return false;
         }
 
-        $livekitService = app(\App\Services\LiveKitService::class);
+        $livekitService = app(LiveKitService::class);
 
         $success = $livekitService->setMeetingDuration($this->meeting_room_name, $durationMinutes);
 
@@ -1132,7 +1139,7 @@ class QuranSession extends BaseSession
         $feedbackField = $feedbackType.'_feedback';
 
         if (! in_array($feedbackField, ['teacher_feedback', 'student_feedback', 'parent_feedback'])) {
-            throw new \Exception('نوع التعليق غير صحيح');
+            throw new Exception('نوع التعليق غير صحيح');
         }
 
         $this->update([
@@ -1145,7 +1152,7 @@ class QuranSession extends BaseSession
     public function rate(int $rating): self
     {
         if ($rating < 1 || $rating > 5) {
-            throw new \Exception('التقييم يجب أن يكون بين 1 و 5');
+            throw new Exception('التقييم يجب أن يكون بين 1 و 5');
         }
 
         $this->update(['overall_rating' => $rating]);
@@ -1191,7 +1198,7 @@ class QuranSession extends BaseSession
      */
     private static function generateSessionCode(string $sessionTypeKey): string
     {
-        return \DB::transaction(function () use ($sessionTypeKey) {
+        return DB::transaction(function () use ($sessionTypeKey) {
             // Get prefix from config
             $prefix = config('session-naming.type_prefixes.'.$sessionTypeKey, 'QI');
             $yearMonth = now()->format('ym');
@@ -1277,7 +1284,7 @@ class QuranSession extends BaseSession
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
             $notificationService->sendHomeworkAssignedNotification(
                 $this,
                 $student,
@@ -1292,7 +1299,7 @@ class QuranSession extends BaseSession
                     null
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send homework notification for Quran session', [
                 'session_id' => $this->id,
                 'error' => $e->getMessage(),
@@ -1300,7 +1307,7 @@ class QuranSession extends BaseSession
         }
     }
 
-    public static function getTodaysSessions(int $academyId, array $filters = []): \Illuminate\Database\Eloquent\Collection
+    public static function getTodaysSessions(int $academyId, array $filters = []): Collection
     {
         $query = self::where('academy_id', $academyId)
             ->today()
@@ -1335,7 +1342,7 @@ class QuranSession extends BaseSession
         return $query->orderBy('scheduled_at', 'asc')->get();
     }
 
-    public static function getUpcomingSessions(int $teacherId, int $days = 7): \Illuminate\Database\Eloquent\Collection
+    public static function getUpcomingSessions(int $teacherId, int $days = 7): Collection
     {
         $now = AcademyContextService::nowInAcademyTimezone();
 
@@ -1347,7 +1354,7 @@ class QuranSession extends BaseSession
             ->get();
     }
 
-    public static function getSessionsNeedingFollowUp(int $academyId): \Illuminate\Database\Eloquent\Collection
+    public static function getSessionsNeedingFollowUp(int $academyId): Collection
     {
         return self::where('academy_id', $academyId)
             ->completed()
@@ -1480,7 +1487,7 @@ class QuranSession extends BaseSession
     /**
      * Get all participants who should have access to this meeting (abstract method implementation)
      */
-    public function getMeetingParticipants(): \Illuminate\Database\Eloquent\Collection
+    public function getMeetingParticipants(): Collection
     {
         $participants = collect();
 
@@ -1664,7 +1671,7 @@ class QuranSession extends BaseSession
     public function getMeetingConfiguration(): array
     {
         // Get academy settings for meeting configuration
-        $academySettings = \App\Models\AcademySettings::where('academy_id', $this->academy_id)->first();
+        $academySettings = AcademySettings::where('academy_id', $this->academy_id)->first();
         $settingsJson = $academySettings?->settings ?? [];
 
         // Extract meeting settings from JSON settings or use defaults

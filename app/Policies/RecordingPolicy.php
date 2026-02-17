@@ -2,6 +2,9 @@
 
 namespace App\Policies;
 
+use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
+use App\Models\AcademicSession;
 use App\Enums\EnrollmentStatus;
 use App\Enums\UserType;
 use App\Models\SessionRecording;
@@ -110,19 +113,19 @@ class RecordingPolicy
         }
 
         // For InteractiveCourseSession
-        if ($session instanceof \App\Models\InteractiveCourseSession) {
+        if ($session instanceof InteractiveCourseSession) {
             $course = $session->course;
 
             return $course && $course->assigned_teacher_id === $user->academicTeacherProfile?->id;
         }
 
         // For QuranSession
-        if ($session instanceof \App\Models\QuranSession) {
+        if ($session instanceof QuranSession) {
             return $session->teacher_id === $user->id;
         }
 
         // For AcademicSession
-        if ($session instanceof \App\Models\AcademicSession) {
+        if ($session instanceof AcademicSession) {
             return $session->teacher_id === $user->id;
         }
 
@@ -140,7 +143,7 @@ class RecordingPolicy
         }
 
         // For InteractiveCourseSession
-        if ($session instanceof \App\Models\InteractiveCourseSession) {
+        if ($session instanceof InteractiveCourseSession) {
             $course = $session->course;
             if (! $course) {
                 return false;
@@ -153,12 +156,12 @@ class RecordingPolicy
         }
 
         // For QuranSession
-        if ($session instanceof \App\Models\QuranSession) {
+        if ($session instanceof QuranSession) {
             return $session->student_id === $user->id;
         }
 
         // For AcademicSession
-        if ($session instanceof \App\Models\AcademicSession) {
+        if ($session instanceof AcademicSession) {
             return $session->student_id === $user->id;
         }
 
@@ -184,7 +187,7 @@ class RecordingPolicy
         $childUserIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
 
         // For InteractiveCourseSession
-        if ($session instanceof \App\Models\InteractiveCourseSession) {
+        if ($session instanceof InteractiveCourseSession) {
             $course = $session->course;
             if (! $course) {
                 return false;
@@ -197,12 +200,12 @@ class RecordingPolicy
         }
 
         // For QuranSession
-        if ($session instanceof \App\Models\QuranSession) {
+        if ($session instanceof QuranSession) {
             return in_array($session->student_id, $childUserIds);
         }
 
         // For AcademicSession
-        if ($session instanceof \App\Models\AcademicSession) {
+        if ($session instanceof AcademicSession) {
             return in_array($session->student_id, $childUserIds);
         }
 
@@ -220,7 +223,7 @@ class RecordingPolicy
         }
 
         // For InteractiveCourseSession, get academy through course
-        if ($session instanceof \App\Models\InteractiveCourseSession) {
+        if ($session instanceof InteractiveCourseSession) {
             $academyId = $session->course?->academy_id;
             if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
                 return true; // Super admin can access all

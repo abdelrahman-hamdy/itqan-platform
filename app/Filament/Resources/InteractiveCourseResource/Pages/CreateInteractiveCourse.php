@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\InteractiveCourseResource\Pages;
 
+use Exception;
 use App\Filament\Resources\InteractiveCourseResource;
 use App\Services\AcademyContextService;
 use Filament\Resources\Pages\CreateRecord;
@@ -20,7 +21,7 @@ class CreateInteractiveCourse extends CreateRecord
         $academyId = AcademyContextService::getCurrentAcademyId();
 
         if (! $academyId) {
-            throw new \Exception('No academy context available. Please select an academy first.');
+            throw new Exception('No academy context available. Please select an academy first.');
         }
 
         $data['academy_id'] = $academyId;

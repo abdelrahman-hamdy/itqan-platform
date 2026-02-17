@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -54,7 +55,7 @@ class RoomPermissionService
             ]);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to set microphone permission', [
                 'room_name' => $roomName,
                 'error' => $e->getMessage(),
@@ -87,7 +88,7 @@ class RoomPermissionService
             ]);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to set camera permission', [
                 'room_name' => $roomName,
                 'error' => $e->getMessage(),
@@ -160,7 +161,7 @@ class RoomPermissionService
             ]);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to clear room permissions', [
                 'room_name' => $roomName,
                 'error' => $e->getMessage(),
@@ -204,7 +205,7 @@ class RoomPermissionService
             ]);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to initialize room permissions', [
                 'room_name' => $roomName,
                 'error' => $e->getMessage(),

@@ -174,7 +174,7 @@ class RecordedCourse extends Model implements HasMedia
         return $this->hasMany(StudentProgress::class);
     }
 
-    public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    public function quizAssignments(): MorphMany
     {
         return $this->morphMany(QuizAssignment::class, 'assignable');
     }

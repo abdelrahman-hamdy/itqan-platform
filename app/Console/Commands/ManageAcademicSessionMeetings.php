@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Services\AcademicSessionMeetingService;
 use App\Services\AcademyContextService;
 use App\Services\CronJobLogger;
@@ -90,7 +91,7 @@ class ManageAcademicSessionMeetings extends Command
 
             return Command::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('❌ Error during academic session meeting management: '.$e->getMessage());
             Log::error('Academic session meeting management failed', [
                 'error' => $e->getMessage(),
@@ -138,7 +139,7 @@ class ManageAcademicSessionMeetings extends Command
 
             return Command::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('❌ Error during maintenance: '.$e->getMessage());
 
             // Log error

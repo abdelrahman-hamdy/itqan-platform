@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1\Student;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use App\Helpers\CountryList;
 use App\Http\Requests\Api\BaseApiFormRequest;
 use App\Rules\PasswordRules;
@@ -18,7 +19,7 @@ class ProfileUpdateRequest extends BaseApiFormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

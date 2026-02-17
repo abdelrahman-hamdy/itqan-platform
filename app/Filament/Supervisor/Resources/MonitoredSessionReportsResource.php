@@ -2,11 +2,23 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use Filament\Tables\Columns\TextColumn;
+use ValueError;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use App\Models\User;
+use Filament\Tables\Filters\Filter;
+use Filament\Actions\ViewAction;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\IconEntry;
+use App\Filament\Supervisor\Resources\MonitoredSessionReportsResource\Pages\ListMonitoredSessionReports;
+use App\Filament\Supervisor\Resources\MonitoredSessionReportsResource\Pages\ViewMonitoredSessionReport;
 use App\Enums\AttendanceStatus;
 use App\Filament\Supervisor\Resources\MonitoredSessionReportsResource\Pages;
 use App\Models\StudentSessionReport;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,7 +34,7 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
     // Default model for Quran reports (tabs switch between models)
     protected static ?string $model = StudentSessionReport::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-chart-bar';
 
     protected static ?string $navigationLabel = 'تقارير الجلسات';
 
@@ -30,7 +42,7 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'تقارير الجلسات';
 
-    protected static ?string $navigationGroup = 'التقارير';
+    protected static string | \UnitEnum | null $navigationGroup = 'التقارير';
 
     protected static ?int $navigationSort = 1;
 
@@ -65,23 +77,23 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('session.title')
+                TextColumn::make('session.title')
                     ->label('الجلسة')
                     ->searchable()
                     ->sortable()
                     ->limit(30),
 
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('teacher.name')
+                TextColumn::make('teacher.name')
                     ->label('المعلم')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('new_memorization_degree')
+                TextColumn::make('new_memorization_degree')
                     ->label('درجة الحفظ')
                     ->numeric()
                     ->sortable()
@@ -93,7 +105,7 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                         default => 'danger',
                     }),
 
-                Tables\Columns\TextColumn::make('reservation_degree')
+                TextColumn::make('reservation_degree')
                     ->label('درجة المراجعة')
                     ->numeric()
                     ->sortable()
@@ -105,7 +117,7 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                         default => 'danger',
                     }),
 
-                Tables\Columns\TextColumn::make('attendance_status')
+                TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
                     ->color(function (mixed $state): string {
@@ -135,69 +147,69 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                         }
                         try {
                             return AttendanceStatus::from($state)->label();
-                        } catch (\ValueError $e) {
+                        } catch (ValueError $e) {
                             return (string) $state;
                         }
                     }),
 
-                Tables\Columns\TextColumn::make('attendance_percentage')
+                TextColumn::make('attendance_percentage')
                     ->label('نسبة الحضور')
                     ->formatStateUsing(fn ($state): string => ($state ?? 0).'%')
                     ->sortable(),
 
-                Tables\Columns\IconColumn::make('manually_evaluated')
+                IconColumn::make('manually_evaluated')
                     ->label('معدل يدوياً')
                     ->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('evaluated_at')
+                TextColumn::make('evaluated_at')
                     ->label('تاريخ التقييم')
                     ->dateTime('Y-m-d H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d')
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('attendance_status')
+                SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')
                     ->options(AttendanceStatus::options()),
 
-                Tables\Filters\SelectFilter::make('teacher_id')
+                SelectFilter::make('teacher_id')
                     ->label('المعلم')
                     ->options(function () {
                         $teacherIds = static::getAssignedQuranTeacherIds();
 
-                        return \App\Models\User::whereIn('id', $teacherIds)
+                        return User::whereIn('id', $teacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
                     })
                     ->searchable()
                     ->preload(),
 
-                Tables\Filters\Filter::make('has_evaluation')
+                Filter::make('has_evaluation')
                     ->label('تم التقييم')
                     ->query(fn (Builder $query): Builder => $query->where(function ($q) {
                         $q->whereNotNull('new_memorization_degree')
                             ->orWhereNotNull('reservation_degree');
                     })),
 
-                Tables\Filters\Filter::make('low_score')
+                Filter::make('low_score')
                     ->label('درجات منخفضة')
                     ->query(fn (Builder $query): Builder => $query->where(function ($q) {
                         $q->where('new_memorization_degree', '<', 6)
                             ->orWhere('reservation_degree', '<', 6);
                     })),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
+            ->recordActions([
+                ViewAction::make()
                     ->label('عرض'),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 // No bulk actions for supervisors
             ]);
     }
@@ -209,23 +221,23 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('session.title')
+                TextColumn::make('session.title')
                     ->label('الجلسة')
                     ->searchable()
                     ->sortable()
                     ->limit(30),
 
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('teacher.name')
+                TextColumn::make('teacher.name')
                     ->label('المعلم')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('homework_degree')
+                TextColumn::make('homework_degree')
                     ->label('درجة الواجب')
                     ->numeric()
                     ->sortable()
@@ -237,7 +249,7 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                         default => 'danger',
                     }),
 
-                Tables\Columns\TextColumn::make('attendance_status')
+                TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
                     ->color(function (mixed $state): string {
@@ -267,63 +279,63 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                         }
                         try {
                             return AttendanceStatus::from($state)->label();
-                        } catch (\ValueError $e) {
+                        } catch (ValueError $e) {
                             return (string) $state;
                         }
                     }),
 
-                Tables\Columns\TextColumn::make('attendance_percentage')
+                TextColumn::make('attendance_percentage')
                     ->label('نسبة الحضور')
                     ->formatStateUsing(fn ($state): string => ($state ?? 0).'%')
                     ->sortable(),
 
-                Tables\Columns\IconColumn::make('manually_evaluated')
+                IconColumn::make('manually_evaluated')
                     ->label('معدل يدوياً')
                     ->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('evaluated_at')
+                TextColumn::make('evaluated_at')
                     ->label('تاريخ التقييم')
                     ->dateTime('Y-m-d H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d')
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('attendance_status')
+                SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')
                     ->options(AttendanceStatus::options()),
 
-                Tables\Filters\SelectFilter::make('teacher_id')
+                SelectFilter::make('teacher_id')
                     ->label('المعلم')
                     ->options(function () {
                         $teacherIds = static::getAssignedAcademicTeacherIds();
 
-                        return \App\Models\User::whereIn('id', $teacherIds)
+                        return User::whereIn('id', $teacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
                     })
                     ->searchable()
                     ->preload(),
 
-                Tables\Filters\Filter::make('has_homework_grade')
+                Filter::make('has_homework_grade')
                     ->label('تم تقييم الواجب')
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('homework_degree')),
 
-                Tables\Filters\Filter::make('low_score')
+                Filter::make('low_score')
                     ->label('درجات منخفضة')
                     ->query(fn (Builder $query): Builder => $query->where('homework_degree', '<', 6)),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
+            ->recordActions([
+                ViewAction::make()
                     ->label('عرض'),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 // No bulk actions for supervisors
             ]);
     }
@@ -334,38 +346,38 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
         return static::getQuranReportsTable($table);
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
-                Infolists\Components\Section::make('معلومات الجلسة')
+        return $schema
+            ->components([
+                Section::make('معلومات الجلسة')
                     ->schema([
-                        Infolists\Components\TextEntry::make('session.title')
+                        TextEntry::make('session.title')
                             ->label('عنوان الجلسة'),
-                        Infolists\Components\TextEntry::make('student.name')
+                        TextEntry::make('student.name')
                             ->label('الطالب'),
-                        Infolists\Components\TextEntry::make('teacher.name')
+                        TextEntry::make('teacher.name')
                             ->label('المعلم'),
-                        Infolists\Components\TextEntry::make('academy.name')
+                        TextEntry::make('academy.name')
                             ->label('الأكاديمية'),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('الأداء')
+                Section::make('الأداء')
                     ->schema([
-                        Infolists\Components\TextEntry::make('new_memorization_degree')
+                        TextEntry::make('new_memorization_degree')
                             ->label('درجة الحفظ الجديد')
                             ->placeholder('غير مقيم'),
-                        Infolists\Components\TextEntry::make('reservation_degree')
+                        TextEntry::make('reservation_degree')
                             ->label('درجة المراجعة')
                             ->placeholder('غير مقيم'),
-                        Infolists\Components\TextEntry::make('homework_degree')
+                        TextEntry::make('homework_degree')
                             ->label('درجة الواجب')
                             ->placeholder('غير مقيم'),
                     ])->columns(3),
 
-                Infolists\Components\Section::make('الحضور')
+                Section::make('الحضور')
                     ->schema([
-                        Infolists\Components\TextEntry::make('attendance_status')
+                        TextEntry::make('attendance_status')
                             ->label('حالة الحضور')
                             ->badge()
                             ->formatStateUsing(function (?string $state): string {
@@ -374,49 +386,49 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                                 }
                                 try {
                                     return AttendanceStatus::from($state)->label();
-                                } catch (\ValueError $e) {
+                                } catch (ValueError $e) {
                                     return $state;
                                 }
                             }),
-                        Infolists\Components\TextEntry::make('attendance_percentage')
+                        TextEntry::make('attendance_percentage')
                             ->label('نسبة الحضور')
                             ->formatStateUsing(fn ($state) => ($state ?? 0).'%'),
-                        Infolists\Components\TextEntry::make('actual_attendance_minutes')
+                        TextEntry::make('actual_attendance_minutes')
                             ->label('دقائق الحضور')
                             ->formatStateUsing(fn ($state) => ($state ?? 0).' دقيقة'),
-                        Infolists\Components\IconEntry::make('is_late')
+                        IconEntry::make('is_late')
                             ->label('متأخر')
                             ->boolean(),
-                        Infolists\Components\TextEntry::make('late_minutes')
+                        TextEntry::make('late_minutes')
                             ->label('دقائق التأخير')
                             ->formatStateUsing(fn ($state) => ($state ?? 0).' دقيقة')
                             ->visible(fn ($record) => $record->is_late),
                     ])->columns(3),
 
-                Infolists\Components\Section::make('ملاحظات')
+                Section::make('ملاحظات')
                     ->schema([
-                        Infolists\Components\TextEntry::make('notes')
+                        TextEntry::make('notes')
                             ->label('ملاحظات المعلم')
                             ->placeholder('لا توجد ملاحظات')
                             ->columnSpanFull(),
                     ]),
 
-                Infolists\Components\Section::make('معلومات النظام')
+                Section::make('معلومات النظام')
                     ->schema([
-                        Infolists\Components\IconEntry::make('is_calculated')
+                        IconEntry::make('is_calculated')
                             ->label('محسوب تلقائياً')
                             ->boolean(),
-                        Infolists\Components\IconEntry::make('manually_evaluated')
+                        IconEntry::make('manually_evaluated')
                             ->label('معدل يدوياً')
                             ->boolean(),
-                        Infolists\Components\TextEntry::make('override_reason')
+                        TextEntry::make('override_reason')
                             ->label('سبب التعديل')
                             ->placeholder('لا يوجد')
                             ->visible(fn ($record) => $record->manually_evaluated),
-                        Infolists\Components\TextEntry::make('evaluated_at')
+                        TextEntry::make('evaluated_at')
                             ->label('تاريخ التقييم')
                             ->dateTime('Y-m-d H:i'),
-                        Infolists\Components\TextEntry::make('created_at')
+                        TextEntry::make('created_at')
                             ->label('تاريخ الإنشاء')
                             ->dateTime('Y-m-d H:i'),
                     ])->columns(3),
@@ -439,8 +451,8 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListMonitoredSessionReports::route('/'),
-            'view' => Pages\ViewMonitoredSessionReport::route('/{record}'),
+            'index' => ListMonitoredSessionReports::route('/'),
+            'view' => ViewMonitoredSessionReport::route('/{record}'),
         ];
     }
 }

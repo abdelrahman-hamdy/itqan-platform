@@ -2,6 +2,9 @@
 
 namespace App\Services\Traits;
 
+use BackedEnum;
+use UnitEnum;
+
 /**
  * Shared attendance status normalization logic.
  *
@@ -21,11 +24,11 @@ trait NormalizesAttendanceStatus
             return '';
         }
 
-        if ($status instanceof \BackedEnum) {
+        if ($status instanceof BackedEnum) {
             return (string) $status->value;
         }
 
-        if ($status instanceof \UnitEnum) {
+        if ($status instanceof UnitEnum) {
             return $status->name;
         }
 

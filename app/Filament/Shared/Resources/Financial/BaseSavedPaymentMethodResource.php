@@ -2,6 +2,19 @@
 
 namespace App\Filament\Shared\Resources\Financial;
 
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\KeyValue;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\Action;
+use Filament\Tables\Table;
 use App\Filament\Resources\BaseResource;
 use App\Models\SavedPaymentMethod;
 use Filament\Forms;
@@ -13,7 +26,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 abstract class BaseSavedPaymentMethodResource extends BaseResource
 {
     protected static ?string $model = SavedPaymentMethod::class;
-    protected static ?string $navigationIcon = 'heroicon-o-credit-card';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-credit-card';
     protected static ?string $modelLabel = 'طريقة دفع';
     protected static ?string $pluralModelLabel = 'طرق الدفع المحفوظة';
 
@@ -21,10 +34,10 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
     abstract protected static function scopeEloquentQuery(Builder $query): Builder;
     abstract protected static function getTableActions(): array;
     abstract protected static function getTableBulkActions(): array;
-    abstract protected static function getAcademyFormField(): ?Forms\Components\Select;
+    abstract protected static function getAcademyFormField(): ?Select;
 
     // Shared form sections
-    protected static function getUserInfoSection(): Forms\Components\Section
+    protected static function getUserInfoSection(): Section
     {
         $schema = [];
 
@@ -34,7 +47,7 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
             $schema[] = $academyField->disabled();
         }
 
-        $schema[] = Forms\Components\Select::make('user_id')
+        $schema[] = Select::make('user_id')
             ->relationship('user', 'name')
             ->label('المستخدم')
             ->required()
@@ -42,16 +55,16 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
             ->preload()
             ->disabled();
 
-        return Forms\Components\Section::make('معلومات المستخدم')
+        return Section::make('معلومات المستخدم')
             ->schema($schema)
             ->columns(2);
     }
 
-    protected static function getCardInfoSection(): Forms\Components\Section
+    protected static function getCardInfoSection(): Section
     {
-        return Forms\Components\Section::make('معلومات البطاقة')
+        return Section::make('معلومات البطاقة')
             ->schema([
-                Forms\Components\Select::make('gateway')
+                Select::make('gateway')
                     ->label('بوابة الدفع')
                     ->options([
                         'paymob' => 'Paymob',
@@ -61,7 +74,7 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
                     ->required()
                     ->disabled(),
 
-                Forms\Components\Select::make('type')
+                Select::make('type')
                     ->label('النوع')
                     ->options([
                         SavedPaymentMethod::TYPE_CARD => 'بطاقة',
@@ -72,7 +85,7 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
                     ->required()
                     ->disabled(),
 
-                Forms\Components\Select::make('brand')
+                Select::make('brand')
                     ->label('العلامة التجارية')
                     ->options([
                         SavedPaymentMethod::BRAND_VISA => 'Visa',
@@ -82,67 +95,67 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
                     ])
                     ->disabled(),
 
-                Forms\Components\TextInput::make('last_four')
+                TextInput::make('last_four')
                     ->label('آخر 4 أرقام')
                     ->maxLength(4)
                     ->disabled(),
 
-                Forms\Components\TextInput::make('expiry_month')
+                TextInput::make('expiry_month')
                     ->label('شهر الانتهاء')
                     ->maxLength(2)
                     ->disabled(),
 
-                Forms\Components\TextInput::make('expiry_year')
+                TextInput::make('expiry_year')
                     ->label('سنة الانتهاء')
                     ->maxLength(4)
                     ->disabled(),
 
-                Forms\Components\TextInput::make('holder_name')
+                TextInput::make('holder_name')
                     ->label('اسم حامل البطاقة')
                     ->maxLength(255)
                     ->disabled(),
 
-                Forms\Components\TextInput::make('display_name')
+                TextInput::make('display_name')
                     ->label('الاسم المعروض')
                     ->maxLength(255),
             ])->columns(2);
     }
 
-    protected static function getStatusSection(): Forms\Components\Section
+    protected static function getStatusSection(): Section
     {
-        return Forms\Components\Section::make('الحالة')
+        return Section::make('الحالة')
             ->schema([
-                Forms\Components\Toggle::make('is_default')
+                Toggle::make('is_default')
                     ->label('افتراضية')
                     ->helperText('هل هذه طريقة الدفع الافتراضية للمستخدم؟'),
 
-                Forms\Components\Toggle::make('is_active')
+                Toggle::make('is_active')
                     ->label('نشطة')
                     ->helperText('هل طريقة الدفع نشطة ويمكن استخدامها؟'),
 
-                Forms\Components\DateTimePicker::make('last_used_at')
+                DateTimePicker::make('last_used_at')
                     ->label('آخر استخدام')
                     ->disabled(),
 
-                Forms\Components\DateTimePicker::make('verified_at')
+                DateTimePicker::make('verified_at')
                     ->label('تاريخ التحقق')
                     ->disabled(),
 
-                Forms\Components\DateTimePicker::make('expires_at')
+                DateTimePicker::make('expires_at')
                     ->label('تاريخ انتهاء الصلاحية')
                     ->disabled(),
             ])->columns(3);
     }
 
-    protected static function getAdditionalInfoSection(): Forms\Components\Section
+    protected static function getAdditionalInfoSection(): Section
     {
-        return Forms\Components\Section::make('معلومات إضافية')
+        return Section::make('معلومات إضافية')
             ->schema([
-                Forms\Components\KeyValue::make('metadata')
+                KeyValue::make('metadata')
                     ->label('البيانات الإضافية')
                     ->disabled(),
 
-                Forms\Components\KeyValue::make('billing_address')
+                KeyValue::make('billing_address')
                     ->label('عنوان الفواتير')
                     ->disabled(),
             ])
@@ -156,12 +169,12 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
         return [
             static::getAcademyColumn(),
 
-            Tables\Columns\TextColumn::make('user.name')
+            TextColumn::make('user.name')
                 ->label('المستخدم')
                 ->searchable()
                 ->sortable(),
 
-            Tables\Columns\TextColumn::make('gateway')
+            TextColumn::make('gateway')
                 ->label('البوابة')
                 ->badge()
                 ->color(fn (string $state): string => match ($state) {
@@ -171,7 +184,7 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
                     default => 'gray',
                 }),
 
-            Tables\Columns\TextColumn::make('type')
+            TextColumn::make('type')
                 ->label('النوع')
                 ->formatStateUsing(fn (SavedPaymentMethod $record) => $record->getTypeDisplayName())
                 ->badge()
@@ -182,7 +195,7 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
                     default => 'secondary',
                 }),
 
-            Tables\Columns\TextColumn::make('brand')
+            TextColumn::make('brand')
                 ->label('العلامة')
                 ->formatStateUsing(fn (?string $state) => match ($state) {
                     SavedPaymentMethod::BRAND_VISA => 'Visa',
@@ -200,19 +213,19 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
                     default => 'gray',
                 }),
 
-            Tables\Columns\TextColumn::make('last_four')
+            TextColumn::make('last_four')
                 ->label('آخر 4 أرقام')
                 ->formatStateUsing(fn (?string $state) => $state ? "****{$state}" : '-')
                 ->copyable()
                 ->searchable(),
 
-            Tables\Columns\TextColumn::make('expiry')
+            TextColumn::make('expiry')
                 ->label('تاريخ الانتهاء')
                 ->getStateUsing(fn (SavedPaymentMethod $record) => $record->getExpiryDisplay())
                 ->badge()
                 ->color(fn (SavedPaymentMethod $record) => $record->isExpired() ? 'danger' : 'success'),
 
-            Tables\Columns\IconColumn::make('is_default')
+            IconColumn::make('is_default')
                 ->label('افتراضية')
                 ->boolean()
                 ->trueIcon('heroicon-o-star')
@@ -220,7 +233,7 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
                 ->trueColor('warning')
                 ->falseColor('gray'),
 
-            Tables\Columns\IconColumn::make('is_active')
+            IconColumn::make('is_active')
                 ->label('نشطة')
                 ->boolean()
                 ->trueIcon('heroicon-o-check-circle')
@@ -228,13 +241,13 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
                 ->trueColor('success')
                 ->falseColor('danger'),
 
-            Tables\Columns\TextColumn::make('last_used_at')
+            TextColumn::make('last_used_at')
                 ->label('آخر استخدام')
                 ->dateTime('Y-m-d H:i')
                 ->sortable()
                 ->toggleable(),
 
-            Tables\Columns\TextColumn::make('created_at')
+            TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')
                 ->dateTime('Y-m-d')
                 ->sortable()
@@ -246,7 +259,7 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
     protected static function getSharedFilters(): array
     {
         return [
-            Tables\Filters\SelectFilter::make('gateway')
+            SelectFilter::make('gateway')
                 ->label('بوابة الدفع')
                 ->options([
                     'paymob' => 'Paymob',
@@ -254,7 +267,7 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
                     'tap' => 'Tap Payments',
                 ]),
 
-            Tables\Filters\SelectFilter::make('type')
+            SelectFilter::make('type')
                 ->label('النوع')
                 ->options([
                     SavedPaymentMethod::TYPE_CARD => 'بطاقة',
@@ -262,7 +275,7 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
                     SavedPaymentMethod::TYPE_APPLE_PAY => 'Apple Pay',
                 ]),
 
-            Tables\Filters\SelectFilter::make('brand')
+            SelectFilter::make('brand')
                 ->label('العلامة التجارية')
                 ->options([
                     SavedPaymentMethod::BRAND_VISA => 'Visa',
@@ -271,27 +284,27 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
                     SavedPaymentMethod::BRAND_AMEX => 'Amex',
                 ]),
 
-            Tables\Filters\TernaryFilter::make('is_active')
+            TernaryFilter::make('is_active')
                 ->label('الحالة')
                 ->placeholder('الكل')
                 ->trueLabel('نشطة')
                 ->falseLabel('غير نشطة'),
 
-            Tables\Filters\TernaryFilter::make('is_default')
+            TernaryFilter::make('is_default')
                 ->label('افتراضية')
                 ->placeholder('الكل')
                 ->trueLabel('افتراضية')
                 ->falseLabel('غير افتراضية'),
 
-            Tables\Filters\TrashedFilter::make()
+            TrashedFilter::make()
                 ->label('المحذوفة'),
         ];
     }
 
     // Shared actions
-    protected static function getToggleActiveAction(): Tables\Actions\Action
+    protected static function getToggleActiveAction(): Action
     {
-        return Tables\Actions\Action::make('toggle_active')
+        return Action::make('toggle_active')
             ->label(fn (SavedPaymentMethod $record) => $record->is_active ? 'تعطيل' : 'تفعيل')
             ->icon(fn (SavedPaymentMethod $record) => $record->is_active ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
             ->color(fn (SavedPaymentMethod $record) => $record->is_active ? 'danger' : 'success')
@@ -314,9 +327,9 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
             });
     }
 
-    protected static function getSetDefaultAction(): Tables\Actions\Action
+    protected static function getSetDefaultAction(): Action
     {
-        return Tables\Actions\Action::make('set_default')
+        return Action::make('set_default')
             ->label('تعيين كافتراضية')
             ->icon('heroicon-o-star')
             ->color('warning')
@@ -344,13 +357,13 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
         return static::scopeEloquentQuery($query);
     }
 
-    public static function table(Tables\Table $table): Tables\Table
+    public static function table(Table $table): Table
     {
         return $table
             ->columns(static::getSharedTableColumns())
             ->filters(static::getSharedFilters())
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions())
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions())
             ->defaultSort('created_at', 'desc');
     }
 }

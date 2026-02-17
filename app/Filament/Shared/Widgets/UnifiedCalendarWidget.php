@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace App\Filament\Shared\Widgets;
 
+use RuntimeException;
+use Exception;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Illuminate\Contracts\View\View;
 use App\Enums\CalendarSessionType;
 use App\Enums\SessionDuration;
 use App\Filament\Shared\Traits\CalendarWidgetBehavior;
@@ -121,7 +128,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
         $user = Auth::user();
 
         if (! $user) {
-            throw new \RuntimeException('User must be authenticated to access calendar');
+            throw new RuntimeException('User must be authenticated to access calendar');
         }
 
         return CalendarConfiguration::forUser($user);
@@ -282,7 +289,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
             }
 
             return $result->shouldRevert();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Notification::make()
                 ->title('خطأ')
                 ->body('حدث خطأ أثناء تحديث الموعد')
@@ -333,7 +340,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
             }
 
             return $result->shouldRevert();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Notification::make()
                 ->title('خطأ')
                 ->body('حدث خطأ أثناء تحديث المدة')
@@ -451,7 +458,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
         // (parent only resolves if getModel() is set, but we handle multiple models)
         try {
             $this->record = $this->resolveRecord($event['id']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->record = null;
         }
 
@@ -544,20 +551,20 @@ class UnifiedCalendarWidget extends FullCalendarWidget
             ->icon('heroicon-o-pencil-square')
             ->modalHeading('تعديل الجلسة')
             ->modalDescription('تعديل المعلومات الأساسية للجلسة')
-            ->form(function (array $arguments): array {
+            ->schema(function (array $arguments): array {
                 $record = $this->resolveRecordFromArguments($arguments);
                 $timezone = AcademyContextService::getTimezone();
                 $scheduledAt = $record?->scheduled_at?->copy()->setTimezone($timezone);
 
                 return [
-                    Forms\Components\TextInput::make('title')
+                    TextInput::make('title')
                         ->label('عنوان الجلسة')
                         ->default($record?->title)
                         ->maxLength(255),
 
-                    Forms\Components\Grid::make(2)
+                    Grid::make(2)
                         ->schema([
-                            Forms\Components\DatePicker::make('scheduled_date')
+                            DatePicker::make('scheduled_date')
                                 ->label('تاريخ الجلسة')
                                 ->default($scheduledAt?->format('Y-m-d'))
                                 ->required()
@@ -566,7 +573,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
                                 ->displayFormat('Y/m/d')
                                 ->closeOnDateSelection(),
 
-                            Forms\Components\Select::make('scheduled_time')
+                            Select::make('scheduled_time')
                                 ->label('وقت الجلسة')
                                 ->default($scheduledAt?->format('H:i'))
                                 ->required()
@@ -588,7 +595,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
                                 ->native(false),
                         ]),
 
-                    Forms\Components\Select::make('duration_minutes')
+                    Select::make('duration_minutes')
                         ->label('مدة الجلسة')
                         ->default($record?->duration_minutes ?? 60)
                         ->required()
@@ -679,7 +686,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
         $type = $this->getSessionTypeFromModel($record);
 
         // Get the current panel ID to construct proper URL
-        $panelId = filament()->getCurrentPanel()?->getId() ?? 'teacher';
+        $panelId = filament()->getCurrentOrDefaultPanel()?->getId() ?? 'teacher';
 
         return match ($type) {
             CalendarSessionType::QURAN_INDIVIDUAL,
@@ -699,7 +706,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
         $type = $this->getSessionTypeFromModel($record);
 
         // Get the current panel ID to construct proper URL
-        $panelId = filament()->getCurrentPanel()?->getId() ?? 'teacher';
+        $panelId = filament()->getCurrentOrDefaultPanel()?->getId() ?? 'teacher';
 
         return match ($type) {
             CalendarSessionType::QURAN_INDIVIDUAL,
@@ -821,7 +828,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
     /**
      * Get widget header with timezone information
      */
-    public function getHeader(): ?\Illuminate\Contracts\View\View
+    public function getHeader(): ?View
     {
         return view('filament.widgets.calendar-timezone-info', [
             'timezoneNotice' => $this->getTimezoneNotice(),

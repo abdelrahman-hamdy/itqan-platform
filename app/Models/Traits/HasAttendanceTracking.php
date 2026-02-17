@@ -2,6 +2,8 @@
 
 namespace App\Models\Traits;
 
+use App\Models\MeetingAttendance;
+use Illuminate\Database\Eloquent\Collection;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -21,7 +23,7 @@ trait HasAttendanceTracking
      */
     public function meetingAttendances(): HasMany
     {
-        return $this->hasMany(\App\Models\MeetingAttendance::class, 'session_id');
+        return $this->hasMany(MeetingAttendance::class, 'session_id');
     }
 
     /**
@@ -29,7 +31,7 @@ trait HasAttendanceTracking
      *
      * @param  array  $data  Additional attendance data
      */
-    public function markAttendance(User $user, array $data = []): \App\Models\MeetingAttendance
+    public function markAttendance(User $user, array $data = []): MeetingAttendance
     {
         return $this->meetingAttendances()->updateOrCreate(
             ['user_id' => $user->id],
@@ -63,7 +65,7 @@ trait HasAttendanceTracking
     /**
      * Get list of attendees
      */
-    public function getAttendees(): \Illuminate\Database\Eloquent\Collection
+    public function getAttendees(): Collection
     {
         return $this->meetingAttendances()
             ->where('status', 'present')

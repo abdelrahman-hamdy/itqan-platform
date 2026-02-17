@@ -2,6 +2,14 @@
 
 namespace App\Filament\Academy\Resources;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
+use App\Filament\Academy\Resources\StudentProfileResource\Pages\ListStudentProfiles;
+use App\Filament\Academy\Resources\StudentProfileResource\Pages\CreateStudentProfile;
+use App\Filament\Academy\Resources\StudentProfileResource\Pages\ViewStudentProfile;
+use App\Filament\Academy\Resources\StudentProfileResource\Pages\EditStudentProfile;
 use App\Enums\UserType;
 use App\Filament\Academy\Resources\StudentProfileResource\Pages;
 use App\Filament\Shared\Resources\Profiles\BaseStudentProfileResource;
@@ -31,8 +39,8 @@ class StudentProfileResource extends BaseStudentProfileResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
+            ViewAction::make(),
+            EditAction::make(),
             // Academy admins cannot delete students
         ];
     }
@@ -65,42 +73,42 @@ class StudentProfileResource extends BaseStudentProfileResource
         $columns = [];
 
         // Add avatar column (Academy-specific)
-        $columns[] = Tables\Columns\ImageColumn::make('avatar')
+        $columns[] = ImageColumn::make('avatar')
             ->label('الصورة')
             ->circular()
             ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff');
 
         // Add shared columns from base
-        $columns[] = Tables\Columns\TextColumn::make('student_code')
+        $columns[] = TextColumn::make('student_code')
             ->label('رمز الطالب')
             ->searchable()
             ->sortable()
             ->copyable();
 
-        $columns[] = Tables\Columns\TextColumn::make('full_name')
+        $columns[] = TextColumn::make('full_name')
             ->label('الاسم')
             ->searchable(['first_name', 'last_name'])
             ->sortable()
             ->weight(FontWeight::Bold);
 
-        $columns[] = Tables\Columns\TextColumn::make('email')
+        $columns[] = TextColumn::make('email')
             ->label('البريد الإلكتروني')
             ->searchable()
             ->sortable()
             ->copyable();
 
-        $columns[] = Tables\Columns\TextColumn::make('gradeLevel.name')
+        $columns[] = TextColumn::make('gradeLevel.name')
             ->label('المرحلة الدراسية')
             ->sortable();
 
-        $columns[] = Tables\Columns\TextColumn::make('parent.full_name')
+        $columns[] = TextColumn::make('parent.full_name')
             ->label('ولي الأمر')
             ->searchable(['first_name', 'last_name'])
             ->sortable()
             ->default('—')
             ->description(fn ($record) => $record->parent?->parent_code);
 
-        $columns[] = Tables\Columns\TextColumn::make('nationality')
+        $columns[] = TextColumn::make('nationality')
             ->label('الجنسية')
             ->formatStateUsing(function (?string $state): string {
                 if (! $state) {
@@ -112,19 +120,19 @@ class StudentProfileResource extends BaseStudentProfileResource
             ->sortable()
             ->toggleable(isToggledHiddenByDefault: true);
 
-        $columns[] = Tables\Columns\TextColumn::make('enrollment_date')
+        $columns[] = TextColumn::make('enrollment_date')
             ->label('تاريخ التسجيل')
             ->date()
             ->sortable()
             ->toggleable();
 
-        $columns[] = Tables\Columns\TextColumn::make('created_at')
+        $columns[] = TextColumn::make('created_at')
             ->label(__('filament.created_at'))
             ->dateTime()
             ->sortable()
             ->toggleable(isToggledHiddenByDefault: true);
 
-        $columns[] = Tables\Columns\TextColumn::make('updated_at')
+        $columns[] = TextColumn::make('updated_at')
             ->label(__('filament.updated_at'))
             ->dateTime()
             ->sortable()
@@ -204,7 +212,7 @@ class StudentProfileResource extends BaseStudentProfileResource
         }
 
         // Query grade level directly
-        $gradeLevel = \App\Models\AcademicGradeLevel::withoutGlobalScope('academy')
+        $gradeLevel = AcademicGradeLevel::withoutGlobalScope('academy')
             ->find($record->grade_level_id);
 
         return $gradeLevel?->academy_id;
@@ -217,10 +225,10 @@ class StudentProfileResource extends BaseStudentProfileResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListStudentProfiles::route('/'),
-            'create' => Pages\CreateStudentProfile::route('/create'),
-            'view' => Pages\ViewStudentProfile::route('/{record}'),
-            'edit' => Pages\EditStudentProfile::route('/{record}/edit'),
+            'index' => ListStudentProfiles::route('/'),
+            'create' => CreateStudentProfile::route('/create'),
+            'view' => ViewStudentProfile::route('/{record}'),
+            'edit' => EditStudentProfile::route('/{record}/edit'),
         ];
     }
 }

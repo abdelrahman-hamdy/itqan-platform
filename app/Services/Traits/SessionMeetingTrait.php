@@ -2,6 +2,7 @@
 
 namespace App\Services\Traits;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Models\AcademySettings;
 use App\Models\BaseSession;
@@ -326,7 +327,7 @@ trait SessionMeetingTrait
                 'room_name' => $session->meeting_room_name,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error during '.$this->getSessionType().' session cleanup', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -356,7 +357,7 @@ trait SessionMeetingTrait
             $results['meetings_terminated'] = $terminateResults['meetings_terminated'];
             $results['errors'] = array_merge($results['errors'], $terminateResults['errors']);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $results['errors'][] = [
                 'general' => $e->getMessage(),
             ];

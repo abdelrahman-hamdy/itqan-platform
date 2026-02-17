@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\View\View;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
+use Exception;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
@@ -22,7 +27,7 @@ class UnifiedInteractiveCourseController extends Controller
     /**
      * Display a listing of interactive courses (Unified for both public and authenticated)
      */
-    public function index(Request $request, $subdomain): \Illuminate\View\View
+    public function index(Request $request, $subdomain): View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -78,7 +83,7 @@ class UnifiedInteractiveCourseController extends Controller
             $currentPage = $request->get('page', 1);
             $offset = ($currentPage - 1) * $perPage;
 
-            $courses = new \Illuminate\Pagination\LengthAwarePaginator(
+            $courses = new LengthAwarePaginator(
                 $allCourses->slice($offset, $perPage),
                 $allCourses->count(),
                 $perPage,
@@ -129,7 +134,7 @@ class UnifiedInteractiveCourseController extends Controller
     /**
      * Display the specified interactive course (Unified for both public and authenticated)
      */
-    public function show(Request $request, $subdomain, $courseId): \Illuminate\View\View
+    public function show(Request $request, $subdomain, $courseId): View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -189,7 +194,7 @@ class UnifiedInteractiveCourseController extends Controller
             'total_enrolled' => $totalEnrolled,
             'max_students' => $course->max_students ?? 50,
             'available_spots' => max(0, ($course->max_students ?? 50) - $totalEnrolled),
-            'enrollment_deadline' => $course->enrollment_deadline ? \Carbon\Carbon::parse($course->enrollment_deadline) : null,
+            'enrollment_deadline' => $course->enrollment_deadline ? Carbon::parse($course->enrollment_deadline) : null,
         ];
 
         // For teachers: Get additional teacher data
@@ -245,7 +250,7 @@ class UnifiedInteractiveCourseController extends Controller
     /**
      * Enroll student in a course
      */
-    public function enroll(Request $request, $subdomain, $courseId): \Illuminate\Http\RedirectResponse
+    public function enroll(Request $request, $subdomain, $courseId): RedirectResponse
     {
         // Must be authenticated
         if (! Auth::check()) {
@@ -414,7 +419,7 @@ class UnifiedInteractiveCourseController extends Controller
             return redirect()->route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $courseId])
                 ->with('info', __('payments.subscription.enrollment_pending'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             Log::error('Interactive course enrollment failed', [

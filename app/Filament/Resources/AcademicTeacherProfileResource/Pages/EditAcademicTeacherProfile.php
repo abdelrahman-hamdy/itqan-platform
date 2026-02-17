@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 
+use Filament\Actions\DeleteAction;
+use App\Models\AcademicTeacherProfile;
 use App\Filament\Resources\AcademicTeacherProfileResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 /**
- * @property \App\Models\AcademicTeacherProfile $record
+ * @property AcademicTeacherProfile $record
  */
 class EditAcademicTeacherProfile extends EditRecord
 {
@@ -16,7 +18,7 @@ class EditAcademicTeacherProfile extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Teacher\Resources\QuranIndividualCircleResource\Pages;
 
+use Filament\Actions\EditAction;
 use App\Filament\Teacher\Resources\QuranIndividualCircleResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,7 +14,7 @@ class ViewQuranIndividualCircle extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
         ];
     }

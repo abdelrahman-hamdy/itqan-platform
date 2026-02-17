@@ -2,6 +2,8 @@
 
 namespace App\Services\Attendance;
 
+use InvalidArgumentException;
+use Illuminate\Support\Collection;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
@@ -82,7 +84,7 @@ class AcademicReportService extends BaseReportSyncService
         ?string $notes = null
     ): AcademicSessionReport {
         if ($grade < 0 || $grade > 10) {
-            throw new \InvalidArgumentException('Homework grade must be between 0 and 10');
+            throw new InvalidArgumentException('Homework grade must be between 0 and 10');
         }
 
         $report->update([
@@ -98,7 +100,7 @@ class AcademicReportService extends BaseReportSyncService
     /**
      * Get students for an Academic session
      */
-    protected function getSessionStudents(AcademicSession $session): \Illuminate\Support\Collection
+    protected function getSessionStudents(AcademicSession $session): Collection
     {
         if ($session->student_id) {
             return collect([User::find($session->student_id)])->filter();
@@ -114,9 +116,9 @@ class AcademicReportService extends BaseReportSyncService
     /**
      * Create reports for all students in an academic session
      *
-     * @return \Illuminate\Support\Collection Collection of created reports
+     * @return Collection Collection of created reports
      */
-    public function createReportsForSession(AcademicSession $session): \Illuminate\Support\Collection
+    public function createReportsForSession(AcademicSession $session): Collection
     {
         $students = $this->getSessionStudents($session);
         $reports = collect();
@@ -169,7 +171,7 @@ class AcademicReportService extends BaseReportSyncService
         if (isset($data['homework_degree'])) {
             $grade = (float) $data['homework_degree'];
             if ($grade < 0 || $grade > 10) {
-                throw new \InvalidArgumentException('Homework degree must be between 0 and 10');
+                throw new InvalidArgumentException('Homework degree must be between 0 and 10');
             }
             $updateData['homework_degree'] = $grade;
         }

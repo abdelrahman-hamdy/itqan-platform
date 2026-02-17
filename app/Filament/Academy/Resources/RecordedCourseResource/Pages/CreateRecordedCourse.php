@@ -2,24 +2,26 @@
 
 namespace App\Filament\Academy\Resources\RecordedCourseResource\Pages;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Actions\Action;
 use App\Filament\Academy\Resources\RecordedCourseResource;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -29,14 +31,14 @@ class CreateRecordedCourse extends CreateRecord
 {
     protected static string $resource = RecordedCourseResource::class;
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Tabs::make('course-creation-tabs')
                     ->label('إنشاء دورة مسجلة جديدة')
                     ->tabs([
-                        Tabs\Tab::make('المعلومات الأساسية')
+                        Tab::make('المعلومات الأساسية')
                             ->icon('heroicon-o-information-circle')
                             ->badge(fn (?array $state): ?string => ! empty($state['title']) && ! empty($state['course_code']) && ! empty($state['instructor_id'])
                                     ? '✓' : null
@@ -196,7 +198,7 @@ class CreateRecordedCourse extends CreateRecord
                                                 Toggle::make('is_free')
                                                     ->label('دورة مجانية')
                                                     ->default(false)
-                                                    ->reactive(),
+                                                    ->live(),
 
                                                 TextInput::make('price')
                                                     ->label('السعر')
@@ -306,7 +308,7 @@ class CreateRecordedCourse extends CreateRecord
                                     ->collapsible(),
                             ]),
 
-                        Tabs\Tab::make('دروس الدورة')
+                        Tab::make('دروس الدورة')
                             ->icon('heroicon-o-play')
                             ->badge(fn (?array $state): ?string => ! empty($state['lessons']) && count($state['lessons']) > 0
                                     ? (string) count($state['lessons']) : null
@@ -316,7 +318,7 @@ class CreateRecordedCourse extends CreateRecord
                                 Section::make('📚 إدارة دروس الدورة')
                                     ->description('يمكنك إضافة عدد لا محدود من الدروس، وترتيبها، وتحديد محتوى كل درس بشكل منفصل. كل درس يحتوي على فيديو منفصل وإعدادات خاصة به.')
                                     ->headerActions([
-                                        \Filament\Forms\Components\Actions\Action::make('help')
+                                        Action::make('help')
                                             ->label('مساعدة')
                                             ->icon('heroicon-o-question-mark-circle')
                                             ->color('info')

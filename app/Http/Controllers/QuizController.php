@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Log;
 use App\Constants\DefaultAcademy;
 use App\Models\QuizAssignment;
 use App\Models\QuizAttempt;
@@ -51,7 +52,7 @@ class QuizController extends Controller
      */
     public function start(string $quiz_id): RedirectResponse
     {
-        \Log::info('QuizController::start() called', [
+        Log::info('QuizController::start() called', [
             'quiz_id' => $quiz_id,
             'user_id' => Auth::id(),
             'route_params' => request()->route()->parameters(),

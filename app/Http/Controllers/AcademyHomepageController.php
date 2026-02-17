@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\View\View;
 use App\Enums\CircleEnrollmentStatus;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
@@ -14,7 +15,7 @@ use Illuminate\Http\Request;
 
 class AcademyHomepageController extends Controller
 {
-    public function show(Request $request): \Illuminate\View\View
+    public function show(Request $request): View
     {
         // Get the current academy from the request (set by middleware)
         $academy = $request->academy ?? Academy::first();

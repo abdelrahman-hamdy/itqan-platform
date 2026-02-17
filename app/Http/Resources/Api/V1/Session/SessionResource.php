@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Session;
 
+use App\Http\Resources\Api\V1\Attendance\AttendanceResource;
 use App\Models\BaseSession;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -83,7 +84,7 @@ class SessionResource extends JsonResource
             ]),
 
             // Attendances (polymorphic)
-            'attendances' => $this->whenLoaded('attendances', fn () => \App\Http\Resources\Api\V1\Attendance\AttendanceResource::collection($this->resource->attendances)
+            'attendances' => $this->whenLoaded('attendances', fn () => AttendanceResource::collection($this->resource->attendances)
             ),
 
             // Timestamps

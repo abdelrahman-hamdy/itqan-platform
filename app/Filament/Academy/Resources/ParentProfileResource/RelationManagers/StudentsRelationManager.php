@@ -2,10 +2,19 @@
 
 namespace App\Filament\Academy\Resources\ParentProfileResource\RelationManagers;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\Select;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Actions\AttachAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DetachAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DetachBulkAction;
 use App\Enums\RelationshipType;
 use App\Models\StudentProfile;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -18,11 +27,11 @@ class StudentsRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'full_name';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Select::make('relationship_type')
+        return $schema
+            ->components([
+                Select::make('relationship_type')
                     ->label('نوع العلاقة')
                     ->options(RelationshipType::labels())
                     ->required()
@@ -35,26 +44,26 @@ class StudentsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('full_name')
             ->columns([
-                Tables\Columns\ImageColumn::make('avatar')
+                ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
                     ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->full_name)),
-                Tables\Columns\TextColumn::make('student_code')
+                TextColumn::make('student_code')
                     ->label('رمز الطالب')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('full_name')
+                TextColumn::make('full_name')
                     ->label('الاسم الكامل')
                     ->searchable(['first_name', 'last_name'])
                     ->sortable(),
-                Tables\Columns\TextColumn::make('email')
+                TextColumn::make('email')
                     ->label('البريد الإلكتروني')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('gradeLevel.name')
+                TextColumn::make('gradeLevel.name')
                     ->label('المرحلة الدراسية')
                     ->badge()
                     ->color('info'),
-                Tables\Columns\TextColumn::make('relationship_type')
+                TextColumn::make('relationship_type')
                     ->label('نوع العلاقة')
                     ->formatStateUsing(fn ($state) => $state?->label() ?? '-')
                     ->badge()
@@ -66,36 +75,36 @@ class StudentsRelationManager extends RelationManager
                     }),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('relationship_type')
+                SelectFilter::make('relationship_type')
                     ->label('نوع العلاقة')
                     ->options(RelationshipType::labels()),
             ])
             ->headerActions([
-                Tables\Actions\AttachAction::make()
+                AttachAction::make()
                     ->label('ربط طالب')
                     ->modalHeading('ربط طالب بولي الأمر')
                     ->preloadRecordSelect()
                     ->recordSelectSearchColumns(['student_code', 'first_name', 'last_name', 'email'])
                     ->recordTitle(fn (StudentProfile $record): string => "{$record->full_name} ({$record->student_code})")
-                    ->form(fn (Tables\Actions\AttachAction $action): array => [
+                    ->form(fn (AttachAction $action): array => [
                         $action->getRecordSelect(),
-                        Forms\Components\Select::make('relationship_type')
+                        Select::make('relationship_type')
                             ->label('نوع العلاقة')
                             ->options(RelationshipType::labels())
                             ->required()
                             ->default(RelationshipType::FATHER->value),
                     ]),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make()
+            ->recordActions([
+                EditAction::make()
                     ->label('تعديل')
                     ->modalHeading('تعديل نوع العلاقة'),
-                Tables\Actions\DetachAction::make()
+                DetachAction::make()
                     ->label('فك الربط'),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DetachBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DetachBulkAction::make()
                         ->label('فك ربط المحددين'),
                 ]),
             ]);

@@ -2,16 +2,24 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use Filament\Schemas\Components\Component;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use App\Filament\Teacher\Resources\QuranCircleResource\Pages\ListQuranCircles;
+use App\Filament\Teacher\Resources\QuranCircleResource\Pages\CreateQuranCircle;
+use App\Filament\Teacher\Resources\QuranCircleResource\Pages\ViewQuranCircle;
+use App\Filament\Teacher\Resources\QuranCircleResource\Pages\EditQuranCircle;
 use App\Filament\Shared\Resources\BaseQuranCircleResource;
 use App\Filament\Teacher\Resources\QuranCircleResource\Pages;
 use App\Models\QuranCircle;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Tables;
-use Filament\Tables\Actions\ActionGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -29,7 +37,7 @@ class QuranCircleResource extends BaseQuranCircleResource
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationGroup = 'جلساتي';
+    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 2;
 
@@ -55,7 +63,7 @@ class QuranCircleResource extends BaseQuranCircleResource
     /**
      * Get the teacher field - hidden, auto-assigned to current teacher.
      */
-    protected static function getTeacherFormField(): \Filament\Forms\Components\Component
+    protected static function getTeacherFormField(): Component
     {
         return TextInput::make('quran_teacher_id')
             ->hidden()
@@ -92,13 +100,13 @@ class QuranCircleResource extends BaseQuranCircleResource
     {
         return [
             ActionGroup::make([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض'),
 
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
 
-                Tables\Actions\Action::make('view_circle')
+                Action::make('view_circle')
                     ->label('عرض تفاصيل الحلقة')
                     ->icon('heroicon-o-eye')
                     ->color('info')
@@ -199,10 +207,10 @@ class QuranCircleResource extends BaseQuranCircleResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuranCircles::route('/'),
-            'create' => Pages\CreateQuranCircle::route('/create'),
-            'view' => Pages\ViewQuranCircle::route('/{record}'),
-            'edit' => Pages\EditQuranCircle::route('/{record}/edit'),
+            'index' => ListQuranCircles::route('/'),
+            'create' => CreateQuranCircle::route('/create'),
+            'view' => ViewQuranCircle::route('/{record}'),
+            'edit' => EditQuranCircle::route('/{record}/edit'),
         ];
     }
 }

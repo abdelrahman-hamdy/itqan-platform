@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
+use App\Models\QuranTeacherProfile;
+use App\Models\AcademicTeacherProfile;
+use App\Models\QuranSession;
+use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
@@ -26,10 +31,10 @@ class EarningsController extends Controller
         $teacherId = null;
 
         if ($user->isQuranTeacher() && $user->quranTeacherProfile) {
-            $teacherType = \App\Models\QuranTeacherProfile::class;
+            $teacherType = QuranTeacherProfile::class;
             $teacherId = $user->quranTeacherProfile->id;
         } elseif ($user->isAcademicTeacher() && $user->academicTeacherProfile) {
-            $teacherType = \App\Models\AcademicTeacherProfile::class;
+            $teacherType = AcademicTeacherProfile::class;
             $teacherId = $user->academicTeacherProfile->id;
         }
 
@@ -88,10 +93,10 @@ class EarningsController extends Controller
         $teacherId = null;
 
         if ($user->isQuranTeacher() && $user->quranTeacherProfile) {
-            $teacherType = \App\Models\QuranTeacherProfile::class;
+            $teacherType = QuranTeacherProfile::class;
             $teacherId = $user->quranTeacherProfile->id;
         } elseif ($user->isAcademicTeacher() && $user->academicTeacherProfile) {
-            $teacherType = \App\Models\AcademicTeacherProfile::class;
+            $teacherType = AcademicTeacherProfile::class;
             $teacherId = $user->academicTeacherProfile->id;
         }
 
@@ -136,9 +141,9 @@ class EarningsController extends Controller
         $earnings = collect($paginatedEarnings->items())->map(function ($earning) {
             // Determine session type label
             $sessionTypeLabel = match ($earning->session_type) {
-                \App\Models\QuranSession::class => 'جلسة قرآنية',
-                \App\Models\AcademicSession::class => 'جلسة أكاديمية',
-                \App\Models\InteractiveCourseSession::class => 'جلسة دورة تفاعلية',
+                QuranSession::class => 'جلسة قرآنية',
+                AcademicSession::class => 'جلسة أكاديمية',
+                InteractiveCourseSession::class => 'جلسة دورة تفاعلية',
                 default => 'جلسة',
             };
 

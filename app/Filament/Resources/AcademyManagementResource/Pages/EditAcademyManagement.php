@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\AcademyManagementResource\Pages;
 
+use Filament\Actions\DeleteAction;
+use Illuminate\Database\Eloquent\Model;
 use App\Filament\Resources\AcademyManagementResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -13,11 +15,11 @@ class EditAcademyManagement extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 
-    protected function handleRecordUpdate(\Illuminate\Database\Eloquent\Model $record, array $data): \Illuminate\Database\Eloquent\Model
+    protected function handleRecordUpdate(Model $record, array $data): Model
     {
         // Colors are now stored as enum values (e.g., 'sky', 'emerald'), not hex values
         // No need to add '#' prefix anymore

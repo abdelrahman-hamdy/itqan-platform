@@ -2,6 +2,9 @@
 
 namespace App\Filament\Widgets;
 
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\Action;
+use App\Filament\Resources\BusinessServiceRequestResource;
 use App\Enums\BusinessRequestStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -29,29 +32,30 @@ class RecentBusinessRequestsWidget extends BaseWidget
                     ->limit(10)
             )
             ->columns([
-                Tables\Columns\TextColumn::make('client_name')
+                TextColumn::make('client_name')
                     ->label('اسم العميل')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
 
-                Tables\Columns\TextColumn::make('client_phone')
+                TextColumn::make('client_phone')
                     ->label('رقم الهاتف')
                     ->searchable()
                     ->copyable()
                     ->icon('heroicon-m-phone'),
 
-                Tables\Columns\TextColumn::make('serviceCategory.name')
+                TextColumn::make('serviceCategory.name')
                     ->label('نوع الخدمة')
                     ->badge()
                     ->color('info'),
 
-                Tables\Columns\TextColumn::make('project_budget')
+                TextColumn::make('project_budget')
                     ->label('الميزانية')
                     ->money(fn ($record) => $record->academy?->currency?->value ?? getAcademyCurrency()->value)
                     ->sortable(),
 
-                Tables\Columns\BadgeColumn::make('status')
+                TextColumn::make('status')
+                    ->badge()
                     ->label('الحالة')
                     ->colors([
                         'warning' => 'pending',
@@ -61,7 +65,7 @@ class RecentBusinessRequestsWidget extends BaseWidget
                         'gray' => 'completed',
                     ])
                     ->formatStateUsing(function (mixed $state): string {
-                        if ($state instanceof \App\Enums\BusinessRequestStatus) {
+                        if ($state instanceof BusinessRequestStatus) {
                             return $state->label();
                         }
 
@@ -75,20 +79,20 @@ class RecentBusinessRequestsWidget extends BaseWidget
                         };
                     }),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الطلب')
                     ->dateTime('Y-m-d H:i')
                     ->sortable()
                     ->since(),
             ])
-            ->actions([
-                Tables\Actions\Action::make('view')
+            ->recordActions([
+                Action::make('view')
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
-                    ->url(fn (BusinessServiceRequest $record): string => \App\Filament\Resources\BusinessServiceRequestResource::getUrl('view', ['record' => $record]))
+                    ->url(fn (BusinessServiceRequest $record): string => BusinessServiceRequestResource::getUrl('view', ['record' => $record]))
                     ->openUrlInNewTab(),
 
-                Tables\Actions\Action::make('mark_reviewed')
+                Action::make('mark_reviewed')
                     ->label('مراجعة')
                     ->icon('heroicon-o-check')
                     ->color('info')

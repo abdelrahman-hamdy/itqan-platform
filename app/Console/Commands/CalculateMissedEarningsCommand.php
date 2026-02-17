@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Jobs\CalculateSessionEarningsJob;
 use App\Models\AcademicSession;
@@ -90,7 +91,7 @@ class CalculateMissedEarningsCommand extends Command
 
             return self::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('Missed earnings calculation failed: '.$e->getMessage());
 
             if ($isVerbose) {
@@ -144,7 +145,7 @@ class CalculateMissedEarningsCommand extends Command
                         try {
                             dispatch(new CalculateSessionEarningsJob($session));
                             $results['quran_dispatched']++;
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             $results['errors'][] = [
                                 'session_type' => 'quran',
                                 'session_id' => $session->id,
@@ -194,7 +195,7 @@ class CalculateMissedEarningsCommand extends Command
                         try {
                             dispatch(new CalculateSessionEarningsJob($session));
                             $results['academic_dispatched']++;
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             $results['errors'][] = [
                                 'session_type' => 'academic',
                                 'session_id' => $session->id,

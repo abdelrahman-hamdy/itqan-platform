@@ -2,6 +2,7 @@
 
 namespace App\Filament\Shared\Traits;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
@@ -40,7 +41,7 @@ trait ValidatesConflicts
      * @param  int|null  $excludeId  Session ID to exclude from conflict check
      * @param  string  $sessionType  Type of session being validated ('quran' or 'academic')
      *
-     * @throws \Exception If conflict is found
+     * @throws Exception If conflict is found
      */
     protected function validateSessionConflicts(array $data, ?int $excludeId = null, string $sessionType = 'quran'): void
     {
@@ -58,7 +59,7 @@ trait ValidatesConflicts
         // Check if trying to schedule in the past
         $timezone = AcademyContextService::getTimezone();
         if ($scheduledAt < Carbon::now($timezone)) {
-            throw new \Exception('لا يمكن جدولة جلسة في وقت ماضي');
+            throw new Exception('لا يمكن جدولة جلسة في وقت ماضي');
         }
 
         // Check for conflicts with Quran sessions (using effective times that include break buffer)
@@ -66,7 +67,7 @@ trait ValidatesConflicts
         if ($quranConflict) {
             $conflictTime = $quranConflict->scheduled_at->timezone($timezone)->format('Y/m/d H:i');
             $conflictEnd = $quranConflict->scheduled_at->copy()->addMinutes($quranConflict->duration_minutes ?? 60)->timezone($timezone)->format('H:i');
-            throw new \Exception("يوجد تعارض مع جلسة قرآن ({$conflictTime} - {$conflictEnd}). يجب ترك {$breakMinutes} دقائق على الأقل بين الجلسات.");
+            throw new Exception("يوجد تعارض مع جلسة قرآن ({$conflictTime} - {$conflictEnd}). يجب ترك {$breakMinutes} دقائق على الأقل بين الجلسات.");
         }
 
         // Check for conflicts with Academic sessions
@@ -74,7 +75,7 @@ trait ValidatesConflicts
         if ($academicConflict) {
             $conflictTime = $academicConflict->scheduled_at->timezone($timezone)->format('Y/m/d H:i');
             $conflictEnd = $academicConflict->scheduled_at->copy()->addMinutes($academicConflict->duration_minutes ?? 60)->timezone($timezone)->format('H:i');
-            throw new \Exception("يوجد تعارض مع جلسة أكاديمية ({$conflictTime} - {$conflictEnd}). يجب ترك {$breakMinutes} دقائق على الأقل بين الجلسات.");
+            throw new Exception("يوجد تعارض مع جلسة أكاديمية ({$conflictTime} - {$conflictEnd}). يجب ترك {$breakMinutes} دقائق على الأقل بين الجلسات.");
         }
 
         // Check for conflicts with Interactive Course sessions
@@ -83,7 +84,7 @@ trait ValidatesConflicts
             $conflictTime = $courseConflict->scheduled_at->timezone($timezone)->format('Y/m/d H:i');
             $conflictEnd = $courseConflict->scheduled_at->copy()->addMinutes($courseConflict->duration_minutes ?? 60)->timezone($timezone)->format('H:i');
             $courseTitle = $courseConflict->course?->title ?? 'دورة تفاعلية';
-            throw new \Exception("يوجد تعارض مع جلسة دورة ({$courseTitle}) في ({$conflictTime} - {$conflictEnd}). يجب ترك {$breakMinutes} دقائق على الأقل بين الجلسات.");
+            throw new Exception("يوجد تعارض مع جلسة دورة ({$courseTitle}) في ({$conflictTime} - {$conflictEnd}). يجب ترك {$breakMinutes} دقائق على الأقل بين الجلسات.");
         }
     }
 
@@ -216,7 +217,7 @@ trait ValidatesConflicts
             ], $excludeSessionId, $sessionType);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }

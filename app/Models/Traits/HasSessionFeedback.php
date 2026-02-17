@@ -2,6 +2,7 @@
 
 namespace App\Models\Traits;
 
+use Illuminate\Support\Str;
 use App\Models\User;
 
 /**
@@ -123,7 +124,7 @@ trait HasSessionFeedback
             return null;
         }
 
-        return \Illuminate\Support\Str::limit($this->teacher_feedback, 100);
+        return Str::limit($this->teacher_feedback, 100);
     }
 
     /**
@@ -135,6 +136,6 @@ trait HasSessionFeedback
             return null;
         }
 
-        return \Illuminate\Support\Str::limit($this->session_notes, 100);
+        return Str::limit($this->session_notes, 100);
     }
 }

@@ -2,10 +2,26 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use App\Models\User;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Filters\SelectFilter;
+use App\Filament\Resources\InteractiveSessionReportResource\Pages\ListInteractiveSessionReports;
+use App\Filament\Resources\InteractiveSessionReportResource\Pages\CreateInteractiveSessionReport;
+use App\Filament\Resources\InteractiveSessionReportResource\Pages\ViewInteractiveSessionReport;
+use App\Filament\Resources\InteractiveSessionReportResource\Pages\EditInteractiveSessionReport;
 use App\Filament\Resources\InteractiveSessionReportResource\Pages;
 use App\Filament\Shared\Resources\BaseInteractiveSessionReportResource;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,7 +38,7 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationGroup = 'التقارير والحضور';
+    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والحضور';
 
     protected static ?int $navigationSort = 3;
 
@@ -45,38 +61,38 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     {
         return Section::make('معلومات الجلسة')
             ->schema([
-                Forms\Components\Select::make('session_id')
+                Select::make('session_id')
                     ->relationship('session', 'title')
                     ->label('الجلسة التفاعلية')
                     ->required()
                     ->searchable()
                     ->preload(),
 
-                Forms\Components\Select::make('student_id')
+                Select::make('student_id')
                     ->label('الطالب')
                     ->required()
                     ->searchable()
                     ->preload()
                     ->options(function () {
-                        return \App\Models\User::whereHas('studentProfile')
+                        return User::whereHas('studentProfile')
                             ->get()
                             ->mapWithKeys(fn ($user) => [
                                 $user->id => $user->display_name ?? $user->name ?? 'طالب #'.$user->id,
                             ])
                             ->toArray();
                     })
-                    ->getOptionLabelUsing(fn ($value) => \App\Models\User::find($value)?->display_name
-                        ?? \App\Models\User::find($value)?->name
+                    ->getOptionLabelUsing(fn ($value) => User::find($value)?->display_name
+                        ?? User::find($value)?->name
                         ?? 'طالب #'.$value
                     ),
 
-                Forms\Components\Select::make('teacher_id')
+                Select::make('teacher_id')
                     ->label('المعلم')
                     ->nullable()
                     ->searchable()
                     ->preload()
                     ->options(function () {
-                        return \App\Models\User::whereHas('quranTeacherProfile')
+                        return User::whereHas('quranTeacherProfile')
                             ->orWhereHas('academicTeacherProfile')
                             ->get()
                             ->mapWithKeys(fn ($user) => [
@@ -84,12 +100,12 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
                             ])
                             ->toArray();
                     })
-                    ->getOptionLabelUsing(fn ($value) => \App\Models\User::find($value)?->display_name
-                        ?? \App\Models\User::find($value)?->name
+                    ->getOptionLabelUsing(fn ($value) => User::find($value)?->display_name
+                        ?? User::find($value)?->name
                         ?? 'معلم #'.$value
                     ),
 
-                Forms\Components\Select::make('academy_id')
+                Select::make('academy_id')
                     ->relationship('academy', 'name')
                     ->label('الأكاديمية')
                     ->nullable()
@@ -104,8 +120,8 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
+            ViewAction::make(),
+            EditAction::make(),
         ];
     }
 
@@ -115,8 +131,8 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
             ]),
         ];
     }
@@ -143,31 +159,31 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     {
         return Section::make('تفاصيل الحضور')
             ->schema([
-                Forms\Components\DateTimePicker::make('meeting_enter_time')
+                DateTimePicker::make('meeting_enter_time')
                     ->label('وقت الدخول للجلسة')
                     ->live(),
 
-                Forms\Components\DateTimePicker::make('meeting_leave_time')
+                DateTimePicker::make('meeting_leave_time')
                     ->label('وقت الخروج من الجلسة')
                     ->after('meeting_enter_time'),
 
-                Forms\Components\TextInput::make('actual_attendance_minutes')
+                TextInput::make('actual_attendance_minutes')
                     ->label('دقائق الحضور الفعلي')
                     ->numeric()
                     ->default(0)
                     ->suffix('دقيقة'),
 
-                Forms\Components\Toggle::make('is_late')
+                Toggle::make('is_late')
                     ->label('الطالب متأخر'),
 
-                Forms\Components\TextInput::make('late_minutes')
+                TextInput::make('late_minutes')
                     ->label('دقائق التأخير')
                     ->numeric()
                     ->default(0)
                     ->suffix('دقيقة')
-                    ->visible(fn (Forms\Get $get) => $get('is_late')),
+                    ->visible(fn (Get $get) => $get('is_late')),
 
-                Forms\Components\TextInput::make('attendance_percentage')
+                TextInput::make('attendance_percentage')
                     ->label('نسبة الحضور')
                     ->numeric()
                     ->minValue(0)
@@ -184,20 +200,20 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     {
         return Section::make('معلومات النظام')
             ->schema([
-                Forms\Components\DateTimePicker::make('evaluated_at')
+                DateTimePicker::make('evaluated_at')
                     ->label('تاريخ التقييم'),
 
-                Forms\Components\Toggle::make('is_calculated')
+                Toggle::make('is_calculated')
                     ->label('محسوب تلقائياً')
                     ->default(true),
 
-                Forms\Components\Toggle::make('manually_evaluated')
+                Toggle::make('manually_evaluated')
                     ->label('معدل يدوياً')
                     ->default(false),
 
-                Forms\Components\Textarea::make('override_reason')
+                Textarea::make('override_reason')
                     ->label('سبب التعديل اليدوي')
-                    ->visible(fn (Forms\Get $get) => $get('manually_evaluated'))
+                    ->visible(fn (Get $get) => $get('manually_evaluated'))
                     ->columnSpanFull(),
             ])->columns(3);
     }
@@ -265,7 +281,7 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
         return [
             ...parent::getTableFilters(),
 
-            Tables\Filters\SelectFilter::make('teacher_id')
+            SelectFilter::make('teacher_id')
                 ->label('المعلم')
                 ->relationship('teacher', 'first_name', fn (Builder $query) => $query->whereIn('user_type', ['quran_teacher', 'academic_teacher']))
                 ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->first_name ?? 'معلم #'.$record->id)
@@ -281,10 +297,10 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListInteractiveSessionReports::route('/'),
-            'create' => Pages\CreateInteractiveSessionReport::route('/create'),
-            'view' => Pages\ViewInteractiveSessionReport::route('/{record}'),
-            'edit' => Pages\EditInteractiveSessionReport::route('/{record}/edit'),
+            'index' => ListInteractiveSessionReports::route('/'),
+            'create' => CreateInteractiveSessionReport::route('/create'),
+            'view' => ViewInteractiveSessionReport::route('/{record}'),
+            'edit' => EditInteractiveSessionReport::route('/{record}/edit'),
         ];
     }
 }

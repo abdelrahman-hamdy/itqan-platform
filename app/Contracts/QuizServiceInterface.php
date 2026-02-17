@@ -2,6 +2,7 @@
 
 namespace App\Contracts;
 
+use Exception;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
 use App\Models\QuizAttempt;
@@ -46,7 +47,7 @@ interface QuizServiceInterface
      * Start a quiz attempt.
      *
      *
-     * @throws \Exception If student has no remaining attempts
+     * @throws Exception If student has no remaining attempts
      */
     public function startAttempt(QuizAssignment $assignment, int $studentId): QuizAttempt;
 
@@ -54,7 +55,7 @@ interface QuizServiceInterface
      * Submit quiz answers.
      *
      *
-     * @throws \Exception If attempt is already submitted
+     * @throws Exception If attempt is already submitted
      */
     public function submitAttempt(QuizAttempt $attempt, array $answers): QuizAttempt;
 

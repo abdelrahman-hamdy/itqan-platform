@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi\Reports;
 
+use BackedEnum;
+use Illuminate\Support\Collection;
+use Illuminate\Http\Request;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
@@ -24,7 +27,7 @@ abstract class BaseParentReportController extends Controller
      * Get all linked children for a parent.
      *
      * @param  int|null  $childId  Optional filter for specific child
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     protected function getChildren(int $parentProfileId, ?int $childId = null)
     {
@@ -66,7 +69,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Get date range from request with defaults.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param Request $request
      * @return array [startDate, endDate]
      */
     protected function getDateRange($request): array
@@ -85,7 +88,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Calculate attendance rate from reports.
      *
-     * @param  \Illuminate\Support\Collection  $reports
+     * @param Collection $reports
      */
     protected function calculateAttendanceRate($reports): float
     {
@@ -97,7 +100,7 @@ abstract class BaseParentReportController extends Controller
 
         $attended = $reports->filter(function ($report) {
             $status = $report->attendance_status;
-            if ($status instanceof \BackedEnum) {
+            if ($status instanceof BackedEnum) {
                 $status = $status->value;
             }
 
@@ -110,13 +113,13 @@ abstract class BaseParentReportController extends Controller
     /**
      * Count attended sessions from reports.
      *
-     * @param  \Illuminate\Support\Collection  $reports
+     * @param Collection $reports
      */
     protected function countAttended($reports): int
     {
         return $reports->filter(function ($report) {
             $status = $report->attendance_status;
-            if ($status instanceof \BackedEnum) {
+            if ($status instanceof BackedEnum) {
                 $status = $status->value;
             }
 
@@ -127,13 +130,13 @@ abstract class BaseParentReportController extends Controller
     /**
      * Count missed sessions from reports.
      *
-     * @param  \Illuminate\Support\Collection  $reports
+     * @param Collection $reports
      */
     protected function countMissed($reports): int
     {
         return $reports->filter(function ($report) {
             $status = $report->attendance_status;
-            if ($status instanceof \BackedEnum) {
+            if ($status instanceof BackedEnum) {
                 $status = $status->value;
             }
 
@@ -144,7 +147,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Validate parent access.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param Request $request
      * @return array|JsonResponse Returns [user, parentProfile] or error response
      */
     protected function validateParentAccess($request)

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -157,7 +158,7 @@ class HealthCheckController extends Controller
                 'latency_ms' => $latency,
                 'driver' => config('database.default'),
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'healthy' => false,
                 'message' => 'Database connection failed',
@@ -182,7 +183,7 @@ class HealthCheckController extends Controller
             $latency = round((microtime(true) - $start) * 1000, 2);
 
             if ($value !== 'test') {
-                throw new \Exception('Cache read/write mismatch');
+                throw new Exception('Cache read/write mismatch');
             }
 
             return [
@@ -191,7 +192,7 @@ class HealthCheckController extends Controller
                 'latency_ms' => $latency,
                 'driver' => config('cache.default'),
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'healthy' => false,
                 'message' => 'Cache check failed',
@@ -217,7 +218,7 @@ class HealthCheckController extends Controller
                 'latency_ms' => $latency,
                 'response' => $pong,
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'healthy' => false,
                 'message' => 'Redis connection failed',
@@ -278,7 +279,7 @@ class HealthCheckController extends Controller
                 'message' => 'Queue configured',
                 'driver' => $driver,
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'healthy' => false,
                 'message' => 'Queue check failed',
@@ -304,7 +305,7 @@ class HealthCheckController extends Controller
             $latency = round((microtime(true) - $start) * 1000, 2);
 
             if ($content !== 'health check') {
-                throw new \Exception('Storage read/write mismatch');
+                throw new Exception('Storage read/write mismatch');
             }
 
             return [
@@ -313,7 +314,7 @@ class HealthCheckController extends Controller
                 'latency_ms' => $latency,
                 'disk' => $disk,
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'healthy' => false,
                 'message' => 'Storage check failed',

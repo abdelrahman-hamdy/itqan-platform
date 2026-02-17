@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Common;
 
+use Throwable;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
@@ -204,7 +205,7 @@ class NotificationController extends Controller
                 'token_id' => $deviceToken->id,
             ], __('Device token registered successfully'));
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Failed to register device token', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),

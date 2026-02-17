@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\View\View;
 use App\Models\Academy;
 use App\Models\RecordedCourse;
 use Illuminate\Http\Request;
@@ -11,7 +12,7 @@ class PublicRecordedCourseController extends Controller
     /**
      * Display a listing of recorded courses for an academy
      */
-    public function index(Request $request, $subdomain): \Illuminate\View\View
+    public function index(Request $request, $subdomain): View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->first();
@@ -32,7 +33,7 @@ class PublicRecordedCourseController extends Controller
     /**
      * Display the specified recorded course
      */
-    public function show(Request $request, $subdomain, $courseId): \Illuminate\View\View
+    public function show(Request $request, $subdomain, $courseId): View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->first();

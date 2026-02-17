@@ -2,6 +2,7 @@
 
 namespace App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages;
 
+use Filament\Actions\EditAction;
 use App\Filament\Teacher\Resources\QuranTrialRequestResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,7 +14,7 @@ class ViewQuranTrialRequest extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
         ];
     }

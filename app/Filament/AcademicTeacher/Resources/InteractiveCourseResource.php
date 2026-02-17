@@ -2,12 +2,29 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Textarea;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use App\Models\AcademicSubject;
+use App\Models\AcademicGradeLevel;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages\ListInteractiveCourses;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages\ViewInteractiveCourse;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages\EditInteractiveCourse;
 use App\Enums\InteractiveCourseStatus;
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages;
 use App\Filament\Shared\Resources\BaseInteractiveCourseResource;
 use App\Models\InteractiveCourse;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
 use Filament\Tables;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -29,11 +46,11 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-bar';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-presentation-chart-bar';
 
     protected static ?string $navigationLabel = 'الدورات التفاعلية';
 
-    protected static ?string $navigationGroup = 'جلساتي';
+    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 3;
 
@@ -63,21 +80,21 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
         return [
             Section::make('معلومات الدورة الأساسية')
                 ->schema([
-                    Forms\Components\Grid::make(3)
+                    Grid::make(3)
                         ->schema([
-                            Forms\Components\TextInput::make('course_code')
+                            TextInput::make('course_code')
                                 ->label('رمز الدورة')
                                 ->disabled()
                                 ->dehydrated(false)
                                 ->helperText('رمز الدورة (يُحدد من قبل الإدارة)'),
 
-                            Forms\Components\TextInput::make('title')
+                            TextInput::make('title')
                                 ->label('عنوان الدورة')
                                 ->required()
                                 ->maxLength(255)
                                 ->helperText('عنوان واضح ومميز للدورة'),
 
-                            Forms\Components\Select::make('status')
+                            Select::make('status')
                                 ->label('حالة الدورة')
                                 ->options(InteractiveCourseStatus::options())
                                 ->required()
@@ -87,9 +104,9 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
 
             Section::make('تفاصيل الدورة')
                 ->schema([
-                    Forms\Components\Grid::make(2)
+                    Grid::make(2)
                         ->schema([
-                            Forms\Components\Select::make('subject_id')
+                            Select::make('subject_id')
                                 ->label('المادة')
                                 ->options(static::getAvailableSubjects())
                                 ->required()
@@ -99,7 +116,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
                                 ->dehydrated(false)
                                 ->helperText('المادة الدراسية (يُحدد من قبل الإدارة)'),
 
-                            Forms\Components\Select::make('grade_level_id')
+                            Select::make('grade_level_id')
                                 ->label('المستوى الأكاديمي')
                                 ->options(static::getAvailableGradeLevels())
                                 ->required()
@@ -109,7 +126,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
                                 ->dehydrated(false)
                                 ->helperText('المستوى الأكاديمي (يُحدد من قبل الإدارة)'),
 
-                            Forms\Components\TextInput::make('total_sessions')
+                            TextInput::make('total_sessions')
                                 ->label('عدد الجلسات')
                                 ->numeric()
                                 ->minValue(1)
@@ -117,7 +134,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
                                 ->dehydrated(false)
                                 ->helperText('إجمالي عدد جلسات الدورة'),
 
-                            Forms\Components\TextInput::make('duration_per_session')
+                            TextInput::make('duration_per_session')
                                 ->label('مدة الجلسة بالدقائق')
                                 ->numeric()
                                 ->minValue(15)
@@ -129,9 +146,9 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
 
             Section::make('التسعير والتسجيل')
                 ->schema([
-                    Forms\Components\Grid::make(3)
+                    Grid::make(3)
                         ->schema([
-                            Forms\Components\TextInput::make('price_per_student')
+                            TextInput::make('price_per_student')
                                 ->label('سعر الطالب الواحد')
                                 ->numeric()
                                 ->minValue(0)
@@ -140,7 +157,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
                                 ->dehydrated(false)
                                 ->helperText('السعر للطالب الواحد (يُحدد من قبل الإدارة)'),
 
-                            Forms\Components\TextInput::make('max_students')
+                            TextInput::make('max_students')
                                 ->label('الحد الأقصى للطلاب')
                                 ->numeric()
                                 ->minValue(1)
@@ -148,7 +165,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
                                 ->dehydrated(false)
                                 ->helperText('العدد الأقصى للطلاب في الدورة'),
 
-                            Forms\Components\TextInput::make('min_students')
+                            TextInput::make('min_students')
                                 ->label('الحد الأدنى للطلاب')
                                 ->numeric()
                                 ->minValue(1)
@@ -160,18 +177,18 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
 
             Section::make('المحتوى والوصف')
                 ->schema([
-                    Forms\Components\RichEditor::make('description')
+                    RichEditor::make('description')
                         ->label('وصف الدورة')
                         ->helperText('وصف تفصيلي لمحتوى وأهداف الدورة')
                         ->columnSpanFull(),
 
-                    Forms\Components\TagsInput::make('learning_outcomes')
+                    TagsInput::make('learning_outcomes')
                         ->label('النتائج التعليمية')
                         ->helperText('الأهداف والنتائج المتوقعة من الدورة')
                         ->placeholder('اضغط Enter لإضافة هدف جديد')
                         ->columnSpanFull(),
 
-                    Forms\Components\TagsInput::make('prerequisites')
+                    TagsInput::make('prerequisites')
                         ->label('المتطلبات المسبقة')
                         ->helperText('المتطلبات التي يجب توفرها قبل الالتحاق بالدورة')
                         ->placeholder('اضغط Enter لإضافة متطلب جديد')
@@ -180,21 +197,21 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
 
             Section::make('التواريخ والجدولة')
                 ->schema([
-                    Forms\Components\Grid::make(2)
+                    Grid::make(2)
                         ->schema([
-                            Forms\Components\DatePicker::make('start_date')
+                            DatePicker::make('start_date')
                                 ->label('تاريخ البداية')
                                 ->required()
                                 ->native(false)
                                 ->helperText('تاريخ بداية الدورة'),
 
-                            Forms\Components\DatePicker::make('end_date')
+                            DatePicker::make('end_date')
                                 ->label('تاريخ النهاية')
                                 ->required()
                                 ->native(false)
                                 ->helperText('تاريخ نهاية الدورة'),
 
-                            Forms\Components\DatePicker::make('enrollment_deadline')
+                            DatePicker::make('enrollment_deadline')
                                 ->label('آخر موعد للتسجيل')
                                 ->native(false)
                                 ->helperText('اتركه فارغاً للسماح بالتسجيل طوال فترة الدورة'),
@@ -203,12 +220,12 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
 
             Section::make('إعدادات المعلم')
                 ->schema([
-                    Forms\Components\Toggle::make('recording_enabled')
+                    Toggle::make('recording_enabled')
                         ->label('تسجيل جلسات الدورة')
                         ->default(true)
                         ->helperText('تفعيل تسجيل جميع جلسات هذه الدورة'),
 
-                    Forms\Components\Textarea::make('teacher_notes')
+                    Textarea::make('teacher_notes')
                         ->label('ملاحظات المعلم')
                         ->rows(4)
                         ->helperText('ملاحظات خاصة للمعلم حول هذه الدورة')
@@ -223,15 +240,15 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض')
                 ->icon('heroicon-m-eye'),
 
-            Tables\Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل')
                 ->icon('heroicon-m-pencil'),
 
-            Tables\Actions\Action::make('manage_sessions')
+            Action::make('manage_sessions')
                 ->label('إدارة الجلسات')
                 ->icon('heroicon-m-calendar')
                 ->color('info')
@@ -242,7 +259,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
                 ])
                 ),
 
-            Tables\Actions\Action::make('view_enrolled_students')
+            Action::make('view_enrolled_students')
                 ->label('الطلاب المسجلين')
                 ->icon('heroicon-m-users')
                 ->color('success')
@@ -268,11 +285,11 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkAction::make('update_status')
+            BulkAction::make('update_status')
                 ->label('تحديث الحالة')
                 ->icon('heroicon-m-pencil-square')
                 ->form([
-                    Forms\Components\Select::make('status')
+                    Select::make('status')
                         ->label('الحالة الجديدة')
                         ->options([
                             InteractiveCourseStatus::PUBLISHED->value => InteractiveCourseStatus::PUBLISHED->label(),
@@ -336,7 +353,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
      */
     protected static function getAvailableSubjects(): array
     {
-        return \App\Models\AcademicSubject::query()
+        return AcademicSubject::query()
             ->pluck('name', 'id')
             ->toArray();
     }
@@ -346,7 +363,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
      */
     protected static function getAvailableGradeLevels(): array
     {
-        return \App\Models\AcademicGradeLevel::query()
+        return AcademicGradeLevel::query()
             ->pluck('name', 'id')
             ->toArray();
     }
@@ -397,9 +414,9 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListInteractiveCourses::route('/'),
-            'view' => Pages\ViewInteractiveCourse::route('/{record}'),
-            'edit' => Pages\EditInteractiveCourse::route('/{record}/edit'),
+            'index' => ListInteractiveCourses::route('/'),
+            'view' => ViewInteractiveCourse::route('/{record}'),
+            'edit' => EditInteractiveCourse::route('/{record}/edit'),
         ];
     }
 }

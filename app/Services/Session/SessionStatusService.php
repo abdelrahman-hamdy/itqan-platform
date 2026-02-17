@@ -2,6 +2,7 @@
 
 namespace App\Services\Session;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Models\AcademicSession;
@@ -190,7 +191,7 @@ class SessionStatusService
                         'session_id' => $session->id,
                         'room_name' => $session->meeting_room_name,
                     ]);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Log::warning('Failed to close LiveKit room on auto-complete', [
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),

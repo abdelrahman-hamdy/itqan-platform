@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use Log;
 use App\Enums\UserType;
 use Closure;
 use Illuminate\Http\Request;
@@ -12,12 +13,12 @@ class CanControlParticipants
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param Closure(Request):Response $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         // Enhanced debugging - log request details
-        \Log::info('CanControlParticipants middleware - Request details', [
+        Log::info('CanControlParticipants middleware - Request details', [
             'url' => $request->url(),
             'method' => $request->method(),
             'has_session' => $request->hasSession(),
@@ -30,7 +31,7 @@ class CanControlParticipants
 
         // Check if user is authenticated
         if (! auth()->check()) {
-            \Log::warning('CanControlParticipants - User not authenticated', [
+            Log::warning('CanControlParticipants - User not authenticated', [
                 'session_exists' => $request->hasSession(),
                 'session_data' => $request->hasSession() ? $request->session()->all() : [],
             ]);
@@ -43,7 +44,7 @@ class CanControlParticipants
         $allowedUserTypes = [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::ADMIN->value, UserType::SUPER_ADMIN->value];
 
         // Log for debugging
-        \Log::info('CanControlParticipants middleware - User authenticated', [
+        Log::info('CanControlParticipants middleware - User authenticated', [
             'user_id' => $user->id,
             'user_email' => $user->email,
             'user_type' => $user->user_type,
@@ -53,7 +54,7 @@ class CanControlParticipants
         ]);
 
         if (! in_array($user->user_type, $allowedUserTypes)) {
-            \Log::warning('CanControlParticipants - User not authorized', [
+            Log::warning('CanControlParticipants - User not authorized', [
                 'user_id' => $user->id,
                 'user_type' => $user->user_type,
                 'required_types' => $allowedUserTypes,
@@ -66,7 +67,7 @@ class CanControlParticipants
             ], 403);
         }
 
-        \Log::info('CanControlParticipants - Authorization successful', [
+        Log::info('CanControlParticipants - Authorization successful', [
             'user_id' => $user->id,
             'user_type' => $user->user_type,
         ]);

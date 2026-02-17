@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Enums\EducationalQualification;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -77,7 +78,7 @@ class AcademicTeacherController extends Controller
 
             return $this->success($teachers, 'تم جلب قائمة المعلمين الأكاديميين بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب قائمة المعلمين');
         }
     }
@@ -111,7 +112,7 @@ class AcademicTeacherController extends Controller
 
             return $this->success($teacher, 'تم جلب تفاصيل المعلم بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب تفاصيل المعلم');
         }
     }
@@ -196,7 +197,7 @@ class AcademicTeacherController extends Controller
 
             return $this->created($teacher, 'تم إنشاء المعلم الأكاديمي بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
 
             return $this->serverError('حدث خطأ أثناء إنشاء المعلم');
@@ -270,7 +271,7 @@ class AcademicTeacherController extends Controller
 
             return $this->success($teacher, 'تم تحديث بيانات المعلم بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء تحديث بيانات المعلم');
         }
     }
@@ -316,7 +317,7 @@ class AcademicTeacherController extends Controller
 
             return $this->success(null, 'تم حذف المعلم بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
 
             return $this->serverError('حدث خطأ أثناء حذف المعلم');
@@ -340,7 +341,7 @@ class AcademicTeacherController extends Controller
 
             return $this->success($teacher, 'تم الموافقة على المعلم بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء الموافقة على المعلم');
         }
     }
@@ -371,7 +372,7 @@ class AcademicTeacherController extends Controller
 
             return $this->success($teacher, 'تم رفض المعلم بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء رفض المعلم');
         }
     }
@@ -403,7 +404,7 @@ class AcademicTeacherController extends Controller
 
             return $this->success($teacher, 'تم تعليق المعلم بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء تعليق المعلم');
         }
     }
@@ -421,7 +422,7 @@ class AcademicTeacherController extends Controller
 
             return $this->success($teacher, 'تم إعادة تفعيل المعلم بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء إعادة تفعيل المعلم');
         }
     }
@@ -454,7 +455,7 @@ class AcademicTeacherController extends Controller
 
             return $this->success($stats, 'تم جلب إحصائيات المعلم بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب إحصائيات المعلم');
         }
     }
@@ -510,7 +511,7 @@ class AcademicTeacherController extends Controller
 
             return $this->success($teachers, 'تم البحث عن المعلمين المتاحين بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء البحث عن المعلمين');
         }
     }

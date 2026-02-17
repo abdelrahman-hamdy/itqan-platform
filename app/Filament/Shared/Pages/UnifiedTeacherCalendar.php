@@ -2,6 +2,13 @@
 
 namespace App\Filament\Shared\Pages;
 
+use Filament\Schemas\Components\Group;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\DatePicker;
+use Exception;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Illuminate\Support\Collection;
 use App\Enums\UserType;
 use App\Filament\Shared\Traits\FormatsCalendarData;
 use App\Filament\Shared\Traits\HandlesScheduling;
@@ -23,7 +30,7 @@ use Illuminate\Support\Facades\Auth;
  * Single calendar implementation for all teacher types (Quran, Academic)
  * Uses strategy pattern to handle type-specific logic
  *
- * @property \Illuminate\Support\Collection $schedulableItems
+ * @property Collection $schedulableItems
  */
 class UnifiedTeacherCalendar extends Page
 {
@@ -32,9 +39,9 @@ class UnifiedTeacherCalendar extends Page
     use ManagesSessionStatistics;
     use ValidatesConflicts;
 
-    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static string $view = 'filament.shared.pages.unified-teacher-calendar';
+    protected string $view = 'filament.shared.pages.unified-teacher-calendar';
 
     protected static ?string $navigationLabel = 'التقويم';
 
@@ -42,7 +49,7 @@ class UnifiedTeacherCalendar extends Page
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationGroup = 'جلساتي';
+    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
 
     // Teacher type and strategy
     public string $teacherType = '';
@@ -284,7 +291,7 @@ class UnifiedTeacherCalendar extends Page
             ->modalDescription('اختر أيام الأسبوع ووقت الجلسات لإنشاء جدول تلقائي')
             ->modalSubmitActionLabel('إنشاء الجدول')
             ->modalCancelActionLabel('إلغاء')
-            ->form([$this->buildScheduleForm()])
+            ->schema([$this->buildScheduleForm()])
             ->action(function (array $data) {
                 $this->scheduleDays = $data['schedule_days'] ?? [];
                 $this->scheduleTime = $data['schedule_time'] ?? null;
@@ -305,13 +312,13 @@ class UnifiedTeacherCalendar extends Page
     /**
      * Build the unified schedule form
      */
-    protected function buildScheduleForm(): Forms\Components\Group
+    protected function buildScheduleForm(): Group
     {
         $item = $this->getSelectedItem();
         $validator = $item ? $this->getStrategy()->getValidator($this->selectedItemType, $item) : null;
 
-        return Forms\Components\Group::make([
-            Forms\Components\CheckboxList::make('schedule_days')
+        return Group::make([
+            CheckboxList::make('schedule_days')
                 ->label('أيام الأسبوع')
                 ->required()
                 ->options([
@@ -332,9 +339,9 @@ class UnifiedTeacherCalendar extends Page
 
                     return "💡 {$recommendations['reason']}";
                 })
-                ->reactive(),
+                ->live(),
 
-            Forms\Components\DatePicker::make('schedule_start_date')
+            DatePicker::make('schedule_start_date')
                 ->label('تاريخ بداية الجدولة')
                 ->helperText(function () use ($item) {
                     if ($item && isset($item['start_date']) && $item['start_date']) {
@@ -349,12 +356,12 @@ class UnifiedTeacherCalendar extends Page
                         if (isset($item['start_date']) && $item['start_date']) {
                             // Parse the date from 'Y/m/d' format to Carbon
                             try {
-                                $startDate = \Carbon\Carbon::parse(str_replace('/', '-', $item['start_date']));
+                                $startDate = Carbon::parse(str_replace('/', '-', $item['start_date']));
                                 // Only use if the date is in the future or today
                                 if ($startDate->gte(now()->startOfDay())) {
                                     return $startDate->format('Y-m-d');
                                 }
-                            } catch (\Exception $e) {
+                            } catch (Exception $e) {
                                 // Fall back to null if parsing fails
                             }
                         }
@@ -377,9 +384,9 @@ class UnifiedTeacherCalendar extends Page
                 ->native(false)
                 ->displayFormat('Y/m/d')
                 ->closeOnDateSelection()
-                ->reactive(),
+                ->live(),
 
-            Forms\Components\Select::make('schedule_time')
+            Select::make('schedule_time')
                 ->label('وقت الجلسة')
                 ->required()
                 ->placeholder('اختر الساعة')
@@ -403,7 +410,7 @@ class UnifiedTeacherCalendar extends Page
                     return "الوقت الذي ستبدأ فيه الجلسات (التوقيت المحلي - الوقت الحالي: {$currentTime})";
                 }),
 
-            Forms\Components\TextInput::make('session_count')
+            TextInput::make('session_count')
                 ->label('عدد الجلسات المطلوب إنشاؤها')
                 ->helperText(function () use ($item) {
                     // Trial sessions always have exactly 1 session
@@ -461,7 +468,7 @@ class UnifiedTeacherCalendar extends Page
                 })
                 ->placeholder('أدخل العدد')
                 ->disabled(fn () => $this->selectedItemType === 'trial')
-                ->reactive(),
+                ->live(),
         ]);
     }
 
@@ -497,13 +504,13 @@ class UnifiedTeacherCalendar extends Page
                 // Validate day selection
                 $dayResult = $validator->validateDaySelection($this->scheduleDays);
                 if ($dayResult->isError()) {
-                    throw new \Exception($dayResult->getMessage());
+                    throw new Exception($dayResult->getMessage());
                 }
 
                 // Validate session count
                 $countResult = $validator->validateSessionCount($this->sessionCount);
                 if ($countResult->isError()) {
-                    throw new \Exception($countResult->getMessage());
+                    throw new Exception($countResult->getMessage());
                 }
 
                 // Validate date range
@@ -512,13 +519,13 @@ class UnifiedTeacherCalendar extends Page
 
                 $dateResult = $validator->validateDateRange($startDate, $weeksAhead);
                 if ($dateResult->isError()) {
-                    throw new \Exception($dateResult->getMessage());
+                    throw new Exception($dateResult->getMessage());
                 }
 
                 // Validate weekly pacing
                 $pacingResult = $validator->validateWeeklyPacing($this->scheduleDays, $weeksAhead);
                 if ($pacingResult->isError()) {
-                    throw new \Exception($pacingResult->getMessage());
+                    throw new Exception($pacingResult->getMessage());
                 }
             }
 
@@ -549,7 +556,7 @@ class UnifiedTeacherCalendar extends Page
             // Refresh the page
             $this->js('setTimeout(() => window.location.reload(), 2000)');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Notification::make()
                 ->title('خطأ')
                 ->body('حدث خطأ أثناء إنشاء الجدول: '.$e->getMessage())

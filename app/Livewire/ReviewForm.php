@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use Exception;
 use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
 use App\Models\QuranTeacherProfile;
@@ -186,7 +187,7 @@ class ReviewForm extends Component
             // Refresh the page to show updated review
             $this->redirect(request()->header('Referer'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             session()->flash('error', __('components.reviews.form.errors.error_with_message', ['message' => $e->getMessage()]));
         }
     }

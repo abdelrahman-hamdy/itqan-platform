@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Services\ExchangeRateService;
 use Illuminate\Console\Command;
 
@@ -41,7 +42,7 @@ class TestExchangeRate extends Command
 
             return 0;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('✗ Failed: '.$e->getMessage());
 
             return 1;

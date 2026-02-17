@@ -2,6 +2,8 @@
 
 namespace App\Services\Calendar;
 
+use InvalidArgumentException;
+use Exception;
 use App\Enums\EnrollmentStatus;
 use App\Enums\InteractiveCourseStatus;
 use App\Enums\SessionStatus;
@@ -183,7 +185,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         return match ($itemType) {
             'private_lesson' => new AcademicLessonValidator(AcademicSubscription::find($item['id'])),
             'interactive_course' => new InteractiveCourseValidator(InteractiveCourse::find($item['id'])),
-            default => throw new \InvalidArgumentException("Unknown item type: {$itemType}"),
+            default => throw new InvalidArgumentException("Unknown item type: {$itemType}"),
         };
     }
 
@@ -196,13 +198,13 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         $itemId = $data['item_id'] ?? null;
 
         if (! $itemType || ! $itemId) {
-            throw new \Exception(__('calendar.strategy.item_info_incomplete'));
+            throw new Exception(__('calendar.strategy.item_info_incomplete'));
         }
 
         match ($itemType) {
             'private_lesson' => $this->createPrivateLessonSchedule($itemId, $data),
             'interactive_course' => $this->createInteractiveCourseSchedule($itemId, $data),
-            default => throw new \InvalidArgumentException("Unknown item type: {$itemType}"),
+            default => throw new InvalidArgumentException("Unknown item type: {$itemType}"),
         };
     }
 
@@ -214,7 +216,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         $subscription = AcademicSubscription::findOrFail($subscriptionId);
 
         if (! $subscription->student) {
-            throw new \Exception(__('calendar.strategy.no_student_enrolled'));
+            throw new Exception(__('calendar.strategy.no_student_enrolled'));
         }
 
         // Get unscheduled sessions
@@ -227,7 +229,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
             ->get();
 
         if ($unscheduledSessions->isEmpty()) {
-            throw new \Exception(__('calendar.strategy.no_unscheduled_sessions'));
+            throw new Exception(__('calendar.strategy.no_unscheduled_sessions'));
         }
 
         $requestedSessionCount = $data['session_count'];
@@ -266,7 +268,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                         'status' => SessionStatus::SCHEDULED,
                     ]);
                     $scheduledCount++;
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     // Skip this time slot due to conflict, try next available
                     $skippedDates[] = $scheduledAt->format('Y/m/d H:i');
 
@@ -276,7 +278,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         }
 
         if (! empty($skippedDates) && $scheduledCount === 0) {
-            throw new \Exception(__('calendar.strategy.all_times_conflict'));
+            throw new Exception(__('calendar.strategy.all_times_conflict'));
         }
 
         return $scheduledCount;
@@ -293,7 +295,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         $remainingSessions = max(0, $course->total_sessions - $course->sessions()->count());
 
         if ($remainingSessions <= 0) {
-            throw new \Exception(__('calendar.strategy.no_remaining_course_sessions'));
+            throw new Exception(__('calendar.strategy.no_remaining_course_sessions'));
         }
 
         $sessionsToCreate = min($requestedSessionCount, $remainingSessions);
@@ -340,7 +342,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                     'status' => SessionStatus::SCHEDULED,
                 ]);
                 $createdCount++;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Skip this time slot due to conflict
                 $skippedDates[] = $sessionDate->format('Y/m/d H:i');
 
@@ -349,7 +351,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         }
 
         if (! empty($skippedDates) && $createdCount === 0) {
-            throw new \Exception(__('calendar.strategy.all_times_conflict'));
+            throw new Exception(__('calendar.strategy.all_times_conflict'));
         }
 
         return $createdCount;

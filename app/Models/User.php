@@ -2,6 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\UniqueConstraintViolationException;
+use App\Notifications\VerifyEmailNotification;
+use Log;
+use Exception;
+use Illuminate\Database\Eloquent\Collection;
+use Carbon\Carbon;
 use App\Constants\DefaultAcademy;
 use App\Enums\UserType;
 use App\Models\Traits\HasChatIntegration;
@@ -33,17 +39,17 @@ use Namu\WireChat\Traits\Chatable;
  * @property string|null $phone
  * @property string $user_type
  * @property bool $active_status
- * @property \Carbon\Carbon|null $email_verified_at
- * @property \Carbon\Carbon|null $phone_verified_at
- * @property \Carbon\Carbon|null $last_login_at
+ * @property Carbon|null $email_verified_at
+ * @property Carbon|null $phone_verified_at
+ * @property Carbon|null $last_login_at
  * @property string|null $avatar
- * @property \Carbon\Carbon|null $profile_completed_at
+ * @property Carbon|null $profile_completed_at
  * @property array|null $meeting_preferences
  * @property bool|null $auto_create_meetings
  * @property int|null $meeting_prep_minutes
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property \Carbon\Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 class User extends Authenticatable implements FilamentUser, HasTenants, MustVerifyEmail
 {
@@ -103,7 +109,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
             if ($user->user_type && $user->academy_id && ! in_array($user->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::SUPERVISOR->value])) {
                 try {
                     $user->createProfile();
-                } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                } catch (UniqueConstraintViolationException $e) {
                     // Profile already exists, likely from parallel test execution - ignore
                     if (! app()->environment('testing')) {
                         throw $e;
@@ -158,14 +164,14 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
 
         if ($academy) {
             try {
-                $this->notify(new \App\Notifications\VerifyEmailNotification($academy));
-                \Log::info('Verification email sent', [
+                $this->notify(new VerifyEmailNotification($academy));
+                Log::info('Verification email sent', [
                     'user_id' => $this->id,
                     'email' => $this->email,
                     'academy' => $academy->name,
                 ]);
-            } catch (\Exception $e) {
-                \Log::error('Failed to send verification email', [
+            } catch (Exception $e) {
+                Log::error('Failed to send verification email', [
                     'user_id' => $this->id,
                     'email' => $this->email,
                     'error' => $e->getMessage(),
@@ -174,7 +180,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
                 throw $e;
             }
         } else {
-            \Log::warning('No academy found for verification email', [
+            Log::warning('No academy found for verification email', [
                 'user_id' => $this->id,
                 'email' => $this->email,
             ]);
@@ -311,7 +317,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
      * Get all supervisors assigned to this teacher.
      * Returns null if user is not a teacher.
      */
-    public function getSupervisors(): ?\Illuminate\Database\Eloquent\Collection
+    public function getSupervisors(): ?Collection
     {
         if (! in_array($this->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return null;

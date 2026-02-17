@@ -2,11 +2,18 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Schemas\Components\Section;
+use Illuminate\Database\Eloquent\Model;
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Tables\Columns\IconColumn;
 use App\Enums\AttendanceStatus;
 use App\Models\AcademicSessionReport;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Form;
 use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -25,7 +32,7 @@ abstract class BaseAcademicSessionReportResource extends BaseResource
 {
     protected static ?string $model = AcademicSessionReport::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-text';
 
     protected static ?string $modelLabel = 'تقرير جلسة أكاديمية';
 
@@ -66,12 +73,12 @@ abstract class BaseAcademicSessionReportResource extends BaseResource
         return false;
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return true;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return true;
     }
@@ -80,7 +87,7 @@ abstract class BaseAcademicSessionReportResource extends BaseResource
     // Shared Form Definition
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         $schema = [];
 
@@ -99,7 +106,7 @@ abstract class BaseAcademicSessionReportResource extends BaseResource
         // Add additional sections from child classes
         $schema = array_merge($schema, static::getAdditionalFormSections());
 
-        return $form->schema($schema);
+        return $form->components($schema);
     }
 
     /**
@@ -109,7 +116,7 @@ abstract class BaseAcademicSessionReportResource extends BaseResource
     {
         return Section::make('تقييم الواجب')
             ->schema([
-                Forms\Components\TextInput::make('homework_degree')
+                TextInput::make('homework_degree')
                     ->label('درجة الواجب (0-10)')
                     ->numeric()
                     ->minValue(0)
@@ -126,7 +133,7 @@ abstract class BaseAcademicSessionReportResource extends BaseResource
     {
         return Section::make('الملاحظات')
             ->schema([
-                Forms\Components\Textarea::make('notes')
+                Textarea::make('notes')
                     ->label('ملاحظات المعلم')
                     ->placeholder('أضف ملاحظات حول أداء الطالب...')
                     ->rows(4)
@@ -141,21 +148,21 @@ abstract class BaseAcademicSessionReportResource extends BaseResource
     {
         return Section::make('تعديل الحضور (إذا لزم الأمر)')
             ->schema([
-                Forms\Components\Select::make('attendance_status')
+                Select::make('attendance_status')
                     ->label('تعديل حالة الحضور')
                     ->options(AttendanceStatus::options())
                     ->helperText('قم بالتغيير فقط إذا كان حساب الحضور التلقائي غير صحيح')
                     ->dehydrated(fn (?string $state): bool => filled($state)),
 
-                Forms\Components\Toggle::make('manually_evaluated')
+                Toggle::make('manually_evaluated')
                     ->label('تحديد كتقييم يدوي')
                     ->helperText('حدد هذا إذا كنت تقوم بتعديل الحضور التلقائي')
                     ->dehydrated(fn (bool $state): bool => $state === true),
 
-                Forms\Components\Textarea::make('override_reason')
+                Textarea::make('override_reason')
                     ->label('سبب التعديل')
                     ->placeholder('اشرح سبب تعديل الحضور التلقائي...')
-                    ->visible(fn (Forms\Get $get) => $get('manually_evaluated'))
+                    ->visible(fn (Get $get) => $get('manually_evaluated'))
                     ->columnSpanFull(),
             ])
             ->columns(2)
@@ -182,8 +189,8 @@ abstract class BaseAcademicSessionReportResource extends BaseResource
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters(), layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions())
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions())
             ->emptyStateHeading('لا توجد تقارير')
             ->emptyStateDescription('لم يتم إنشاء أي تقارير جلسات بعد.')
             ->emptyStateIcon('heroicon-o-document-text');
@@ -246,7 +253,7 @@ abstract class BaseAcademicSessionReportResource extends BaseResource
                 ->sortable()
                 ->toggleable(),
 
-            Tables\Columns\IconColumn::make('manually_evaluated')
+            IconColumn::make('manually_evaluated')
                 ->label('تعديل يدوي')
                 ->boolean()
                 ->toggleable(isToggledHiddenByDefault: true),

@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Str;
+use Exception;
+use Agence104\LiveKit\RoomServiceClient;
+use Illuminate\Validation\ValidationException;
+use Livekit\TrackType;
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
 use Agence104\LiveKit\VideoGrant;
@@ -47,7 +52,7 @@ class LiveKitController extends Controller
 
             // Create participant identity with user ID for uniqueness (consistent with other token generation)
             $user = auth()->user();
-            $identity = $user->id.'_'.\Illuminate\Support\Str::slug($user->first_name.'_'.$user->last_name);
+            $identity = $user->id.'_'.Str::slug($user->first_name.'_'.$user->last_name);
 
             // Create access token options with metadata
             $metadata = json_encode([
@@ -100,7 +105,7 @@ class LiveKitController extends Controller
                 'identity' => $identity,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('Failed to generate token: '.$e->getMessage());
         }
     }
@@ -122,7 +127,7 @@ class LiveKitController extends Controller
             }
 
             // Use room service client to mute/unmute
-            $roomService = new \Agence104\LiveKit\RoomServiceClient(
+            $roomService = new RoomServiceClient(
                 config('livekit.api_url'),
                 config('livekit.api_key'),
                 config('livekit.api_secret')
@@ -148,7 +153,7 @@ class LiveKitController extends Controller
                 'participant_identity' => $participantIdentity,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to mute/unmute participant', [
                 'error' => $e->getMessage(),
                 'request' => $request->all(),
@@ -181,7 +186,7 @@ class LiveKitController extends Controller
             }
 
             // Get detailed participant info with tracks
-            $roomService = new \Agence104\LiveKit\RoomServiceClient(
+            $roomService = new RoomServiceClient(
                 config('livekit.api_url'),
                 config('livekit.api_key'),
                 config('livekit.api_secret')
@@ -221,9 +226,9 @@ class LiveKitController extends Controller
                 'participants' => $participants,
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return $this->validationError($e->errors(), 'Validation failed');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to get room participants', [
                 'error' => $e->getMessage(),
                 'room_name' => $request->input('room_name'),
@@ -260,9 +265,9 @@ class LiveKitController extends Controller
                 ],
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return $this->validationError($e->errors(), 'Validation failed');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to get room permissions', [
                 'error' => $e->getMessage(),
                 'request' => $request->all(),
@@ -317,7 +322,7 @@ class LiveKitController extends Controller
             $this->roomPermissionService->setMicrophonePermission($roomName, $allowed, auth()->id());
 
             // Get room participants
-            $roomService = new \Agence104\LiveKit\RoomServiceClient(
+            $roomService = new RoomServiceClient(
                 config('livekit.api_url'),
                 config('livekit.api_key'),
                 config('livekit.api_secret')
@@ -325,7 +330,7 @@ class LiveKitController extends Controller
 
             try {
                 $participantsResponse = $roomService->listParticipants($roomName);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::error('Failed to list participants', [
                     'room' => $roomName,
                     'error' => $e->getMessage(),
@@ -349,7 +354,7 @@ class LiveKitController extends Controller
                     if ($isStudent) {
                         // Find audio tracks and mute them
                         foreach ($participant->getTracks() as $track) {
-                            if ($track->getType() === \Livekit\TrackType::AUDIO) { // Audio type = 0
+                            if ($track->getType() === TrackType::AUDIO) { // Audio type = 0
                                 try {
                                     $roomService->mutePublishedTrack(
                                         $roomName,
@@ -358,7 +363,7 @@ class LiveKitController extends Controller
                                         $muted
                                     );
                                     $mutedCount++;
-                                } catch (\Exception $e) {
+                                } catch (Exception $e) {
                                     Log::warning('Failed to mute individual student', [
                                         'participant' => $participant->getIdentity(),
                                         'track_sid' => $track->getSid(),
@@ -383,7 +388,7 @@ class LiveKitController extends Controller
                 'affected_participants' => $mutedCount,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to mute all students', [
                 'error' => $e->getMessage(),
                 'request' => $request->all(),
@@ -427,7 +432,7 @@ class LiveKitController extends Controller
             $allowed = ! $disabled; // Inverted: disabled=true means NOT allowed
             $this->roomPermissionService->setCameraPermission($roomName, $allowed, auth()->id());
 
-            $roomService = new \Agence104\LiveKit\RoomServiceClient(
+            $roomService = new RoomServiceClient(
                 config('livekit.api_url'),
                 config('livekit.api_key'),
                 config('livekit.api_secret')
@@ -435,7 +440,7 @@ class LiveKitController extends Controller
 
             try {
                 $participantsResponse = $roomService->listParticipants($roomName);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::error('Failed to list participants for camera control', [
                     'room' => $roomName,
                     'error' => $e->getMessage(),
@@ -456,7 +461,7 @@ class LiveKitController extends Controller
                     if ($isStudent) {
                         // Find video tracks and disable/enable them
                         foreach ($participant->getTracks() as $track) {
-                            if ($track->getType() === \Livekit\TrackType::VIDEO) { // Video type = 1
+                            if ($track->getType() === TrackType::VIDEO) { // Video type = 1
                                 try {
                                     $roomService->mutePublishedTrack(
                                         $roomName,
@@ -465,7 +470,7 @@ class LiveKitController extends Controller
                                         $disabled
                                     );
                                     $affectedCount++;
-                                } catch (\Exception $e) {
+                                } catch (Exception $e) {
                                     Log::warning('Failed to control student camera', [
                                         'participant' => $participant->getIdentity(),
                                         'track_sid' => $track->getSid(),
@@ -490,7 +495,7 @@ class LiveKitController extends Controller
                 'affected_participants' => $affectedCount,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to control students cameras', [
                 'error' => $e->getMessage(),
                 'request' => $request->all(),

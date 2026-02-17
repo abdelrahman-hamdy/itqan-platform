@@ -2,6 +2,11 @@
 
 namespace App\Providers\Filament;
 
+use Filament\Facades\Filament;
+use App\Filament\Teacher\Pages\Dashboard;
+use App\Filament\Shared\Pages\UnifiedTeacherCalendar;
+use App\Filament\Pages\Auth\Login;
+use Filament\Navigation\MenuItem;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
 use Filament\Http\Middleware\Authenticate;
@@ -39,7 +44,7 @@ class TeacherPanelProvider extends PanelProvider
                 'gray' => Color::Gray,
             ])
             ->font('Tajawal') // Arabic font
-            ->favicon(fn () => getFavicon(\Filament\Facades\Filament::getTenant()))
+            ->favicon(fn () => getFavicon(Filament::getTenant()))
             ->brandName('لوحة المعلم')
             ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'green', 'panelType' => 'teacher']))
             ->navigationGroups([
@@ -56,8 +61,8 @@ class TeacherPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Teacher/Resources'), for: 'App\\Filament\\Teacher\\Resources')
             ->discoverPages(in: app_path('Filament/Teacher/Pages'), for: 'App\\Filament\\Teacher\\Pages')
             ->pages([
-                \App\Filament\Teacher\Pages\Dashboard::class,
-                \App\Filament\Shared\Pages\UnifiedTeacherCalendar::class,
+                Dashboard::class,
+                UnifiedTeacherCalendar::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Teacher/Widgets'), for: 'App\\Filament\\Teacher\\Widgets')
             ->discoverWidgets(in: app_path('Filament/Shared/Widgets'), for: 'App\\Filament\\Shared\\Widgets')
@@ -82,9 +87,9 @@ class TeacherPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->sidebarCollapsibleOnDesktop()
-            ->login(\App\Filament\Pages\Auth\Login::class)
+            ->login(Login::class)
             ->userMenuItems([
-                'profile-page' => \Filament\Navigation\MenuItem::make()
+                'profile-page' => MenuItem::make()
                     ->label('الملف الشخصي العام')
                     ->url(fn (): string => auth()->user()->quranTeacherProfile && auth()->user()->academy
                         ? route('quran-teachers.show', [

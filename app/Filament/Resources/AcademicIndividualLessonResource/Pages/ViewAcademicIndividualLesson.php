@@ -2,13 +2,17 @@
 
 namespace App\Filament\Resources\AcademicIndividualLessonResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use App\Models\AcademicIndividualLesson;
 use App\Filament\Resources\AcademicIndividualLessonResource;
 use App\Filament\Resources\AcademicSessionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
- * @property \App\Models\AcademicIndividualLesson $record
+ * @property AcademicIndividualLesson $record
  */
 class ViewAcademicIndividualLesson extends ViewRecord
 {
@@ -22,15 +26,15 @@ class ViewAcademicIndividualLesson extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
-            Actions\Action::make('view_sessions')
+            Action::make('view_sessions')
                 ->label('عرض الجلسات')
                 ->icon('heroicon-o-calendar-days')
                 ->url(fn (): string => AcademicSessionResource::getUrl('index', [
                     'tableFilters[academic_individual_lesson_id][value]' => $this->record->id,
                 ])),
-            Actions\DeleteAction::make()
+            DeleteAction::make()
                 ->label('حذف'),
         ];
     }

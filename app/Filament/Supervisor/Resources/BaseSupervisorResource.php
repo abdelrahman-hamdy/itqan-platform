@@ -2,6 +2,9 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use App\Models\Academy;
+use App\Models\AcademicTeacherProfile;
+use Filament\Tables\Columns\TextColumn;
 use App\Models\SupervisorProfile;
 use App\Services\AcademyContextService;
 use Filament\Resources\Resource;
@@ -46,7 +49,7 @@ abstract class BaseSupervisorResource extends Resource
     /**
      * Get current supervisor's academy
      */
-    protected static function getCurrentSupervisorAcademy(): ?\App\Models\Academy
+    protected static function getCurrentSupervisorAcademy(): ?Academy
     {
         $academyContextService = app(AcademyContextService::class);
 
@@ -166,7 +169,7 @@ abstract class BaseSupervisorResource extends Resource
             return [];
         }
 
-        return \App\Models\AcademicTeacherProfile::whereIn('user_id', $userIds)
+        return AcademicTeacherProfile::whereIn('user_id', $userIds)
             ->pluck('id')
             ->toArray();
     }
@@ -345,9 +348,9 @@ abstract class BaseSupervisorResource extends Resource
     /**
      * Get academy column (hidden since supervisors see only their academy)
      */
-    protected static function getAcademyColumn(): \Filament\Tables\Columns\TextColumn
+    protected static function getAcademyColumn(): TextColumn
     {
-        return \Filament\Tables\Columns\TextColumn::make('academy.name')
+        return TextColumn::make('academy.name')
             ->label('الأكاديمية')
             ->sortable()
             ->searchable()

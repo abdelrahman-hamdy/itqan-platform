@@ -2,6 +2,17 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Tables\Enums\FiltersLayout;
 use App\Enums\SessionDuration;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -10,8 +21,6 @@ use App\Enums\WeekDays;
 use App\Filament\Shared\Traits\HasSubscriptionActions;
 use App\Models\SavedPaymentMethod;
 use Filament\Forms;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -19,7 +28,6 @@ use Filament\Infolists;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -77,7 +85,7 @@ abstract class BaseSubscriptionResource extends Resource
                     ->disabled()
                     ->helperText('عدد الجلسات المتبقية للاستخدام'),
 
-                Forms\Components\Select::make('session_duration_minutes')
+                Select::make('session_duration_minutes')
                     ->label('مدة الجلسة')
                     ->options(SessionDuration::options())
                     ->default(SessionDuration::FORTY_FIVE_MINUTES->value)
@@ -93,18 +101,18 @@ abstract class BaseSubscriptionResource extends Resource
         return Section::make('تفضيلات الطالب')
             ->description('المعلومات التي قدمها الطالب عند الاشتراك')
             ->schema([
-                Forms\Components\CheckboxList::make('weekly_schedule.preferred_days')
+                CheckboxList::make('weekly_schedule.preferred_days')
                     ->label('الأيام المفضلة')
                     ->options(WeekDays::options())
                     ->columns(4)
                     ->columnSpanFull(),
 
-                Forms\Components\Select::make('weekly_schedule.preferred_time')
+                Select::make('weekly_schedule.preferred_time')
                     ->label('الفترة المفضلة')
                     ->options(TimeSlot::options())
                     ->placeholder('اختر الفترة المفضلة'),
 
-                Forms\Components\Textarea::make('student_notes')
+                Textarea::make('student_notes')
                     ->label('ملاحظات الطالب')
                     ->rows(2)
                     ->helperText('الملاحظات التي قدمها الطالب عند الاشتراك')
@@ -191,14 +199,15 @@ abstract class BaseSubscriptionResource extends Resource
                 ->searchable()
                 ->sortable(),
 
-            BadgeColumn::make('status')
+            TextColumn::make('status')
+                ->badge()
                 ->label('حالة الاشتراك')
-                ->formatStateUsing(fn ($state): string => match ($state instanceof \App\Enums\SessionSubscriptionStatus ? $state->value : $state) {
+                ->formatStateUsing(fn ($state): string => match ($state instanceof SessionSubscriptionStatus ? $state->value : $state) {
                     SessionSubscriptionStatus::PENDING->value => 'قيد الانتظار',
                     SessionSubscriptionStatus::ACTIVE->value => 'نشط',
                     SessionSubscriptionStatus::PAUSED->value => 'متوقف مؤقتاً',
                     SessionSubscriptionStatus::CANCELLED->value => 'ملغي',
-                    default => $state instanceof \App\Enums\SessionSubscriptionStatus ? $state->value : (string) $state,
+                    default => $state instanceof SessionSubscriptionStatus ? $state->value : (string) $state,
                 })
                 ->colors([
                     'success' => SessionSubscriptionStatus::ACTIVE->value,
@@ -207,13 +216,14 @@ abstract class BaseSubscriptionResource extends Resource
                     'danger' => SessionSubscriptionStatus::CANCELLED->value,
                 ]),
 
-            BadgeColumn::make('payment_status')
+            TextColumn::make('payment_status')
+                ->badge()
                 ->label('حالة الدفع')
-                ->formatStateUsing(fn ($state): string => match ($state instanceof \App\Enums\SubscriptionPaymentStatus ? $state->value : $state) {
+                ->formatStateUsing(fn ($state): string => match ($state instanceof SubscriptionPaymentStatus ? $state->value : $state) {
                     SubscriptionPaymentStatus::PENDING->value => 'في الانتظار',
                     SubscriptionPaymentStatus::PAID->value => 'مدفوع',
                     SubscriptionPaymentStatus::FAILED->value => 'فشل',
-                    default => $state instanceof \App\Enums\SubscriptionPaymentStatus ? $state->value : (string) $state,
+                    default => $state instanceof SubscriptionPaymentStatus ? $state->value : (string) $state,
                 })
                 ->colors([
                     'warning' => SubscriptionPaymentStatus::PENDING->value,
@@ -248,8 +258,8 @@ abstract class BaseSubscriptionResource extends Resource
 
             Filter::make('date_from')
                 ->label('من تاريخ')
-                ->form([
-                    Forms\Components\DatePicker::make('date')
+                ->schema([
+                    DatePicker::make('date')
                         ->label('التاريخ'),
                 ])
                 ->query(function (Builder $query, array $data): Builder {
@@ -261,8 +271,8 @@ abstract class BaseSubscriptionResource extends Resource
 
             Filter::make('date_to')
                 ->label('إلى تاريخ')
-                ->form([
-                    Forms\Components\DatePicker::make('date')
+                ->schema([
+                    DatePicker::make('date')
                         ->label('التاريخ'),
                 ])
                 ->query(function (Builder $query, array $data): Builder {
@@ -272,18 +282,18 @@ abstract class BaseSubscriptionResource extends Resource
                     );
                 }),
 
-            Tables\Filters\TrashedFilter::make()->label(__('filament.filters.trashed')),
+            TrashedFilter::make()->label(__('filament.filters.trashed')),
         ];
     }
 
     // Shared pause action
-    protected static function getPauseAction(): Tables\Actions\Action
+    protected static function getPauseAction(): Action
     {
-        return Tables\Actions\Action::make('pause')
+        return Action::make('pause')
             ->label('إيقاف مؤقت')
             ->icon('heroicon-o-pause-circle')
             ->color('warning')
-            ->form([
+            ->schema([
                 Textarea::make('pause_reason')
                     ->label('سبب الإيقاف')
                     ->required(),
@@ -299,9 +309,9 @@ abstract class BaseSubscriptionResource extends Resource
     }
 
     // Shared resume action
-    protected static function getResumeAction(): Tables\Actions\Action
+    protected static function getResumeAction(): Action
     {
-        return Tables\Actions\Action::make('resume')
+        return Action::make('resume')
             ->label('استئناف')
             ->icon('heroicon-o-play-circle')
             ->color('success')
@@ -317,13 +327,13 @@ abstract class BaseSubscriptionResource extends Resource
     }
 
     // Shared extend subscription action
-    protected static function getExtendSubscriptionAction(): Tables\Actions\Action
+    protected static function getExtendSubscriptionAction(): Action
     {
-        return Tables\Actions\Action::make('extend_subscription')
+        return Action::make('extend_subscription')
             ->label('تمديد الاشتراك')
             ->icon('heroicon-o-calendar-days')
             ->color('success')
-            ->form([
+            ->schema([
                 TextInput::make('extension_days')
                     ->label('عدد أيام التمديد')
                     ->numeric()
@@ -360,7 +370,7 @@ abstract class BaseSubscriptionResource extends Resource
                     'metadata' => $metadata,
                 ]);
 
-                \Filament\Notifications\Notification::make()
+                Notification::make()
                     ->success()
                     ->title('تم تمديد الاشتراك بنجاح')
                     ->body("تم إضافة {$data['extension_days']} يوم. تاريخ الانتهاء الجديد: {$newEndsAt->format('Y-m-d')}")
@@ -373,29 +383,29 @@ abstract class BaseSubscriptionResource extends Resource
     }
 
     // Shared extension history infolist section
-    protected static function getExtensionHistoryInfolistSection(): Infolists\Components\Section
+    protected static function getExtensionHistoryInfolistSection(): Section
     {
-        return Infolists\Components\Section::make('سجل التمديدات')
+        return Section::make('سجل التمديدات')
             ->schema([
-                Infolists\Components\RepeatableEntry::make('metadata.extensions')
+                RepeatableEntry::make('metadata.extensions')
                     ->label('')
                     ->schema([
-                        Infolists\Components\TextEntry::make('extension_days')
+                        TextEntry::make('extension_days')
                             ->label('عدد الأيام')
                             ->suffix(' يوم')
                             ->weight(FontWeight::Bold),
-                        Infolists\Components\TextEntry::make('extension_reason')
+                        TextEntry::make('extension_reason')
                             ->label('سبب التمديد')
                             ->columnSpan(2),
-                        Infolists\Components\TextEntry::make('extended_by_name')
+                        TextEntry::make('extended_by_name')
                             ->label('تم بواسطة'),
-                        Infolists\Components\TextEntry::make('extended_at')
+                        TextEntry::make('extended_at')
                             ->label('تاريخ التمديد')
                             ->dateTime('Y-m-d H:i'),
-                        Infolists\Components\TextEntry::make('old_ends_at')
+                        TextEntry::make('old_ends_at')
                             ->label('تاريخ الانتهاء السابق')
                             ->dateTime('Y-m-d H:i'),
-                        Infolists\Components\TextEntry::make('new_ends_at')
+                        TextEntry::make('new_ends_at')
                             ->label('تاريخ الانتهاء الجديد')
                             ->dateTime('Y-m-d H:i')
                             ->color('success')
@@ -428,10 +438,10 @@ abstract class BaseSubscriptionResource extends Resource
                 static::getSharedFilters(),
                 static::getTypeSpecificFilters()
             ))
-            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions())
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions())
             ->headerActions([
                 // Header action to cancel all expired pending (from HasSubscriptionActions trait)
                 static::getCancelExpiredPendingAction(),

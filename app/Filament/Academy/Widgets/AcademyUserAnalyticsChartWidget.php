@@ -9,13 +9,13 @@ use Filament\Widgets\ChartWidget;
 
 class AcademyUserAnalyticsChartWidget extends ChartWidget
 {
-    protected static ?string $heading = 'تحليل نمو المستخدمين';
+    protected ?string $heading = 'تحليل نمو المستخدمين';
 
     protected static ?int $sort = 3;
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $maxHeight = '300px';
+    protected ?string $maxHeight = '300px';
 
     public ?string $filter = '30';
 

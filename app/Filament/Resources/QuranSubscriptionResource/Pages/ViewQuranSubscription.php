@@ -2,6 +2,10 @@
 
 namespace App\Filament\Resources\QuranSubscriptionResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
+use App\Models\QuranSubscription;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -10,7 +14,7 @@ use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
- * @property \App\Models\QuranSubscription $record
+ * @property QuranSubscription $record
  */
 class ViewQuranSubscription extends ViewRecord
 {
@@ -24,9 +28,9 @@ class ViewQuranSubscription extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
-            Actions\Action::make('activate')
+            Action::make('activate')
                 ->label('تفعيل الاشتراك')
                 ->icon('heroicon-o-play-circle')
                 ->color('success')
@@ -37,12 +41,12 @@ class ViewQuranSubscription extends ViewRecord
                     'last_payment_at' => now(),
                 ]))
                 ->visible(fn () => $this->record->status === SessionSubscriptionStatus::PENDING),
-            Actions\Action::make('pause')
+            Action::make('pause')
                 ->label('إيقاف مؤقت')
                 ->icon('heroicon-o-pause-circle')
                 ->color('warning')
-                ->form([
-                    \Filament\Forms\Components\Textarea::make('pause_reason')
+                ->schema([
+                    Textarea::make('pause_reason')
                         ->label('سبب الإيقاف')
                         ->required(),
                 ])
@@ -54,7 +58,7 @@ class ViewQuranSubscription extends ViewRecord
                     ]);
                 })
                 ->visible(fn () => $this->record->status === SessionSubscriptionStatus::ACTIVE),
-            Actions\Action::make('resume')
+            Action::make('resume')
                 ->label('استئناف الاشتراك')
                 ->icon('heroicon-o-play-circle')
                 ->color('success')
@@ -72,13 +76,13 @@ class ViewQuranSubscription extends ViewRecord
                     ]);
                 })
                 ->visible(fn () => $this->record->status === SessionSubscriptionStatus::PAUSED),
-            Actions\Action::make('cancel')
+            Action::make('cancel')
                 ->label('إلغاء الاشتراك')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->requiresConfirmation()
-                ->form([
-                    \Filament\Forms\Components\Textarea::make('cancellation_reason')
+                ->schema([
+                    Textarea::make('cancellation_reason')
                         ->label('سبب الإلغاء')
                         ->required(),
                 ])
@@ -97,7 +101,7 @@ class ViewQuranSubscription extends ViewRecord
                         ->update(['status' => SessionStatus::CANCELLED->value]);
                 })
                 ->visible(fn () => $this->record->status !== SessionSubscriptionStatus::CANCELLED),
-            Actions\Action::make('renew')
+            Action::make('renew')
                 ->label('تجديد الاشتراك')
                 ->icon('heroicon-o-arrow-path')
                 ->color('primary')

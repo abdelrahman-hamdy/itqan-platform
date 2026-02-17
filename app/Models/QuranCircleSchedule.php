@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\SessionNamingService;
 use App\Enums\CircleEnrollmentStatus;
 use App\Models\Traits\ScopedToAcademy;
 use App\Services\AcademyContextService;
@@ -294,7 +295,7 @@ class QuranCircleSchedule extends Model
         }
 
         // Use the naming service for consistent sequential session naming
-        $namingService = app(\App\Services\SessionNamingService::class);
+        $namingService = app(SessionNamingService::class);
 
         return $namingService->generateGroupSessionTitle($this->circle);
     }
@@ -305,7 +306,7 @@ class QuranCircleSchedule extends Model
      */
     private function getNextSessionNumberForCircle(): int
     {
-        $namingService = app(\App\Services\SessionNamingService::class);
+        $namingService = app(SessionNamingService::class);
 
         return $namingService->getNextGroupSessionNumber($this->circle);
     }
@@ -329,7 +330,7 @@ class QuranCircleSchedule extends Model
         }
 
         // Use the naming service for consistent description
-        $namingService = app(\App\Services\SessionNamingService::class);
+        $namingService = app(SessionNamingService::class);
 
         return $namingService->generateGroupSessionDescription($this->circle, $datetime);
     }

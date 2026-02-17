@@ -2,6 +2,13 @@
 
 namespace App\Services;
 
+use Illuminate\Database\QueryException;
+use InvalidArgumentException;
+use Throwable;
+use Exception;
+use App\Contracts\Payment\SupportsRefunds;
+use App\Enums\NotificationType;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Constants\DefaultAcademy;
 use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Contracts\PaymentServiceInterface;
@@ -107,7 +114,7 @@ class PaymentService implements PaymentServiceInterface
                 'error' => $e->getErrorMessageAr(),
                 'error_code' => $e->getErrorCode(),
             ];
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Log::error('Database error during payment processing', [
                 'payment_id' => $payment->id,
                 'gateway' => $payment->payment_gateway,
@@ -120,7 +127,7 @@ class PaymentService implements PaymentServiceInterface
                 'error' => __('payments.service.database_error'),
                 'error_code' => 'DATABASE_ERROR',
             ];
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             Log::error('Invalid payment data', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
@@ -131,7 +138,7 @@ class PaymentService implements PaymentServiceInterface
                 'error' => __('payments.service.invalid_data'),
                 'error_code' => 'INVALID_DATA',
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::critical('Unexpected payment processing error', [
                 'payment_id' => $payment->id,
                 'gateway' => $payment->payment_gateway,
@@ -381,7 +388,7 @@ class PaymentService implements PaymentServiceInterface
                     'error' => $result->getDisplayError(),
                     'error_code' => $result->errorCode ?? 'CHARGE_FAILED',
                 ];
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Get failure count from subscription metadata
                 $metadata = $subscription->metadata ?? [];
                 $failureCount = $metadata['renewal_failed_count'] ?? 0;
@@ -465,7 +472,7 @@ class PaymentService implements PaymentServiceInterface
                 : $this->gatewayManager->driver($gatewayName);
 
             // Check if gateway supports refunds
-            if (! $gateway instanceof \App\Contracts\Payment\SupportsRefunds) {
+            if (! $gateway instanceof SupportsRefunds) {
                 return PaymentResult::failed(
                     errorCode: 'REFUNDS_NOT_SUPPORTED',
                     errorMessage: "Gateway {$gatewayName} does not support refunds",
@@ -516,7 +523,7 @@ class PaymentService implements PaymentServiceInterface
             }
 
             return $result;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Exception during payment refund', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
@@ -714,7 +721,7 @@ class PaymentService implements PaymentServiceInterface
                 // Send failure notification
                 $this->notificationService->send(
                     $user,
-                    \App\Enums\NotificationType::PAYMENT_FAILED,
+                    NotificationType::PAYMENT_FAILED,
                     [
                         'amount' => $payment->amount,
                         'currency' => $payment->currency ?? getCurrencyCode(null, $payment->academy),
@@ -728,12 +735,12 @@ class PaymentService implements PaymentServiceInterface
                 // Mark payment notification as sent
                 $payment->update(['payment_notification_sent_at' => now()]);
             }
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             Log::warning('Payment notification failed - related model not found', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
             ]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Failed to send payment notification', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Log;
 use App\Enums\AttendanceStatus;
 use App\Enums\PerformanceLevel;
 use App\Models\Traits\ScopedToAcademy;
@@ -362,7 +363,7 @@ abstract class BaseSessionReport extends Model
     {
         // CRITICAL FIX: If attendance is already calculated, use that status (most accurate)
         if ($meetingAttendance->is_calculated && $meetingAttendance->attendance_status) {
-            \Log::info('Using pre-calculated attendance status from MeetingAttendance', [
+            Log::info('Using pre-calculated attendance status from MeetingAttendance', [
                 'session_id' => $this->session_id,
                 'student_id' => $this->student_id,
                 'status' => $meetingAttendance->attendance_status,

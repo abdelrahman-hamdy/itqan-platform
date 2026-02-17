@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\SessionStatus;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\User;
@@ -124,7 +125,7 @@ class CircleReportFormatterService
             // Overall circle info
             'overall' => [
                 'created_at' => $circle->created_at,
-                'sessions_completed' => $circle->sessions_completed ?? $data['sessions']->whereIn('status', [\App\Enums\SessionStatus::COMPLETED->value])->count(),
+                'sessions_completed' => $circle->sessions_completed ?? $data['sessions']->whereIn('status', [SessionStatus::COMPLETED->value])->count(),
                 'enrolled_students' => $data['students']->count(),
                 'max_students' => $circle->max_students,
             ],

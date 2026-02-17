@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
@@ -87,7 +88,7 @@ class PlatformSettings extends Model
     /**
      * Get social links as collection
      */
-    public function getSocialLinksCollection(): \Illuminate\Support\Collection
+    public function getSocialLinksCollection(): Collection
     {
         return collect($this->social_links ?? []);
     }

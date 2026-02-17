@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment\Gateways;
 
+use Exception;
 use App\Contracts\Payment\PaymentGatewayInterface;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -118,7 +119,7 @@ abstract class AbstractGateway implements PaymentGatewayInterface
                 'data' => $responseData,
                 'raw' => $response->body(),
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Gateway {$this->getName()} exception", [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),

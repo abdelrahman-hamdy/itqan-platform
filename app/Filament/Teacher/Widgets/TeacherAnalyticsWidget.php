@@ -12,7 +12,7 @@ class TeacherAnalyticsWidget extends ChartWidget
     // Prevent auto-discovery - not needed on dashboard
     protected static bool $isDiscoverable = false;
 
-    protected static ?string $heading = 'تحليلات الجلسات - آخر 30 يوم';
+    protected ?string $heading = 'تحليلات الجلسات - آخر 30 يوم';
 
     protected static ?int $sort = 2;
 

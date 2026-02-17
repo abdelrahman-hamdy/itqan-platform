@@ -2,6 +2,7 @@
 
 namespace App\Services\Notification;
 
+use Exception;
 use App\Enums\NotificationType;
 use App\Events\NotificationSent;
 use App\Models\Academy;
@@ -68,7 +69,7 @@ class NotificationDispatcher
                 if ($id) {
                     $notificationIds[] = $id;
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::error('Failed to send notification', [
                     'user_id' => $user->id,
                     'type' => $type->value,
@@ -169,7 +170,7 @@ class NotificationDispatcher
     {
         try {
             broadcast(new NotificationSent($user, $data))->toOthers();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to broadcast notification', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
@@ -215,7 +216,7 @@ class NotificationDispatcher
                 actionUrl: $actionUrl,
                 academy: $academy
             ));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send email notification', [
                 'user_id' => $user->id,
                 'type' => $type->value,

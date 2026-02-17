@@ -2,6 +2,9 @@
 
 namespace App\Filament\Concerns;
 
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use App\Rules\PasswordRules;
 use App\Enums\Gender;
 use App\Models\User;
 use App\Services\AcademyContextService;
@@ -26,38 +29,38 @@ trait HasInlineUserCreation
     /**
      * Get the form schema for inline user creation.
      *
-     * @return array<Forms\Components\Component>
+     * @return array<\Filament\Schemas\Components\Component>
      */
     protected static function getUserCreationFormSchema(): array
     {
         return [
-            Forms\Components\TextInput::make('first_name')
+            TextInput::make('first_name')
                 ->label('الاسم الأول')
                 ->required()
                 ->maxLength(255),
-            Forms\Components\TextInput::make('last_name')
+            TextInput::make('last_name')
                 ->label('اسم العائلة')
                 ->required()
                 ->maxLength(255),
-            Forms\Components\TextInput::make('email')
+            TextInput::make('email')
                 ->label('البريد الإلكتروني')
                 ->email()
                 ->required()
                 ->unique('users', 'email')
                 ->maxLength(255),
             static::getPhoneInput(),
-            Forms\Components\Select::make('gender')
+            Select::make('gender')
                 ->label('الجنس')
                 ->options(Gender::options())
                 ->required(),
-            Forms\Components\TextInput::make('password')
+            TextInput::make('password')
                 ->label('كلمة المرور')
                 ->password()
                 ->required()
                 ->minLength(6)
                 ->maxLength(255)
-                ->rules([\App\Rules\PasswordRules::rule()])
-                ->helperText(\App\Rules\PasswordRules::description()),
+                ->rules([PasswordRules::rule()])
+                ->helperText(PasswordRules::description()),
         ];
     }
 

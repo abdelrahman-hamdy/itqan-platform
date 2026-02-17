@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ParentProfile;
+use App\Models\StudentProfile;
 use App\Http\Traits\Api\ApiResponses;
 use App\Services\ParentDashboardService;
 use App\Services\ParentDataService;
@@ -41,7 +43,7 @@ class ParentDashboardController extends Controller
      */
     public function index(Request $request): View
     {
-        $this->authorize('viewDashboard', \App\Models\ParentProfile::class);
+        $this->authorize('viewDashboard', ParentProfile::class);
 
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -66,7 +68,7 @@ class ParentDashboardController extends Controller
         $parent = $user->parentProfile;
 
         // Find child and authorize access
-        $child = \App\Models\StudentProfile::findOrFail($childId);
+        $child = StudentProfile::findOrFail($childId);
         $this->authorize('viewChild', [$parent, $child]);
 
         // Store in session
@@ -81,7 +83,7 @@ class ParentDashboardController extends Controller
      */
     public function childDetail(Request $request): View
     {
-        $this->authorize('viewDashboard', \App\Models\ParentProfile::class);
+        $this->authorize('viewDashboard', ParentProfile::class);
 
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -108,7 +110,7 @@ class ParentDashboardController extends Controller
      */
     public function selectChildSession(Request $request): JsonResponse
     {
-        $this->authorize('viewDashboard', \App\Models\ParentProfile::class);
+        $this->authorize('viewDashboard', ParentProfile::class);
 
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -125,7 +127,7 @@ class ParentDashboardController extends Controller
         }
 
         // Find child and authorize access
-        $child = \App\Models\StudentProfile::findOrFail($childId);
+        $child = StudentProfile::findOrFail($childId);
         $this->authorize('viewChild', [$parent, $child]);
 
         // Store in session
@@ -147,7 +149,7 @@ class ParentDashboardController extends Controller
         $parent = $user->parentProfile;
 
         // Find child and authorize access
-        $child = \App\Models\StudentProfile::findOrFail($childId);
+        $child = StudentProfile::findOrFail($childId);
         $this->authorize('viewChild', [$parent, $child]);
 
         // Store in session
@@ -162,7 +164,7 @@ class ParentDashboardController extends Controller
     /**
      * Helper method: Get active child from session
      */
-    protected function getActiveChild(): \App\Models\StudentProfile
+    protected function getActiveChild(): StudentProfile
     {
         $childId = session('active_child_id');
 

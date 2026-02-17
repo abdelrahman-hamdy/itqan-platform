@@ -2,6 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Resources\HomeworkSubmissionsResource;
+use App\Filament\Supervisor\Pages\Dashboard;
+use App\Filament\Pages\Auth\Login;
 use App\Http\Middleware\VerifySupervisorRole;
 use App\Services\AcademyContextService;
 use Filament\Http\Middleware\Authenticate;
@@ -49,11 +52,11 @@ class SupervisorPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Supervisor/Resources'), for: 'App\\Filament\\Supervisor\\Resources')
             ->resources([
-                \App\Filament\Resources\HomeworkSubmissionsResource::class,
+                HomeworkSubmissionsResource::class,
             ])
             ->discoverPages(in: app_path('Filament/Supervisor/Pages'), for: 'App\\Filament\\Supervisor\\Pages')
             ->pages([
-                \App\Filament\Supervisor\Pages\Dashboard::class,
+                Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Supervisor/Widgets'), for: 'App\\Filament\\Supervisor\\Widgets')
             ->widgets([
@@ -78,7 +81,7 @@ class SupervisorPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->sidebarCollapsibleOnDesktop()
-            ->login(\App\Filament\Pages\Auth\Login::class)
+            ->login(Login::class)
             ->profile()
             ->plugins([
                 FilamentFullCalendarPlugin::make()

@@ -5,7 +5,6 @@ namespace App\Filament\Shared\Tables;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Services\AcademyContextService;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 
 /**
@@ -51,7 +50,8 @@ class SessionTableColumns
             ->placeholder('جماعية')
             ->toggleable();
 
-        $columns[] = BadgeColumn::make('session_type')
+        $columns[] = TextColumn::make('session_type')
+            ->badge()
             ->label('النوع')
             ->colors([
                 'primary' => 'individual',
@@ -112,7 +112,8 @@ class SessionTableColumns
             ->searchable()
             ->placeholder('غير محدد');
 
-        $columns[] = BadgeColumn::make('session_type')
+        $columns[] = TextColumn::make('session_type')
+            ->badge()
             ->label('النوع')
             ->colors([
                 'primary' => 'individual',
@@ -195,7 +196,8 @@ class SessionTableColumns
                 ->sortable()
                 ->toggleable(),
 
-            BadgeColumn::make('status')
+            TextColumn::make('status')
+                ->badge()
                 ->label('الحالة')
                 ->colors(SessionStatus::colorOptions())
                 ->formatStateUsing(function ($state): string {
@@ -209,7 +211,8 @@ class SessionTableColumns
         ];
 
         if ($showAttendance) {
-            $columns[] = BadgeColumn::make('attendance_status')
+            $columns[] = TextColumn::make('attendance_status')
+                ->badge()
                 ->label('الحضور')
                 ->colors(array_merge(
                     AttendanceStatus::colorOptions(),

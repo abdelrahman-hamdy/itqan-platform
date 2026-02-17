@@ -2,6 +2,7 @@
 
 namespace App\Services\LiveKit;
 
+use Exception;
 use Agence104\LiveKit\RoomCreateOptions;
 use Agence104\LiveKit\RoomServiceClient;
 use App\Models\Academy;
@@ -49,7 +50,7 @@ class LiveKitRoomManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit room manager not configured properly');
+                throw new Exception('LiveKit room manager not configured properly');
             }
 
             $roomOptions = $this->buildRoomOptions($roomName, $options);
@@ -69,13 +70,13 @@ class LiveKitRoomManager
                 'metadata' => json_decode($room->getMetadata(), true),
             ];
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to create LiveKit room', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
             ]);
 
-            throw new \Exception('Failed to create room: '.$e->getMessage());
+            throw new Exception('Failed to create room: '.$e->getMessage());
         }
     }
 
@@ -86,7 +87,7 @@ class LiveKitRoomManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit room manager not configured properly');
+                throw new Exception('LiveKit room manager not configured properly');
             }
 
             $this->roomService->deleteRoom($roomName);
@@ -97,7 +98,7 @@ class LiveKitRoomManager
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to delete LiveKit room', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
@@ -114,7 +115,7 @@ class LiveKitRoomManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit room manager not configured properly');
+                throw new Exception('LiveKit room manager not configured properly');
             }
 
             $roomsResponse = $this->roomService->listRooms($roomNames);
@@ -137,7 +138,7 @@ class LiveKitRoomManager
 
             return $rooms;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to list LiveKit rooms', [
                 'error' => $e->getMessage(),
             ]);
@@ -207,7 +208,7 @@ class LiveKitRoomManager
                 'is_active' => $room->getNumParticipants() > 0,
             ];
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to get room info', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
@@ -224,7 +225,7 @@ class LiveKitRoomManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit room manager not configured properly');
+                throw new Exception('LiveKit room manager not configured properly');
             }
 
             $participantsResponse = $this->roomService->listParticipants($roomName);
@@ -246,7 +247,7 @@ class LiveKitRoomManager
 
             return $participants;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to get participants', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
@@ -263,7 +264,7 @@ class LiveKitRoomManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit room manager not configured properly');
+                throw new Exception('LiveKit room manager not configured properly');
             }
 
             $this->roomService->removeParticipant($roomName, $participantIdentity);
@@ -275,7 +276,7 @@ class LiveKitRoomManager
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to remove participant', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
@@ -348,7 +349,7 @@ class LiveKitRoomManager
 
             return false;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error checking LiveKit room', [
                 'room_name' => $roomName,
                 'user_identity' => $userIdentity,
@@ -367,7 +368,7 @@ class LiveKitRoomManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit room manager not configured properly');
+                throw new Exception('LiveKit room manager not configured properly');
             }
 
             $this->roomService->updateRoomMetadata($roomName, json_encode($metadata));
@@ -379,7 +380,7 @@ class LiveKitRoomManager
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to update room metadata', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
@@ -396,7 +397,7 @@ class LiveKitRoomManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit room manager not configured properly');
+                throw new Exception('LiveKit room manager not configured properly');
             }
 
             // Disconnect all participants
@@ -417,7 +418,7 @@ class LiveKitRoomManager
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // If the room doesn't exist, consider it already ended (not an error)
             if (str_contains($e->getMessage(), 'room does not exist')) {
                 Log::info('LiveKit room already gone, treating as ended', [
@@ -443,7 +444,7 @@ class LiveKitRoomManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit room manager not configured properly');
+                throw new Exception('LiveKit room manager not configured properly');
             }
 
             // Update room with timeout settings
@@ -454,7 +455,7 @@ class LiveKitRoomManager
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to set meeting duration', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,

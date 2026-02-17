@@ -2,6 +2,13 @@
 
 namespace App\Filament\Academy\Resources;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Tables\Columns\ImageColumn;
+use App\Filament\Academy\Resources\SupervisorProfileResource\Pages\ListSupervisorProfiles;
+use App\Filament\Academy\Resources\SupervisorProfileResource\Pages\CreateSupervisorProfile;
+use App\Filament\Academy\Resources\SupervisorProfileResource\Pages\ViewSupervisorProfile;
+use App\Filament\Academy\Resources\SupervisorProfileResource\Pages\EditSupervisorProfile;
 use App\Enums\UserType;
 use App\Filament\Academy\Resources\SupervisorProfileResource\Pages;
 use App\Filament\Shared\Resources\Profiles\BaseSupervisorProfileResource;
@@ -20,8 +27,8 @@ class SupervisorProfileResource extends BaseSupervisorProfileResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
+            ViewAction::make(),
+            EditAction::make(),
         ];
     }
 
@@ -33,7 +40,7 @@ class SupervisorProfileResource extends BaseSupervisorProfileResource
     protected static function getTableColumns(): array
     {
         return array_merge(
-            [Tables\Columns\ImageColumn::make('avatar')
+            [ImageColumn::make('avatar')
                 ->label('الصورة')
                 ->circular()
                 ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url').'?name='.urlencode($record->full_name ?? 'N/A').'&background=9333ea&color=fff')],
@@ -54,10 +61,10 @@ class SupervisorProfileResource extends BaseSupervisorProfileResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSupervisorProfiles::route('/'),
-            'create' => Pages\CreateSupervisorProfile::route('/create'),
-            'view' => Pages\ViewSupervisorProfile::route('/{record}'),
-            'edit' => Pages\EditSupervisorProfile::route('/{record}/edit'),
+            'index' => ListSupervisorProfiles::route('/'),
+            'create' => CreateSupervisorProfile::route('/create'),
+            'view' => ViewSupervisorProfile::route('/{record}'),
+            'edit' => EditSupervisorProfile::route('/{record}/edit'),
         ];
     }
 }

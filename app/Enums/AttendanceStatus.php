@@ -72,7 +72,7 @@ enum AttendanceStatus: string
     }
 
     /**
-     * Get color options array for Filament BadgeColumn/TextColumn.
+     * Get color options array for Filament TextColumn badge.
      *
      * @return array<string, string>
      */

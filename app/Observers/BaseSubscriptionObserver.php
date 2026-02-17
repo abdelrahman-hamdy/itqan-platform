@@ -2,6 +2,12 @@
 
 namespace App\Observers;
 
+use Exception;
+use App\Models\Payment;
+use App\Enums\PaymentStatus;
+use App\Services\NotificationService;
+use App\Enums\NotificationType;
+use App\Constants\DefaultAcademy;
 use App\Enums\BillingCycle;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -72,7 +78,7 @@ class BaseSubscriptionObserver
         if (method_exists($subscription, 'snapshotPackageData') && empty($subscription->package_name_ar)) {
             try {
                 $subscription->snapshotPackageData();
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::warning('Failed to snapshot package data during creation', [
                     'subscription_type' => get_class($subscription),
                     'error' => $e->getMessage(),
@@ -357,7 +363,7 @@ class BaseSubscriptionObserver
         try {
             // Broadcasting not yet implemented - will be added when real-time updates are required
             // event(new SubscriptionStatusChanged($subscription, $oldStatus, $newStatus));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to broadcast subscription status change', [
                 'subscription_id' => $subscription->id,
                 'error' => $e->getMessage(),
@@ -372,9 +378,9 @@ class BaseSubscriptionObserver
     {
         try {
             // Find related payment to check/track notification status
-            $payment = \App\Models\Payment::where('payable_type', get_class($subscription))
+            $payment = Payment::where('payable_type', get_class($subscription))
                 ->where('payable_id', $subscription->id)
-                ->where('status', \App\Enums\PaymentStatus::COMPLETED)
+                ->where('status', PaymentStatus::COMPLETED)
                 ->latest()
                 ->first();
 
@@ -393,7 +399,7 @@ class BaseSubscriptionObserver
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             // Get subscription display name
             $subscriptionName = $this->getSubscriptionName($subscription);
@@ -401,7 +407,7 @@ class BaseSubscriptionObserver
 
             $notificationService->send(
                 $student,
-                \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
+                NotificationType::SUBSCRIPTION_ACTIVATED,
                 [
                     'subscription_name' => $subscriptionName,
                     'subscription_type' => $subscriptionType,
@@ -426,7 +432,7 @@ class BaseSubscriptionObserver
                 'student_id' => $student->id,
                 'payment_id' => $payment?->id,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send activation notification', [
                 'subscription_id' => $subscription->id,
                 'error' => $e->getMessage(),
@@ -445,7 +451,7 @@ class BaseSubscriptionObserver
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             // Get subscription display name
             $subscriptionName = $this->getSubscriptionName($subscription);
@@ -453,7 +459,7 @@ class BaseSubscriptionObserver
 
             $notificationService->send(
                 $student,
-                \App\Enums\NotificationType::SUBSCRIPTION_EXPIRED,
+                NotificationType::SUBSCRIPTION_EXPIRED,
                 [
                     'subscription_name' => $subscriptionName,
                     'subscription_type' => $subscriptionType,
@@ -472,7 +478,7 @@ class BaseSubscriptionObserver
                 'subscription_id' => $subscription->id,
                 'student_id' => $student->id,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send expiration notification', [
                 'subscription_id' => $subscription->id,
                 'error' => $e->getMessage(),
@@ -491,7 +497,7 @@ class BaseSubscriptionObserver
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             // Get subscription display name
             $subscriptionName = $this->getSubscriptionName($subscription);
@@ -500,7 +506,7 @@ class BaseSubscriptionObserver
             // Send to student
             $notificationService->send(
                 $student,
-                \App\Enums\NotificationType::SESSION_CANCELLED,
+                NotificationType::SESSION_CANCELLED,
                 [
                     'subscription_name' => $subscriptionName,
                     'subscription_type' => $subscriptionType,
@@ -519,7 +525,7 @@ class BaseSubscriptionObserver
                 'subscription_id' => $subscription->id,
                 'student_id' => $student->id,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send cancellation notification', [
                 'subscription_id' => $subscription->id,
                 'error' => $e->getMessage(),
@@ -557,11 +563,11 @@ class BaseSubscriptionObserver
     protected function getSubscriptionUrl(BaseSubscription $subscription): string
     {
         $subdomain = $subscription->academy?->subdomain
-            ?? \App\Constants\DefaultAcademy::subdomain();
+            ?? DefaultAcademy::subdomain();
 
         try {
             return route('student.subscriptions', ['subdomain' => $subdomain]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return route('student.profile', ['subdomain' => $subdomain]);
         }
     }
@@ -590,7 +596,7 @@ class BaseSubscriptionObserver
                 'student_id' => $studentId,
                 'academy_id' => $academyId,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to clear student dashboard cache', [
                 'subscription_id' => $subscription->id,
                 'error' => $e->getMessage(),

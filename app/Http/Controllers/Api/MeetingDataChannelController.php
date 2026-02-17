@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use Exception;
 use App\Events\MeetingCommandEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AcknowledgeMeetingMessageRequest;
@@ -44,7 +45,7 @@ class MeetingDataChannelController extends Controller
             );
 
             return $this->success($result, __('api.meeting.command_sent'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send teacher command', [
                 'session_id' => $session->id,
                 'command' => $request->input('command'),
@@ -71,7 +72,7 @@ class MeetingDataChannelController extends Controller
             );
 
             return $this->success(null, __('api.meeting.ack_recorded'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to record acknowledgment', [
                 'session_id' => $session->id,
                 'message_id' => $request->input('message_id'),
@@ -96,7 +97,7 @@ class MeetingDataChannelController extends Controller
             );
 
             return $this->success($state);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to get meeting state', [
                 'session_id' => $session->id,
                 'user_id' => Auth::id(),
@@ -145,7 +146,7 @@ class MeetingDataChannelController extends Controller
                 'commands' => array_values($relevantCommands),
                 'server_time' => now()->toISOString(),
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to get pending commands', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -252,7 +253,7 @@ class MeetingDataChannelController extends Controller
             $result = $this->dataChannelService->muteAllStudents($session, Auth::user());
 
             return $this->success($result, __('api.meeting.students_muted'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError(__('api.meeting.mute_failed'));
         }
     }
@@ -265,7 +266,7 @@ class MeetingDataChannelController extends Controller
             $result = $this->dataChannelService->allowStudentMicrophones($session, Auth::user());
 
             return $this->success($result, __('api.meeting.mics_allowed'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError(__('api.meeting.mics_failed'));
         }
     }
@@ -278,7 +279,7 @@ class MeetingDataChannelController extends Controller
             $result = $this->dataChannelService->clearAllHandRaises($session, Auth::user());
 
             return $this->success($result, __('api.meeting.hands_cleared'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError(__('api.meeting.hands_failed'));
         }
     }
@@ -306,7 +307,7 @@ class MeetingDataChannelController extends Controller
             );
 
             return $this->success($result, __('api.meeting.mic_granted'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError(__('api.meeting.mic_grant_failed'));
         }
     }
@@ -343,7 +344,7 @@ class MeetingDataChannelController extends Controller
                     return json_decode($ack, true);
                 }, $acks),
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError(__('api.meeting.delivery_status_failed'));
         }
     }
@@ -373,7 +374,7 @@ class MeetingDataChannelController extends Controller
             return $this->success([
                 'test_id' => $testData['message_id'],
             ], __('api.meeting.connectivity_test_sent'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError(__('api.meeting.connectivity_test_failed'));
         }
     }

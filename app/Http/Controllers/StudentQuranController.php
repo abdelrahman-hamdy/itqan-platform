@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Pagination\LengthAwarePaginator;
+use App\Models\QuranIndividualCircle;
+use Exception;
+use Log;
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -97,7 +101,7 @@ class StudentQuranController extends Controller
         $currentPage = $request->get('page', 1);
         $offset = ($currentPage - 1) * $perPage;
 
-        $paginatedCircles = new \Illuminate\Pagination\LengthAwarePaginator(
+        $paginatedCircles = new LengthAwarePaginator(
             $circles->slice($offset, $perPage),
             $circles->count(),
             $perPage,
@@ -160,7 +164,7 @@ class StudentQuranController extends Controller
             $now = now();
             // Include both upcoming sessions and ongoing sessions
             $upcomingSessions = $allSessions->filter(function ($session) use ($now) {
-                return $session->scheduled_at > $now || $session->status->value === 'ongoing' || $session->status === \App\Enums\SessionStatus::ONGOING;
+                return $session->scheduled_at > $now || $session->status->value === 'ongoing' || $session->status === SessionStatus::ONGOING;
             })->take(10);
 
             $pastSessions = $allSessions->where('scheduled_at', '<=', $now)
@@ -173,7 +177,7 @@ class StudentQuranController extends Controller
         $subscription = null;
         if ($isEnrolled && $circle->quran_teacher_id) {
             // Try to find subscription by matching teacher and subscription type
-            $subscription = \App\Models\QuranSubscription::where('student_id', $user->id)
+            $subscription = QuranSubscription::where('student_id', $user->id)
                 ->where('academy_id', $academy->id)
                 ->where('quran_teacher_id', $circle->quran_teacher_id)
                 ->where('subscription_type', 'group')
@@ -183,11 +187,11 @@ class StudentQuranController extends Controller
 
             // If no subscription exists for this enrollment, create one
             if (! $subscription) {
-                $subscription = \App\Models\QuranSubscription::create([
+                $subscription = QuranSubscription::create([
                     'academy_id' => $academy->id,
                     'student_id' => $user->id,
                     'quran_teacher_id' => $circle->quran_teacher_id,
-                    'subscription_code' => \App\Models\QuranSubscription::generateSubscriptionCode($academy->id),
+                    'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
                     'subscription_type' => 'group',
                     'total_sessions' => $circle->sessions_per_month ?? 8,
                     'sessions_used' => 0,
@@ -230,7 +234,7 @@ class StudentQuranController extends Controller
         $academy = $user->academy;
 
         // Find the individual circle that belongs to this student
-        $individualCircle = \App\Models\QuranIndividualCircle::where('id', $circleId)
+        $individualCircle = QuranIndividualCircle::where('id', $circleId)
             ->where('student_id', $user->id)
             ->with(['subscription', 'quranTeacher', 'sessions' => function ($query) {
                 $query->orderBy('scheduled_at', 'asc');
@@ -250,19 +254,19 @@ class StudentQuranController extends Controller
             // Show if: future sessions, or any active/ongoing sessions regardless of time
             return ($session->scheduled_at > $now ||
                     in_array($session->status, [
-                        \App\Enums\SessionStatus::ONGOING,
-                        \App\Enums\SessionStatus::READY,
-                        \App\Enums\SessionStatus::UNSCHEDULED, // Include unscheduled sessions
-                    ])) && $session->status !== \App\Enums\SessionStatus::CANCELLED;
+                        SessionStatus::ONGOING,
+                        SessionStatus::READY,
+                        SessionStatus::UNSCHEDULED, // Include unscheduled sessions
+                    ])) && $session->status !== SessionStatus::CANCELLED;
         })->sortBy('scheduled_at')->take(10);
 
         // CRITICAL FIX: Include completed sessions and any past sessions with attendance data
         $pastSessions = $allSessions->filter(function ($session) use ($now) {
             return $session->scheduled_at <= $now &&
                    in_array($session->status, [
-                       \App\Enums\SessionStatus::COMPLETED,
-                       \App\Enums\SessionStatus::ABSENT,
-                       \App\Enums\SessionStatus::CANCELLED,
+                       SessionStatus::COMPLETED,
+                       SessionStatus::ABSENT,
+                       SessionStatus::CANCELLED,
                        // Include sessions that ended but might have attendance data
                    ]);
         })->sortByDesc('scheduled_at')->take(10);
@@ -319,8 +323,8 @@ class StudentQuranController extends Controller
                 ['redirect_url' => route('student.quran-circles', ['subdomain' => $academy->subdomain])],
                 $result['message']
             );
-        } catch (\Exception $e) {
-            \Log::error('[CircleEnroll] Exception in controller', [
+        } catch (Exception $e) {
+            Log::error('[CircleEnroll] Exception in controller', [
                 'user_id' => $user->id,
                 'circle_id' => $circleId,
                 'error' => $e->getMessage(),
@@ -358,7 +362,7 @@ class StudentQuranController extends Controller
                 ['redirect_url' => route('student.quran-circles', ['subdomain' => $academy->subdomain])],
                 $result['message']
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ أثناء إلغاء التسجيل. يرجى المحاولة مرة أخرى');
         }
     }

@@ -2,6 +2,21 @@
 
 namespace App\Filament\Academy\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use App\Models\QuranCircle;
+use App\Models\User;
+use App\Models\QuranTeacherProfile;
+use App\Models\QuranPackage;
+use Filament\Schemas\Schema;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Infolists\Components\TextEntry;
+use App\Filament\Academy\Resources\QuranSubscriptionResource\Pages\ListQuranSubscriptions;
+use App\Filament\Academy\Resources\QuranSubscriptionResource\Pages\CreateQuranSubscription;
+use App\Filament\Academy\Resources\QuranSubscriptionResource\Pages\ViewQuranSubscription;
+use App\Filament\Academy\Resources\QuranSubscriptionResource\Pages\EditQuranSubscription;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\UserType;
@@ -10,16 +25,11 @@ use App\Filament\Shared\Resources\BaseSubscriptionResource;
 use App\Models\QuranSubscription;
 use Filament\Forms;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,11 +37,11 @@ use Illuminate\Database\Eloquent\Builder;
 class QuranSubscriptionResource extends BaseSubscriptionResource
 {
     protected static ?string $model = QuranSubscription::class;
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationLabel = 'اشتراكات القرآن';
     protected static ?string $modelLabel = 'اشتراك قرآن';
     protected static ?string $pluralModelLabel = 'اشتراكات القرآن';
-    protected static ?string $navigationGroup = 'إدارة القرآن';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة القرآن';
     protected static ?int $navigationSort = 6;
 
     protected static function getBasicInfoFormSection(): Section
@@ -59,7 +69,7 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                             ->options(function () {
                                 $academyId = auth()->user()->academy_id;
 
-                                return \App\Models\QuranCircle::where('academy_id', $academyId)
+                                return QuranCircle::where('academy_id', $academyId)
                                     ->where('status', true)
                                     ->get()
                                     ->mapWithKeys(fn ($circle) => [
@@ -77,7 +87,7 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                             ->options(function () {
                                 $academyId = auth()->user()->academy_id;
 
-                                return \App\Models\User::where('user_type', UserType::STUDENT->value)
+                                return User::where('user_type', UserType::STUDENT->value)
                                     ->with('studentProfile')
                                     ->whereHas('studentProfile.gradeLevel', fn ($q) => $q->where('academy_id', $academyId))
                                     ->get()
@@ -97,7 +107,7 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                             ->options(function () {
                                 $academyId = auth()->user()->academy_id;
 
-                                $teachers = \App\Models\QuranTeacherProfile::where('academy_id', $academyId)
+                                $teachers = QuranTeacherProfile::where('academy_id', $academyId)
                                     ->whereHas('user', fn ($q) => $q->where('active_status', true))
                                     ->get();
 
@@ -127,7 +137,7 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                             ->options(function () {
                                 $academyId = auth()->user()->academy_id;
 
-                                return \App\Models\QuranPackage::where('academy_id', $academyId)
+                                return QuranPackage::where('academy_id', $academyId)
                                     ->where('is_active', true)
                                     ->orderBy('sort_order')
                                     ->pluck('name', 'id');
@@ -138,7 +148,7 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                             ->live()
                             ->afterStateUpdated(function ($state, $set) {
                                 if ($state) {
-                                    $package = \App\Models\QuranPackage::find($state);
+                                    $package = QuranPackage::find($state);
                                     if ($package) {
                                         $set('total_sessions', $package->sessions_per_month);
                                         $set('currency', getCurrencyCode(null, $package->academy));
@@ -219,10 +229,10 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
             ->visibleOn('edit');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 static::getBasicInfoFormSection(),
                 static::getPricingFormSection(),
                 static::getStatusSection(),
@@ -235,7 +245,8 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
     protected static function getTypeSpecificTableColumns(): array
     {
         return [
-            BadgeColumn::make('subscription_type')
+            TextColumn::make('subscription_type')
+                ->badge()
                 ->label('نوع الاشتراك')
                 ->formatStateUsing(fn (?string $state): string => match ($state) {
                     'individual' => 'فردي',
@@ -327,8 +338,8 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
+            ViewAction::make(),
+            EditAction::make(),
             static::getPauseAction(),
             static::getResumeAction(),
             static::getCancelPendingAction(),
@@ -338,7 +349,7 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
+            BulkActionGroup::make([
                 static::getBulkCancelPendingAction(),
             ]),
         ];
@@ -352,15 +363,15 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
     protected static function getTypeSpecificInfolistSections(): array
     {
         return [
-            Infolists\Components\Section::make('معلومات الاشتراك')
+            Section::make('معلومات الاشتراك')
                 ->schema([
-                    Infolists\Components\Grid::make(2)
+                    Grid::make(2)
                         ->schema([
-                            Infolists\Components\TextEntry::make('subscription_code')->label('رمز الاشتراك'),
-                            Infolists\Components\TextEntry::make('package.name')->label('اسم الباقة'),
-                            Infolists\Components\TextEntry::make('student.name')->label('الطالب'),
-                            Infolists\Components\TextEntry::make('quranTeacher.full_name')->label('المعلم'),
-                            Infolists\Components\TextEntry::make('subscription_type')
+                            TextEntry::make('subscription_code')->label('رمز الاشتراك'),
+                            TextEntry::make('package.name')->label('اسم الباقة'),
+                            TextEntry::make('student.name')->label('الطالب'),
+                            TextEntry::make('quranTeacher.full_name')->label('المعلم'),
+                            TextEntry::make('subscription_type')
                                 ->label('نوع الاشتراك')
                                 ->formatStateUsing(fn (?string $state): string => match ($state) {
                                     'individual' => 'فردي',
@@ -368,18 +379,18 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                                     default => $state ?? '-',
                                 })
                                 ->badge(),
-                            Infolists\Components\TextEntry::make('billing_cycle')->label('دورة الفوترة'),
+                            TextEntry::make('billing_cycle')->label('دورة الفوترة'),
                         ]),
                 ]),
 
-            Infolists\Components\Section::make('الجلسات والأسعار')
+            Section::make('الجلسات والأسعار')
                 ->schema([
-                    Infolists\Components\Grid::make(3)
+                    Grid::make(3)
                         ->schema([
-                            Infolists\Components\TextEntry::make('total_sessions')->label('إجمالي الجلسات'),
-                            Infolists\Components\TextEntry::make('total_sessions_scheduled')->label('المجدولة'),
-                            Infolists\Components\TextEntry::make('total_sessions_completed')->label('المكتملة'),
-                            Infolists\Components\TextEntry::make('sessions_remaining')
+                            TextEntry::make('total_sessions')->label('إجمالي الجلسات'),
+                            TextEntry::make('total_sessions_scheduled')->label('المجدولة'),
+                            TextEntry::make('total_sessions_completed')->label('المكتملة'),
+                            TextEntry::make('sessions_remaining')
                                 ->label('المتبقية')
                                 ->badge()
                                 ->color(fn ($state): string => match (true) {
@@ -387,20 +398,20 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                                     (int) $state >= 2 => 'warning',
                                     default => 'danger',
                                 }),
-                            Infolists\Components\TextEntry::make('total_price')
+                            TextEntry::make('total_price')
                                 ->label('السعر الإجمالي')
                                 ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR')),
                         ]),
                 ]),
 
-            Infolists\Components\Section::make('ملاحظات')
+            Section::make('ملاحظات')
                 ->schema([
-                    Infolists\Components\Grid::make(2)
+                    Grid::make(2)
                         ->schema([
-                            Infolists\Components\TextEntry::make('admin_notes')
+                            TextEntry::make('admin_notes')
                                 ->label('ملاحظات الإدارة')
                                 ->placeholder('لا توجد ملاحظات'),
-                            Infolists\Components\TextEntry::make('supervisor_notes')
+                            TextEntry::make('supervisor_notes')
                                 ->label('ملاحظات المشرف')
                                 ->placeholder('لا توجد ملاحظات'),
                         ]),
@@ -408,10 +419,10 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
         ];
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema(static::getTypeSpecificInfolistSections());
+        return $schema
+            ->components(static::getTypeSpecificInfolistSections());
     }
 
     public static function getRelations(): array
@@ -422,10 +433,10 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuranSubscriptions::route('/'),
-            'create' => Pages\CreateQuranSubscription::route('/create'),
-            'view' => Pages\ViewQuranSubscription::route('/{record}'),
-            'edit' => Pages\EditQuranSubscription::route('/{record}/edit'),
+            'index' => ListQuranSubscriptions::route('/'),
+            'create' => CreateQuranSubscription::route('/create'),
+            'view' => ViewQuranSubscription::route('/{record}'),
+            'edit' => EditQuranSubscription::route('/{record}/edit'),
         ];
     }
 

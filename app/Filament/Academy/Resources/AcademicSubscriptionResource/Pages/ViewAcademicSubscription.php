@@ -2,6 +2,7 @@
 
 namespace App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages;
 
+use Filament\Actions\EditAction;
 use App\Filament\Academy\Resources\AcademicSubscriptionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,7 +14,7 @@ class ViewAcademicSubscription extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            EditAction::make(),
         ];
     }
 }

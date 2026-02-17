@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Academy;
 use App\Constants\DefaultAcademy;
 use App\Enums\EnrollmentStatus;
 use App\Http\Requests\AddLessonNoteRequest;
@@ -47,7 +48,7 @@ class LessonController extends Controller
             // For non-free lessons, require authentication
             if (! Auth::check()) {
                 // Get subdomain from current academy context or use default
-                $academy = current_academy() ?? \App\Models\Academy::where('subdomain', DefaultAcademy::subdomain())->first();
+                $academy = current_academy() ?? Academy::where('subdomain', DefaultAcademy::subdomain())->first();
                 $subdomain = $academy ? $academy->subdomain : DefaultAcademy::subdomain();
 
                 return redirect()->route('login', ['subdomain' => $subdomain]);

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Archived;
 
+use Exception;
 use App\Models\AcademicSession;
 use App\Models\Academy;
 use App\Models\InteractiveCourse;
@@ -78,7 +79,7 @@ class CreateChatGroupsForEntities extends Command
             DB::commit();
             $this->info('Chat groups created successfully!');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             $this->error('Error creating chat groups: '.$e->getMessage());
 
@@ -105,7 +106,7 @@ class CreateChatGroupsForEntities extends Command
                 $group = $this->chatGroupService->createForQuranCircle($circle);
                 $count++;
                 $this->line("Created group for circle: {$circle->name}");
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->warn("Failed to create group for circle {$circle->name}: ".$e->getMessage());
             }
         }
@@ -130,7 +131,7 @@ class CreateChatGroupsForEntities extends Command
                 $group = $this->chatGroupService->createForQuranSession($session);
                 $count++;
                 $this->line("Created group for session ID: {$session->id}");
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->warn("Failed to create group for session {$session->id}: ".$e->getMessage());
             }
         }
@@ -155,7 +156,7 @@ class CreateChatGroupsForEntities extends Command
                 $group = $this->chatGroupService->createForAcademicSession($session);
                 $count++;
                 $this->line("Created group for academic session ID: {$session->id}");
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->warn("Failed to create group for academic session {$session->id}: ".$e->getMessage());
             }
         }
@@ -180,7 +181,7 @@ class CreateChatGroupsForEntities extends Command
                 $group = $this->chatGroupService->createForInteractiveCourse($course);
                 $count++;
                 $this->line("Created group for course: {$course->title}");
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->warn("Failed to create group for course {$course->title}: ".$e->getMessage());
             }
         }
@@ -205,7 +206,7 @@ class CreateChatGroupsForEntities extends Command
                 $group = $this->chatGroupService->createForRecordedCourse($course);
                 $count++;
                 $this->line("Created discussion group for course: {$course->title}");
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->warn("Failed to create group for course {$course->title}: ".$e->getMessage());
             }
         }
@@ -230,7 +231,7 @@ class CreateChatGroupsForEntities extends Command
                 $group = $this->chatGroupService->createAnnouncementGroup($academy);
                 $count++;
                 $this->line("Created announcement group for academy: {$academy->name}");
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->warn("Failed to create announcement group for academy {$academy->name}: ".$e->getMessage());
             }
         }

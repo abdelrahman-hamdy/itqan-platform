@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\StudentSessionReportResource\Pages;
 
+use Filament\Actions\DeleteAction;
 use App\Filament\Resources\StudentSessionReportResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -13,7 +14,7 @@ class EditStudentSessionReport extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 }

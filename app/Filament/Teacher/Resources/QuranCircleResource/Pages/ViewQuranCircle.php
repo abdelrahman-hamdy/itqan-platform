@@ -2,11 +2,15 @@
 
 namespace App\Filament\Teacher\Resources\QuranCircleResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Infolists\Components\TextEntry;
 use App\Enums\WeekDays;
 use App\Filament\Teacher\Resources\QuranCircleResource;
 use Filament\Actions;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewQuranCircle extends ViewRecord
@@ -16,7 +20,7 @@ class ViewQuranCircle extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
         ];
     }
@@ -34,19 +38,19 @@ class ViewQuranCircle extends ViewRecord
         ];
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
         return $infolist
             ->schema([
-                Infolists\Components\Section::make('معلومات أساسية')
+                Section::make('معلومات أساسية')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('name')
+                                TextEntry::make('name')
                                     ->label('اسم الحلقة'),
-                                Infolists\Components\TextEntry::make('circle_code')
+                                TextEntry::make('circle_code')
                                     ->label('رمز الحلقة'),
-                                Infolists\Components\TextEntry::make('age_group')
+                                TextEntry::make('age_group')
                                     ->label('الفئة العمرية')
                                     ->badge()
                                     ->formatStateUsing(fn (?string $state): string => match ($state) {
@@ -56,7 +60,7 @@ class ViewQuranCircle extends ViewRecord
                                         'all_ages' => 'كل الفئات',
                                         default => $state ?? 'غير محدد',
                                     }),
-                                Infolists\Components\TextEntry::make('gender_type')
+                                TextEntry::make('gender_type')
                                     ->label('النوع')
                                     ->badge()
                                     ->formatStateUsing(fn (?string $state): string => match ($state) {
@@ -65,7 +69,7 @@ class ViewQuranCircle extends ViewRecord
                                         'mixed' => 'مختلط',
                                         default => $state ?? 'غير محدد',
                                     }),
-                                Infolists\Components\TextEntry::make('specialization')
+                                TextEntry::make('specialization')
                                     ->label('التخصص')
                                     ->badge()
                                     ->formatStateUsing(fn (?string $state): string => match ($state) {
@@ -76,7 +80,7 @@ class ViewQuranCircle extends ViewRecord
                                         'complete' => 'شامل',
                                         default => $state ?? 'غير محدد',
                                     }),
-                                Infolists\Components\TextEntry::make('status')
+                                TextEntry::make('status')
                                     ->label('الحالة')
                                     ->badge()
                                     ->color(fn (bool $state): string => $state ? 'success' : 'danger')
@@ -84,18 +88,18 @@ class ViewQuranCircle extends ViewRecord
                             ]),
                     ]),
 
-                Infolists\Components\Section::make('إعدادات الحلقة')
+                Section::make('إعدادات الحلقة')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('max_students')
+                                TextEntry::make('max_students')
                                     ->label('الحد الأقصى للطلاب'),
-                                Infolists\Components\TextEntry::make('current_students')
+                                TextEntry::make('current_students')
                                     ->label('عدد الطلاب الحالي')
                                     ->formatStateUsing(fn ($record) => $record->students()->count()),
                             ]),
 
-                        Infolists\Components\TextEntry::make('schedule_days')
+                        TextEntry::make('schedule_days')
                             ->label('أيام الانعقاد')
                             ->formatStateUsing(function ($state) {
                                 if (! is_array($state) || empty($state)) {
@@ -105,7 +109,7 @@ class ViewQuranCircle extends ViewRecord
                                 return WeekDays::getDisplayNames($state);
                             }),
 
-                        Infolists\Components\TextEntry::make('schedule_time')
+                        TextEntry::make('schedule_time')
                             ->label('الساعة')
                             ->placeholder('غير محدد'),
                     ]),

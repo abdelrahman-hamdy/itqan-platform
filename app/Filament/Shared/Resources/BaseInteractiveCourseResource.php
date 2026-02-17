@@ -2,6 +2,20 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Illuminate\Database\Eloquent\Model;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Forms\Components\DatePicker;
+use Carbon\Carbon;
+use Exception;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Toggle;
 use App\Enums\DifficultyLevel;
 use App\Enums\InteractiveCourseStatus;
 use App\Enums\SessionDuration;
@@ -11,10 +25,7 @@ use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -33,7 +44,7 @@ abstract class BaseInteractiveCourseResource extends Resource
 {
     protected static ?string $model = InteractiveCourse::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $modelLabel = 'دورة تفاعلية';
 
@@ -72,12 +83,12 @@ abstract class BaseInteractiveCourseResource extends Resource
         return true;
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return true;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return false;
     }
@@ -86,9 +97,9 @@ abstract class BaseInteractiveCourseResource extends Resource
     // Shared Form Definition
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema(static::getFormSchema());
+        return $schema->components(static::getFormSchema());
     }
 
     /**
@@ -98,14 +109,14 @@ abstract class BaseInteractiveCourseResource extends Resource
     {
         return Section::make('معلومات الدورة الأساسية')
             ->schema([
-                Forms\Components\TextInput::make('title')
+                TextInput::make('title')
                     ->label('عنوان الدورة')
                     ->required()
                     ->maxLength(255)
                     ->placeholder('مثل: رياضيات متقدمة - الفصل الأول')
                     ->columnSpanFull(),
 
-                Forms\Components\Textarea::make('description')
+                Textarea::make('description')
                     ->label('وصف الدورة')
                     ->required()
                     ->maxLength(1000)
@@ -121,9 +132,9 @@ abstract class BaseInteractiveCourseResource extends Resource
     {
         return Section::make('التخصص والمستوى')
             ->schema([
-                Forms\Components\Grid::make(3)
+                Grid::make(3)
                     ->schema([
-                        Forms\Components\Select::make('subject_id')
+                        Select::make('subject_id')
                             ->label('المادة الدراسية')
                             ->options(function () {
                                 $academyId = AcademyContextService::getCurrentAcademyId();
@@ -134,7 +145,7 @@ abstract class BaseInteractiveCourseResource extends Resource
                             ->searchable()
                             ->preload(),
 
-                        Forms\Components\Select::make('grade_level_id')
+                        Select::make('grade_level_id')
                             ->label('المرحلة الدراسية')
                             ->options(function () {
                                 $academyId = AcademyContextService::getCurrentAcademyId();
@@ -147,7 +158,7 @@ abstract class BaseInteractiveCourseResource extends Resource
                             ->required()
                             ->searchable(),
 
-                        Forms\Components\Select::make('assigned_teacher_id')
+                        Select::make('assigned_teacher_id')
                             ->label('المعلم المعين')
                             ->options(function () {
                                 $academyId = AcademyContextService::getCurrentAcademyId();
@@ -176,9 +187,9 @@ abstract class BaseInteractiveCourseResource extends Resource
     {
         return Section::make('إعدادات الدورة')
             ->schema([
-                Forms\Components\Grid::make(4)
+                Grid::make(4)
                     ->schema([
-                        Forms\Components\TextInput::make('total_sessions')
+                        TextInput::make('total_sessions')
                             ->label('إجمالي الجلسات')
                             ->numeric()
                             ->minValue(1)
@@ -191,7 +202,7 @@ abstract class BaseInteractiveCourseResource extends Resource
                             })
                             ->suffix('جلسة'),
 
-                        Forms\Components\TextInput::make('sessions_per_week')
+                        TextInput::make('sessions_per_week')
                             ->label('الجلسات أسبوعياً')
                             ->numeric()
                             ->minValue(1)
@@ -204,13 +215,13 @@ abstract class BaseInteractiveCourseResource extends Resource
                             })
                             ->suffix('جلسة'),
 
-                        Forms\Components\TextInput::make('duration_weeks')
+                        TextInput::make('duration_weeks')
                             ->label('مدة الدورة (أسابيع)')
                             ->numeric()
                             ->disabled()
                             ->dehydrated(false)
                             ->live()
-                            ->placeholder(function (Forms\Get $get) {
+                            ->placeholder(function (Get $get) {
                                 $totalSessions = $get('total_sessions') ?? 0;
                                 $sessionsPerWeek = $get('sessions_per_week') ?? 0;
 
@@ -223,16 +234,16 @@ abstract class BaseInteractiveCourseResource extends Resource
                                 return '0';
                             }),
 
-                        Forms\Components\Select::make('session_duration_minutes')
+                        Select::make('session_duration_minutes')
                             ->label('مدة الجلسة (دقيقة)')
                             ->options(SessionDuration::options())
                             ->default(SessionDuration::SIXTY_MINUTES->value)
                             ->required(),
                     ]),
 
-                Forms\Components\Grid::make(2)
+                Grid::make(2)
                     ->schema([
-                        Forms\Components\TextInput::make('max_students')
+                        TextInput::make('max_students')
                             ->label('أقصى عدد طلاب')
                             ->numeric()
                             ->minValue(1)
@@ -241,7 +252,7 @@ abstract class BaseInteractiveCourseResource extends Resource
                             ->required()
                             ->suffix('طالب'),
 
-                        Forms\Components\Select::make('difficulty_level')
+                        Select::make('difficulty_level')
                             ->label('مستوى الصعوبة')
                             ->options(DifficultyLevel::options())
                             ->default(DifficultyLevel::BEGINNER->value)
@@ -257,9 +268,9 @@ abstract class BaseInteractiveCourseResource extends Resource
     {
         return Section::make('الإعدادات المالية')
             ->schema([
-                Forms\Components\Grid::make(3)
+                Grid::make(3)
                     ->schema([
-                        Forms\Components\TextInput::make('student_price')
+                        TextInput::make('student_price')
                             ->label('سعر الدورة للطالب')
                             ->numeric()
                             ->minValue(0)
@@ -267,7 +278,7 @@ abstract class BaseInteractiveCourseResource extends Resource
                             ->required()
                             ->prefix(getCurrencyCode()),
 
-                        Forms\Components\TextInput::make('teacher_payment')
+                        TextInput::make('teacher_payment')
                             ->label('دفع المعلم')
                             ->numeric()
                             ->minValue(0)
@@ -275,7 +286,7 @@ abstract class BaseInteractiveCourseResource extends Resource
                             ->required()
                             ->prefix(getCurrencyCode()),
 
-                        Forms\Components\Select::make('payment_type')
+                        Select::make('payment_type')
                             ->label('نوع دفع المعلم')
                             ->options([
                                 'fixed_amount' => 'مبلغ ثابت',
@@ -295,9 +306,9 @@ abstract class BaseInteractiveCourseResource extends Resource
     {
         return Section::make('التواريخ والجدولة')
             ->schema([
-                Forms\Components\Grid::make(3)
+                Grid::make(3)
                     ->schema([
-                        Forms\Components\DatePicker::make('start_date')
+                        DatePicker::make('start_date')
                             ->label('تاريخ البداية')
                             ->required()
                             ->minDate(now()->addDays(7))
@@ -306,7 +317,7 @@ abstract class BaseInteractiveCourseResource extends Resource
                                 $set('end_date', null);
                             }),
 
-                        Forms\Components\TextInput::make('end_date')
+                        TextInput::make('end_date')
                             ->label('تاريخ النهاية')
                             ->disabled()
                             ->dehydrated(false)
@@ -318,15 +329,15 @@ abstract class BaseInteractiveCourseResource extends Resource
 
                                 if ($state && is_string($state)) {
                                     try {
-                                        return \Carbon\Carbon::parse($state)->format('d/m/Y');
-                                    } catch (\Exception $e) {
+                                        return Carbon::parse($state)->format('d/m/Y');
+                                    } catch (Exception $e) {
                                         return $state;
                                     }
                                 }
 
                                 return null;
                             })
-                            ->placeholder(function (Forms\Get $get) {
+                            ->placeholder(function (Get $get) {
                                 $startDate = $get('start_date');
                                 $totalSessions = $get('total_sessions') ?? 0;
                                 $sessionsPerWeek = $get('sessions_per_week') ?? 0;
@@ -341,18 +352,18 @@ abstract class BaseInteractiveCourseResource extends Resource
                                 return $endDate;
                             }),
 
-                        Forms\Components\DatePicker::make('enrollment_deadline')
+                        DatePicker::make('enrollment_deadline')
                             ->label('آخر موعد للتسجيل')
                             ->helperText('اتركه فارغاً للسماح بالتسجيل طوال فترة الدورة')
                             ->before('start_date')
-                            ->maxDate(function (Forms\Get $get) {
+                            ->maxDate(function (Get $get) {
                                 $startDate = $get('start_date');
 
                                 return $startDate ? date('Y-m-d', strtotime($startDate.' -3 days')) : null;
                             }),
                     ]),
 
-                Forms\Components\KeyValue::make('schedule')
+                KeyValue::make('schedule')
                     ->label('الجدول الأسبوعي')
                     ->keyLabel('اليوم')
                     ->valueLabel('التوقيت')
@@ -371,10 +382,10 @@ abstract class BaseInteractiveCourseResource extends Resource
     {
         return Section::make('محتوى الدورة والأهداف')
             ->schema([
-                Forms\Components\Repeater::make('learning_outcomes')
+                Repeater::make('learning_outcomes')
                     ->label('مخرجات التعلم')
                     ->schema([
-                        Forms\Components\TextInput::make('outcome')
+                        TextInput::make('outcome')
                             ->label('المخرج')
                             ->required(),
                     ])
@@ -382,10 +393,10 @@ abstract class BaseInteractiveCourseResource extends Resource
                     ->collapsible()
                     ->columnSpanFull(),
 
-                Forms\Components\Repeater::make('prerequisites')
+                Repeater::make('prerequisites')
                     ->label('المتطلبات المسبقة')
                     ->schema([
-                        Forms\Components\TextInput::make('prerequisite')
+                        TextInput::make('prerequisite')
                             ->label('المتطلب')
                             ->required(),
                     ])
@@ -393,7 +404,7 @@ abstract class BaseInteractiveCourseResource extends Resource
                     ->collapsible()
                     ->columnSpanFull(),
 
-                Forms\Components\Textarea::make('course_outline')
+                Textarea::make('course_outline')
                     ->label('مخطط الدورة')
                     ->rows(5)
                     ->columnSpanFull(),
@@ -407,19 +418,19 @@ abstract class BaseInteractiveCourseResource extends Resource
     {
         return Section::make('حالة الدورة والإعدادات')
             ->schema([
-                Forms\Components\Toggle::make('is_published')
+                Toggle::make('is_published')
                     ->label('مفعل للنشر')
                     ->default(false)
                     ->helperText('هل يمكن للطلاب رؤية هذه الدورة والتسجيل فيها؟'),
 
-                Forms\Components\Select::make('status')
+                Select::make('status')
                     ->label('حالة الدورة')
                     ->options(InteractiveCourseStatus::options())
                     ->default(InteractiveCourseStatus::PUBLISHED->value)
                     ->required()
                     ->helperText('حالة الدورة الحالية'),
 
-                Forms\Components\Toggle::make('recording_enabled')
+                Toggle::make('recording_enabled')
                     ->label('تسجيل جلسات الدورة')
                     ->default(true)
                     ->helperText('تفعيل تسجيل جميع جلسات هذه الدورة'),
@@ -436,8 +447,8 @@ abstract class BaseInteractiveCourseResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions());
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions());
     }
 
     /**
@@ -503,7 +514,8 @@ abstract class BaseInteractiveCourseResource extends Resource
                 ->sortable()
                 ->toggleable(),
 
-            BadgeColumn::make('status')
+            TextColumn::make('status')
+                ->badge()
                 ->label('الحالة')
                 ->colors(InteractiveCourseStatus::colorOptions())
                 ->formatStateUsing(function ($state): string {

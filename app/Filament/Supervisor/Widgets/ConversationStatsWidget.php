@@ -20,7 +20,7 @@ use Namu\WireChat\Models\Participant;
  */
 class ConversationStatsWidget extends BaseWidget
 {
-    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+    protected string $view = 'filament.widgets.collapsible-stats-overview-widget';
 
     protected static bool $isDiscoverable = false;
 

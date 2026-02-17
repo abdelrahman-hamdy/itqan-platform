@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use App\Contracts\RecordingCapable;
 use App\Contracts\RecordingServiceInterface;
 use App\Enums\RecordingStatus;
@@ -33,18 +35,18 @@ class RecordingService implements RecordingServiceInterface
      * @param  RecordingCapable  $session  The session to record
      * @return SessionRecording The created recording record
      *
-     * @throws \Exception If recording cannot be started
+     * @throws Exception If recording cannot be started
      */
     public function startRecording(RecordingCapable $session): SessionRecording
     {
         // Validate session can be recorded
         if (! $session->canBeRecorded()) {
-            throw new \Exception('Session cannot be recorded at this time');
+            throw new Exception('Session cannot be recorded at this time');
         }
 
         // Check if already recording
         if ($session->isRecording()) {
-            throw new \Exception('Session is already being recorded');
+            throw new Exception('Session is already being recorded');
         }
 
         try {
@@ -79,7 +81,7 @@ class RecordingService implements RecordingServiceInterface
 
             return $recording;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to start recording', [
                 'session_type' => get_class($session),
                 'session_id' => $session->id,
@@ -87,7 +89,7 @@ class RecordingService implements RecordingServiceInterface
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            throw new \Exception('Failed to start recording: '.$e->getMessage());
+            throw new Exception('Failed to start recording: '.$e->getMessage());
         }
     }
 
@@ -128,7 +130,7 @@ class RecordingService implements RecordingServiceInterface
 
             return false;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to stop recording', [
                 'recording_id' => $recording->id,
                 'egress_id' => $recording->recording_id,
@@ -209,7 +211,7 @@ class RecordingService implements RecordingServiceInterface
 
             return false;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error processing egress webhook', [
                 'error' => $e->getMessage(),
                 'webhook_data' => $webhookData,
@@ -253,7 +255,7 @@ class RecordingService implements RecordingServiceInterface
     /**
      * Get all recordings for a session
      */
-    public function getSessionRecordings(RecordingCapable $session): \Illuminate\Database\Eloquent\Collection
+    public function getSessionRecordings(RecordingCapable $session): Collection
     {
         return $session->getRecordings();
     }
@@ -282,7 +284,7 @@ class RecordingService implements RecordingServiceInterface
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to delete recording', [
                 'recording_id' => $recording->id,
                 'error' => $e->getMessage(),

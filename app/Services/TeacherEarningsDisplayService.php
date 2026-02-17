@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\QuranSession;
+use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
 use App\Models\TeacherEarning;
 use Carbon\Carbon;
 
@@ -71,9 +74,9 @@ class TeacherEarningsDisplayService
             ->with([
                 'session' => function ($morphTo) {
                     $morphTo->morphWith([
-                        \App\Models\QuranSession::class => ['individualCircle', 'circle', 'student'],
-                        \App\Models\AcademicSession::class => ['academicIndividualLesson.subject', 'student'],
-                        \App\Models\InteractiveCourseSession::class => ['course'],
+                        QuranSession::class => ['individualCircle', 'circle', 'student'],
+                        AcademicSession::class => ['academicIndividualLesson.subject', 'student'],
+                        InteractiveCourseSession::class => ['course'],
                     ]);
                 },
             ]);
@@ -161,7 +164,7 @@ class TeacherEarningsDisplayService
             ];
         }
 
-        if ($session instanceof \App\Models\QuranSession) {
+        if ($session instanceof QuranSession) {
             if ($session->individualCircle) {
                 return [
                     'key' => 'individual_circle_'.$session->individualCircle->id,
@@ -184,7 +187,7 @@ class TeacherEarningsDisplayService
             }
         }
 
-        if ($session instanceof \App\Models\AcademicSession) {
+        if ($session instanceof AcademicSession) {
             $lessonName = $session->academicIndividualLesson
                 ? ($session->academicIndividualLesson->subject?->name.' - '.$session->student?->name)
                 : 'درس أكاديمي - '.$session->student?->name;
@@ -196,7 +199,7 @@ class TeacherEarningsDisplayService
             ];
         }
 
-        if ($session instanceof \App\Models\InteractiveCourseSession) {
+        if ($session instanceof InteractiveCourseSession) {
             $courseName = $session->course?->title ?? 'دورة تفاعلية';
             $courseId = $session->course?->id ?? $session->id;
 

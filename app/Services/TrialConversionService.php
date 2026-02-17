@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use Illuminate\Database\Eloquent\Collection;
+use Carbon\Carbon;
+use Exception;
 use App\Enums\BillingCycle;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -29,7 +32,7 @@ class TrialConversionService
     /**
      * Get available packages for conversion
      */
-    public function getAvailablePackages(QuranTrialRequest $trialRequest): \Illuminate\Database\Eloquent\Collection
+    public function getAvailablePackages(QuranTrialRequest $trialRequest): Collection
     {
         return QuranPackage::where('academy_id', $trialRequest->academy_id)
             ->where('is_active', true)
@@ -78,7 +81,7 @@ class TrialConversionService
     /**
      * Get conversion statistics for an academy
      */
-    public function getConversionStats(int $academyId, ?\Carbon\Carbon $startDate = null, ?\Carbon\Carbon $endDate = null): array
+    public function getConversionStats(int $academyId, ?Carbon $startDate = null, ?Carbon $endDate = null): array
     {
         $query = QuranTrialRequest::where('academy_id', $academyId);
 
@@ -183,7 +186,7 @@ class TrialConversionService
         ?User $createdBy = null
     ): QuranSubscription {
         if (! $this->isEligibleForConversion($trialRequest)) {
-            throw new \Exception('هذا الطلب التجريبي غير مؤهل للتحويل إلى اشتراك');
+            throw new Exception('هذا الطلب التجريبي غير مؤهل للتحويل إلى اشتراك');
         }
 
         return DB::transaction(function () use ($trialRequest, $package, $billingCycle, $createdBy) {
@@ -309,7 +312,7 @@ class TrialConversionService
     /**
      * Get pending conversion opportunities (completed trials without subscriptions)
      */
-    public function getPendingConversions(int $academyId, int $limit = 10): \Illuminate\Database\Eloquent\Collection
+    public function getPendingConversions(int $academyId, int $limit = 10): Collection
     {
         return QuranTrialRequest::where('academy_id', $academyId)
             ->where('status', TrialRequestStatus::COMPLETED)

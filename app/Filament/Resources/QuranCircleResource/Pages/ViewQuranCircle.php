@@ -2,13 +2,17 @@
 
 namespace App\Filament\Resources\QuranCircleResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use App\Models\QuranCircle;
 use App\Enums\CircleEnrollmentStatus;
 use App\Filament\Resources\QuranCircleResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
- * @property \App\Models\QuranCircle $record
+ * @property QuranCircle $record
  */
 class ViewQuranCircle extends ViewRecord
 {
@@ -22,9 +26,9 @@ class ViewQuranCircle extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
-            Actions\Action::make('toggle_status')
+            Action::make('toggle_status')
                 ->label(fn () => $this->record->status ? 'إلغاء التفعيل' : 'تفعيل')
                 ->icon(fn () => $this->record->status ? 'heroicon-o-pause-circle' : 'heroicon-o-play-circle')
                 ->color(fn () => $this->record->status ? 'warning' : 'success')
@@ -38,7 +42,7 @@ class ViewQuranCircle extends ViewRecord
                     'status' => ! $this->record->status,
                     'enrollment_status' => $this->record->status ? CircleEnrollmentStatus::CLOSED : CircleEnrollmentStatus::OPEN,
                 ])),
-            Actions\DeleteAction::make()
+            DeleteAction::make()
                 ->label('حذف'),
         ];
     }

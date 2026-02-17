@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\NotificationService;
+use App\Enums\NotificationType;
+use Exception;
+use Illuminate\Support\Facades\Log;
 use App\Constants\DefaultAcademy;
 use App\Enums\ReviewStatus;
 use App\Models\Traits\ScopedToAcademy;
@@ -221,7 +225,7 @@ class TeacherReview extends Model
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
             $teacher = $this->reviewable->user;
 
             // Build teacher profile URL
@@ -231,7 +235,7 @@ class TeacherReview extends Model
 
             $notificationService->send(
                 $teacher,
-                \App\Enums\NotificationType::REVIEW_RECEIVED,
+                NotificationType::REVIEW_RECEIVED,
                 [
                     'student_name' => $this->student_name,
                     'rating' => $this->rating,
@@ -245,8 +249,8 @@ class TeacherReview extends Model
                 ],
                 false
             );
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send review received notification', [
+        } catch (Exception $e) {
+            Log::error('Failed to send review received notification', [
                 'review_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);
@@ -263,7 +267,7 @@ class TeacherReview extends Model
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             // Build teacher profile URL
             $profileUrl = $this->teacher_type === 'quran'
@@ -278,7 +282,7 @@ class TeacherReview extends Model
 
             $notificationService->send(
                 $this->student,
-                \App\Enums\NotificationType::REVIEW_APPROVED,
+                NotificationType::REVIEW_APPROVED,
                 [
                     'teacher_name' => $this->teacher_name,
                     'rating' => $this->rating,
@@ -291,8 +295,8 @@ class TeacherReview extends Model
                 ],
                 false
             );
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send review approved notification', [
+        } catch (Exception $e) {
+            Log::error('Failed to send review approved notification', [
                 'review_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);

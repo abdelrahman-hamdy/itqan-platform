@@ -2,6 +2,15 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Tables\Filters\SelectFilter;
+use App\Models\InteractiveCourse;
+use App\Models\InteractiveCourseSession;
+use App\Filament\Resources\SessionRecordingResource\Pages\ListSessionRecordings;
+use App\Filament\Resources\SessionRecordingResource\Pages\ViewSessionRecording;
 use App\Filament\Resources\SessionRecordingResource\Pages;
 use App\Filament\Shared\Resources\BaseSessionRecordingResource;
 use Filament\Tables;
@@ -19,7 +28,7 @@ class SessionRecordingResource extends BaseSessionRecordingResource
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
 
     protected static ?int $navigationSort = 10;
 
@@ -42,8 +51,8 @@ class SessionRecordingResource extends BaseSessionRecordingResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ActionGroup::make([
-                Tables\Actions\ViewAction::make()->label('عرض'),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
                 static::makeDownloadAction(),
                 static::makeStreamAction(),
                 static::makeDeleteAction(),
@@ -57,8 +66,8 @@ class SessionRecordingResource extends BaseSessionRecordingResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\BulkAction::make('delete_selected')
+            BulkActionGroup::make([
+                BulkAction::make('delete_selected')
                     ->label('حذف المحدد')
                     ->icon('heroicon-o-trash')
                     ->color('danger')
@@ -87,10 +96,10 @@ class SessionRecordingResource extends BaseSessionRecordingResource
             ...parent::getTableFilters(),
 
             // Filter by Course
-            Tables\Filters\SelectFilter::make('course')
+            SelectFilter::make('course')
                 ->label('الدورة')
                 ->options(function () {
-                    return \App\Models\InteractiveCourse::query()
+                    return InteractiveCourse::query()
                         ->orderBy('title')
                         ->pluck('title', 'id')
                         ->toArray();
@@ -102,7 +111,7 @@ class SessionRecordingResource extends BaseSessionRecordingResource
 
                     return $query->whereHasMorph(
                         'recordable',
-                        [\App\Models\InteractiveCourseSession::class],
+                        [InteractiveCourseSession::class],
                         function ($q) use ($data) {
                             $q->where('course_id', $data['value']);
                         }
@@ -120,8 +129,8 @@ class SessionRecordingResource extends BaseSessionRecordingResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSessionRecordings::route('/'),
-            'view' => Pages\ViewSessionRecording::route('/{record}'),
+            'index' => ListSessionRecordings::route('/'),
+            'view' => ViewSessionRecording::route('/{record}'),
         ];
     }
 }

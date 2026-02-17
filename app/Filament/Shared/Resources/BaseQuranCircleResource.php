@@ -2,20 +2,21 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Tables\Enums\FiltersLayout;
 use App\Enums\DifficultyLevel;
 use App\Enums\WeekDays;
 use App\Models\QuranCircle;
 use Filament\Forms;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -33,7 +34,7 @@ abstract class BaseQuranCircleResource extends Resource
 {
     protected static ?string $model = QuranCircle::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-users';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-users';
 
     protected static ?string $navigationLabel = 'حلقات القرآن الجماعية';
 
@@ -65,7 +66,7 @@ abstract class BaseQuranCircleResource extends Resource
      * SuperAdmin: Select with academy teachers
      * Teacher: Hidden field with auto-assignment
      */
-    abstract protected static function getTeacherFormField(): Forms\Components\Component;
+    abstract protected static function getTeacherFormField(): Component;
 
     /**
      * Get description field(s) for the form.
@@ -97,10 +98,10 @@ abstract class BaseQuranCircleResource extends Resource
     // Shared Form Definition
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Section::make('معلومات الحلقة الأساسية')
                     ->schema([
                         Grid::make(2)
@@ -238,10 +239,10 @@ abstract class BaseQuranCircleResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
-            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions());
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions());
     }
 
     /**
@@ -261,15 +262,18 @@ abstract class BaseQuranCircleResource extends Resource
                 ->searchable()
                 ->limit(30),
 
-            BadgeColumn::make('memorization_level')
+            TextColumn::make('memorization_level')
+                ->badge()
                 ->label('المستوى')
                 ->formatStateUsing(fn (string $state): string => static::formatMemorizationLevel($state)),
 
-            BadgeColumn::make('age_group')
+            TextColumn::make('age_group')
+                ->badge()
                 ->label('الفئة العمرية')
                 ->formatStateUsing(fn (string $state): string => static::formatAgeGroup($state)),
 
-            BadgeColumn::make('gender_type')
+            TextColumn::make('gender_type')
+                ->badge()
                 ->label('النوع')
                 ->formatStateUsing(fn (string $state): string => static::formatGenderType($state))
                 ->colors([
@@ -317,7 +321,8 @@ abstract class BaseQuranCircleResource extends Resource
                 ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                 ->toggleable(),
 
-            BadgeColumn::make('status')
+            TextColumn::make('status')
+                ->badge()
                 ->label(__('filament.status'))
                 ->formatStateUsing(fn (bool $state): string => $state
                     ? __('enums.circle_active_status.active')

@@ -2,6 +2,10 @@
 
 namespace App\Services\Payment\DTOs;
 
+use App\Models\QuranSubscription;
+use App\Models\AcademicSubscription;
+use App\Models\CourseSubscription;
+use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use Carbon\Carbon;
 
@@ -55,7 +59,7 @@ readonly class InvoiceData
         if ($payment->payable) {
             $payable = $payment->payable;
 
-            if ($payable instanceof \App\Models\QuranSubscription) {
+            if ($payable instanceof QuranSubscription) {
                 $subscriptionType = 'quran';
                 $subscriptionName = $payable->package_name_ar
                     ?? $payable->package?->name
@@ -63,7 +67,7 @@ readonly class InvoiceData
                 $subscriptionPeriod = $payable->start_date && $payable->end_date
                     ? $payable->start_date->format('Y-m-d').' - '.$payable->end_date->format('Y-m-d')
                     : null;
-            } elseif ($payable instanceof \App\Models\AcademicSubscription) {
+            } elseif ($payable instanceof AcademicSubscription) {
                 $subscriptionType = 'academic';
                 $subscriptionName = $payable->package_name_ar
                     ?? $payable->package?->name
@@ -72,7 +76,7 @@ readonly class InvoiceData
                 $subscriptionPeriod = $payable->start_date && $payable->end_date
                     ? $payable->start_date->format('Y-m-d').' - '.$payable->end_date->format('Y-m-d')
                     : null;
-            } elseif ($payable instanceof \App\Models\CourseSubscription) {
+            } elseif ($payable instanceof CourseSubscription) {
                 $subscriptionType = 'course';
                 $subscriptionName = $payable->course?->title
                     ?? __('payments.course_subscription');
@@ -108,7 +112,7 @@ readonly class InvoiceData
             netAmount: (float) ($payment->net_amount ?? $payment->amount),
             currency: $payment->currency ?? getCurrencyCode(null, $payment->academy),
             paymentMethod: $payment->payment_method_text ?? $payment->payment_method,
-            paymentStatus: $payment->status instanceof \App\Enums\PaymentStatus
+            paymentStatus: $payment->status instanceof PaymentStatus
                 ? $payment->status->label()
                 : (string) $payment->status,
             subscriptionType: $subscriptionType,

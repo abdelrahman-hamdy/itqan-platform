@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Student;
 
+use ValueError;
+use Log;
 use App\Enums\AttendanceStatus as AttendanceStatusEnum;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
@@ -199,9 +201,9 @@ class AttendanceStatus extends Component
                 ]);
                 $this->showProgress = true;
 
-            } catch (\ValueError $e) {
+            } catch (ValueError $e) {
                 // Invalid status value - log error
-                \Log::error('Invalid attendance status', [
+                Log::error('Invalid attendance status', [
                     'status' => $attendance->attendance_status,
                     'session_id' => $this->sessionId,
                     'user_id' => $this->userId,

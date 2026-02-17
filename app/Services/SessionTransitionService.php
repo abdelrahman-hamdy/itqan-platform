@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\User;
+use Exception;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
@@ -404,7 +406,7 @@ class SessionTransitionService
             return 'system';
         }
 
-        $user = \App\Models\User::find($cancelledBy);
+        $user = User::find($cancelledBy);
         if (! $user) {
             return 'system';
         }
@@ -519,7 +521,7 @@ class SessionTransitionService
                 'meeting_url' => $meetingUrl,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to create meeting for ready session', [
                 'session_id' => $session->id,
                 'session_type' => $this->settingsService->getSessionType($session),
@@ -546,7 +548,7 @@ class SessionTransitionService
                 'session_type' => $this->settingsService->getSessionType($session),
                 'room_name' => $session->meeting_room_name,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to close meeting room on completion', [
                 'session_id' => $session->id,
                 'session_type' => $this->settingsService->getSessionType($session),

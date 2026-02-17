@@ -2,6 +2,7 @@
 
 namespace App\Services\Certificate;
 
+use Exception;
 use App\Models\Certificate;
 use App\Notifications\CertificateIssuedNotification;
 use App\Services\ParentNotificationService;
@@ -30,7 +31,7 @@ class CertificateEmailService
             ]);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('Certificate notification failed', [
                 'certificate_id' => $certificate->id,
                 'student_id' => $certificate->student_id,
@@ -55,7 +56,7 @@ class CertificateEmailService
             ]);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send parent certificate notification', [
                 'certificate_id' => $certificate->id,
                 'student_id' => $certificate->student_id,
@@ -177,7 +178,7 @@ class CertificateEmailService
             ]);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send certificate with custom template', [
                 'certificate_id' => $certificate->id,
                 'template' => $template,

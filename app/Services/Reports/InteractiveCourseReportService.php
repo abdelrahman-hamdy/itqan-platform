@@ -2,6 +2,7 @@
 
 namespace App\Services\Reports;
 
+use App\Models\StudentProfile;
 use App\DTOs\Reports\AttendanceDTO;
 use App\DTOs\Reports\PerformanceDTO;
 use App\DTOs\Reports\StatDTO;
@@ -43,7 +44,7 @@ class InteractiveCourseReportService extends BaseReportService
     /**
      * Get individual student report within course
      *
-     * @param  User|\App\Models\StudentProfile  $student
+     * @param User|StudentProfile $student
      * @return array Report data with DTOs
      */
     public function getStudentReport(InteractiveCourse $course, $student, ?array $dateRange = null): array
@@ -244,7 +245,7 @@ class InteractiveCourseReportService extends BaseReportService
     /**
      * Get student reports for a course
      *
-     * @param  User|\App\Models\StudentProfile  $student
+     * @param User|StudentProfile $student
      */
     protected function getStudentReportsForCourse(Collection $sessions, $student): Collection
     {

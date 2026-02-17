@@ -2,6 +2,24 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
+use App\Models\QuranSubscription;
+use App\Models\AcademicSubscription;
+use App\Models\InteractiveCourseEnrollment;
+use App\Filament\Resources\StudentProfileResource\Pages\ListStudentProfiles;
+use App\Filament\Resources\StudentProfileResource\Pages\CreateStudentProfile;
+use App\Filament\Resources\StudentProfileResource\Pages\ViewStudentProfile;
+use App\Filament\Resources\StudentProfileResource\Pages\EditStudentProfile;
 use App\Enums\UserType;
 use App\Filament\Resources\StudentProfileResource\Pages;
 use App\Filament\Shared\Resources\Profiles\BaseStudentProfileResource;
@@ -34,12 +52,12 @@ class StudentProfileResource extends BaseStudentProfileResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
-            Tables\Actions\DeleteAction::make(),
-            Tables\Actions\RestoreAction::make()
+            ViewAction::make(),
+            EditAction::make(),
+            DeleteAction::make(),
+            RestoreAction::make()
                 ->label(__('filament.actions.restore')),
-            Tables\Actions\ForceDeleteAction::make()
+            ForceDeleteAction::make()
                 ->label(__('filament.actions.force_delete')),
         ];
     }
@@ -47,11 +65,11 @@ class StudentProfileResource extends BaseStudentProfileResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
-                Tables\Actions\RestoreBulkAction::make()
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+                RestoreBulkAction::make()
                     ->label(__('filament.actions.restore_selected')),
-                Tables\Actions\ForceDeleteBulkAction::make()
+                ForceDeleteBulkAction::make()
                     ->label(__('filament.actions.force_delete_selected')),
             ]),
         ];
@@ -83,42 +101,42 @@ class StudentProfileResource extends BaseStudentProfileResource
         $columns[] = static::getAcademyColumn();
 
         // Add avatar column (Admin-specific)
-        $columns[] = Tables\Columns\ImageColumn::make('avatar')
+        $columns[] = ImageColumn::make('avatar')
             ->label('الصورة')
             ->circular()
             ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff');
 
         // Add shared columns from base
-        $columns[] = Tables\Columns\TextColumn::make('student_code')
+        $columns[] = TextColumn::make('student_code')
             ->label('رمز الطالب')
             ->searchable()
             ->sortable()
             ->copyable();
 
-        $columns[] = Tables\Columns\TextColumn::make('full_name')
+        $columns[] = TextColumn::make('full_name')
             ->label('الاسم')
             ->searchable(['first_name', 'last_name'])
             ->sortable()
             ->weight(FontWeight::Bold);
 
-        $columns[] = Tables\Columns\TextColumn::make('email')
+        $columns[] = TextColumn::make('email')
             ->label('البريد الإلكتروني')
             ->searchable()
             ->sortable()
             ->copyable();
 
-        $columns[] = Tables\Columns\TextColumn::make('gradeLevel.name')
+        $columns[] = TextColumn::make('gradeLevel.name')
             ->label('المرحلة الدراسية')
             ->sortable();
 
-        $columns[] = Tables\Columns\TextColumn::make('parent.full_name')
+        $columns[] = TextColumn::make('parent.full_name')
             ->label('ولي الأمر')
             ->searchable(['first_name', 'last_name'])
             ->sortable()
             ->default('—')
             ->description(fn ($record) => $record->parent?->parent_code);
 
-        $columns[] = Tables\Columns\TextColumn::make('nationality')
+        $columns[] = TextColumn::make('nationality')
             ->label('الجنسية')
             ->formatStateUsing(function (?string $state): string {
                 if (! $state) {
@@ -130,19 +148,19 @@ class StudentProfileResource extends BaseStudentProfileResource
             ->sortable()
             ->toggleable(isToggledHiddenByDefault: true);
 
-        $columns[] = Tables\Columns\TextColumn::make('enrollment_date')
+        $columns[] = TextColumn::make('enrollment_date')
             ->label('تاريخ التسجيل')
             ->date()
             ->sortable()
             ->toggleable();
 
-        $columns[] = Tables\Columns\TextColumn::make('created_at')
+        $columns[] = TextColumn::make('created_at')
             ->label(__('filament.created_at'))
             ->dateTime()
             ->sortable()
             ->toggleable(isToggledHiddenByDefault: true);
 
-        $columns[] = Tables\Columns\TextColumn::make('updated_at')
+        $columns[] = TextColumn::make('updated_at')
             ->label(__('filament.updated_at'))
             ->dateTime()
             ->sortable()
@@ -279,7 +297,7 @@ class StudentProfileResource extends BaseStudentProfileResource
 
         // Check Quran subscriptions
         if ($user->isQuranTeacher()) {
-            $hasQuranStudent = \App\Models\QuranSubscription::query()
+            $hasQuranStudent = QuranSubscription::query()
                 ->where('student_id', $studentUserId)
                 ->whereHas('circle', function ($q) use ($user) {
                     $q->where('quran_teacher_id', $user->id);
@@ -296,7 +314,7 @@ class StudentProfileResource extends BaseStudentProfileResource
 
         // Check Academic subscriptions
         if ($user->isAcademicTeacher()) {
-            $hasAcademicStudent = \App\Models\AcademicSubscription::query()
+            $hasAcademicStudent = AcademicSubscription::query()
                 ->where('student_id', $studentUserId)
                 ->whereHas('teacher', function ($q) use ($user) {
                     $q->where('user_id', $user->id);
@@ -308,7 +326,7 @@ class StudentProfileResource extends BaseStudentProfileResource
             }
 
             // Check interactive courses
-            $hasInteractiveStudent = \App\Models\InteractiveCourseEnrollment::query()
+            $hasInteractiveStudent = InteractiveCourseEnrollment::query()
                 ->where('student_id', $studentUserId)
                 ->whereHas('course', function ($q) use ($user) {
                     $q->where('assigned_teacher_id', $user->id);
@@ -330,7 +348,7 @@ class StudentProfileResource extends BaseStudentProfileResource
         }
 
         // Query grade level directly, bypassing the academy scope
-        $gradeLevel = \App\Models\AcademicGradeLevel::withoutGlobalScope('academy')
+        $gradeLevel = AcademicGradeLevel::withoutGlobalScope('academy')
             ->find($record->grade_level_id);
 
         return $gradeLevel?->academy_id;
@@ -343,10 +361,10 @@ class StudentProfileResource extends BaseStudentProfileResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListStudentProfiles::route('/'),
-            'create' => Pages\CreateStudentProfile::route('/create'),
-            'view' => Pages\ViewStudentProfile::route('/{record}'),
-            'edit' => Pages\EditStudentProfile::route('/{record}/edit'),
+            'index' => ListStudentProfiles::route('/'),
+            'create' => CreateStudentProfile::route('/create'),
+            'view' => ViewStudentProfile::route('/{record}'),
+            'edit' => EditStudentProfile::route('/{record}/edit'),
         ];
     }
 }

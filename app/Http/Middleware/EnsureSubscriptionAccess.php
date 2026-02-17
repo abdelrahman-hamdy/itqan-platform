@@ -2,6 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\SubscriptionPaymentStatus;
+use App\Enums\SessionSubscriptionStatus;
+use App\Models\QuranSession;
+use App\Models\AcademicSession;
+use App\Enums\CourseType;
+use App\Enums\EnrollmentStatus;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
 use App\Models\QuranSubscription;
@@ -16,7 +22,7 @@ class EnsureSubscriptionAccess
      * Handle an incoming request.
      * Ensures the user has a valid subscription to access the requested resource.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param Closure(Request):Response $next
      * @param  string  $resourceType  The type of resource being accessed (quran_session, academic_session, etc.)
      */
     public function handle(Request $request, Closure $next, string $resourceType): Response
@@ -38,9 +44,9 @@ class EnsureSubscriptionAccess
         // Check if subscription allows access
         if (!$subscription->canAccess()) {
             $reason = match (true) {
-                $subscription->payment_status !== \App\Enums\SubscriptionPaymentStatus::PAID => 'payment_required',
-                $subscription->status === \App\Enums\SessionSubscriptionStatus::PAUSED => 'subscription_paused',
-                $subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED => 'subscription_cancelled',
+                $subscription->payment_status !== SubscriptionPaymentStatus::PAID => 'payment_required',
+                $subscription->status === SessionSubscriptionStatus::PAUSED => 'subscription_paused',
+                $subscription->status === SessionSubscriptionStatus::CANCELLED => 'subscription_cancelled',
                 default => 'subscription_inactive',
             };
 
@@ -95,7 +101,7 @@ class EnsureSubscriptionAccess
     protected function findQuranSubscriptionForSession($user, $sessionId)
     {
         // Get the session first
-        $session = \App\Models\QuranSession::find($sessionId);
+        $session = QuranSession::find($sessionId);
 
         if (!$session) {
             return null;
@@ -103,7 +109,7 @@ class EnsureSubscriptionAccess
 
         // Find subscription that matches this student and session's circle/teacher
         return QuranSubscription::where('student_id', $user->id)
-            ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->where(function ($query) use ($session) {
                 if ($session->individual_circle_id) {
                     $query->whereHas('individualCircle', function ($q) use ($session) {
@@ -122,7 +128,7 @@ class EnsureSubscriptionAccess
     protected function findAcademicSubscriptionForSession($user, $sessionId)
     {
         // Get the session first
-        $session = \App\Models\AcademicSession::find($sessionId);
+        $session = AcademicSession::find($sessionId);
 
         if (!$session) {
             return null;
@@ -130,7 +136,7 @@ class EnsureSubscriptionAccess
 
         // Find subscription that matches this student and session's lesson
         return AcademicSubscription::where('student_id', $user->id)
-            ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->whereHas('lesson', function ($q) use ($session) {
                 $q->where('id', $session->academic_individual_lesson_id);
             })
@@ -142,13 +148,13 @@ class EnsureSubscriptionAccess
      */
     protected function findCourseSubscriptionForCourse($user, $courseId, $courseType)
     {
-        $courseTypeValue = $courseType instanceof \App\Enums\CourseType ? $courseType->value : $courseType;
+        $courseTypeValue = $courseType instanceof CourseType ? $courseType->value : $courseType;
         $column = $courseTypeValue === 'interactive' ? 'interactive_course_id' : 'recorded_course_id';
 
         return CourseSubscription::where('student_id', $user->id)
             ->where($column, $courseId)
             ->where('course_type', $courseType)
-            ->where('status', \App\Enums\EnrollmentStatus::ENROLLED)
+            ->where('status', EnrollmentStatus::ENROLLED)
             ->first();
     }
 

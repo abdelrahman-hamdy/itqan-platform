@@ -2,6 +2,11 @@
 
 namespace App\Models;
 
+use Exception;
+use App\Services\CircleEnrollmentService;
+use App\Services\NotificationService;
+use App\Enums\NotificationType;
+use Carbon\Carbon;
 use App\Constants\DefaultAcademy;
 use App\Enums\BillingCycle;
 use App\Enums\SessionSubscriptionStatus;
@@ -46,8 +51,8 @@ use Illuminate\Support\Facades\Log;
  * @property bool $is_trial_active
  * @property string|null $memorization_level
  * @property int|null $quran_circle_id
- * @property \Carbon\Carbon|null $starts_at (from BaseSubscription)
- * @property \Carbon\Carbon|null $ends_at (from BaseSubscription)
+ * @property Carbon|null $starts_at (from BaseSubscription)
+ * @property Carbon|null $ends_at (from BaseSubscription)
  */
 class QuranSubscription extends BaseSubscription
 {
@@ -505,11 +510,11 @@ class QuranSubscription extends BaseSubscription
             $subscription = static::lockForUpdate()->find($this->id);
 
             if (! $subscription) {
-                throw new \Exception('الاشتراك غير موجود');
+                throw new Exception('الاشتراك غير موجود');
             }
 
             if ($subscription->sessions_remaining <= 0) {
-                throw new \Exception('لا توجد جلسات متبقية في الاشتراك');
+                throw new Exception('لا توجد جلسات متبقية في الاشتراك');
             }
 
             $subscription->update([
@@ -544,7 +549,7 @@ class QuranSubscription extends BaseSubscription
             $subscription = static::lockForUpdate()->find($this->id);
 
             if (! $subscription) {
-                throw new \Exception('الاشتراك غير موجود');
+                throw new Exception('الاشتراك غير موجود');
             }
 
             $subscription->update([
@@ -579,11 +584,11 @@ class QuranSubscription extends BaseSubscription
             $subscription = static::lockForUpdate()->find($this->id);
 
             if (! $subscription) {
-                throw new \Exception('الاشتراك غير موجود');
+                throw new Exception('الاشتراك غير موجود');
             }
 
             if (! $subscription->is_trial_active || $subscription->trial_used >= 2) {
-                throw new \Exception('لا توجد جلسات تجريبية متبقية');
+                throw new Exception('لا توجد جلسات تجريبية متبقية');
             }
 
             $subscription->update([
@@ -740,7 +745,7 @@ class QuranSubscription extends BaseSubscription
 
         $teacherUser = User::find($this->quran_teacher_id);
         if (! $teacherUser || $teacherUser->user_type !== UserType::QURAN_TEACHER->value) {
-            throw new \Exception('Valid teacher user not found');
+            throw new Exception('Valid teacher user not found');
         }
 
         return QuranIndividualCircle::create([
@@ -875,7 +880,7 @@ class QuranSubscription extends BaseSubscription
                         $subscription->quran_teacher_id,
                         $subscription->academy_id
                     )) {
-                        throw new \Exception('لديك اشتراك فردي نشط بالفعل مع هذا المعلم');
+                        throw new Exception('لديك اشتراك فردي نشط بالفعل مع هذا المعلم');
                     }
                 }
             }
@@ -893,8 +898,8 @@ class QuranSubscription extends BaseSubscription
             ]);
 
             // ONLY send notification if subscription is ACTIVE and PAID (not for pending)
-            if ($subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE
-                && $subscription->payment_status === \App\Enums\SubscriptionPaymentStatus::PAID) {
+            if ($subscription->status === SessionSubscriptionStatus::ACTIVE
+                && $subscription->payment_status === SubscriptionPaymentStatus::PAID) {
                 $subscription->notifySubscriptionActivated();
             }
         });
@@ -997,7 +1002,7 @@ class QuranSubscription extends BaseSubscription
                     'subscription_id' => $this->id,
                 ]);
 
-                $enrollmentService = app(\App\Services\CircleEnrollmentService::class);
+                $enrollmentService = app(CircleEnrollmentService::class);
                 $result = $enrollmentService->completeEnrollmentAfterPayment($this);
 
                 \Log::info('[QuranSubscription] Circle enrollment result', [
@@ -1027,7 +1032,7 @@ class QuranSubscription extends BaseSubscription
                         'subscription_id' => $this->id,
                         'circle_id' => $circle?->id,
                     ]);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     \Log::error('[QuranSubscription] Failed to create individual circle', [
                         'subscription_id' => $this->id,
                         'error' => $e->getMessage(),
@@ -1050,7 +1055,7 @@ class QuranSubscription extends BaseSubscription
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             // Generate action URL for the notification
             $subdomain = $this->academy->subdomain ?? DefaultAcademy::subdomain();
@@ -1089,7 +1094,7 @@ class QuranSubscription extends BaseSubscription
 
             $notificationService->send(
                 $this->student,
-                \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
+                NotificationType::SUBSCRIPTION_ACTIVATED,
                 [
                     'subscription_name' => $subscriptionName,
                     'subscription_type' => $subscriptionTypeLabel,
@@ -1115,7 +1120,7 @@ class QuranSubscription extends BaseSubscription
 
                     $notificationService->send(
                         $teacherUser,
-                        \App\Enums\NotificationType::NEW_STUDENT_SUBSCRIPTION_TEACHER,
+                        NotificationType::NEW_STUDENT_SUBSCRIPTION_TEACHER,
                         [
                             'student_name' => $this->student->full_name,
                             'subscription_name' => $subscriptionName,
@@ -1136,7 +1141,7 @@ class QuranSubscription extends BaseSubscription
             if ($this->student->studentProfile && $this->student->studentProfile->parent) {
                 $notificationService->send(
                     $this->student->studentProfile->parent->user,
-                    \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
+                    NotificationType::SUBSCRIPTION_ACTIVATED,
                     [
                         'subscription_name' => $subscriptionName,
                         'student_name' => $this->student->full_name,
@@ -1153,7 +1158,7 @@ class QuranSubscription extends BaseSubscription
                     false
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             \Illuminate\Support\Facades\Log::error('Failed to send subscription activated notification', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),
@@ -1171,7 +1176,7 @@ class QuranSubscription extends BaseSubscription
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             // Generate circle URL only if we have a valid circle ID
             $circleUrl = null;
@@ -1191,7 +1196,7 @@ class QuranSubscription extends BaseSubscription
 
             $notificationService->send(
                 $this->student,
-                \App\Enums\NotificationType::SUBSCRIPTION_EXPIRED,
+                NotificationType::SUBSCRIPTION_EXPIRED,
                 [
                     'subscription_type' => $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL ? 'فردي' : 'جماعي',
                     'end_date' => $this->ends_at?->format('Y-m-d'),
@@ -1210,7 +1215,7 @@ class QuranSubscription extends BaseSubscription
             if ($this->student->studentProfile && $this->student->studentProfile->parent) {
                 $notificationService->send(
                     $this->student->studentProfile->parent->user,
-                    \App\Enums\NotificationType::SUBSCRIPTION_EXPIRED,
+                    NotificationType::SUBSCRIPTION_EXPIRED,
                     [
                         'student_name' => $this->student->full_name,
                         'subscription_type' => $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL ? 'فردي' : 'جماعي',
@@ -1226,7 +1231,7 @@ class QuranSubscription extends BaseSubscription
                     true
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             \Illuminate\Support\Facades\Log::error('Failed to send subscription expired notification', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),

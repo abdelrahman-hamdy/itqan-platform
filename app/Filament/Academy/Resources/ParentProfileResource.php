@@ -2,6 +2,17 @@
 
 namespace App\Filament\Academy\Resources;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use App\Filament\Academy\Resources\ParentProfileResource\RelationManagers\StudentsRelationManager;
+use App\Filament\Academy\Resources\ParentProfileResource\Pages\ListParentProfiles;
+use App\Filament\Academy\Resources\ParentProfileResource\Pages\CreateParentProfile;
+use App\Filament\Academy\Resources\ParentProfileResource\Pages\ViewParentProfile;
+use App\Filament\Academy\Resources\ParentProfileResource\Pages\EditParentProfile;
 use App\Enums\UserType;
 use App\Filament\Academy\Resources\ParentProfileResource\Pages;
 use App\Filament\Academy\Resources\ParentProfileResource\RelationManagers;
@@ -28,8 +39,8 @@ class ParentProfileResource extends BaseParentProfileResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
+            ViewAction::make(),
+            EditAction::make(),
             static::getToggleActiveAction(),
             // Academy admins cannot delete parents
         ];
@@ -38,7 +49,7 @@ class ParentProfileResource extends BaseParentProfileResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
+            BulkActionGroup::make([
                 static::getActivateBulkAction(),
                 static::getDeactivateBulkAction(),
             ]),
@@ -54,41 +65,41 @@ class ParentProfileResource extends BaseParentProfileResource
         $columns = [];
 
         // Add avatar column (Academy-specific)
-        $columns[] = Tables\Columns\ImageColumn::make('avatar')
+        $columns[] = ImageColumn::make('avatar')
             ->label('الصورة')
             ->circular()
             ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff');
 
         // Add shared columns from base
-        $columns[] = Tables\Columns\TextColumn::make('parent_code')
+        $columns[] = TextColumn::make('parent_code')
             ->label('رمز ولي الأمر')
             ->searchable()
             ->sortable()
             ->copyable();
 
-        $columns[] = Tables\Columns\TextColumn::make('full_name')
+        $columns[] = TextColumn::make('full_name')
             ->label('الاسم الكامل')
             ->searchable(['first_name', 'last_name'])
             ->sortable()
             ->weight(FontWeight::Bold);
 
-        $columns[] = Tables\Columns\TextColumn::make('email')
+        $columns[] = TextColumn::make('email')
             ->label('البريد الإلكتروني')
             ->searchable()
             ->sortable()
             ->copyable();
 
-        $columns[] = Tables\Columns\TextColumn::make('phone')
+        $columns[] = TextColumn::make('phone')
             ->label('رقم الهاتف')
             ->searchable()
             ->copyable();
 
-        $columns[] = Tables\Columns\IconColumn::make('has_students')
+        $columns[] = IconColumn::make('has_students')
             ->label('مرتبط بطلاب')
             ->boolean()
             ->getStateUsing(fn ($record) => $record->students()->exists());
 
-        $columns[] = Tables\Columns\IconColumn::make('user.active_status')
+        $columns[] = IconColumn::make('user.active_status')
             ->label('نشط')
             ->boolean()
             ->trueIcon('heroicon-o-check-circle')
@@ -97,7 +108,7 @@ class ParentProfileResource extends BaseParentProfileResource
             ->falseColor('danger')
             ->sortable();
 
-        $columns[] = Tables\Columns\TextColumn::make('created_at')
+        $columns[] = TextColumn::make('created_at')
             ->label(__('filament.created_at'))
             ->dateTime()
             ->sortable()
@@ -167,7 +178,7 @@ class ParentProfileResource extends BaseParentProfileResource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\StudentsRelationManager::class,
+            StudentsRelationManager::class,
         ];
     }
 
@@ -178,10 +189,10 @@ class ParentProfileResource extends BaseParentProfileResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListParentProfiles::route('/'),
-            'create' => Pages\CreateParentProfile::route('/create'),
-            'view' => Pages\ViewParentProfile::route('/{record}'),
-            'edit' => Pages\EditParentProfile::route('/{record}/edit'),
+            'index' => ListParentProfiles::route('/'),
+            'create' => CreateParentProfile::route('/create'),
+            'view' => ViewParentProfile::route('/{record}'),
+            'edit' => EditParentProfile::route('/{record}/edit'),
         ];
     }
 }

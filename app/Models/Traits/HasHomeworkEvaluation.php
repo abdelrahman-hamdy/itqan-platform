@@ -2,6 +2,9 @@
 
 namespace App\Models\Traits;
 
+use InvalidArgumentException;
+use Carbon\Carbon;
+
 /**
  * Trait HasHomeworkEvaluation
  *
@@ -9,7 +12,7 @@ namespace App\Models\Traits;
  * Eliminates duplication between AcademicSessionReport and InteractiveSessionReport.
  *
  * @property float|null $homework_degree
- * @property \Carbon\Carbon|null $evaluated_at
+ * @property Carbon|null $evaluated_at
  * @property bool $manually_evaluated
  * @property string|null $notes
  */
@@ -21,7 +24,7 @@ trait HasHomeworkEvaluation
     public function recordHomeworkGrade(float $grade, ?string $notes = null): void
     {
         if ($grade < 0 || $grade > 10) {
-            throw new \InvalidArgumentException('Homework grade must be between 0 and 10');
+            throw new InvalidArgumentException('Homework grade must be between 0 and 10');
         }
 
         $data = [

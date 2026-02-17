@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSession;
@@ -127,7 +128,7 @@ class ValidateDataIntegrityCommand extends Command
 
             return $totalIssues > 0 ? self::FAILURE : self::SUCCESS;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('Data integrity validation failed: '.$e->getMessage());
 
             if ($isVerbose) {

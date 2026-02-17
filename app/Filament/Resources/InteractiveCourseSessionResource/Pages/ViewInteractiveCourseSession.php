@@ -2,11 +2,16 @@
 
 namespace App\Filament\Resources\InteractiveCourseSessionResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\IconEntry;
 use App\Enums\SessionStatus;
 use App\Filament\Resources\InteractiveCourseSessionResource;
 use Filament\Actions;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewInteractiveCourseSession extends ViewRecord
@@ -16,7 +21,7 @@ class ViewInteractiveCourseSession extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
         ];
     }
@@ -26,23 +31,23 @@ class ViewInteractiveCourseSession extends ViewRecord
         return $this->getRecord()->title ?? 'تفاصيل جلسة الدورة التفاعلية';
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
         return $infolist
             ->schema([
-                Infolists\Components\Section::make('معلومات الجلسة الأساسية')
+                Section::make('معلومات الجلسة الأساسية')
                     ->schema([
-                        Infolists\Components\Grid::make(4)
+                        Grid::make(4)
                             ->schema([
-                                Infolists\Components\TextEntry::make('session_code')
+                                TextEntry::make('session_code')
                                     ->label('رمز الجلسة')
                                     ->copyable()
                                     ->weight('bold'),
-                                Infolists\Components\TextEntry::make('session_number')
+                                TextEntry::make('session_number')
                                     ->label('رقم الجلسة'),
-                                Infolists\Components\TextEntry::make('title')
+                                TextEntry::make('title')
                                     ->label('العنوان'),
-                                Infolists\Components\TextEntry::make('status')
+                                TextEntry::make('status')
                                     ->label('الحالة')
                                     ->badge()
                                     ->formatStateUsing(function ($state): string {
@@ -63,66 +68,66 @@ class ViewInteractiveCourseSession extends ViewRecord
                             ]),
                     ]),
 
-                Infolists\Components\Section::make('الدورة والمعلم')
+                Section::make('الدورة والمعلم')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('course.title')
+                                TextEntry::make('course.title')
                                     ->label('الدورة'),
-                                Infolists\Components\TextEntry::make('course.assignedTeacher.user.name')
+                                TextEntry::make('course.assignedTeacher.user.name')
                                     ->label('المعلم'),
                             ]),
                     ]),
 
-                Infolists\Components\Section::make('التوقيت')
+                Section::make('التوقيت')
                     ->schema([
-                        Infolists\Components\Grid::make(4)
+                        Grid::make(4)
                             ->schema([
-                                Infolists\Components\TextEntry::make('scheduled_at')
+                                TextEntry::make('scheduled_at')
                                     ->label('موعد الجلسة')
                                     ->dateTime('Y-m-d H:i'),
-                                Infolists\Components\TextEntry::make('duration_minutes')
+                                TextEntry::make('duration_minutes')
                                     ->label('المدة المقررة')
                                     ->suffix(' دقيقة'),
-                                Infolists\Components\TextEntry::make('started_at')
+                                TextEntry::make('started_at')
                                     ->label('وقت البدء')
                                     ->dateTime('H:i')
                                     ->placeholder('لم تبدأ'),
-                                Infolists\Components\TextEntry::make('ended_at')
+                                TextEntry::make('ended_at')
                                     ->label('وقت الانتهاء')
                                     ->dateTime('H:i')
                                     ->placeholder('لم تنته'),
                             ]),
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('actual_duration_minutes')
+                                TextEntry::make('actual_duration_minutes')
                                     ->label('المدة الفعلية')
                                     ->suffix(' دقيقة')
                                     ->placeholder('غير متاح'),
-                                Infolists\Components\TextEntry::make('attendance_count')
+                                TextEntry::make('attendance_count')
                                     ->label('عدد الحضور'),
                             ]),
                     ]),
 
-                Infolists\Components\Section::make('المحتوى')
+                Section::make('المحتوى')
                     ->schema([
-                        Infolists\Components\TextEntry::make('description')
+                        TextEntry::make('description')
                             ->label('وصف الجلسة')
                             ->columnSpanFull()
                             ->placeholder('لا يوجد وصف'),
-                        Infolists\Components\TextEntry::make('lesson_content')
+                        TextEntry::make('lesson_content')
                             ->label('محتوى الدرس')
                             ->columnSpanFull()
                             ->placeholder('لا يوجد محتوى'),
                     ])
                     ->collapsible(),
 
-                Infolists\Components\Section::make('الواجبات')
+                Section::make('الواجبات')
                     ->schema([
-                        Infolists\Components\IconEntry::make('homework_assigned')
+                        IconEntry::make('homework_assigned')
                             ->label('يوجد واجب')
                             ->boolean(),
-                        Infolists\Components\TextEntry::make('homework_description')
+                        TextEntry::make('homework_description')
                             ->label('وصف الواجب')
                             ->columnSpanFull()
                             ->placeholder('لا يوجد وصف')
@@ -131,14 +136,14 @@ class ViewInteractiveCourseSession extends ViewRecord
                     ->collapsible()
                     ->visible(fn ($record) => $record->homework_assigned),
 
-                Infolists\Components\Section::make('معلومات النظام')
+                Section::make('معلومات النظام')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('created_at')
+                                TextEntry::make('created_at')
                                     ->label('تاريخ الإنشاء')
                                     ->dateTime(),
-                                Infolists\Components\TextEntry::make('updated_at')
+                                TextEntry::make('updated_at')
                                     ->label('آخر تحديث')
                                     ->dateTime(),
                             ]),

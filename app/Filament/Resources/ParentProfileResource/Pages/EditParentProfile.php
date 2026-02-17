@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources\ParentProfileResource\Pages;
 
+use Filament\Actions\DeleteAction;
+use App\Models\ParentProfile;
 use App\Filament\Resources\ParentProfileResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 /**
- * @property \App\Models\ParentProfile $record
+ * @property ParentProfile $record
  */
 class EditParentProfile extends EditRecord
 {
@@ -16,7 +18,7 @@ class EditParentProfile extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 

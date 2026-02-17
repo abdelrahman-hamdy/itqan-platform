@@ -2,6 +2,14 @@
 
 namespace App\Filament\Pages;
 
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Actions\ViewAction;
+use App\Filament\Resources\QuranSessionResource;
+use App\Filament\Resources\AcademicSessionResource;
+use App\Filament\Resources\InteractiveCourseSessionResource;
+use Filament\Actions\Action;
 use App\Enums\SessionStatus;
 use App\Filament\Shared\Tables\SessionTableColumns;
 use App\Models\AcademicSession;
@@ -9,7 +17,6 @@ use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Filament\Pages\Page;
-use Filament\Resources\Components\Tab;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -24,7 +31,7 @@ class LiveSessionsPage extends Page implements HasTable
 {
     use InteractsWithTable;
 
-    protected static ?string $navigationIcon = 'heroicon-o-eye';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-eye';
 
     protected static ?string $navigationLabel = 'مراقبة الجلسات';
 
@@ -34,7 +41,7 @@ class LiveSessionsPage extends Page implements HasTable
 
     protected static ?int $navigationSort = -1;
 
-    protected static string $view = 'filament.pages.live-sessions';
+    protected string $view = 'filament.pages.live-sessions';
 
     public ?string $activeTab = null;
 
@@ -98,11 +105,11 @@ class LiveSessionsPage extends Page implements HasTable
             ->columns(SessionTableColumns::getQuranSessionColumns())
             ->defaultSort('scheduled_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
+                SelectFilter::make('status')
                     ->label('الحالة')
                     ->options(SessionStatus::options()),
 
-                Tables\Filters\SelectFilter::make('session_type')
+                SelectFilter::make('session_type')
                     ->label('نوع الجلسة')
                     ->options([
                         'individual' => 'فردية',
@@ -110,24 +117,24 @@ class LiveSessionsPage extends Page implements HasTable
                         'trial' => 'تجريبية',
                     ]),
 
-                Tables\Filters\Filter::make('today')
+                Filter::make('today')
                     ->label('جلسات اليوم')
                     ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
 
-                Tables\Filters\Filter::make('this_week')
+                Filter::make('this_week')
                     ->label('جلسات هذا الأسبوع')
                     ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
 
-                Tables\Filters\Filter::make('has_meeting')
+                Filter::make('has_meeting')
                     ->label('لديها اجتماع نشط')
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('meeting_room_name')
                         ->whereIn('status', [SessionStatus::READY->value, SessionStatus::ONGOING->value])),
             ])
-            ->actions([
+            ->recordActions([
                 $this->getObserveAction('quran'),
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض')
-                    ->url(fn ($record): string => \App\Filament\Resources\QuranSessionResource::getUrl('view', ['record' => $record])),
+                    ->url(fn ($record): string => QuranSessionResource::getUrl('view', ['record' => $record])),
             ]);
     }
 
@@ -145,28 +152,28 @@ class LiveSessionsPage extends Page implements HasTable
             ->columns(SessionTableColumns::getAcademicSessionColumns())
             ->defaultSort('scheduled_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
+                SelectFilter::make('status')
                     ->label('الحالة')
                     ->options(SessionStatus::options()),
 
-                Tables\Filters\Filter::make('today')
+                Filter::make('today')
                     ->label('جلسات اليوم')
                     ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
 
-                Tables\Filters\Filter::make('this_week')
+                Filter::make('this_week')
                     ->label('جلسات هذا الأسبوع')
                     ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
 
-                Tables\Filters\Filter::make('has_meeting')
+                Filter::make('has_meeting')
                     ->label('لديها اجتماع نشط')
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('meeting_room_name')
                         ->whereIn('status', [SessionStatus::READY->value, SessionStatus::ONGOING->value])),
             ])
-            ->actions([
+            ->recordActions([
                 $this->getObserveAction('academic'),
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض')
-                    ->url(fn ($record): string => \App\Filament\Resources\AcademicSessionResource::getUrl('view', ['record' => $record])),
+                    ->url(fn ($record): string => AcademicSessionResource::getUrl('view', ['record' => $record])),
             ]);
     }
 
@@ -184,34 +191,34 @@ class LiveSessionsPage extends Page implements HasTable
             ->columns(SessionTableColumns::getInteractiveCourseSessionColumns())
             ->defaultSort('scheduled_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
+                SelectFilter::make('status')
                     ->label('الحالة')
                     ->options(SessionStatus::options()),
 
-                Tables\Filters\Filter::make('today')
+                Filter::make('today')
                     ->label('جلسات اليوم')
                     ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
 
-                Tables\Filters\Filter::make('this_week')
+                Filter::make('this_week')
                     ->label('جلسات هذا الأسبوع')
                     ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
 
-                Tables\Filters\Filter::make('has_meeting')
+                Filter::make('has_meeting')
                     ->label('لديها اجتماع نشط')
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('meeting_room_name')
                         ->whereIn('status', [SessionStatus::READY->value, SessionStatus::ONGOING->value])),
             ])
-            ->actions([
+            ->recordActions([
                 $this->getObserveAction('interactive'),
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض')
-                    ->url(fn ($record): string => \App\Filament\Resources\InteractiveCourseSessionResource::getUrl('view', ['record' => $record])),
+                    ->url(fn ($record): string => InteractiveCourseSessionResource::getUrl('view', ['record' => $record])),
             ]);
     }
 
-    protected function getObserveAction(string $sessionType): Tables\Actions\Action
+    protected function getObserveAction(string $sessionType): Action
     {
-        return Tables\Actions\Action::make('observe_meeting')
+        return Action::make('observe_meeting')
             ->label(__('supervisor.observation.observe_session'))
             ->icon('heroicon-o-eye')
             ->color('info')

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\SupervisorProfileResource\Pages;
 
+use Exception;
+use Log;
 use App\Filament\Resources\SupervisorProfileResource;
 use App\Models\User;
 use App\Services\AcademyContextService;
@@ -24,7 +26,7 @@ class CreateSupervisorProfile extends CreateRecord
             $currentAcademyId = AcademyContextService::getCurrentAcademyId();
 
             if (! $currentAcademyId) {
-                throw new \Exception('لا يمكن إنشاء مشرف بدون تحديد أكاديمية. يرجى اختيار أكاديمية من القائمة أعلاه.');
+                throw new Exception('لا يمكن إنشاء مشرف بدون تحديد أكاديمية. يرجى اختيار أكاديمية من القائمة أعلاه.');
             }
 
             $data['academy_id'] = $currentAcademyId;
@@ -70,9 +72,9 @@ class CreateSupervisorProfile extends CreateRecord
                     ->title('تم إنشاء حساب المشرف بنجاح')
                     ->body('يمكن للمشرف الآن تسجيل الدخول باستخدام البريد الإلكتروني وكلمة المرور.')
                     ->send();
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Log detailed error for debugging
-                \Log::error('Failed to create user account for supervisor', [
+                Log::error('Failed to create user account for supervisor', [
                     'supervisor_id' => $supervisorProfile->id,
                     'supervisor_email' => $supervisorProfile->email,
                     'academy_id' => $supervisorProfile->academy_id,

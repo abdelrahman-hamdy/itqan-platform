@@ -2,13 +2,16 @@
 
 namespace App\Filament\Resources\QuranCircleResource\Pages;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
+use App\Models\QuranCircle;
 use App\Filament\Resources\QuranCircleResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * @property \App\Models\QuranCircle $record
+ * @property QuranCircle $record
  */
 class EditQuranCircle extends EditRecord
 {
@@ -22,9 +25,9 @@ class EditQuranCircle extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
-            Actions\DeleteAction::make()
+            DeleteAction::make()
                 ->label('حذف'),
         ];
     }

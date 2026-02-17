@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use InvalidArgumentException;
+use Illuminate\Support\Collection;
 use App\Enums\SessionStatus;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
@@ -24,7 +26,7 @@ class QuranSessionSchedulingService
     ): QuranSession {
         // Validate that this is a template session
         if (! $templateSession->is_template || $templateSession->is_scheduled) {
-            throw new \InvalidArgumentException('Session is not a schedulable template');
+            throw new InvalidArgumentException('Session is not a schedulable template');
         }
 
         // Validate the scheduled time is in the future
@@ -158,7 +160,7 @@ class QuranSessionSchedulingService
     public function bulkScheduleIndividualSessions(
         QuranIndividualCircle $circle,
         array $sessionsData
-    ): \Illuminate\Support\Collection {
+    ): Collection {
         $scheduledSessions = collect();
 
         foreach ($sessionsData as $sessionData) {
@@ -166,7 +168,7 @@ class QuranSessionSchedulingService
 
             // Verify template belongs to this circle
             if ($templateSession->individual_circle_id !== $circle->id) {
-                throw new \InvalidArgumentException('Template session does not belong to this circle');
+                throw new InvalidArgumentException('Template session does not belong to this circle');
             }
 
             $scheduledSession = $this->scheduleIndividualSession(

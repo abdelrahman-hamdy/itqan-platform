@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use App\Models\InteractiveCourseHomework;
+use App\Models\AcademicSession;
+use App\Models\QuranSession;
+use App\Models\AcademicHomework;
 use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Services\UnifiedHomeworkService;
 use Illuminate\Http\Request;
@@ -43,7 +48,7 @@ class ParentHomeworkController extends Controller
 
         // Authorize parent can view homework for each selected child
         foreach ($childUserIds as $childUserId) {
-            $childUser = \App\Models\User::find($childUserId);
+            $childUser = User::find($childUserId);
             if ($childUser && $childUser->studentProfileUnscoped) {
                 $this->authorize('viewChildHomework', [get_class($parent), $childUser->studentProfileUnscoped]);
             }
@@ -83,7 +88,7 @@ class ParentHomeworkController extends Controller
             );
 
             // Add child info to each homework item
-            $childUser = \App\Models\User::find($childUserId);
+            $childUser = User::find($childUserId);
             $homework = collect($homework)->map(function ($hw) use ($childUser) {
                 $hw['child_name'] = $childUser->name ?? 'غير معروف';
                 $hw['child_id'] = $childUser->id;
@@ -161,16 +166,16 @@ class ParentHomeworkController extends Controller
         }
 
         // Authorization: Use appropriate policy based on homework type
-        if ($type === 'interactive' && $homework instanceof \App\Models\InteractiveCourseHomework) {
+        if ($type === 'interactive' && $homework instanceof InteractiveCourseHomework) {
             $this->authorize('view', $homework);
-        } elseif ($type === 'academic' && $homework instanceof \App\Models\AcademicSession) {
+        } elseif ($type === 'academic' && $homework instanceof AcademicSession) {
             $this->authorize('viewAcademicHomework', $homework);
-        } elseif ($type === 'quran' && $homework instanceof \App\Models\QuranSession) {
+        } elseif ($type === 'quran' && $homework instanceof QuranSession) {
             $this->authorize('viewQuranHomework', $homework);
         } else {
             // Fallback: Verify homework belongs to one of parent's children
             $studentId = $this->getStudentIdFromHomework($homework, $type);
-            $studentUser = \App\Models\User::find($studentId);
+            $studentUser = User::find($studentId);
             if ($studentUser && $studentUser->studentProfileUnscoped) {
                 $this->authorize('viewChildHomework', [get_class($parent), $studentUser->studentProfileUnscoped]);
             } else {
@@ -197,10 +202,10 @@ class ParentHomeworkController extends Controller
     private function getHomeworkByType($id, $type, $academyId)
     {
         return match ($type) {
-            'academic' => \App\Models\AcademicHomework::where('id', $id)
+            'academic' => AcademicHomework::where('id', $id)
                 ->where('academy_id', $academyId)
                 ->first(),
-            'interactive' => \App\Models\InteractiveCourseHomework::where('id', $id)
+            'interactive' => InteractiveCourseHomework::where('id', $id)
                 ->whereHas('session.interactiveCourse', function ($q) use ($academyId) {
                     $q->where('academy_id', $academyId);
                 })

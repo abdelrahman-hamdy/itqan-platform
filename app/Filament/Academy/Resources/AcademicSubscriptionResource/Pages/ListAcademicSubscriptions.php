@@ -2,6 +2,7 @@
 
 namespace App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages;
 
+use Filament\Actions\CreateAction;
 use App\Filament\Academy\Resources\AcademicSubscriptionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -13,7 +14,7 @@ class ListAcademicSubscriptions extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            CreateAction::make(),
         ];
     }
 }

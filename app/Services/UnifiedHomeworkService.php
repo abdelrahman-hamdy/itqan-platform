@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Carbon\Carbon;
 use App\Constants\DefaultAcademy;
 use App\Enums\HomeworkSubmissionStatus;
 use App\Models\AcademicHomework;
@@ -69,7 +70,7 @@ class UnifiedHomeworkService
             }
 
             $dueDate = is_string($item['due_date'])
-                ? \Carbon\Carbon::parse($item['due_date'])
+                ? Carbon::parse($item['due_date'])
                 : $item['due_date'];
 
             return $dueDate->isPast() ? $dueDate->timestamp : -$dueDate->timestamp;

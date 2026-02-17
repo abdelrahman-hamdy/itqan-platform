@@ -2,12 +2,16 @@
 
 namespace App\Filament\Resources\AcademicSessionReportResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use App\Services\AttendanceCalculationService;
+use App\Models\AcademicSessionReport;
 use App\Filament\Resources\AcademicSessionReportResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
- * @property \App\Models\AcademicSessionReport $record
+ * @property AcademicSessionReport $record
  */
 class ViewAcademicSessionReport extends ViewRecord
 {
@@ -24,9 +28,9 @@ class ViewAcademicSessionReport extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
-            Actions\Action::make('recalculate')
+            Action::make('recalculate')
                 ->label('إعادة الحساب')
                 ->icon('heroicon-o-calculator')
                 ->color('warning')
@@ -37,7 +41,7 @@ class ViewAcademicSessionReport extends ViewRecord
                     // Recalculate attendance from meeting events
                     $session = $this->record->session;
                     if ($session && $session->meeting) {
-                        $calculationService = app(\App\Services\AttendanceCalculationService::class);
+                        $calculationService = app(AttendanceCalculationService::class);
                         $calculationService->recalculateAttendance($session);
                     }
 

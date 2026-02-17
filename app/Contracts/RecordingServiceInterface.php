@@ -2,6 +2,8 @@
 
 namespace App\Contracts;
 
+use Illuminate\Database\Eloquent\Collection;
+use Exception;
 use App\Models\SessionRecording;
 
 /**
@@ -27,7 +29,7 @@ interface RecordingServiceInterface
      * @param  RecordingCapable  $session  The session to record
      * @return SessionRecording The created recording record
      *
-     * @throws \Exception If recording cannot be started (session not recordable, already recording, etc.)
+     * @throws Exception If recording cannot be started (session not recordable, already recording, etc.)
      */
     public function startRecording(RecordingCapable $session): SessionRecording;
 
@@ -60,9 +62,9 @@ interface RecordingServiceInterface
      * failed, and in-progress recordings.
      *
      * @param  RecordingCapable  $session  The session
-     * @return \Illuminate\Database\Eloquent\Collection Collection of SessionRecording models
+     * @return Collection Collection of SessionRecording models
      */
-    public function getSessionRecordings(RecordingCapable $session): \Illuminate\Database\Eloquent\Collection;
+    public function getSessionRecordings(RecordingCapable $session): Collection;
 
     /**
      * Delete a recording.

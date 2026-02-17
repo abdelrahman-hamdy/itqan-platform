@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Helpers\CountryList;
 use App\Enums\EducationalQualification;
 use App\Enums\RelationshipType;
 use App\Enums\TeachingLanguage;
@@ -74,7 +75,7 @@ class ProfileOptionsController extends Controller
      */
     private function getCountries(): array
     {
-        return \App\Helpers\CountryList::toApiArray();
+        return CountryList::toApiArray();
     }
 
     /**

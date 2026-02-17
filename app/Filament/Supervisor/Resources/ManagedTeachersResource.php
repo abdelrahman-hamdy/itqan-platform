@@ -2,13 +2,24 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Actions\ViewAction;
+use Filament\Actions\Action;
+use App\Filament\Supervisor\Resources\ManagedTeachersResource\Pages\ListManagedTeachers;
+use App\Filament\Supervisor\Resources\ManagedTeachersResource\Pages\ViewManagedTeacher;
 use App\Enums\UserType;
 use App\Filament\Supervisor\Resources\ManagedTeachersResource\Pages;
 use App\Models\User;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,7 +33,7 @@ class ManagedTeachersResource extends BaseSupervisorResource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $navigationLabel = 'المعلمون';
 
@@ -30,7 +41,7 @@ class ManagedTeachersResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'المعلمون';
 
-    protected static ?string $navigationGroup = 'إدارة المعلمين';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المعلمين';
 
     protected static ?int $navigationSort = 1;
 
@@ -54,29 +65,29 @@ class ManagedTeachersResource extends BaseSupervisorResource
             ->whereIn('user_type', [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value]);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات المعلم')
+        return $schema
+            ->components([
+                Section::make('معلومات المعلم')
                     ->schema([
-                        Forms\Components\TextInput::make('first_name')
+                        TextInput::make('first_name')
                             ->label('الاسم الأول')
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('last_name')
+                        TextInput::make('last_name')
                             ->label('اسم العائلة')
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('email')
+                        TextInput::make('email')
                             ->label('البريد الإلكتروني')
                             ->disabled(),
 
-                        Forms\Components\TextInput::make('phone')
+                        TextInput::make('phone')
                             ->label('رقم الهاتف')
                             ->disabled(),
 
-                        Forms\Components\Select::make('user_type')
+                        Select::make('user_type')
                             ->label('نوع المعلم')
                             ->options([
                                 'quran_teacher' => 'معلم قرآن',
@@ -84,14 +95,14 @@ class ManagedTeachersResource extends BaseSupervisorResource
                             ])
                             ->disabled(),
 
-                        Forms\Components\Toggle::make('active_status')
+                        Toggle::make('active_status')
                             ->label('نشط')
                             ->disabled(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('ملاحظات المشرف')
+                Section::make('ملاحظات المشرف')
                     ->schema([
-                        Forms\Components\Textarea::make('supervisor_notes')
+                        Textarea::make('supervisor_notes')
                             ->label('ملاحظات المشرف')
                             ->rows(4)
                             ->helperText('يمكنك إضافة ملاحظاتك حول هذا المعلم'),
@@ -117,7 +128,8 @@ class ManagedTeachersResource extends BaseSupervisorResource
                     ->label('الهاتف')
                     ->searchable(),
 
-                BadgeColumn::make('user_type')
+                TextColumn::make('user_type')
+                    ->badge()
                     ->label('النوع')
                     ->colors([
                         'success' => 'quran_teacher',
@@ -147,7 +159,7 @@ class ManagedTeachersResource extends BaseSupervisorResource
                         return '-';
                     }),
 
-                Tables\Columns\IconColumn::make('active_status')
+                IconColumn::make('active_status')
                     ->label('نشط')
                     ->boolean(),
 
@@ -159,22 +171,22 @@ class ManagedTeachersResource extends BaseSupervisorResource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('user_type')
+                SelectFilter::make('user_type')
                     ->label('نوع المعلم')
                     ->options([
                         'quran_teacher' => 'معلم قرآن',
                         'academic_teacher' => 'معلم أكاديمي',
                     ]),
 
-                Tables\Filters\TernaryFilter::make('active_status')
+                TernaryFilter::make('active_status')
                     ->label('الحالة')
                     ->trueLabel('نشط')
                     ->falseLabel('غير نشط'),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
+            ->recordActions([
+                ViewAction::make()
                     ->label('عرض'),
-                Tables\Actions\Action::make('view_earnings')
+                Action::make('view_earnings')
                     ->label('الأرباح')
                     ->icon('heroicon-o-currency-dollar')
                     ->url(fn (User $record): string => ManagedTeacherEarningsResource::getUrl('index', [
@@ -182,7 +194,7 @@ class ManagedTeachersResource extends BaseSupervisorResource
                     ]))
                     ->visible(fn () => static::canManageTeachers()),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 // No bulk actions for supervisors
             ]);
     }
@@ -195,8 +207,8 @@ class ManagedTeachersResource extends BaseSupervisorResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListManagedTeachers::route('/'),
-            'view' => Pages\ViewManagedTeacher::route('/{record}'),
+            'index' => ListManagedTeachers::route('/'),
+            'view' => ViewManagedTeacher::route('/{record}'),
         ];
     }
 

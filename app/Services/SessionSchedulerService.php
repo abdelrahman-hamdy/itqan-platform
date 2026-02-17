@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\SessionStatus;
+use Exception;
 use App\Models\BaseSession;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -29,7 +31,7 @@ class SessionSchedulerService
      */
     public function shouldTransitionToReady(BaseSession $session): bool
     {
-        if ($session->status !== \App\Enums\SessionStatus::SCHEDULED) {
+        if ($session->status !== SessionStatus::SCHEDULED) {
             return false;
         }
 
@@ -72,7 +74,7 @@ class SessionSchedulerService
             return false;
         }
 
-        if (! in_array($session->status, [\App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING])) {
+        if (! in_array($session->status, [SessionStatus::READY, SessionStatus::ONGOING])) {
             return false;
         }
 
@@ -116,7 +118,7 @@ class SessionSchedulerService
      */
     public function shouldAutoComplete(BaseSession $session): bool
     {
-        if (! in_array($session->status, [\App\Enums\SessionStatus::ONGOING, \App\Enums\SessionStatus::READY])) {
+        if (! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
             return false;
         }
 
@@ -175,7 +177,7 @@ class SessionSchedulerService
                     }
                 }
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results['errors'][] = [
                     'session_id' => $session->id,
                     'session_type' => $this->settingsService->getSessionType($session),

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AcademicSubscriptionResource\Pages;
 
+use Filament\Actions\DeleteAction;
 use App\Filament\Resources\AcademicSubscriptionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -13,7 +14,7 @@ class EditAcademicSubscription extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 }

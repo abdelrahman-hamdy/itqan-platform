@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DTOs;
 
+use BackedEnum;
 use Carbon\Carbon;
 
 /**
@@ -53,7 +54,7 @@ readonly class CalendarEvent
             start: Carbon::parse($session->scheduled_at),
             end: Carbon::parse($session->scheduled_at)->addMinutes($session->duration_minutes ?? 60),
             type: 'quran_session',
-            status: $session->status instanceof \BackedEnum ? $session->status->value : $session->status,
+            status: $session->status instanceof BackedEnum ? $session->status->value : $session->status,
             color: self::getStatusColor($session->status),
             url: "/teacher-panel/quran-sessions/{$session->id}",
             teacherId: $session->quran_teacher_id,
@@ -78,7 +79,7 @@ readonly class CalendarEvent
             start: Carbon::parse($session->scheduled_at),
             end: Carbon::parse($session->scheduled_at)->addMinutes($session->duration_minutes ?? 60),
             type: 'academic_session',
-            status: $session->status instanceof \BackedEnum ? $session->status->value : $session->status,
+            status: $session->status instanceof BackedEnum ? $session->status->value : $session->status,
             color: self::getStatusColor($session->status),
             url: route('teacher.academic-sessions.show', $session),
             teacherId: $session->academic_teacher_id,
@@ -107,7 +108,7 @@ readonly class CalendarEvent
             start: $scheduledAt,
             end: $scheduledAt->copy()->addMinutes($session->duration_minutes ?? 60),
             type: 'interactive_course_session',
-            status: $session->status instanceof \BackedEnum ? $session->status->value : $session->status,
+            status: $session->status instanceof BackedEnum ? $session->status->value : $session->status,
             color: self::getStatusColor($session->status),
             url: route('interactive-courses.show', $session->course_id),
             teacherId: $session->course?->assignedTeacher?->id,
@@ -181,7 +182,7 @@ readonly class CalendarEvent
      */
     private static function getStatusColor(mixed $status): string
     {
-        $statusValue = $status instanceof \BackedEnum ? $status->value : $status;
+        $statusValue = $status instanceof BackedEnum ? $status->value : $status;
 
         return match ($statusValue) {
             'scheduled' => '#3B82F6', // Blue

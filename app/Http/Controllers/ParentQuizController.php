@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use App\Models\QuizAssignment;
+use App\Models\StudentProfile;
 use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Services\QuizService;
 use Illuminate\Http\Request;
@@ -46,7 +49,7 @@ class ParentQuizController extends Controller
 
         foreach ($childUserIds as $childUserId) {
             // Get child's student profile
-            $childUser = \App\Models\User::find($childUserId);
+            $childUser = User::find($childUserId);
             $studentProfile = $childUser?->studentProfile;
 
             if ($studentProfile) {
@@ -109,14 +112,14 @@ class ParentQuizController extends Controller
         $childUserIds = $children->pluck('user_id')->toArray();
 
         // Get the quiz assignment
-        $assignment = \App\Models\QuizAssignment::with(['quiz', 'attempts'])->findOrFail($quizId);
+        $assignment = QuizAssignment::with(['quiz', 'attempts'])->findOrFail($quizId);
 
         // Policy-based authorization
         $this->authorize('viewResults', $assignment);
 
         // Get attempts by parent's children only
         $childAttempts = $assignment->attempts->filter(function ($attempt) use ($childUserIds) {
-            $studentProfile = \App\Models\StudentProfile::find($attempt->student_id);
+            $studentProfile = StudentProfile::find($attempt->student_id);
 
             return $studentProfile && in_array($studentProfile->user_id, $childUserIds);
         });

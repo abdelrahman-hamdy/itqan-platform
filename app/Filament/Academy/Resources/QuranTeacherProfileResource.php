@@ -1,5 +1,12 @@
 <?php
 namespace App\Filament\Academy\Resources;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Tables\Columns\ImageColumn;
+use App\Filament\Academy\Resources\QuranTeacherProfileResource\Pages\ListQuranTeacherProfiles;
+use App\Filament\Academy\Resources\QuranTeacherProfileResource\Pages\CreateQuranTeacherProfile;
+use App\Filament\Academy\Resources\QuranTeacherProfileResource\Pages\ViewQuranTeacherProfile;
+use App\Filament\Academy\Resources\QuranTeacherProfileResource\Pages\EditQuranTeacherProfile;
 use App\Enums\UserType;
 use App\Filament\Academy\Resources\QuranTeacherProfileResource\Pages;
 use App\Filament\Shared\Resources\Profiles\BaseQuranTeacherProfileResource;
@@ -12,11 +19,11 @@ class QuranTeacherProfileResource extends BaseQuranTeacherProfileResource {
         return $query->where('academy_id', Auth::user()->academy_id);
     }
     protected static function getTableActions(): array {
-        return [Tables\Actions\ViewAction::make(), Tables\Actions\EditAction::make()];
+        return [ViewAction::make(), EditAction::make()];
     }
     protected static function getTableBulkActions(): array { return []; }
     protected static function getTableColumns(): array {
-        return array_merge([Tables\Columns\ImageColumn::make('avatar')->label('الصورة')->circular()
+        return array_merge([ImageColumn::make('avatar')->label('الصورة')->circular()
             ->defaultImageUrl(fn($record) => config('services.ui_avatars.base_url').'?name='.urlencode($record->full_name ?? 'N/A').'&background=059669&color=fff')],
             parent::getTableColumns());
     }
@@ -25,9 +32,9 @@ class QuranTeacherProfileResource extends BaseQuranTeacherProfileResource {
     }
     public static function canDelete($record): bool { return false; }
     public static function getPages(): array {
-        return ['index' => Pages\ListQuranTeacherProfiles::route('/'),
-            'create' => Pages\CreateQuranTeacherProfile::route('/create'),
-            'view' => Pages\ViewQuranTeacherProfile::route('/{record}'),
-            'edit' => Pages\EditQuranTeacherProfile::route('/{record}/edit')];
+        return ['index' => ListQuranTeacherProfiles::route('/'),
+            'create' => CreateQuranTeacherProfile::route('/create'),
+            'view' => ViewQuranTeacherProfile::route('/{record}'),
+            'edit' => EditQuranTeacherProfile::route('/{record}/edit')];
     }
 }

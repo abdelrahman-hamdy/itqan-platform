@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Validation\ValidationException;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Http\Requests\StoreStudentReportRequest;
 use App\Http\Requests\UpdateStudentReportRequest;
 use App\Http\Traits\Api\ApiResponses;
@@ -90,9 +93,9 @@ class StudentReportController extends Controller
                 'report' => $report,
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return $this->validationError($e->errors(), 'خطأ في البيانات المدخلة');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             Log::error('Error creating student report: '.$e->getMessage(), [
                 'type' => $type,
@@ -173,11 +176,11 @@ class StudentReportController extends Controller
                 'report' => $report->fresh(),
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return $this->validationError($e->errors(), 'خطأ في البيانات المدخلة');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return $this->notFound('التقرير غير موجود');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             Log::error('Error updating student report: '.$e->getMessage(), [
                 'type' => $type,
@@ -218,13 +221,13 @@ class StudentReportController extends Controller
         }
 
         // For AcademicSession, teacher is accessed through academicTeacher profile
-        if ($session instanceof \App\Models\AcademicSession) {
+        if ($session instanceof AcademicSession) {
             return $session->academicTeacher
                 && $session->academicTeacher->user_id === $teacher->id;
         }
 
         // For QuranSession, quranTeacher returns User model directly (not a profile)
-        if ($session instanceof \App\Models\QuranSession) {
+        if ($session instanceof QuranSession) {
             return $session->quranTeacher
                 && $session->quranTeacher->id === $teacher->id;
         }

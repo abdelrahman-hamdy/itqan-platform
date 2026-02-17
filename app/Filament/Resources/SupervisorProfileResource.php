@@ -2,6 +2,20 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Tables\Columns\ImageColumn;
+use App\Filament\Resources\SupervisorProfileResource\Pages\ListSupervisorProfiles;
+use App\Filament\Resources\SupervisorProfileResource\Pages\CreateSupervisorProfile;
+use App\Filament\Resources\SupervisorProfileResource\Pages\ViewSupervisorProfile;
+use App\Filament\Resources\SupervisorProfileResource\Pages\EditSupervisorProfile;
 use App\Filament\Resources\SupervisorProfileResource\Pages;
 use App\Filament\Shared\Resources\Profiles\BaseSupervisorProfileResource;
 use Filament\Support\Enums\FontWeight;
@@ -24,21 +38,21 @@ class SupervisorProfileResource extends BaseSupervisorProfileResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
-            Tables\Actions\DeleteAction::make(),
-            Tables\Actions\RestoreAction::make(),
-            Tables\Actions\ForceDeleteAction::make(),
+            ViewAction::make(),
+            EditAction::make(),
+            DeleteAction::make(),
+            RestoreAction::make(),
+            ForceDeleteAction::make(),
         ];
     }
 
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
-                Tables\Actions\RestoreBulkAction::make(),
-                Tables\Actions\ForceDeleteBulkAction::make(),
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+                RestoreBulkAction::make(),
+                ForceDeleteBulkAction::make(),
             ]),
         ];
     }
@@ -47,7 +61,7 @@ class SupervisorProfileResource extends BaseSupervisorProfileResource
     {
         return array_merge(
             [static::getAcademyColumn()],
-            [Tables\Columns\ImageColumn::make('avatar')
+            [ImageColumn::make('avatar')
                 ->label('الصورة')
                 ->circular()
                 ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url').'?name='.urlencode($record->full_name ?? 'N/A').'&background=9333ea&color=fff')],
@@ -58,10 +72,10 @@ class SupervisorProfileResource extends BaseSupervisorProfileResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSupervisorProfiles::route('/'),
-            'create' => Pages\CreateSupervisorProfile::route('/create'),
-            'view' => Pages\ViewSupervisorProfile::route('/{record}'),
-            'edit' => Pages\EditSupervisorProfile::route('/{record}/edit'),
+            'index' => ListSupervisorProfiles::route('/'),
+            'create' => CreateSupervisorProfile::route('/create'),
+            'view' => ViewSupervisorProfile::route('/{record}'),
+            'edit' => EditSupervisorProfile::route('/{record}/edit'),
         ];
     }
 }

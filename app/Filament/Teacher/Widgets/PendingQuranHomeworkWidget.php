@@ -2,6 +2,9 @@
 
 namespace App\Filament\Teacher\Widgets;
 
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Actions\Action;
 use App\Models\QuranSession;
 use App\Models\QuranSessionHomework;
 use Filament\Facades\Filament;
@@ -45,12 +48,12 @@ class PendingQuranHomeworkWidget extends BaseWidget
                     ->limit(10)
             )
             ->columns([
-                Tables\Columns\TextColumn::make('session.student.name')
+                TextColumn::make('session.student.name')
                     ->label('الطالب')
                     ->searchable()
                     ->placeholder('غير محدد'),
 
-                Tables\Columns\TextColumn::make('homework_type')
+                TextColumn::make('homework_type')
                     ->label('نوع الواجب')
                     ->badge()
                     ->getStateUsing(function ($record) {
@@ -69,18 +72,18 @@ class PendingQuranHomeworkWidget extends BaseWidget
                     })
                     ->color('primary'),
 
-                Tables\Columns\TextColumn::make('total_pages')
+                TextColumn::make('total_pages')
                     ->label('الصفحات')
                     ->suffix(' صفحة')
                     ->alignCenter(),
 
-                Tables\Columns\TextColumn::make('due_date')
+                TextColumn::make('due_date')
                     ->label('تاريخ التسليم')
                     ->date('d/m/Y')
                     ->sortable()
                     ->color(fn ($record) => $record->is_overdue ? 'danger' : ($record->due_date?->isToday() ? 'warning' : 'gray')),
 
-                Tables\Columns\TextColumn::make('difficulty_level')
+                TextColumn::make('difficulty_level')
                     ->label('المستوى')
                     ->badge()
                     ->formatStateUsing(fn ($state) => match ($state) {
@@ -96,7 +99,7 @@ class PendingQuranHomeworkWidget extends BaseWidget
                         default => 'gray',
                     }),
 
-                Tables\Columns\IconColumn::make('is_overdue')
+                IconColumn::make('is_overdue')
                     ->label('متأخر')
                     ->boolean()
                     ->trueIcon('heroicon-o-exclamation-circle')
@@ -104,8 +107,8 @@ class PendingQuranHomeworkWidget extends BaseWidget
                     ->trueColor('danger')
                     ->falseColor('success'),
             ])
-            ->actions([
-                Tables\Actions\Action::make('view')
+            ->recordActions([
+                Action::make('view')
                     ->label('عرض الجلسة')
                     ->icon('heroicon-o-eye')
                     ->url(fn ($record) => route('filament.teacher.resources.quran-sessions.view', [

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
@@ -165,7 +166,7 @@ class StudentCircleService
             }
 
             return $result;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to enroll student in circle', [
                 'user_id' => $user->id,
                 'circle_id' => $circleId,
@@ -192,7 +193,7 @@ class StudentCircleService
             $result = $this->enrollmentService->unenrollStudent($user, $circleId);
 
             return $result;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to unenroll student from circle', [
                 'user_id' => $user->id,
                 'circle_id' => $circleId,

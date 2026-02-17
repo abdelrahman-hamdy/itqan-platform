@@ -2,6 +2,10 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Facades\Filament;
+use Filament\Tables\Filters\Filter;
+use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Filters\SelectFilter;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
@@ -44,7 +48,7 @@ abstract class BaseResource extends Resource
     protected static function isViewingAllAcademies(): bool
     {
         // If we're in a tenant panel (Academy panel), we always have an academy context
-        if (\Filament\Facades\Filament::getTenant() !== null) {
+        if (Filament::getTenant() !== null) {
             return false;
         }
 
@@ -146,13 +150,13 @@ abstract class BaseResource extends Resource
      *
      * @param  string  $column  The column name to filter on (default: 'created_at')
      */
-    protected static function getDateRangeFilter(string $column = 'created_at'): Tables\Filters\Filter
+    protected static function getDateRangeFilter(string $column = 'created_at'): Filter
     {
-        return Tables\Filters\Filter::make($column)
-            ->form([
-                Forms\Components\DatePicker::make('from')
+        return Filter::make($column)
+            ->schema([
+                DatePicker::make('from')
                     ->label(__('filament.filters.from_date')),
-                Forms\Components\DatePicker::make('until')
+                DatePicker::make('until')
                     ->label(__('filament.filters.to_date')),
             ])
             ->query(function (Builder $query, array $data) use ($column): Builder {
@@ -182,21 +186,21 @@ abstract class BaseResource extends Resource
     /**
      * Get a subscription status filter for tables
      */
-    protected static function getSubscriptionStatusFilter(): Tables\Filters\SelectFilter
+    protected static function getSubscriptionStatusFilter(): SelectFilter
     {
-        return Tables\Filters\SelectFilter::make('status')
+        return SelectFilter::make('status')
             ->label(__('filament.status'))
             ->options(SessionSubscriptionStatus::options());
     }
 
     /**
-     * Get the standard subscription status badge column configuration
+     * Get the standard subscription status badge column configuration (uses TextColumn with badge)
      *
      * @param  string  $column  The column name (default: 'status')
      */
-    protected static function getStatusBadgeColumn(string $column = 'status'): Tables\Columns\TextColumn
+    protected static function getStatusBadgeColumn(string $column = 'status'): TextColumn
     {
-        return Tables\Columns\TextColumn::make($column)
+        return TextColumn::make($column)
             ->label(__('filament.status'))
             ->badge()
             ->formatStateUsing(fn ($state) => $state instanceof SessionSubscriptionStatus ? $state->label() : $state)

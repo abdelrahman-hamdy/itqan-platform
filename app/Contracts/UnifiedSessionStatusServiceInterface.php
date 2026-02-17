@@ -2,6 +2,7 @@
 
 namespace App\Contracts;
 
+use App\Exceptions\SessionOperationException;
 use App\Models\BaseSession;
 use Illuminate\Support\Collection;
 
@@ -37,7 +38,7 @@ interface UnifiedSessionStatusServiceInterface
      * @param  bool  $throwOnError  When true, throws SessionOperationException instead of returning false
      * @return bool True if transition was successful
      *
-     * @throws \App\Exceptions\SessionOperationException When transition is invalid and $throwOnError is true
+     * @throws SessionOperationException When transition is invalid and $throwOnError is true
      */
     public function transitionToReady(BaseSession $session, bool $throwOnError = false): bool;
 
@@ -51,7 +52,7 @@ interface UnifiedSessionStatusServiceInterface
      * @param  bool  $throwOnError  When true, throws SessionOperationException instead of returning false
      * @return bool True if transition was successful
      *
-     * @throws \App\Exceptions\SessionOperationException When transition is invalid and $throwOnError is true
+     * @throws SessionOperationException When transition is invalid and $throwOnError is true
      */
     public function transitionToOngoing(BaseSession $session, bool $throwOnError = false): bool;
 
@@ -66,7 +67,7 @@ interface UnifiedSessionStatusServiceInterface
      * @param  bool  $throwOnError  When true, throws SessionOperationException instead of returning false
      * @return bool True if transition was successful
      *
-     * @throws \App\Exceptions\SessionOperationException When transition is invalid and $throwOnError is true
+     * @throws SessionOperationException When transition is invalid and $throwOnError is true
      */
     public function transitionToCompleted(BaseSession $session, bool $throwOnError = false): bool;
 
@@ -82,7 +83,7 @@ interface UnifiedSessionStatusServiceInterface
      * @param  bool  $throwOnError  When true, throws SessionOperationException instead of returning false
      * @return bool True if transition was successful
      *
-     * @throws \App\Exceptions\SessionOperationException When transition is invalid and $throwOnError is true
+     * @throws SessionOperationException When transition is invalid and $throwOnError is true
      */
     public function transitionToCancelled(
         BaseSession $session,

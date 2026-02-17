@@ -400,7 +400,7 @@ class MeetingAttendance extends Model
     private function getAcademyForSession($session): ?Academy
     {
         // For InteractiveCourseSession, academy is accessed via course
-        if ($session instanceof \App\Models\InteractiveCourseSession) {
+        if ($session instanceof InteractiveCourseSession) {
             return $session->course?->academy;
         }
 
@@ -435,7 +435,7 @@ class MeetingAttendance extends Model
             }
 
             // Check staleness
-            $joinTime = \Carbon\Carbon::parse($lastCycle['timestamp']);
+            $joinTime = Carbon::parse($lastCycle['timestamp']);
             $minutesAgo = $joinTime->diffInMinutes(now());
 
             if ($minutesAgo > 5) {
@@ -456,7 +456,7 @@ class MeetingAttendance extends Model
         // Legacy format: [{joined_at:..., left_at:...}]
         foreach (array_reverse($cycles) as $cycle) {
             if (isset($cycle['joined_at']) && ! isset($cycle['left_at'])) {
-                $joinedAt = \Carbon\Carbon::parse($cycle['joined_at']);
+                $joinedAt = Carbon::parse($cycle['joined_at']);
                 $minutesAgo = $joinedAt->diffInMinutes(now());
 
                 if ($minutesAgo > 5) {

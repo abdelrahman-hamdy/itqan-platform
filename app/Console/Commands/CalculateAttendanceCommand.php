@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Models\QuranSession;
 use App\Services\AttendanceCalculationService;
 use Illuminate\Console\Command;
@@ -58,7 +59,7 @@ class CalculateAttendanceCommand extends Command
                 return $this->processAllEligibleSessions($academyId, $isDryRun, $isForced);
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('❌ Error during attendance calculation: '.$e->getMessage());
             Log::error('Attendance calculation command failed', [
                 'error' => $e->getMessage(),

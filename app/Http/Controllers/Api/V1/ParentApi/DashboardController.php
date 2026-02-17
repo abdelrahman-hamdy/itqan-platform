@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
+use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\ParentStudentRelationship;
@@ -124,7 +125,7 @@ class DashboardController extends Controller
     /**
      * Format upcoming sessions for API response.
      */
-    protected function formatUpcomingSessionsForApi(\Illuminate\Support\Collection $sessions): array
+    protected function formatUpcomingSessionsForApi(Collection $sessions): array
     {
         return $sessions->map(function ($session) {
             return [

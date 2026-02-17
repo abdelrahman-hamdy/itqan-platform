@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Services\CertificateService;
+use Exception;
+use Log;
 use App\Enums\BillingCycle;
 use App\Enums\CourseType;
 use App\Enums\EnrollmentStatus;
@@ -33,7 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $recorded_course_id
  * @property int|null $interactive_course_id
  * @property string $course_type
- * @property \App\Enums\EnrollmentType|null $enrollment_type
+ * @property EnrollmentType|null $enrollment_type
  * @property string|null $access_type
  * @property int|null $access_duration_months
  * @property bool $lifetime_access
@@ -702,7 +705,7 @@ class CourseSubscription extends BaseSubscription
         }
 
         try {
-            $certificateService = app(\App\Services\CertificateService::class);
+            $certificateService = app(CertificateService::class);
 
             if ($this->course_type === CourseType::RECORDED) {
                 $certificateService->issueCertificateForRecordedCourse($this);
@@ -712,8 +715,8 @@ class CourseSubscription extends BaseSubscription
             }
 
             $this->refresh();
-        } catch (\Exception $e) {
-            \Log::error("Failed to issue certificate for CourseSubscription {$this->id}: ".$e->getMessage());
+        } catch (Exception $e) {
+            Log::error("Failed to issue certificate for CourseSubscription {$this->id}: ".$e->getMessage());
         }
 
         return $this;

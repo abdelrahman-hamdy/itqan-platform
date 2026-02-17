@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Homework;
 
+use App\Models\AcademicHomeworkSubmission;
 use Illuminate\Foundation\Http\FormRequest;
 
 class GradeHomeworkRequest extends FormRequest
@@ -14,7 +15,7 @@ class GradeHomeworkRequest extends FormRequest
     public function rules(): array
     {
         $submission = $this->route('submissionId')
-            ? \App\Models\AcademicHomeworkSubmission::find($this->route('submissionId'))
+            ? AcademicHomeworkSubmission::find($this->route('submissionId'))
             : null;
 
         $maxScore = $submission ? $submission->max_score : 100;

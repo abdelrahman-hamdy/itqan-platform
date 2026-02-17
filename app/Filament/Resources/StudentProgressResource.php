@@ -2,11 +2,31 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Hidden;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\StudentProgressResource\Pages\ListStudentProgress;
+use App\Filament\Resources\StudentProgressResource\Pages\CreateStudentProgress;
+use App\Filament\Resources\StudentProgressResource\Pages\ViewStudentProgress;
+use App\Filament\Resources\StudentProgressResource\Pages\EditStudentProgress;
 use App\Enums\EnrollmentStatus;
 use App\Filament\Resources\StudentProgressResource\Pages;
 use App\Models\CourseSubscription;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,7 +35,7 @@ class StudentProgressResource extends BaseResource
 {
     protected static ?string $model = CourseSubscription::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-chart-bar-square';
 
     protected static ?string $navigationLabel = 'تقدم الدورات المسجلة';
 
@@ -23,23 +43,23 @@ class StudentProgressResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'تقدم الدورات';
 
-    protected static ?string $navigationGroup = 'إدارة الدورات المسجلة';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة الدورات المسجلة';
 
     protected static ?int $navigationSort = 3;
 
     protected static ?string $slug = 'recorded-course-progress';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 // Section 1: Student & Course Info
-                Forms\Components\Section::make('معلومات الطالب والدورة')
+                Section::make('معلومات الطالب والدورة')
                     ->description('بيانات الطالب والدورة المسجلة')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\Select::make('student_id')
+                                Select::make('student_id')
                                     ->label('الطالب')
                                     ->relationship(
                                         'student',
@@ -50,7 +70,7 @@ class StudentProgressResource extends BaseResource
                                     ->preload()
                                     ->required(),
 
-                                Forms\Components\Select::make('recorded_course_id')
+                                Select::make('recorded_course_id')
                                     ->label('الدورة المسجلة')
                                     ->relationship('recordedCourse', 'title')
                                     ->searchable()
@@ -60,12 +80,12 @@ class StudentProgressResource extends BaseResource
                     ]),
 
                 // Section 2: Progress Tracking
-                Forms\Components\Section::make('تتبع التقدم')
+                Section::make('تتبع التقدم')
                     ->description('إحصائيات إكمال الدورة')
                     ->schema([
-                        Forms\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Forms\Components\TextInput::make('progress_percentage')
+                                TextInput::make('progress_percentage')
                                     ->label('نسبة الإكمال')
                                     ->suffix('%')
                                     ->numeric()
@@ -73,39 +93,39 @@ class StudentProgressResource extends BaseResource
                                     ->maxValue(100)
                                     ->default(0),
 
-                                Forms\Components\TextInput::make('completed_lessons')
+                                TextInput::make('completed_lessons')
                                     ->label('الدروس المكتملة')
                                     ->numeric()
                                     ->minValue(0)
                                     ->default(0),
 
-                                Forms\Components\TextInput::make('total_lessons')
+                                TextInput::make('total_lessons')
                                     ->label('إجمالي الدروس')
                                     ->numeric()
                                     ->minValue(0)
                                     ->default(0),
                             ]),
 
-                        Forms\Components\DateTimePicker::make('last_accessed_at')
+                        DateTimePicker::make('last_accessed_at')
                             ->label('آخر دخول'),
                     ]),
 
                 // Section 3: Certificate
-                Forms\Components\Section::make('الشهادة')
+                Section::make('الشهادة')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Forms\Components\Toggle::make('certificate_issued')
+                                Toggle::make('certificate_issued')
                                     ->label('تم إصدار الشهادة'),
 
-                                Forms\Components\DateTimePicker::make('completion_date')
+                                DateTimePicker::make('completion_date')
                                     ->label('تاريخ الإكمال'),
                             ]),
                     ])
                     ->collapsible(),
 
                 // Hidden field to ensure only recorded courses
-                Forms\Components\Hidden::make('course_type')
+                Hidden::make('course_type')
                     ->default('recorded'),
             ]);
     }
@@ -114,20 +134,20 @@ class StudentProgressResource extends BaseResource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('student.name')
+                TextColumn::make('student.name')
                     ->label('الطالب')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
 
-                Tables\Columns\TextColumn::make('recordedCourse.title')
+                TextColumn::make('recordedCourse.title')
                     ->label('الدورة')
                     ->searchable()
                     ->sortable()
                     ->limit(30)
                     ->tooltip(fn ($record) => $record->recordedCourse?->title),
 
-                Tables\Columns\TextColumn::make('progress_percentage')
+                TextColumn::make('progress_percentage')
                     ->label('نسبة الإكمال')
                     ->suffix('%')
                     ->badge()
@@ -139,12 +159,12 @@ class StudentProgressResource extends BaseResource
                     })
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('lessons_progress')
+                TextColumn::make('lessons_progress')
                     ->label('الدروس')
                     ->getStateUsing(fn ($record) => "{$record->completed_lessons}/{$record->total_lessons}")
                     ->description(fn ($record) => 'درس مكتمل'),
 
-                Tables\Columns\IconColumn::make('certificate_issued')
+                IconColumn::make('certificate_issued')
                     ->label('شهادة')
                     ->boolean()
                     ->trueIcon('heroicon-o-academic-cap')
@@ -153,20 +173,20 @@ class StudentProgressResource extends BaseResource
                     ->falseColor('gray')
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('last_accessed_at')
+                TextColumn::make('last_accessed_at')
                     ->label('آخر دخول')
                     ->since()
                     ->sortable()
                     ->placeholder('لم يدخل بعد'),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ التسجيل')
                     ->date('Y-m-d')
                     ->sortable(),
             ])
             ->defaultSort('last_accessed_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('completion_status')
+                SelectFilter::make('completion_status')
                     ->label('حالة الإكمال')
                     ->options([
                         'completed' => 'مكتمل (100%)',
@@ -182,26 +202,26 @@ class StudentProgressResource extends BaseResource
                         };
                     }),
 
-                Tables\Filters\SelectFilter::make('recorded_course_id')
+                SelectFilter::make('recorded_course_id')
                     ->label('الدورة')
                     ->relationship('recordedCourse', 'title')
                     ->searchable()
                     ->preload(),
 
-                Tables\Filters\Filter::make('has_certificate')
+                Filter::make('has_certificate')
                     ->label('حاصل على شهادة')
                     ->query(fn (Builder $query) => $query->where('certificate_issued', true)),
 
-                Tables\Filters\Filter::make('last_week')
+                Filter::make('last_week')
                     ->label('نشط هذا الأسبوع')
                     ->query(fn (Builder $query) => $query->where('last_accessed_at', '>=', now()->subWeek())),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
+            ->recordActions([
+                ViewAction::make()
                     ->label('عرض'),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
-                Tables\Actions\Action::make('markComplete')
+                Action::make('markComplete')
                     ->label('تحديد كمكتمل')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
@@ -210,7 +230,7 @@ class StudentProgressResource extends BaseResource
                     ->modalDescription('سيتم تحديد هذه الدورة كمكتملة بنسبة 100%. هل أنت متأكد؟')
                     ->action(fn (CourseSubscription $record) => $record->markAsCompleted())
                     ->visible(fn (CourseSubscription $record) => ! $record->isCompleted()),
-                Tables\Actions\Action::make('issueCertificate')
+                Action::make('issueCertificate')
                     ->label('إصدار شهادة')
                     ->icon('heroicon-o-academic-cap')
                     ->color('primary')
@@ -218,9 +238,9 @@ class StudentProgressResource extends BaseResource
                     ->action(fn (CourseSubscription $record) => $record->issueCertificateForCourse())
                     ->visible(fn (CourseSubscription $record) => $record->can_earn_certificate),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد'),
                 ]),
             ]);
@@ -236,10 +256,10 @@ class StudentProgressResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListStudentProgress::route('/'),
-            'create' => Pages\CreateStudentProgress::route('/create'),
-            'view' => Pages\ViewStudentProgress::route('/{record}'),
-            'edit' => Pages\EditStudentProgress::route('/{record}/edit'),
+            'index' => ListStudentProgress::route('/'),
+            'create' => CreateStudentProgress::route('/create'),
+            'view' => ViewStudentProgress::route('/{record}'),
+            'edit' => EditStudentProgress::route('/{record}/edit'),
         ];
     }
 

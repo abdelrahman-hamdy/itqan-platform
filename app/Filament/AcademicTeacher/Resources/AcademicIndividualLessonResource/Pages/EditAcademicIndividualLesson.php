@@ -2,6 +2,8 @@
 
 namespace App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
 use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -14,9 +16,9 @@ class EditAcademicIndividualLesson extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
-            Actions\DeleteAction::make()
+            DeleteAction::make()
                 ->label('حذف'),
         ];
     }

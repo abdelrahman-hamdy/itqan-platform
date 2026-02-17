@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Archived;
 
+use Exception;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use App\Models\Lesson;
@@ -335,7 +336,7 @@ class MigrateFilesToTenantStorage extends Command
 
                 // Check if source file exists
                 if (! $disk->exists($oldPath)) {
-                    throw new \Exception("Source file not found: {$oldPath}");
+                    throw new Exception("Source file not found: {$oldPath}");
                 }
 
                 // Ensure target directory exists
@@ -363,7 +364,7 @@ class MigrateFilesToTenantStorage extends Command
             $this->line("  ✓ Moved: {$oldPath} -> {$newPath}");
             $this->movedCount++;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error("  ✗ Error: {$oldPath} - {$e->getMessage()}");
             $this->errors[] = [
                 'model' => get_class($model),
@@ -419,7 +420,7 @@ class MigrateFilesToTenantStorage extends Command
                     $this->line("  ✓ Moved: {$oldPath} -> {$newPath}");
                     $hasChanges = true;
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->error("  ✗ Error: {$oldPath} - {$e->getMessage()}");
                 $this->errorCount++;
                 $newPaths[array_key_last($newPaths)] = $oldPath; // Revert to old path on error

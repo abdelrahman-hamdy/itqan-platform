@@ -2,6 +2,7 @@
 
 namespace App\Services\LiveKit;
 
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 class LiveKitWebhookHandler
@@ -47,7 +48,7 @@ class LiveKitWebhookHandler
 
             return $data;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Exception parsing webhook payload', [
                 'error' => $e->getMessage(),
             ]);

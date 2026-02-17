@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Auth;
  */
 class CalendarColorLegendWidget extends Widget
 {
-    protected static string $view = 'filament.shared.widgets.calendar-color-legend';
+    protected string $view = 'filament.shared.widgets.calendar-color-legend';
 
     protected int|string|array $columnSpan = 'full';
 

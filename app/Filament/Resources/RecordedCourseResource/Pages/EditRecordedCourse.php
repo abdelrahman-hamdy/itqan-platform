@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources\RecordedCourseResource\Pages;
 
+use Filament\Actions\DeleteAction;
+use App\Models\RecordedCourse;
 use App\Filament\Resources\RecordedCourseResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 /**
- * @property \App\Models\RecordedCourse $record
+ * @property RecordedCourse $record
  */
 class EditRecordedCourse extends EditRecord
 {
@@ -16,7 +18,7 @@ class EditRecordedCourse extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 

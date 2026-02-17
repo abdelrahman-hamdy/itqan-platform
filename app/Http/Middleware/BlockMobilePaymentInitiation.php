@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use Exception;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,7 +16,7 @@ class BlockMobilePaymentInitiation
      * all payment creation/processing from the mobile app. Users must complete
      * purchases on the web platform.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param Closure(Request):Response $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -143,7 +144,7 @@ class BlockMobilePaymentInitiation
                     'type' => $type,
                     'id' => $id,
                 ]);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Route doesn't exist yet, return base URL
                 return config('app.url');
             }

@@ -2,10 +2,20 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Schema;
+use App\Filament\Resources\SavedPaymentMethodResource\Pages\ListSavedPaymentMethods;
+use App\Filament\Resources\SavedPaymentMethodResource\Pages\ViewSavedPaymentMethod;
+use App\Filament\Resources\SavedPaymentMethodResource\Pages\EditSavedPaymentMethod;
 use App\Filament\Resources\SavedPaymentMethodResource\Pages;
 use App\Filament\Shared\Resources\Financial\BaseSavedPaymentMethodResource;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -13,7 +23,7 @@ class SavedPaymentMethodResource extends BaseSavedPaymentMethodResource
 {
     protected static ?string $navigationLabel = 'طرق الدفع المحفوظة';
 
-    protected static ?string $navigationGroup = 'المالية';
+    protected static string | \UnitEnum | null $navigationGroup = 'المالية';
 
     protected static ?int $navigationSort = 2;
 
@@ -30,9 +40,9 @@ class SavedPaymentMethodResource extends BaseSavedPaymentMethodResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
-            Tables\Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
             static::getToggleActiveAction(),
             static::getSetDefaultAction(),
@@ -42,20 +52,20 @@ class SavedPaymentMethodResource extends BaseSavedPaymentMethodResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make()
+            BulkActionGroup::make([
+                DeleteBulkAction::make()
                     ->label('حذف المحدد'),
-                Tables\Actions\RestoreBulkAction::make()
+                RestoreBulkAction::make()
                     ->label('استعادة المحدد'),
-                Tables\Actions\ForceDeleteBulkAction::make()
+                ForceDeleteBulkAction::make()
                     ->label('حذف نهائي'),
             ]),
         ];
     }
 
-    protected static function getAcademyFormField(): ?Forms\Components\Select
+    protected static function getAcademyFormField(): ?Select
     {
-        return Forms\Components\Select::make('academy_id')
+        return Select::make('academy_id')
             ->relationship('academy', 'name')
             ->label('الأكاديمية')
             ->required()
@@ -67,10 +77,10 @@ class SavedPaymentMethodResource extends BaseSavedPaymentMethodResource
     // Form - Uses Parent Sections
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 static::getUserInfoSection(),
                 static::getCardInfoSection(),
                 static::getStatusSection(),
@@ -85,9 +95,9 @@ class SavedPaymentMethodResource extends BaseSavedPaymentMethodResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSavedPaymentMethods::route('/'),
-            'view' => Pages\ViewSavedPaymentMethod::route('/{record}'),
-            'edit' => Pages\EditSavedPaymentMethod::route('/{record}/edit'),
+            'index' => ListSavedPaymentMethods::route('/'),
+            'view' => ViewSavedPaymentMethod::route('/{record}'),
+            'edit' => EditSavedPaymentMethod::route('/{record}/edit'),
         ];
     }
 

@@ -2,11 +2,12 @@
 
 namespace App\Filament\Teacher\Resources\TeacherEarningsResource\Pages;
 
+use App\Models\TeacherEarning;
 use App\Filament\Teacher\Resources\TeacherEarningsResource;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
- * @property \App\Models\TeacherEarning $record
+ * @property TeacherEarning $record
  */
 class ViewTeacherEarning extends ViewRecord
 {

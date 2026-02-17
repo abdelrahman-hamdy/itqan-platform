@@ -2,6 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\StudentSessionReport;
+use App\Models\AcademicHomeworkSubmission;
+use BackedEnum;
+use App\Models\StudentProfile;
+use App\Models\Certificate;
+use Carbon\Carbon;
 use App\Constants\DefaultAcademy;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
@@ -229,7 +235,7 @@ class ParentReportController extends Controller
             return 0;
         }
 
-        $reports = \App\Models\StudentSessionReport::whereIn('session_id', $sessionIds)
+        $reports = StudentSessionReport::whereIn('session_id', $sessionIds)
             ->where('student_id', $userId)
             ->get();
 
@@ -260,7 +266,7 @@ class ParentReportController extends Controller
             return 0;
         }
 
-        $avgScore = \App\Models\AcademicHomeworkSubmission::where('student_id', $userId)
+        $avgScore = AcademicHomeworkSubmission::where('student_id', $userId)
             ->whereIn('academic_session_id', $sessionIds)
             ->whereNotNull('score')
             ->avg('score');
@@ -285,12 +291,12 @@ class ParentReportController extends Controller
     protected function getStatusLabel(mixed $status): string
     {
         // If it's a SessionSubscriptionStatus enum, use its label() method
-        if ($status instanceof \App\Enums\SessionSubscriptionStatus) {
+        if ($status instanceof SessionSubscriptionStatus) {
             return $status->label();
         }
 
         // If it's a BackedEnum with a value, get the string value
-        if ($status instanceof \BackedEnum) {
+        if ($status instanceof BackedEnum) {
             $status = $status->value;
         }
 
@@ -348,17 +354,17 @@ class ParentReportController extends Controller
     protected function buildProgressReport($parent, array $childIds): array
     {
         // Convert StudentProfile IDs to User IDs (for models that reference User.id)
-        $userIds = \App\Models\StudentProfile::whereIn('id', $childIds)
+        $userIds = StudentProfile::whereIn('id', $childIds)
             ->pluck('user_id')
             ->toArray();
 
         // Get certificate count (Certificate.student_id references User.id)
-        $certificatesCount = \App\Models\Certificate::whereIn('student_id', $userIds)
+        $certificatesCount = Certificate::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
             ->count();
 
         // Get Quran sessions (QuranSession.student_id references User.id)
-        $quranSessions = \App\Models\QuranSession::whereIn('student_id', $userIds)
+        $quranSessions = QuranSession::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
             ->get();
 
@@ -367,7 +373,7 @@ class ParentReportController extends Controller
         $quranAttendanceRate = $quranTotal > 0 ? round(($quranCompleted / $quranTotal) * 100) : 0;
 
         // Get Academic sessions (AcademicSession.student_id references User.id)
-        $academicSessions = \App\Models\AcademicSession::whereIn('student_id', $userIds)
+        $academicSessions = AcademicSession::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
             ->get();
 
@@ -376,18 +382,18 @@ class ParentReportController extends Controller
         $academicAttendanceRate = $academicTotal > 0 ? round(($academicCompleted / $academicTotal) * 100) : 0;
 
         // Get active subscription counts (subscription.student_id references User.id)
-        $quranActiveSubscriptions = \App\Models\QuranSubscription::whereIn('student_id', $userIds)
+        $quranActiveSubscriptions = QuranSubscription::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
-        $academicActiveSubscriptions = \App\Models\AcademicSubscription::whereIn('student_id', $userIds)
+        $academicActiveSubscriptions = AcademicSubscription::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
         // Get course enrollments (CourseSubscription.student_id references User.id)
-        $courseEnrollments = \App\Models\CourseSubscription::whereIn('student_id', $userIds)
+        $courseEnrollments = CourseSubscription::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
             ->get();
 
@@ -397,7 +403,7 @@ class ParentReportController extends Controller
         $overallAttendanceRate = $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0;
 
         // Get homework performance data from AcademicHomeworkSubmission
-        $gradedHomework = \App\Models\AcademicHomeworkSubmission::whereIn('student_id', $userIds)
+        $gradedHomework = AcademicHomeworkSubmission::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
             ->graded()
             ->get();
@@ -478,7 +484,7 @@ class ParentReportController extends Controller
     protected function buildAttendanceReport($parent, array $childIds): array
     {
         // Convert StudentProfile IDs to User IDs (session models reference User.id)
-        $userIds = \App\Models\StudentProfile::whereIn('id', $childIds)
+        $userIds = StudentProfile::whereIn('id', $childIds)
             ->pluck('user_id')
             ->toArray();
 
@@ -487,7 +493,7 @@ class ParentReportController extends Controller
         }
 
         // Get Quran sessions that happened (completed) or have attendance marked
-        $quranSessions = \App\Models\QuranSession::whereIn('student_id', $userIds)
+        $quranSessions = QuranSession::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
             ->where(function ($query) {
                 $query->where('status', SessionStatus::COMPLETED->value)
@@ -496,7 +502,7 @@ class ParentReportController extends Controller
             ->get();
 
         // Get Academic sessions that happened (completed) or have attendance marked
-        $academicSessions = \App\Models\AcademicSession::whereIn('student_id', $userIds)
+        $academicSessions = AcademicSession::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
             ->where(function ($query) {
                 $query->where('status', SessionStatus::COMPLETED->value)
@@ -505,7 +511,7 @@ class ParentReportController extends Controller
             ->get();
 
         // Helper to get session status value (handles both enum and string)
-        $getStatusValue = fn ($status) => $status instanceof \BackedEnum ? $status->value : (string) $status;
+        $getStatusValue = fn ($status) => $status instanceof BackedEnum ? $status->value : (string) $status;
 
         // Calculate Quran attendance stats
         $quranTotal = $quranSessions->count();
@@ -739,8 +745,8 @@ class ParentReportController extends Controller
 
             if ($start && $end) {
                 return [
-                    'start' => \Carbon\Carbon::parse($start)->startOfDay(),
-                    'end' => \Carbon\Carbon::parse($end)->endOfDay(),
+                    'start' => Carbon::parse($start)->startOfDay(),
+                    'end' => Carbon::parse($end)->endOfDay(),
                 ];
             }
         }

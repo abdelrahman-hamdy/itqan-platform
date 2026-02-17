@@ -2,6 +2,10 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use Filament\Actions\ViewAction;
+use Filament\Tables\Filters\SelectFilter;
+use App\Filament\Supervisor\Resources\ManagedTeacherReviewsResource\Pages\ListManagedTeacherReviews;
+use App\Filament\Supervisor\Resources\ManagedTeacherReviewsResource\Pages\ViewManagedTeacherReview;
 use App\Enums\UserType;
 use App\Filament\Shared\Resources\BaseTeacherReviewResource;
 use App\Filament\Supervisor\Resources\ManagedTeacherReviewsResource\Pages;
@@ -21,7 +25,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class ManagedTeacherReviewsResource extends BaseTeacherReviewResource
 {
-    protected static ?string $navigationGroup = 'إدارة المعلمين';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المعلمين';
 
     protected static ?int $navigationSort = 4;
 
@@ -81,7 +85,7 @@ class ManagedTeacherReviewsResource extends BaseTeacherReviewResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
         ];
     }
@@ -115,9 +119,9 @@ class ManagedTeacherReviewsResource extends BaseTeacherReviewResource
     /**
      * Additional teacher filter for Supervisor panel.
      */
-    protected static function getTeacherFilter(): Tables\Filters\SelectFilter
+    protected static function getTeacherFilter(): SelectFilter
     {
-        return Tables\Filters\SelectFilter::make('teacher_id')
+        return SelectFilter::make('teacher_id')
             ->label('المعلم')
             ->options(function () {
                 $teacherIds = BaseSupervisorResource::getAllAssignedTeacherIds();
@@ -192,8 +196,8 @@ class ManagedTeacherReviewsResource extends BaseTeacherReviewResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListManagedTeacherReviews::route('/'),
-            'view' => Pages\ViewManagedTeacherReview::route('/{record}'),
+            'index' => ListManagedTeacherReviews::route('/'),
+            'view' => ViewManagedTeacherReview::route('/{record}'),
         ];
     }
 }

@@ -2,6 +2,13 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Schemas\Components\Section;
+use Illuminate\Database\Eloquent\Model;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Actions\Action;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
@@ -9,16 +16,12 @@ use App\Models\AcademicSession;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
 use App\Filament\Resources\BaseResource;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -36,7 +39,7 @@ abstract class BaseAcademicSessionResource extends BaseResource
 {
     protected static ?string $model = AcademicSession::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-calendar-days';
 
     protected static ?string $modelLabel = 'جلسة أكاديمية';
 
@@ -75,12 +78,12 @@ abstract class BaseAcademicSessionResource extends BaseResource
         return true;
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return true;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return false;
     }
@@ -89,7 +92,7 @@ abstract class BaseAcademicSessionResource extends BaseResource
     // Shared Form Definition
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         $schema = [];
 
@@ -108,7 +111,7 @@ abstract class BaseAcademicSessionResource extends BaseResource
         // Add additional sections from child classes
         $schema = array_merge($schema, static::getAdditionalFormSections());
 
-        return $form->schema($schema);
+        return $form->components($schema);
     }
 
     /**
@@ -143,7 +146,7 @@ abstract class BaseAcademicSessionResource extends BaseResource
             ->schema([
                 Grid::make(2)
                     ->schema([
-                        Forms\Components\DateTimePicker::make('scheduled_at')
+                        DateTimePicker::make('scheduled_at')
                             ->label('موعد الجلسة')
                             ->required()
                             ->native(false)
@@ -220,10 +223,10 @@ abstract class BaseAcademicSessionResource extends BaseResource
             ->columns(static::getTableColumns())
             ->defaultSort('scheduled_at', 'desc')
             ->filters(static::getTableFilters())
-            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions())
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions())
             ->modifyQueryUsing(fn ($query) => $query->with(['student', 'academy', 'academicTeacher', 'academicTeacher.user']));
     }
 
@@ -260,7 +263,8 @@ abstract class BaseAcademicSessionResource extends BaseResource
                 ->suffix(' دقيقة')
                 ->sortable(),
 
-            BadgeColumn::make('status')
+            TextColumn::make('status')
+                ->badge()
                 ->label('الحالة')
                 ->colors(SessionStatus::colorOptions())
                 ->formatStateUsing(function ($state): string {
@@ -272,7 +276,8 @@ abstract class BaseAcademicSessionResource extends BaseResource
                     return $status?->label() ?? (string) $state;
                 }),
 
-            BadgeColumn::make('attendance_status')
+            TextColumn::make('attendance_status')
+                ->badge()
                 ->label('الحضور')
                 ->colors(array_merge(
                     ['secondary' => SessionStatus::SCHEDULED->value],
@@ -334,9 +339,9 @@ abstract class BaseAcademicSessionResource extends BaseResource
     /**
      * Create the start session action - shared logic.
      */
-    protected static function makeStartSessionAction(): Tables\Actions\Action
+    protected static function makeStartSessionAction(): Action
     {
-        return Tables\Actions\Action::make('start_session')
+        return Action::make('start_session')
             ->label('بدء الجلسة')
             ->icon('heroicon-o-play')
             ->color('success')
@@ -354,9 +359,9 @@ abstract class BaseAcademicSessionResource extends BaseResource
     /**
      * Create the complete session action - shared logic.
      */
-    protected static function makeCompleteSessionAction(): Tables\Actions\Action
+    protected static function makeCompleteSessionAction(): Action
     {
-        return Tables\Actions\Action::make('complete_session')
+        return Action::make('complete_session')
             ->label('إنهاء الجلسة')
             ->icon('heroicon-o-check')
             ->color('success')
@@ -378,9 +383,9 @@ abstract class BaseAcademicSessionResource extends BaseResource
     /**
      * Create the join meeting action - shared logic.
      */
-    protected static function makeJoinMeetingAction(): Tables\Actions\Action
+    protected static function makeJoinMeetingAction(): Action
     {
-        return Tables\Actions\Action::make('join_meeting')
+        return Action::make('join_meeting')
             ->label('دخول الاجتماع')
             ->icon('heroicon-o-video-camera')
             ->url(fn (AcademicSession $record): string => $record->meeting_link ?? '#')

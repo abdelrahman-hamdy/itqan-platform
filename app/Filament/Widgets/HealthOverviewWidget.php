@@ -2,13 +2,14 @@
 
 namespace App\Filament\Widgets;
 
+use Carbon\Carbon;
 use Filament\Widgets\Widget;
 use Spatie\Health\Enums\Status;
 use Spatie\Health\ResultStores\ResultStore;
 
 class HealthOverviewWidget extends Widget
 {
-    protected static string $view = 'filament.widgets.health-overview-widget';
+    protected string $view = 'filament.widgets.health-overview-widget';
 
     protected static ?int $sort = -1;
 
@@ -45,7 +46,7 @@ class HealthOverviewWidget extends Widget
         return [
             'checkResults' => $results,
             'summary' => $summary,
-            'lastRanAt' => $checkResults?->finishedAt ? \Carbon\Carbon::parse($checkResults->finishedAt) : null,
+            'lastRanAt' => $checkResults?->finishedAt ? Carbon::parse($checkResults->finishedAt) : null,
         ];
     }
 }

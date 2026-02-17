@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\QuranTeacherProfileResource\Pages;
 
+use Exception;
+use Log;
 use App\Filament\Resources\QuranTeacherProfileResource;
 use App\Models\User;
 use Filament\Notifications\Notification;
@@ -57,9 +59,9 @@ class CreateQuranTeacherProfile extends CreateRecord
                     ->title('تم إنشاء حساب المعلم بنجاح')
                     ->body('يمكن للمعلم الآن تسجيل الدخول باستخدام البريد الإلكتروني وكلمة المرور.')
                     ->send();
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Log error but don't fail the teacher creation
-                \Log::error('Failed to create user account for quran teacher', [
+                Log::error('Failed to create user account for quran teacher', [
                     'teacher_id' => $teacherProfile->id,
                     'error' => $e->getMessage(),
                 ]);

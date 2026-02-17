@@ -2,6 +2,12 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Tables\Filters\SelectFilter;
+use App\Models\InteractiveCourse;
+use App\Filament\AcademicTeacher\Resources\SessionRecordingResource\Pages\ListSessionRecordings;
+use App\Filament\AcademicTeacher\Resources\SessionRecordingResource\Pages\ViewSessionRecording;
 use App\Filament\AcademicTeacher\Resources\SessionRecordingResource\Pages;
 use App\Filament\Shared\Resources\BaseSessionRecordingResource;
 use App\Models\InteractiveCourseSession;
@@ -25,7 +31,7 @@ class SessionRecordingResource extends BaseSessionRecordingResource
 
     protected static ?string $tenantOwnershipRelationshipName = null;
 
-    protected static ?string $navigationGroup = 'جلساتي';
+    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 5;
 
@@ -69,8 +75,8 @@ class SessionRecordingResource extends BaseSessionRecordingResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ActionGroup::make([
-                Tables\Actions\ViewAction::make()->label('عرض'),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
                 static::makeDownloadAction(),
                 static::makeStreamAction(),
                 // Teachers cannot delete recordings per RecordingPolicy
@@ -96,12 +102,12 @@ class SessionRecordingResource extends BaseSessionRecordingResource
             ...parent::getTableFilters(),
 
             // Filter by Course (scoped to teacher's courses)
-            Tables\Filters\SelectFilter::make('course')
+            SelectFilter::make('course')
                 ->label('الدورة')
                 ->options(function () {
                     $teacherProfile = Auth::user()?->academicTeacherProfile;
 
-                    return \App\Models\InteractiveCourse::query()
+                    return InteractiveCourse::query()
                         ->when($teacherProfile, fn ($q) => $q->where('assigned_teacher_id', $teacherProfile->id))
                         ->orderBy('title')
                         ->pluck('title', 'id')
@@ -165,8 +171,8 @@ class SessionRecordingResource extends BaseSessionRecordingResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSessionRecordings::route('/'),
-            'view' => Pages\ViewSessionRecording::route('/{record}'),
+            'index' => ListSessionRecordings::route('/'),
+            'view' => ViewSessionRecording::route('/{record}'),
         ];
     }
 }

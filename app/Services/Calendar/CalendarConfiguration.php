@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Calendar;
 
+use InvalidArgumentException;
 use App\Enums\CalendarSessionType;
 use App\Models\User;
 
@@ -110,7 +111,7 @@ final readonly class CalendarConfiguration
     /**
      * Create configuration based on a user's roles.
      *
-     * @throws \InvalidArgumentException If user is not a teacher
+     * @throws InvalidArgumentException If user is not a teacher
      */
     public static function forUser(User $user): self
     {
@@ -130,7 +131,7 @@ final readonly class CalendarConfiguration
             return self::forAcademicTeacher();
         }
 
-        throw new \InvalidArgumentException(
+        throw new InvalidArgumentException(
             'User must be a Quran teacher or Academic teacher to access the calendar'
         );
     }

@@ -2,6 +2,7 @@
 
 namespace App\Services\LiveKit;
 
+use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -33,7 +34,7 @@ class LiveKitRecordingManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit recording manager not configured properly');
+                throw new Exception('LiveKit recording manager not configured properly');
             }
 
             // Build file path for local storage on LiveKit server
@@ -77,7 +78,7 @@ class LiveKitRecordingManager
             ])->post($this->apiUrl.'/twirp/livekit.Egress/StartRoomCompositeEgress', $payload);
 
             if (! $response->successful()) {
-                throw new \Exception('Egress API error: '.$response->body());
+                throw new Exception('Egress API error: '.$response->body());
             }
 
             $responseData = $response->json();
@@ -94,14 +95,14 @@ class LiveKitRecordingManager
                 'response' => $responseData,
             ];
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to start recording', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
                 'options' => $options,
             ]);
 
-            throw new \Exception('Failed to start recording: '.$e->getMessage());
+            throw new Exception('Failed to start recording: '.$e->getMessage());
         }
     }
 
@@ -112,7 +113,7 @@ class LiveKitRecordingManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit recording manager not configured properly');
+                throw new Exception('LiveKit recording manager not configured properly');
             }
 
             Log::info('Stopping LiveKit Egress recording', [
@@ -132,7 +133,7 @@ class LiveKitRecordingManager
             ]);
 
             if (! $response->successful()) {
-                throw new \Exception('Egress API error: '.$response->body());
+                throw new Exception('Egress API error: '.$response->body());
             }
 
             Log::info('Recording stopped successfully', [
@@ -141,13 +142,13 @@ class LiveKitRecordingManager
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to stop recording', [
                 'error' => $e->getMessage(),
                 'egress_id' => $egressId,
             ]);
 
-            throw new \Exception('Failed to stop recording: '.$e->getMessage());
+            throw new Exception('Failed to stop recording: '.$e->getMessage());
         }
     }
 
@@ -158,7 +159,7 @@ class LiveKitRecordingManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit recording manager not configured properly');
+                throw new Exception('LiveKit recording manager not configured properly');
             }
 
             // Generate token for Egress API
@@ -173,14 +174,14 @@ class LiveKitRecordingManager
             ]);
 
             if (! $response->successful()) {
-                throw new \Exception('Egress API error: '.$response->body());
+                throw new Exception('Egress API error: '.$response->body());
             }
 
             $responseData = $response->json();
 
             return $responseData;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to get recording info', [
                 'error' => $e->getMessage(),
                 'egress_id' => $egressId,
@@ -197,7 +198,7 @@ class LiveKitRecordingManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit recording manager not configured properly');
+                throw new Exception('LiveKit recording manager not configured properly');
             }
 
             // Generate token for Egress API
@@ -212,14 +213,14 @@ class LiveKitRecordingManager
             ]);
 
             if (! $response->successful()) {
-                throw new \Exception('Egress API error: '.$response->body());
+                throw new Exception('Egress API error: '.$response->body());
             }
 
             $responseData = $response->json();
 
             return $responseData['items'] ?? [];
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to list recordings', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
@@ -236,7 +237,7 @@ class LiveKitRecordingManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit recording manager not configured properly');
+                throw new Exception('LiveKit recording manager not configured properly');
             }
 
             $filename = $trackOptions['filename'] ?? sprintf('track-recording-%s-%s', $roomName, now()->timestamp);
@@ -270,7 +271,7 @@ class LiveKitRecordingManager
             ])->post($this->apiUrl.'/twirp/livekit.Egress/StartTrackCompositeEgress', $payload);
 
             if (! $response->successful()) {
-                throw new \Exception('Egress API error: '.$response->body());
+                throw new Exception('Egress API error: '.$response->body());
             }
 
             $responseData = $response->json();
@@ -287,13 +288,13 @@ class LiveKitRecordingManager
                 'response' => $responseData,
             ];
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to start track recording', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
             ]);
 
-            throw new \Exception('Failed to start track recording: '.$e->getMessage());
+            throw new Exception('Failed to start track recording: '.$e->getMessage());
         }
     }
 
@@ -304,7 +305,7 @@ class LiveKitRecordingManager
     {
         try {
             if (! $this->isConfigured()) {
-                throw new \Exception('LiveKit recording manager not configured properly');
+                throw new Exception('LiveKit recording manager not configured properly');
             }
 
             $payload = array_merge(['egress_id' => $egressId], $updates);
@@ -317,7 +318,7 @@ class LiveKitRecordingManager
             ])->post($this->apiUrl.'/twirp/livekit.Egress/UpdateLayout', $payload);
 
             if (! $response->successful()) {
-                throw new \Exception('Egress API error: '.$response->body());
+                throw new Exception('Egress API error: '.$response->body());
             }
 
             Log::info('Egress updated successfully', [
@@ -326,7 +327,7 @@ class LiveKitRecordingManager
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to update egress', [
                 'error' => $e->getMessage(),
                 'egress_id' => $egressId,

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Academy\Resources\PaymentResource\Pages;
 
+use Filament\Actions\ViewAction;
 use App\Filament\Academy\Resources\PaymentResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -13,7 +14,7 @@ class EditPayment extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
         ];
     }

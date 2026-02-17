@@ -2,14 +2,19 @@
 
 namespace App\Filament\Academy\Pages;
 
+use App\Filament\Academy\Widgets\AcademyStatsWidget;
+use App\Filament\Academy\Widgets\RenewalMetricsWidget;
+use App\Filament\Academy\Widgets\AcademyMonthlyStatsWidget;
+use App\Filament\Academy\Widgets\AcademyUserAnalyticsChartWidget;
+use App\Filament\Academy\Widgets\AcademySessionAnalyticsChartWidget;
 use Filament\Facades\Filament;
 use Filament\Pages\Dashboard as BaseDashboard;
 
 class Dashboard extends BaseDashboard
 {
-    protected static ?string $navigationIcon = 'heroicon-o-home';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-home';
 
-    protected static string $view = 'filament.pages.academy-dashboard';
+    protected string $view = 'filament.pages.academy-dashboard';
 
     public function getTitle(): string
     {
@@ -36,15 +41,15 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
-            \App\Filament\Academy\Widgets\AcademyStatsWidget::class,
-            \App\Filament\Academy\Widgets\RenewalMetricsWidget::class,
-            \App\Filament\Academy\Widgets\AcademyMonthlyStatsWidget::class,
-            \App\Filament\Academy\Widgets\AcademyUserAnalyticsChartWidget::class,
-            \App\Filament\Academy\Widgets\AcademySessionAnalyticsChartWidget::class,
+            AcademyStatsWidget::class,
+            RenewalMetricsWidget::class,
+            AcademyMonthlyStatsWidget::class,
+            AcademyUserAnalyticsChartWidget::class,
+            AcademySessionAnalyticsChartWidget::class,
         ];
     }
 
-    public function getColumns(): int|string|array
+    public function getColumns(): int|array
     {
         return 1;
     }

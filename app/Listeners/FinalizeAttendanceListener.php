@@ -2,6 +2,8 @@
 
 namespace App\Listeners;
 
+use Exception;
+use Throwable;
 use App\Events\SessionCompletedEvent;
 use App\Services\Attendance\QuranReportService;
 use App\Services\MeetingAttendanceService;
@@ -52,7 +54,7 @@ class FinalizeAttendanceListener implements ShouldQueue
                 ]);
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('FinalizeAttendanceListener: Failed to finalize attendance', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -77,7 +79,7 @@ class FinalizeAttendanceListener implements ShouldQueue
     /**
      * Handle a job failure.
      */
-    public function failed(SessionCompletedEvent $event, \Throwable $exception): void
+    public function failed(SessionCompletedEvent $event, Throwable $exception): void
     {
         Log::error('FinalizeAttendanceListener: Job failed', [
             'session_id' => $event->getSession()->id,

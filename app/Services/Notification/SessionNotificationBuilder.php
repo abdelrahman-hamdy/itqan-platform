@@ -2,6 +2,8 @@
 
 namespace App\Services\Notification;
 
+use Carbon\Carbon;
+use DateTimeInterface;
 use App\Enums\AttendanceStatus;
 use App\Enums\NotificationType;
 use App\Models\User;
@@ -28,7 +30,7 @@ class SessionNotificationBuilder
     /**
      * Format a datetime in academy timezone for notification display.
      *
-     * @param  \Carbon\Carbon|\DateTimeInterface|null  $datetime
+     * @param Carbon|DateTimeInterface|null $datetime
      * @param  string  $format  Format string (default includes AM/PM)
      * @return string Formatted time in academy timezone
      */
@@ -40,7 +42,7 @@ class SessionNotificationBuilder
 
         $timezone = AcademyContextService::getTimezone();
 
-        return \Carbon\Carbon::parse($datetime)
+        return Carbon::parse($datetime)
             ->setTimezone($timezone)
             ->format($format);
     }
@@ -219,12 +221,12 @@ class SessionNotificationBuilder
      *
      * @param  Model  $session  The rescheduled session
      * @param  User  $student  The student to notify
-     * @param  \DateTimeInterface  $oldDateTime  The original date/time
+     * @param DateTimeInterface $oldDateTime The original date/time
      */
     public function sendSessionRescheduledNotification(
         Model $session,
         User $student,
-        \DateTimeInterface $oldDateTime
+        DateTimeInterface $oldDateTime
     ): void {
         $sessionType = class_basename($session);
 

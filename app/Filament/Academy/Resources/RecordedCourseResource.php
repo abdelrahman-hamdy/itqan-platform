@@ -2,6 +2,25 @@
 
 namespace App\Filament\Academy\Resources;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\BulkAction;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers\SectionsRelationManager;
+use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers\LessonsRelationManager;
+use App\Filament\Academy\Resources\RecordedCourseResource\Pages\ListRecordedCourses;
+use App\Filament\Academy\Resources\RecordedCourseResource\Pages\CreateRecordedCourse;
+use App\Filament\Academy\Resources\RecordedCourseResource\Pages\EditRecordedCourse;
+use App\Filament\Academy\Resources\RecordedCourseResource\Pages\ViewRecordedCourse;
 use App\Filament\Academy\Resources\RecordedCourseResource\Pages;
 use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers;
 use App\Filament\Shared\Resources\Courses\BaseRecordedCourseResource;
@@ -10,7 +29,6 @@ use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
 use App\Models\RecordedCourse;
 use Filament\Forms;
-use Filament\Forms\Get;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -41,9 +59,9 @@ class RecordedCourseResource extends BaseRecordedCourseResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
-            Tables\Actions\Action::make('publish')
+            ViewAction::make(),
+            EditAction::make(),
+            Action::make('publish')
                 ->label('نشر')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
@@ -53,7 +71,7 @@ class RecordedCourseResource extends BaseRecordedCourseResource
                 })
                 ->visible(fn (RecordedCourse $record): bool => ! $record->is_published),
 
-            Tables\Actions\Action::make('unpublish')
+            Action::make('unpublish')
                 ->label('إلغاء النشر')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
@@ -68,9 +86,9 @@ class RecordedCourseResource extends BaseRecordedCourseResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
-                Tables\Actions\BulkAction::make('publish')
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+                BulkAction::make('publish')
                     ->label('نشر المحدد')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
@@ -80,7 +98,7 @@ class RecordedCourseResource extends BaseRecordedCourseResource
                         });
                     }),
 
-                Tables\Actions\BulkAction::make('unpublish')
+                BulkAction::make('unpublish')
                     ->label('إلغاء نشر المحدد')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
@@ -93,15 +111,15 @@ class RecordedCourseResource extends BaseRecordedCourseResource
         ];
     }
 
-    protected static function getAcademyFormField(): ?Forms\Components\Select
+    protected static function getAcademyFormField(): ?Select
     {
         // Academy panel doesn't show academy field - auto-scoped by tenant
         return null;
     }
 
-    protected static function getInstructorFormField(): ?Forms\Components\Select
+    protected static function getInstructorFormField(): ?Select
     {
-        return Forms\Components\Select::make('instructor_id')
+        return Select::make('instructor_id')
             ->label('المدرب')
             ->options(function () {
                 $academyId = Auth::user()->academy_id;
@@ -121,17 +139,17 @@ class RecordedCourseResource extends BaseRecordedCourseResource
             static::getInstructorFormField(),
 
             // Academy-specific fields
-            Forms\Components\Section::make('ملاحظات')
+            Section::make('ملاحظات')
                 ->schema([
-                    Forms\Components\Grid::make(2)
+                    Grid::make(2)
                         ->schema([
-                            Forms\Components\Textarea::make('admin_notes')
+                            Textarea::make('admin_notes')
                                 ->label('ملاحظات الإدارة')
                                 ->rows(3)
                                 ->maxLength(1000)
                                 ->helperText('ملاحظات داخلية للإدارة'),
 
-                            Forms\Components\Textarea::make('supervisor_notes')
+                            Textarea::make('supervisor_notes')
                                 ->label('ملاحظات المشرف')
                                 ->rows(3)
                                 ->maxLength(2000)
@@ -171,14 +189,14 @@ class RecordedCourseResource extends BaseRecordedCourseResource
 
         // Add instructor column for academy panel
         array_splice($columns, 2, 0, [
-            Tables\Columns\TextColumn::make('instructor.user.name')
+            TextColumn::make('instructor.user.name')
                 ->label('المدرب')
                 ->searchable()
                 ->sortable(),
         ]);
 
         // Add published status badge
-        $columns[] = Tables\Columns\IconColumn::make('is_published')
+        $columns[] = IconColumn::make('is_published')
             ->label('منشور')
             ->boolean()
             ->trueIcon('heroicon-o-check-circle')
@@ -194,18 +212,18 @@ class RecordedCourseResource extends BaseRecordedCourseResource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\SectionsRelationManager::class,
-            RelationManagers\LessonsRelationManager::class,
+            SectionsRelationManager::class,
+            LessonsRelationManager::class,
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListRecordedCourses::route('/'),
-            'create' => Pages\CreateRecordedCourse::route('/create'),
-            'edit' => Pages\EditRecordedCourse::route('/{record}/edit'),
-            'view' => Pages\ViewRecordedCourse::route('/{record}'),
+            'index' => ListRecordedCourses::route('/'),
+            'create' => CreateRecordedCourse::route('/create'),
+            'edit' => EditRecordedCourse::route('/{record}/edit'),
+            'view' => ViewRecordedCourse::route('/{record}'),
         ];
     }
 }

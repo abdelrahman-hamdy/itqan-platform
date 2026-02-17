@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi\Sessions;
 
+use Illuminate\Support\Collection;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Http\Traits\Api\SessionViewerTrait;
@@ -35,7 +37,7 @@ abstract class BaseParentSessionController extends Controller
      * Get all linked children for a parent.
      *
      * @param  int|null  $childId  Optional filter for specific child
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     protected function getChildren(int $parentProfileId, ?int $childId = null)
     {
@@ -83,7 +85,7 @@ abstract class BaseParentSessionController extends Controller
     /**
      * Validate parent access to child.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param Request $request
      * @return JsonResponse|null Returns error response if validation fails, null if passes
      */
     protected function validateParentAccess($request, ?int $childId = null): ?JsonResponse

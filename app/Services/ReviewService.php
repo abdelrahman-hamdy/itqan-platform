@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use InvalidArgumentException;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
@@ -205,7 +206,7 @@ class ReviewService
     ): TeacherReview {
         // Validate rating
         if ($rating < 1 || $rating > 5) {
-            throw new \InvalidArgumentException('التقييم يجب أن يكون بين 1 و 5');
+            throw new InvalidArgumentException('التقييم يجب أن يكون بين 1 و 5');
         }
 
         // Get academy ID
@@ -237,7 +238,7 @@ class ReviewService
     ): CourseReview {
         // Validate rating
         if ($rating < 1 || $rating > 5) {
-            throw new \InvalidArgumentException('التقييم يجب أن يكون بين 1 و 5');
+            throw new InvalidArgumentException('التقييم يجب أن يكون بين 1 و 5');
         }
 
         // Get academy ID

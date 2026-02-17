@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -34,8 +35,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property array|null $graduation_requirements
  * @property array|null $learning_outcomes
  * @property array|null $skill_requirements
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class AcademicGradeLevel extends Model
 {

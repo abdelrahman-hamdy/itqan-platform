@@ -2,12 +2,29 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Forms\Components\Hidden;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\Action;
+use Filament\Forms\Components\DateTimePicker;
 use App\Filament\Resources\BaseResource;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
 use Filament\Facades\Filament;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,9 +39,9 @@ abstract class BaseQuizResource extends BaseResource
 {
     protected static ?string $model = Quiz::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static ?string $navigationGroup = 'الاختبارات';
+    protected static string | \UnitEnum | null $navigationGroup = 'الاختبارات';
 
     protected static ?string $navigationLabel = 'اختباراتي';
 
@@ -63,30 +80,30 @@ abstract class BaseQuizResource extends BaseResource
         return 'الجهة';
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات الاختبار')
+        return $schema
+            ->components([
+                Section::make('معلومات الاختبار')
                     ->schema([
-                        Forms\Components\TextInput::make('title')
+                        TextInput::make('title')
                             ->label('عنوان الاختبار')
                             ->required()
                             ->maxLength(255),
 
-                        Forms\Components\Textarea::make('description')
+                        Textarea::make('description')
                             ->label('وصف الاختبار')
                             ->rows(3)
                             ->maxLength(1000),
 
-                        Forms\Components\TextInput::make('duration_minutes')
+                        TextInput::make('duration_minutes')
                             ->label('المدة (بالدقائق)')
                             ->numeric()
                             ->minValue(1)
                             ->maxValue(180)
                             ->helperText('اتركه فارغاً لاختبار بدون وقت محدد'),
 
-                        Forms\Components\TextInput::make('passing_score')
+                        TextInput::make('passing_score')
                             ->label('درجة النجاح (%)')
                             ->numeric()
                             ->default(60)
@@ -96,33 +113,33 @@ abstract class BaseQuizResource extends BaseResource
                             ->suffix('%')
                             ->helperText('يجب أن تكون درجة النجاح بين 10% و 90%'),
 
-                        Forms\Components\Toggle::make('is_active')
+                        Toggle::make('is_active')
                             ->label('نشط')
                             ->default(true),
 
-                        Forms\Components\Toggle::make('randomize_questions')
+                        Toggle::make('randomize_questions')
                             ->label('ترتيب عشوائي للأسئلة')
                             ->helperText('عند التفعيل، ستظهر الأسئلة بترتيب مختلف لكل طالب')
                             ->default(false),
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('الأسئلة')
+                Section::make('الأسئلة')
                     ->schema([
-                        Forms\Components\Repeater::make('questions')
+                        Repeater::make('questions')
                             ->relationship()
                             ->label('')
                             ->schema([
-                                Forms\Components\Textarea::make('question_text')
+                                Textarea::make('question_text')
                                     ->label('نص السؤال')
                                     ->required()
                                     ->rows(2)
                                     ->columnSpanFull(),
 
-                                Forms\Components\Repeater::make('options')
+                                Repeater::make('options')
                                     ->label('الخيارات')
                                     ->simple(
-                                        Forms\Components\TextInput::make('option')
+                                        TextInput::make('option')
                                             ->required()
                                             ->placeholder('أدخل نص الخيار')
                                             ->live(onBlur: true),
@@ -134,9 +151,9 @@ abstract class BaseQuizResource extends BaseResource
                                     ->reorderable(false)
                                     ->live(),
 
-                                Forms\Components\Select::make('correct_option')
+                                Select::make('correct_option')
                                     ->label('الإجابة الصحيحة')
-                                    ->options(function (Forms\Get $get): array {
+                                    ->options(function (Get $get): array {
                                         $options = $get('options') ?? [];
                                         $result = [];
                                         $counter = 0;
@@ -153,7 +170,7 @@ abstract class BaseQuizResource extends BaseResource
                                     ->required()
                                     ->helperText('اختر الإجابة الصحيحة من الخيارات أعلاه'),
 
-                                Forms\Components\Hidden::make('order')
+                                Hidden::make('order')
                                     ->default(0),
                             ])
                             ->orderColumn('order')
@@ -172,30 +189,30 @@ abstract class BaseQuizResource extends BaseResource
             ->columns([
                 static::getAcademyColumn(),
 
-                Tables\Columns\TextColumn::make('title')
+                TextColumn::make('title')
                     ->label('العنوان')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('questions_count')
+                TextColumn::make('questions_count')
                     ->label('عدد الأسئلة')
                     ->counts('questions')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('duration_minutes')
+                TextColumn::make('duration_minutes')
                     ->label('المدة')
                     ->formatStateUsing(fn ($state) => $state ? "{$state} دقيقة" : 'غير محدد')
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('passing_score')
+                TextColumn::make('passing_score')
                     ->label('درجة النجاح')
                     ->formatStateUsing(fn ($state) => "{$state}%"),
 
-                Tables\Columns\IconColumn::make('is_active')
+                IconColumn::make('is_active')
                     ->label('نشط')
                     ->boolean(),
 
-                Tables\Columns\IconColumn::make('randomize_questions')
+                IconColumn::make('randomize_questions')
                     ->label('عشوائي')
                     ->boolean()
                     ->trueIcon('heroicon-o-arrows-right-left')
@@ -204,30 +221,30 @@ abstract class BaseQuizResource extends BaseResource
                     ->falseColor('gray')
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('assignments_count')
+                TextColumn::make('assignments_count')
                     ->label('عدد التعيينات')
                     ->counts('assignments')
                     ->sortable()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('is_active')
+                TernaryFilter::make('is_active')
                     ->label('الحالة'),
             ])
-            ->actions([
+            ->recordActions([
                 static::getAssignAction(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -235,45 +252,45 @@ abstract class BaseQuizResource extends BaseResource
     /**
      * Get the assign action with panel-specific configuration.
      */
-    protected static function getAssignAction(): Tables\Actions\Action
+    protected static function getAssignAction(): Action
     {
-        return Tables\Actions\Action::make('assign')
+        return Action::make('assign')
             ->label('تعيين')
             ->icon('heroicon-o-link')
             ->color('success')
-            ->form([
-                Forms\Components\Select::make('assignable_type')
+            ->schema([
+                Select::make('assignable_type')
                     ->label(static::getAssignableTypeLabel())
                     ->options(static::getAssignableTypes())
                     ->required()
                     ->live(),
 
-                Forms\Components\Select::make('assignable_id')
+                Select::make('assignable_id')
                     ->label(static::getAssignableTargetLabel())
-                    ->options(fn (Forms\Get $get) => static::getAssignableOptions($get('assignable_type')))
+                    ->options(fn (Get $get) => static::getAssignableOptions($get('assignable_type')))
                     ->required()
                     ->searchable()
                     ->preload(),
 
-                Forms\Components\Toggle::make('is_visible')
+                Toggle::make('is_visible')
                     ->label('مرئي للطلاب')
                     ->default(true),
 
-                Forms\Components\TextInput::make('max_attempts')
+                TextInput::make('max_attempts')
                     ->label('عدد المحاولات')
                     ->numeric()
                     ->default(1)
                     ->minValue(1)
                     ->maxValue(10),
 
-                Forms\Components\DateTimePicker::make('available_from')
+                DateTimePicker::make('available_from')
                     ->label('متاح من')
                     ->native(false)
                     ->seconds(false)
                     ->displayFormat('Y-m-d H:i')
                     ->placeholder('اتركه فارغاً للإتاحة فوراً'),
 
-                Forms\Components\DateTimePicker::make('available_until')
+                DateTimePicker::make('available_until')
                     ->label('متاح حتى')
                     ->native(false)
                     ->seconds(false)

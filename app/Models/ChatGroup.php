@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Enums\UserType;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -92,7 +93,7 @@ class ChatGroup extends Model
     /**
      * Get the members of the chat group
      */
-    public function members(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'chat_group_members', 'group_id', 'user_id')
             ->withPivot('role', 'can_send_messages', 'joined_at')

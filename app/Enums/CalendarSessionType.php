@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+use InvalidArgumentException;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -208,7 +209,7 @@ enum CalendarSessionType: string
     /**
      * Parse a session type from an event ID prefix.
      *
-     * @throws \InvalidArgumentException If prefix is unknown
+     * @throws InvalidArgumentException If prefix is unknown
      */
     public static function fromEventIdPrefix(string $prefix): self
     {
@@ -218,7 +219,7 @@ enum CalendarSessionType: string
             'qt' => self::QURAN_TRIAL,
             'ap' => self::ACADEMIC_PRIVATE,
             'ic' => self::INTERACTIVE_COURSE,
-            default => throw new \InvalidArgumentException("Unknown event prefix: {$prefix}"),
+            default => throw new InvalidArgumentException("Unknown event prefix: {$prefix}"),
         };
     }
 

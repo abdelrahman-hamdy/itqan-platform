@@ -2,6 +2,7 @@
 
 namespace App\Services\Webhook\LiveKit;
 
+use Exception;
 use App\Enums\SessionStatus;
 use App\Models\BaseSession;
 use App\Services\LiveKitService;
@@ -111,7 +112,7 @@ class RoomStartedHandler extends AbstractLiveKitEventHandler
                     'room_name' => $roomName,
                 ]);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logError('Failed to start auto-recording', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),

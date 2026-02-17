@@ -2,6 +2,8 @@
 
 namespace App\Filament\Academy\Widgets;
 
+use Carbon\Carbon;
+use Exception;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
@@ -13,9 +15,9 @@ use Illuminate\Support\Facades\DB;
 
 class RenewalMetricsWidget extends BaseWidget
 {
-    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+    protected string $view = 'filament.widgets.collapsible-stats-overview-widget';
 
-    protected static ?string $pollingInterval = '120s'; // Refresh every 2 minutes
+    protected ?string $pollingInterval = '120s'; // Refresh every 2 minutes
 
     protected static ?int $sort = 5;
 
@@ -104,9 +106,9 @@ class RenewalMetricsWidget extends BaseWidget
                 }
 
                 try {
-                    $lastRenewal = \Carbon\Carbon::parse($metadata['last_renewal_at']);
+                    $lastRenewal = Carbon::parse($metadata['last_renewal_at']);
                     return $lastRenewal->between($today, $tomorrow);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     return false;
                 }
             });
@@ -123,9 +125,9 @@ class RenewalMetricsWidget extends BaseWidget
                 }
 
                 try {
-                    $lastRenewal = \Carbon\Carbon::parse($metadata['last_renewal_at']);
+                    $lastRenewal = Carbon::parse($metadata['last_renewal_at']);
                     return $lastRenewal->between($today, $tomorrow);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     return false;
                 }
             });

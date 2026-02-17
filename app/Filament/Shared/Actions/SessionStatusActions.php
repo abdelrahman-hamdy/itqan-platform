@@ -2,10 +2,11 @@
 
 namespace App\Filament\Shared\Actions;
 
+use Filament\Actions\Action;
+use Exception;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use Filament\Notifications\Notification;
-use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 
@@ -149,7 +150,7 @@ class SessionStatusActions
                         ->success()
                         ->send();
 
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Log::error('Session cancellation failed', [
                         'session_id' => $record->id,
                         'error' => $e->getMessage(),

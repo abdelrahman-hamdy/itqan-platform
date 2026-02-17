@@ -2,6 +2,9 @@
 
 namespace App\Livewire;
 
+use App\Models\Certificate;
+use Log;
+use Exception;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\UserType;
 use App\Models\AcademicSubscription;
@@ -133,7 +136,7 @@ class IssueCertificateModal extends Component
             ->get()
             ->map(function ($student) {
                 // Count certificates issued to this student for this circle
-                $certificateCount = \App\Models\Certificate::where('student_id', $student->id)
+                $certificateCount = Certificate::where('student_id', $student->id)
                     ->where('certificateable_type', QuranCircle::class)
                     ->where('certificateable_id', $this->circleId)
                     ->count();
@@ -164,7 +167,7 @@ class IssueCertificateModal extends Component
             ->get()
             ->map(function ($enrollment) {
                 // Count certificates issued to this student for this course
-                $certificateCount = \App\Models\Certificate::where('student_id', $enrollment->student_id)
+                $certificateCount = Certificate::where('student_id', $enrollment->student_id)
                     ->where('certificateable_type', InteractiveCourse::class)
                     ->where('certificateable_id', $this->circleId)
                     ->count();
@@ -259,7 +262,7 @@ class IssueCertificateModal extends Component
                 // Issue certificates to selected students in group circle
                 $errors = [];
 
-                \Log::info('Starting group certificate issuance', [
+                Log::info('Starting group certificate issuance', [
                     'circle_id' => $this->circleId,
                     'selected_students' => $this->selectedStudents,
                     'achievement_text' => $this->achievementText,
@@ -277,9 +280,9 @@ class IssueCertificateModal extends Component
                                 Auth::id()
                             );
                             $issuedCount++;
-                            \Log::info('Certificate issued successfully', ['student_id' => $studentId]);
-                        } catch (\Exception $e) {
-                            \Log::error('Certificate issuance failed', [
+                            Log::info('Certificate issued successfully', ['student_id' => $studentId]);
+                        } catch (Exception $e) {
+                            Log::error('Certificate issuance failed', [
                                 'student_id' => $studentId,
                                 'error' => $e->getMessage(),
                                 'trace' => $e->getTraceAsString(),
@@ -287,7 +290,7 @@ class IssueCertificateModal extends Component
                             $errors[] = ($student->name ?? __('components.certificate.modal.fallbacks.student')).': '.$e->getMessage();
                         }
                     } else {
-                        \Log::warning('Student not found', ['student_id' => $studentId]);
+                        Log::warning('Student not found', ['student_id' => $studentId]);
                     }
                 }
 
@@ -324,7 +327,7 @@ class IssueCertificateModal extends Component
                 // Issue certificates to selected students in interactive course
                 $errors = [];
 
-                \Log::info('Starting interactive course certificate issuance', [
+                Log::info('Starting interactive course certificate issuance', [
                     'course_id' => $this->circleId,
                     'selected_students' => $this->selectedStudents,
                     'achievement_text' => $this->achievementText,
@@ -342,9 +345,9 @@ class IssueCertificateModal extends Component
                                 Auth::id()
                             );
                             $issuedCount++;
-                            \Log::info('Certificate issued successfully', ['student_id' => $studentId]);
-                        } catch (\Exception $e) {
-                            \Log::error('Certificate issuance failed', [
+                            Log::info('Certificate issued successfully', ['student_id' => $studentId]);
+                        } catch (Exception $e) {
+                            Log::error('Certificate issuance failed', [
                                 'student_id' => $studentId,
                                 'error' => $e->getMessage(),
                                 'trace' => $e->getTraceAsString(),
@@ -352,7 +355,7 @@ class IssueCertificateModal extends Component
                             $errors[] = ($student->name ?? __('components.certificate.modal.fallbacks.student')).': '.$e->getMessage();
                         }
                     } else {
-                        \Log::warning('Student not found', ['student_id' => $studentId]);
+                        Log::warning('Student not found', ['student_id' => $studentId]);
                     }
                 }
 
@@ -421,8 +424,8 @@ class IssueCertificateModal extends Component
                 return;
             }
 
-        } catch (\Exception $e) {
-            \Log::error('Certificate issuance error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        } catch (Exception $e) {
+            Log::error('Certificate issuance error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             $errorMessage = __('components.certificate.modal.messages.error_occurred', ['error' => $e->getMessage()]);
             session()->flash('error', $errorMessage);
             $this->dispatch('certificate-issued-error', [

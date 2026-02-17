@@ -2,13 +2,16 @@
 
 namespace App\Filament\Academy\Resources\RecordedCourseResource\Pages;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
+use App\Models\RecordedCourse;
 use App\Filament\Academy\Resources\RecordedCourseResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * @property \App\Models\RecordedCourse $record
+ * @property RecordedCourse $record
  */
 class EditRecordedCourse extends EditRecord
 {
@@ -17,9 +20,9 @@ class EditRecordedCourse extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض الدورة'),
-            Actions\DeleteAction::make()
+            DeleteAction::make()
                 ->label('حذف الدورة'),
         ];
     }

@@ -2,6 +2,20 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use Filament\Schemas\Components\Section;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Illuminate\Support\Collection;
+use App\Models\QuranIndividualCircle;
+use App\Filament\Teacher\Resources\QuranSessionResource\Pages\ListQuranSessions;
+use App\Filament\Teacher\Resources\QuranSessionResource\Pages\CreateQuranSession;
+use App\Filament\Teacher\Resources\QuranSessionResource\Pages\ViewQuranSession;
+use App\Filament\Teacher\Resources\QuranSessionResource\Pages\EditQuranSession;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -10,10 +24,7 @@ use App\Filament\Shared\Resources\BaseQuranSessionResource;
 use App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
-use Filament\Forms\Components\Section;
 use Filament\Tables;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -34,11 +45,11 @@ class QuranSessionResource extends BaseQuranSessionResource
     // Navigation Configuration
     // ========================================
 
-    protected static ?string $navigationIcon = 'heroicon-o-video-camera';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-video-camera';
 
     protected static ?string $navigationLabel = 'جلساتي';
 
-    protected static ?string $navigationGroup = 'جلساتي';
+    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 1;
 
@@ -78,18 +89,18 @@ class QuranSessionResource extends BaseQuranSessionResource
     {
         return [
             ActionGroup::make([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض'),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف')
                     ->after(function (QuranSession $record) {
                         if ($record->individualCircle) {
                             $record->individualCircle->updateSessionCounts();
                         }
                     }),
-                Tables\Actions\Action::make('start_session')
+                Action::make('start_session')
                     ->label('بدء الجلسة')
                     ->icon('heroicon-o-play')
                     ->color('success')
@@ -100,7 +111,7 @@ class QuranSessionResource extends BaseQuranSessionResource
                             'started_at' => now(),
                         ]);
                     }),
-                Tables\Actions\Action::make('complete_session')
+                Action::make('complete_session')
                     ->label('إنهاء الجلسة')
                     ->icon('heroicon-o-check')
                     ->color('success')
@@ -123,12 +134,12 @@ class QuranSessionResource extends BaseQuranSessionResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make()
-                    ->after(function (\Illuminate\Support\Collection $records) {
+            BulkActionGroup::make([
+                DeleteBulkAction::make()
+                    ->after(function (Collection $records) {
                         $individualCircleIds = $records->pluck('individual_circle_id')->filter()->unique();
                         foreach ($individualCircleIds as $circleId) {
-                            $circle = \App\Models\QuranIndividualCircle::find($circleId);
+                            $circle = QuranIndividualCircle::find($circleId);
                             if ($circle) {
                                 $circle->updateSessionCounts();
                             }
@@ -163,7 +174,8 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->searchable()
                 ->sortable(),
 
-            BadgeColumn::make('session_type')
+            TextColumn::make('session_type')
+                ->badge()
                 ->label('نوع الجلسة')
                 ->colors([
                     'primary' => 'individual',
@@ -185,7 +197,8 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->sortable()
                 ->toggleable(),
 
-            BadgeColumn::make('status')
+            TextColumn::make('status')
+                ->badge()
                 ->label('الحالة')
                 ->colors(SessionStatus::colorOptions())
                 ->formatStateUsing(function ($state): string {
@@ -197,7 +210,8 @@ class QuranSessionResource extends BaseQuranSessionResource
                     return $status?->label() ?? $state;
                 }),
 
-            BadgeColumn::make('attendance_status')
+            TextColumn::make('attendance_status')
+                ->badge()
                 ->label('الحضور')
                 ->colors([
                     'success' => AttendanceStatus::ATTENDED->value,
@@ -315,10 +329,10 @@ class QuranSessionResource extends BaseQuranSessionResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuranSessions::route('/'),
-            'create' => Pages\CreateQuranSession::route('/create'),
-            'view' => Pages\ViewQuranSession::route('/{record}'),
-            'edit' => Pages\EditQuranSession::route('/{record}/edit'),
+            'index' => ListQuranSessions::route('/'),
+            'create' => CreateQuranSession::route('/create'),
+            'view' => ViewQuranSession::route('/{record}'),
+            'edit' => EditQuranSession::route('/{record}/edit'),
         ];
     }
 }

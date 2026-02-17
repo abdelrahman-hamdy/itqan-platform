@@ -2,6 +2,9 @@
 
 namespace App\Models\Traits;
 
+use App\Services\LiveKitService;
+use Exception;
+use Illuminate\Support\Str;
 use App\Enums\MeetingStatus;
 use App\Enums\SessionStatus;
 use App\Models\Academy;
@@ -108,7 +111,7 @@ trait HasMeetingData
             return $this->meeting_link;
         }
 
-        $livekitService = app(\App\Services\LiveKitService::class);
+        $livekitService = app(LiveKitService::class);
 
         // Set default options
         $defaultOptions = [
@@ -190,10 +193,10 @@ trait HasMeetingData
     public function generateParticipantToken(User $user, array $permissions = []): string
     {
         if (! $this->meeting_room_name) {
-            throw new \Exception('Meeting room not created yet');
+            throw new Exception('Meeting room not created yet');
         }
 
-        $livekitService = app(\App\Services\LiveKitService::class);
+        $livekitService = app(LiveKitService::class);
 
         // Set permissions based on user role
         $defaultPermissions = [
@@ -220,7 +223,7 @@ trait HasMeetingData
             return null;
         }
 
-        $livekitService = app(\App\Services\LiveKitService::class);
+        $livekitService = app(LiveKitService::class);
 
         return $livekitService->getRoomInfo($this->meeting_room_name);
     }
@@ -234,7 +237,7 @@ trait HasMeetingData
             return false;
         }
 
-        $livekitService = app(\App\Services\LiveKitService::class);
+        $livekitService = app(LiveKitService::class);
 
         $success = $livekitService->endMeeting($this->meeting_room_name);
 
@@ -260,7 +263,7 @@ trait HasMeetingData
             return false;
         }
 
-        $userIdentity = $user->id.'_'.\Illuminate\Support\Str::slug($user->first_name.'_'.$user->last_name);
+        $userIdentity = $user->id.'_'.Str::slug($user->first_name.'_'.$user->last_name);
 
         foreach ($roomInfo['participants'] as $participant) {
             if ($participant['id'] === $userIdentity) {

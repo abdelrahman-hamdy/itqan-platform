@@ -2,12 +2,19 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Actions\Action;
 use App\Enums\RecordingStatus;
 use App\Models\InteractiveCourseSession;
 use App\Models\SessionRecording;
 use App\Services\AcademyContextService;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -26,7 +33,7 @@ abstract class BaseSessionRecordingResource extends BaseResource
 {
     protected static ?string $model = SessionRecording::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-video-camera';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-video-camera';
 
     protected static ?string $modelLabel = 'تسجيل جلسة';
 
@@ -99,8 +106,8 @@ abstract class BaseSessionRecordingResource extends BaseResource
             ->columns(static::getTableColumns())
             ->defaultSort('started_at', 'desc')
             ->filters(static::getTableFilters())
-            ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions())
+            ->recordActions(static::getTableActions())
+            ->toolbarActions(static::getTableBulkActions())
             ->emptyStateHeading('لا توجد تسجيلات')
             ->emptyStateDescription('لم يتم تسجيل أي جلسات بعد.')
             ->emptyStateIcon('heroicon-o-video-camera');
@@ -113,7 +120,7 @@ abstract class BaseSessionRecordingResource extends BaseResource
     {
         return [
             // Session Title (from polymorphic recordable)
-            Tables\Columns\TextColumn::make('session_title')
+            TextColumn::make('session_title')
                 ->label('عنوان الجلسة')
                 ->searchable(query: function (Builder $query, string $search): Builder {
                     return $query->whereHasMorph('recordable', [InteractiveCourseSession::class], function ($q) use ($search) {
@@ -131,7 +138,7 @@ abstract class BaseSessionRecordingResource extends BaseResource
                 }),
 
             // Course Title (for InteractiveCourseSession)
-            Tables\Columns\TextColumn::make('course_title')
+            TextColumn::make('course_title')
                 ->label('الدورة')
                 ->searchable(query: function (Builder $query, string $search): Builder {
                     return $query->whereHasMorph('recordable', [InteractiveCourseSession::class], function ($q) use ($search) {
@@ -149,7 +156,7 @@ abstract class BaseSessionRecordingResource extends BaseResource
                 }),
 
             // Status Badge
-            Tables\Columns\TextColumn::make('status')
+            TextColumn::make('status')
                 ->label('الحالة')
                 ->badge()
                 ->color(fn ($state): string => $state instanceof RecordingStatus
@@ -160,24 +167,24 @@ abstract class BaseSessionRecordingResource extends BaseResource
                     : (RecordingStatus::tryFrom($state)?->label() ?? $state)),
 
             // Duration (formatted)
-            Tables\Columns\TextColumn::make('formatted_duration')
+            TextColumn::make('formatted_duration')
                 ->label('المدة')
                 ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('duration', $direction)),
 
             // File Size (formatted)
-            Tables\Columns\TextColumn::make('formatted_file_size')
+            TextColumn::make('formatted_file_size')
                 ->label('حجم الملف')
                 ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('file_size', $direction)),
 
             // Recording Started At
-            Tables\Columns\TextColumn::make('started_at')
+            TextColumn::make('started_at')
                 ->label('بدء التسجيل')
                 ->dateTime('Y-m-d H:i')
                 ->timezone(fn () => AcademyContextService::getTimezone())
                 ->sortable(),
 
             // Completed At
-            Tables\Columns\TextColumn::make('completed_at')
+            TextColumn::make('completed_at')
                 ->label('اكتمل في')
                 ->dateTime('Y-m-d H:i')
                 ->timezone(fn () => AcademyContextService::getTimezone())
@@ -185,7 +192,7 @@ abstract class BaseSessionRecordingResource extends BaseResource
                 ->toggleable(isToggledHiddenByDefault: true),
 
             // Created At
-            Tables\Columns\TextColumn::make('created_at')
+            TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')
                 ->dateTime('Y-m-d H:i')
                 ->sortable()
@@ -200,18 +207,18 @@ abstract class BaseSessionRecordingResource extends BaseResource
     {
         return [
             // Status Filter
-            Tables\Filters\SelectFilter::make('status')
+            SelectFilter::make('status')
                 ->label('الحالة')
                 ->options(RecordingStatus::options())
                 ->multiple(),
 
             // Date Range Filter - Recordings from today
-            Tables\Filters\Filter::make('recorded_today')
+            Filter::make('recorded_today')
                 ->label('تسجيلات اليوم')
                 ->query(fn (Builder $query): Builder => $query->whereDate('started_at', today())),
 
             // Date Range Filter - Recordings this week
-            Tables\Filters\Filter::make('recorded_this_week')
+            Filter::make('recorded_this_week')
                 ->label('تسجيلات هذا الأسبوع')
                 ->query(fn (Builder $query): Builder => $query->whereBetween('started_at', [
                     now()->startOfWeek(),
@@ -219,7 +226,7 @@ abstract class BaseSessionRecordingResource extends BaseResource
                 ])),
 
             // Available Recordings Only (completed with file_path)
-            Tables\Filters\Filter::make('available_only')
+            Filter::make('available_only')
                 ->label('المتاحة للتحميل فقط')
                 ->query(fn (Builder $query): Builder => $query
                     ->where('status', RecordingStatus::COMPLETED->value)
@@ -231,22 +238,22 @@ abstract class BaseSessionRecordingResource extends BaseResource
     // Shared Infolist Definition (View Page)
     // ========================================
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist->schema([
-            Infolists\Components\Section::make('معلومات التسجيل')
+        return $schema->components([
+            Section::make('معلومات التسجيل')
                 ->schema([
-                    Infolists\Components\Grid::make(3)->schema([
-                        Infolists\Components\TextEntry::make('display_name')
+                    Grid::make(3)->schema([
+                        TextEntry::make('display_name')
                             ->label('اسم التسجيل'),
-                        Infolists\Components\TextEntry::make('recording_id')
+                        TextEntry::make('recording_id')
                             ->label('معرف التسجيل')
                             ->copyable(),
-                        Infolists\Components\TextEntry::make('meeting_room')
+                        TextEntry::make('meeting_room')
                             ->label('غرفة الاجتماع'),
                     ]),
-                    Infolists\Components\Grid::make(3)->schema([
-                        Infolists\Components\TextEntry::make('status')
+                    Grid::make(3)->schema([
+                        TextEntry::make('status')
                             ->label('الحالة')
                             ->badge()
                             ->color(fn ($state): string => $state instanceof RecordingStatus
@@ -255,44 +262,44 @@ abstract class BaseSessionRecordingResource extends BaseResource
                             ->formatStateUsing(fn ($state): string => $state instanceof RecordingStatus
                                 ? $state->label()
                                 : (RecordingStatus::tryFrom($state)?->label() ?? $state)),
-                        Infolists\Components\TextEntry::make('formatted_duration')
+                        TextEntry::make('formatted_duration')
                             ->label('المدة'),
-                        Infolists\Components\TextEntry::make('formatted_file_size')
+                        TextEntry::make('formatted_file_size')
                             ->label('حجم الملف'),
                     ]),
                 ]),
 
-            Infolists\Components\Section::make('معلومات الجلسة')
+            Section::make('معلومات الجلسة')
                 ->schema([
-                    Infolists\Components\Grid::make(3)->schema([
-                        Infolists\Components\TextEntry::make('session_title')
+                    Grid::make(3)->schema([
+                        TextEntry::make('session_title')
                             ->label('عنوان الجلسة')
                             ->getStateUsing(fn (SessionRecording $record): string => $record->recordable?->title ?? 'غير متوفر'),
-                        Infolists\Components\TextEntry::make('course_title')
+                        TextEntry::make('course_title')
                             ->label('الدورة')
                             ->getStateUsing(fn (SessionRecording $record): string => $record->recordable?->course?->title ?? 'غير متوفر'),
-                        Infolists\Components\TextEntry::make('teacher_name')
+                        TextEntry::make('teacher_name')
                             ->label('المعلم')
                             ->getStateUsing(fn (SessionRecording $record): string => $record->recordable?->course?->assignedTeacher?->user?->name ?? 'غير متوفر'),
                     ]),
                 ]),
 
-            Infolists\Components\Section::make('التواريخ')
+            Section::make('التواريخ')
                 ->schema([
-                    Infolists\Components\Grid::make(4)->schema([
-                        Infolists\Components\TextEntry::make('started_at')
+                    Grid::make(4)->schema([
+                        TextEntry::make('started_at')
                             ->label('بدء التسجيل')
                             ->dateTime('Y-m-d H:i')
                             ->timezone(fn () => AcademyContextService::getTimezone()),
-                        Infolists\Components\TextEntry::make('ended_at')
+                        TextEntry::make('ended_at')
                             ->label('انتهاء التسجيل')
                             ->dateTime('Y-m-d H:i')
                             ->timezone(fn () => AcademyContextService::getTimezone()),
-                        Infolists\Components\TextEntry::make('processed_at')
+                        TextEntry::make('processed_at')
                             ->label('تاريخ المعالجة')
                             ->dateTime('Y-m-d H:i')
                             ->timezone(fn () => AcademyContextService::getTimezone()),
-                        Infolists\Components\TextEntry::make('completed_at')
+                        TextEntry::make('completed_at')
                             ->label('تاريخ الاكتمال')
                             ->dateTime('Y-m-d H:i')
                             ->timezone(fn () => AcademyContextService::getTimezone()),
@@ -300,15 +307,15 @@ abstract class BaseSessionRecordingResource extends BaseResource
                 ])
                 ->collapsible(),
 
-            Infolists\Components\Section::make('معلومات الملف')
+            Section::make('معلومات الملف')
                 ->schema([
-                    Infolists\Components\Grid::make(3)->schema([
-                        Infolists\Components\TextEntry::make('file_path')
+                    Grid::make(3)->schema([
+                        TextEntry::make('file_path')
                             ->label('مسار الملف')
                             ->copyable(),
-                        Infolists\Components\TextEntry::make('file_name')
+                        TextEntry::make('file_name')
                             ->label('اسم الملف'),
-                        Infolists\Components\TextEntry::make('file_format')
+                        TextEntry::make('file_format')
                             ->label('صيغة الملف')
                             ->badge(),
                     ]),
@@ -316,9 +323,9 @@ abstract class BaseSessionRecordingResource extends BaseResource
                 ->visible(fn (SessionRecording $record): bool => $record->isCompleted())
                 ->collapsible(),
 
-            Infolists\Components\Section::make('خطأ المعالجة')
+            Section::make('خطأ المعالجة')
                 ->schema([
-                    Infolists\Components\TextEntry::make('processing_error')
+                    TextEntry::make('processing_error')
                         ->label('رسالة الخطأ')
                         ->columnSpanFull(),
                 ])
@@ -334,9 +341,9 @@ abstract class BaseSessionRecordingResource extends BaseResource
     /**
      * Create download action.
      */
-    protected static function makeDownloadAction(): Tables\Actions\Action
+    protected static function makeDownloadAction(): Action
     {
-        return Tables\Actions\Action::make('download')
+        return Action::make('download')
             ->label('تحميل')
             ->icon('heroicon-o-arrow-down-tray')
             ->color('success')
@@ -348,9 +355,9 @@ abstract class BaseSessionRecordingResource extends BaseResource
     /**
      * Create stream/play action.
      */
-    protected static function makeStreamAction(): Tables\Actions\Action
+    protected static function makeStreamAction(): Action
     {
-        return Tables\Actions\Action::make('stream')
+        return Action::make('stream')
             ->label('تشغيل')
             ->icon('heroicon-o-play')
             ->color('primary')
@@ -365,9 +372,9 @@ abstract class BaseSessionRecordingResource extends BaseResource
      * Storage file cleanup is handled by SessionRecordingObserver when
      * markAsDeleted() changes the status to 'deleted'.
      */
-    protected static function makeDeleteAction(): Tables\Actions\Action
+    protected static function makeDeleteAction(): Action
     {
-        return Tables\Actions\Action::make('delete_recording')
+        return Action::make('delete_recording')
             ->label('حذف')
             ->icon('heroicon-o-trash')
             ->color('danger')

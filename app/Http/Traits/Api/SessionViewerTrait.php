@@ -2,6 +2,7 @@
 
 namespace App\Http\Traits\Api;
 
+use App\Models\User;
 use App\Enums\SessionStatus;
 use App\Http\Helpers\PaginationHelper;
 
@@ -29,7 +30,7 @@ trait SessionViewerTrait
     /**
      * Resolve the teacher User model from a session based on its type.
      *
-     * @return \App\Models\User|null
+     * @return User|null
      */
     protected function resolveSessionTeacher($session, string $type)
     {
@@ -44,7 +45,7 @@ trait SessionViewerTrait
     /**
      * Format teacher data for API response.
      *
-     * @param  \App\Models\User|null  $teacher
+     * @param User|null $teacher
      */
     protected function formatTeacherData($teacher): ?array
     {

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
+use Illuminate\Support\Str;
+use InvalidArgumentException;
 use App\Enums\UserType;
 use App\Http\Requests\Meeting\CreateMeetingRequest;
 use App\Http\Traits\Api\ApiResponses;
@@ -62,7 +65,7 @@ class LiveKitMeetingController extends Controller
                 'created_at' => now()->toISOString(),
             ], __('meetings.api.meeting_created'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to create LiveKit meeting', [
                 'error' => $e->getMessage(),
                 'session_id' => $request->validated('session_id'),
@@ -109,12 +112,12 @@ class LiveKitMeetingController extends Controller
                 'access_token' => $token,
                 'server_url' => config('livekit.server_url'),
                 'room_name' => $session->meeting_room_name,
-                'participant_identity' => $user->id.'_'.\Illuminate\Support\Str::slug($user->first_name.'_'.$user->last_name),
+                'participant_identity' => $user->id.'_'.Str::slug($user->first_name.'_'.$user->last_name),
                 'permissions' => $permissions,
                 'expires_at' => now()->addHours(3)->toISOString(),
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to generate LiveKit participant token', [
                 'error' => $e->getMessage(),
                 'session_id' => $sessionId,
@@ -163,7 +166,7 @@ class LiveKitMeetingController extends Controller
                     if (! $roomInfo) {
                         return $this->notFound(__('meetings.api.room_info_unavailable'));
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Log::error('Failed to recreate room', [
                         'session_id' => $sessionId,
                         'room_name' => $session->meeting_room_name,
@@ -195,7 +198,7 @@ class LiveKitMeetingController extends Controller
                 'data' => $roomInfo,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to get LiveKit room info', [
                 'error' => $e->getMessage(),
                 'session_id' => $sessionId,
@@ -239,7 +242,7 @@ class LiveKitMeetingController extends Controller
         return match ($sessionType) {
             'quran' => QuranSession::findOrFail($sessionId),
             'academic' => AcademicSession::findOrFail($sessionId),
-            default => throw new \InvalidArgumentException("Invalid session type: {$sessionType}")
+            default => throw new InvalidArgumentException("Invalid session type: {$sessionType}")
         };
     }
 

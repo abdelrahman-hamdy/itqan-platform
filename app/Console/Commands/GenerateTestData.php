@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use App\Enums\AttendanceStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\HomeworkSubmissionStatus;
@@ -123,7 +124,7 @@ class GenerateTestData extends Command
             $this->displaySummary();
 
             return Command::SUCCESS;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             $this->error('❌ Error generating test data: '.$e->getMessage());
             $this->error($e->getFile().':'.$e->getLine());

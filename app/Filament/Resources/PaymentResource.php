@@ -2,12 +2,21 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Schema;
+use App\Filament\Resources\PaymentResource\Pages\ListPayments;
+use App\Filament\Resources\PaymentResource\Pages\CreatePayment;
+use App\Filament\Resources\PaymentResource\Pages\ViewPayment;
+use App\Filament\Resources\PaymentResource\Pages\EditPayment;
 use App\Filament\Resources\PaymentResource\Pages;
 use App\Filament\Shared\Resources\Financial\BasePaymentResource;
 use App\Models\Academy;
 use App\Models\Payment;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -15,7 +24,7 @@ class PaymentResource extends BasePaymentResource
 {
     protected static ?string $model = Payment::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-banknotes';
 
     protected static ?string $navigationLabel = 'المدفوعات';
 
@@ -23,7 +32,7 @@ class PaymentResource extends BasePaymentResource
 
     protected static ?string $pluralModelLabel = 'المدفوعات';
 
-    protected static ?string $navigationGroup = 'المالية';
+    protected static string | \UnitEnum | null $navigationGroup = 'المالية';
 
     protected static ?int $navigationSort = 1;
 
@@ -40,9 +49,9 @@ class PaymentResource extends BasePaymentResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make()
+            ViewAction::make()
                 ->label('عرض'),
-            Tables\Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
             static::getMarkCompletedAction(),
             static::getGenerateInvoiceAction(),
@@ -53,16 +62,16 @@ class PaymentResource extends BasePaymentResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make()
+            BulkActionGroup::make([
+                DeleteBulkAction::make()
                     ->label('حذف المحدد'),
             ]),
         ];
     }
 
-    protected static function getAcademyFormField(): ?Forms\Components\Select
+    protected static function getAcademyFormField(): ?Select
     {
-        return Forms\Components\Select::make('academy_id')
+        return Select::make('academy_id')
             ->relationship('academy', 'name')
             ->label('الأكاديمية')
             ->required()
@@ -74,10 +83,10 @@ class PaymentResource extends BasePaymentResource
     // Form - Uses Parent Sections
     // ========================================
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 static::getPaymentInfoSection(),
                 static::getAmountDetailsSection(),
                 static::getPaymentStatusSection(),
@@ -98,10 +107,10 @@ class PaymentResource extends BasePaymentResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPayments::route('/'),
-            'create' => Pages\CreatePayment::route('/create'),
-            'view' => Pages\ViewPayment::route('/{record}'),
-            'edit' => Pages\EditPayment::route('/{record}/edit'),
+            'index' => ListPayments::route('/'),
+            'create' => CreatePayment::route('/create'),
+            'view' => ViewPayment::route('/{record}'),
+            'edit' => EditPayment::route('/{record}/edit'),
         ];
     }
 

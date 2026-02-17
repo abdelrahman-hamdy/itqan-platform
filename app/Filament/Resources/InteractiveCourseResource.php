@@ -2,6 +2,22 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Facades\Filament;
+use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Filters\TrashedFilter;
+use App\Filament\Resources\InteractiveCourseResource\RelationManagers\EnrollmentsRelationManager;
+use App\Filament\Resources\InteractiveCourseResource\Pages\ListInteractiveCourses;
+use App\Filament\Resources\InteractiveCourseResource\Pages\CreateInteractiveCourse;
+use App\Filament\Resources\InteractiveCourseResource\Pages\EditInteractiveCourse;
 use App\Filament\Resources\InteractiveCourseResource\Pages;
 use App\Filament\Resources\InteractiveCourseResource\RelationManagers;
 use App\Filament\Shared\Resources\BaseInteractiveCourseResource;
@@ -33,7 +49,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
 
     protected static ?string $navigationLabel = 'الدورات التفاعلية';
 
-    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
 
     protected static ?int $navigationSort = 3;
 
@@ -71,12 +87,12 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
-            Tables\Actions\DeleteAction::make(),
-            Tables\Actions\RestoreAction::make()
+            ViewAction::make(),
+            EditAction::make(),
+            DeleteAction::make(),
+            RestoreAction::make()
                 ->label(__('filament.actions.restore')),
-            Tables\Actions\ForceDeleteAction::make()
+            ForceDeleteAction::make()
                 ->label(__('filament.actions.force_delete')),
         ];
     }
@@ -87,11 +103,11 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     protected static function getTableBulkActions(): array
     {
         return [
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
-                Tables\Actions\RestoreBulkAction::make()
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+                RestoreBulkAction::make()
                     ->label(__('filament.actions.restore_selected')),
-                Tables\Actions\ForceDeleteBulkAction::make()
+                ForceDeleteBulkAction::make()
                     ->label(__('filament.actions.force_delete_selected')),
             ]),
         ];
@@ -107,7 +123,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
             ->label('الأكاديمية')
             ->sortable()
             ->searchable()
-            ->visible(fn () => \Filament\Facades\Filament::getTenant() === null)
+            ->visible(fn () => Filament::getTenant() === null)
             ->placeholder('غير محدد');
     }
 
@@ -172,10 +188,10 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
             ...parent::getTableFilters(),
 
             Filter::make('created_at')
-                ->form([
-                    Forms\Components\DatePicker::make('from')
+                ->schema([
+                    DatePicker::make('from')
                         ->label(__('filament.filters.from_date')),
-                    Forms\Components\DatePicker::make('until')
+                    DatePicker::make('until')
                         ->label(__('filament.filters.to_date')),
                 ])
                 ->query(function (Builder $query, array $data): Builder {
@@ -201,7 +217,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
                     return $indicators;
                 }),
 
-            Tables\Filters\TrashedFilter::make()
+            TrashedFilter::make()
                 ->label(__('filament.filters.trashed')),
         ];
     }
@@ -213,7 +229,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\EnrollmentsRelationManager::class,
+            EnrollmentsRelationManager::class,
         ];
     }
 
@@ -224,9 +240,9 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListInteractiveCourses::route('/'),
-            'create' => Pages\CreateInteractiveCourse::route('/create'),
-            'edit' => Pages\EditInteractiveCourse::route('/{record}/edit'),
+            'index' => ListInteractiveCourses::route('/'),
+            'create' => CreateInteractiveCourse::route('/create'),
+            'edit' => EditInteractiveCourse::route('/{record}/edit'),
         ];
     }
 }

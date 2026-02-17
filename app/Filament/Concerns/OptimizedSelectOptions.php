@@ -2,6 +2,7 @@
 
 namespace App\Filament\Concerns;
 
+use Filament\Forms\Components\Select;
 use App\Enums\UserType;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicPackage;
@@ -535,9 +536,9 @@ trait OptimizedSelectOptions
      * @param  string  $label  Field label
      * @param  bool  $required  Whether the field is required
      */
-    protected static function makeStudentSelect(string $name = 'student_id', string $label = 'الطالب', bool $required = true): \Filament\Forms\Components\Select
+    protected static function makeStudentSelect(string $name = 'student_id', string $label = 'الطالب', bool $required = true): Select
     {
-        return \Filament\Forms\Components\Select::make($name)
+        return Select::make($name)
             ->label($label)
             ->searchable()
             ->preload(false)
@@ -553,9 +554,9 @@ trait OptimizedSelectOptions
      * @param  string  $label  Field label
      * @param  bool  $required  Whether the field is required
      */
-    protected static function makeQuranTeacherSelect(string $name = 'quran_teacher_profile_id', string $label = 'المعلم', bool $required = true): \Filament\Forms\Components\Select
+    protected static function makeQuranTeacherSelect(string $name = 'quran_teacher_profile_id', string $label = 'المعلم', bool $required = true): Select
     {
-        return \Filament\Forms\Components\Select::make($name)
+        return Select::make($name)
             ->label($label)
             ->searchable()
             ->preload(false)
@@ -571,9 +572,9 @@ trait OptimizedSelectOptions
      * @param  string  $label  Field label
      * @param  bool  $required  Whether the field is required
      */
-    protected static function makeAcademicTeacherSelect(string $name = 'academic_teacher_profile_id', string $label = 'المعلم', bool $required = true): \Filament\Forms\Components\Select
+    protected static function makeAcademicTeacherSelect(string $name = 'academic_teacher_profile_id', string $label = 'المعلم', bool $required = true): Select
     {
-        return \Filament\Forms\Components\Select::make($name)
+        return Select::make($name)
             ->label($label)
             ->searchable()
             ->preload(false)
@@ -589,9 +590,9 @@ trait OptimizedSelectOptions
      * @param  string  $label  Field label
      * @param  bool  $required  Whether the field is required
      */
-    protected static function makeQuranCircleSelect(string $name = 'quran_circle_id', string $label = 'الحلقة', bool $required = true): \Filament\Forms\Components\Select
+    protected static function makeQuranCircleSelect(string $name = 'quran_circle_id', string $label = 'الحلقة', bool $required = true): Select
     {
-        return \Filament\Forms\Components\Select::make($name)
+        return Select::make($name)
             ->label($label)
             ->searchable()
             ->preload(false)

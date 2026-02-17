@@ -2,6 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Academy;
+use App\Models\InteractiveCourseSession;
+use App\Models\User;
+use App\Models\InteractiveCourseEnrollment;
+use App\Models\InteractiveCourseHomework;
+use App\Enums\HomeworkSubmissionStatus;
+use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
@@ -70,11 +77,11 @@ class StudentInteractiveCourseController extends Controller
         }
 
         // Get academy from subdomain parameter
-        $academy = \App\Models\Academy::where('subdomain', $subdomain)->firstOrFail();
+        $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
 
         // Ensure user belongs to this academy (security check)
         if ($user->academy_id !== $academy->id) {
-            $this->authorize('belongsToAcademy', [\App\Models\Academy::class, $academy]);
+            $this->authorize('belongsToAcademy', [Academy::class, $academy]);
         }
 
         // Determine user type
@@ -173,11 +180,11 @@ class StudentInteractiveCourseController extends Controller
         }
 
         // Get academy from subdomain parameter
-        $academy = \App\Models\Academy::where('subdomain', $subdomain)->firstOrFail();
+        $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
 
         // Ensure user belongs to this academy (security check)
         if ($user->academy_id !== $academy->id) {
-            $this->authorize('belongsToAcademy', [\App\Models\Academy::class, $academy]);
+            $this->authorize('belongsToAcademy', [Academy::class, $academy]);
         }
 
         $isTeacher = $user->isAcademicTeacher();
@@ -205,7 +212,7 @@ class StudentInteractiveCourseController extends Controller
         }
 
         // For teachers: Keep inline logic (teacher-specific access control)
-        $session = \App\Models\InteractiveCourseSession::with([
+        $session = InteractiveCourseSession::with([
             'course.assignedTeacher.user',
             'course.subject',
             'course.gradeLevel',
@@ -237,19 +244,19 @@ class StudentInteractiveCourseController extends Controller
 
         // Verify user is an academic teacher
         if (! $user->isAcademicTeacher()) {
-            $this->authorize('create', \App\Models\InteractiveCourse::class);
+            $this->authorize('create', InteractiveCourse::class);
         }
 
         // Get academy from subdomain
-        $academy = \App\Models\Academy::where('subdomain', $subdomain)->firstOrFail();
+        $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
 
         // Ensure user belongs to this academy
         if ($user->academy_id !== $academy->id) {
-            $this->authorize('belongsToAcademy', [\App\Models\Academy::class, $academy]);
+            $this->authorize('belongsToAcademy', [Academy::class, $academy]);
         }
 
         // Load course with relationships
-        $course = \App\Models\InteractiveCourse::with([
+        $course = InteractiveCourse::with([
             'subject',
             'gradeLevel',
             'assignedTeacher.user',
@@ -285,19 +292,19 @@ class StudentInteractiveCourseController extends Controller
 
         // Verify user is an academic teacher
         if (! $user->isAcademicTeacher()) {
-            $this->authorize('create', \App\Models\InteractiveCourse::class);
+            $this->authorize('create', InteractiveCourse::class);
         }
 
         // Get academy from subdomain
-        $academy = \App\Models\Academy::where('subdomain', $subdomain)->firstOrFail();
+        $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
 
         // Ensure user belongs to this academy
         if ($user->academy_id !== $academy->id) {
-            $this->authorize('belongsToAcademy', [\App\Models\Academy::class, $academy]);
+            $this->authorize('belongsToAcademy', [Academy::class, $academy]);
         }
 
         // Load course with relationships
-        $course = \App\Models\InteractiveCourse::with([
+        $course = InteractiveCourse::with([
             'subject',
             'gradeLevel',
             'assignedTeacher.user',
@@ -312,7 +319,7 @@ class StudentInteractiveCourseController extends Controller
         $this->authorize('view', $course);
 
         // Get student
-        $student = \App\Models\User::findOrFail($studentId);
+        $student = User::findOrFail($studentId);
 
         // Verify student is enrolled in this course
         $enrollment = $course->enrollments->first(function ($e) use ($student) {
@@ -370,19 +377,19 @@ class StudentInteractiveCourseController extends Controller
 
         // Verify user is a student
         if (! $user->isStudent()) {
-            $this->authorize('viewAny', \App\Models\InteractiveCourse::class);
+            $this->authorize('viewAny', InteractiveCourse::class);
         }
 
         // Get academy from subdomain
-        $academy = \App\Models\Academy::where('subdomain', $subdomain)->firstOrFail();
+        $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
 
         // Ensure user belongs to this academy
         if ($user->academy_id !== $academy->id) {
-            $this->authorize('belongsToAcademy', [\App\Models\Academy::class, $academy]);
+            $this->authorize('belongsToAcademy', [Academy::class, $academy]);
         }
 
         // Load course with relationships
-        $course = \App\Models\InteractiveCourse::with([
+        $course = InteractiveCourse::with([
             'subject',
             'gradeLevel',
             'assignedTeacher.user',
@@ -401,7 +408,7 @@ class StudentInteractiveCourseController extends Controller
             abort(404, 'Student profile not found');
         }
 
-        $enrollment = \App\Models\InteractiveCourseEnrollment::where([
+        $enrollment = InteractiveCourseEnrollment::where([
             'course_id' => $course->id,
             'student_id' => $studentProfile->id,
             'enrollment_status' => EnrollmentStatus::ENROLLED,
@@ -425,7 +432,7 @@ class StudentInteractiveCourseController extends Controller
         $validated = $request->validated();
 
         $user = Auth::user();
-        $session = \App\Models\InteractiveCourseSession::findOrFail($sessionId);
+        $session = InteractiveCourseSession::findOrFail($sessionId);
 
         // Verify enrollment and session completion
         $studentProfile = $user->studentProfile;
@@ -433,7 +440,7 @@ class StudentInteractiveCourseController extends Controller
             return $this->forbidden('Student profile not found');
         }
 
-        $enrollment = \App\Models\InteractiveCourseEnrollment::where([
+        $enrollment = InteractiveCourseEnrollment::where([
             'course_id' => $session->course_id,
             'student_id' => $studentProfile->id,
             'enrollment_status' => EnrollmentStatus::ENROLLED,
@@ -457,7 +464,7 @@ class StudentInteractiveCourseController extends Controller
         $validated = $request->validated();
 
         $user = Auth::user();
-        $session = \App\Models\InteractiveCourseSession::findOrFail($sessionId);
+        $session = InteractiveCourseSession::findOrFail($sessionId);
 
         // Verify teacher is assigned to this course
         if (! $user->isAcademicTeacher()) {
@@ -483,7 +490,7 @@ class StudentInteractiveCourseController extends Controller
         $validated = $request->validated();
 
         $user = Auth::user();
-        $session = \App\Models\InteractiveCourseSession::findOrFail($sessionId);
+        $session = InteractiveCourseSession::findOrFail($sessionId);
 
         // Authorize updating the session (includes teacher check)
         $this->authorize('update', $session);
@@ -519,7 +526,7 @@ class StudentInteractiveCourseController extends Controller
         $validated = $request->validated();
 
         $user = Auth::user();
-        $session = \App\Models\InteractiveCourseSession::findOrFail($sessionId);
+        $session = InteractiveCourseSession::findOrFail($sessionId);
 
         // Authorize updating the session (includes teacher check)
         $this->authorize('update', $session);
@@ -557,20 +564,20 @@ class StudentInteractiveCourseController extends Controller
         $validated = $request->validated();
 
         $user = Auth::user();
-        $session = \App\Models\InteractiveCourseSession::findOrFail($sessionId);
+        $session = InteractiveCourseSession::findOrFail($sessionId);
 
         // Verify enrollment
-        $enrollment = \App\Models\InteractiveCourseEnrollment::where([
+        $enrollment = InteractiveCourseEnrollment::where([
             'course_id' => $session->course_id,
             'student_id' => $user->id,
             'status' => 'active',
         ])->firstOrFail();
 
-        $homework = \App\Models\InteractiveCourseHomework::findOrFail($validated['homework_id']);
+        $homework = InteractiveCourseHomework::findOrFail($validated['homework_id']);
         $student = $user->studentProfile;
 
         // Use existing HomeworkService if available
-        if (class_exists(\App\Services\HomeworkService::class)) {
+        if (class_exists(HomeworkService::class)) {
             $this->homeworkService->submitHomework(
                 $homework,
                 $student,
@@ -584,7 +591,7 @@ class StudentInteractiveCourseController extends Controller
                 'interactive_course_session_id' => $homework->interactive_course_session_id,
                 'student_id' => $student->id,
                 'submission_text' => $validated['answer_text'] ?? null,
-                'submission_status' => \App\Enums\HomeworkSubmissionStatus::SUBMITTED,
+                'submission_status' => HomeworkSubmissionStatus::SUBMITTED,
                 'submitted_at' => now(),
                 'max_score' => $homework->max_score ?? 10,
             ];
@@ -604,7 +611,7 @@ class StudentInteractiveCourseController extends Controller
                 $submissionData['submission_files'] = $files;
             }
 
-            \App\Models\InteractiveCourseHomeworkSubmission::updateOrCreate(
+            InteractiveCourseHomeworkSubmission::updateOrCreate(
                 [
                     'interactive_course_homework_id' => $homework->id,
                     'student_id' => $student->id,

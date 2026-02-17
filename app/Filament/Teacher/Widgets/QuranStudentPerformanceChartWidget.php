@@ -13,13 +13,13 @@ class QuranStudentPerformanceChartWidget extends ChartWidget
     // Prevent auto-display on dashboard - Dashboard explicitly adds this widget
     protected static bool $isDiscoverable = false;
 
-    protected static ?string $heading = 'أداء الطلاب في الجلسات';
+    protected ?string $heading = 'أداء الطلاب في الجلسات';
 
     protected static ?int $sort = 5;
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $maxHeight = '300px';
+    protected ?string $maxHeight = '300px';
 
     public ?string $filter = 'month';
 

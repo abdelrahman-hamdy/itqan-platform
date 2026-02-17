@@ -2,6 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Database\QueryException;
+use InvalidArgumentException;
+use Throwable;
+use Exception;
+use App\Services\NotificationService;
+use App\Services\Payment\InvoiceService;
+use App\Enums\NotificationType;
+use Illuminate\Http\RedirectResponse;
 use App\Constants\DefaultAcademy;
 use App\Enums\PaymentStatus;
 use App\Http\Traits\Api\ApiResponses;
@@ -109,7 +117,7 @@ class PaymobWebhookController extends Controller
                 'status' => 'error',
                 'message' => $e->getMessage(),
             ], 400);
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Log::channel('payments')->error('Database error during webhook processing', [
                 'error' => $e->getMessage(),
                 'code' => $e->getCode(),
@@ -119,7 +127,7 @@ class PaymobWebhookController extends Controller
                 'status' => 'error',
                 'message' => 'Database error occurred',
             ], 500);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             Log::channel('payments')->error('Invalid webhook data', [
                 'error' => $e->getMessage(),
             ]);
@@ -128,7 +136,7 @@ class PaymobWebhookController extends Controller
                 'status' => 'error',
                 'message' => 'Invalid data format',
             ], 400);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('payments')->critical('Unexpected webhook processing error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -408,7 +416,7 @@ class PaymobWebhookController extends Controller
                     'last_four' => $payload->cardLastFour,
                 ]);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to save card from webhook', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
@@ -441,7 +449,7 @@ class PaymobWebhookController extends Controller
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             // Get subscription name if available
             $subscriptionName = __('payments.notifications.payment');
@@ -515,7 +523,7 @@ class PaymobWebhookController extends Controller
                 'payment_id' => $payment->id,
                 'user_id' => $user->id,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to send payment success notification', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
@@ -529,19 +537,19 @@ class PaymobWebhookController extends Controller
     private function generateInvoice(Payment $payment): void
     {
         try {
-            $invoiceService = app(\App\Services\Payment\InvoiceService::class);
+            $invoiceService = app(InvoiceService::class);
             $result = $invoiceService->generateInvoiceWithPdf($payment);
             $invoiceData = $result['invoice'];
 
             // Send invoice generated notification to the user
             $user = $payment->user;
             if ($user) {
-                $subdomain = $payment->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+                $subdomain = $payment->academy?->subdomain ?? DefaultAcademy::subdomain();
 
-                $notificationService = app(\App\Services\NotificationService::class);
+                $notificationService = app(NotificationService::class);
                 $notificationService->send(
                     $user,
-                    \App\Enums\NotificationType::INVOICE_GENERATED,
+                    NotificationType::INVOICE_GENERATED,
                     [
                         'invoice_number' => $invoiceData->invoiceNumber,
                         'amount' => $invoiceData->amount,
@@ -557,7 +565,7 @@ class PaymobWebhookController extends Controller
                 'payment_id' => $payment->id,
                 'invoice_number' => $invoiceData->invoiceNumber,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to generate invoice', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
@@ -578,7 +586,7 @@ class PaymobWebhookController extends Controller
      * - error_occured: Whether an error occurred
      * - txn_response_code: Response code (e.g., 'APPROVED')
      */
-    public function callback(Request $request, int|string $payment): \Illuminate\Http\RedirectResponse
+    public function callback(Request $request, int|string $payment): RedirectResponse
     {
         // Manually fetch the Payment model (route model binding not working in this context)
         // Bypass tenant scope - callback arrives from payment gateway without tenant context

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Academy;
+use Exception;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Http\Requests\GetAvailableTimeSlotsRequest;
@@ -63,7 +65,7 @@ class QuranIndividualCircleController extends Controller
         $user = Auth::user();
 
         // Resolve academy from subdomain
-        $tenantAcademy = \App\Models\Academy::where('subdomain', $subdomain)->first();
+        $tenantAcademy = Academy::where('subdomain', $subdomain)->first();
         if (! $tenantAcademy) {
             abort(404);
         }
@@ -194,7 +196,7 @@ class QuranIndividualCircleController extends Controller
 
             return $this->success(null, 'تم تحديث إعدادات الحلقة بنجاح');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->serverError('حدث خطأ في تحديث الإعدادات: '.$e->getMessage());
         }
     }

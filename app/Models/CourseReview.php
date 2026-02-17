@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\NotificationService;
+use App\Enums\NotificationType;
+use Exception;
+use Illuminate\Support\Facades\Log;
 use App\Constants\DefaultAcademy;
 use App\Enums\ReviewStatus;
 use App\Models\Traits\ScopedToAcademy;
@@ -225,13 +229,13 @@ class CourseReview extends Model
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             // Get course instructor/owner
             $instructor = null;
-            if ($this->reviewable instanceof \App\Models\InteractiveCourse && $this->reviewable->assignedTeacher) {
+            if ($this->reviewable instanceof InteractiveCourse && $this->reviewable->assignedTeacher) {
                 $instructor = $this->reviewable->assignedTeacher->user;
-            } elseif ($this->reviewable instanceof \App\Models\RecordedCourse && $this->reviewable->instructor) {
+            } elseif ($this->reviewable instanceof RecordedCourse && $this->reviewable->instructor) {
                 $instructor = $this->reviewable->instructor;
             }
 
@@ -252,7 +256,7 @@ class CourseReview extends Model
 
             $notificationService->send(
                 $instructor,
-                \App\Enums\NotificationType::REVIEW_RECEIVED,
+                NotificationType::REVIEW_RECEIVED,
                 [
                     'student_name' => $this->student_name,
                     'rating' => $this->rating,
@@ -267,8 +271,8 @@ class CourseReview extends Model
                 ],
                 false
             );
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send course review received notification', [
+        } catch (Exception $e) {
+            Log::error('Failed to send course review received notification', [
                 'review_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);
@@ -285,7 +289,7 @@ class CourseReview extends Model
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
 
             // Build course URL
             $courseUrl = $this->course_type === 'interactive'
@@ -300,7 +304,7 @@ class CourseReview extends Model
 
             $notificationService->send(
                 $this->user,
-                \App\Enums\NotificationType::REVIEW_APPROVED,
+                NotificationType::REVIEW_APPROVED,
                 [
                     'course_name' => $this->course_name,
                     'rating' => $this->rating,
@@ -313,8 +317,8 @@ class CourseReview extends Model
                 ],
                 false
             );
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send course review approved notification', [
+        } catch (Exception $e) {
+            Log::error('Failed to send course review approved notification', [
                 'review_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);

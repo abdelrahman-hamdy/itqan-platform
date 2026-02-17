@@ -2,12 +2,16 @@
 
 namespace App\Filament\Resources\InteractiveSessionReportResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use App\Services\AttendanceCalculationService;
+use App\Models\InteractiveSessionReport;
 use App\Filament\Resources\InteractiveSessionReportResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
- * @property \App\Models\InteractiveSessionReport $record
+ * @property InteractiveSessionReport $record
  */
 class ViewInteractiveSessionReport extends ViewRecord
 {
@@ -24,9 +28,9 @@ class ViewInteractiveSessionReport extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
-            Actions\Action::make('recalculate')
+            Action::make('recalculate')
                 ->label('إعادة الحساب')
                 ->icon('heroicon-o-calculator')
                 ->color('warning')
@@ -36,7 +40,7 @@ class ViewInteractiveSessionReport extends ViewRecord
                 ->action(function () {
                     $session = $this->record->session;
                     if ($session && $session->meeting) {
-                        $calculationService = app(\App\Services\AttendanceCalculationService::class);
+                        $calculationService = app(AttendanceCalculationService::class);
                         $calculationService->recalculateAttendance($session);
                     }
 

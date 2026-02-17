@@ -2,6 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use App\Services\NotificationService;
+use App\Enums\NotificationType;
+use Exception;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Collection;
 use App\Constants\DefaultAcademy;
 use App\Enums\QuizAssignableType;
 use App\Services\AcademyContextService;
@@ -67,7 +73,7 @@ class QuizAssignment extends Model
     /**
      * Get the academy through the quiz relationship
      */
-    public function academy(): \Illuminate\Database\Eloquent\Relations\HasOneThrough
+    public function academy(): HasOneThrough
     {
         return $this->hasOneThrough(
             Academy::class,
@@ -237,7 +243,7 @@ class QuizAssignment extends Model
                 return;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
             $students = $this->getAffectedStudents();
 
             // Convert times to academy timezone for display
@@ -249,7 +255,7 @@ class QuizAssignment extends Model
                 try {
                     $notificationService->send(
                         $student,
-                        \App\Enums\NotificationType::QUIZ_ASSIGNED,
+                        NotificationType::QUIZ_ASSIGNED,
                         [
                             'quiz_title' => $this->quiz->title,
                             'quiz_description' => $this->quiz->description,
@@ -268,16 +274,16 @@ class QuizAssignment extends Model
                         ],
                         true  // Mark as important
                     );
-                } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error('Failed to send quiz assigned notification to student', [
+                } catch (Exception $e) {
+                    Log::error('Failed to send quiz assigned notification to student', [
                         'assignment_id' => $this->id,
                         'student_id' => $student->id,
                         'error' => $e->getMessage(),
                     ]);
                 }
             }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send quiz assigned notifications', [
+        } catch (Exception $e) {
+            Log::error('Failed to send quiz assigned notifications', [
                 'assignment_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);
@@ -295,7 +301,7 @@ class QuizAssignment extends Model
     /**
      * Get all students affected by this quiz assignment
      */
-    public function getAffectedStudents(): \Illuminate\Support\Collection
+    public function getAffectedStudents(): Collection
     {
         $students = collect();
 
@@ -341,7 +347,7 @@ class QuizAssignment extends Model
     /**
      * Get students who haven't completed (passed) the quiz yet
      */
-    public function getStudentsWithoutCompletedAttempts(): \Illuminate\Support\Collection
+    public function getStudentsWithoutCompletedAttempts(): Collection
     {
         $allStudents = $this->getAffectedStudents();
 
@@ -372,12 +378,12 @@ class QuizAssignment extends Model
                 return 0;
             }
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(NotificationService::class);
             $students = $this->getStudentsWithoutCompletedAttempts();
 
             $notificationType = $type === '1h'
-                ? \App\Enums\NotificationType::QUIZ_DEADLINE_1H
-                : \App\Enums\NotificationType::QUIZ_DEADLINE_24H;
+                ? NotificationType::QUIZ_DEADLINE_1H
+                : NotificationType::QUIZ_DEADLINE_24H;
 
             $isUrgent = $type === '1h';
 
@@ -425,8 +431,8 @@ class QuizAssignment extends Model
                             $isUrgent
                         );
                     }
-                } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error('Failed to send quiz deadline reminder', [
+                } catch (Exception $e) {
+                    Log::error('Failed to send quiz deadline reminder', [
                         'assignment_id' => $this->id,
                         'student_id' => $student->id,
                         'type' => $type,
@@ -434,8 +440,8 @@ class QuizAssignment extends Model
                     ]);
                 }
             }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send quiz deadline reminders', [
+        } catch (Exception $e) {
+            Log::error('Failed to send quiz deadline reminders', [
                 'assignment_id' => $this->id,
                 'type' => $type,
                 'error' => $e->getMessage(),

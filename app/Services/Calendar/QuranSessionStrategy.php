@@ -2,6 +2,8 @@
 
 namespace App\Services\Calendar;
 
+use InvalidArgumentException;
+use Exception;
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -258,7 +260,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
             'group' => new GroupCircleValidator(QuranCircle::find($item['id'])),
             'individual' => new IndividualCircleValidator(QuranIndividualCircle::find($item['id']), $this->sessionService),
             'trial' => new TrialSessionValidator(QuranTrialRequest::find($item['id'])),
-            default => throw new \InvalidArgumentException("Unknown item type: {$itemType}"),
+            default => throw new InvalidArgumentException("Unknown item type: {$itemType}"),
         };
     }
 
@@ -271,14 +273,14 @@ class QuranSessionStrategy extends AbstractSessionStrategy
         $itemId = $data['item_id'] ?? null;
 
         if (! $itemType || ! $itemId) {
-            throw new \Exception(__('calendar.strategy.item_info_incomplete'));
+            throw new Exception(__('calendar.strategy.item_info_incomplete'));
         }
 
         match ($itemType) {
             'group' => $this->createGroupCircleSchedule($itemId, $data),
             'individual' => $this->createIndividualCircleSchedule($itemId, $data),
             'trial' => $this->createTrialSessionSchedule($itemId, $data),
-            default => throw new \InvalidArgumentException("Unknown item type: {$itemType}"),
+            default => throw new InvalidArgumentException("Unknown item type: {$itemType}"),
         };
     }
 
@@ -357,17 +359,17 @@ class QuranSessionStrategy extends AbstractSessionStrategy
         $circle = QuranIndividualCircle::findOrFail($circleId);
 
         if (! $circle->subscription) {
-            throw new \Exception(__('calendar.strategy.no_valid_subscription'));
+            throw new Exception(__('calendar.strategy.no_valid_subscription'));
         }
 
         if ($circle->subscription->status !== SessionSubscriptionStatus::ACTIVE) {
-            throw new \Exception(__('calendar.strategy.subscription_inactive'));
+            throw new Exception(__('calendar.strategy.subscription_inactive'));
         }
 
         $remainingSessions = $this->sessionService->getRemainingIndividualSessions($circle);
 
         if ($remainingSessions <= 0) {
-            throw new \Exception(__('calendar.strategy.no_remaining_circle_sessions'));
+            throw new Exception(__('calendar.strategy.no_remaining_circle_sessions'));
         }
 
         // Generate sessions using the session service

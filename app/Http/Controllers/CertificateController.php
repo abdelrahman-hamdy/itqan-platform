@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
+use Log;
+use App\Models\InteractiveCourseEnrollment;
 use App\Http\Requests\PreviewCertificateRequest;
 use App\Http\Requests\RequestInteractiveCourseCertificateRequest;
 use App\Http\Traits\Api\ApiResponses;
@@ -70,7 +73,7 @@ class CertificateController extends Controller
 
         try {
             return $this->certificateService->downloadCertificate($certificate);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return back()->with('error', 'حدث خطأ أثناء تحميل الشهادة: '.$e->getMessage());
         }
     }
@@ -87,7 +90,7 @@ class CertificateController extends Controller
 
         try {
             return $this->certificateService->streamCertificate($certificate);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return back()->with('error', 'حدث خطأ أثناء عرض الشهادة: '.$e->getMessage());
         }
     }
@@ -114,8 +117,8 @@ class CertificateController extends Controller
             return response($pdf->Output('', 'S'), 200)
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', 'inline; filename="certificate-preview.pdf"');
-        } catch (\Exception $e) {
-            \Log::error('Certificate preview error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        } catch (Exception $e) {
+            Log::error('Certificate preview error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 
             return $this->serverError('حدث خطأ أثناء معاينة الشهادة: '.$e->getMessage());
         }
@@ -128,7 +131,7 @@ class CertificateController extends Controller
     {
         $validated = $request->validated();
 
-        $enrollment = \App\Models\InteractiveCourseEnrollment::findOrFail($validated['enrollment_id']);
+        $enrollment = InteractiveCourseEnrollment::findOrFail($validated['enrollment_id']);
 
         // Authorization: Ensure the current user owns this enrollment
         if (Auth::id() !== $enrollment->student_id) {
@@ -144,7 +147,7 @@ class CertificateController extends Controller
             $certificate = $this->certificateService->issueCertificateForInteractiveCourse($enrollment);
 
             return back()->with('success', 'تم إصدار شهادتك بنجاح! يمكنك تحميلها الآن.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return back()->with('error', $e->getMessage());
         }
     }

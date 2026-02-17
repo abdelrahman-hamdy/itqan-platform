@@ -2,10 +2,14 @@
 
 namespace App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Infolists\Components\TextEntry;
 use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource;
 use Filament\Actions;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewAcademicIndividualLesson extends ViewRecord
@@ -15,7 +19,7 @@ class ViewAcademicIndividualLesson extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
         ];
     }
@@ -25,47 +29,47 @@ class ViewAcademicIndividualLesson extends ViewRecord
         return $this->getRecord()->name ?? 'تفاصيل الدرس الفردي';
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
         return $infolist
             ->schema([
-                Infolists\Components\Section::make('معلومات الدرس')
+                Section::make('معلومات الدرس')
                     ->schema([
-                        Infolists\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Infolists\Components\TextEntry::make('lesson_code')
+                                TextEntry::make('lesson_code')
                                     ->label('رمز الدرس')
                                     ->copyable(),
-                                Infolists\Components\TextEntry::make('name')
+                                TextEntry::make('name')
                                     ->label('اسم الدرس'),
-                                Infolists\Components\TextEntry::make('student.name')
+                                TextEntry::make('student.name')
                                     ->label('الطالب'),
                             ]),
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('academicSubject.name')
+                                TextEntry::make('academicSubject.name')
                                     ->label('المادة')
                                     ->badge()
                                     ->color('info'),
-                                Infolists\Components\TextEntry::make('academicGradeLevel.name')
+                                TextEntry::make('academicGradeLevel.name')
                                     ->label('المستوى')
                                     ->badge()
                                     ->color('success'),
                             ]),
                     ]),
 
-                Infolists\Components\Section::make('تقدم الجلسات')
+                Section::make('تقدم الجلسات')
                     ->schema([
-                        Infolists\Components\Grid::make(4)
+                        Grid::make(4)
                             ->schema([
-                                Infolists\Components\TextEntry::make('total_sessions')
+                                TextEntry::make('total_sessions')
                                     ->label('إجمالي الجلسات'),
-                                Infolists\Components\TextEntry::make('sessions_completed')
+                                TextEntry::make('sessions_completed')
                                     ->label('الجلسات المكتملة'),
-                                Infolists\Components\TextEntry::make('sessions_remaining')
+                                TextEntry::make('sessions_remaining')
                                     ->label('الجلسات المتبقية')
                                     ->getStateUsing(fn ($record) => $record->total_sessions - $record->sessions_completed),
-                                Infolists\Components\TextEntry::make('progress_percentage')
+                                TextEntry::make('progress_percentage')
                                     ->label('نسبة الإنجاز')
                                     ->suffix('%')
                                     ->badge()
@@ -77,13 +81,13 @@ class ViewAcademicIndividualLesson extends ViewRecord
                             ]),
                     ]),
 
-                Infolists\Components\Section::make('الوصف والملاحظات')
+                Section::make('الوصف والملاحظات')
                     ->schema([
-                        Infolists\Components\TextEntry::make('description')
+                        TextEntry::make('description')
                             ->label('وصف الدرس')
                             ->columnSpanFull()
                             ->placeholder('لا يوجد وصف'),
-                        Infolists\Components\TextEntry::make('notes')
+                        TextEntry::make('notes')
                             ->label('ملاحظات')
                             ->columnSpanFull()
                             ->placeholder('لا توجد ملاحظات'),

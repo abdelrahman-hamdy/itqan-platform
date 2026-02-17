@@ -2,6 +2,12 @@
 
 namespace App\Filament\Supervisor\Pages;
 
+use Filament\Schemas\Components\Group;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\DatePicker;
+use Exception;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use App\Enums\CalendarSessionType;
 use App\Filament\Shared\Traits\HandlesScheduling;
 use App\Models\User;
@@ -24,16 +30,16 @@ use Illuminate\Support\Facades\Auth;
  * Allows supervisors to view and manage sessions for their assigned teachers.
  * Uses a dropdown to select the teacher, then displays their calendar.
  *
- * @property \Illuminate\Support\Collection $resourceItems Livewire computed property
+ * @property Collection $resourceItems Livewire computed property
  */
 class SupervisorCalendar extends Page implements HasForms
 {
     use HandlesScheduling;
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static string $view = 'filament.supervisor.pages.supervisor-calendar';
+    protected string $view = 'filament.supervisor.pages.supervisor-calendar';
 
     protected static ?string $navigationLabel = 'تقويم الجلسات';
 
@@ -41,7 +47,7 @@ class SupervisorCalendar extends Page implements HasForms
 
     protected static ?int $navigationSort = 11;
 
-    protected static ?string $navigationGroup = 'إدارة الجلسات';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة الجلسات';
 
     // Selected teacher data
     public ?int $selectedTeacherId = null;
@@ -473,7 +479,7 @@ class SupervisorCalendar extends Page implements HasForms
             ->modalDescription('اختر أيام الأسبوع ووقت الجلسات لإنشاء جدول تلقائي')
             ->modalSubmitActionLabel('إنشاء الجدول')
             ->modalCancelActionLabel('إلغاء')
-            ->form([$this->buildScheduleForm()])
+            ->schema([$this->buildScheduleForm()])
             ->action(function (array $data) {
                 $this->scheduleDays = $data['schedule_days'] ?? [];
                 $this->scheduleTime = $data['schedule_time'] ?? null;
@@ -494,14 +500,14 @@ class SupervisorCalendar extends Page implements HasForms
     /**
      * Build the unified schedule form
      */
-    protected function buildScheduleForm(): Forms\Components\Group
+    protected function buildScheduleForm(): Group
     {
         $item = $this->getSelectedItem();
         $strategy = $this->getStrategy();
         $validator = ($item && $strategy) ? $strategy->getValidator($this->selectedItemType, $item) : null;
 
-        return Forms\Components\Group::make([
-            Forms\Components\CheckboxList::make('schedule_days')
+        return Group::make([
+            CheckboxList::make('schedule_days')
                 ->label('أيام الأسبوع')
                 ->required()
                 ->options([
@@ -522,9 +528,9 @@ class SupervisorCalendar extends Page implements HasForms
 
                     return "💡 {$recommendations['reason']}";
                 })
-                ->reactive(),
+                ->live(),
 
-            Forms\Components\DatePicker::make('schedule_start_date')
+            DatePicker::make('schedule_start_date')
                 ->label('تاريخ بداية الجدولة')
                 ->helperText(function () use ($item) {
                     if ($item && isset($item['start_date']) && $item['start_date']) {
@@ -542,7 +548,7 @@ class SupervisorCalendar extends Page implements HasForms
                                 if ($startDate->gte(now()->startOfDay())) {
                                     return $startDate->format('Y-m-d');
                                 }
-                            } catch (\Exception $e) {
+                            } catch (Exception $e) {
                                 // Fall back to null if parsing fails
                             }
                         }
@@ -564,9 +570,9 @@ class SupervisorCalendar extends Page implements HasForms
                 ->native(false)
                 ->displayFormat('Y/m/d')
                 ->closeOnDateSelection()
-                ->reactive(),
+                ->live(),
 
-            Forms\Components\Select::make('schedule_time')
+            Select::make('schedule_time')
                 ->label('وقت الجلسة')
                 ->required()
                 ->placeholder('اختر الساعة')
@@ -590,7 +596,7 @@ class SupervisorCalendar extends Page implements HasForms
                     return "الوقت الذي ستبدأ فيه الجلسات (التوقيت المحلي - الوقت الحالي: {$currentTime})";
                 }),
 
-            Forms\Components\TextInput::make('session_count')
+            TextInput::make('session_count')
                 ->label('عدد الجلسات المطلوب إنشاؤها')
                 ->helperText(function () use ($item) {
                     if ($this->selectedItemType === 'trial') {
@@ -643,7 +649,7 @@ class SupervisorCalendar extends Page implements HasForms
                 })
                 ->placeholder('أدخل العدد')
                 ->disabled(fn () => $this->selectedItemType === 'trial')
-                ->reactive(),
+                ->live(),
         ]);
     }
 
@@ -673,7 +679,7 @@ class SupervisorCalendar extends Page implements HasForms
             $strategy = $this->getStrategy();
 
             if (! $strategy) {
-                throw new \Exception('لم يتم تحديد معلم');
+                throw new Exception('لم يتم تحديد معلم');
             }
 
             $validator = $strategy->getValidator($this->selectedItemType, $selectedItem);
@@ -683,13 +689,13 @@ class SupervisorCalendar extends Page implements HasForms
                 // Validate day selection
                 $dayResult = $validator->validateDaySelection($this->scheduleDays);
                 if ($dayResult->isError()) {
-                    throw new \Exception($dayResult->getMessage());
+                    throw new Exception($dayResult->getMessage());
                 }
 
                 // Validate session count
                 $countResult = $validator->validateSessionCount($this->sessionCount);
                 if ($countResult->isError()) {
-                    throw new \Exception($countResult->getMessage());
+                    throw new Exception($countResult->getMessage());
                 }
 
                 // Validate date range
@@ -698,13 +704,13 @@ class SupervisorCalendar extends Page implements HasForms
 
                 $dateResult = $validator->validateDateRange($startDate, $weeksAhead);
                 if ($dateResult->isError()) {
-                    throw new \Exception($dateResult->getMessage());
+                    throw new Exception($dateResult->getMessage());
                 }
 
                 // Validate weekly pacing
                 $pacingResult = $validator->validateWeeklyPacing($this->scheduleDays, $weeksAhead);
                 if ($pacingResult->isError()) {
-                    throw new \Exception($pacingResult->getMessage());
+                    throw new Exception($pacingResult->getMessage());
                 }
             }
 
@@ -735,7 +741,7 @@ class SupervisorCalendar extends Page implements HasForms
             // Refresh the page
             $this->js('setTimeout(() => window.location.reload(), 2000)');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Notification::make()
                 ->title('خطأ')
                 ->body('حدث خطأ أثناء إنشاء الجدول: '.$e->getMessage())

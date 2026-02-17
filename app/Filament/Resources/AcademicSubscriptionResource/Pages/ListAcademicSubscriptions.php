@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AcademicSubscriptionResource\Pages;
 
+use Filament\Actions\CreateAction;
 use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Resources\AcademicSubscriptionResource;
 use Filament\Actions;
@@ -16,7 +17,7 @@ class ListAcademicSubscriptions extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
+            CreateAction::make()
                 ->label('إضافة اشتراك جديد'),
         ];
     }

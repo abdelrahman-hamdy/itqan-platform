@@ -2,9 +2,9 @@
 
 namespace App\Filament\Teacher\Resources\StudentSessionReportResource\Pages;
 
+use Filament\Schemas\Components\Tabs\Tab;
 use App\Enums\AttendanceStatus;
 use App\Filament\Teacher\Resources\StudentSessionReportResource;
-use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 

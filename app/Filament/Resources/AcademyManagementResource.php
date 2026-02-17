@@ -2,6 +2,26 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use App\Filament\Resources\AcademyManagementResource\Pages\ListAcademyManagements;
+use App\Filament\Resources\AcademyManagementResource\Pages\CreateAcademyManagement;
+use App\Filament\Resources\AcademyManagementResource\Pages\EditAcademyManagement;
+use App\Filament\Resources\AcademyManagementResource\Pages\ViewAcademyManagement;
+use Illuminate\Support\HtmlString;
+use ValueError;
 use App\Enums\GradientPalette;
 use App\Enums\TailwindColor;
 use App\Filament\Resources\AcademyManagementResource\Pages;
@@ -12,16 +32,12 @@ use App\Models\RecordedCourse;
 use App\Services\AcademyAdminSyncService;
 use App\Services\AcademyContextService;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Radio;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -32,9 +48,9 @@ class AcademyManagementResource extends BaseResource
 {
     protected static ?string $model = Academy::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-building-office-2';
 
-    protected static ?string $navigationGroup = 'إدارة النظام';
+    protected static string | \UnitEnum | null $navigationGroup = 'إدارة النظام';
 
     protected static ?string $navigationLabel = 'إدارة الأكاديميات';
 
@@ -44,10 +60,10 @@ class AcademyManagementResource extends BaseResource
 
     protected static ?int $navigationSort = 1;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Section::make('المعلومات الأساسية')
                     ->schema([
                         Grid::make(2)
@@ -189,7 +205,7 @@ class AcademyManagementResource extends BaseResource
                                     ->label('وضع الصيانة')
                                     ->default(false)
                                     ->helperText('إيقاف الوصول مؤقتاً للصيانة')
-                                    ->reactive()
+                                    ->live()
                                     ->afterStateUpdated(fn ($state, $set) => $state ?: $set('academic_settings.maintenance_message', null)),
                             ]),
 
@@ -287,7 +303,7 @@ class AcademyManagementResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TrashedFilter::make()->label(__('filament.filters.trashed')),
+                TrashedFilter::make()->label(__('filament.filters.trashed')),
 
                 TernaryFilter::make('is_active')
                     ->label('مفعلة')
@@ -301,7 +317,7 @@ class AcademyManagementResource extends BaseResource
                     ->trueLabel('تحت الصيانة')
                     ->falseLabel('غير في الصيانة'),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('select_academy')
                     ->label('اختيار هذه الأكاديمية')
                     ->icon('heroicon-o-cursor-arrow-rays')
@@ -323,17 +339,17 @@ class AcademyManagementResource extends BaseResource
                     ->url(fn (Academy $record): string => "https://{$record->subdomain}.".config('app.domain', 'itqanway.com'))
                     ->openUrlInNewTab(),
 
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make()->label(__('filament.actions.restore')),
-                Tables\Actions\ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+                ViewAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
+                RestoreAction::make()->label(__('filament.actions.restore')),
+                ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make()->label(__('filament.actions.restore_selected')),
-                    Tables\Actions\ForceDeleteBulkAction::make()->label(__('filament.actions.force_delete_selected')),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    RestoreBulkAction::make()->label(__('filament.actions.restore_selected')),
+                    ForceDeleteBulkAction::make()->label(__('filament.actions.force_delete_selected')),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -342,10 +358,10 @@ class AcademyManagementResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAcademyManagements::route('/'),
-            'create' => Pages\CreateAcademyManagement::route('/create'),
-            'edit' => Pages\EditAcademyManagement::route('/{record}/edit'),
-            'view' => Pages\ViewAcademyManagement::route('/{record}'),
+            'index' => ListAcademyManagements::route('/'),
+            'create' => CreateAcademyManagement::route('/create'),
+            'edit' => EditAcademyManagement::route('/{record}/edit'),
+            'view' => ViewAcademyManagement::route('/{record}'),
         ];
     }
 
@@ -390,7 +406,7 @@ class AcademyManagementResource extends BaseResource
         foreach (TailwindColor::cases() as $color) {
             $hex = $color->getHexValue(500);
             // Create HTML with color swatch
-            $descriptions[$color->value] = new \Illuminate\Support\HtmlString(
+            $descriptions[$color->value] = new HtmlString(
                 '<div class="flex items-center gap-2 mt-1">
                     <div class="w-6 h-6 rounded-md border-2 border-gray-200 shadow-sm" style="background-color: '.$hex.'"></div>
                     <span class="text-xs text-gray-600">'.$hex.'</span>
@@ -434,13 +450,13 @@ class AcademyManagementResource extends BaseResource
             try {
                 $fromHex = TailwindColor::from($fromColorName)->getHexValue((int) $fromShade);
                 $toHex = TailwindColor::from($toColorName)->getHexValue((int) $toShade);
-            } catch (\ValueError $e) {
+            } catch (ValueError $e) {
                 $fromHex = '#3B82F6';
                 $toHex = '#6366F1';
             }
 
             // Create HTML with gradient swatch using inline styles for reliability
-            $descriptions[$palette->value] = new \Illuminate\Support\HtmlString(
+            $descriptions[$palette->value] = new HtmlString(
                 '<div style="padding: 8px 0; min-height: 60px; display: flex; align-items: center; justify-content: center;">
                     <div style="width: 140px; height: 50px; border-radius: 8px; border: 3px solid #d1d5db; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); background: linear-gradient(to right, '.$fromHex.', '.$toHex.');">
                     </div>

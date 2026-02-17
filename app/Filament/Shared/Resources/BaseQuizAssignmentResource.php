@@ -2,13 +2,28 @@
 
 namespace App\Filament\Shared\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 use App\Filament\Resources\BaseResource;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
 use Filament\Facades\Filament;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,9 +38,9 @@ abstract class BaseQuizAssignmentResource extends BaseResource
 {
     protected static ?string $model = QuizAssignment::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-plus';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-plus';
 
-    protected static ?string $navigationGroup = 'الاختبارات';
+    protected static string | \UnitEnum | null $navigationGroup = 'الاختبارات';
 
     protected static ?string $navigationLabel = 'تعيينات الاختبارات';
 
@@ -87,15 +102,15 @@ abstract class BaseQuizAssignmentResource extends BaseResource
         return 'الجهة';
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         $tenant = Filament::getTenant();
 
-        return $form
-            ->schema([
-                Forms\Components\Section::make('تعيين الاختبار')
+        return $schema
+            ->components([
+                Section::make('تعيين الاختبار')
                     ->schema([
-                        Forms\Components\Select::make('quiz_id')
+                        Select::make('quiz_id')
                             ->label('الاختبار')
                             ->options(function () use ($tenant) {
                                 $query = Quiz::active();
@@ -109,14 +124,14 @@ abstract class BaseQuizAssignmentResource extends BaseResource
                             ->searchable()
                             ->preload(),
 
-                        Forms\Components\Select::make('assignable_type')
+                        Select::make('assignable_type')
                             ->label(static::getAssignableTypeLabel())
                             ->options(static::getAssignableTypes())
                             ->required()
                             ->live()
-                            ->afterStateUpdated(fn (Forms\Set $set) => $set('assignable_id', null)),
+                            ->afterStateUpdated(fn (Set $set) => $set('assignable_id', null)),
 
-                        Forms\Components\Select::make('assignable_id')
+                        Select::make('assignable_id')
                             ->label(static::getAssignableTargetLabel())
                             ->options(fn (Get $get) => static::getAssignableOptions($get('assignable_type')))
                             ->required()
@@ -126,14 +141,14 @@ abstract class BaseQuizAssignmentResource extends BaseResource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('إعدادات التوفر')
+                Section::make('إعدادات التوفر')
                     ->schema([
-                        Forms\Components\Toggle::make('is_visible')
+                        Toggle::make('is_visible')
                             ->label('مرئي للطلاب')
                             ->default(true)
                             ->helperText('إخفاء الاختبار عن الطلاب مؤقتاً'),
 
-                        Forms\Components\TextInput::make('max_attempts')
+                        TextInput::make('max_attempts')
                             ->label('عدد المحاولات المسموحة')
                             ->numeric()
                             ->default(1)
@@ -141,7 +156,7 @@ abstract class BaseQuizAssignmentResource extends BaseResource
                             ->maxValue(10)
                             ->required(),
 
-                        Forms\Components\DateTimePicker::make('available_from')
+                        DateTimePicker::make('available_from')
                             ->label('متاح من')
                             ->native(false)
                             ->seconds(false)
@@ -149,7 +164,7 @@ abstract class BaseQuizAssignmentResource extends BaseResource
                             ->placeholder('اتركه فارغاً للإتاحة فوراً')
                             ->helperText('تاريخ ووقت بدء إتاحة الاختبار للطلاب'),
 
-                        Forms\Components\DateTimePicker::make('available_until')
+                        DateTimePicker::make('available_until')
                             ->label('متاح حتى')
                             ->native(false)
                             ->seconds(false)
@@ -168,65 +183,65 @@ abstract class BaseQuizAssignmentResource extends BaseResource
             ->columns([
                 static::getAcademyColumn(),
 
-                Tables\Columns\TextColumn::make('quiz.title')
+                TextColumn::make('quiz.title')
                     ->label('الاختبار')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('assignable_type')
+                TextColumn::make('assignable_type')
                     ->label(static::getAssignableTypeLabel())
                     ->formatStateUsing(fn ($state) => static::getAssignableTypes()[$state] ?? $state),
 
-                Tables\Columns\TextColumn::make('assignable')
+                TextColumn::make('assignable')
                     ->label(static::getAssignableTargetLabel())
                     ->formatStateUsing(fn ($record) => static::formatAssignableName($record)),
 
-                Tables\Columns\IconColumn::make('is_visible')
+                IconColumn::make('is_visible')
                     ->label('مرئي')
                     ->boolean(),
 
-                Tables\Columns\TextColumn::make('max_attempts')
+                TextColumn::make('max_attempts')
                     ->label('المحاولات')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('attempts_count')
+                TextColumn::make('attempts_count')
                     ->label('عدد التقديمات')
                     ->counts('attempts'),
 
-                Tables\Columns\TextColumn::make('available_from')
+                TextColumn::make('available_from')
                     ->label('متاح من')
                     ->dateTime('Y-m-d H:i')
                     ->placeholder('فوري'),
 
-                Tables\Columns\TextColumn::make('available_until')
+                TextColumn::make('available_until')
                     ->label('متاح حتى')
                     ->dateTime('Y-m-d H:i')
                     ->placeholder('دائم'),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('assignable_type')
+                SelectFilter::make('assignable_type')
                     ->label(static::getAssignableTypeLabel())
                     ->options(static::getAssignableTypes()),
 
-                Tables\Filters\TernaryFilter::make('is_visible')
+                TernaryFilter::make('is_visible')
                     ->label('الحالة')
                     ->trueLabel('مرئي')
                     ->falseLabel('مخفي'),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+            ->recordActions([
+                ViewAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }

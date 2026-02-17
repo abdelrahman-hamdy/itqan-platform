@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+use DB;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Collection;
 use App\Contracts\RecordingCapable;
 use App\Enums\AttendanceStatus;
 use App\Enums\EnrollmentStatus;
@@ -53,7 +57,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
         $this->fillable = array_merge(parent::$baseFillable, $this->fillable);
 
         // Call grandparent (Model) constructor directly to avoid BaseSession overwriting fillable
-        \Illuminate\Database\Eloquent\Model::__construct($attributes);
+        Model::__construct($attributes);
     }
 
     /**
@@ -107,7 +111,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     protected function generateUniqueSessionCode(): string
     {
-        return \DB::transaction(function () {
+        return DB::transaction(function () {
             $prefix = 'IC';
             $yearMonth = now()->format('ym');
             $codePrefix = "{$prefix}-{$yearMonth}-";
@@ -204,7 +208,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     /**
      * Get enrolled students through the course relationship
      */
-    public function enrolledStudents(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    public function enrolledStudents(): HasManyThrough
     {
         return $this->hasManyThrough(
             StudentProfile::class,
@@ -315,7 +319,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
             return false;
         }
 
-        if ($this->status !== \App\Enums\SessionStatus::SCHEDULED) {
+        if ($this->status !== SessionStatus::SCHEDULED) {
             return false;
         }
 
@@ -335,7 +339,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
             return false;
         }
 
-        return in_array($this->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::ONGOING]) &&
+        return in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::ONGOING]) &&
                $this->scheduled_at->isFuture();
     }
 
@@ -349,12 +353,12 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     public function markAsOngoing(): bool
     {
-        if (! in_array($this->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY])) {
+        if (! in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::READY])) {
             return false;
         }
 
         $this->update([
-            'status' => \App\Enums\SessionStatus::ONGOING,
+            'status' => SessionStatus::ONGOING,
             'started_at' => now(),
         ]);
 
@@ -367,7 +371,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     public function markAsCompleted(array $additionalData = []): bool
     {
-        return \DB::transaction(function () use ($additionalData) {
+        return DB::transaction(function () use ($additionalData) {
             // Lock for update to prevent race conditions
             $session = self::lockForUpdate()->find($this->id);
 
@@ -375,7 +379,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
                 return false;
             }
 
-            if (! in_array($session->status, [\App\Enums\SessionStatus::ONGOING, \App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::SCHEDULED])) {
+            if (! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY, SessionStatus::SCHEDULED])) {
                 return false;
             }
 
@@ -385,9 +389,9 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
             }
 
             $updateData = array_merge([
-                'status' => \App\Enums\SessionStatus::COMPLETED,
+                'status' => SessionStatus::COMPLETED,
                 'ended_at' => now(),
-                'attendance_status' => \App\Enums\AttendanceStatus::ATTENDED->value,
+                'attendance_status' => AttendanceStatus::ATTENDED->value,
             ], $additionalData);
 
             $session->update($updateData);
@@ -408,12 +412,12 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     public function markAsCancelled(?string $reason = null, ?User $cancelledBy = null, ?string $cancellationType = null): bool
     {
-        if (! in_array($this->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING])) {
+        if (! in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING])) {
             return false;
         }
 
         $this->update([
-            'status' => \App\Enums\SessionStatus::CANCELLED,
+            'status' => SessionStatus::CANCELLED,
             'cancellation_reason' => $reason,
             'cancelled_by' => $cancelledBy?->id,
             'cancelled_at' => now(),
@@ -623,7 +627,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     /**
      * Get all participants who should have access to this meeting (abstract method implementation)
      */
-    public function getMeetingParticipants(): \Illuminate\Database\Eloquent\Collection
+    public function getMeetingParticipants(): Collection
     {
         $participants = collect();
 

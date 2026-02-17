@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\QuranSubscriptionResource\Pages;
 
+use Filament\Actions\CreateAction;
 use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Resources\QuranSubscriptionResource;
 use App\Models\QuranSubscription;
@@ -17,7 +18,7 @@ class ListQuranSubscriptions extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
+            CreateAction::make()
                 ->label('إضافة اشتراك جديد'),
         ];
     }

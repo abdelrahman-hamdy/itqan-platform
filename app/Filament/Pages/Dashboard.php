@@ -2,14 +2,18 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\AcademyContextWidget;
+use App\Filament\Widgets\RecentActivitiesWidget;
+use App\Filament\Widgets\PlatformOverviewWidget;
+use App\Filament\Widgets\AcademyStatsWidget;
 use App\Services\AcademyContextService;
 use Filament\Pages\Dashboard as BaseDashboard;
 
 class Dashboard extends BaseDashboard
 {
-    protected static ?string $navigationIcon = 'heroicon-o-home';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-home';
 
-    protected static string $view = 'filament.pages.dashboard';
+    protected string $view = 'filament.pages.dashboard';
 
     public function getTitle(): string
     {
@@ -36,7 +40,7 @@ class Dashboard extends BaseDashboard
     protected function getHeaderWidgets(): array
     {
         return [
-            \App\Filament\Widgets\AcademyContextWidget::class,
+            AcademyContextWidget::class,
         ];
     }
 
@@ -46,13 +50,13 @@ class Dashboard extends BaseDashboard
 
         if ($currentAcademy) {
             return [
-                \App\Filament\Widgets\RecentActivitiesWidget::class,
+                RecentActivitiesWidget::class,
             ];
         }
 
         return [
-            \App\Filament\Widgets\PlatformOverviewWidget::class,
-            \App\Filament\Widgets\AcademyStatsWidget::class,
+            PlatformOverviewWidget::class,
+            AcademyStatsWidget::class,
         ];
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\SessionSubscriptionStatus;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Constants\ErrorMessages;
 use App\Exceptions\AuthorizationException;
 use App\Models\AcademicSession;
@@ -26,7 +28,7 @@ class ParentChildVerificationService
     /**
      * Verify that a child belongs to the parent and return the child profile.
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     * @throws HttpException
      */
     public function verifyChildBelongsToParent(
         ParentProfile $parent,
@@ -48,7 +50,7 @@ class ParentChildVerificationService
     /**
      * Get a child without academy filtering (for some contexts).
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     * @throws HttpException
      */
     public function getChildOrFail(
         ParentProfile $parent,
@@ -89,7 +91,7 @@ class ParentChildVerificationService
     /**
      * Verify that a payment belongs to one of the parent's children.
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     * @throws HttpException
      */
     public function verifyPaymentBelongsToParent(
         ParentProfile $parent,
@@ -108,7 +110,7 @@ class ParentChildVerificationService
      *
      * @param  mixed  $subscription  Any subscription model with a student_id or user_id
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     * @throws HttpException
      */
     public function verifySubscriptionBelongsToParent(
         ParentProfile $parent,
@@ -130,7 +132,7 @@ class ParentChildVerificationService
      *
      * @param  mixed  $certificate  Certificate model with user_id
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     * @throws HttpException
      */
     public function verifyCertificateBelongsToParent(
         ParentProfile $parent,
@@ -173,7 +175,7 @@ class ParentChildVerificationService
     /**
      * Get the active child from session, or throw if not set/invalid.
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     * @throws HttpException
      */
     public function getActiveChildOrFail(ParentProfile $parent): StudentProfile
     {
@@ -280,21 +282,21 @@ class ParentChildVerificationService
                 // Load Quran subscriptions
                 $child->quranSubscriptions = QuranSubscription::where('student_id', $child->user_id)
                     ->where('academy_id', $parent->academy_id)
-                    ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE->value)
+                    ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                     ->with(['quranTeacher.user', 'package', 'individualCircle'])
                     ->get();
 
                 // Load Academic subscriptions
                 $child->academicSubscriptions = AcademicSubscription::where('student_id', $child->user_id)
                     ->where('academy_id', $parent->academy_id)
-                    ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE->value)
+                    ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                     ->with(['academicTeacher.user', 'subject', 'academicPackage'])
                     ->get();
 
                 // Load Course enrollments
                 $child->courseEnrollments = CourseSubscription::where('student_id', $child->user_id)
                     ->where('academy_id', $parent->academy_id)
-                    ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE->value)
+                    ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                     ->with(['course.assignedTeacher.user'])
                     ->get();
             });

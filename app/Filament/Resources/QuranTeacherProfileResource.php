@@ -1,5 +1,19 @@
 <?php
 namespace App\Filament\Resources;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Tables\Columns\ImageColumn;
+use App\Filament\Resources\QuranTeacherProfileResource\Pages\ListQuranTeacherProfiles;
+use App\Filament\Resources\QuranTeacherProfileResource\Pages\CreateQuranTeacherProfile;
+use App\Filament\Resources\QuranTeacherProfileResource\Pages\ViewQuranTeacherProfile;
+use App\Filament\Resources\QuranTeacherProfileResource\Pages\EditQuranTeacherProfile;
 use App\Filament\Resources\QuranTeacherProfileResource\Pages;
 use App\Filament\Shared\Resources\Profiles\BaseQuranTeacherProfileResource;
 use Filament\Tables;
@@ -11,23 +25,23 @@ class QuranTeacherProfileResource extends BaseQuranTeacherProfileResource {
         return $query->withoutGlobalScopes([SoftDeletingScope::class]);
     }
     protected static function getTableActions(): array {
-        return [Tables\Actions\ViewAction::make(), Tables\Actions\EditAction::make(), Tables\Actions\DeleteAction::make(),
-            Tables\Actions\RestoreAction::make(), Tables\Actions\ForceDeleteAction::make()];
+        return [ViewAction::make(), EditAction::make(), DeleteAction::make(),
+            RestoreAction::make(), ForceDeleteAction::make()];
     }
     protected static function getTableBulkActions(): array {
-        return [Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make(),
-            Tables\Actions\RestoreBulkAction::make(), Tables\Actions\ForceDeleteBulkAction::make()])];
+        return [BulkActionGroup::make([DeleteBulkAction::make(),
+            RestoreBulkAction::make(), ForceDeleteBulkAction::make()])];
     }
     protected static function getTableColumns(): array {
         return array_merge([static::getAcademyColumn()],
-            [Tables\Columns\ImageColumn::make('avatar')->label('الصورة')->circular()
+            [ImageColumn::make('avatar')->label('الصورة')->circular()
                 ->defaultImageUrl(fn($record) => config('services.ui_avatars.base_url').'?name='.urlencode($record->full_name ?? 'N/A').'&background=059669&color=fff')],
             parent::getTableColumns());
     }
     public static function getPages(): array {
-        return ['index' => Pages\ListQuranTeacherProfiles::route('/'),
-            'create' => Pages\CreateQuranTeacherProfile::route('/create'),
-            'view' => Pages\ViewQuranTeacherProfile::route('/{record}'),
-            'edit' => Pages\EditQuranTeacherProfile::route('/{record}/edit')];
+        return ['index' => ListQuranTeacherProfiles::route('/'),
+            'create' => CreateQuranTeacherProfile::route('/create'),
+            'view' => ViewQuranTeacherProfile::route('/{record}'),
+            'edit' => EditQuranTeacherProfile::route('/{record}/edit')];
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\ExchangeRateService;
 use App\Enums\Currency;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
@@ -252,16 +253,16 @@ if (! function_exists('convertCurrency')) {
 
         // Use ExchangeRateService for live rates
         try {
-            $rateService = app(\App\Services\ExchangeRateService::class);
+            $rateService = app(ExchangeRateService::class);
             $rate = $rateService->getRate($fromCode, $toCode);
 
             $convertedAmount = $amount * $rate;
 
             return round($convertedAmount, getCurrencyDecimals($toCode));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // If service fails, log and return original amount (safe fallback)
-            \Log::channel('payments')->error('Currency conversion failed', [
+            Log::channel('payments')->error('Currency conversion failed', [
                 'from' => $fromCode,
                 'to' => $toCode,
                 'amount' => $amount,

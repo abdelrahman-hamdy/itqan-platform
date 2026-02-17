@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Contracts\AutoMeetingCreationServiceInterface;
 use App\Enums\SessionStatus;
 use App\Models\Academy;
@@ -54,7 +55,7 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
 
             Log::info('Auto meeting creation completed', $results);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to process auto meeting creation for all academies', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -118,7 +119,7 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
                         'academy_id' => $academy->id,
                     ]);
 
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $results['meetings_failed']++;
                     $results['errors'][] = [
                         'session_id' => $session->id,
@@ -133,7 +134,7 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
                 }
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to process academy for auto meeting creation', [
                 'academy_id' => $academy->id,
                 'error' => $e->getMessage(),
@@ -224,7 +225,7 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
                 'room_name' => $session->meeting_room_name,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
 
             Log::error('Failed to create meeting for session', [
@@ -310,7 +311,7 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
                         ]);
                     }
 
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $results['meetings_failed_to_end']++;
                     $results['errors'][] = [
                         'session_id' => $session->id,
@@ -324,7 +325,7 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
                 }
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to cleanup expired meetings', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -370,7 +371,7 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
             $videoSettings = VideoSettings::forAcademy($session->academy);
 
             if (! $videoSettings->shouldAutoCreateMeetings()) {
-                throw new \Exception('Auto meeting creation is disabled for this academy');
+                throw new Exception('Auto meeting creation is disabled for this academy');
             }
 
             // Create the meeting using academy settings
@@ -384,7 +385,7 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
                 'room_name' => $session->meeting_room_name,
             ];
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'success' => false,
                 'message' => 'Failed to create test meeting: '.$e->getMessage(),

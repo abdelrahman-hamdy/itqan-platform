@@ -2,6 +2,14 @@
 
 namespace App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages;
 
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\DateTimePicker;
+use App\Models\User;
+use App\Models\AcademicTeacherProfile;
+use App\Models\InteractiveCourse;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource;
@@ -28,9 +36,9 @@ class CreateMonitoredSession extends CreateRecord
     protected function getFormSchema(): array
     {
         return [
-            Forms\Components\Section::make('نوع الجلسة')
+            Section::make('نوع الجلسة')
                 ->schema([
-                    Forms\Components\Select::make('session_type')
+                    Select::make('session_type')
                         ->label('نوع الجلسة')
                         ->options($this->getSessionTypeOptions())
                         ->required()
@@ -39,66 +47,66 @@ class CreateMonitoredSession extends CreateRecord
                         ->afterStateUpdated(fn ($state) => $this->sessionType = $state),
                 ]),
 
-            Forms\Components\Section::make('معلومات الجلسة')
+            Section::make('معلومات الجلسة')
                 ->schema([
                     // Teacher selection based on session type
-                    Forms\Components\Select::make('quran_teacher_id')
+                    Select::make('quran_teacher_id')
                         ->label('معلم القرآن')
                         ->options(fn () => $this->getQuranTeacherOptions())
                         ->required()
                         ->searchable()
                         ->visible(fn ($get) => $get('session_type') === 'quran'),
 
-                    Forms\Components\Select::make('academic_teacher_id')
+                    Select::make('academic_teacher_id')
                         ->label('المعلم الأكاديمي')
                         ->options(fn () => $this->getAcademicTeacherOptions())
                         ->required()
                         ->searchable()
                         ->visible(fn ($get) => $get('session_type') === 'academic'),
 
-                    Forms\Components\Select::make('course_id')
+                    Select::make('course_id')
                         ->label('الدورة التفاعلية')
                         ->options(fn () => $this->getInteractiveCourseOptions())
                         ->required()
                         ->searchable()
                         ->visible(fn ($get) => $get('session_type') === 'interactive'),
 
-                    Forms\Components\TextInput::make('title')
+                    TextInput::make('title')
                         ->label('عنوان الجلسة')
                         ->required()
                         ->maxLength(255),
 
-                    Forms\Components\Select::make('status')
+                    Select::make('status')
                         ->label('الحالة')
                         ->options(SessionStatus::options())
                         ->default(SessionStatus::SCHEDULED->value)
                         ->required(),
 
-                    Forms\Components\Textarea::make('description')
+                    Textarea::make('description')
                         ->label('وصف الجلسة')
                         ->helperText('أهداف ومحتوى الجلسة')
                         ->rows(2)
                         ->columnSpanFull(),
                 ])->columns(2),
 
-            Forms\Components\Section::make('التوقيت')
+            Section::make('التوقيت')
                 ->schema([
-                    Forms\Components\DateTimePicker::make('scheduled_at')
+                    DateTimePicker::make('scheduled_at')
                         ->label('موعد الجلسة')
                         ->required()
                         ->timezone(AcademyContextService::getTimezone())
                         ->default(now()->addDay()),
 
-                    Forms\Components\Select::make('duration_minutes')
+                    Select::make('duration_minutes')
                         ->label('مدة الجلسة')
                         ->options(SessionDuration::options())
                         ->default(60)
                         ->required(),
                 ])->columns(2),
 
-            Forms\Components\Section::make('ملاحظات')
+            Section::make('ملاحظات')
                 ->schema([
-                    Forms\Components\Textarea::make('supervisor_notes')
+                    Textarea::make('supervisor_notes')
                         ->label('ملاحظات المشرف')
                         ->rows(3)
                         ->helperText('ملاحظات من المشرف بعد المراجعة'),
@@ -129,7 +137,7 @@ class CreateMonitoredSession extends CreateRecord
     {
         $teacherIds = MonitoredAllSessionsResource::getAssignedQuranTeacherIds();
 
-        return \App\Models\User::whereIn('id', $teacherIds)
+        return User::whereIn('id', $teacherIds)
             ->get()
             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email])
             ->toArray();
@@ -139,7 +147,7 @@ class CreateMonitoredSession extends CreateRecord
     {
         $profileIds = MonitoredAllSessionsResource::getAssignedAcademicTeacherProfileIds();
 
-        return \App\Models\AcademicTeacherProfile::whereIn('id', $profileIds)
+        return AcademicTeacherProfile::whereIn('id', $profileIds)
             ->with('user')
             ->get()
             ->mapWithKeys(fn ($profile) => [$profile->id => $profile->user?->name ?? 'غير محدد'])
@@ -150,7 +158,7 @@ class CreateMonitoredSession extends CreateRecord
     {
         $courseIds = MonitoredAllSessionsResource::getDerivedInteractiveCourseIds();
 
-        return \App\Models\InteractiveCourse::whereIn('id', $courseIds)
+        return InteractiveCourse::whereIn('id', $courseIds)
             ->pluck('title', 'id')
             ->toArray();
     }

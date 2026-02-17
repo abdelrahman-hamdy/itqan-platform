@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
+use Log;
 use App\Models\Course;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -62,8 +64,8 @@ class WebPurchaseController extends Controller
 
             return redirect($redirectUrl)
                 ->with('info', __('Complete your purchase below. You will be redirected back to the mobile app after payment.'));
-        } catch (\Exception $e) {
-            \Log::error('Mobile purchase redirect failed', [
+        } catch (Exception $e) {
+            Log::error('Mobile purchase redirect failed', [
                 'type' => $type,
                 'id' => $id,
                 'error' => $e->getMessage(),

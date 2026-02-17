@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\Common;
 
+use App\Models\ChatGroup;
+use App\Events\UserTyping;
+use App\Events\MessageEdited;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
@@ -53,7 +56,7 @@ class ChatController extends Controller
         return $this->success([
             'conversations' => collect($conversations->items())->map(function ($conversation) use ($user) {
                 // Check if this is a supervised chat first
-                $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)
+                $chatGroup = ChatGroup::where('conversation_id', $conversation->id)
                     ->with(['quranIndividualCircle', 'academicIndividualLesson'])
                     ->first();
                 $isSupervisedChat = $chatGroup !== null;
@@ -108,8 +111,8 @@ class ChatController extends Controller
                 $studentParticipant = null;
 
                 if ($isSupervisedChat && $teacherId && $studentId) {
-                    $teacherUser = \App\Models\User::find($teacherId);
-                    $studentUser = \App\Models\User::find($studentId);
+                    $teacherUser = User::find($teacherId);
+                    $studentUser = User::find($studentId);
 
                     if ($teacherUser) {
                         $teacherParticipant = [
@@ -296,7 +299,7 @@ class ChatController extends Controller
         }
 
         // Check if this is a supervised chat
-        $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)
+        $chatGroup = ChatGroup::where('conversation_id', $conversation->id)
             ->with(['quranIndividualCircle', 'academicIndividualLesson'])
             ->first();
         $isSupervisedChat = $chatGroup !== null;
@@ -347,8 +350,8 @@ class ChatController extends Controller
         $studentParticipant = null;
 
         if ($isSupervisedChat && $teacherId && $studentId) {
-            $teacherUser = \App\Models\User::find($teacherId);
-            $studentUser = \App\Models\User::find($studentId);
+            $teacherUser = User::find($teacherId);
+            $studentUser = User::find($studentId);
 
             if ($teacherUser) {
                 $teacherParticipant = [
@@ -592,7 +595,7 @@ class ChatController extends Controller
         }
 
         // Broadcast typing event
-        broadcast(new \App\Events\UserTyping($id, $user, $request->is_typing));
+        broadcast(new UserTyping($id, $user, $request->is_typing));
 
         return $this->success([
             'broadcasted' => true,
@@ -634,7 +637,7 @@ class ChatController extends Controller
         $message->save();
 
         // Broadcast edit event
-        broadcast(new \App\Events\MessageEdited($message));
+        broadcast(new MessageEdited($message));
 
         return $this->success([
             'message' => [
@@ -755,7 +758,7 @@ class ChatController extends Controller
         return $this->success([
             'conversations' => collect($conversations->items())->map(function ($conversation) use ($user) {
                 // Check if this is a supervised chat first
-                $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)
+                $chatGroup = ChatGroup::where('conversation_id', $conversation->id)
                     ->with(['quranIndividualCircle', 'academicIndividualLesson'])
                     ->first();
                 $isSupervisedChat = $chatGroup !== null;
@@ -808,8 +811,8 @@ class ChatController extends Controller
                 $studentParticipant = null;
 
                 if ($isSupervisedChat && $teacherId && $studentId) {
-                    $teacherUser = \App\Models\User::find($teacherId);
-                    $studentUser = \App\Models\User::find($studentId);
+                    $teacherUser = User::find($teacherId);
+                    $studentUser = User::find($studentId);
 
                     if ($teacherUser) {
                         $teacherParticipant = [
@@ -911,7 +914,7 @@ class ChatController extends Controller
         ])->toArray();
 
         // Check if this is a supervised chat by querying ChatGroup directly
-        $chatGroup = \App\Models\ChatGroup::where('conversation_id', $id)->first();
+        $chatGroup = ChatGroup::where('conversation_id', $id)->first();
         $isSupervisedChat = $chatGroup !== null;
 
         return $this->success([

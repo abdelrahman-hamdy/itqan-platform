@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AssignAcademicHomeworkRequest;
+use App\Models\AcademicSessionReport;
+use App\Http\Requests\SubmitAcademicHomeworkRequest;
+use App\Http\Requests\GradeAcademicHomeworkRequest;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Http\Requests\AddStudentFeedbackRequest;
@@ -126,7 +130,7 @@ class AcademicSessionController extends Controller
     /**
      * Assign homework to session (Teacher)
      */
-    public function assignHomework(\App\Http\Requests\AssignAcademicHomeworkRequest $request, $subdomain, $session): JsonResponse|RedirectResponse
+    public function assignHomework(AssignAcademicHomeworkRequest $request, $subdomain, $session): JsonResponse|RedirectResponse
     {
         // If $session is not a model instance, fetch it
         if (! $session instanceof AcademicSession) {
@@ -152,7 +156,7 @@ class AcademicSessionController extends Controller
         ]);
 
         // Create or update report for the student to track homework assignment
-        $studentReport = \App\Models\AcademicSessionReport::firstOrCreate(
+        $studentReport = AcademicSessionReport::firstOrCreate(
             [
                 'session_id' => $session->id,
                 'student_id' => $session->student_id,
@@ -214,7 +218,7 @@ class AcademicSessionController extends Controller
         ]);
 
         // Update report if it exists
-        $studentReport = \App\Models\AcademicSessionReport::where('session_id', $session->id)
+        $studentReport = AcademicSessionReport::where('session_id', $session->id)
             ->where('student_id', $session->student_id)
             ->first();
 
@@ -235,7 +239,7 @@ class AcademicSessionController extends Controller
     /**
      * Submit homework for academic session (Student)
      */
-    public function submitHomework(\App\Http\Requests\SubmitAcademicHomeworkRequest $request, $subdomain, $session): RedirectResponse
+    public function submitHomework(SubmitAcademicHomeworkRequest $request, $subdomain, $session): RedirectResponse
     {
         $user = Auth::user();
 
@@ -257,7 +261,7 @@ class AcademicSessionController extends Controller
         }
 
         // Get or create student report
-        $studentReport = \App\Models\AcademicSessionReport::firstOrCreate(
+        $studentReport = AcademicSessionReport::firstOrCreate(
             [
                 'session_id' => $session->id,
                 'student_id' => $user->id,
@@ -279,7 +283,7 @@ class AcademicSessionController extends Controller
     /**
      * Grade homework submission (Teacher)
      */
-    public function gradeHomework(\App\Http\Requests\GradeAcademicHomeworkRequest $request, $subdomain, $session, $reportId): RedirectResponse
+    public function gradeHomework(GradeAcademicHomeworkRequest $request, $subdomain, $session, $reportId): RedirectResponse
     {
         // If $session is not a model instance, fetch it
         if (! $session instanceof AcademicSession) {
@@ -289,7 +293,7 @@ class AcademicSessionController extends Controller
         // Authorize update access (only teachers can grade homework)
         $this->authorize('update', $session);
 
-        $report = \App\Models\AcademicSessionReport::findOrFail($reportId);
+        $report = AcademicSessionReport::findOrFail($reportId);
 
         // Verify report belongs to this session
         if ($report->session_id !== $session->id) {

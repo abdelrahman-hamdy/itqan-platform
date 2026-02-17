@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Models\AcademicHomework;
+use Illuminate\Support\Collection;
+use App\Models\QuranSubscription;
+use App\Models\AcademicSubscription;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -113,7 +117,7 @@ class DashboardController extends Controller
         }
 
         // Count sessions that have submissions
-        $sessionsWithSubmissions = \App\Models\AcademicHomework::whereIn('academic_session_id', $sessionsWithHomework)
+        $sessionsWithSubmissions = AcademicHomework::whereIn('academic_session_id', $sessionsWithHomework)
             ->whereHas('submissions', function ($q) use ($userId) {
                 $q->where('academic_homework_submissions.student_id', $userId);
             })
@@ -143,7 +147,7 @@ class DashboardController extends Controller
      * The unified service already provides normalized data, we just need
      * to transform it to the API response format.
      */
-    protected function formatUnifiedSessionsForApi(\Illuminate\Support\Collection $sessions): array
+    protected function formatUnifiedSessionsForApi(Collection $sessions): array
     {
         return $sessions->map(function ($session) {
             return [
@@ -240,7 +244,7 @@ class DashboardController extends Controller
         $subscriptions = collect();
 
         // Get Quran subscriptions
-        $quranSubs = \App\Models\QuranSubscription::where('student_id', $userId)
+        $quranSubs = QuranSubscription::where('student_id', $userId)
             ->where('academy_id', $academyId)
             ->where('status', 'active')
             ->with(['quranTeacherUser']) // Load the User directly
@@ -273,7 +277,7 @@ class DashboardController extends Controller
         }
 
         // Get Academic subscriptions
-        $academicSubs = \App\Models\AcademicSubscription::where('student_id', $userId)
+        $academicSubs = AcademicSubscription::where('student_id', $userId)
             ->where('academy_id', $academyId)
             ->where('status', 'active')
             ->with(['academicTeacher.user']) // Load teacher with user

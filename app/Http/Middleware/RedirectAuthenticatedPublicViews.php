@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\InteractiveCourse;
+use App\Models\QuranSubscription;
 use App\Constants\DefaultAcademy;
 use Closure;
 use Illuminate\Http\Request;
@@ -14,7 +16,7 @@ class RedirectAuthenticatedPublicViews
      * Handle an incoming request to public education views.
      * Redirect authenticated users to their appropriate role-based views.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param Closure(Request):Response $next
      */
     public function handle(Request $request, Closure $next, ?string $type = null): Response
     {
@@ -43,7 +45,7 @@ class RedirectAuthenticatedPublicViews
             if ($user->isAcademicTeacher()) {
                 // Check if teacher is assigned to this course
                 if ($courseId) {
-                    $course = \App\Models\InteractiveCourse::find($courseId);
+                    $course = InteractiveCourse::find($courseId);
                     if ($course) {
                         $teacherProfile = $user->academicTeacherProfile;
                         $isAssignedTeacher = $teacherProfile && $course->assigned_teacher_id === $teacherProfile->id;
@@ -70,7 +72,7 @@ class RedirectAuthenticatedPublicViews
 
             if ($user->isStudent()) {
                 // Check if student is subscribed
-                $subscription = \App\Models\QuranSubscription::where('circle_id', $circleId)
+                $subscription = QuranSubscription::where('circle_id', $circleId)
                     ->where('student_id', $user->student->id ?? $user->id)
                     ->where('status', 'active')
                     ->first();

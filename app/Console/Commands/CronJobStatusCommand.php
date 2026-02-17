@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use Carbon\Carbon;
+use Exception;
 use App\Services\CronJobLogger;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
@@ -180,7 +182,7 @@ class CronJobStatusCommand extends Command
         foreach ($lines as $line) {
             if (preg_match('/\[(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[^\]]*)\]\s+(.+?)\.\w+:\s+(.+)/', $line, $matches)) {
                 try {
-                    $timestamp = \Carbon\Carbon::parse($matches[1]);
+                    $timestamp = Carbon::parse($matches[1]);
                     if ($timestamp->isAfter($cutoff)) {
                         $logs[] = [
                             'timestamp' => $timestamp,
@@ -189,7 +191,7 @@ class CronJobStatusCommand extends Command
                             'full_line' => $line,
                         ];
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     // Skip invalid timestamps
                 }
             }

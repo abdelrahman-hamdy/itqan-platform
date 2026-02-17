@@ -2,6 +2,12 @@
 
 namespace App\Services;
 
+use Exception;
+use Carbon\Carbon;
+use App\Models\QuranSession;
+use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
+use App\Events\AttendanceUpdated;
 use App\Contracts\AttendanceEventServiceInterface;
 use App\Enums\AttendanceStatus;
 use App\Enums\UserType;
@@ -76,7 +82,7 @@ class AttendanceEventService implements AttendanceEventServiceInterface
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to record join event', [
                 'error' => $e->getMessage(),
                 'session_id' => $session->id,
@@ -122,8 +128,8 @@ class AttendanceEventService implements AttendanceEventServiceInterface
                         // Check if this is a join event without a matching leave
                         if ($cycle['type'] === 'join') {
                             // Add matching leave event right after the join
-                            $joinTime = is_string($cycle['timestamp']) ? \Carbon\Carbon::parse($cycle['timestamp']) : $cycle['timestamp'];
-                            $leaveTimeCarbon = is_string($leaveTime) ? \Carbon\Carbon::parse($leaveTime) : $leaveTime;
+                            $joinTime = is_string($cycle['timestamp']) ? Carbon::parse($cycle['timestamp']) : $cycle['timestamp'];
+                            $leaveTimeCarbon = is_string($leaveTime) ? Carbon::parse($leaveTime) : $leaveTime;
                             $duration = $joinTime->diffInMinutes($leaveTimeCarbon);
 
                             // Insert leave event right after the join event
@@ -185,7 +191,7 @@ class AttendanceEventService implements AttendanceEventServiceInterface
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to record leave event', [
                 'error' => $e->getMessage(),
                 'session_id' => $session->id,
@@ -208,8 +214,8 @@ class AttendanceEventService implements AttendanceEventServiceInterface
             if ($cycle['type'] === 'join') {
                 $lastJoinTime = $cycle['timestamp'];
             } elseif ($cycle['type'] === 'leave' && $lastJoinTime) {
-                $joinTime = is_string($lastJoinTime) ? \Carbon\Carbon::parse($lastJoinTime) : $lastJoinTime;
-                $leaveTime = is_string($cycle['timestamp']) ? \Carbon\Carbon::parse($cycle['timestamp']) : $cycle['timestamp'];
+                $joinTime = is_string($lastJoinTime) ? Carbon::parse($lastJoinTime) : $lastJoinTime;
+                $leaveTime = is_string($cycle['timestamp']) ? Carbon::parse($cycle['timestamp']) : $cycle['timestamp'];
                 $totalMinutes += $joinTime->diffInMinutes($leaveTime);
                 $lastJoinTime = null; // Reset for next cycle
             }
@@ -243,7 +249,7 @@ class AttendanceEventService implements AttendanceEventServiceInterface
      */
     private function getSessionType($session): string
     {
-        if ($session instanceof \App\Models\QuranSession) {
+        if ($session instanceof QuranSession) {
             // Map 'trial' to 'individual' since trial sessions are 1-on-1
             // DB enum only allows: individual, group, academic, interactive
             $type = $session->session_type ?? 'individual';
@@ -254,11 +260,11 @@ class AttendanceEventService implements AttendanceEventServiceInterface
             };
         }
 
-        if ($session instanceof \App\Models\AcademicSession) {
+        if ($session instanceof AcademicSession) {
             return 'academic';
         }
 
-        if ($session instanceof \App\Models\InteractiveCourseSession) {
+        if ($session instanceof InteractiveCourseSession) {
             return 'interactive';
         }
 
@@ -282,10 +288,10 @@ class AttendanceEventService implements AttendanceEventServiceInterface
         try {
             // Broadcast attendance update event using Laravel broadcasting
             // This will be received by Livewire components listening for the event
-            broadcast(new \App\Events\AttendanceUpdated($sessionId, $userId, [
+            broadcast(new AttendanceUpdated($sessionId, $userId, [
                 'updated_at' => now()->toIso8601String(),
             ]))->toOthers();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Silent fail - don't break attendance recording if event dispatch fails
             Log::debug('Failed to dispatch attendance update event', [
                 'error' => $e->getMessage(),

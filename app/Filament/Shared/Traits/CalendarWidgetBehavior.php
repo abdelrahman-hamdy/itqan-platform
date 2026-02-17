@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Shared\Traits;
 
+use Exception;
 use App\Enums\CalendarSessionType;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
@@ -213,7 +214,7 @@ trait CalendarWidgetBehavior
 
         try {
             return $this->resolveRecord($eventId);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return null;
         }
     }

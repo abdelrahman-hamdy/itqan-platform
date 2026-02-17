@@ -13,7 +13,7 @@ class SupervisorInboxWidget extends Widget
 {
     protected static bool $isDiscoverable = false;
 
-    protected static string $view = 'filament.supervisor.widgets.inbox-widget';
+    protected string $view = 'filament.supervisor.widgets.inbox-widget';
 
     protected static ?int $sort = 0;
 

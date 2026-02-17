@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Archived;
 
+use Exception;
 use App\Models\QuranIndividualCircle;
 use Illuminate\Console\Command;
 
@@ -77,7 +78,7 @@ class FixIndividualCircleTeacherIds extends Command
                     $sessionsFixed += $sessionsToFix->count();
                 }
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->error("Circle {$circle->id}: Error - {$e->getMessage()}");
                 $errors++;
             }

@@ -2,11 +2,15 @@
 
 namespace App\Filament\Teacher\Resources\StudentSessionReportResource\Pages;
 
+use Filament\Actions\EditAction;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Infolists\Components\TextEntry;
 use App\Enums\AttendanceStatus;
 use App\Filament\Teacher\Resources\StudentSessionReportResource;
 use Filament\Actions;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewStudentSessionReport extends ViewRecord
@@ -16,7 +20,7 @@ class ViewStudentSessionReport extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            EditAction::make()
                 ->label('تعديل'),
         ];
     }
@@ -34,20 +38,20 @@ class ViewStudentSessionReport extends ViewRecord
         ];
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
         return $infolist
             ->schema([
-                Infolists\Components\Section::make('معلومات الطالب والجلسة')
+                Section::make('معلومات الطالب والجلسة')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('student.name')
+                                TextEntry::make('student.name')
                                     ->label('اسم الطالب'),
-                                Infolists\Components\TextEntry::make('session.scheduled_at')
+                                TextEntry::make('session.scheduled_at')
                                     ->label('تاريخ الجلسة')
                                     ->dateTime('Y-m-d H:i'),
-                                Infolists\Components\TextEntry::make('session.session_type')
+                                TextEntry::make('session.session_type')
                                     ->label('نوع الجلسة')
                                     ->formatStateUsing(function (string $state): string {
                                         return match ($state) {
@@ -57,7 +61,7 @@ class ViewStudentSessionReport extends ViewRecord
                                         };
                                     })
                                     ->badge(),
-                                Infolists\Components\TextEntry::make('attendance_status')
+                                TextEntry::make('attendance_status')
                                     ->label('حالة الحضور')
                                     ->formatStateUsing(function (string $state): string {
                                         return match ($state) {
@@ -79,59 +83,59 @@ class ViewStudentSessionReport extends ViewRecord
                             ]),
                     ]),
 
-                Infolists\Components\Section::make('تفاصيل الحضور')
+                Section::make('تفاصيل الحضور')
                     ->schema([
-                        Infolists\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
-                                Infolists\Components\TextEntry::make('meeting_enter_time')
+                                TextEntry::make('meeting_enter_time')
                                     ->label('وقت الدخول')
                                     ->dateTime('H:i')
                                     ->placeholder('لم يدخل'),
-                                Infolists\Components\TextEntry::make('meeting_leave_time')
+                                TextEntry::make('meeting_leave_time')
                                     ->label('وقت الخروج')
                                     ->dateTime('H:i')
                                     ->placeholder('لم يخرج'),
-                                Infolists\Components\TextEntry::make('actual_attendance_minutes')
+                                TextEntry::make('actual_attendance_minutes')
                                     ->label('مدة الحضور')
                                     ->suffix(' دقيقة'),
                             ]),
 
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('late_minutes')
+                                TextEntry::make('late_minutes')
                                     ->label('دقائق التأخير')
                                     ->suffix(' دقيقة'),
-                                Infolists\Components\TextEntry::make('attendance_percentage')
+                                TextEntry::make('attendance_percentage')
                                     ->label('نسبة الحضور')
                                     ->suffix('%')
                                     ->numeric(2),
                             ]),
                     ]),
 
-                Infolists\Components\Section::make('التقييم الأكاديمي')
+                Section::make('التقييم الأكاديمي')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('new_memorization_degree')
+                                TextEntry::make('new_memorization_degree')
                                     ->label('درجة الحفظ الجديد')
                                     ->suffix('/10'),
-                                Infolists\Components\TextEntry::make('reservation_degree')
+                                TextEntry::make('reservation_degree')
                                     ->label('درجة المراجعة')
                                     ->suffix('/10'),
                             ]),
 
-                        Infolists\Components\TextEntry::make('notes')
+                        TextEntry::make('notes')
                             ->label('ملاحظات التقييم')
                             ->placeholder('لا توجد ملاحظات'),
 
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('is_calculated')
+                                TextEntry::make('is_calculated')
                                     ->label('نوع التقييم')
                                     ->formatStateUsing(fn (bool $state): string => $state ? 'محسوب تلقائياً' : 'مقيم يدوياً')
                                     ->badge()
                                     ->color(fn (bool $state): string => $state ? 'info' : 'warning'),
-                                Infolists\Components\TextEntry::make('evaluated_at')
+                                TextEntry::make('evaluated_at')
                                     ->label('تاريخ التقييم')
                                     ->dateTime('Y-m-d H:i')
                                     ->placeholder('لم يقيم بعد'),

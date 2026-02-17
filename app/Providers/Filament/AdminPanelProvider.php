@@ -2,6 +2,56 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\Login;
+use Filament\Pages\Dashboard;
+use App\Filament\Widgets\SuperAdminStatsWidget;
+use App\Filament\Widgets\SuperAdminMonthlyStatsWidget;
+use App\Filament\Widgets\UserAnalyticsChartWidget;
+use App\Filament\Widgets\SessionAnalyticsChartWidget;
+use App\Filament\Widgets\RecentBusinessRequestsWidget;
+use App\Filament\Widgets\SentryStatsWidget;
+use ShuvroRoy\FilamentSpatieLaravelHealth\Pages\HealthCheckResults;
+use App\Filament\Resources\AcademyManagementResource;
+use App\Filament\Resources\AcademyGeneralSettingsResource;
+use App\Filament\Resources\PaymentSettingsResource;
+use App\Filament\Resources\UserResource;
+use App\Filament\Resources\AdminResource;
+use App\Filament\Resources\StudentProfileResource;
+use App\Filament\Resources\ParentProfileResource;
+use App\Filament\Resources\SupervisorProfileResource;
+use App\Filament\Resources\AcademicTeacherProfileResource;
+use App\Filament\Resources\QuranTeacherProfileResource;
+use App\Filament\Resources\QuranPackageResource;
+use App\Filament\Resources\QuranCircleResource;
+use App\Filament\Resources\QuranIndividualCircleResource;
+use App\Filament\Resources\QuranSubscriptionResource;
+use App\Filament\Resources\QuranSessionResource;
+use App\Filament\Resources\QuranTrialRequestResource;
+use App\Filament\Resources\AcademicGradeLevelResource;
+use App\Filament\Resources\AcademicSubjectResource;
+use App\Filament\Resources\AcademicPackageResource;
+use App\Filament\Resources\AcademicIndividualLessonResource;
+use App\Filament\Resources\InteractiveCourseResource;
+use App\Filament\Resources\AcademicSubscriptionResource;
+use App\Filament\Resources\AcademicSessionResource;
+use App\Filament\Resources\InteractiveCourseSessionResource;
+use App\Filament\Resources\RecordedCourseResource;
+use App\Filament\Resources\PaymentResource;
+use App\Filament\Resources\SavedPaymentMethodResource;
+use App\Filament\Resources\TeacherReviewResource;
+use App\Filament\Resources\TeacherEarningResource;
+use App\Filament\Resources\StudentSessionReportResource;
+use App\Filament\Resources\AcademicSessionReportResource;
+use App\Filament\Resources\InteractiveSessionReportResource;
+use App\Filament\Resources\MeetingAttendanceResource;
+use App\Filament\Resources\HomeworkSubmissionsResource;
+use App\Filament\Resources\StudentProgressResource;
+use App\Filament\Resources\CertificateResource;
+use App\Filament\Resources\QuizResource;
+use App\Filament\Resources\QuizAssignmentResource;
+use App\Filament\Resources\BusinessServiceCategoryResource;
+use App\Filament\Resources\BusinessServiceRequestResource;
+use App\Filament\Resources\PortfolioItemResource;
 use App\Http\Middleware\AcademyContext;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -28,7 +78,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('/admin')
-            ->login(\App\Filament\Pages\Auth\Login::class)
+            ->login(Login::class)
             ->authGuard('web')
             ->authPasswordBroker('users')
             ->brandName('منصة إتقان للأعمال')
@@ -42,16 +92,16 @@ class AdminPanelProvider extends PanelProvider
             ->resources($this->getResources())
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                Dashboard::class,
             ])
             ->widgets([
                 // Only show these specific widgets - no auto-discovery
-                \App\Filament\Widgets\SuperAdminStatsWidget::class,
-                \App\Filament\Widgets\SuperAdminMonthlyStatsWidget::class,
-                \App\Filament\Widgets\UserAnalyticsChartWidget::class,
-                \App\Filament\Widgets\SessionAnalyticsChartWidget::class,
-                \App\Filament\Widgets\RecentBusinessRequestsWidget::class,
-                \App\Filament\Widgets\SentryStatsWidget::class, // Registered for Log Viewer page, hidden from dashboard via canView()
+                SuperAdminStatsWidget::class,
+                SuperAdminMonthlyStatsWidget::class,
+                UserAnalyticsChartWidget::class,
+                SessionAnalyticsChartWidget::class,
+                RecentBusinessRequestsWidget::class,
+                SentryStatsWidget::class, // Registered for Log Viewer page, hidden from dashboard via canView()
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -91,7 +141,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 FilamentSpatieLaravelHealthPlugin::make()
-                    ->usingPage(\ShuvroRoy\FilamentSpatieLaravelHealth\Pages\HealthCheckResults::class)
+                    ->usingPage(HealthCheckResults::class)
                     ->authorize(fn (): bool => auth()->user()?->isSuperAdmin())
                     ->navigationGroup('أدوات المطور')
                     ->navigationLabel('حالة النظام')
@@ -113,72 +163,72 @@ class AdminPanelProvider extends PanelProvider
         // Register all resources - each resource will handle its own visibility through canViewAny()
         return [
             // إدارة النظام - Super Admin Resources
-            \App\Filament\Resources\AcademyManagementResource::class,
-            \App\Filament\Resources\AcademyGeneralSettingsResource::class,
-            \App\Filament\Resources\PaymentSettingsResource::class,
+            AcademyManagementResource::class,
+            AcademyGeneralSettingsResource::class,
+            PaymentSettingsResource::class,
 
             // إدارة المستخدمين - Academy Level
-            \App\Filament\Resources\UserResource::class,
-            \App\Filament\Resources\AdminResource::class,
-            \App\Filament\Resources\StudentProfileResource::class,
-            \App\Filament\Resources\ParentProfileResource::class,
-            \App\Filament\Resources\SupervisorProfileResource::class,
-            \App\Filament\Resources\AcademicTeacherProfileResource::class,
+            UserResource::class,
+            AdminResource::class,
+            StudentProfileResource::class,
+            ParentProfileResource::class,
+            SupervisorProfileResource::class,
+            AcademicTeacherProfileResource::class,
 
             // إدارة القرآن - Quran Management
-            \App\Filament\Resources\QuranTeacherProfileResource::class,
-            \App\Filament\Resources\QuranPackageResource::class,
-            \App\Filament\Resources\QuranCircleResource::class,
-            \App\Filament\Resources\QuranIndividualCircleResource::class,
-            \App\Filament\Resources\QuranSubscriptionResource::class,
-            \App\Filament\Resources\QuranSessionResource::class,
-            \App\Filament\Resources\QuranTrialRequestResource::class,
+            QuranTeacherProfileResource::class,
+            QuranPackageResource::class,
+            QuranCircleResource::class,
+            QuranIndividualCircleResource::class,
+            QuranSubscriptionResource::class,
+            QuranSessionResource::class,
+            QuranTrialRequestResource::class,
 
             // إدارة التعليم الأكاديمي - Academic Management
-            \App\Filament\Resources\AcademicGradeLevelResource::class,
-            \App\Filament\Resources\AcademicSubjectResource::class,
-            \App\Filament\Resources\AcademicPackageResource::class,
-            \App\Filament\Resources\AcademicIndividualLessonResource::class,
-            \App\Filament\Resources\InteractiveCourseResource::class,
-            \App\Filament\Resources\AcademicSubscriptionResource::class,
-            \App\Filament\Resources\AcademicSessionResource::class,
-            \App\Filament\Resources\InteractiveCourseSessionResource::class,
+            AcademicGradeLevelResource::class,
+            AcademicSubjectResource::class,
+            AcademicPackageResource::class,
+            AcademicIndividualLessonResource::class,
+            InteractiveCourseResource::class,
+            AcademicSubscriptionResource::class,
+            AcademicSessionResource::class,
+            InteractiveCourseSessionResource::class,
 
             // إدارة الدورات المسجلة - Recorded Courses
-            \App\Filament\Resources\RecordedCourseResource::class,
+            RecordedCourseResource::class,
 
             // المالية - Financial Management
-            \App\Filament\Resources\PaymentResource::class,
-            \App\Filament\Resources\SavedPaymentMethodResource::class,
+            PaymentResource::class,
+            SavedPaymentMethodResource::class,
 
             // إعدادات المعلمين - Teacher Settings
-            \App\Filament\Resources\TeacherReviewResource::class,
-            \App\Filament\Resources\TeacherEarningResource::class,
+            TeacherReviewResource::class,
+            TeacherEarningResource::class,
 
             // التقارير والحضور - Reports & Attendance
-            \App\Filament\Resources\StudentSessionReportResource::class,
-            \App\Filament\Resources\AcademicSessionReportResource::class,
-            \App\Filament\Resources\InteractiveSessionReportResource::class,
-            \App\Filament\Resources\MeetingAttendanceResource::class,
-            \App\Filament\Resources\HomeworkSubmissionsResource::class,
+            StudentSessionReportResource::class,
+            AcademicSessionReportResource::class,
+            InteractiveSessionReportResource::class,
+            MeetingAttendanceResource::class,
+            HomeworkSubmissionsResource::class,
 
             // متابعة التقدم - Progress Tracking
             // Note: QuranProgressResource and InteractiveCourseProgressResource removed
             // Progress is now calculated dynamically from session reports
-            \App\Filament\Resources\StudentProgressResource::class,
+            StudentProgressResource::class,
 
             // إدارة الشهادات - Certificates Management
-            \App\Filament\Resources\CertificateResource::class,
+            CertificateResource::class,
 
             // إدارة الاختبارات - Quiz Management
-            \App\Filament\Resources\QuizResource::class,
-            \App\Filament\Resources\QuizAssignmentResource::class,
+            QuizResource::class,
+            QuizAssignmentResource::class,
 
             // الإعدادات
             // Business Services - Access controlled by resource authorization
-            \App\Filament\Resources\BusinessServiceCategoryResource::class,
-            \App\Filament\Resources\BusinessServiceRequestResource::class,
-            \App\Filament\Resources\PortfolioItemResource::class,
+            BusinessServiceCategoryResource::class,
+            BusinessServiceRequestResource::class,
+            PortfolioItemResource::class,
         ];
     }
 
