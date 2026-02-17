@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { assertPageLoads, assertNoPHPErrors } from '../fixtures/helpers';
 import { assertRTL, assertNoServerError } from '../fixtures/filament.fixture';
 
-const BASE = 'https://itqan-academy.itqanway.com';
+const BASE = 'https://e2e-test.itqanway.com';
 
 test.describe('Academy Public Pages', () => {
   test.describe('Academy Homepage', () => {

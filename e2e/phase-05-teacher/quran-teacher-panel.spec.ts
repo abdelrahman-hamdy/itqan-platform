@@ -3,7 +3,7 @@ import { teacherTest as test } from '../fixtures/auth.fixture';
 import { assertNoServerError, assertTableLoaded, waitForLivewire, assertRTL, assertNotLoginPage } from '../fixtures/filament.fixture';
 import { assertNoPHPErrors } from '../fixtures/helpers';
 
-const BASE = 'https://itqan-academy.itqanway.com/teacher-panel';
+const BASE = 'https://e2e-test.itqanway.com/teacher-panel';
 
 test.describe('Quran Teacher Panel', () => {
   test.describe('Dashboard', () => {

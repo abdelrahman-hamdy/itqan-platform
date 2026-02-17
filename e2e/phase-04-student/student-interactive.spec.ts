@@ -3,7 +3,7 @@ import { studentTest as test } from '../fixtures/auth.fixture';
 import { assertNoServerError, assertNotLoginPage, waitForLivewire } from '../fixtures/filament.fixture';
 import { assertMeaningfulContent, assertNoPHPErrors, assertHasContentSections, assertHasNavigation, assertContainsArabic } from '../fixtures/helpers';
 
-const BASE = 'https://itqan-academy.itqanway.com';
+const BASE = 'https://e2e-test.itqanway.com';
 
 test.describe('Student - Interactive Content', () => {
   test('subscription detail shows info', async ({ studentPage: page }) => {

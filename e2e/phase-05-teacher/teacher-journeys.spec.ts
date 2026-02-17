@@ -3,7 +3,7 @@ import { teacherTest as test } from '../fixtures/auth.fixture';
 import { assertNoServerError, assertNotLoginPage, waitForLivewire } from '../fixtures/filament.fixture';
 import { assertMeaningfulContent } from '../fixtures/helpers';
 
-const BASE = 'https://itqan-academy.itqanway.com';
+const BASE = 'https://e2e-test.itqanway.com';
 
 test.describe('Teacher - User Journeys', () => {
   test('circles to circle detail to sessions', async ({ teacherPage: page }) => {

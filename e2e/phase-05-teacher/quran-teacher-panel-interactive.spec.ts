@@ -3,7 +3,7 @@ import { teacherTest as test } from '../fixtures/auth.fixture';
 import { assertNoServerError, assertNotLoginPage, waitForLivewire, assertTableHasData, openTableFilters, assertTableSearch } from '../fixtures/filament.fixture';
 import { assertMeaningfulContent } from '../fixtures/helpers';
 
-const BASE = 'https://itqan-academy.itqanway.com/teacher-panel';
+const BASE = 'https://e2e-test.itqanway.com/teacher-panel';
 
 test.describe('Quran Teacher Panel - Interactive Tests', () => {
   test('quran sessions table has filters', async ({ teacherPage: page }) => {

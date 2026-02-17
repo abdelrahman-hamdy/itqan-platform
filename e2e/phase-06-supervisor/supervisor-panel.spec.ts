@@ -3,7 +3,7 @@ import { supervisorTest as test } from '../fixtures/auth.fixture';
 import { assertNoServerError, assertTableLoaded, waitForLivewire, assertRTL, assertNotLoginPage } from '../fixtures/filament.fixture';
 import { assertNoPHPErrors } from '../fixtures/helpers';
 
-const BASE = 'https://itqan-academy.itqanway.com/supervisor-panel';
+const BASE = 'https://e2e-test.itqanway.com/supervisor-panel';
 
 test.describe('Supervisor Panel', () => {
   test.describe('Dashboard', () => {

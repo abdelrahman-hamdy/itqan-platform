@@ -2,18 +2,18 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { expect } from '@playwright/test';
 
 /** API base URL for the academy tenant */
-export const API_BASE = 'https://itqan-academy.itqanway.com/api/v1';
+export const API_BASE = 'https://e2e-test.itqanway.com/api/v1';
 
 /** Academy subdomain header value */
-export const ACADEMY_SUBDOMAIN = 'itqan-academy';
+export const ACADEMY_SUBDOMAIN = 'e2e-test';
 
 /** Test account credentials (same as web tests) */
 export const API_ACCOUNTS: Record<string, { email: string; password: string }> = {
-  student: { email: 'abdelrahman260598@gmail.com', password: 'Admin@Dev98' },
-  teacher: { email: 'quran.teacher5@itqan.com', password: 'Admin@Dev98' },
-  'academic-teacher': { email: 'academic.teacher1@itqan.com', password: 'Admin@Dev98' },
-  parent: { email: 'parent1@itqan.com', password: 'Admin@Dev98' },
-  supervisor: { email: 'supervisor1@itqan.com', password: 'Admin@Dev98' },
+  student: { email: 'e2e-student@itqan.com', password: 'Admin@Dev98' },
+  teacher: { email: 'e2e-teacher@itqan.com', password: 'Admin@Dev98' },
+  'academic-teacher': { email: 'e2e-academic@itqan.com', password: 'Admin@Dev98' },
+  parent: { email: 'e2e-parent@itqan.com', password: 'Admin@Dev98' },
+  supervisor: { email: 'e2e-supervisor@itqan.com', password: 'Admin@Dev98' },
   admin: { email: 'abdelrahmanhamdy320@gmail.com', password: 'Admin@Dev98' },
 };
 

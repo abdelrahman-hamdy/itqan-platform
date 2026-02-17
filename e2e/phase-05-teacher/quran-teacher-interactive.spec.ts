@@ -3,7 +3,7 @@ import { teacherTest as test } from '../fixtures/auth.fixture';
 import { assertNoServerError, assertNotLoginPage, waitForLivewire } from '../fixtures/filament.fixture';
 import { assertMeaningfulContent, assertNoPHPErrors, assertHasContentSections } from '../fixtures/helpers';
 
-const BASE = 'https://itqan-academy.itqanway.com';
+const BASE = 'https://e2e-test.itqanway.com';
 
 test.describe('Quran Teacher - Interactive Web Routes', () => {
   test('individual circles page has content', async ({ teacherPage: page }) => {

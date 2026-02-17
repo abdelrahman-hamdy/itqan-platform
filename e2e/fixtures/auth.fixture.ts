@@ -2,17 +2,17 @@ import { test as base, Page, BrowserContext, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const ACADEMY_URL = 'https://itqan-academy.itqanway.com';
+const ACADEMY_URL = 'https://e2e-test.itqanway.com';
 const ADMIN_URL = 'https://itqanway.com';
 
 export const TEST_ACCOUNTS = {
   superadmin: { email: 'abdelrahmanhamdy320@gmail.com', password: 'Admin@Dev98' },
-  supervisor: { email: 'supervisor1@itqan.com', password: 'Admin@Dev98' },
-  student: { email: 'abdelrahman260598@gmail.com', password: 'Admin@Dev98' },
-  'quran-teacher': { email: 'quran.teacher5@itqan.com', password: 'Admin@Dev98' },
-  'academic-teacher': { email: 'academic.teacher1@itqan.com', password: 'Admin@Dev98' },
-  parent: { email: 'parent1@itqan.com', password: 'Admin@Dev98' },
-  admin: { email: '', password: 'Admin@Dev98' },
+  supervisor: { email: 'e2e-supervisor@itqan.com', password: 'Admin@Dev98' },
+  student: { email: 'e2e-student@itqan.com', password: 'Admin@Dev98' },
+  'quran-teacher': { email: 'e2e-teacher@itqan.com', password: 'Admin@Dev98' },
+  'academic-teacher': { email: 'e2e-academic@itqan.com', password: 'Admin@Dev98' },
+  parent: { email: 'e2e-parent@itqan.com', password: 'Admin@Dev98' },
+  admin: { email: 'e2e-admin@itqan.com', password: 'Admin@Dev98' },
 };
 
 /** Login via the academy web login form (standard HTML form) */

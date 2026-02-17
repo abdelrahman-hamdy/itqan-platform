@@ -3,7 +3,7 @@ import { studentTest as test } from '../fixtures/auth.fixture';
 import { assertNoServerError, assertRTL, waitForLivewire, assertNotLoginPage } from '../fixtures/filament.fixture';
 import { assertPageLoads, assertNoPHPErrors } from '../fixtures/helpers';
 
-const BASE = 'https://itqan-academy.itqanway.com';
+const BASE = 'https://e2e-test.itqanway.com';
 
 test.describe('Student Dashboard', () => {
   test('academy homepage loads for authenticated student', async ({ studentPage: page }) => {

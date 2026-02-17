@@ -3,7 +3,7 @@ import { supervisorTest as test } from '../fixtures/auth.fixture';
 import { assertNoServerError, assertNotLoginPage, waitForLivewire, assertTableHasData, openTableFilters } from '../fixtures/filament.fixture';
 import { assertMeaningfulContent } from '../fixtures/helpers';
 
-const BASE = 'https://itqan-academy.itqanway.com/supervisor-panel';
+const BASE = 'https://e2e-test.itqanway.com/supervisor-panel';
 
 test.describe('Supervisor Interactive Flows', () => {
   test('dashboard to monitored circles', async ({ supervisorPage: page }) => {

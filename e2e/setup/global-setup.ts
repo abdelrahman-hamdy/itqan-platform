@@ -1,7 +1,7 @@
 import { test as setup, expect } from '@playwright/test';
 import { TEST_ACCOUNTS, loginViaUI, loginAsFilamentAdmin, loginAsFilamentPanel } from '../fixtures/auth.fixture';
 
-const ACADEMY_URL = 'https://itqan-academy.itqanway.com';
+const ACADEMY_URL = 'https://e2e-test.itqanway.com';
 const ADMIN_URL = 'https://itqanway.com';
 
 setup('authenticate as superadmin', async ({ page }) => {

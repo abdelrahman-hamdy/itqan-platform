@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const ADMIN_URL = 'https://itqanway.com';
-const ACADEMY_URL = 'https://itqan-academy.itqanway.com';
+const ACADEMY_URL = 'https://e2e-test.itqanway.com';
 
 async function createAuthPage(browser: Browser, role: string): Promise<{ page: Page; close: () => Promise<void> }> {
   const statePath = path.join(process.cwd(), `e2e/auth/${role}.json`);

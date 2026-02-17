@@ -3,7 +3,7 @@ import { academicTeacherTest as test } from '../fixtures/auth.fixture';
 import { assertNoServerError, assertNotLoginPage, waitForLivewire, assertTableHasData } from '../fixtures/filament.fixture';
 import { assertMeaningfulContent } from '../fixtures/helpers';
 
-const BASE = 'https://itqan-academy.itqanway.com/academic-teacher-panel';
+const BASE = 'https://e2e-test.itqanway.com/academic-teacher-panel';
 
 test.describe('Academic Teacher Panel - Interactive Tests', () => {
   test('academic sessions table with detail', async ({ academicTeacherPage: page }) => {

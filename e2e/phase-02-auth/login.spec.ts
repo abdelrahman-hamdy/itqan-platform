@@ -3,7 +3,7 @@ import { assertPageLoads, assertFormFields, assertNoPHPErrors } from '../fixture
 import { assertRTL, assertNoServerError } from '../fixtures/filament.fixture';
 import { TEST_ACCOUNTS, loginViaUI, loginAsFilamentAdmin, loginAsFilamentPanel } from '../fixtures/auth.fixture';
 
-const BASE = 'https://itqan-academy.itqanway.com';
+const BASE = 'https://e2e-test.itqanway.com';
 
 test.describe('Authentication - Login', () => {
   test.describe('Login Page UI', () => {

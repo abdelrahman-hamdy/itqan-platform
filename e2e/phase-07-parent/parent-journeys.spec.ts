@@ -3,7 +3,7 @@ import { parentTest as test } from '../fixtures/auth.fixture';
 import { assertNoServerError, assertNotLoginPage, waitForLivewire } from '../fixtures/filament.fixture';
 import { assertMeaningfulContent, assertHasContentSections, assertHasNavigation } from '../fixtures/helpers';
 
-const BASE = 'https://itqan-academy.itqanway.com';
+const BASE = 'https://e2e-test.itqanway.com';
 
 test.describe('Parent Journey Flows', () => {
   test('dashboard to children to sessions', async ({ parentPage: page }) => {

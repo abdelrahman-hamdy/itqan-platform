@@ -17,7 +17,7 @@ test.describe('API - Validation & Error Handling', () => {
       headers: {
         'Authorization': 'Bearer invalid-token-abc123',
         'Accept': 'application/json',
-        'X-Academy-Subdomain': 'itqan-academy',
+        'X-Academy-Subdomain': 'e2e-test',
       },
       validateStatus: () => true,
     });
@@ -29,7 +29,7 @@ test.describe('API - Validation & Error Handling', () => {
       headers: {
         'Authorization': 'Bearer 999|totally-fake-token-value',
         'Accept': 'application/json',
-        'X-Academy-Subdomain': 'itqan-academy',
+        'X-Academy-Subdomain': 'e2e-test',
       },
       validateStatus: () => true,
     });
@@ -40,7 +40,7 @@ test.describe('API - Validation & Error Handling', () => {
     const res = await axios.get(`${API_BASE}/student/dashboard`, {
       headers: {
         'Accept': 'application/json',
-        'X-Academy-Subdomain': 'itqan-academy',
+        'X-Academy-Subdomain': 'e2e-test',
       },
       validateStatus: () => true,
     });
