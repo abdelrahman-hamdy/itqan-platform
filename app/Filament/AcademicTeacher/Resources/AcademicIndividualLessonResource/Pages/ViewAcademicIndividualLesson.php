@@ -31,7 +31,7 @@ class ViewAcademicIndividualLesson extends ViewRecord
 
     public function infolist(Schema $schema): Schema
     {
-        return $infolist
+        return $schema
             ->schema([
                 Section::make('معلومات الدرس')
                     ->schema([
