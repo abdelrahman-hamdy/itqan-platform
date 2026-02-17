@@ -4,7 +4,7 @@ namespace App\Filament\Academy\Resources\AcademicSubjectResource\Pages;
 
 use App\Filament\Academy\Resources\AcademicSubjectResource;
 use Filament\Actions\DeleteAction;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditAcademicSubject extends EditRecord
 {

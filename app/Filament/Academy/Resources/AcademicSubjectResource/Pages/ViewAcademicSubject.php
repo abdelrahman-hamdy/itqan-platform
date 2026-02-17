@@ -4,7 +4,7 @@ namespace App\Filament\Academy\Resources\AcademicSubjectResource\Pages;
 
 use App\Filament\Academy\Resources\AcademicSubjectResource;
 use Filament\Actions\EditAction;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewAcademicSubject extends ViewRecord
 {

@@ -3,7 +3,7 @@
 namespace App\Filament\Academy\Resources\AcademicGradeLevelResource\Pages;
 
 use App\Filament\Academy\Resources\AcademicGradeLevelResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateAcademicGradeLevel extends CreateRecord
 {

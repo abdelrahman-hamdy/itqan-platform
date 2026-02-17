@@ -3,7 +3,7 @@
 namespace App\Filament\Academy\Resources\StudentProgressResource\Pages;
 
 use App\Filament\Academy\Resources\StudentProgressResource;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewStudentProgress extends ViewRecord
 {

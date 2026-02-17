@@ -4,7 +4,7 @@ namespace App\Filament\Academy\Resources\StudentSessionReportResource\Pages;
 
 use Filament\Actions\EditAction;
 use App\Filament\Academy\Resources\StudentSessionReportResource;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewStudentSessionReport extends ViewRecord
 {

@@ -4,7 +4,7 @@ namespace App\Filament\Academy\Resources\StudentSessionReportResource\Pages;
 
 use Filament\Actions\DeleteAction;
 use App\Filament\Academy\Resources\StudentSessionReportResource;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditStudentSessionReport extends EditRecord
 {

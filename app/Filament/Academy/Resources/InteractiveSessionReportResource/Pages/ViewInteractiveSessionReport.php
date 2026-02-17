@@ -7,7 +7,7 @@ use Filament\Actions\Action;
 use App\Services\AttendanceCalculationService;
 use App\Models\InteractiveSessionReport;
 use App\Filament\Academy\Resources\InteractiveSessionReportResource;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 /**
  * @property InteractiveSessionReport $record

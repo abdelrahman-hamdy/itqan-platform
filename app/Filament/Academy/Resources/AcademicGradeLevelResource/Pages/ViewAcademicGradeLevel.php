@@ -4,7 +4,7 @@ namespace App\Filament\Academy\Resources\AcademicGradeLevelResource\Pages;
 
 use App\Filament\Academy\Resources\AcademicGradeLevelResource;
 use Filament\Actions\EditAction;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewAcademicGradeLevel extends ViewRecord
 {

@@ -4,7 +4,7 @@ namespace App\Filament\Academy\Resources\MeetingAttendanceResource\Pages;
 
 use App\Filament\Academy\Resources\MeetingAttendanceResource;
 use Filament\Actions\EditAction;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewMeetingAttendance extends ViewRecord
 {
