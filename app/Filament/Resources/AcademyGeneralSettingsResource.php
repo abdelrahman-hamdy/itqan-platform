@@ -55,7 +55,7 @@ class AcademyGeneralSettingsResource extends BaseResource
 
     public static function canAccess(): bool
     {
-        return static::hasSpecificAcademySelected();
+        return auth()->user()?->user_type === UserType::SUPER_ADMIN->value;
     }
 
     public static function canEdit(Model $record): bool
