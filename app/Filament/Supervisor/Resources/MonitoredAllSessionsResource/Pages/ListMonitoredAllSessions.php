@@ -280,6 +280,7 @@ class ListMonitoredAllSessions extends ListRecords
             ])
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
+            ->deferFilters(false)
             ->recordActions([
                 $this->getObserveAction('quran'),
                 ViewAction::make()
@@ -421,6 +422,7 @@ class ListMonitoredAllSessions extends ListRecords
             ])
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
+            ->deferFilters(false)
             ->recordActions([
                 $this->getObserveAction('academic'),
                 ViewAction::make()
@@ -530,6 +532,7 @@ class ListMonitoredAllSessions extends ListRecords
             ])
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
+            ->deferFilters(false)
             ->recordActions([
                 $this->getObserveAction('interactive'),
                 ViewAction::make()

@@ -5,7 +5,7 @@ namespace App\Filament\Academy\Resources\PaymentResource\Pages;
 use Filament\Actions\ViewAction;
 use App\Filament\Academy\Resources\PaymentResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditPayment extends EditRecord
 {

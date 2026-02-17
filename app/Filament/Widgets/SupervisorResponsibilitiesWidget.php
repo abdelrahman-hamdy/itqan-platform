@@ -63,6 +63,7 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
                     ->getStateUsing(fn ($record) => $this->getResourceCount($record))
                     ->alignCenter(),
             ])
+            ->deferFilters(false)
             ->emptyStateHeading('لا توجد مسؤوليات محددة')
             ->emptyStateDescription('يمكنك تحديد المعلمين والدورات من صفحة التعديل')
             ->emptyStateIcon('heroicon-o-clipboard-document-list');

@@ -6,7 +6,7 @@ use Filament\Actions\ViewAction;
 use Filament\Actions\DeleteAction;
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 use Illuminate\Support\Facades\Auth;
 
 class EditInteractiveCourse extends EditRecord

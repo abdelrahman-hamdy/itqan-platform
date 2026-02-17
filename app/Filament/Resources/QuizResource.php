@@ -212,6 +212,7 @@ class QuizResource extends BaseResource
                     ->trueLabel('نشط')
                     ->falseLabel('غير نشط'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),

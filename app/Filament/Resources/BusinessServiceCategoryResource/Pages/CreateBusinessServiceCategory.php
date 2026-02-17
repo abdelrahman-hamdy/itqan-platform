@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\BusinessServiceCategoryResource\Pages;
 
 use App\Filament\Resources\BusinessServiceCategoryResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateBusinessServiceCategory extends CreateRecord
 {

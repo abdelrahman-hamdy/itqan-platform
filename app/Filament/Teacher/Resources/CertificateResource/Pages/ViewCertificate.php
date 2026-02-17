@@ -3,7 +3,7 @@
 namespace App\Filament\Teacher\Resources\CertificateResource\Pages;
 
 use App\Filament\Teacher\Resources\CertificateResource;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewCertificate extends ViewRecord
 {

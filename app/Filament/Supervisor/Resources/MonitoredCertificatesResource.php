@@ -182,6 +182,7 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
                             );
                     }),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 Action::make('view_pdf')
                     ->label('عرض PDF')

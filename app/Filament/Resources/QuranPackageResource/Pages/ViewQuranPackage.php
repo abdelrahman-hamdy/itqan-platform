@@ -7,7 +7,7 @@ use Filament\Actions\Action;
 use App\Models\QuranPackage;
 use App\Filament\Resources\QuranPackageResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 /**
  * @property QuranPackage $record

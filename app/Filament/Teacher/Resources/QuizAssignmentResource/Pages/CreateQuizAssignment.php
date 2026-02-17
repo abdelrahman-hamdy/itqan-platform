@@ -3,7 +3,7 @@
 namespace App\Filament\Teacher\Resources\QuizAssignmentResource\Pages;
 
 use App\Filament\Teacher\Resources\QuizAssignmentResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateQuizAssignment extends CreateRecord
 {

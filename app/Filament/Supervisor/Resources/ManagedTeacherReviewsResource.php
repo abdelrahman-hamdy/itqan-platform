@@ -113,7 +113,8 @@ class ManagedTeacherReviewsResource extends BaseTeacherReviewResource
             ->filters([
                 ...static::getTableFilters(),
                 static::getTeacherFilter(),
-            ]);
+            ])
+            ->deferFilters(false);
     }
 
     /**

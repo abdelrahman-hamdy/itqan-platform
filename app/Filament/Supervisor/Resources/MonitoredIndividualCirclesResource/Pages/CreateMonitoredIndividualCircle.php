@@ -3,7 +3,7 @@
 namespace App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource\Pages;
 
 use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateMonitoredIndividualCircle extends CreateRecord
 {

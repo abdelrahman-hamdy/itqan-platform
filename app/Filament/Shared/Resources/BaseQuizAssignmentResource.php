@@ -234,6 +234,7 @@ abstract class BaseQuizAssignmentResource extends BaseResource
                     ->trueLabel('مرئي')
                     ->falseLabel('مخفي'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),

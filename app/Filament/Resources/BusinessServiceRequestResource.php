@@ -286,6 +286,7 @@ class BusinessServiceRequestResource extends Resource
                             );
                     }),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make()
                     ->label('عرض'),

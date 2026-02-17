@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\AcademicIndividualLessonResource\Pages;
 
 use App\Filament\Resources\AcademicIndividualLessonResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateAcademicIndividualLesson extends CreateRecord
 {

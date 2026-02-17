@@ -5,7 +5,7 @@ namespace App\Filament\Academy\Resources\ParentProfileResource\Pages;
 use Filament\Actions\ViewAction;
 use App\Filament\Academy\Resources\ParentProfileResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditParentProfile extends EditRecord
 {

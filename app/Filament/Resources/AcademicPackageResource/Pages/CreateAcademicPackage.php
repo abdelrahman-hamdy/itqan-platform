@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\AcademicPackageResource\Pages;
 
 use App\Filament\Resources\AcademicPackageResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateAcademicPackage extends CreateRecord
 {

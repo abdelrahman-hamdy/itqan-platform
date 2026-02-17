@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\PortfolioItemResource\Pages;
 
 use App\Filament\Resources\PortfolioItemResource;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewPortfolioItem extends ViewRecord
 {

@@ -252,6 +252,7 @@ class EnrollmentsRelationManager extends RelationManager
                     ->trueLabel('صدرت')
                     ->falseLabel('لم تصدر'),
             ])
+            ->deferFilters(false)
             ->headerActions([
                 CreateAction::make()
                     ->label('تسجيل طالب')

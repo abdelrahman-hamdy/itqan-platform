@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\StudentProgressResource\Pages;
 
 use App\Filament\Resources\StudentProgressResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateStudentProgress extends CreateRecord
 {

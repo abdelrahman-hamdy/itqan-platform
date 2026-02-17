@@ -89,6 +89,7 @@ class PendingHomeworkWidget extends BaseWidget
                     ->formatStateUsing(fn ($state, $record) => $state ? ($record->days_late.' أيام') : 'في الوقت')
                     ->color(fn ($state) => $state ? 'danger' : 'success'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 Action::make('grade')
                     ->label('تصحيح')

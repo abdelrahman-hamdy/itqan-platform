@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\AcademicSubscriptionResource\Pages;
 
 use App\Filament\Resources\AcademicSubscriptionResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateAcademicSubscription extends CreateRecord
 {

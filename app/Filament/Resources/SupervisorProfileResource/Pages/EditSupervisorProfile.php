@@ -8,7 +8,7 @@ use App\Filament\Resources\SupervisorProfileResource;
 use App\Models\SupervisorResponsibility;
 use App\Models\User;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 use Illuminate\Support\Facades\Hash;
 
 /**

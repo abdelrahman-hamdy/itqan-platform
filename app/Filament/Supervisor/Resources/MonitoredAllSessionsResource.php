@@ -197,6 +197,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
         // Table configuration is handled by the ListMonitoredAllSessions page per tab
         return $table
             ->columns(SessionTableColumns::getQuranSessionColumns())
+            ->deferFilters(false)
             ->defaultSort('scheduled_at', 'desc');
     }
 

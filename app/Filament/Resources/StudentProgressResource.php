@@ -216,6 +216,7 @@ class StudentProgressResource extends BaseResource
                     ->label('نشط هذا الأسبوع')
                     ->query(fn (Builder $query) => $query->where('last_accessed_at', '>=', now()->subWeek())),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make()
                     ->label('عرض'),

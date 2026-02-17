@@ -6,7 +6,7 @@ use Filament\Actions\DeleteAction;
 use Illuminate\Database\Eloquent\Model;
 use App\Filament\Resources\AcademyManagementResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditAcademyManagement extends EditRecord
 {

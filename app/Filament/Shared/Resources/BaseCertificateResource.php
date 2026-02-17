@@ -201,6 +201,7 @@ abstract class BaseCertificateResource extends BaseResource
                             );
                     }),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 Action::make('view_pdf')
                     ->label('عرض PDF')

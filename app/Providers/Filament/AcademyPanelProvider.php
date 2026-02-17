@@ -2,34 +2,35 @@
 
 namespace App\Providers\Filament;
 
-use Filament\Facades\Filament;
-use App\Filament\Resources\QuranTrialRequestResource;
-use App\Filament\Resources\TeacherReviewResource;
-use App\Filament\Resources\TeacherEarningResource;
-use App\Filament\Resources\PaymentSettingsResource;
 use App\Filament\Academy\Pages\Dashboard;
-use App\Filament\Academy\Widgets\AcademyStatsWidget;
-use App\Filament\Academy\Widgets\AcademyMonthlyStatsWidget;
-use App\Filament\Academy\Widgets\AcademyUserAnalyticsChartWidget;
-use App\Filament\Academy\Widgets\AcademySessionAnalyticsChartWidget;
-use App\Filament\Academy\Widgets\RenewalMetricsWidget;
-use App\Filament\Pages\Auth\Login;
 use App\Filament\Academy\Resources\AcademicPackageResource;
 use App\Filament\Academy\Resources\AcademicSubscriptionResource;
 use App\Filament\Academy\Resources\AcademicTeacherProfileResource;
 use App\Filament\Academy\Resources\ParentProfileResource;
 use App\Filament\Academy\Resources\PaymentResource;
 use App\Filament\Academy\Resources\QuranPackageResource;
-use App\Filament\Academy\Resources\SavedPaymentMethodResource;
 use App\Filament\Academy\Resources\QuranSubscriptionResource;
 use App\Filament\Academy\Resources\QuranTeacherProfileResource;
 use App\Filament\Academy\Resources\RecordedCourseResource;
+use App\Filament\Academy\Resources\SavedPaymentMethodResource;
 use App\Filament\Academy\Resources\StudentProfileResource;
 use App\Filament\Academy\Resources\SupervisorProfileResource;
+use App\Filament\Academy\Widgets\AcademyMonthlyStatsWidget;
+use App\Filament\Academy\Widgets\AcademySessionAnalyticsChartWidget;
+use App\Filament\Academy\Widgets\AcademyStatsWidget;
+use App\Filament\Academy\Widgets\AcademyUserAnalyticsChartWidget;
+use App\Filament\Academy\Widgets\RenewalMetricsWidget;
+use App\Filament\Pages\Auth\Login;
+use App\Filament\Resources\HomeworkSubmissionsResource;
 use App\Filament\Resources\InteractiveCourseResource;
+use App\Filament\Resources\PaymentSettingsResource;
 use App\Filament\Resources\QuranCircleResource;
+use App\Filament\Resources\QuranTrialRequestResource;
+use App\Filament\Resources\TeacherEarningResource;
+use App\Filament\Resources\TeacherReviewResource;
 use App\Http\Middleware\AcademyContext;
 use App\Models\Academy;
+use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -72,7 +73,12 @@ class AcademyPanelProvider extends PanelProvider
                 __('filament.nav_groups.quran_management'),
                 __('filament.nav_groups.academic_management'),
                 __('filament.nav_groups.recorded_courses'),
+                'التقارير والحضور',
+                'الشهادات',
+                'الاختبارات',
+                'التقييمات والمراجعات',
                 __('filament.nav_groups.teacher_settings'),
+                __('filament.nav_groups.payments'),
                 __('filament.nav_groups.settings'),
             ])
             ->discoverResources(in: app_path('Filament/Academy/Resources'), for: 'App\\Filament\\Academy\\Resources')
@@ -105,6 +111,9 @@ class AcademyPanelProvider extends PanelProvider
                 // إعدادات المعلمين - Teacher Settings
                 TeacherReviewResource::class,
                 TeacherEarningResource::class,
+
+                // التقارير والحضور
+                HomeworkSubmissionsResource::class,
 
                 // الإعدادات
                 PaymentSettingsResource::class,
@@ -147,7 +156,7 @@ class AcademyPanelProvider extends PanelProvider
                 fn (): string => \Illuminate\Support\Facades\Blade::render('@vite(["resources/css/filament-custom.css"])')
             )
             ->renderHook(
-                'panels::topbar.start',
+                \Filament\View\PanelsRenderHook::TOPBAR_LOGO_AFTER,
                 fn (): string => view('filament.hooks.academy-selector')->render()
             )
             ->renderHook(

@@ -5,7 +5,7 @@ namespace App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages;
 use Filament\Actions\ViewAction;
 use App\Filament\Academy\Resources\AcademicSubscriptionResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditAcademicSubscription extends EditRecord
 {

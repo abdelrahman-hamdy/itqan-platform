@@ -225,6 +225,7 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
             ->columns(static::getTableColumns())
             ->filters(static::getTableFilters(), layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
+            ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
             ->defaultSort('session_completed_at', 'desc');

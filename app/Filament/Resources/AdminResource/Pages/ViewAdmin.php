@@ -5,7 +5,7 @@ namespace App\Filament\Resources\AdminResource\Pages;
 use Filament\Actions\EditAction;
 use App\Filament\Resources\AdminResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewAdmin extends ViewRecord
 {

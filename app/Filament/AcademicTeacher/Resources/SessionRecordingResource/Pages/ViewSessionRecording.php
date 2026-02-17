@@ -5,7 +5,7 @@ namespace App\Filament\AcademicTeacher\Resources\SessionRecordingResource\Pages;
 use Filament\Actions\Action;
 use App\Filament\AcademicTeacher\Resources\SessionRecordingResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewSessionRecording extends ViewRecord
 {

@@ -3,7 +3,7 @@
 namespace App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages;
 
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use Illuminate\Support\Facades\Auth;
 
 class CreateInteractiveCourse extends CreateRecord

@@ -7,7 +7,7 @@ use Filament\Actions\DeleteAction;
 use App\Models\QuranSession;
 use App\Filament\Teacher\Resources\QuranSessionResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 use Illuminate\Support\Facades\Auth;
 
 /**

@@ -15,7 +15,7 @@ use App\Enums\AttendanceStatus;
 use App\Filament\Resources\MeetingAttendanceResource;
 use Filament\Actions;
 use Filament\Infolists\Components;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 /**
  * @property MeetingAttendance $record

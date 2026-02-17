@@ -237,6 +237,7 @@ abstract class BaseQuizResource extends BaseResource
                 TernaryFilter::make('is_active')
                     ->label('الحالة'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 static::getAssignAction(),
                 EditAction::make(),

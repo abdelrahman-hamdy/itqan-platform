@@ -90,6 +90,7 @@ abstract class BasePackageResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->columns(static::getTableColumns())->filters(static::getTableFilters())
+            ->deferFilters(false)
             ->recordActions(static::getTableActions())->toolbarActions(static::getTableBulkActions())->defaultSort('sort_order');
     }
 

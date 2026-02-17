@@ -14,7 +14,7 @@ use App\Models\CourseSubscription;
 use App\Filament\Resources\StudentProgressResource;
 use Filament\Actions;
 use Filament\Infolists\Components;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 /**
  * @property CourseSubscription $record

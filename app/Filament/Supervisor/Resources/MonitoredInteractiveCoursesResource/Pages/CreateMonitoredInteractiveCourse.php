@@ -3,7 +3,7 @@
 namespace App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages;
 
 use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateMonitoredInteractiveCourse extends CreateRecord
 {

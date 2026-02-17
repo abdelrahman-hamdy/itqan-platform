@@ -5,7 +5,7 @@ namespace App\Filament\Resources\TeacherReviewResource\Pages;
 use Filament\Actions\EditAction;
 use App\Filament\Resources\TeacherReviewResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewTeacherReview extends ViewRecord
 {

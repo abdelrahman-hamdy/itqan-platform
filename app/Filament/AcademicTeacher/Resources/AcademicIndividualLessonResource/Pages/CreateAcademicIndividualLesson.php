@@ -3,7 +3,7 @@
 namespace App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages;
 
 use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use Illuminate\Support\Facades\Auth;
 
 class CreateAcademicIndividualLesson extends CreateRecord

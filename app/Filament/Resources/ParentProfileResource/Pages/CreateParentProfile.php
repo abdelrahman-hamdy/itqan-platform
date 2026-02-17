@@ -10,7 +10,7 @@ use App\Models\User;
 use App\Notifications\ParentInvitationNotification;
 use App\Services\AcademyContextService;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;

@@ -3,7 +3,7 @@
 namespace App\Filament\Academy\Resources\ParentProfileResource\Pages;
 
 use App\Filament\Academy\Resources\ParentProfileResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateParentProfile extends CreateRecord
 {

@@ -16,7 +16,7 @@ use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Teacher\Resources\QuranSessionResource;
 use Filament\Actions;
 use Filament\Infolists;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewQuranSession extends ViewRecord
 {

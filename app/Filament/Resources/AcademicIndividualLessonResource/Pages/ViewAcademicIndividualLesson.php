@@ -9,7 +9,7 @@ use App\Models\AcademicIndividualLesson;
 use App\Filament\Resources\AcademicIndividualLessonResource;
 use App\Filament\Resources\AcademicSessionResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 /**
  * @property AcademicIndividualLesson $record

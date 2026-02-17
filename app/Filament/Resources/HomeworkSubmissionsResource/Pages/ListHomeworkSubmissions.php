@@ -155,6 +155,7 @@ class ListHomeworkSubmissions extends ListRecords
                     ->label('الحالة')
                     ->options(HomeworkSubmissionStatus::class),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 Action::make('view')
                     ->label('عرض')
@@ -241,6 +242,7 @@ class ListHomeworkSubmissions extends ListRecords
                     ->label('الحالة')
                     ->options(HomeworkSubmissionStatus::class),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 Action::make('view')
                     ->label('عرض')
@@ -369,6 +371,7 @@ class ListHomeworkSubmissions extends ListRecords
                     ])
                     ->attribute('submission_status'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 Action::make('view')
                     ->label('عرض')

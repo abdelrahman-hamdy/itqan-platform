@@ -182,6 +182,7 @@ class AcademicGradeLevelResource extends BaseResource
                     ->falseLabel('غير نشط'),
 
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make()
                     ->label('عرض'),

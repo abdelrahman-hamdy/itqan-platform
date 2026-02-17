@@ -5,7 +5,7 @@ namespace App\Filament\Resources\RecordedCourseResource\Pages;
 use App\Filament\Resources\RecordedCourseResource;
 use App\Models\RecordedCourse;
 use App\Services\AcademyContextService;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use Illuminate\Support\Str;
 
 class CreateRecordedCourse extends CreateRecord

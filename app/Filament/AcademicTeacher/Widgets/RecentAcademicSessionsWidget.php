@@ -67,6 +67,7 @@ class RecentAcademicSessionsWidget extends BaseWidget
                     ->formatStateUsing(fn ($state) => $state instanceof SessionStatus ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof SessionStatus ? $state->color() : 'gray'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 Action::make('view')
                     ->label('عرض')

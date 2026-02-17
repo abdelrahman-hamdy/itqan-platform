@@ -213,6 +213,7 @@ class AdminResource extends BaseResource
                 TrashedFilter::make()
                     ->label(__('filament.filters.trashed')),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),

@@ -3,7 +3,7 @@
 namespace App\Filament\Supervisor\Resources\MonitoredCertificatesResource\Pages;
 
 use App\Filament\Supervisor\Resources\MonitoredCertificatesResource;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewMonitoredCertificate extends ViewRecord
 {

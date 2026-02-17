@@ -189,6 +189,7 @@ abstract class BaseInteractiveSessionReportResource extends BaseResource
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters(), layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
+            ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
             ->emptyStateHeading('لا توجد تقارير')

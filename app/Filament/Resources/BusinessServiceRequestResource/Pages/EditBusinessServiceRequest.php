@@ -5,7 +5,7 @@ namespace App\Filament\Resources\BusinessServiceRequestResource\Pages;
 use Filament\Actions\DeleteAction;
 use App\Filament\Resources\BusinessServiceRequestResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditBusinessServiceRequest extends EditRecord
 {

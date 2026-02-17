@@ -5,7 +5,7 @@ namespace App\Filament\Teacher\Resources\QuranIndividualCircleResource\Pages;
 use Filament\Actions\EditAction;
 use App\Filament\Teacher\Resources\QuranIndividualCircleResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewQuranIndividualCircle extends ViewRecord
 {

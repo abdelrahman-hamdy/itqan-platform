@@ -5,7 +5,7 @@ namespace App\Filament\Resources\InteractiveSessionReportResource\Pages;
 use Filament\Actions\DeleteAction;
 use App\Filament\Resources\InteractiveSessionReportResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditInteractiveSessionReport extends EditRecord
 {

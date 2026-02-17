@@ -343,7 +343,8 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
     public static function table(Table $table): Table
     {
         // Default to Quran reports table
-        return static::getQuranReportsTable($table);
+        return static::getQuranReportsTable($table)
+            ->deferFilters(false);
     }
 
     public static function infolist(Schema $schema): Schema

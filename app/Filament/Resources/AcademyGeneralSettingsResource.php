@@ -490,6 +490,8 @@ class AcademyGeneralSettingsResource extends BaseResource
                     ->label('آخر تحديث')
                     ->dateTime('Y-m-d H:i'),
             ])
+            ->filters([])
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),

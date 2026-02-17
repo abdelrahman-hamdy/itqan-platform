@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\QuranTrialRequestResource\Pages;
 
 use App\Filament\Resources\QuranTrialRequestResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateQuranTrialRequest extends CreateRecord
 {

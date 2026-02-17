@@ -227,6 +227,7 @@ class PortfolioItemResource extends Resource
                     ->trueLabel('الأعمال النشطة فقط')
                     ->falseLabel('الأعمال غير النشطة فقط'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make()
                     ->label('عرض'),

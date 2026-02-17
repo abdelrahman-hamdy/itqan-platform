@@ -3,7 +3,7 @@
 namespace App\Filament\Supervisor\Resources\ManagedTeachersResource\Pages;
 
 use App\Filament\Supervisor\Resources\ManagedTeachersResource;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewManagedTeacher extends ViewRecord
 {

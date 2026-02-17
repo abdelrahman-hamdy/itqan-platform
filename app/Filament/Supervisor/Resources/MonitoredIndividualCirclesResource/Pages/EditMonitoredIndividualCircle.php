@@ -6,7 +6,7 @@ use Filament\Actions\ViewAction;
 use Filament\Actions\DeleteAction;
 use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditMonitoredIndividualCircle extends EditRecord
 {

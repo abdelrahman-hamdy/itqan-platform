@@ -4,7 +4,7 @@ namespace App\Filament\AcademicTeacher\Resources\TeacherEarningsResource\Pages;
 
 use App\Models\TeacherEarning;
 use App\Filament\AcademicTeacher\Resources\TeacherEarningsResource;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 /**
  * @property TeacherEarning $record

@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\PaymentSettingsResource\Pages;
 
 use App\Filament\Resources\PaymentSettingsResource;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditPaymentSettings extends EditRecord
 {

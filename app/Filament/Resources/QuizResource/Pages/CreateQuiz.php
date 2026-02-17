@@ -4,7 +4,7 @@ namespace App\Filament\Resources\QuizResource\Pages;
 
 use App\Filament\Resources\QuizResource;
 use App\Services\AcademyContextService;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateQuiz extends CreateRecord
 {

@@ -11,7 +11,7 @@ use App\Enums\AttendanceStatus;
 use App\Filament\Teacher\Resources\StudentSessionReportResource;
 use Filament\Actions;
 use Filament\Infolists;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewStudentSessionReport extends ViewRecord
 {

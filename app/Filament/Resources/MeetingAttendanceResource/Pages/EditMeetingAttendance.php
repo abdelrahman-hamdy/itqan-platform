@@ -5,7 +5,7 @@ namespace App\Filament\Resources\MeetingAttendanceResource\Pages;
 use Filament\Actions\DeleteAction;
 use App\Filament\Resources\MeetingAttendanceResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditMeetingAttendance extends EditRecord
 {

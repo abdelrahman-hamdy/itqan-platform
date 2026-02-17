@@ -186,6 +186,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
             ->filters(static::getTableFilters())
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
+            ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions());
     }

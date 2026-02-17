@@ -3,7 +3,7 @@
 namespace App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource\Pages;
 
 use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewMonitoredIndividualCircle extends ViewRecord
 {

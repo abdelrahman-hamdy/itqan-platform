@@ -5,7 +5,7 @@ namespace App\Filament\Resources\AcademicGradeLevelResource\Pages;
 use Filament\Actions\DeleteAction;
 use App\Filament\Resources\AcademicGradeLevelResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditAcademicGradeLevel extends EditRecord
 {

@@ -107,6 +107,7 @@ class PendingQuranHomeworkWidget extends BaseWidget
                     ->trueColor('danger')
                     ->falseColor('success'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 Action::make('view')
                     ->label('عرض الجلسة')

@@ -79,6 +79,7 @@ class StudentsRelationManager extends RelationManager
                     ->label('نوع العلاقة')
                     ->options(RelationshipType::labels()),
             ])
+            ->deferFilters(false)
             ->headerActions([
                 AttachAction::make()
                     ->label('ربط طالب')

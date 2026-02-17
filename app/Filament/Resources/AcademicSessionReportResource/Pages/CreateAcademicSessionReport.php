@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\AcademicSessionReportResource\Pages;
 
 use App\Filament\Resources\AcademicSessionReportResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateAcademicSessionReport extends CreateRecord
 {

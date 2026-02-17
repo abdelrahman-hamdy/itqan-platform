@@ -154,7 +154,7 @@ class AdminPanelProvider extends PanelProvider
                 fn (): string => \Illuminate\Support\Facades\Blade::render('@vite(["resources/css/filament-custom.css"])')
             )
             ->renderHook(
-                'panels::topbar.start',
+                PanelsRenderHook::TOPBAR_LOGO_AFTER,
                 fn (): string => view('filament.hooks.academy-selector')->render()
             )
             ->renderHook(

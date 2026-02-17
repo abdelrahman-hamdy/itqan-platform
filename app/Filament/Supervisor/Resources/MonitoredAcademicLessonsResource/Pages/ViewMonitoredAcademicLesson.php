@@ -3,7 +3,7 @@
 namespace App\Filament\Supervisor\Resources\MonitoredAcademicLessonsResource\Pages;
 
 use App\Filament\Supervisor\Resources\MonitoredAcademicLessonsResource;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewMonitoredAcademicLesson extends ViewRecord
 {

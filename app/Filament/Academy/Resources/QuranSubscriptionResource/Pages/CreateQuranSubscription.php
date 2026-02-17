@@ -3,7 +3,7 @@
 namespace App\Filament\Academy\Resources\QuranSubscriptionResource\Pages;
 
 use App\Filament\Academy\Resources\QuranSubscriptionResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateQuranSubscription extends CreateRecord
 {

@@ -5,7 +5,7 @@ namespace App\Filament\Resources\InteractiveCourseResource\Pages;
 use Exception;
 use App\Filament\Resources\InteractiveCourseResource;
 use App\Services\AcademyContextService;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateInteractiveCourse extends CreateRecord
 {

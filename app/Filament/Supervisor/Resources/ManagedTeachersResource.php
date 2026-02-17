@@ -183,6 +183,7 @@ class ManagedTeachersResource extends BaseSupervisorResource
                     ->trueLabel('نشط')
                     ->falseLabel('غير نشط'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make()
                     ->label('عرض'),

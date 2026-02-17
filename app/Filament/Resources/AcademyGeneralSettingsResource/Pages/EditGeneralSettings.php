@@ -7,7 +7,7 @@ use App\Filament\Resources\AcademyGeneralSettingsResource;
 use App\Models\Academy;
 use App\Models\AcademySettings;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 /**
  * @property Academy $record

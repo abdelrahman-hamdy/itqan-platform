@@ -174,6 +174,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
                     ->label('انتهى موعده')
                     ->query(fn (Builder $query): Builder => $query->where('available_until', '<', now())),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make()
                     ->label('عرض'),

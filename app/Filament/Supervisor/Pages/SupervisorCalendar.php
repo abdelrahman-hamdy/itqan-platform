@@ -21,6 +21,7 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Support\Enums\Width;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
@@ -36,6 +37,11 @@ class SupervisorCalendar extends Page implements HasForms
 {
     use HandlesScheduling;
     use InteractsWithForms;
+
+    public function getMaxContentWidth(): Width|string|null
+    {
+        return Width::Full;
+    }
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-calendar-days';
 

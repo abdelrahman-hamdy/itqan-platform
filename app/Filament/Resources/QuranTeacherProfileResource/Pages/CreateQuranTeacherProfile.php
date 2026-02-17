@@ -7,7 +7,7 @@ use Log;
 use App\Filament\Resources\QuranTeacherProfileResource;
 use App\Models\User;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use Illuminate\Support\Facades\Hash;
 
 class CreateQuranTeacherProfile extends CreateRecord

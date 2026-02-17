@@ -109,6 +109,7 @@ class RecentActivitiesWidget extends BaseWidget
                     ->dateTime('Y-m-d H:i')
                     ->sortable(),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 Action::make('view')
                     ->label('عرض')

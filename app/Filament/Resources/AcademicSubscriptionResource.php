@@ -403,6 +403,7 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     public static function table(Table $table): Table
     {
         return parent::table($table)
+            ->deferFilters(false)
             ->recordUrl(fn (AcademicSubscription $record): string => ViewAcademicSubscription::getUrl([$record->id]));
     }
 

@@ -4,7 +4,7 @@ namespace App\Filament\Resources\AcademyManagementResource\Pages;
 
 use App\Models\Academy;
 use App\Filament\Resources\AcademyManagementResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateAcademyManagement extends CreateRecord
 {

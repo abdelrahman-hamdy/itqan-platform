@@ -304,6 +304,7 @@ class BusinessServiceCategoryResource extends Resource
                     ->trueLabel('التصنيفات النشطة فقط')
                     ->falseLabel('التصنيفات غير النشطة فقط'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 EditAction::make()
                     ->label('تعديل'),

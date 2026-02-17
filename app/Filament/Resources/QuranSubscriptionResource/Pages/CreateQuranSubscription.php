@@ -8,7 +8,7 @@ use App\Enums\SubscriptionPaymentStatus;
 use App\Filament\Resources\QuranSubscriptionResource;
 use App\Services\AcademyContextService;
 use Carbon\Carbon;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use Illuminate\Support\Facades\Auth;
 
 class CreateQuranSubscription extends CreateRecord

@@ -4,7 +4,7 @@ namespace App\Filament\Resources\QuranPackageResource\Pages;
 
 use App\Filament\Resources\QuranPackageResource;
 use App\Services\AcademyContextService;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use Illuminate\Support\Facades\Auth;
 
 class CreateQuranPackage extends CreateRecord

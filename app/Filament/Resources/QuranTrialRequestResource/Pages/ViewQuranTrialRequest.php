@@ -5,7 +5,7 @@ namespace App\Filament\Resources\QuranTrialRequestResource\Pages;
 use Filament\Actions\EditAction;
 use App\Filament\Resources\QuranTrialRequestResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewQuranTrialRequest extends ViewRecord
 {

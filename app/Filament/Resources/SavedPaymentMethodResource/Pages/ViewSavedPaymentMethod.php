@@ -5,7 +5,7 @@ namespace App\Filament\Resources\SavedPaymentMethodResource\Pages;
 use Filament\Actions\EditAction;
 use App\Filament\Resources\SavedPaymentMethodResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewSavedPaymentMethod extends ViewRecord
 {

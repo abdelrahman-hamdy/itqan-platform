@@ -6,7 +6,7 @@ use Filament\Actions\DeleteAction;
 use App\Models\AcademicTeacherProfile;
 use App\Filament\Resources\AcademicTeacherProfileResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 /**
  * @property AcademicTeacherProfile $record

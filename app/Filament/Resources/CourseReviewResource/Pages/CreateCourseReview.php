@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\CourseReviewResource\Pages;
 
 use App\Filament\Resources\CourseReviewResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateCourseReview extends CreateRecord
 {

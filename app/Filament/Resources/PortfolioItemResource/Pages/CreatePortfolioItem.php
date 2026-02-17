@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\PortfolioItemResource\Pages;
 
 use App\Filament\Resources\PortfolioItemResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreatePortfolioItem extends CreateRecord
 {

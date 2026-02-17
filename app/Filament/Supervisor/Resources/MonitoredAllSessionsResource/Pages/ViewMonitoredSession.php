@@ -17,7 +17,7 @@ use App\Models\QuranSession;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Infolists;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 use Illuminate\Database\Eloquent\Model;
 
 /**

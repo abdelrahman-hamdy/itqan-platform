@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\StudentProfileResource\Pages;
 
 use App\Filament\Resources\StudentProfileResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateStudentProfile extends CreateRecord
 {

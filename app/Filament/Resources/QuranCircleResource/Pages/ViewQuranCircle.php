@@ -9,7 +9,7 @@ use App\Models\QuranCircle;
 use App\Enums\CircleEnrollmentStatus;
 use App\Filament\Resources\QuranCircleResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 /**
  * @property QuranCircle $record

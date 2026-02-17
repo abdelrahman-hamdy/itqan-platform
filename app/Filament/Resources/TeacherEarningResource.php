@@ -207,7 +207,8 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     {
         return parent::table($table)
             ->filtersLayout(FiltersLayout::AboveContent)
-            ->filtersFormColumns(3);
+            ->filtersFormColumns(3)
+            ->deferFilters(false);
     }
 
     // ========================================

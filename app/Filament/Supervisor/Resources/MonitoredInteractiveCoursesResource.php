@@ -469,6 +469,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                         ->where('end_date', '>=', now()))
                     ->toggle(),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()

@@ -5,7 +5,7 @@ namespace App\Filament\Academy\Resources\QuranSubscriptionResource\Pages;
 use Filament\Actions\ViewAction;
 use App\Filament\Academy\Resources\QuranSubscriptionResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditQuranSubscription extends EditRecord
 {

@@ -5,7 +5,7 @@ namespace App\Filament\Supervisor\Resources\MonitoredTrialRequestsResource\Pages
 use Filament\Actions\EditAction;
 use App\Filament\Supervisor\Resources\MonitoredTrialRequestsResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewMonitoredTrialRequest extends ViewRecord
 {

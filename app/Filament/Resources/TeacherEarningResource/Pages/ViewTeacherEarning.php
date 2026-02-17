@@ -5,7 +5,7 @@ namespace App\Filament\Resources\TeacherEarningResource\Pages;
 use Filament\Actions\DeleteAction;
 use App\Filament\Resources\TeacherEarningResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewTeacherEarning extends ViewRecord
 {

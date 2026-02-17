@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\MeetingAttendanceResource\Pages;
 
 use App\Filament\Resources\MeetingAttendanceResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateMeetingAttendance extends CreateRecord
 {

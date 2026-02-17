@@ -8,7 +8,7 @@ use App\Filament\Resources\SupervisorProfileResource;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use Illuminate\Support\Facades\Hash;
 
 class CreateSupervisorProfile extends CreateRecord

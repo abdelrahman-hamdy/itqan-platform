@@ -218,6 +218,7 @@ abstract class BaseStudentProfileResource extends BaseResource
         return $table
             ->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
+            ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
             ->defaultSort('created_at', 'desc');

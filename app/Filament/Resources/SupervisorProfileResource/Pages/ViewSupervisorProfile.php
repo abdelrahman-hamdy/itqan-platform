@@ -6,7 +6,7 @@ use Filament\Actions\EditAction;
 use App\Filament\Resources\SupervisorProfileResource;
 use App\Filament\Widgets\SupervisorResponsibilitiesWidget;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewSupervisorProfile extends ViewRecord
 {

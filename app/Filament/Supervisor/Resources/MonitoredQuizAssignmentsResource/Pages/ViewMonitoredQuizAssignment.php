@@ -3,7 +3,7 @@
 namespace App\Filament\Supervisor\Resources\MonitoredQuizAssignmentsResource\Pages;
 
 use App\Filament\Supervisor\Resources\MonitoredQuizAssignmentsResource;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewMonitoredQuizAssignment extends ViewRecord
 {

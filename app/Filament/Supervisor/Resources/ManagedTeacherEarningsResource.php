@@ -130,6 +130,7 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
                 ...static::getTableFilters(),
                 static::getTeacherFilter(),
             ])
+            ->deferFilters(false)
             ->defaultSort('session_completed_at', 'desc');
     }
 

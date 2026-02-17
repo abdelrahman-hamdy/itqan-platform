@@ -5,7 +5,7 @@ namespace App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 use Filament\Actions\EditAction;
 use App\Filament\Resources\AcademicTeacherProfileResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewAcademicTeacherProfile extends ViewRecord
 {

@@ -220,6 +220,7 @@ class ListMonitoredSessionReports extends ListRecords
                             ->orWhere('reservation_degree', '<', 6);
                     })),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make()
                     ->label('عرض')
@@ -327,6 +328,7 @@ class ListMonitoredSessionReports extends ListRecords
                     ->label('درجات منخفضة')
                     ->query(fn (Builder $query): Builder => $query->where('homework_degree', '<', 6)),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make()
                     ->label('عرض')

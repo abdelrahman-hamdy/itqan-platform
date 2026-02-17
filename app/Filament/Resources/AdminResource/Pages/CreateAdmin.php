@@ -4,7 +4,7 @@ namespace App\Filament\Resources\AdminResource\Pages;
 
 use App\Enums\UserType;
 use App\Filament\Resources\AdminResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateAdmin extends CreateRecord
 {

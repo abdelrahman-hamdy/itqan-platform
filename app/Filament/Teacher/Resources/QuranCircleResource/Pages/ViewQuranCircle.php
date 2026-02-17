@@ -11,7 +11,7 @@ use App\Enums\WeekDays;
 use App\Filament\Teacher\Resources\QuranCircleResource;
 use Filament\Actions;
 use Filament\Infolists;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewQuranCircle extends ViewRecord
 {

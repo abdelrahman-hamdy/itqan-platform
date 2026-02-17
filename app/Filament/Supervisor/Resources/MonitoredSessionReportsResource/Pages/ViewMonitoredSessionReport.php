@@ -5,7 +5,7 @@ namespace App\Filament\Supervisor\Resources\MonitoredSessionReportsResource\Page
 use App\Filament\Supervisor\Resources\MonitoredSessionReportsResource;
 use App\Models\AcademicSessionReport;
 use App\Models\StudentSessionReport;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 use Illuminate\Database\Eloquent\Model;
 
 class ViewMonitoredSessionReport extends ViewRecord

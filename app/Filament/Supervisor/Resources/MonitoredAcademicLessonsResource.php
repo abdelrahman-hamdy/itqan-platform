@@ -280,6 +280,7 @@ class MonitoredAcademicLessonsResource extends BaseSupervisorResource
                     ->searchable()
                     ->preload(),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()

@@ -7,7 +7,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\RestoreAction;
 use App\Filament\Resources\SavedPaymentMethodResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditSavedPaymentMethod extends EditRecord
 {

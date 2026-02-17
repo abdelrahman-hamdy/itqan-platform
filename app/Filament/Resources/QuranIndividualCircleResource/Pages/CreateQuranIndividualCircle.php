@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\QuranIndividualCircleResource\Pages;
 
 use App\Filament\Resources\QuranIndividualCircleResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateQuranIndividualCircle extends CreateRecord
 {

@@ -8,7 +8,7 @@ use App\Services\AttendanceCalculationService;
 use App\Models\AcademicSessionReport;
 use App\Filament\Resources\AcademicSessionReportResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 /**
  * @property AcademicSessionReport $record

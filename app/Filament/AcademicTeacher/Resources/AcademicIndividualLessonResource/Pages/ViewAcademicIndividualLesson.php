@@ -10,7 +10,7 @@ use Filament\Infolists\Components\TextEntry;
 use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource;
 use Filament\Actions;
 use Filament\Infolists;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewAcademicIndividualLesson extends ViewRecord
 {

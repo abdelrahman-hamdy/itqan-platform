@@ -4,7 +4,7 @@ namespace App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 
 use App\Enums\SessionStatus;
 use App\Filament\Teacher\Resources\QuranSessionResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use Illuminate\Support\Facades\Auth;
 
 class CreateQuranSession extends CreateRecord

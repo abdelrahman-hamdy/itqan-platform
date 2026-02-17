@@ -4,7 +4,7 @@ namespace App\Filament\Teacher\Resources\QuranCircleResource\Pages;
 
 use App\Models\QuranCircle;
 use App\Filament\Teacher\Resources\QuranCircleResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use Illuminate\Support\Facades\Auth;
 
 class CreateQuranCircle extends CreateRecord

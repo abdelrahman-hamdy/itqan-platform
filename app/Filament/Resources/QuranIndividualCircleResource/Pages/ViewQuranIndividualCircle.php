@@ -8,7 +8,7 @@ use Filament\Actions\RestoreAction;
 use Filament\Actions\ForceDeleteAction;
 use App\Filament\Resources\QuranIndividualCircleResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewQuranIndividualCircle extends ViewRecord
 {

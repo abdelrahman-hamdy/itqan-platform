@@ -146,6 +146,7 @@ class SectionsRelationManager extends RelationManager
                     ->trueLabel('معاينة مجانية')
                     ->falseLabel('مدفوع'),
             ])
+            ->deferFilters(false)
             ->headerActions([
                 CreateAction::make()
                     ->label('إضافة قسم جديد'),

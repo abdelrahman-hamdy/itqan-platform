@@ -258,6 +258,7 @@ class UserResource extends BaseResource
                 TrashedFilter::make()
                     ->label(__('filament.filters.trashed')),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 // Redirect to profile resource based on user type
                 Action::make('view_profile')

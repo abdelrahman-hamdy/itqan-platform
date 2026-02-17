@@ -207,6 +207,7 @@ class CertificateResource extends BaseResource
                 TrashedFilter::make()
                     ->label('المحذوفة'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 Action::make('view_pdf')
                     ->label('عرض PDF')

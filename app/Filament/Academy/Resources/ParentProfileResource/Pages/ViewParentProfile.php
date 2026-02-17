@@ -5,7 +5,7 @@ namespace App\Filament\Academy\Resources\ParentProfileResource\Pages;
 use Filament\Actions\EditAction;
 use App\Filament\Academy\Resources\ParentProfileResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewParentProfile extends ViewRecord
 {

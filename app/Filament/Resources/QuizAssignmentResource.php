@@ -266,6 +266,7 @@ class QuizAssignmentResource extends BaseResource
                     ->trueLabel('مرئي')
                     ->falseLabel('مخفي'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),

@@ -106,6 +106,7 @@ class RecentBusinessRequestsWidget extends BaseWidget
             ->emptyStateDescription('سيتم عرض طلبات الخدمات الجديدة هنا')
             ->emptyStateIcon('heroicon-o-document-text')
             ->defaultSort('created_at', 'desc')
+            ->deferFilters(false)
             ->paginated(false)
             ->striped();
     }

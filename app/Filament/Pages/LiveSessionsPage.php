@@ -130,6 +130,7 @@ class LiveSessionsPage extends Page implements HasTable
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('meeting_room_name')
                         ->whereIn('status', [SessionStatus::READY->value, SessionStatus::ONGOING->value])),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 $this->getObserveAction('quran'),
                 ViewAction::make()
@@ -169,6 +170,7 @@ class LiveSessionsPage extends Page implements HasTable
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('meeting_room_name')
                         ->whereIn('status', [SessionStatus::READY->value, SessionStatus::ONGOING->value])),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 $this->getObserveAction('academic'),
                 ViewAction::make()
@@ -208,6 +210,7 @@ class LiveSessionsPage extends Page implements HasTable
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('meeting_room_name')
                         ->whereIn('status', [SessionStatus::READY->value, SessionStatus::ONGOING->value])),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 $this->getObserveAction('interactive'),
                 ViewAction::make()

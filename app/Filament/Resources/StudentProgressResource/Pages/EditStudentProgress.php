@@ -5,7 +5,7 @@ namespace App\Filament\Resources\StudentProgressResource\Pages;
 use Filament\Actions\DeleteAction;
 use App\Filament\Resources\StudentProgressResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 
 class EditStudentProgress extends EditRecord
 {

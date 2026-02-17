@@ -3,7 +3,7 @@
 namespace App\Filament\Academy\Resources\PaymentResource\Pages;
 
 use App\Filament\Academy\Resources\PaymentResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 

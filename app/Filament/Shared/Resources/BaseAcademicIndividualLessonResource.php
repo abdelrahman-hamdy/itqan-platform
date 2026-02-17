@@ -163,6 +163,7 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
+            ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
             ->emptyStateHeading('لا توجد دروس فردية')

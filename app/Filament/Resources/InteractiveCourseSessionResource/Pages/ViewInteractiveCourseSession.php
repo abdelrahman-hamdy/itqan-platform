@@ -12,7 +12,7 @@ use App\Enums\SessionStatus;
 use App\Filament\Resources\InteractiveCourseSessionResource;
 use Filament\Actions;
 use Filament\Infolists;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewInteractiveCourseSession extends ViewRecord
 {

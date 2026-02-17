@@ -206,6 +206,7 @@ class CourseReviewResource extends BaseResource
                 TrashedFilter::make()
                     ->label(__('filament.filters.trashed')),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 Action::make('approve')
                     ->label('اعتماد')

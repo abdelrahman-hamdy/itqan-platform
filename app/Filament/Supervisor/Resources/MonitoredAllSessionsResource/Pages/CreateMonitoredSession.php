@@ -18,7 +18,7 @@ use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 
 class CreateMonitoredSession extends CreateRecord

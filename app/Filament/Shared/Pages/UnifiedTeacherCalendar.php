@@ -22,6 +22,7 @@ use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Support\Enums\Width;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -38,6 +39,11 @@ class UnifiedTeacherCalendar extends Page
     use HandlesScheduling;
     use ManagesSessionStatistics;
     use ValidatesConflicts;
+
+    public function getMaxContentWidth(): Width|string|null
+    {
+        return Width::Full;
+    }
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-calendar-days';
 

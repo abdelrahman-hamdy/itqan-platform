@@ -370,6 +370,7 @@ class MeetingAttendanceResource extends BaseResource
                     }),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),

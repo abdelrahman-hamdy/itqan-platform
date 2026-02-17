@@ -143,6 +143,7 @@ class AcademicSubjectResource extends BaseResource
                     ->trueLabel('نشطة')
                     ->falseLabel('غير نشطة'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 ViewAction::make()
                     ->label('عرض'),

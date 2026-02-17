@@ -111,6 +111,7 @@ abstract class BaseSessionRecordingResource extends BaseResource
             ->columns(static::getTableColumns())
             ->defaultSort('started_at', 'desc')
             ->filters(static::getTableFilters())
+            ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
             ->emptyStateHeading('لا توجد تسجيلات')

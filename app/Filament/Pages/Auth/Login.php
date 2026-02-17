@@ -4,7 +4,7 @@ namespace App\Filament\Pages\Auth;
 
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Schemas\Components\Component;
-use Filament\Facades\Filament\Schemas\Schema;
+use Filament\Schemas\Schema;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;

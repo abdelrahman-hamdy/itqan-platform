@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\QuranSessionResource\Pages;
 
 use App\Filament\Resources\QuranSessionResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateQuranSession extends CreateRecord
 {

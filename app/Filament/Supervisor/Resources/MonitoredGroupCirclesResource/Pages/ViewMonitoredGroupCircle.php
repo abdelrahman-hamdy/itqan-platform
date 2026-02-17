@@ -3,7 +3,7 @@
 namespace App\Filament\Supervisor\Resources\MonitoredGroupCirclesResource\Pages;
 
 use App\Filament\Supervisor\Resources\MonitoredGroupCirclesResource;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewMonitoredGroupCircle extends ViewRecord
 {

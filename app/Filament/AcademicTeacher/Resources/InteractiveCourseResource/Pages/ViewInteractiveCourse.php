@@ -11,7 +11,7 @@ use App\Enums\InteractiveCourseStatus;
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource;
 use Filament\Actions;
 use Filament\Infolists;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewInteractiveCourse extends ViewRecord
 {

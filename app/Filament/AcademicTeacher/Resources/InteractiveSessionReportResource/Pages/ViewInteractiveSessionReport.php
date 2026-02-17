@@ -13,7 +13,7 @@ use App\Enums\AttendanceStatus;
 use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource;
 use Filament\Actions;
 use Filament\Infolists;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 
 class ViewInteractiveSessionReport extends ViewRecord
 {

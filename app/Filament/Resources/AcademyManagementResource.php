@@ -317,6 +317,7 @@ class AcademyManagementResource extends BaseResource
                     ->trueLabel('تحت الصيانة')
                     ->falseLabel('غير في الصيانة'),
             ])
+            ->deferFilters(false)
             ->recordActions([
                 Action::make('select_academy')
                     ->label('اختيار هذه الأكاديمية')

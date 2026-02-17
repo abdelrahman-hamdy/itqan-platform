@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\InteractiveSessionReportResource\Pages;
 
 use App\Filament\Resources\InteractiveSessionReportResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 
 class CreateInteractiveSessionReport extends CreateRecord
 {
