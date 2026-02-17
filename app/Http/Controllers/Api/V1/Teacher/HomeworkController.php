@@ -36,7 +36,7 @@ class HomeworkController extends Controller
                 $academicSessions = AcademicSession::where('academic_teacher_id', $academicTeacherId)
                     ->whereNotNull('homework')
                     ->where('homework', '!=', '')
-                    ->with(['student.user', 'academicSubscription', 'submissions'])
+                    ->with(['student', 'academicSubscription', 'submissions'])
                     ->orderBy('scheduled_at', 'desc')
                     ->limit(50)
                     ->get();
@@ -47,7 +47,7 @@ class HomeworkController extends Controller
                         'type' => 'academic',
                         'title' => $session->academicSubscription?->subject_name ?? 'واجب أكاديمي',
                         'description' => $session->homework,
-                        'student_name' => $session->student?->user?->name ?? 'طالب',
+                        'student_name' => $session->student?->name ?? 'طالب',
                         'session_date' => $session->scheduled_at?->toDateString(),
                         'due_date' => $session->homework_due_date?->toDateString(),
                         'submissions_count' => $session->submissions?->count() ?? 0,
@@ -115,7 +115,7 @@ class HomeworkController extends Controller
         if ($type === 'academic') {
             $session = AcademicSession::where('id', $id)
                 ->where('academic_teacher_id', $academicTeacherId)
-                ->with(['student.user', 'academicSubscription', 'submissions.user'])
+                ->with(['student', 'academicSubscription', 'submissions.user'])
                 ->first();
 
             if (! $session) {
@@ -128,9 +128,9 @@ class HomeworkController extends Controller
                     'type' => 'academic',
                     'title' => $session->academicSubscription?->subject_name ?? 'واجب أكاديمي',
                     'description' => $session->homework,
-                    'student' => $session->student?->user ? [
-                        'id' => $session->student->user->id,
-                        'name' => $session->student->user->name,
+                    'student' => $session->student ? [
+                        'id' => $session->student->id,
+                        'name' => $session->student->name,
                     ] : null,
                     'session_date' => $session->scheduled_at?->toDateString(),
                     'due_date' => $session->homework_due_date?->toDateString(),

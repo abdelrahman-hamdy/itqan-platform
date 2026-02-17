@@ -95,7 +95,7 @@ class CourseController extends Controller
         ];
 
         // Count certificates issued for students in this course
-        $studentIds = CourseSubscription::where('course_id', $id)->pluck('user_id')->filter()->toArray();
+        $studentIds = CourseSubscription::where('interactive_course_id', $id)->pluck('student_id')->filter()->toArray();
         $certificatesIssued = Certificate::where('certificateable_type', InteractiveCourse::class)
             ->where('certificateable_id', $course->id)
             ->whereIn('student_id', $studentIds)
@@ -174,7 +174,7 @@ class CourseController extends Controller
         // Check if teacher can chat (has supervisor)
         $canChat = $user->hasSupervisor();
 
-        $query = CourseSubscription::where('course_id', $id)
+        $query = CourseSubscription::where('interactive_course_id', $id)
             ->with(['user']);
 
         // Filter by status
@@ -252,7 +252,7 @@ class CourseController extends Controller
         }
 
         // Get all student IDs from enrollments
-        $studentIds = CourseSubscription::where('course_id', $id)->pluck('user_id')->filter()->toArray();
+        $studentIds = CourseSubscription::where('interactive_course_id', $id)->pluck('student_id')->filter()->toArray();
 
         // Get all certificates for this course
         $certificates = Certificate::where('certificateable_type', InteractiveCourse::class)

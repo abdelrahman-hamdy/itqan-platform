@@ -29,7 +29,7 @@ class CircleController extends Controller
         }
 
         $query = QuranIndividualCircle::where('quran_teacher_id', $quranTeacherId)
-            ->with(['student.user', 'subscription']);
+            ->with(['student', 'subscription']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -43,11 +43,11 @@ class CircleController extends Controller
             'circles' => collect($circles->items())->map(fn ($circle) => [
                 'id' => $circle->id,
                 'name' => $circle->name,
-                'student' => $circle->student?->user ? [
-                    'id' => $circle->student->user->id,
-                    'name' => $circle->student->user->name,
-                    'avatar' => $circle->student->user->avatar
-                        ? asset('storage/'.$circle->student->user->avatar)
+                'student' => $circle->student ? [
+                    'id' => $circle->student->id,
+                    'name' => $circle->student->name,
+                    'avatar' => $circle->student->avatar
+                        ? asset('storage/'.$circle->student->avatar)
                         : null,
                 ] : null,
                 'status' => $circle->status,
@@ -75,7 +75,7 @@ class CircleController extends Controller
 
         $circle = QuranIndividualCircle::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
-            ->with(['student.user', 'subscription.certificate', 'sessions' => function ($q) {
+            ->with(['student', 'subscription.certificate', 'sessions' => function ($q) {
                 $q->with('reports')->orderBy('scheduled_at', 'desc')->limit(10);
             }])
             ->first();
@@ -116,14 +116,14 @@ class CircleController extends Controller
                 'id' => $circle->id,
                 'name' => $circle->name,
                 'description' => $circle->description,
-                'student' => $circle->student?->user ? [
-                    'id' => $circle->student->user->id,
-                    'name' => $circle->student->user->name,
-                    'email' => $circle->student->user->email,
-                    'avatar' => $circle->student->user->avatar
-                        ? asset('storage/'.$circle->student->user->avatar)
+                'student' => $circle->student ? [
+                    'id' => $circle->student->id,
+                    'name' => $circle->student->name,
+                    'email' => $circle->student->email,
+                    'avatar' => $circle->student->avatar
+                        ? asset('storage/'.$circle->student->avatar)
                         : null,
-                    'phone' => $circle->student?->phone ?? $circle->student->user->phone,
+                    'phone' => $circle->student->phone,
                 ] : null,
                 'status' => $circle->status,
                 'subscription' => $circle->subscription ? [

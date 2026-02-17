@@ -70,9 +70,9 @@ class CourseController extends Controller
 
         // Get enrollment status for each course
         $enrolledCourses = CourseSubscription::where('student_id', $user->id)
-            ->whereIn('course_id', collect($courses->items())->pluck('id'))
+            ->whereIn('interactive_course_id', collect($courses->items())->pluck('id'))
             ->get()
-            ->keyBy('course_id');
+            ->keyBy('interactive_course_id');
 
         return $this->success([
             'courses' => collect($courses->items())->map(function ($course) use ($enrolledCourses) {
@@ -134,7 +134,7 @@ class CourseController extends Controller
         }
 
         // Get enrollment (course_subscriptions.student_id references User.id)
-        $enrollment = CourseSubscription::where('course_id', $id)
+        $enrollment = CourseSubscription::where('interactive_course_id', $id)
             ->where('student_id', $user->id)
             ->first();
 

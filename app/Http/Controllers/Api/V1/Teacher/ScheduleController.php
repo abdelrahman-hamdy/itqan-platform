@@ -104,7 +104,7 @@ class ScheduleController extends Controller
                 $quranSessions = QuranSession::where('quran_teacher_id', $quranTeacherId)
                     ->whereBetween('scheduled_at', [$startDate->startOfDay(), $endDate->endOfDay()])
                     ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-                    ->with(['student.user', 'individualCircle', 'circle'])
+                    ->with(['student', 'individualCircle', 'circle'])
                     ->get();
 
                 foreach ($quranSessions as $session) {
@@ -112,7 +112,7 @@ class ScheduleController extends Controller
                         'id' => $session->id,
                         'type' => 'quran',
                         'title' => $session->title ?? 'جلسة قرآنية',
-                        'student_name' => $session->student?->user?->name ?? $session->student?->full_name,
+                        'student_name' => $session->student?->name ?? $session->student?->full_name,
                         'circle_name' => $session->individualCircle?->name ?? $session->circle?->name,
                         'circle_type' => $session->circle_id ? 'group' : 'individual',
                         'scheduled_at' => $session->scheduled_at?->toISOString(),
@@ -132,7 +132,7 @@ class ScheduleController extends Controller
                 $academicSessions = AcademicSession::where('academic_teacher_id', $academicTeacherId)
                     ->whereBetween('scheduled_at', [$startDate->startOfDay(), $endDate->endOfDay()])
                     ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-                    ->with(['student.user', 'academicSubscription'])
+                    ->with(['student', 'academicSubscription'])
                     ->get();
 
                 foreach ($academicSessions as $session) {
@@ -140,7 +140,7 @@ class ScheduleController extends Controller
                         'id' => $session->id,
                         'type' => 'academic',
                         'title' => $session->title ?? $session->academicSubscription?->subject_name ?? 'جلسة أكاديمية',
-                        'student_name' => $session->student?->user?->name ?? 'طالب',
+                        'student_name' => $session->student?->name ?? 'طالب',
                         'subject' => $session->academicSubscription?->subject?->name ?? $session->academicSubscription?->subject_name,
                         'scheduled_at' => $session->scheduled_at?->toISOString(),
                         'duration_minutes' => $session->duration_minutes ?? 60,
@@ -150,8 +150,8 @@ class ScheduleController extends Controller
                 }
 
                 // Interactive course sessions
-                $courseIds = $user->academicTeacherProfile?->assignedCourses()
-                    ?->pluck('id') ?? collect();
+                $profile = $user->academicTeacherProfile;
+                $courseIds = $profile ? $profile->assignedCourses()->pluck('id') : collect();
 
                 $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $courseIds)
                     ->whereBetween('scheduled_at', [$startDate, $endDate])

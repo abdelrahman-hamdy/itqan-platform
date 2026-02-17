@@ -159,7 +159,7 @@ class DashboardController extends Controller
                 $quranSessions = QuranSession::where('quran_teacher_id', $quranTeacherId)
                     ->whereDate('scheduled_at', $today)
                     ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-                    ->with(['student.user', 'individualCircle', 'circle'])
+                    ->with(['student', 'individualCircle', 'circle'])
                     ->orderBy('scheduled_at')
                     ->get();
 
@@ -168,7 +168,7 @@ class DashboardController extends Controller
                         'id' => $session->id,
                         'type' => 'quran',
                         'title' => $session->title ?? 'جلسة قرآنية',
-                        'student_name' => $session->student?->user?->name ?? $session->student?->full_name,
+                        'student_name' => $session->student?->name ?? $session->student?->full_name,
                         'circle_name' => $session->individualCircle?->name ?? $session->circle?->name,
                         'scheduled_at' => $session->scheduled_at?->toISOString(),
                         'status' => $session->status->value ?? $session->status,
@@ -185,7 +185,7 @@ class DashboardController extends Controller
                 $academicSessions = AcademicSession::where('academic_teacher_id', $academicTeacherId)
                     ->whereDate('scheduled_at', $today)
                     ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-                    ->with(['student.user', 'academicSubscription'])
+                    ->with(['student', 'academicSubscription'])
                     ->orderBy('scheduled_at')
                     ->get();
 
@@ -194,7 +194,7 @@ class DashboardController extends Controller
                         'id' => $session->id,
                         'type' => 'academic',
                         'title' => $session->title ?? $session->academicSubscription?->subject_name ?? 'جلسة أكاديمية',
-                        'student_name' => $session->student?->user?->name ?? 'طالب',
+                        'student_name' => $session->student?->name ?? 'طالب',
                         'subject' => $session->academicSubscription?->subject?->name ?? $session->academicSubscription?->subject_name,
                         'scheduled_at' => $session->scheduled_at?->toISOString(),
                         'status' => $session->status->value ?? $session->status,
@@ -253,7 +253,7 @@ class DashboardController extends Controller
                     ->where('scheduled_at', '>', $now)
                     ->where('scheduled_at', '<=', $endDate)
                     ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-                    ->with(['student.user'])
+                    ->with(['student'])
                     ->orderBy('scheduled_at')
                     ->limit(5)
                     ->get();
@@ -263,7 +263,7 @@ class DashboardController extends Controller
                         'id' => $session->id,
                         'type' => 'quran',
                         'title' => $session->title ?? 'جلسة قرآنية',
-                        'student_name' => $session->student?->user?->name ?? $session->student?->full_name,
+                        'student_name' => $session->student?->name ?? $session->student?->full_name,
                         'scheduled_at' => $session->scheduled_at?->toISOString(),
                         'status' => $session->status->value ?? $session->status,
                     ];
@@ -279,7 +279,7 @@ class DashboardController extends Controller
                     ->where('scheduled_at', '>', $now)
                     ->where('scheduled_at', '<=', $endDate)
                     ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-                    ->with(['student.user', 'academicSubscription'])
+                    ->with(['student', 'academicSubscription'])
                     ->orderBy('scheduled_at')
                     ->limit(5)
                     ->get();
@@ -289,7 +289,7 @@ class DashboardController extends Controller
                         'id' => $session->id,
                         'type' => 'academic',
                         'title' => $session->title ?? $session->academicSubscription?->subject_name ?? 'جلسة أكاديمية',
-                        'student_name' => $session->student?->user?->name ?? 'طالب',
+                        'student_name' => $session->student?->name ?? 'طالب',
                         'scheduled_at' => $session->scheduled_at?->toISOString(),
                         'status' => $session->status->value ?? $session->status,
                     ];
@@ -318,7 +318,7 @@ class DashboardController extends Controller
             if ($quranTeacherId) {
                 $recentQuran = QuranSession::where('quran_teacher_id', $quranTeacherId)
                     ->where('status', SessionStatus::COMPLETED->value)
-                    ->with(['student.user'])
+                    ->with(['student'])
                     ->orderBy('ended_at', 'desc')
                     ->limit(3)
                     ->get();
@@ -328,7 +328,7 @@ class DashboardController extends Controller
                         'type' => 'session_completed',
                         'session_type' => 'quran',
                         'session_id' => $session->id,
-                        'description' => 'أكملت جلسة قرآنية مع '.($session->student?->user?->name ?? 'طالب'),
+                        'description' => 'أكملت جلسة قرآنية مع '.($session->student?->name ?? 'طالب'),
                         'timestamp' => $session->ended_at?->toISOString() ?? $session->updated_at->toISOString(),
                     ];
                 }
@@ -341,7 +341,7 @@ class DashboardController extends Controller
             if ($academicTeacherId) {
                 $recentAcademic = AcademicSession::where('academic_teacher_id', $academicTeacherId)
                     ->where('status', SessionStatus::COMPLETED->value)
-                    ->with(['student.user'])
+                    ->with(['student'])
                     ->orderBy('ended_at', 'desc')
                     ->limit(3)
                     ->get();
@@ -351,7 +351,7 @@ class DashboardController extends Controller
                         'type' => 'session_completed',
                         'session_type' => 'academic',
                         'session_id' => $session->id,
-                        'description' => 'أكملت جلسة أكاديمية مع '.($session->student?->user?->name ?? 'طالب'),
+                        'description' => 'أكملت جلسة أكاديمية مع '.($session->student?->name ?? 'طالب'),
                         'timestamp' => $session->ended_at?->toISOString() ?? $session->updated_at->toISOString(),
                     ];
                 }

@@ -438,7 +438,7 @@ class SubscriptionController extends Controller
 
         if ($type === 'course') {
             $base['course_details'] = [
-                'course_id' => $subscription->course_id,
+                'course_id' => $subscription->interactive_course_id ?? $subscription->recorded_course_id,
                 'course_title' => $subscription->course?->title,
                 'course_description' => $subscription->course?->description,
                 'total_sessions' => $subscription->course?->total_sessions,

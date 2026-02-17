@@ -215,14 +215,14 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
 
             Tables\Columns\BadgeColumn::make('attendance_status')
                 ->label('حالة الحضور')
-                ->formatStateUsing(fn (string $state): string => match ($state) {
+                ->formatStateUsing(fn ($state): string => match ((string) $state) {
                     AttendanceStatus::ATTENDED->value => 'حاضر',
                     AttendanceStatus::LATE->value => 'متأخر',
                     AttendanceStatus::LEFT->value => 'غادر مبكراً',
                     AttendanceStatus::ABSENT->value => 'غائب',
-                    default => $state,
+                    default => (string) $state,
                 })
-                ->color(fn (string $state): string => match ($state) {
+                ->color(fn ($state): string => match ((string) $state) {
                     AttendanceStatus::ATTENDED->value => 'success',
                     AttendanceStatus::LATE->value => 'warning',
                     AttendanceStatus::LEFT->value => 'info',

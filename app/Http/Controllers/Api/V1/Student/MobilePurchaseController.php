@@ -162,7 +162,10 @@ class MobilePurchaseController extends Controller
     {
         return match ($type) {
             'course' => CourseSubscription::where('student_id', $user->id)
-                ->where('course_id', $id)
+                ->where(function ($q) use ($id) {
+                    $q->where('interactive_course_id', $id)
+                        ->orWhere('recorded_course_id', $id);
+                })
                 ->orderBy('created_at', 'desc')
                 ->first(),
 

@@ -16,6 +16,11 @@
 | API-003 | Validation API | Low | Validation errors missing standard envelope | Fixed |
 | API-004 | Teacher API | Medium | Academic teacher endpoints return 500 | Fixed |
 | CRUD-003 | Admin Panel | Medium | InteractiveCourse create page returns 500 | Fixed |
+| UI-001 | Frontend | High | Interactive course card `htmlspecialchars()` error on schedule | Fixed |
+| API-005 | Teacher API | High | `student.user` undefined relationship across 7 controllers | Fixed |
+| API-006 | Student API | High | `course_id` column missing on `course_subscriptions` (7 instances) | Fixed |
+| API-007 | Teacher API | Medium | ScheduleController nullsafe chain on `assignedCourses()` | Fixed |
+| FIL-001 | Teacher Panel | Medium | AttendanceStatus enum type hint mismatch in StudentSessionReport | Fixed |
 
 ---
 
@@ -146,4 +151,62 @@
 - **Impact**: Cannot create interactive courses through admin panel.
 - **Fix**: Removed `->approved()` call — the existing `->active()` scope already checks user active status.
 - **Location**: `app/Filament/Shared/Resources/BaseInteractiveCourseResource.php:156`
+- **Status**: Fixed
+
+---
+
+## E2E Round 2 Findings (e2e-test academy)
+
+### UI-001: Interactive course card `htmlspecialchars()` error on schedule display
+- **Severity**: High
+- **Page**: Academy public interactive courses page
+- **Expected**: Course schedule days/times displayed correctly
+- **Actual**: `htmlspecialchars(): Argument #1 ($string) must be of type string, array given`
+- **Root Cause**: `interactive-course-card.blade.php` line 81 iterates schedule as `$day => $time`, but schedule items are arrays `{day: "sunday", time: "16:00"}`, not key-value pairs. `{{ $time }}` tried to echo an array.
+- **Fix**: Changed foreach to iterate items and access `$item['day']` and `$item['time']`
+- **Location**: `resources/views/components/interactive-course-card.blade.php:81`
+- **Status**: Fixed
+
+### API-005: `student.user` undefined relationship causes 500 errors across Teacher API
+- **Severity**: High
+- **Endpoints**: Dashboard, Schedule, Sessions, Circles, Homework — all Teacher API endpoints
+- **Expected**: Sessions return with student name
+- **Actual**: 500 error — `Call to undefined relationship [user] on model [App\Models\User]`
+- **Root Cause**: All session models (`QuranSession`, `AcademicSession`) define `student()` as `BelongsTo(User::class)` — the student IS already a User. Eager loading `student.user` tries to find a `user()` relationship on the User model itself, which doesn't exist.
+- **Impact**: Mobile app teacher dashboard, schedule, sessions, circles, and homework all crash.
+- **Fix**: Changed `->with(['student.user', ...])` to `->with(['student', ...])` and `$session->student?->user?->name` to `$session->student?->name` across 7 controller files (DashboardController, ScheduleController, HomeworkController, Quran/SessionController, Quran/CircleController, Academic/SessionController, Academic/LessonController).
+- **Status**: Fixed
+
+### API-006: `course_id` column doesn't exist on `course_subscriptions` table
+- **Severity**: High
+- **Endpoints**: Student course list/detail, Teacher course students/certificates, Mobile purchase, Parent reports, Subscription access middleware
+- **Expected**: Course enrollment queries succeed
+- **Actual**: 500 error — `Unknown column 'course_id' in 'where clause'`
+- **Root Cause**: `course_subscriptions` table uses `recorded_course_id` and `interactive_course_id` (polymorphic FK pattern), but 7 query locations used the non-existent `course_id` column.
+- **Impact**: Course enrollment, subscription checks, and certificate queries all fail.
+- **Fix**: Replaced `course_id` with `interactive_course_id` or `recorded_course_id` (based on context) in 7 instances across 6 files:
+  - `Student/CourseController.php` (2 instances)
+  - `Student/SubscriptionController.php` (1 instance)
+  - `Student/MobilePurchaseController.php` (1 instance)
+  - `Teacher/Academic/CourseController.php` (3 instances)
+  - `ParentReportController.php` (1 instance)
+  - `EnsureSubscriptionAccess.php` middleware (1 instance)
+- **Status**: Fixed
+
+### API-007: ScheduleController nullsafe chain on `assignedCourses()` fails
+- **Severity**: Medium
+- **Endpoint**: `GET /api/v1/teacher/schedule`
+- **Root Cause**: PHP nullsafe operator chain `$user->academicTeacherProfile?->assignedCourses()?->pluck('id') ?? collect()` doesn't work as expected — nullsafe on a method that returns a Builder doesn't propagate null correctly.
+- **Fix**: Replaced with explicit if-check: `$profile = ...; $courseIds = $profile ? $profile->assignedCourses()->pluck('id') : collect();`
+- **Location**: `app/Http/Controllers/Api/V1/Teacher/ScheduleController.php:153`
+- **Status**: Fixed
+
+### FIL-001: AttendanceStatus enum type hint mismatch in StudentSessionReport
+- **Severity**: Medium
+- **Page**: Teacher panel → Student session reports table
+- **Expected**: Attendance status badge renders correctly
+- **Actual**: Type error — `fn (string $state)` receives `AttendanceStatus` enum object
+- **Root Cause**: Filament passes the casted enum value (AttendanceStatus object) to formatStateUsing/color closures, but closures had `string` type hint.
+- **Fix**: Removed `string` type hints from closure parameters, added `(string)` cast inside match expressions.
+- **Location**: `app/Filament/Teacher/Resources/StudentSessionReportResource.php:218`
 - **Status**: Fixed

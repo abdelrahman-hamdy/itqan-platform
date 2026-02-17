@@ -705,7 +705,7 @@ class ParentReportController extends Controller
         $childUserIds = $this->verificationService->getChildUserIds($parent);
 
         // Find the child enrolled in this course
-        $enrollment = CourseSubscription::where('course_id', $course->id)
+        $enrollment = CourseSubscription::where('interactive_course_id', $course->id)
             ->whereIn('student_id', $childUserIds)
             ->with('student')
             ->firstOrFail();

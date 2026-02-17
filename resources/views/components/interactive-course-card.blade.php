@@ -78,9 +78,9 @@
       </div>
       @if($course->schedule && is_array($course->schedule) && count($course->schedule) > 0)
       <div class="flex flex-wrap gap-1 mt-2 ms-12">
-        @foreach($course->schedule as $day => $time)
+        @foreach($course->schedule as $item)
         <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-white text-blue-700 border border-blue-200">
-          {{ $day }}: {{ $time }}
+          {{ is_array($item) ? ($item['day'] ?? '') . ': ' . ($item['time'] ?? '') : $item }}
         </span>
         @endforeach
       </div>

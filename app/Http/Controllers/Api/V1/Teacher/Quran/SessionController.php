@@ -30,7 +30,7 @@ class SessionController extends Controller
         }
 
         $query = QuranSession::where('quran_teacher_id', $quranTeacherId)
-            ->with(['student.user', 'individualCircle', 'circle']);
+            ->with(['student', 'individualCircle', 'circle']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -61,7 +61,7 @@ class SessionController extends Controller
             'sessions' => collect($sessions->items())->map(fn ($session) => [
                 'id' => $session->id,
                 'title' => $session->title ?? 'جلسة قرآنية',
-                'student_name' => $session->student?->user?->name ?? $session->student?->full_name,
+                'student_name' => $session->student?->name ?? $session->student?->full_name,
                 'circle_name' => $session->individualCircle?->name ?? $session->circle?->name,
                 'circle_type' => $session->circle_id ? 'group' : 'individual',
                 'scheduled_at' => $session->scheduled_at?->toISOString(),
@@ -87,7 +87,7 @@ class SessionController extends Controller
 
         $session = QuranSession::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
-            ->with(['student.user', 'individualCircle', 'circle', 'reports', 'subscription'])
+            ->with(['student', 'individualCircle', 'circle', 'reports', 'subscription'])
             ->first();
 
         if (! $session) {
@@ -98,13 +98,13 @@ class SessionController extends Controller
             'session' => [
                 'id' => $session->id,
                 'title' => $session->title ?? 'جلسة قرآنية',
-                'student' => $session->student?->user ? [
-                    'id' => $session->student->user->id,
-                    'name' => $session->student->user->name,
-                    'avatar' => $session->student->user->avatar
-                        ? asset('storage/'.$session->student->user->avatar)
+                'student' => $session->student ? [
+                    'id' => $session->student->id,
+                    'name' => $session->student->name,
+                    'avatar' => $session->student->avatar
+                        ? asset('storage/'.$session->student->avatar)
                         : null,
-                    'phone' => $session->student?->phone ?? $session->student->user->phone,
+                    'phone' => $session->student->phone,
                 ] : null,
                 'circle' => [
                     'id' => $session->individualCircle?->id ?? $session->circle?->id,
@@ -338,7 +338,7 @@ class SessionController extends Controller
 
         $session = QuranSession::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
-            ->with(['student.user'])
+            ->with(['student'])
             ->first();
 
         if (! $session) {
@@ -373,7 +373,7 @@ class SessionController extends Controller
             'session' => [
                 'id' => $session->id,
                 'status' => SessionStatus::ABSENT,
-                'student_name' => $session->student?->user?->name,
+                'student_name' => $session->student?->name,
             ],
         ], __('Student marked as absent'));
     }

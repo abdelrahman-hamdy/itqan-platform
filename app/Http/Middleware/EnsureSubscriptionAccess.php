@@ -142,8 +142,11 @@ class EnsureSubscriptionAccess
      */
     protected function findCourseSubscriptionForCourse($user, $courseId, $courseType)
     {
+        $courseTypeValue = $courseType instanceof \App\Enums\CourseType ? $courseType->value : $courseType;
+        $column = $courseTypeValue === 'interactive' ? 'interactive_course_id' : 'recorded_course_id';
+
         return CourseSubscription::where('student_id', $user->id)
-            ->where('course_id', $courseId)
+            ->where($column, $courseId)
             ->where('course_type', $courseType)
             ->where('status', \App\Enums\EnrollmentStatus::ENROLLED)
             ->first();
