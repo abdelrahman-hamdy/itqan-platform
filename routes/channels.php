@@ -21,3 +21,16 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 Broadcast::channel('user.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
+
+/*
+|--------------------------------------------------------------------------
+| WireChat Broadcast Channels
+|--------------------------------------------------------------------------
+|
+| WireChat registers its channels via loadRoutesFrom() in its service provider,
+| which is skipped when routes are cached in production. We load them here
+| since withBroadcasting() uses require() directly, bypassing route cache.
+|
+*/
+
+require base_path('vendor/namu/wirechat/routes/channels.php');
