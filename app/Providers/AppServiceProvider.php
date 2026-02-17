@@ -178,6 +178,13 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
+        // Set default subdomain for URL generation in non-HTTP contexts (queue workers, CLI).
+        // WireChat's NotifyParticipant event calls route('chat', ...) which requires the
+        // {subdomain} parameter normally set by ResolveTenantFromSubdomain middleware.
+        if ($this->app->runningInConsole()) {
+            URL::defaults(['subdomain' => config('multitenancy.default_tenant_subdomain', 'itqan-academy')]);
+        }
+
         // Register middleware aliases
         Route::aliasMiddleware('auth', CustomAuthenticate::class);
         Route::aliasMiddleware('role', RoleMiddleware::class);
