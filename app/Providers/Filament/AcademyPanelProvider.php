@@ -142,7 +142,6 @@ class AcademyPanelProvider extends PanelProvider
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->sidebarCollapsibleOnDesktop()
             ->login(Login::class)
-            ->profile()
             ->renderHook(
                 \Filament\View\PanelsRenderHook::STYLES_AFTER,
                 fn (): string => \Illuminate\Support\Facades\Blade::render('@vite(["resources/css/filament-custom.css"])')

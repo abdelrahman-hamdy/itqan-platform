@@ -33,6 +33,11 @@ abstract class BaseSessionRecordingResource extends BaseResource
 {
     protected static ?string $model = SessionRecording::class;
 
+    // SessionRecording has no direct academy relationship.
+    // Disable Filament's tenant global scope - access control is handled
+    // by scopeEloquentQuery() in each child resource.
+    protected static bool $isScopedToTenant = false;
+
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-video-camera';
 
     protected static ?string $modelLabel = 'تسجيل جلسة';

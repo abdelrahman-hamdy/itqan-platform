@@ -82,7 +82,6 @@ class SupervisorPanelProvider extends PanelProvider
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->sidebarCollapsibleOnDesktop()
             ->login(Login::class)
-            ->profile()
             ->plugins([
                 FilamentFullCalendarPlugin::make()
                     ->selectable(true)
