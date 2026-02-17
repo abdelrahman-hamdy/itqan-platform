@@ -74,12 +74,12 @@
         </div>
 
         <!-- Main Heading -->
-        <h1 class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-snug" style="color: {{ $brandColorHex }};">
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold" style="color: {{ $brandColorHex }}; line-height: 1.4;">
           {{ $heroHeading }}
         </h1>
 
         <!-- Subheading -->
-        <p class="text-xl lg:text-2xl text-gray-600 leading-[2.15] max-w-3xl mx-auto">
+        <p class="text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto" style="line-height: 2.15;">
           {{ $heroSubheading }}
         </p>
 
