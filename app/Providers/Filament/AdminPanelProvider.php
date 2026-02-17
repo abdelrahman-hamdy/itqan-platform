@@ -52,6 +52,7 @@ use App\Filament\Resources\QuizAssignmentResource;
 use App\Filament\Resources\BusinessServiceCategoryResource;
 use App\Filament\Resources\BusinessServiceRequestResource;
 use App\Filament\Resources\PortfolioItemResource;
+use App\Filament\Resources\SessionRecordingResource;
 use App\Http\Middleware\AcademyContext;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -60,6 +61,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Width;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -118,6 +120,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
+            ->maxContentWidth(Width::Full)
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('16rem')
             ->sidebarFullyCollapsibleOnDesktop()
@@ -198,6 +201,9 @@ class AdminPanelProvider extends PanelProvider
             AcademicSubscriptionResource::class,
             AcademicSessionResource::class,
             InteractiveCourseSessionResource::class,
+
+            // تسجيلات الجلسات - Session Recordings
+            SessionRecordingResource::class,
 
             // إدارة الدورات المسجلة - Recorded Courses
             RecordedCourseResource::class,
