@@ -11,6 +11,9 @@
   <!-- Fonts -->
   @include('partials.fonts')
 
+  <!-- Favicon -->
+  {!! getFaviconLinkTag($academy) !!}
+
   <!-- Vite Assets (Compiled CSS & JS - includes RemixIcon & Flag-icons) -->
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 

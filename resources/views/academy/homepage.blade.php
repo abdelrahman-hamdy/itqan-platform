@@ -36,6 +36,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;600;700;800;900&family=Cairo:wght@300;400;500;700&family=Pacifico&display=swap" rel="stylesheet">
 
+  <!-- Favicon -->
+  {!! getFaviconLinkTag($academy) !!}
+
   <!-- Vite Assets (includes RemixIcon & Flag-icons) -->
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 
