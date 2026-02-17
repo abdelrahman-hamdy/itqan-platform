@@ -24,16 +24,6 @@ use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
 class TeacherPanelProvider extends PanelProvider
 {
-    protected function getTenantFavicon(): string
-    {
-        $tenant = \Filament\Facades\Filament::getTenant();
-        if ($tenant && $tenant->favicon) {
-            return \Illuminate\Support\Facades\Storage::url($tenant->favicon);
-        }
-
-        return asset('favicon.ico');
-    }
-
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -49,7 +39,7 @@ class TeacherPanelProvider extends PanelProvider
                 'gray' => Color::Gray,
             ])
             ->font('Tajawal') // Arabic font
-            ->favicon(fn () => $this->getTenantFavicon())
+            ->favicon(fn () => getFavicon(\Filament\Facades\Filament::getTenant()))
             ->brandName('لوحة المعلم')
             ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'green', 'panelType' => 'teacher']))
             ->navigationGroups([

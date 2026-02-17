@@ -139,6 +139,45 @@ if (! function_exists('can_test_meetings')) {
     }
 }
 
+if (! function_exists('getFavicon')) {
+    /**
+     * Get the favicon URL for the current academy
+     *
+     * @param \App\Models\Academy|null $academy Academy instance (auto-resolves if null)
+     * @return string Favicon URL
+     */
+    function getFavicon(?\App\Models\Academy $academy = null): string
+    {
+        return \App\Helpers\FaviconHelper::get($academy);
+    }
+}
+
+if (! function_exists('getFaviconLinkTag')) {
+    /**
+     * Get favicon HTML link tag
+     *
+     * @param \App\Models\Academy|null $academy Academy instance (auto-resolves if null)
+     * @return string HTML link tag
+     */
+    function getFaviconLinkTag(?\App\Models\Academy $academy = null): string
+    {
+        return \App\Helpers\FaviconHelper::linkTag($academy);
+    }
+}
+
+if (! function_exists('hasCustomFavicon')) {
+    /**
+     * Check if academy has a custom favicon
+     *
+     * @param \App\Models\Academy|null $academy Academy instance (auto-resolves if null)
+     * @return bool True if academy has custom favicon
+     */
+    function hasCustomFavicon(?\App\Models\Academy $academy = null): bool
+    {
+        return \App\Helpers\FaviconHelper::hasCustom($academy);
+    }
+}
+
 // Include TimeHelper functions
 require_once __DIR__.'/Helpers/TimeHelper.php';
 

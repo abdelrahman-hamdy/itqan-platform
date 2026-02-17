@@ -43,7 +43,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $session->title ?? $session->session_code ?? __('supervisor.observation.observe_session') }} - {{ $academy->name ?? config('app.name') }}</title>
-    <link rel="icon" href="{{ $academy->logo_url ?? asset('favicon.ico') }}">
+    {!! getFaviconLinkTag($academy) !!}
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&family=Cairo:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])

@@ -23,6 +23,8 @@ class SessionRecordingResource extends BaseSessionRecordingResource
     // Navigation Configuration
     // ========================================
 
+    protected static ?string $tenantOwnershipRelationshipName = null;
+
     protected static ?string $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 5;

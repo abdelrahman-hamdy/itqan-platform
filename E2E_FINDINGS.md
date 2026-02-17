@@ -21,6 +21,8 @@
 | API-006 | Student API | High | `course_id` column missing on `course_subscriptions` (7 instances) | Fixed |
 | API-007 | Teacher API | Medium | ScheduleController nullsafe chain on `assignedCourses()` | Fixed |
 | FIL-001 | Teacher Panel | Medium | AttendanceStatus enum type hint mismatch in StudentSessionReport | Fixed |
+| UI-002 | Frontend | High | Interactive course detail `htmlspecialchars()` error on schedule | Fixed |
+| FIL-002 | Admin Panel | Medium | `is_active` column removed from `quran_teacher_profiles` but still queried | Fixed |
 
 ---
 
@@ -209,4 +211,24 @@
 - **Root Cause**: Filament passes the casted enum value (AttendanceStatus object) to formatStateUsing/color closures, but closures had `string` type hint.
 - **Fix**: Removed `string` type hints from closure parameters, added `(string)` cast inside match expressions.
 - **Location**: `app/Filament/Teacher/Resources/StudentSessionReportResource.php:218`
+- **Status**: Fixed
+
+### UI-002: Interactive course detail page `htmlspecialchars()` error on schedule display
+- **Severity**: High
+- **Page**: Student interactive course detail page
+- **Expected**: Course schedule days/times displayed correctly
+- **Actual**: `htmlspecialchars(): Argument #1 ($string) must be of type string, array given`
+- **Root Cause**: Same bug as UI-001 but in a different Blade view. `interactive-course-detail-content.blade.php` line 307 iterates schedule as `$day => $time`, but schedule items are arrays `{day: "sunday", time: "16:00"}`.
+- **Fix**: Changed foreach to iterate items and access `$item['day']` and `$item['time']`
+- **Location**: `resources/views/student/partials/interactive-course-detail-content.blade.php:307`
+- **Status**: Fixed
+
+### FIL-002: `is_active` column removed from `quran_teacher_profiles` but still queried
+- **Severity**: Medium
+- **Page**: Admin panel → Quran Individual Circles → Create/Edit form (teacher dropdown)
+- **Expected**: Teacher dropdown loads active teachers
+- **Actual**: SQL error — `Unknown column 'is_active' in 'where clause'`
+- **Root Cause**: Migration `2026_01_16_235347_simplify_activation_system` removed `is_active` from `quran_teacher_profiles` (activation moved to `User.active_status`). But `QuranIndividualCircleResource.php:98` still queried `->where('is_active', true)` on `QuranTeacherProfile`.
+- **Fix**: Changed to `->whereHas('user', fn ($q) => $q->where('active_status', true))` matching the pattern already used in `QuranSubscriptionResource.php`
+- **Location**: `app/Filament/Resources/QuranIndividualCircleResource.php:98`
 - **Status**: Fixed

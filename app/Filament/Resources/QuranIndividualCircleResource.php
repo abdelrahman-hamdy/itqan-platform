@@ -95,7 +95,7 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                                     $teachers = \App\Models\QuranTeacherProfile::when($academyId, function ($query) use ($academyId) {
                                         return $query->where('academy_id', $academyId);
                                     })
-                                        ->where('is_active', true)
+                                        ->whereHas('user', fn ($q) => $q->where('active_status', true))
                                         ->get();
 
                                     if ($teachers->isEmpty()) {

@@ -304,10 +304,10 @@
                         {{ __('student.interactive_course.schedule_title') }}
                     </h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
-                        @foreach($course->schedule as $day => $time)
+                        @foreach($course->schedule as $item)
                         <div class="flex items-center justify-between p-3 md:p-4 bg-gradient-to-l from-purple-50 to-white rounded-xl border border-purple-100">
-                            <span class="font-semibold text-gray-900 text-sm md:text-base">{{ $day }}</span>
-                            <span class="text-purple-600 font-bold text-sm md:text-base">{{ $time }}</span>
+                            <span class="font-semibold text-gray-900 text-sm md:text-base">{{ is_array($item) ? ($item['day'] ?? '') : $item }}</span>
+                            <span class="text-purple-600 font-bold text-sm md:text-base">{{ is_array($item) ? ($item['time'] ?? '') : '' }}</span>
                         </div>
                         @endforeach
                     </div>

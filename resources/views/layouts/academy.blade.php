@@ -13,11 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&family=Cairo:wght@300;400;500;700&display=swap" rel="stylesheet">
 
     <!-- Favicon -->
-    @if($academy->logo_url)
-        <link rel="icon" type="image/x-icon" href="{{ $academy->logo_url }}">
-    @else
-        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    @endif
+    {!! getFaviconLinkTag($academy) !!}
 
     <!-- Meta Tags -->
     @yield('meta')

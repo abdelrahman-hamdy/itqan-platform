@@ -14,7 +14,6 @@
     $academy = auth()->user()?->academy ?? \App\Models\Academy::first();
     $primaryColor = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
     $gradientPalette = $academy?->gradient_palette ?? \App\Enums\GradientPalette::OCEAN_BREEZE;
-    $favicon = $academy?->favicon ?? null;
 
     // Generate CSS variables for all shades
     $primaryVars = $primaryColor->generateCssVariables('primary');
@@ -34,12 +33,7 @@
 <meta name="description" content="{{ $pageDescription }}">
 
 <!-- Favicon -->
-@if($favicon)
-<link rel="icon" type="image/png" href="{{ Storage::url($favicon) }}">
-@else
-<link rel="icon" type="image/svg+xml" href="{{ asset('images/itqan-logo.svg') }}">
-<link rel="icon" type="image/png" href="{{ asset('favicon.ico') }}">
-@endif
+{!! getFaviconLinkTag($academy) !!}
 
 <!-- Fonts - Primary: Tajawal (Arabic & English) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">

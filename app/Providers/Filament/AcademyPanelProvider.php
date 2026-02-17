@@ -30,16 +30,6 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AcademyPanelProvider extends PanelProvider
 {
-    protected function getTenantFavicon(): string
-    {
-        $tenant = \Filament\Facades\Filament::getTenant();
-        if ($tenant && $tenant->favicon) {
-            return \Illuminate\Support\Facades\Storage::url($tenant->favicon);
-        }
-
-        return asset('favicon.ico');
-    }
-
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -57,7 +47,7 @@ class AcademyPanelProvider extends PanelProvider
                 'gray' => Color::Gray,
             ])
             ->font('Tajawal') // Arabic font
-            ->favicon(fn () => $this->getTenantFavicon())
+            ->favicon(fn () => getFavicon(\Filament\Facades\Filament::getTenant()))
             ->brandName('لوحة إدارة الأكاديمية')
             ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'blue', 'panelType' => 'academy']))
             ->navigationGroups([
