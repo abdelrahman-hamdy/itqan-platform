@@ -1981,8 +1981,8 @@ return [
         ],
     ],
     'footer' => [
-        'academy_default' => 'Itqan Academy',
-        'default_description' => 'A comprehensive educational platform aiming to provide the best learning experience in Quran and academic subjects',
+        'academy_default' => 'Ma\'een App | The Best Aid for Quran Memorization',
+        'default_description' => 'A smart platform and application for memorizing the Holy Quran that aims to connect those wishing to memorize the Quran with certified and proficient teachers, through an elegant, modern, and motivating digital experience, befitting the status of the Quran and its people.',
         'main_sections' => 'Main Sections',
         'home' => 'Home',
         'quran_circles' => 'Quran Circles',
