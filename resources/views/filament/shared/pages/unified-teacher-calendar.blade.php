@@ -1,9 +1,9 @@
 <x-filament-panels::page>
     <div class="space-y-6">
         {{-- Session Statistics Section --}}
-        <x-filament::grid default="1" md="2" lg="4" class="gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             @foreach ($this->getSessionStatistics() as $stat)
-                <x-filament::grid.column>
+                <div>
                     <x-filament::card>
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
@@ -24,9 +24,9 @@
                             </div>
                         </div>
                     </x-filament::card>
-                </x-filament::grid.column>
+                </div>
             @endforeach
-        </x-filament::grid>
+        </div>
 
         {{-- Timezone Information --}}
         <div class="rounded-xl bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-950 dark:to-primary-900 px-6 py-7 shadow-md border-2 border-primary-200 dark:border-primary-800" wire:poll.60s>

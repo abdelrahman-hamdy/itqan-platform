@@ -2,9 +2,9 @@
 <x-filament-panels::page>
     <div class="space-y-6">
         {{-- Session Statistics Section --}}
-        <x-filament::grid default="1" md="2" lg="4" class="gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             @foreach ($this->getSessionStatistics() as $stat)
-                <x-filament::grid.column>
+                <div>
                     <x-filament::card>
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
@@ -25,9 +25,9 @@
                             </div>
                         </div>
                     </x-filament::card>
-                </x-filament::grid.column>
+                </div>
             @endforeach
-        </x-filament::grid>
+        </div>
 
         {{-- Academic Sessions Management Section --}}
         <x-filament::section>
