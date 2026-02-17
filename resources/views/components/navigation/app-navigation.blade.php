@@ -370,6 +370,34 @@
             0
           </span>
         </a>
+        <script>
+        (function() {
+            function updateUnreadCount() {
+                fetch('/api/chat/unreadCount', {
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(r => r.json())
+                .then(data => {
+                    const badge = document.getElementById('unread-count-badge');
+                    if (badge && data.unread_count !== undefined) {
+                        if (data.unread_count > 0) {
+                            badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
+                            badge.classList.remove('hidden');
+                        } else {
+                            badge.classList.add('hidden');
+                        }
+                    }
+                })
+                .catch(() => {});
+            }
+            updateUnreadCount();
+            setInterval(updateUnreadCount, 10000);
+        })();
+        </script>
 
         <!-- User Dropdown (hidden on mobile - sidebar has user widget) -->
         <div class="relative hidden md:block" x-data="{ open: false }">

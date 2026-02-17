@@ -92,6 +92,24 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Chat Unread Count (Web API for navigation badges)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::middleware(['auth'])->get('/api/chat/unreadCount', function () {
+        $user = auth()->user();
+        $conversations = \Namu\WireChat\Models\Conversation::whereHas('participants', function ($q) use ($user) {
+            $q->where('participantable_id', $user->id)
+                ->where('participantable_type', $user->getMorphClass());
+        })->get();
+
+        $unreadCount = $conversations->sum(fn ($conv) => $conv->getUnreadCountFor($user));
+
+        return response()->json(['unread_count' => $unreadCount]);
+    })->name('chat.unread-count');
+
+    /*
+    |--------------------------------------------------------------------------
     | CSRF Token Endpoint
     |--------------------------------------------------------------------------
     */
