@@ -12,6 +12,7 @@ use App\Filament\Academy\Widgets\AcademyStatsWidget;
 use App\Filament\Academy\Widgets\AcademyMonthlyStatsWidget;
 use App\Filament\Academy\Widgets\AcademyUserAnalyticsChartWidget;
 use App\Filament\Academy\Widgets\AcademySessionAnalyticsChartWidget;
+use App\Filament\Academy\Widgets\RenewalMetricsWidget;
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Academy\Resources\AcademicPackageResource;
 use App\Filament\Academy\Resources\AcademicSubscriptionResource;
@@ -112,9 +113,11 @@ class AcademyPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
+            ->discoverWidgets(in: app_path('Filament/Academy/Widgets'), for: 'App\\Filament\\Academy\\Widgets')
             ->widgets([
                 // Main stats widgets - same structure as super admin but scoped to academy
                 AcademyStatsWidget::class,
+                RenewalMetricsWidget::class,
                 AcademyMonthlyStatsWidget::class,
                 AcademyUserAnalyticsChartWidget::class,
                 AcademySessionAnalyticsChartWidget::class,
