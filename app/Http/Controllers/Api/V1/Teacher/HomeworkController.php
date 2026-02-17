@@ -34,9 +34,9 @@ class HomeworkController extends Controller
             if ($academicTeacherId) {
                 // Academic sessions with homework
                 $academicSessions = AcademicSession::where('academic_teacher_id', $academicTeacherId)
-                    ->whereNotNull('homework')
-                    ->where('homework', '!=', '')
-                    ->with(['student', 'academicSubscription', 'submissions'])
+                    ->whereNotNull('homework_description')
+                    ->where('homework_description', '!=', '')
+                    ->with(['student', 'academicSubscription', 'homeworkSubmissions'])
                     ->orderBy('scheduled_at', 'desc')
                     ->limit(50)
                     ->get();
@@ -46,13 +46,13 @@ class HomeworkController extends Controller
                         'id' => $session->id,
                         'type' => 'academic',
                         'title' => $session->academicSubscription?->subject_name ?? 'واجب أكاديمي',
-                        'description' => $session->homework,
+                        'description' => $session->homework_description,
                         'student_name' => $session->student?->name ?? 'طالب',
                         'session_date' => $session->scheduled_at?->toDateString(),
-                        'due_date' => $session->homework_due_date?->toDateString(),
-                        'submissions_count' => $session->submissions?->count() ?? 0,
-                        'pending_submissions' => $session->submissions?->where('status', 'submitted')->count() ?? 0,
-                        'created_at' => $session->created_at->toISOString(),
+                        'due_date' => null,
+                        'submissions_count' => $session->homeworkSubmissions?->count() ?? 0,
+                        'pending_submissions' => $session->homeworkSubmissions?->where('submission_status', 'submitted')->count() ?? 0,
+                        'created_at' => $session->created_at?->toISOString(),
                     ];
                 }
 
@@ -115,7 +115,7 @@ class HomeworkController extends Controller
         if ($type === 'academic') {
             $session = AcademicSession::where('id', $id)
                 ->where('academic_teacher_id', $academicTeacherId)
-                ->with(['student', 'academicSubscription', 'submissions.user'])
+                ->with(['student', 'academicSubscription', 'homeworkSubmissions.student'])
                 ->first();
 
             if (! $session) {
@@ -127,21 +127,21 @@ class HomeworkController extends Controller
                     'id' => $session->id,
                     'type' => 'academic',
                     'title' => $session->academicSubscription?->subject_name ?? 'واجب أكاديمي',
-                    'description' => $session->homework,
+                    'description' => $session->homework_description,
                     'student' => $session->student ? [
                         'id' => $session->student->id,
                         'name' => $session->student->name,
                     ] : null,
                     'session_date' => $session->scheduled_at?->toDateString(),
-                    'due_date' => $session->homework_due_date?->toDateString(),
-                    'submissions' => $session->submissions->map(fn ($sub) => [
+                    'due_date' => null,
+                    'submissions' => $session->homeworkSubmissions->map(fn ($sub) => [
                         'id' => $sub->id,
-                        'student_name' => $sub->user?->name,
-                        'status' => $sub->status,
-                        'content' => $sub->content,
-                        'file_path' => $sub->file_path ? asset('storage/'.$sub->file_path) : null,
-                        'grade' => $sub->grade,
-                        'feedback' => $sub->feedback,
+                        'student_name' => $sub->student?->name,
+                        'status' => $sub->submission_status,
+                        'content' => $sub->submission_text,
+                        'file_path' => $sub->submission_files[0]['path'] ?? null,
+                        'grade' => $sub->score,
+                        'feedback' => $sub->teacher_feedback,
                         'submitted_at' => $sub->submitted_at?->toISOString(),
                         'graded_at' => $sub->graded_at?->toISOString(),
                     ])->toArray(),
@@ -225,14 +225,14 @@ class HomeworkController extends Controller
             }
 
             $session->update([
-                'homework' => $request->homework,
-                'homework_due_date' => $request->due_date,
+                'homework_description' => $request->homework,
+                'homework_assigned' => true,
             ]);
 
             return $this->success([
                 'session_id' => $session->id,
-                'homework' => $session->homework,
-                'due_date' => $session->homework_due_date?->toDateString(),
+                'homework' => $session->homework_description,
+                'due_date' => null,
             ], __('Homework assigned successfully'));
         }
 
@@ -304,14 +304,13 @@ class HomeworkController extends Controller
             }
 
             $session->update([
-                'homework' => $request->homework ?? $session->homework,
-                'homework_due_date' => $request->has('due_date') ? $request->due_date : $session->homework_due_date,
+                'homework_description' => $request->homework ?? $session->homework_description,
             ]);
 
             return $this->success([
                 'session_id' => $session->id,
-                'homework' => $session->homework,
-                'due_date' => $session->homework_due_date?->toDateString(),
+                'homework' => $session->homework_description,
+                'due_date' => null,
             ], __('Homework updated successfully'));
         }
 
