@@ -12,6 +12,9 @@
   <!-- Fonts -->
   @include('partials.fonts')
 
+  <!-- Favicon -->
+  {!! getFaviconLinkTag($academy) !!}
+
   <!-- Alpine.js is bundled with Livewire 3 (inject_assets: true in config/livewire.php) -->
 
   <!-- Vite Assets (includes RemixIcon & Flag-icons) -->

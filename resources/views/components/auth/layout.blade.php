@@ -43,6 +43,9 @@
     <!-- Fonts -->
     @include('partials.fonts')
 
+    <!-- Favicon -->
+    {!! getFaviconLinkTag($academy) !!}
+
     <!-- Phone Input Library is bundled via Vite (resources/js/phone-input.js) -->
 
     <!-- Alpine.js is bundled with Livewire 3 (inject_assets: true in config/livewire.php) -->
