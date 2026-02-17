@@ -108,6 +108,10 @@ class SupervisorPanelProvider extends PanelProvider
                             'endTime' => '22:00',
                         ],
                     ]),
-            ]);
+            ])
+            ->renderHook(
+                \Filament\View\PanelsRenderHook::STYLES_AFTER,
+                fn (): string => \Illuminate\Support\Facades\Blade::render('@vite(["resources/css/app.css"])')
+            );
     }
 }

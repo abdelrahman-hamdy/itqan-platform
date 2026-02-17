@@ -141,6 +141,10 @@ class AcademyPanelProvider extends PanelProvider
             ->login(Login::class)
             ->profile()
             ->renderHook(
+                \Filament\View\PanelsRenderHook::STYLES_AFTER,
+                fn (): string => \Illuminate\Support\Facades\Blade::render('@vite(["resources/css/app.css"])')
+            )
+            ->renderHook(
                 'panels::topbar.start',
                 fn (): string => view('filament.hooks.academy-selector')->render()
             )

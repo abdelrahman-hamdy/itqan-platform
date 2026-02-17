@@ -60,6 +60,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -148,6 +149,10 @@ class AdminPanelProvider extends PanelProvider
                     ->navigationIcon('heroicon-o-heart')
                     ->navigationSort(1),
             ])
+            ->renderHook(
+                PanelsRenderHook::STYLES_AFTER,
+                fn (): string => \Illuminate\Support\Facades\Blade::render('@vite(["resources/css/app.css"])')
+            )
             ->renderHook(
                 'panels::topbar.start',
                 fn (): string => view('filament.hooks.academy-selector')->render()

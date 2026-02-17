@@ -128,6 +128,10 @@ class TeacherPanelProvider extends PanelProvider
                     ]),
             ])
             ->renderHook(
+                PanelsRenderHook::STYLES_AFTER,
+                fn (): string => \Illuminate\Support\Facades\Blade::render('@vite(["resources/css/app.css"])')
+            )
+            ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn (): string => '<script src="'.asset('js/teacher-breadcrumb-fix.js').'"></script>'
             )

@@ -133,6 +133,10 @@ class AcademicTeacherPanelProvider extends PanelProvider
                     ]),
             ])
             ->renderHook(
+                PanelsRenderHook::STYLES_AFTER,
+                fn (): string => \Illuminate\Support\Facades\Blade::render('@vite(["resources/css/app.css"])')
+            )
+            ->renderHook(
                 PanelsRenderHook::TOPBAR_END,
                 fn (): string => view('filament.academic-teacher.render-hooks.messages-count')->render()
             )
