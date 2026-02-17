@@ -18,6 +18,7 @@ use Filament\Resources\Pages\Page;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redirect;
 
 /**
  * @property \Filament\Schemas\Schema $form
@@ -55,13 +56,29 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
         $academyId = AcademyContextService::getCurrentAcademyId();
 
         if (! $academyId) {
-            throw new Exception('لا يوجد سياق أكاديمية متاح. يرجى اختيار أكاديمية أولاً.');
+            Notification::make()
+                ->title('يرجى اختيار أكاديمية')
+                ->body('لا يمكن عرض الإعدادات العامة بدون اختيار أكاديمية محددة. يرجى اختيار أكاديمية من القائمة أولاً.')
+                ->warning()
+                ->send();
+
+            $this->redirect(url('/admin'));
+
+            return;
         }
 
         $academy = Academy::find($academyId);
 
         if (! $academy) {
-            throw new Exception('الأكاديمية المختارة غير موجودة.');
+            Notification::make()
+                ->title('خطأ')
+                ->body('الأكاديمية المختارة غير موجودة.')
+                ->danger()
+                ->send();
+
+            $this->redirect(url('/admin'));
+
+            return;
         }
 
         // Prepare form data
