@@ -25,6 +25,8 @@ use App\Enums\DifficultyLevel;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\RecordedCourse;
+use App\Services\AcademyContextService;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -518,6 +520,38 @@ abstract class BaseRecordedCourseResource extends Resource
                     return $indicators;
                 }),
         ];
+    }
+
+    // ========================================
+    // Academy Context Methods
+    // ========================================
+
+    protected static function isViewingAllAcademies(): bool
+    {
+        if (Filament::getTenant() !== null) {
+            return false;
+        }
+
+        $academyContextService = app(AcademyContextService::class);
+
+        return $academyContextService->getCurrentAcademyId() === null;
+    }
+
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'academy';
+    }
+
+    protected static function getAcademyColumn(): TextColumn
+    {
+        $academyPath = static::getAcademyRelationshipPath();
+
+        return TextColumn::make($academyPath.'.name')
+            ->label('الأكاديمية')
+            ->sortable()
+            ->searchable()
+            ->visible(static::isViewingAllAcademies())
+            ->placeholder('غير محدد');
     }
 
     // ========================================

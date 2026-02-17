@@ -20,6 +20,7 @@ use App\Enums\TimeSlot;
 use App\Enums\WeekDays;
 use App\Filament\Shared\Traits\HasSubscriptionActions;
 use App\Models\SavedPaymentMethod;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -32,6 +33,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Builder;
 
 abstract class BaseSubscriptionResource extends Resource
@@ -416,6 +418,38 @@ abstract class BaseSubscriptionResource extends Resource
             ])
             ->collapsed()
             ->visible(fn ($record) => ! empty($record->metadata['extensions']));
+    }
+
+    // ========================================
+    // Academy Context Methods
+    // ========================================
+
+    protected static function isViewingAllAcademies(): bool
+    {
+        if (Filament::getTenant() !== null) {
+            return false;
+        }
+
+        $academyContextService = app(AcademyContextService::class);
+
+        return $academyContextService->getCurrentAcademyId() === null;
+    }
+
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'academy';
+    }
+
+    protected static function getAcademyColumn(): TextColumn
+    {
+        $academyPath = static::getAcademyRelationshipPath();
+
+        return TextColumn::make($academyPath.'.name')
+            ->label('الأكاديمية')
+            ->sortable()
+            ->searchable()
+            ->visible(static::isViewingAllAcademies())
+            ->placeholder('غير محدد');
     }
 
     // Apply panel-specific scoping

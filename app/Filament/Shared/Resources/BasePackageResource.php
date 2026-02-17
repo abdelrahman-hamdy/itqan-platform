@@ -14,9 +14,11 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use App\Enums\SessionDuration;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use App\Services\AcademyContextService;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -25,6 +27,31 @@ abstract class BasePackageResource extends Resource
     abstract protected static function scopeEloquentQuery(Builder $query): Builder;
     abstract protected static function getTableActions(): array;
     abstract protected static function getTableBulkActions(): array;
+
+    protected static function isViewingAllAcademies(): bool
+    {
+        if (Filament::getTenant() !== null) {
+            return false;
+        }
+        $academyContextService = app(AcademyContextService::class);
+        return $academyContextService->getCurrentAcademyId() === null;
+    }
+
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'academy';
+    }
+
+    protected static function getAcademyColumn(): TextColumn
+    {
+        $academyPath = static::getAcademyRelationshipPath();
+        return TextColumn::make($academyPath.'.name')
+            ->label('الأكاديمية')
+            ->sortable()
+            ->searchable()
+            ->visible(static::isViewingAllAcademies())
+            ->placeholder('غير محدد');
+    }
 
     public static function form(Schema $schema): Schema
     {
