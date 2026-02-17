@@ -1,0 +1,22 @@
+/*
+ * Custom CSS for Filament panels.
+ * Only includes Tailwind utilities and custom CSS needed by Filament hook views.
+ * Does NOT include @tailwind base (conflicts with Filament's own reset)
+ * Does NOT include icon libraries (flag-icons, remixicon)
+ */
+
+/* Custom CSS files needed in Filament panels */
+@import 'calendar.css';
+
+@tailwind utilities;
+
+/* Custom utilities from app.css that Filament panels may need */
+@layer utilities {
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+}
