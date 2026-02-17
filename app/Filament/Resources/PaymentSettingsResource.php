@@ -90,6 +90,29 @@ class PaymentSettingsResource extends BaseResource
         return false;
     }
 
+    /**
+     * Override query to bypass Filament's tenant scoping.
+     * The model IS the tenant (Academy), so it can't scope by academy relationship.
+     * In Academy panel: show only the current tenant. In Admin panel: use context service.
+     */
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = static::getModel()::query();
+
+        $tenant = \Filament\Facades\Filament::getTenant();
+        if ($tenant) {
+            $query->where('id', $tenant->id);
+        } else {
+            $academyContextService = app(AcademyContextService::class);
+            $academyId = $academyContextService->getCurrentAcademyId();
+            if ($academyId) {
+                $query->where('id', $academyId);
+            }
+        }
+
+        return $query;
+    }
+
     protected static function hasSpecificAcademySelected(): bool
     {
         $academyContextService = app(AcademyContextService::class);

@@ -226,22 +226,19 @@ class CreateRecordedCourse extends CreateRecord
                                             ->label('المتطلبات المسبقة')
                                             ->keyLabel('المتطلب')
                                             ->valueLabel('الوصف')
-                                            ->addActionLabel('إضافة متطلب')
-                                            ->placeholder('أدخل المتطلبات المسبقة للدورة'),
+                                            ->addActionLabel('إضافة متطلب'),
 
                                         KeyValue::make('learning_outcomes')
                                             ->label('نتائج التعلم')
                                             ->keyLabel('النتيجة')
                                             ->valueLabel('الوصف')
-                                            ->addActionLabel('إضافة نتيجة تعلم')
-                                            ->placeholder('أدخل نتائج التعلم المتوقعة'),
+                                            ->addActionLabel('إضافة نتيجة تعلم'),
 
                                         KeyValue::make('course_materials')
                                             ->label('المواد التعليمية')
                                             ->keyLabel('المادة')
                                             ->valueLabel('الوصف')
-                                            ->addActionLabel('إضافة مادة')
-                                            ->placeholder('أدخل المواد التعليمية المطلوبة'),
+                                            ->addActionLabel('إضافة مادة'),
 
                                         Grid::make(3)
                                             ->schema([

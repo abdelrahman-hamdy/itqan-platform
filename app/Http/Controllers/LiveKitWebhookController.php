@@ -363,11 +363,11 @@ class LiveKitWebhookController extends Controller
             return;
         }
 
-        // 🔧 FIX: Set tenant context for multi-tenancy support in queued jobs
-        if (isset($session->tenant_id)) {
-            $tenant = \App\Models\Academy::find($session->tenant_id);
-            if ($tenant) {
-                $tenant->makeCurrent();
+        // Set tenant context for multi-tenancy support in queued jobs
+        if ($session->academy_id) {
+            $academy = \App\Models\Academy::find($session->academy_id);
+            if ($academy) {
+                app()->instance('current_academy', $academy);
             }
         }
 
@@ -495,11 +495,11 @@ class LiveKitWebhookController extends Controller
             return;
         }
 
-        // 🔧 FIX: Set tenant context for multi-tenancy support in queued jobs
-        if (isset($session->tenant_id)) {
-            $tenant = \App\Models\Academy::find($session->tenant_id);
-            if ($tenant) {
-                $tenant->makeCurrent();
+        // Set tenant context for multi-tenancy support in queued jobs
+        if ($session->academy_id) {
+            $academy = \App\Models\Academy::find($session->academy_id);
+            if ($academy) {
+                app()->instance('current_academy', $academy);
             }
         }
 

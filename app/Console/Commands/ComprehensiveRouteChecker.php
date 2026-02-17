@@ -238,7 +238,7 @@ class ComprehensiveRouteChecker extends Command
                 return false;
             }
 
-            $uri = $route->uri();
+            $uri = $route->getUri();
             $routeName = $route->getName() ?? '';
 
             // Skip routes with required parameters unless include-parameterized is set
@@ -307,7 +307,7 @@ class ComprehensiveRouteChecker extends Command
 
     protected function buildUri($route): string
     {
-        $uri = '/'.ltrim($route->uri(), '/');
+        $uri = '/'.ltrim($route->getUri(), '/');
 
         // Remove domain part if present
         $domain = $route->getDomain();

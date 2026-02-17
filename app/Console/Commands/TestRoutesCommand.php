@@ -53,20 +53,20 @@ class TestRoutesCommand extends Command
             }
 
             // Skip API routes (they need different handling)
-            if (str_starts_with($route->uri(), 'api/')) {
+            if (str_starts_with($route->getUri(), 'api/')) {
                 return false;
             }
 
             // Skip Livewire, Filament internal routes
-            if (str_starts_with($route->uri(), 'livewire/') ||
-                str_contains($route->uri(), '/actions/') ||
-                str_starts_with($route->uri(), '_') ||
-                str_starts_with($route->uri(), 'sanctum/')) {
+            if (str_starts_with($route->getUri(), 'livewire/') ||
+                str_contains($route->getUri(), '/actions/') ||
+                str_starts_with($route->getUri(), '_') ||
+                str_starts_with($route->getUri(), 'sanctum/')) {
                 return false;
             }
 
             // Apply prefix filter
-            if ($routePrefix && ! str_starts_with($route->uri(), $routePrefix)) {
+            if ($routePrefix && ! str_starts_with($route->getUri(), $routePrefix)) {
                 return false;
             }
 
@@ -126,7 +126,7 @@ class TestRoutesCommand extends Command
         foreach ($routes as $route) {
             $bar->advance();
 
-            $uri = $route->uri();
+            $uri = $route->getUri();
 
             // Skip routes that require parameters we can't easily fill
             if (preg_match('/\{[^}]+\}/', $uri)) {
@@ -134,7 +134,7 @@ class TestRoutesCommand extends Command
                 $uri = $this->replaceRouteParameters($uri, $user);
                 if (preg_match('/\{[^}]+\}/', $uri)) {
                     $this->skipped[] = [
-                        'uri' => $route->uri(),
+                        'uri' => $route->getUri(),
                         'reason' => 'Has unfillable parameters',
                     ];
 
@@ -153,7 +153,7 @@ class TestRoutesCommand extends Command
                     $this->errors[] = [
                         'user_type' => $userType,
                         'uri' => $uri,
-                        'original_uri' => $route->uri(),
+                        'original_uri' => $route->getUri(),
                         'status' => $result['status'],
                         'error' => $result['error'],
                         'trace' => $result['trace'] ?? null,
@@ -168,7 +168,7 @@ class TestRoutesCommand extends Command
                 $this->errors[] = [
                     'user_type' => $userType,
                     'uri' => $uri,
-                    'original_uri' => $route->uri(),
+                    'original_uri' => $route->getUri(),
                     'status' => 500,
                     'error' => $e->getMessage(),
                     'trace' => $this->option('verbose-errors') ? $e->getTraceAsString() : null,
