@@ -281,6 +281,17 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
     }
 
     // ========================================
+    // Widgets
+    // ========================================
+
+    public static function getWidgets(): array
+    {
+        return [
+            TeacherEarningsResource\Widgets\EarningsStatsWidget::class,
+        ];
+    }
+
+    // ========================================
     // Pages
     // ========================================
 

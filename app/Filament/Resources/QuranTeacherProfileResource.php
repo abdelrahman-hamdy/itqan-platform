@@ -38,6 +38,11 @@ class QuranTeacherProfileResource extends BaseQuranTeacherProfileResource {
                 ->defaultImageUrl(fn($record) => config('services.ui_avatars.base_url').'?name='.urlencode($record->full_name ?? 'N/A').'&background=059669&color=fff')],
             parent::getTableColumns());
     }
+    public static function getWidgets(): array {
+        return [
+            QuranTeacherProfileResource\Widgets\QuranTeachersStatsWidget::class,
+        ];
+    }
     public static function getPages(): array {
         return ['index' => ListQuranTeacherProfiles::route('/'),
             'create' => CreateQuranTeacherProfile::route('/create'),

@@ -69,7 +69,7 @@ class UserResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
-            ->with(['academy'])
+            ->with(['academy', 'quranTeacherProfile', 'academicTeacherProfile', 'studentProfile', 'parentProfile', 'supervisorProfile'])
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);

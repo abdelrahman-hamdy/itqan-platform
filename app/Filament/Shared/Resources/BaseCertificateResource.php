@@ -59,6 +59,7 @@ abstract class BaseCertificateResource extends BaseResource
 
         // Show only certificates issued by this teacher
         return parent::getEloquentQuery()
+            ->with(['student', 'academy'])
             ->where(function ($q) use ($user) {
                 $q->where('teacher_id', $user->id)
                     ->orWhere('issued_by', $user->id);
