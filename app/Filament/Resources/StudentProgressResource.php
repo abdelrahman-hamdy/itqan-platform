@@ -7,12 +7,11 @@ use App\Filament\Resources\StudentProgressResource\Pages;
 use App\Models\CourseSubscription;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
-class StudentProgressResource extends Resource
+class StudentProgressResource extends BaseResource
 {
     protected static ?string $model = CourseSubscription::class;
 

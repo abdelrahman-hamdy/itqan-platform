@@ -108,21 +108,35 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                 Tables\Columns\TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
-                    ->color(fn (?string $state): string => match ($state) {
-                        AttendanceStatus::ATTENDED->value => 'success',
-                        AttendanceStatus::LATE->value => 'warning',
-                        AttendanceStatus::LEFT->value => 'info',
-                        AttendanceStatus::ABSENT->value => 'danger',
-                        default => 'gray',
+                    ->color(function (mixed $state): string {
+                        if ($state instanceof AttendanceStatus) {
+                            return match ($state) {
+                                AttendanceStatus::ATTENDED => 'success',
+                                AttendanceStatus::LATE => 'warning',
+                                AttendanceStatus::LEFT => 'info',
+                                AttendanceStatus::ABSENT => 'danger',
+                            };
+                        }
+
+                        return match ($state) {
+                            'attended' => 'success',
+                            'late' => 'warning',
+                            'left', 'leaved' => 'info',
+                            'absent' => 'danger',
+                            default => 'gray',
+                        };
                     })
-                    ->formatStateUsing(function (?string $state): string {
+                    ->formatStateUsing(function (mixed $state): string {
                         if (! $state) {
                             return '-';
+                        }
+                        if ($state instanceof AttendanceStatus) {
+                            return $state->label();
                         }
                         try {
                             return AttendanceStatus::from($state)->label();
                         } catch (\ValueError $e) {
-                            return $state;
+                            return (string) $state;
                         }
                     }),
 
@@ -226,21 +240,35 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                 Tables\Columns\TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
-                    ->color(fn (?string $state): string => match ($state) {
-                        AttendanceStatus::ATTENDED->value => 'success',
-                        AttendanceStatus::LATE->value => 'warning',
-                        AttendanceStatus::LEFT->value => 'info',
-                        AttendanceStatus::ABSENT->value => 'danger',
-                        default => 'gray',
+                    ->color(function (mixed $state): string {
+                        if ($state instanceof AttendanceStatus) {
+                            return match ($state) {
+                                AttendanceStatus::ATTENDED => 'success',
+                                AttendanceStatus::LATE => 'warning',
+                                AttendanceStatus::LEFT => 'info',
+                                AttendanceStatus::ABSENT => 'danger',
+                            };
+                        }
+
+                        return match ($state) {
+                            'attended' => 'success',
+                            'late' => 'warning',
+                            'left', 'leaved' => 'info',
+                            'absent' => 'danger',
+                            default => 'gray',
+                        };
                     })
-                    ->formatStateUsing(function (?string $state): string {
+                    ->formatStateUsing(function (mixed $state): string {
                         if (! $state) {
                             return '-';
+                        }
+                        if ($state instanceof AttendanceStatus) {
+                            return $state->label();
                         }
                         try {
                             return AttendanceStatus::from($state)->label();
                         } catch (\ValueError $e) {
-                            return $state;
+                            return (string) $state;
                         }
                     }),
 

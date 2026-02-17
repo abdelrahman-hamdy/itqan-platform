@@ -167,11 +167,11 @@ class SessionController extends Controller
                     'topics_covered' => $session->topics_covered ?? [],
                     'notes' => $session->notes,
                     'teacher_notes' => $session->teacher_notes,
-                    'report' => $session->reports?->first() ? [
-                        'id' => $session->reports->first()->id,
-                        'rating' => $session->reports->first()->rating,
-                        'notes' => $session->reports->first()->notes,
-                        'teacher_feedback' => $session->reports->first()->teacher_feedback,
+                    'report' => ($report = $session->reports?->first()) ? [
+                        'id' => $report->id,
+                        'rating' => $report->rating,
+                        'notes' => $report->notes,
+                        'teacher_feedback' => $report->teacher_feedback,
                     ] : null,
                     'started_at' => $session->started_at?->toISOString(),
                     'ended_at' => $session->ended_at?->toISOString(),

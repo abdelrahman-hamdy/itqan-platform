@@ -60,13 +60,19 @@ class RecentBusinessRequestsWidget extends BaseWidget
                         'danger' => 'rejected',
                         'gray' => 'completed',
                     ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
-                        'reviewed' => 'تم المراجعة',
-                        'approved' => 'مقبول',
-                        'rejected' => 'مرفوض',
-                        SessionStatus::COMPLETED->value => 'مكتمل',
-                        default => $state,
+                    ->formatStateUsing(function (mixed $state): string {
+                        if ($state instanceof \App\Enums\BusinessRequestStatus) {
+                            return $state->label();
+                        }
+
+                        return match ($state) {
+                            'pending' => 'في الانتظار',
+                            'reviewed' => 'تم المراجعة',
+                            'approved' => 'مقبول',
+                            'rejected' => 'مرفوض',
+                            'completed' => 'مكتمل',
+                            default => (string) $state,
+                        };
                     }),
 
                 Tables\Columns\TextColumn::make('created_at')

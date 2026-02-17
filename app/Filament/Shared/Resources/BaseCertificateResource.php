@@ -5,10 +5,10 @@ namespace App\Filament\Shared\Resources;
 use App\Constants\DefaultAcademy;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
+use App\Filament\Resources\BaseResource;
 use App\Models\Certificate;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Auth;
  * Shared implementation for Certificate resources across Teacher and AcademicTeacher panels.
  * Extend this class in panel-specific resources to avoid code duplication.
  */
-abstract class BaseCertificateResource extends Resource
+abstract class BaseCertificateResource extends BaseResource
 {
     protected static ?string $model = Certificate::class;
 
@@ -109,6 +109,8 @@ abstract class BaseCertificateResource extends Resource
     {
         return $table
             ->columns([
+                static::getAcademyColumn(),
+
                 Tables\Columns\TextColumn::make('certificate_number')
                     ->label('رقم الشهادة')
                     ->searchable()

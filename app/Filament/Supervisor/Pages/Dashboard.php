@@ -9,7 +9,6 @@ use App\Filament\Supervisor\Widgets\SupervisorStatsWidget;
 use App\Filament\Supervisor\Widgets\TodaySessionsWidget;
 use App\Filament\Supervisor\Widgets\TrialAnalyticsWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
-use Illuminate\Support\Facades\Auth;
 
 class Dashboard extends BaseDashboard
 {
@@ -21,12 +20,9 @@ class Dashboard extends BaseDashboard
 
     public function mount(): void
     {
-        $user = Auth::user();
-
-        // Super admins can access even without a supervisor profile
-        if (! $user->isSuperAdmin() && ! $user->supervisorProfile) {
-            abort(403, 'غير مصرح لك بالوصول إلى لوحة المشرف');
-        }
+        // Authorization is handled by VerifySupervisorRole middleware
+        // No additional check needed here - supervisors without profiles
+        // should still access the dashboard
     }
 
     public function getColumns(): int|string|array

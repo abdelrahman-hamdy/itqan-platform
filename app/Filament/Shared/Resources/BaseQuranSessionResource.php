@@ -5,6 +5,7 @@ namespace App\Filament\Shared\Resources;
 use App\Enums\QuranSurah;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
+use App\Filament\Resources\BaseResource;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Filament\Forms;
@@ -16,7 +17,6 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -31,7 +31,7 @@ use Illuminate\Database\Eloquent\Model;
  * Shared functionality for SuperAdmin and Teacher panels.
  * Child classes must implement query scoping and authorization methods.
  */
-abstract class BaseQuranSessionResource extends Resource
+abstract class BaseQuranSessionResource extends BaseResource
 {
     protected static ?string $model = QuranSession::class;
 
@@ -321,6 +321,8 @@ abstract class BaseQuranSessionResource extends Resource
     protected static function getTableColumns(): array
     {
         return [
+            static::getAcademyColumn(),
+
             TextColumn::make('session_code')
                 ->label('رمز الجلسة')
                 ->searchable()

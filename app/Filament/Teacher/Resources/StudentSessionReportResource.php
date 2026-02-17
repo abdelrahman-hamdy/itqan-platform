@@ -215,19 +215,41 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
 
             Tables\Columns\BadgeColumn::make('attendance_status')
                 ->label('حالة الحضور')
-                ->formatStateUsing(fn ($state): string => match ((string) $state) {
-                    AttendanceStatus::ATTENDED->value => 'حاضر',
-                    AttendanceStatus::LATE->value => 'متأخر',
-                    AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                    AttendanceStatus::ABSENT->value => 'غائب',
-                    default => (string) $state,
+                ->formatStateUsing(function (mixed $state): string {
+                    if ($state instanceof AttendanceStatus) {
+                        return match ($state) {
+                            AttendanceStatus::ATTENDED => 'حاضر',
+                            AttendanceStatus::LATE => 'متأخر',
+                            AttendanceStatus::LEFT => 'غادر مبكراً',
+                            AttendanceStatus::ABSENT => 'غائب',
+                        };
+                    }
+
+                    return match ($state) {
+                        'attended' => 'حاضر',
+                        'late' => 'متأخر',
+                        'left', 'leaved' => 'غادر مبكراً',
+                        'absent' => 'غائب',
+                        default => (string) $state,
+                    };
                 })
-                ->color(fn ($state): string => match ((string) $state) {
-                    AttendanceStatus::ATTENDED->value => 'success',
-                    AttendanceStatus::LATE->value => 'warning',
-                    AttendanceStatus::LEFT->value => 'info',
-                    AttendanceStatus::ABSENT->value => 'danger',
-                    default => 'gray',
+                ->color(function (mixed $state): string {
+                    if ($state instanceof AttendanceStatus) {
+                        return match ($state) {
+                            AttendanceStatus::ATTENDED => 'success',
+                            AttendanceStatus::LATE => 'warning',
+                            AttendanceStatus::LEFT => 'info',
+                            AttendanceStatus::ABSENT => 'danger',
+                        };
+                    }
+
+                    return match ($state) {
+                        'attended' => 'success',
+                        'late' => 'warning',
+                        'left', 'leaved' => 'info',
+                        'absent' => 'danger',
+                        default => 'gray',
+                    };
                 }),
 
             TextColumn::make('attendance_percentage')

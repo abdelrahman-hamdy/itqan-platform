@@ -237,10 +237,10 @@ class ParentAcademicSessionController extends BaseParentSessionController
             'homework' => $session->homework,
             'lesson_content' => $session->lesson_content,
             'topics_covered' => $session->topics_covered ?? [],
-            'report' => $session->reports?->first() ? [
-                'rating' => $session->reports->first()->rating,
-                'notes' => $session->reports->first()->notes,
-                'teacher_feedback' => $session->reports->first()->teacher_feedback,
+            'report' => ($report = $session->reports?->first()) ? [
+                'rating' => $report->rating,
+                'notes' => $report->notes,
+                'teacher_feedback' => $report->teacher_feedback,
             ] : null,
             'meeting_link' => $session->meeting_link,
             'started_at' => $session->started_at?->toISOString(),

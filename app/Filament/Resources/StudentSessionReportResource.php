@@ -220,11 +220,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
             ->sortable();
 
         // Add academy column
-        $academyColumn = TextColumn::make('academy.name')
-            ->label('الأكاديمية')
-            ->searchable()
-            ->sortable()
-            ->toggleable(isToggledHiddenByDefault: true);
+        $academyColumn = static::getAcademyColumn();
 
         // Add is_late column
         $isLateColumn = Tables\Columns\IconColumn::make('is_late')

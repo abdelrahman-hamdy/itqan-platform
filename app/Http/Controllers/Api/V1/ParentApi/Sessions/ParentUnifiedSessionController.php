@@ -594,12 +594,12 @@ class ParentUnifiedSessionController extends BaseParentSessionController
                     'review' => $session->quran_homework_review,
                 ],
                 'progress' => [],
-                'evaluation' => $session->reports?->first() ? [
-                    'memorization_degree' => $session->reports->first()->new_memorization_degree,
-                    'revision_degree' => $session->reports->first()->reservation_degree,
-                    'overall_performance' => $session->reports->first()->overall_performance,
-                    'notes' => $session->reports->first()->notes,
-                    'evaluated_at' => $session->reports->first()->evaluated_at?->toISOString(),
+                'evaluation' => ($report = $session->reports?->first()) ? [
+                    'memorization_degree' => $report->new_memorization_degree,
+                    'revision_degree' => $report->reservation_degree,
+                    'overall_performance' => $report->overall_performance,
+                    'notes' => $report->notes,
+                    'evaluated_at' => $report->evaluated_at?->toISOString(),
                 ] : null,
                 'meeting_link' => $session->meeting_link,
                 'started_at' => $session->started_at?->toISOString(),
@@ -623,10 +623,10 @@ class ParentUnifiedSessionController extends BaseParentSessionController
                 'homework' => $session->homework,
                 'lesson_content' => $session->lesson_content,
                 'topics_covered' => $session->topics_covered ?? [],
-                'report' => $session->reports?->first() ? [
-                    'rating' => $session->reports->first()->rating,
-                    'notes' => $session->reports->first()->notes,
-                    'teacher_feedback' => $session->reports->first()->teacher_feedback,
+                'report' => ($report = $session->reports?->first()) ? [
+                    'rating' => $report->rating,
+                    'notes' => $report->notes,
+                    'teacher_feedback' => $report->teacher_feedback,
                 ] : null,
                 'meeting_link' => $session->meeting_link,
                 'started_at' => $session->started_at?->toISOString(),

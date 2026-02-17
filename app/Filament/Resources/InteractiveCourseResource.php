@@ -119,12 +119,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
             });
 
         // Add academy column for global view
-        $academyColumn = TextColumn::make('academy.name')
-            ->label('الأكاديمية')
-            ->badge()
-            ->color('info')
-            ->visible(fn () => AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode());
-
+        $academyColumn = static::getAcademyColumn();
         // Insert columns at appropriate positions
         $result = [];
         foreach ($columns as $column) {

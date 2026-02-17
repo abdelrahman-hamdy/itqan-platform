@@ -74,8 +74,7 @@ class CreateRecordedCourse extends CreateRecord
                                                         $academyId = Auth::user()->academy_id;
 
                                                         return AcademicTeacherProfile::where('academy_id', $academyId)
-                                                            ->where('is_approved', true)
-                                                            ->where('is_active', true)
+                                                            ->whereHas('user', fn ($q) => $q->where('active_status', true))
                                                             ->pluck('full_name', 'id');
                                                     })
                                                     ->searchable()

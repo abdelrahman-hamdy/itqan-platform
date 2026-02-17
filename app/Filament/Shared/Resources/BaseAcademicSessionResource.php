@@ -16,7 +16,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\IconColumn;
@@ -32,7 +32,7 @@ use Illuminate\Database\Eloquent\Builder;
  * Shared functionality for SuperAdmin and AcademicTeacher panels.
  * Child classes must implement query scoping and authorization methods.
  */
-abstract class BaseAcademicSessionResource extends Resource
+abstract class BaseAcademicSessionResource extends BaseResource
 {
     protected static ?string $model = AcademicSession::class;
 

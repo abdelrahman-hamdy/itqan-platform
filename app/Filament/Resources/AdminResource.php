@@ -152,19 +152,7 @@ class AdminResource extends BaseResource
                 Tables\Columns\TextColumn::make('phone')
                     ->label('رقم الهاتف')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('academy.name')
-                    ->label('الأكاديمية المُدارة')
-                    ->badge()
-                    ->getStateUsing(function ($record) {
-                        if (is_null($record->academy_id)) {
-                            return 'غير معين لأكاديمية';
-                        }
-
-                        return $record->academy?->name ?? 'غير محدد';
-                    })
-                    ->color(function ($record) {
-                        return is_null($record->academy_id) ? 'gray' : 'success';
-                    }),
+                static::getAcademyColumn(),
                 Tables\Columns\IconColumn::make('active_status')
                     ->label('الحالة')
                     ->boolean()

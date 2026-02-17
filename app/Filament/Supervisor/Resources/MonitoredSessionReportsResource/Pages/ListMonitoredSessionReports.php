@@ -146,21 +146,28 @@ class ListMonitoredSessionReports extends ListRecords
                 Tables\Columns\TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
-                    ->color(fn (?string $state): string => match ($state) {
-                        AttendanceStatus::ATTENDED->value => 'success',
-                        AttendanceStatus::LATE->value => 'warning',
-                        AttendanceStatus::LEFT->value => 'info',
-                        AttendanceStatus::ABSENT->value => 'danger',
-                        default => 'gray',
+                    ->color(function (mixed $state): string {
+                        $value = $state instanceof \BackedEnum ? $state->value : (string) $state;
+
+                        return match ($value) {
+                            AttendanceStatus::ATTENDED->value => 'success',
+                            AttendanceStatus::LATE->value => 'warning',
+                            AttendanceStatus::LEFT->value => 'info',
+                            AttendanceStatus::ABSENT->value => 'danger',
+                            default => 'gray',
+                        };
                     })
-                    ->formatStateUsing(function (?string $state): string {
+                    ->formatStateUsing(function (mixed $state): string {
                         if (! $state) {
                             return '-';
                         }
+                        if ($state instanceof AttendanceStatus) {
+                            return $state->label();
+                        }
                         try {
-                            return AttendanceStatus::from($state)->label();
+                            return AttendanceStatus::from((string) $state)->label();
                         } catch (\ValueError $e) {
-                            return $state;
+                            return (string) $state;
                         }
                     }),
 
@@ -252,21 +259,28 @@ class ListMonitoredSessionReports extends ListRecords
                 Tables\Columns\TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
-                    ->color(fn (?string $state): string => match ($state) {
-                        AttendanceStatus::ATTENDED->value => 'success',
-                        AttendanceStatus::LATE->value => 'warning',
-                        AttendanceStatus::LEFT->value => 'info',
-                        AttendanceStatus::ABSENT->value => 'danger',
-                        default => 'gray',
+                    ->color(function (mixed $state): string {
+                        $value = $state instanceof \BackedEnum ? $state->value : (string) $state;
+
+                        return match ($value) {
+                            AttendanceStatus::ATTENDED->value => 'success',
+                            AttendanceStatus::LATE->value => 'warning',
+                            AttendanceStatus::LEFT->value => 'info',
+                            AttendanceStatus::ABSENT->value => 'danger',
+                            default => 'gray',
+                        };
                     })
-                    ->formatStateUsing(function (?string $state): string {
+                    ->formatStateUsing(function (mixed $state): string {
                         if (! $state) {
                             return '-';
                         }
+                        if ($state instanceof AttendanceStatus) {
+                            return $state->label();
+                        }
                         try {
-                            return AttendanceStatus::from($state)->label();
+                            return AttendanceStatus::from((string) $state)->label();
                         } catch (\ValueError $e) {
-                            return $state;
+                            return (string) $state;
                         }
                     }),
 

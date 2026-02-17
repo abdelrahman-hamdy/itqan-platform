@@ -7,7 +7,7 @@ use App\Models\StudentSessionReport;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
  * For Quran session reports with memorization and revision degrees.
  * Child classes must implement query scoping and authorization methods.
  */
-abstract class BaseStudentSessionReportResource extends Resource
+abstract class BaseStudentSessionReportResource extends BaseResource
 {
     protected static ?string $model = StudentSessionReport::class;
 

@@ -115,12 +115,8 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     protected static function getTableColumns(): array
     {
         return [
-            // Academy column for multi-tenant context
-            TextColumn::make('academy.name')
-                ->label('الأكاديمية')
-                ->sortable()
-                ->searchable()
-                ->toggleable(isToggledHiddenByDefault: true),
+            // Academy column with automatic visibility logic
+            static::getAcademyColumn(),
 
             TextColumn::make('teacher.user.name')
                 ->label('المعلم')

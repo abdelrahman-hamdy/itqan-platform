@@ -2,16 +2,20 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Academy\Resources\AcademicPackageResource;
+use App\Filament\Academy\Resources\AcademicSubscriptionResource;
+use App\Filament\Academy\Resources\AcademicTeacherProfileResource;
+use App\Filament\Academy\Resources\ParentProfileResource;
+use App\Filament\Academy\Resources\PaymentResource;
+use App\Filament\Academy\Resources\QuranPackageResource;
+use App\Filament\Academy\Resources\SavedPaymentMethodResource;
+use App\Filament\Academy\Resources\QuranSubscriptionResource;
+use App\Filament\Academy\Resources\QuranTeacherProfileResource;
 use App\Filament\Academy\Resources\RecordedCourseResource;
-use App\Filament\Resources\AcademicTeacherProfileResource;
+use App\Filament\Academy\Resources\StudentProfileResource;
+use App\Filament\Academy\Resources\SupervisorProfileResource;
 use App\Filament\Resources\InteractiveCourseResource;
-use App\Filament\Resources\ParentProfileResource;
 use App\Filament\Resources\QuranCircleResource;
-use App\Filament\Resources\QuranPackageResource;
-use App\Filament\Resources\QuranSubscriptionResource;
-use App\Filament\Resources\QuranTeacherProfileResource;
-use App\Filament\Resources\StudentProfileResource;
-use App\Filament\Resources\SupervisorProfileResource;
 use App\Http\Middleware\AcademyContext;
 use App\Models\Academy;
 use Filament\Http\Middleware\Authenticate;
@@ -76,10 +80,15 @@ class AcademyPanelProvider extends PanelProvider
 
                 // إدارة التعليم الأكاديمي
                 InteractiveCourseResource::class,
-                \App\Filament\Resources\AcademicSubscriptionResource::class,
+                AcademicPackageResource::class,
+                AcademicSubscriptionResource::class,
 
                 // إدارة الدورات المسجلة
                 RecordedCourseResource::class,
+
+                // المالية
+                PaymentResource::class,
+                SavedPaymentMethodResource::class,
 
                 // إعدادات المعلمين - Teacher Settings
                 \App\Filament\Resources\TeacherReviewResource::class,

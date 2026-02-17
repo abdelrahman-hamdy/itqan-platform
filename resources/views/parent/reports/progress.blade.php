@@ -1,5 +1,5 @@
 @php
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 
     $subdomain = $subdomain ?? request()->route('subdomain') ?? auth()->user()->academy?->subdomain ?? 'itqan-academy';
 @endphp
@@ -239,10 +239,10 @@ use App\Enums\SubscriptionStatus;
                                                                 $statusValue = $item['status'] instanceof \BackedEnum ? $item['status']->value : $item['status'];
                                                             @endphp
                                                             <span class="px-2 py-0.5 text-xs font-bold rounded-full
-                                                                {{ $statusValue === SubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-700' : '' }}
-                                                                {{ $statusValue === SubscriptionStatus::PAUSED->value ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                                                {{ in_array($statusValue, [SubscriptionStatus::EXPIRED->value, SubscriptionStatus::CANCELLED->value]) ? 'bg-gray-100 text-gray-600' : '' }}
-                                                                {{ $statusValue === SubscriptionStatus::COMPLETED->value ? 'bg-blue-100 text-blue-700' : '' }}">
+                                                                {{ $statusValue === SessionSubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-700' : '' }}
+                                                                {{ $statusValue === SessionSubscriptionStatus::PAUSED->value ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                                                {{ in_array($statusValue, ['expired', SessionSubscriptionStatus::CANCELLED->value]) ? 'bg-gray-100 text-gray-600' : '' }}
+                                                                {{ $statusValue === 'completed' ? 'bg-blue-100 text-blue-700' : '' }}">
                                                                 {{ $item['status_label'] }}
                                                             </span>
                                                         </div>
@@ -321,10 +321,10 @@ use App\Enums\SubscriptionStatus;
                                                                 $statusValue = $item['status'] instanceof \BackedEnum ? $item['status']->value : $item['status'];
                                                             @endphp
                                                             <span class="px-2 py-0.5 text-xs font-bold rounded-full
-                                                                {{ $statusValue === SubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-700' : '' }}
-                                                                {{ $statusValue === SubscriptionStatus::PAUSED->value ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                                                {{ in_array($statusValue, [SubscriptionStatus::EXPIRED->value, SubscriptionStatus::CANCELLED->value]) ? 'bg-gray-100 text-gray-600' : '' }}
-                                                                {{ $statusValue === SubscriptionStatus::COMPLETED->value ? 'bg-blue-100 text-blue-700' : '' }}">
+                                                                {{ $statusValue === SessionSubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-700' : '' }}
+                                                                {{ $statusValue === SessionSubscriptionStatus::PAUSED->value ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                                                {{ in_array($statusValue, ['expired', SessionSubscriptionStatus::CANCELLED->value]) ? 'bg-gray-100 text-gray-600' : '' }}
+                                                                {{ $statusValue === 'completed' ? 'bg-blue-100 text-blue-700' : '' }}">
                                                                 {{ $item['status_label'] }}
                                                             </span>
                                                         </div>
@@ -399,10 +399,10 @@ use App\Enums\SubscriptionStatus;
                                                                 $statusValue = $item['status'] instanceof \BackedEnum ? $item['status']->value : $item['status'];
                                                             @endphp
                                                             <span class="px-2 py-0.5 text-xs font-bold rounded-full
-                                                                {{ $statusValue === SubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-700' : '' }}
-                                                                {{ $statusValue === SubscriptionStatus::PAUSED->value ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                                                {{ in_array($statusValue, [SubscriptionStatus::EXPIRED->value, SubscriptionStatus::CANCELLED->value]) ? 'bg-gray-100 text-gray-600' : '' }}
-                                                                {{ $statusValue === SubscriptionStatus::COMPLETED->value ? 'bg-blue-100 text-blue-700' : '' }}">
+                                                                {{ $statusValue === SessionSubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-700' : '' }}
+                                                                {{ $statusValue === SessionSubscriptionStatus::PAUSED->value ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                                                {{ in_array($statusValue, ['expired', SessionSubscriptionStatus::CANCELLED->value]) ? 'bg-gray-100 text-gray-600' : '' }}
+                                                                {{ $statusValue === 'completed' ? 'bg-blue-100 text-blue-700' : '' }}">
                                                                 {{ $item['status_label'] }}
                                                             </span>
                                                         </div>

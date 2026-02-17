@@ -231,13 +231,6 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
             ->searchable()
             ->sortable();
 
-        // Add academy column
-        $academyColumn = TextColumn::make('academy.name')
-            ->label('الأكاديمية')
-            ->searchable()
-            ->sortable()
-            ->toggleable(isToggledHiddenByDefault: true);
-
         // Insert columns at appropriate positions
         $result = [];
         foreach ($columns as $column) {
@@ -249,8 +242,8 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
             }
         }
 
-        // Add academy column at the end
-        $result[] = $academyColumn;
+        // Add academy column at the end (uses BaseResource::getAcademyColumn() with automatic visibility)
+        $result[] = static::getAcademyColumn();
 
         return $result;
     }
@@ -270,12 +263,6 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
             Tables\Filters\SelectFilter::make('academic_teacher_id')
                 ->label('المعلم')
                 ->relationship('academicTeacher.user', 'name')
-                ->searchable()
-                ->preload(),
-
-            Tables\Filters\SelectFilter::make('academy_id')
-                ->label('الأكاديمية')
-                ->relationship('academy', 'name')
                 ->searchable()
                 ->preload(),
 

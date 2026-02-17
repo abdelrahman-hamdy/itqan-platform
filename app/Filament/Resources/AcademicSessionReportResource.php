@@ -213,11 +213,7 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
             ->sortable();
 
         // Add academy column
-        $academyColumn = TextColumn::make('academy.name')
-            ->label('الأكاديمية')
-            ->searchable()
-            ->sortable()
-            ->toggleable(isToggledHiddenByDefault: true);
+        $academyColumn = static::getAcademyColumn();
 
         // Add attendance percentage column
         $attendancePercentageColumn = TextColumn::make('attendance_percentage')

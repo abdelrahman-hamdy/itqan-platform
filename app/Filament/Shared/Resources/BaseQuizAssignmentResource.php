@@ -2,13 +2,13 @@
 
 namespace App\Filament\Shared\Resources;
 
+use App\Filament\Resources\BaseResource;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Builder;
  * Shared functionality for Teacher and AcademicTeacher panels.
  * Child classes must implement assignable type configuration, query filtering, and getPages().
  */
-abstract class BaseQuizAssignmentResource extends Resource
+abstract class BaseQuizAssignmentResource extends BaseResource
 {
     protected static ?string $model = QuizAssignment::class;
 
@@ -166,6 +166,8 @@ abstract class BaseQuizAssignmentResource extends Resource
     {
         return $table
             ->columns([
+                static::getAcademyColumn(),
+
                 Tables\Columns\TextColumn::make('quiz.title')
                     ->label('الاختبار')
                     ->searchable()

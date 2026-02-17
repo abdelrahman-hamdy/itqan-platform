@@ -9,7 +9,7 @@ use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
  * Shared functionality for SuperAdmin and AcademicTeacher panels.
  * Child classes must implement query scoping and authorization methods.
  */
-abstract class BaseInteractiveCourseSessionResource extends Resource
+abstract class BaseInteractiveCourseSessionResource extends BaseResource
 {
     protected static ?string $model = InteractiveCourseSession::class;
 
@@ -57,6 +57,18 @@ abstract class BaseInteractiveCourseSessionResource extends Resource
      * Get the session info form section (course selection differs by panel).
      */
     abstract protected static function getSessionInfoFormSection(): Section;
+
+    // ========================================
+    // Academy Relationship Path Override
+    // ========================================
+
+    /**
+     * Override academy relationship path since sessions access academy through course.
+     */
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'course.academy';
+    }
 
     // ========================================
     // Authorization - Override in child classes

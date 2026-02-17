@@ -81,10 +81,6 @@ class SupervisorCalendar extends Page implements HasForms
     {
         $user = Auth::user();
 
-        if (! $user?->supervisorProfile) {
-            abort(403, 'غير مصرح لك بالوصول إلى هذه الصفحة');
-        }
-
         // Auto-select first available teacher
         $teachers = $this->getTeacherOptions();
         if (! empty($teachers)) {

@@ -9,14 +9,13 @@ use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class UserResource extends Resource
+class UserResource extends BaseResource
 {
     use TenantAwareFileUpload;
 
@@ -205,12 +204,7 @@ class UserResource extends Resource
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
                     ->falseColor('danger'),
-                Tables\Columns\TextColumn::make('academy.name')
-                    ->label('الأكاديمية')
-                    ->badge()
-                    ->color('info')
-                    ->visible(fn () => AcademyContextService::isSuperAdmin()),
-                Tables\Columns\TextColumn::make('last_login_at')
+                static::getAcademyColumn(),                Tables\Columns\TextColumn::make('last_login_at')
                     ->label(__('filament.last_login_at'))
                     ->dateTime()
                     ->sortable()

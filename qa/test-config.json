@@ -1,0 +1,109 @@
+{
+  "panels": {
+    "superadmin": {
+      "name": "SuperAdmin Panel",
+      "base_url": "https://itqanway.com",
+      "login_url": "https://itqanway.com/admin/login",
+      "dashboard_url": "https://itqanway.com/admin",
+      "panel_path": "/admin",
+      "tenant_selection": false,
+      "credentials": {
+        "email": "abdelrahmanhamdy320@gmail.com",
+        "password": "Admin@Dev98"
+      }
+    },
+    "supervisor": {
+      "name": "Supervisor Panel",
+      "base_url": "https://e2e-test.itqanway.com",
+      "login_url": "https://e2e-test.itqanway.com/supervisor-panel/login",
+      "dashboard_url": "https://e2e-test.itqanway.com/supervisor-panel",
+      "panel_path": "/supervisor-panel",
+      "tenant_selection": false,
+      "credentials": {
+        "email": "supervisor1@itqan.com",
+        "password": "Admin@Dev98"
+      }
+    },
+    "academy": {
+      "name": "Academy Panel",
+      "base_url": "https://e2e-test.itqanway.com",
+      "login_url": "https://e2e-test.itqanway.com/panel/login",
+      "dashboard_url": "https://e2e-test.itqanway.com/panel",
+      "panel_path": "/panel",
+      "tenant_selection": true,
+      "tenant_name": "e2e-test",
+      "credentials": {
+        "email": "abdelrahmanhamdy320@gmail.com",
+        "password": "Admin@Dev98"
+      }
+    },
+    "quran_teacher": {
+      "name": "Quran Teacher Panel",
+      "base_url": "https://e2e-test.itqanway.com",
+      "login_url": "https://e2e-test.itqanway.com/teacher-panel/login",
+      "dashboard_url": "https://e2e-test.itqanway.com/teacher-panel",
+      "panel_path": "/teacher-panel",
+      "tenant_selection": false,
+      "credentials": {
+        "email": "e2e-teacher@itqan.com",
+        "password": "Admin@Dev98"
+      }
+    },
+    "academic_teacher": {
+      "name": "Academic Teacher Panel",
+      "base_url": "https://e2e-test.itqanway.com",
+      "login_url": "https://e2e-test.itqanway.com/academic-teacher-panel/login",
+      "dashboard_url": "https://e2e-test.itqanway.com/academic-teacher-panel",
+      "panel_path": "/academic-teacher-panel",
+      "tenant_selection": false,
+      "credentials": {
+        "email": "e2e-academic@itqan.com",
+        "password": "Admin@Dev98"
+      }
+    },
+    "student": {
+      "name": "Student Portal",
+      "base_url": "https://e2e-test.itqanway.com",
+      "login_url": "https://e2e-test.itqanway.com/login",
+      "dashboard_url": "https://e2e-test.itqanway.com/profile",
+      "panel_path": "/",
+      "tenant_selection": false,
+      "credentials": {
+        "email": "e2e-student@itqan.com",
+        "password": "Admin@Dev98"
+      },
+      "pages": [
+        "/profile",
+        "/subscriptions",
+        "/search",
+        "/quran-journeys",
+        "/academic-journeys",
+        "/courses",
+        "/certificates"
+      ]
+    },
+    "parent": {
+      "name": "Parent Portal",
+      "base_url": "https://e2e-test.itqanway.com",
+      "login_url": "https://e2e-test.itqanway.com/login",
+      "dashboard_url": "https://e2e-test.itqanway.com/parent/dashboard",
+      "panel_path": "/parent",
+      "tenant_selection": false,
+      "credentials": {
+        "email": "e2e-parent@itqan.com",
+        "password": "Admin@Dev98"
+      },
+      "pages": [
+        "/parent/dashboard",
+        "/parent/children"
+      ]
+    }
+  },
+  "settings": {
+    "language": "ar",
+    "timezone": "Asia/Riyadh",
+    "reports_dir": "qa/reports",
+    "tenant_subdomain": "e2e-test",
+    "e2e_data_prefix": "[E2E]"
+  }
+}

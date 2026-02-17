@@ -47,21 +47,6 @@ class VerifySupervisorRole
             abort(403, 'غير مصرح لك بالوصول. يجب أن تكون مشرفاً للوصول إلى هذه اللوحة.');
         }
 
-        // Check if supervisor is active
-        // Note: is_active column may not exist on supervisor_profiles table in current schema
-        // The check uses null coalescing to default to true if the column doesn't exist
-        $supervisorProfile = $user->supervisorProfile;
-        $isActive = $supervisorProfile?->is_active ?? true;
-        if ($supervisorProfile && ! $isActive) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'حساب المشرف الخاص بك غير نشط. يرجى التواصل مع الإدارة.',
-                ], 403);
-            }
-
-            abort(403, 'حساب المشرف الخاص بك غير نشط. يرجى التواصل مع الإدارة.');
-        }
-
         return $next($request);
     }
 }

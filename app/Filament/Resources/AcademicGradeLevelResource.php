@@ -141,11 +141,7 @@ class AcademicGradeLevelResource extends BaseResource
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('academy.name')
-                    ->label('الأكاديمية')
-                    ->badge()
-                    ->color('info')
-                    ->visible(fn () => AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode()),
+                static::getAcademyColumn(),
 
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('نشط')

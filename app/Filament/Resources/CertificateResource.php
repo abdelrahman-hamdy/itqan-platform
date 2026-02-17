@@ -112,11 +112,7 @@ class CertificateResource extends BaseResource
                     ->label('التصميم')
                     ->badge(),
 
-                Tables\Columns\TextColumn::make('academy.name')
-                    ->label('الأكاديمية')
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(),
+                static::getAcademyColumn(),
 
                 Tables\Columns\TextColumn::make('teacher.name')
                     ->label('المعلم')
@@ -163,12 +159,6 @@ class CertificateResource extends BaseResource
                     ->label('التصميم')
                     ->options(CertificateTemplateStyle::class)
                     ->multiple(),
-
-                Tables\Filters\SelectFilter::make('academy_id')
-                    ->label('الأكاديمية')
-                    ->relationship('academy', 'name')
-                    ->searchable()
-                    ->preload(),
 
                 Tables\Filters\Filter::make('is_manual')
                     ->label('يدوية فقط')

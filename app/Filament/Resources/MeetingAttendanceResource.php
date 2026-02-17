@@ -9,13 +9,12 @@ use App\Models\MeetingAttendance;
 use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
-class MeetingAttendanceResource extends Resource
+class MeetingAttendanceResource extends BaseResource
 {
     protected static ?string $model = MeetingAttendance::class;
 

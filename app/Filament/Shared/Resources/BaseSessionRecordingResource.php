@@ -8,7 +8,7 @@ use App\Models\SessionRecording;
 use App\Services\AcademyContextService;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @see \App\Models\SessionRecording
  */
-abstract class BaseSessionRecordingResource extends Resource
+abstract class BaseSessionRecordingResource extends BaseResource
 {
     protected static ?string $model = SessionRecording::class;
 
@@ -386,7 +386,10 @@ abstract class BaseSessionRecordingResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()
+        // Use direct query instead of parent::getEloquentQuery() because
+        // SessionRecording has no academy relationship for tenant scoping.
+        // Access control is handled by scopeEloquentQuery() in each child resource.
+        $query = static::getModel()::query()
             ->with([
                 'recordable',
                 'recordable.course',

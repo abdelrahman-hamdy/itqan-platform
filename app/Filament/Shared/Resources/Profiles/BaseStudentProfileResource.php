@@ -1,0 +1,309 @@
+<?php
+
+namespace App\Filament\Shared\Resources\Profiles;
+
+use App\Enums\Gender;
+use App\Filament\Concerns\TenantAwareFileUpload;
+use App\Filament\Resources\BaseResource;
+use App\Helpers\CountryList;
+use App\Models\StudentProfile;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+
+/**
+ * Base Student Profile Resource
+ *
+ * Shared functionality for Admin and Academy panels.
+ * Child classes must implement query scoping and authorization methods.
+ */
+abstract class BaseStudentProfileResource extends BaseResource
+{
+    use TenantAwareFileUpload;
+
+    protected static ?string $model = StudentProfile::class;
+
+    protected static ?string $tenantOwnershipRelationshipName = 'gradeLevel';
+
+    protected static ?string $navigationIcon = 'heroicon-o-users';
+
+    protected static ?string $navigationLabel = 'الطلاب';
+
+    protected static ?string $navigationGroup = 'إدارة المستخدمين';
+
+    protected static ?string $modelLabel = 'طالب';
+
+    protected static ?string $pluralModelLabel = 'الطلاب';
+
+    // ========================================
+    // Abstract Methods - Panel-specific implementation
+    // ========================================
+
+    /**
+     * Apply panel-specific query scoping.
+     */
+    abstract protected static function scopeEloquentQuery(Builder $query): Builder;
+
+    /**
+     * Get panel-specific table actions.
+     */
+    abstract protected static function getTableActions(): array;
+
+    /**
+     * Get panel-specific bulk actions.
+     */
+    abstract protected static function getTableBulkActions(): array;
+
+    /**
+     * Get grade level options (panel-specific scoping).
+     */
+    abstract protected static function getGradeLevelOptions(): array;
+
+    // ========================================
+    // Academy Relationship Path Override
+    // ========================================
+
+    /**
+     * Override academy relationship path since students access academy through gradeLevel.
+     */
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'gradeLevel.academy';
+    }
+
+    // ========================================
+    // Shared Form Implementation
+    // ========================================
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                static::getPersonalInfoSection(),
+                static::getAcademicInfoSection(),
+                static::getContactInfoSection(),
+                static::getNotesSection(),
+            ]);
+    }
+
+    protected static function getPersonalInfoSection(): Forms\Components\Section
+    {
+        return Forms\Components\Section::make('المعلومات الشخصية')
+            ->schema([
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\TextInput::make('first_name')
+                            ->label('الاسم الأول')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('last_name')
+                            ->label('الاسم الأخير')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('email')
+                            ->label('البريد الإلكتروني')
+                            ->email()
+                            ->required()
+                            ->unique(ignoreRecord: true)
+                            ->maxLength(255)
+                            ->helperText('سيستخدم الطالب هذا البريد للدخول إلى المنصة'),
+                        static::getPhoneInput('phone', 'رقم الهاتف')
+                            ->helperText('رقم الهاتف مع رمز الدولة'),
+                    ]),
+                Forms\Components\FileUpload::make('avatar')
+                    ->label('الصورة الشخصية')
+                    ->image()
+                    ->imageEditor()
+                    ->circleCropper()
+                    ->directory(static::getTenantDirectoryLazy('avatars/students'))
+                    ->maxSize(2048),
+                Forms\Components\Grid::make(3)
+                    ->schema([
+                        Forms\Components\DatePicker::make('birth_date')
+                            ->label('تاريخ الميلاد'),
+                        Forms\Components\Select::make('nationality')
+                            ->label('الجنسية')
+                            ->options(CountryList::toSelectArray())
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                        Forms\Components\Select::make('gender')
+                            ->label('الجنس')
+                            ->options(Gender::options()),
+                    ]),
+            ]);
+    }
+
+    protected static function getAcademicInfoSection(): Forms\Components\Section
+    {
+        return Forms\Components\Section::make('المعلومات الأكاديمية')
+            ->schema([
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\Select::make('grade_level_id')
+                            ->label('المرحلة الدراسية')
+                            ->options(fn () => static::getGradeLevelOptions())
+                            ->required()
+                            ->searchable()
+                            ->preload(),
+                        Forms\Components\DatePicker::make('enrollment_date')
+                            ->label('تاريخ التسجيل')
+                            ->default(now()),
+                    ]),
+            ]);
+    }
+
+    protected static function getContactInfoSection(): Forms\Components\Section
+    {
+        return Forms\Components\Section::make('معلومات الاتصال والطوارئ')
+            ->schema([
+                Forms\Components\Textarea::make('address')
+                    ->label('العنوان')
+                    ->maxLength(500)
+                    ->rows(3)
+                    ->columnSpanFull(),
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        static::getPhoneInput('parent_phone', 'رقم هاتف ولي الأمر')
+                            ->required()
+                            ->helperText('رقم الهاتف مع رمز الدولة (مطلوب للربط مع حساب ولي الأمر)'),
+                        Forms\Components\TextInput::make('emergency_contact')
+                            ->label('رقم الطوارئ (اختياري)')
+                            ->tel()
+                            ->maxLength(20),
+                    ]),
+                Forms\Components\Select::make('parent_id')
+                    ->label('ولي الأمر')
+                    ->relationship('parent', 'first_name')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->full_name.' ('.$record->parent_code.')')
+                    ->searchable(['first_name', 'last_name', 'parent_code', 'email'])
+                    ->preload()
+                    ->nullable()
+                    ->helperText('اختر ولي الأمر المسؤول عن هذا الطالب (أو سيتم الربط تلقائياً عند تسجيل ولي الأمر)'),
+            ]);
+    }
+
+    protected static function getNotesSection(): Forms\Components\Section
+    {
+        return Forms\Components\Section::make('ملاحظات إضافية')
+            ->schema([
+                Forms\Components\Textarea::make('notes')
+                    ->label('ملاحظات')
+                    ->maxLength(1000)
+                    ->rows(3)
+                    ->columnSpanFull(),
+            ]);
+    }
+
+    // ========================================
+    // Shared Table Implementation
+    // ========================================
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns(static::getTableColumns())
+            ->filters(static::getTableFilters())
+            ->actions(static::getTableActions())
+            ->bulkActions(static::getTableBulkActions())
+            ->defaultSort('created_at', 'desc');
+    }
+
+    protected static function getTableColumns(): array
+    {
+        return [
+            TextColumn::make('student_code')
+                ->label('رمز الطالب')
+                ->searchable()
+                ->sortable()
+                ->weight('bold')
+                ->copyable(),
+
+            TextColumn::make('full_name')
+                ->label('الاسم الكامل')
+                ->searchable(['first_name', 'last_name'])
+                ->sortable(),
+
+            TextColumn::make('email')
+                ->label('البريد الإلكتروني')
+                ->searchable()
+                ->toggleable(),
+
+            TextColumn::make('gradeLevel.name')
+                ->label('المرحلة الدراسية')
+                ->sortable()
+                ->searchable(),
+
+            TextColumn::make('parent.full_name')
+                ->label('ولي الأمر')
+                ->searchable()
+                ->toggleable(),
+
+            TextColumn::make('phone')
+                ->label('الهاتف')
+                ->searchable()
+                ->toggleable(),
+
+            TextColumn::make('created_at')
+                ->label('تاريخ التسجيل')
+                ->dateTime()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
+        ];
+    }
+
+    protected static function getTableFilters(): array
+    {
+        return [
+            Tables\Filters\SelectFilter::make('grade_level_id')
+                ->label('المرحلة الدراسية')
+                ->relationship('gradeLevel', 'name')
+                ->searchable()
+                ->preload(),
+
+            Tables\Filters\SelectFilter::make('gender')
+                ->label('الجنس')
+                ->options(Gender::options()),
+
+            Tables\Filters\TrashedFilter::make()
+                ->label(__('filament.filters.trashed')),
+        ];
+    }
+
+    // ========================================
+    // Query Scoping
+    // ========================================
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery()
+            ->with(['parent', 'gradeLevel.academy']);
+
+        return static::scopeEloquentQuery($query);
+    }
+
+    // ========================================
+    // Helper Methods
+    // ========================================
+
+    protected static function getPhoneInput(
+        string $name = 'phone',
+        string $label = 'رقم الهاتف'
+    ): \Ysfkaya\FilamentPhoneInput\Forms\PhoneInput {
+        return \Ysfkaya\FilamentPhoneInput\Forms\PhoneInput::make($name)
+            ->label($label)
+            ->defaultCountry('SA')
+            ->initialCountry('sa')
+            ->excludeCountries(['il'])
+            ->separateDialCode(true)
+            ->formatAsYouType(true)
+            ->showFlags(true)
+            ->strictMode(true)
+            ->locale('ar')
+            ->i18n(['ps' => 'فلسطين']);
+    }
+}
