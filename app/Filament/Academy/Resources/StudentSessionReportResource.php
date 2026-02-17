@@ -6,6 +6,7 @@ use App\Filament\Academy\Resources\StudentSessionReportResource\Pages\EditStuden
 use App\Filament\Academy\Resources\StudentSessionReportResource\Pages\ListStudentSessionReports;
 use App\Filament\Academy\Resources\StudentSessionReportResource\Pages\ViewStudentSessionReport;
 use App\Filament\Shared\Resources\BaseStudentSessionReportResource;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\TextInput;
@@ -61,6 +62,8 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
                 ->label('عرض'),
             EditAction::make()
                 ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 

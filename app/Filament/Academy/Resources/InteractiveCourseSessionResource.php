@@ -2,19 +2,30 @@
 
 namespace App\Filament\Academy\Resources;
 
+use App\Enums\SessionStatus;
 use App\Filament\Academy\Resources\InteractiveCourseSessionResource\Pages\EditInteractiveCourseSession;
 use App\Filament\Academy\Resources\InteractiveCourseSessionResource\Pages\ListInteractiveCourseSessions;
 use App\Filament\Academy\Resources\InteractiveCourseSessionResource\Pages\ViewInteractiveCourseSession;
+use App\Filament\Pages\ObserveSessionPage;
 use App\Filament\Shared\Resources\BaseInteractiveCourseSessionResource;
 use App\Models\InteractiveCourse;
+use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -25,7 +36,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResource
 {
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة التعليم الأكاديمي';
 
     protected static ?int $navigationSort = 6;
 
@@ -74,34 +85,125 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     }
 
     /**
-     * Academy admin table actions with session control.
+     * Academy admin table actions with observe_meeting and soft deletes.
      */
     protected static function getTableActions(): array
     {
         return [
             ActionGroup::make([
+                Action::make('observe_meeting')
+                    ->label('مراقبة الجلسة')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->visible(fn ($record): bool => $record->meeting_room_name
+                        && in_array(
+                            $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
+                            [SessionStatus::READY, SessionStatus::ONGOING]
+                        ))
+                    ->url(fn ($record): string => ObserveSessionPage::getUrl().'?'.http_build_query([
+                        'sessionId' => $record->id,
+                        'sessionType' => 'interactive',
+                    ]))
+                    ->openUrlInNewTab(),
+
                 ViewAction::make()
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
+                DeleteAction::make()
+                    ->label('حذف'),
 
                 static::makeStartSessionAction(),
                 static::makeCompleteSessionAction(),
                 static::makeCancelSessionAction('admin'),
                 static::makeJoinMeetingAction(),
+
+                RestoreAction::make()
+                    ->label(__('filament.actions.restore')),
+                ForceDeleteAction::make()
+                    ->label(__('filament.actions.force_delete')),
             ]),
         ];
     }
 
     /**
-     * Bulk actions for academy admins.
+     * Bulk actions with soft deletes.
      */
     protected static function getTableBulkActions(): array
     {
         return [
             BulkActionGroup::make([
                 DeleteBulkAction::make(),
+                RestoreBulkAction::make()
+                    ->label(__('filament.actions.restore_selected')),
+                ForceDeleteBulkAction::make()
+                    ->label(__('filament.actions.force_delete_selected')),
             ]),
+        ];
+    }
+
+    // ========================================
+    // Additional Form Sections
+    // ========================================
+
+    /**
+     * Add notes section for academy admins.
+     */
+    protected static function getAdditionalFormSections(): array
+    {
+        return [
+            static::getNotesFormSection(),
+        ];
+    }
+
+    /**
+     * Notes section.
+     */
+    protected static function getNotesFormSection(): Section
+    {
+        return Section::make('ملاحظات')
+            ->schema([
+                Grid::make(2)
+                    ->schema([
+                        Textarea::make('session_notes')
+                            ->label('ملاحظات الجلسة')
+                            ->rows(3)
+                            ->maxLength(1000)
+                            ->helperText('ملاحظات داخلية للإدارة'),
+
+                        Textarea::make('supervisor_notes')
+                            ->label('ملاحظات المشرف')
+                            ->rows(3)
+                            ->maxLength(2000)
+                            ->helperText('ملاحظات مرئية للمشرف والإدارة فقط'),
+                    ]),
+            ])
+            ->collapsible()
+            ->collapsed();
+    }
+
+    // ========================================
+    // Table Filters Override
+    // ========================================
+
+    /**
+     * Extended filters with course filter + parent filters.
+     */
+    protected static function getTableFilters(): array
+    {
+        $academyId = auth()->user()->academy_id;
+
+        return [
+            ...parent::getTableFilters(),
+
+            SelectFilter::make('course_id')
+                ->label('الدورة')
+                ->options(function () use ($academyId) {
+                    return InteractiveCourse::where('academy_id', $academyId)
+                        ->pluck('title', 'id')
+                        ->toArray();
+                })
+                ->searchable(),
         ];
     }
 

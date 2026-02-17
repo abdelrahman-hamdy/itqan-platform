@@ -6,12 +6,22 @@ use App\Enums\QuizAssignableType;
 use App\Filament\Academy\Resources\QuizResource\Pages\CreateQuiz;
 use App\Filament\Academy\Resources\QuizResource\Pages\EditQuiz;
 use App\Filament\Academy\Resources\QuizResource\Pages\ListQuizzes;
+use App\Filament\Academy\Resources\QuizResource\Pages\ViewQuiz;
+use App\Filament\Resources\QuizResource\RelationManagers\QuestionsRelationManager;
 use App\Filament\Shared\Resources\BaseQuizResource;
 use App\Models\AcademicIndividualLesson;
 use App\Models\InteractiveCourse;
+use App\Models\Quiz;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\RecordedCourse;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Facades\Filament;
+use Filament\Tables\Table;
 
 /**
  * Quiz Resource for Academy Panel
@@ -24,6 +34,39 @@ class QuizResource extends BaseQuizResource
     protected static ?string $navigationLabel = 'الاختبارات';
 
     protected static ?int $navigationSort = 1;
+
+    /**
+     * Navigation badge showing quizzes without questions (warning)
+     */
+    public static function getNavigationBadge(): ?string
+    {
+        $tenant = Filament::getTenant();
+        $query = Quiz::query()->doesntHave('questions');
+
+        if ($tenant) {
+            $query->where('academy_id', $tenant->id);
+        }
+
+        $count = $query->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    /**
+     * Badge color - warning for quizzes without questions
+     */
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'warning';
+    }
+
+    /**
+     * Badge tooltip
+     */
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'اختبارات بدون أسئلة';
+    }
 
     /**
      * Academy admins can assign quizzes to all education unit types.
@@ -73,11 +116,37 @@ class QuizResource extends BaseQuizResource
         };
     }
 
+    public static function table(Table $table): Table
+    {
+        $table = parent::table($table);
+
+        return $table
+            ->recordActions([
+                ViewAction::make()->label('عرض'),
+                static::getAssignAction(),
+                EditAction::make(),
+                DeleteAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            QuestionsRelationManager::class,
+        ];
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => ListQuizzes::route('/'),
             'create' => CreateQuiz::route('/create'),
+            'view' => ViewQuiz::route('/{record}'),
             'edit' => EditQuiz::route('/{record}/edit'),
         ];
     }

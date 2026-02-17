@@ -6,6 +6,7 @@ use App\Filament\Academy\Resources\InteractiveSessionReportResource\Pages\EditIn
 use App\Filament\Academy\Resources\InteractiveSessionReportResource\Pages\ListInteractiveSessionReports;
 use App\Filament\Academy\Resources\InteractiveSessionReportResource\Pages\ViewInteractiveSessionReport;
 use App\Filament\Shared\Resources\BaseInteractiveSessionReportResource;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\TextInput;
@@ -66,6 +67,8 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
                 ->label('عرض'),
             EditAction::make()
                 ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 

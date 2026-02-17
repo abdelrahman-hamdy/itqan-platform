@@ -282,6 +282,12 @@ class AppServiceProvider extends ServiceProvider
         // Must run after Filament registers its components (after all providers boot)
         $this->app->booted(function () {
             Livewire::component('filament.livewire.database-notifications', DatabaseNotifications::class);
+
+            // Override Filament's default Login component with our custom Login class.
+            // Filament v4 registers its parent Login class under 'filament.auth.pages.login'
+            // during panel boot, which can shadow our custom class. This ensures our
+            // custom Login (with Arabic translations and last_login_at tracking) is used.
+            Livewire::component('filament.auth.pages.login', \App\Filament\Pages\Auth\Login::class);
         });
 
         // Register policies for authorization

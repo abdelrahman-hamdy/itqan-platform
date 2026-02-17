@@ -6,6 +6,7 @@ use App\Filament\Academy\Resources\AcademicSessionReportResource\Pages\EditAcade
 use App\Filament\Academy\Resources\AcademicSessionReportResource\Pages\ListAcademicSessionReports;
 use App\Filament\Academy\Resources\AcademicSessionReportResource\Pages\ViewAcademicSessionReport;
 use App\Filament\Shared\Resources\BaseAcademicSessionReportResource;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\TextInput;
@@ -61,6 +62,8 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
                 ->label('عرض'),
             EditAction::make()
                 ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 

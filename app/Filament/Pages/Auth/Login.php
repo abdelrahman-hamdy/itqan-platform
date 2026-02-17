@@ -3,13 +3,10 @@
 namespace App\Filament\Pages\Auth;
 
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
-use Filament\Schemas\Components\Component;
-use Filament\Schemas\Schema;
-use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\TextInput;
-use Filament\Models\Contracts\FilamentUser;
+use Filament\Schemas\Components\Component;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\HtmlString;
@@ -19,59 +16,17 @@ class Login extends \Filament\Auth\Pages\Login
 {
     public function authenticate(): ?LoginResponse
     {
-        try {
-            $this->rateLimit(5);
-        } catch (TooManyRequestsException $exception) {
-            $this->getRateLimitedNotification($exception)?->send();
+        $response = parent::authenticate();
 
-            return null;
+        if ($response) {
+            $user = Filament::auth()->user();
+
+            if ($user && method_exists($user, 'update')) {
+                $user->update(['last_login_at' => now()]);
+            }
         }
 
-        $data = $this->form->getState();
-
-        $remember = $data['remember'] ?? false;
-
-        if (! Filament::auth()->attempt($this->getCredentialsFromFormData($data), $remember)) {
-            $this->throwFailureValidationException();
-        }
-
-        $user = Filament::auth()->user();
-
-        if (
-            ($user instanceof FilamentUser) &&
-            (! $user->canAccessPanel(Filament::getCurrentOrDefaultPanel()))
-        ) {
-            Filament::auth()->logout();
-
-            $this->throwFailureValidationException();
-        }
-
-        // Update last login timestamp
-        if (method_exists($user, 'update')) {
-            $user->update(['last_login_at' => now()]);
-        }
-
-        session()->regenerate();
-
-        return app(LoginResponse::class);
-    }
-
-    /**
-     * @return array<int|string, string|Schema>
-     */
-    protected function getForms(): array
-    {
-        return [
-            'form' => $this->form(
-                $this->makeForm()
-                    ->components([
-                        $this->getEmailFormComponent(),
-                        $this->getPasswordFormComponent(),
-                        $this->getRememberFormComponent(),
-                    ])
-                    ->statePath('data'),
-            ),
-        ];
+        return $response;
     }
 
     protected function getEmailFormComponent(): Component
@@ -109,7 +64,7 @@ class Login extends \Filament\Auth\Pages\Login
         return __('auth.login.title');
     }
 
-    public function getHeading(): string|Htmlable
+    public function getHeading(): string|Htmlable|null
     {
         return __('auth.login.heading');
     }
