@@ -31,10 +31,10 @@
       </div>
       <div class="text-center">
         <div class="w-16 h-16 flex items-center justify-center bg-white/20 rounded-full mx-auto mb-4">
-          <i class="ri-award-line text-2xl text-white"></i>
+          <i class="ri-bar-chart-line text-2xl text-white"></i>
         </div>
-        <h3 class="text-xl font-bold mb-3">شهادات إتمام</h3>
-        <p class="text-blue-100">احصل على شهادات إتمام عند إكمال الكورسات</p>
+        <h3 class="text-xl font-bold mb-3">متابعة دورية</h3>
+        <p class="text-blue-100">تقارير مفصلة عن تقدم الطالب وتقييم مستمر لضمان تحقيق الأهداف التعليمية</p>
       </div>
     </div>
   </div>

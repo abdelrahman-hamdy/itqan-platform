@@ -40,10 +40,10 @@
       </div>
       <div class="text-center">
         <div class="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center bg-white/20 rounded-full mx-auto mb-3 sm:mb-4">
-          <i class="ri-award-line text-xl sm:text-2xl text-white"></i>
+          <i class="ri-bar-chart-line text-xl sm:text-2xl text-white"></i>
         </div>
-        <h3 class="text-base sm:text-lg lg:text-xl font-bold mb-2 sm:mb-3">{{ __('academy.features.certificates.title') }}</h3>
-        <p class="text-xs sm:text-sm lg:text-base" style="color: rgba(255,255,255,0.85);">{{ __('academy.features.certificates.description') }}</p>
+        <h3 class="text-base sm:text-lg lg:text-xl font-bold mb-2 sm:mb-3">{{ __('academy.features.regular_followup.title') }}</h3>
+        <p class="text-xs sm:text-sm lg:text-base" style="color: rgba(255,255,255,0.85);">{{ __('academy.features.regular_followup.description') }}</p>
       </div>
     </div>
   </div>
