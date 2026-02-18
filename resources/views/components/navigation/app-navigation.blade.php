@@ -366,7 +366,7 @@
            class="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-all duration-200"
            aria-label="{{ __('components.navigation.app.messages.open_messages') }}">
           <i class="ri-message-2-line text-xl"></i>
-          <span id="unread-count-badge" class="absolute top-0 start-0 items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-600 rounded-full" style="display:none">
+          <span id="unread-count-badge" class="absolute top-0 start-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-0.5 text-xs font-bold text-white transform translate-x-1/2 -translate-y-1/2 bg-green-600 rounded-full" style="display:none">
           </span>
         </a>
         <script>
