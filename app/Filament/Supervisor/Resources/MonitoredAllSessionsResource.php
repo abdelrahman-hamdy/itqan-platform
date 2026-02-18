@@ -15,7 +15,6 @@ use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages\ListMon
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages\CreateMonitoredSession;
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages\ViewMonitoredSession;
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages\EditMonitoredSession;
-use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages\ObserveSession;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Filament\Shared\Tables\SessionTableColumns;
@@ -223,7 +222,6 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
             'create' => CreateMonitoredSession::route('/create'),
             'view' => ViewMonitoredSession::route('/{record}'),
             'edit' => EditMonitoredSession::route('/{record}/edit'),
-            'observe' => ObserveSession::route('/{record}/observe'),
         ];
     }
 

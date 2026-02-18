@@ -3,7 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\SessionStatus;
-use App\Filament\Pages\ObserveSessionPage;
+use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Resources\QuranSessionResource\Pages;
 use App\Filament\Resources\QuranSessionResource\Pages\CreateQuranSession;
 use App\Filament\Resources\QuranSessionResource\Pages\EditQuranSession;
@@ -130,20 +130,7 @@ class QuranSessionResource extends BaseQuranSessionResource
             ActionGroup::make([
                 ViewAction::make()->label('عرض'),
                 EditAction::make()->label('تعديل'),
-                Action::make('observe_meeting')
-                    ->label('مراقبة الجلسة')
-                    ->icon('heroicon-o-eye')
-                    ->color('info')
-                    ->visible(fn ($record): bool => $record->meeting_room_name
-                        && in_array(
-                            $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
-                            [SessionStatus::READY, SessionStatus::ONGOING]
-                        ))
-                    ->url(fn ($record): string => ObserveSessionPage::getUrl().'?'.http_build_query([
-                        'sessionId' => $record->id,
-                        'sessionType' => 'quran',
-                    ]))
-                    ->openUrlInNewTab(),
+                MeetingActions::viewMeeting('quran'),
                 RestoreAction::make()->label(__('filament.actions.restore')),
                 ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
             ]),

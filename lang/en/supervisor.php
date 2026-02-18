@@ -73,5 +73,11 @@ return [
         'session_participants' => 'Session Participants',
         'session_content' => 'Session Content',
         'learning_outcomes' => 'Learning Outcomes',
+
+        // View Meeting action & mode toggle
+        'view_meeting' => 'View Meeting',
+        'participant_mode' => 'Participant Mode',
+        'mode_observer_description' => 'Watch the session silently without being seen by participants',
+        'mode_participant_description' => 'Join the session as an active participant with audio and video',
     ],
 ];

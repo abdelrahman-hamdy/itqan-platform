@@ -6,7 +6,7 @@ use App\Enums\SessionStatus;
 use App\Filament\Academy\Resources\InteractiveCourseSessionResource\Pages\EditInteractiveCourseSession;
 use App\Filament\Academy\Resources\InteractiveCourseSessionResource\Pages\ListInteractiveCourseSessions;
 use App\Filament\Academy\Resources\InteractiveCourseSessionResource\Pages\ViewInteractiveCourseSession;
-use App\Filament\Pages\ObserveSessionPage;
+use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Shared\Resources\BaseInteractiveCourseSessionResource;
 use App\Models\InteractiveCourse;
 use Filament\Actions\Action;
@@ -91,20 +91,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
-                Action::make('observe_meeting')
-                    ->label('مراقبة الجلسة')
-                    ->icon('heroicon-o-eye')
-                    ->color('info')
-                    ->visible(fn ($record): bool => $record->meeting_room_name
-                        && in_array(
-                            $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
-                            [SessionStatus::READY, SessionStatus::ONGOING]
-                        ))
-                    ->url(fn ($record): string => ObserveSessionPage::getUrl().'?'.http_build_query([
-                        'sessionId' => $record->id,
-                        'sessionType' => 'interactive',
-                    ]))
-                    ->openUrlInNewTab(),
+                MeetingActions::viewMeeting('interactive'),
                 static::makeStartSessionAction(),
                 static::makeCompleteSessionAction(),
                 static::makeCancelSessionAction('admin'),

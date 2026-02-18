@@ -73,5 +73,11 @@ return [
         'session_participants' => 'المشاركون في الجلسة',
         'session_content' => 'محتوى الجلسة',
         'learning_outcomes' => 'مخرجات التعلم',
+
+        // View Meeting action & mode toggle
+        'view_meeting' => 'عرض الاجتماع',
+        'participant_mode' => 'وضع المشاركة',
+        'mode_observer_description' => 'شاهد الجلسة بصمت دون أن يراك المشاركون',
+        'mode_participant_description' => 'انضم للجلسة كمشارك نشط بالصوت والفيديو',
     ],
 ];

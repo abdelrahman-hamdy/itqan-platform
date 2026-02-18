@@ -8,7 +8,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\Action;
-use App\Filament\Pages\ObserveSessionPage;
+use App\Filament\Shared\Actions\MeetingActions;
 use Filament\Actions\ViewAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
@@ -137,20 +137,7 @@ class AcademicSessionResource extends BaseAcademicSessionResource
     {
         return [
             ActionGroup::make([
-                Action::make('observe_meeting')
-                    ->label('مراقبة الجلسة')
-                    ->icon('heroicon-o-eye')
-                    ->color('info')
-                    ->visible(fn ($record): bool => $record->meeting_room_name
-                        && in_array(
-                            $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
-                            [SessionStatus::READY, SessionStatus::ONGOING]
-                        ))
-                    ->url(fn ($record): string => ObserveSessionPage::getUrl().'?'.http_build_query([
-                        'sessionId' => $record->id,
-                        'sessionType' => 'academic',
-                    ]))
-                    ->openUrlInNewTab(),
+                MeetingActions::viewMeeting('academic'),
 
                 ViewAction::make()
                     ->label('عرض'),

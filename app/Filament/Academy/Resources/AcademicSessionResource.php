@@ -8,7 +8,7 @@ use App\Filament\Academy\Resources\AcademicSessionResource\Pages\CreateAcademicS
 use App\Filament\Academy\Resources\AcademicSessionResource\Pages\EditAcademicSession;
 use App\Filament\Academy\Resources\AcademicSessionResource\Pages\ListAcademicSessions;
 use App\Filament\Academy\Resources\AcademicSessionResource\Pages\ViewAcademicSession;
-use App\Filament\Pages\ObserveSessionPage;
+use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Shared\Actions\SessionStatusActions;
 use App\Filament\Shared\Resources\BaseAcademicSessionResource;
 use App\Models\AcademicIndividualLesson;
@@ -131,20 +131,7 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
-                Action::make('observe_meeting')
-                    ->label('مراقبة الجلسة')
-                    ->icon('heroicon-o-eye')
-                    ->color('info')
-                    ->visible(fn ($record): bool => $record->meeting_room_name
-                        && in_array(
-                            $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
-                            [SessionStatus::READY, SessionStatus::ONGOING]
-                        ))
-                    ->url(fn ($record): string => ObserveSessionPage::getUrl().'?'.http_build_query([
-                        'sessionId' => $record->id,
-                        'sessionType' => 'academic',
-                    ]))
-                    ->openUrlInNewTab(),
+                MeetingActions::viewMeeting('academic'),
                 static::makeStartSessionAction(),
                 static::makeCompleteSessionAction(),
                 static::makeJoinMeetingAction(),

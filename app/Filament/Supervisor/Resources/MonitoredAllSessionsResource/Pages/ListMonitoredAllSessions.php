@@ -16,6 +16,7 @@ use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\User;
 use App\Services\AcademyContextService;
+use App\Filament\Shared\Actions\MeetingActions;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
@@ -42,24 +43,11 @@ class ListMonitoredAllSessions extends ListRecords
     protected static string $resource = MonitoredAllSessionsResource::class;
 
     /**
-     * Build the "Observe Meeting" action for a given session type.
+     * Build the "View Meeting" action for a given session type.
      */
     protected function getObserveAction(string $sessionType): Action
     {
-        return Action::make('observe_meeting')
-            ->label(__('supervisor.observation.observe_session'))
-            ->icon('heroicon-o-eye')
-            ->color('info')
-            ->visible(fn ($record): bool => $record->meeting_room_name
-                && in_array(
-                    $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
-                    [SessionStatus::READY, SessionStatus::ONGOING]
-                ))
-            ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.observe', [
-                'record' => $record->id,
-                'type' => $sessionType,
-            ]))
-            ->openUrlInNewTab();
+        return MeetingActions::viewMeeting($sessionType);
     }
 
     protected function getHeaderActions(): array

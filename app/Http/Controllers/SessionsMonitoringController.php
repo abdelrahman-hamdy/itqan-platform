@@ -28,8 +28,7 @@ class SessionsMonitoringController extends Controller
     {
         $user = auth()->user();
 
-        // Authorization: only supervisor or super_admin
-        if (! $user->isSupervisor() && ! $user->isSuperAdmin()) {
+        if (! $user->isSupervisor() && ! $user->isSuperAdmin() && ! $user->isAdmin()) {
             abort(403);
         }
 
@@ -55,7 +54,7 @@ class SessionsMonitoringController extends Controller
     {
         $user = auth()->user();
 
-        if (! $user->isSupervisor() && ! $user->isSuperAdmin()) {
+        if (! $user->isSupervisor() && ! $user->isSuperAdmin() && ! $user->isAdmin()) {
             abort(403);
         }
 
@@ -70,9 +69,21 @@ class SessionsMonitoringController extends Controller
             $session->ensureMeetingExists();
         }
 
+        // Determine if user can observe silently
+        $canObserve = $this->observerService->canObserveSession($user, $session)
+            && $this->observerService->isSessionObservable($session);
+
+        // Mode: 'participant' (default) or 'observer' (silent)
+        $mode = $request->query('mode', 'participant');
+        if ($mode === 'observer' && ! $canObserve) {
+            $mode = 'participant';
+        }
+
         return view('sessions-monitoring.show', [
             'session' => $session,
             'sessionType' => $sessionType,
+            'canObserve' => $canObserve,
+            'mode' => $mode,
         ]);
     }
 

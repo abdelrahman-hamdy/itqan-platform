@@ -5,6 +5,7 @@ namespace App\Filament\AcademicTeacher\Resources;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use App\Filament\Shared\Actions\MeetingActions;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
 use Filament\Actions\EditAction;
@@ -122,6 +123,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
+                MeetingActions::viewMeeting('interactive'),
 
                 static::makeStartSessionAction(),
                 static::makeCompleteSessionAction(),

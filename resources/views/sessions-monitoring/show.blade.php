@@ -65,12 +65,19 @@
                 </div>
             </div>
 
-            {{-- Left: Observer Badge & Back --}}
+            {{-- Left: Mode Badge & Back --}}
             <div class="flex items-center gap-3">
-                <span class="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    <i class="ri-eye-line ms-1"></i>
-                    {{ __('supervisor.observation.observer_mode') }}
-                </span>
+                @if($mode === 'observer')
+                    <span class="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <i class="ri-eye-line ms-1"></i>
+                        {{ __('supervisor.observation.observer_mode') }}
+                    </span>
+                @else
+                    <span class="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <i class="ri-video-chat-line ms-1"></i>
+                        {{ __('supervisor.observation.participant_mode') }}
+                    </span>
+                @endif
                 <a href="{{ route('sessions.monitoring', ['subdomain' => $subdomain, 'tab' => $sessionType]) }}"
                    class="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors">
                     <i class="ri-arrow-right-line"></i>
@@ -87,12 +94,44 @@
         {{-- Session Header (reused component) --}}
         <x-sessions.session-header :session="$session" view-type="student" />
 
-        {{-- LiveKit Meeting Interface (reused component with observer type) --}}
+        {{-- Mode Toggle (visible when observer mode is available) --}}
+        @if($canObserve)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
+                <div class="flex items-center gap-3 justify-center">
+                    <a href="?mode=participant"
+                       class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ $mode === 'participant' ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                        <i class="ri-video-chat-line"></i>
+                        {{ __('supervisor.observation.participant_mode') }}
+                    </a>
+                    <a href="?mode=observer"
+                       class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ $mode === 'observer' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                        <i class="ri-eye-line"></i>
+                        {{ __('supervisor.observation.observer_mode') }}
+                    </a>
+                </div>
+                <p class="text-xs text-gray-500 text-center mt-2">
+                    @if($mode === 'observer')
+                        {{ __('supervisor.observation.mode_observer_description') }}
+                    @else
+                        {{ __('supervisor.observation.mode_participant_description') }}
+                    @endif
+                </p>
+            </div>
+        @endif
+
+        {{-- Meeting Interface --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-            <x-meetings.livekit-interface
-                :session="$session"
-                user-type="observer"
-            />
+            @if($mode === 'observer' && $canObserve)
+                <x-meetings.observer-interface
+                    :session="$session"
+                    :session-type="$sessionType"
+                />
+            @else
+                <x-meetings.livekit-interface
+                    :session="$session"
+                    user-type="observer"
+                />
+            @endif
         </div>
 
         {{-- Teacher & Student Info Card --}}

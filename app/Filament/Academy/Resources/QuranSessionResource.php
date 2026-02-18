@@ -7,7 +7,7 @@ use App\Filament\Academy\Resources\QuranSessionResource\Pages\CreateQuranSession
 use App\Filament\Academy\Resources\QuranSessionResource\Pages\EditQuranSession;
 use App\Filament\Academy\Resources\QuranSessionResource\Pages\ListQuranSessions;
 use App\Filament\Academy\Resources\QuranSessionResource\Pages\ViewQuranSession;
-use App\Filament\Pages\ObserveSessionPage;
+use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Shared\Actions\SessionStatusActions;
 use App\Filament\Shared\Resources\BaseQuranSessionResource;
 use App\Models\QuranCircle;
@@ -129,20 +129,7 @@ class QuranSessionResource extends BaseQuranSessionResource
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
-                Action::make('observe_meeting')
-                    ->label('مراقبة الجلسة')
-                    ->icon('heroicon-o-eye')
-                    ->color('info')
-                    ->visible(fn ($record): bool => $record->meeting_room_name
-                        && in_array(
-                            $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
-                            [SessionStatus::READY, SessionStatus::ONGOING]
-                        ))
-                    ->url(fn ($record): string => ObserveSessionPage::getUrl().'?'.http_build_query([
-                        'sessionId' => $record->id,
-                        'sessionType' => 'quran',
-                    ]))
-                    ->openUrlInNewTab(),
+                MeetingActions::viewMeeting('quran'),
                 ...SessionStatusActions::all('admin'),
                 DeleteAction::make()
                     ->label('حذف'),
