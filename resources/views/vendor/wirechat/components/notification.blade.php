@@ -1,7 +1,7 @@
 
-@use('Namu\WireChat\Facades\WireChat')
+@use('Wirechat\Wirechat\Facades\Wirechat')
 
-@if(auth()->check() && WireChat::notificationsEnabled())
+@if(auth()->check() && Wirechat::notificationsEnabled())
 
    <div dusk="notification_manager"
         x-data="{
@@ -87,11 +87,11 @@
         registerServiceWorker();
 
         userId = @js(auth()->id());
-        encodedType = @js(\Namu\WireChat\Helpers\MorphClassResolver::encode(auth()->user()->getMorphClass()));
+        encodedType = @js(\Wirechat\Wirechat\Helpers\MorphClassResolver::encode(auth()->user()->getMorphClass()));
 
         {{-- We listen to notify participant event --}}
         Echo.private(`participant.${encodedType}.${userId}`)
-            .listen('.Namu\\WireChat\\Events\\NotifyParticipant', (e) => {
+            .listen('.Wirechat\\Wirechat\\Events\\NotifyParticipant', (e) => {
 
                 {{--Ignore if user is currently open in the chat  --}}
                 if (e.redirect_url !== window.location.href) {

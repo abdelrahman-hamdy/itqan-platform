@@ -2,11 +2,11 @@
 
 namespace App\Models\Traits;
 
-use Namu\WireChat\Models\Conversation;
-use Namu\WireChat\Models\Participant;
+use Wirechat\Wirechat\Models\Conversation;
+use Wirechat\Wirechat\Models\Participant;
 use Exception;
 use Log;
-use Namu\WireChat\Models\Message;
+use Wirechat\Wirechat\Models\Message;
 use App\Enums\UserType;
 use App\Models\User;
 
@@ -173,9 +173,9 @@ trait HasChatIntegration
             $query = Message::query()
                 ->where('conversation_id', $participant->conversation_id)
                 ->whereNull('deleted_at')
-                ->where(function ($q) use ($userId, $userType) {
-                    $q->where('sendable_id', '!=', $userId)
-                        ->orWhere('sendable_type', '!=', $userType);
+                ->whereHas('participant', function ($q) use ($userId, $userType) {
+                    $q->where('participantable_id', '!=', $userId)
+                        ->orWhere('participantable_type', '!=', $userType);
                 });
 
             // If conversation_read_at is set, only count messages after that time

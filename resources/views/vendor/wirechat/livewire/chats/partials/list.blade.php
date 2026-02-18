@@ -1,5 +1,5 @@
 
-@use('Namu\WireChat\Facades\WireChat')
+@use('Wirechat\Wirechat\Facades\Wirechat')
 
 <ul wire:loading.delay.long.remove wire:target="search" class="p-2 grid w-full spacey-y-2">
     @foreach ($conversations as $key=> $conversation)
@@ -51,7 +51,7 @@
         @click="$dispatch('open-chat',{conversation:@js($conversation->id)})"
         @keydown.enter="$dispatch('open-chat',{conversation:@js($conversation->id)})"
         @else
-        wire:navigate href="{{ route(WireChat::viewRouteName(), $conversation->id) }}" @endif
+        wire:navigate href="{{ route(Wirechat::viewRouteName(), $conversation->id) }}" @endif
             class="py-3 flex gap-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-all duration-200 relative w-full cursor-pointer px-2 group"
             :class="$wire.selectedConversationId == conversationID &&
                 'bg-gray-50 dark:bg-gray-800 border-r-4 border-primary-500 shadow-sm'">

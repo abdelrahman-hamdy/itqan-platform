@@ -6,8 +6,8 @@ use App\Models\ChatGroup;
 use App\Models\User;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
-use Namu\WireChat\Models\Message;
-use Namu\WireChat\Models\Participant;
+use Wirechat\Wirechat\Models\Message;
+use Wirechat\Wirechat\Models\Participant;
 
 class SupervisorInboxWidget extends Widget
 {
@@ -44,17 +44,17 @@ class SupervisorInboxWidget extends Widget
                 $unreadCount += Message::where('conversation_id', $p->conversation_id)
                     ->whereNull('deleted_at')
                     ->where('created_at', '>', $p->conversation_read_at)
-                    ->where(function ($q) use ($user) {
-                        $q->where('sendable_id', '!=', $user->id)
-                            ->orWhere('sendable_type', '!=', User::class);
+                    ->whereHas('participant', function ($q) use ($user) {
+                        $q->where('participantable_id', '!=', $user->id)
+                            ->orWhere('participantable_type', '!=', User::class);
                     })
                     ->count();
             } else {
                 $unreadCount += Message::where('conversation_id', $p->conversation_id)
                     ->whereNull('deleted_at')
-                    ->where(function ($q) use ($user) {
-                        $q->where('sendable_id', '!=', $user->id)
-                            ->orWhere('sendable_type', '!=', User::class);
+                    ->whereHas('participant', function ($q) use ($user) {
+                        $q->where('participantable_id', '!=', $user->id)
+                            ->orWhere('participantable_type', '!=', User::class);
                     })
                     ->count();
             }
@@ -102,18 +102,18 @@ class SupervisorInboxWidget extends Widget
                     $hasUnread = Message::where('conversation_id', $conversation->id)
                         ->whereNull('deleted_at')
                         ->where('created_at', '>', $participant->conversation_read_at)
-                        ->where(function ($q) use ($userId, $userType) {
-                            $q->where('sendable_id', '!=', $userId)
-                                ->orWhere('sendable_type', '!=', $userType);
+                        ->whereHas('participant', function ($q) use ($userId, $userType) {
+                            $q->where('participantable_id', '!=', $userId)
+                                ->orWhere('participantable_type', '!=', $userType);
                         })
                         ->exists();
                 } else {
                     // Never read - check if any messages from others exist
                     $hasUnread = Message::where('conversation_id', $conversation->id)
                         ->whereNull('deleted_at')
-                        ->where(function ($q) use ($userId, $userType) {
-                            $q->where('sendable_id', '!=', $userId)
-                                ->orWhere('sendable_type', '!=', $userType);
+                        ->whereHas('participant', function ($q) use ($userId, $userType) {
+                            $q->where('participantable_id', '!=', $userId)
+                                ->orWhere('participantable_type', '!=', $userType);
                         })
                         ->exists();
                 }

@@ -114,15 +114,15 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
                 if ($group->conversation_id) {
                     // Use existing conversation
-                    $conversation = \Namu\WireChat\Models\Conversation::find($group->conversation_id);
+                    $conversation = \Wirechat\Wirechat\Models\Conversation::find($group->conversation_id);
                 }
 
                 if (! $conversation) {
                     // Create new WireChat group conversation
                     \Illuminate\Support\Facades\DB::transaction(function () use ($group, $teacher, $student, $supervisor, $entityType, $entityId, &$conversation) {
                         // Create conversation with GROUP type
-                        $conversation = new \Namu\WireChat\Models\Conversation;
-                        $conversation->type = \Namu\WireChat\Enums\ConversationType::GROUP;
+                        $conversation = new \Wirechat\Wirechat\Models\Conversation;
+                        $conversation->type = \Wirechat\Wirechat\Enums\ConversationType::GROUP;
                         $conversation->save();
 
                         // Create the group record for WireChat
@@ -132,11 +132,11 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
                         ]);
 
                         // Add teacher as owner
-                        \Namu\WireChat\Models\Participant::create([
+                        \Wirechat\Wirechat\Models\Participant::create([
                             'conversation_id' => $conversation->id,
                             'participantable_id' => $teacher->id,
                             'participantable_type' => $teacher->getMorphClass(),
-                            'role' => \Namu\WireChat\Enums\ParticipantRole::OWNER,
+                            'role' => \Wirechat\Wirechat\Enums\ParticipantRole::OWNER,
                         ]);
 
                         // For group entities (quran_circle, interactive_course), add ALL enrolled students
@@ -163,22 +163,22 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
                         // Add all students as members
                         foreach ($studentsToAdd as $studentUser) {
                             if ($studentUser && $studentUser->id !== $teacher->id) {
-                                \Namu\WireChat\Models\Participant::create([
+                                \Wirechat\Wirechat\Models\Participant::create([
                                     'conversation_id' => $conversation->id,
                                     'participantable_id' => $studentUser->id,
                                     'participantable_type' => $studentUser->getMorphClass(),
-                                    'role' => \Namu\WireChat\Enums\ParticipantRole::PARTICIPANT,
+                                    'role' => \Wirechat\Wirechat\Enums\ParticipantRole::PARTICIPANT,
                                 ]);
                             }
                         }
 
                         // Add supervisor as admin
                         if ($supervisor) {
-                            \Namu\WireChat\Models\Participant::create([
+                            \Wirechat\Wirechat\Models\Participant::create([
                                 'conversation_id' => $conversation->id,
                                 'participantable_id' => $supervisor->id,
                                 'participantable_type' => $supervisor->getMorphClass(),
-                                'role' => \Namu\WireChat\Enums\ParticipantRole::ADMIN,
+                                'role' => \Wirechat\Wirechat\Enums\ParticipantRole::ADMIN,
                             ]);
                         }
 

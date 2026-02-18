@@ -132,9 +132,9 @@ return [
         // Broadcast events should not be tenant-aware
         \Illuminate\Broadcasting\BroadcastEvent::class,
         // WireChat events
-        \Namu\WireChat\Events\MessageCreated::class,
-        \Namu\WireChat\Events\MessageDeleted::class,
-        \Namu\WireChat\Jobs\NotifyParticipants::class,
+        \Wirechat\Wirechat\Events\MessageCreated::class,
+        \Wirechat\Wirechat\Events\MessageDeleted::class,
+        \Wirechat\Wirechat\Jobs\NotifyParticipants::class,
         // Jobs that use custom TenantAwareJob trait to handle tenancy internally
         // (they iterate over all academies, so Spatie's tenant context is not needed)
         \App\Jobs\CalculateSessionAttendance::class,

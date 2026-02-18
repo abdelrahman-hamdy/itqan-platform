@@ -3,7 +3,7 @@
 namespace App\Livewire\Chat;
 
 use Illuminate\Support\Collection;
-use Namu\WireChat\Livewire\Chat\Info as BaseInfo;
+use Wirechat\Wirechat\Livewire\Chat\Info as BaseInfo;
 
 /**
  * @property Collection $mediaAttachments

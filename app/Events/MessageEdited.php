@@ -7,7 +7,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use Namu\WireChat\Models\Message;
+use Wirechat\Wirechat\Models\Message;
 
 /**
  * Message Edited Event
@@ -23,7 +23,7 @@ class MessageEdited implements ShouldBroadcastNow
 
     public function __construct(Message $message)
     {
-        $this->message = $message->load('sendable');
+        $this->message = $message->load('participant.participantable');
     }
 
     /**
@@ -55,7 +55,7 @@ class MessageEdited implements ShouldBroadcastNow
                 'body' => $this->message->body,
                 'edited_at' => $this->message->edited_at?->toIso8601String(),
                 'sender' => [
-                    'id' => $this->message->sendable_id,
+                    'id' => $this->message->sendable?->id,
                     'name' => $this->message->sendable?->name,
                 ],
             ],

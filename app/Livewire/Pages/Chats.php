@@ -3,7 +3,7 @@
 namespace App\Livewire\Pages;
 
 use Livewire\Attributes\Title;
-use Namu\WireChat\Livewire\Pages\Chats as WireChatChats;
+use Wirechat\Wirechat\Livewire\Pages\Chats as WireChatChats;
 
 class Chats extends WireChatChats
 {

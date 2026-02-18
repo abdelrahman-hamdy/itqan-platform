@@ -9,7 +9,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use Namu\WireChat\Models\Message;
+use Wirechat\Wirechat\Models\Message;
 
 /**
  * Message Reaction Added Event

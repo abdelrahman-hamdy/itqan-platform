@@ -10,7 +10,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Namu\WireChat\Models\Message;
+use Wirechat\Wirechat\Models\Message;
 
 /**
  * Message Reaction Controller

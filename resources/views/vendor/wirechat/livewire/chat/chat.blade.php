@@ -1,9 +1,9 @@
 {{-- Import helper function to use in chatbox --}}
-@use('Namu\WireChat\Helpers\Helper')
-@use('Namu\WireChat\Facades\WireChat')
+@use('Wirechat\Wirechat\Helpers\Helper')
+@use('Wirechat\Wirechat\Facades\Wirechat')
 
 @php
-    $primaryColor = WireChat::getColor();
+    $primaryColor = Wirechat::getColor();
 @endphp
 
 

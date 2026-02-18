@@ -1,4 +1,4 @@
-@use('Namu\WireChat\Helpers\Helper')
+@use('Wirechat\Wirechat\Helpers\Helper')
 
 <footer class="shrink-0 h-auto relative   sticky bottom-0 mt-auto">
 

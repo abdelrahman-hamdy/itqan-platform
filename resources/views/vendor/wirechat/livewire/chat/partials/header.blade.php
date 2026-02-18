@@ -1,4 +1,4 @@
-@use('Namu\WireChat\Facades\WireChat')
+@use('Wirechat\Wirechat\Facades\Wirechat')
 
 @php
     $group = $conversation->group;
@@ -30,7 +30,7 @@
         <a @if ($this->isWidget()) @click="$dispatch('close-chat',{conversation: @js($conversation->id) })"
             dusk="return_to_home_button_dispatch"
         @else
-            href="{{ route(WireChat::indexRouteName(), $conversation->id) }}"
+            href="{{ route(Wirechat::indexRouteName(), $conversation->id) }}"
             dusk="return_to_home_button_link" @endif
             @class([
                 'shrink-0  cursor-pointer dark:text-white',
@@ -139,7 +139,7 @@
                                 @lang('wirechat::chat.actions.close_chat.label')
                             </x-wirechat::dropdown-link>
                         @else
-                            <x-wirechat::dropdown-link href="{{ route(WireChat::indexRouteName()) }}" class="shrink-0">
+                            <x-wirechat::dropdown-link href="{{ route(Wirechat::indexRouteName()) }}" class="shrink-0">
                                 @lang('wirechat::chat.actions.close_chat.label')
                             </x-wirechat::dropdown-link>
                         @endif

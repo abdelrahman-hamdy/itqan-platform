@@ -8,8 +8,8 @@ use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Namu\WireChat\Models\Message;
-use Namu\WireChat\Models\Participant;
+use Wirechat\Wirechat\Models\Message;
+use Wirechat\Wirechat\Models\Participant;
 
 /**
  * Conversation Stats Widget for Supervisor Panel
@@ -100,17 +100,17 @@ class ConversationStatsWidget extends BaseWidget
                     $unread += Message::where('conversation_id', $p->conversation_id)
                         ->whereNull('deleted_at')
                         ->where('created_at', '>', $p->conversation_read_at)
-                        ->where(function ($q) use ($user) {
-                            $q->where('sendable_id', '!=', $user->id)
-                                ->orWhere('sendable_type', '!=', User::class);
+                        ->whereHas('participant', function ($q) use ($user) {
+                            $q->where('participantable_id', '!=', $user->id)
+                                ->orWhere('participantable_type', '!=', User::class);
                         })
                         ->count();
                 } else {
                     $unread += Message::where('conversation_id', $p->conversation_id)
                         ->whereNull('deleted_at')
-                        ->where(function ($q) use ($user) {
-                            $q->where('sendable_id', '!=', $user->id)
-                                ->orWhere('sendable_type', '!=', User::class);
+                        ->whereHas('participant', function ($q) use ($user) {
+                            $q->where('participantable_id', '!=', $user->id)
+                                ->orWhere('participantable_type', '!=', User::class);
                         })
                         ->count();
                 }

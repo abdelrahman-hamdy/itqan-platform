@@ -14,7 +14,7 @@ use App\Models\User;
 use App\Services\SupervisedChatGroupService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-use Namu\WireChat\Models\Conversation;
+use Wirechat\Wirechat\Models\Conversation;
 
 class MigrateToSupervisedChats extends Command
 {

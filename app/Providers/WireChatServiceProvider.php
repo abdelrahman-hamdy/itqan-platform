@@ -6,22 +6,22 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
-use Namu\WireChat\Livewire\Chat\Chat;
-use Namu\WireChat\Livewire\Chat\Drawer;
-use Namu\WireChat\Livewire\Chat\Group\AddMembers;
-use Namu\WireChat\Livewire\Chat\Group\Info as GroupInfo;
-use Namu\WireChat\Livewire\Chat\Group\Members;
-use Namu\WireChat\Livewire\Chat\Group\Permissions;
-use Namu\WireChat\Livewire\Chat\Info;
-use Namu\WireChat\Livewire\Chats\Chats;
-use Namu\WireChat\Livewire\Modals\Modal;
-use Namu\WireChat\Livewire\New\Chat as NewChat;
-use Namu\WireChat\Livewire\New\Group as NewGroup;
-use Namu\WireChat\Livewire\Pages\Chat as View;
-use Namu\WireChat\Livewire\Pages\Chats as Index;
-use Namu\WireChat\Livewire\Widgets\WireChat;
-use Namu\WireChat\Middleware\BelongsToConversation;
-use Namu\WireChat\Services\WireChatService;
+use Wirechat\Wirechat\Livewire\Chat\Chat;
+use Wirechat\Wirechat\Livewire\Chat\Drawer;
+use Wirechat\Wirechat\Livewire\Chat\Group\AddMembers;
+use Wirechat\Wirechat\Livewire\Chat\Group\Info as GroupInfo;
+use Wirechat\Wirechat\Livewire\Chat\Group\Members;
+use Wirechat\Wirechat\Livewire\Chat\Group\Permissions;
+use Wirechat\Wirechat\Livewire\Chat\Info;
+use Wirechat\Wirechat\Livewire\Chats\Chats;
+use Wirechat\Wirechat\Livewire\Modals\Modal;
+use Wirechat\Wirechat\Livewire\New\Chat as NewChat;
+use Wirechat\Wirechat\Livewire\New\Group as NewGroup;
+use Wirechat\Wirechat\Livewire\Pages\Chat as View;
+use Wirechat\Wirechat\Livewire\Pages\Chats as Index;
+use Wirechat\Wirechat\Livewire\Widgets\Wirechat as WireChatWidget;
+use Wirechat\Wirechat\Middleware\BelongsToConversation;
+use Wirechat\Wirechat\Services\WirechatService;
 
 /**
  * Custom WireChat Service Provider
@@ -44,7 +44,7 @@ class WireChatServiceProvider extends ServiceProvider
 
         // Register facade
         $this->app->singleton('wirechat', function ($app) {
-            return new WireChatService;
+            return new WirechatService;
         });
     }
 
@@ -127,7 +127,7 @@ class WireChatServiceProvider extends ServiceProvider
         Livewire::component('wirechat.chat.group.permissions', Permissions::class);
 
         // Stand-alone widget component
-        Livewire::component('wirechat', WireChat::class);
+        Livewire::component('wirechat', WireChatWidget::class);
     }
 
     /**
@@ -160,7 +160,7 @@ class WireChatServiceProvider extends ServiceProvider
      */
     protected function loadStyles(): void
     {
-        $primaryColor = \Namu\WireChat\Facades\WireChat::getColor();
+        $primaryColor = \Wirechat\Wirechat\Facades\Wirechat::getColor();
         Blade::directive('wirechatStyles', function () use ($primaryColor) {
             return "<?php echo <<<EOT
                 <style>

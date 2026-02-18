@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Namu\WireChat\Models\Conversation;
+use Wirechat\Wirechat\Models\Conversation;
 
 class ChatGroup extends Model
 {

@@ -5,7 +5,7 @@ namespace App\Livewire\Pages;
 use App\Models\ChatGroup;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
-use Namu\WireChat\Livewire\Pages\Chat as WireChatChat;
+use Wirechat\Wirechat\Livewire\Pages\Chat as WireChatChat;
 
 class Chat extends WireChatChat
 {

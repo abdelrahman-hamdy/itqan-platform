@@ -6,14 +6,14 @@ use Exception;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Namu\WireChat\Enums\ConversationType;
-use Namu\WireChat\Enums\MessageType;
-use Namu\WireChat\Enums\ParticipantRole;
-use Namu\WireChat\Models\Attachment;
-use Namu\WireChat\Models\Conversation;
-use Namu\WireChat\Models\Group;
-use Namu\WireChat\Models\Message;
-use Namu\WireChat\Models\Participant;
+use Wirechat\Wirechat\Enums\ConversationType;
+use Wirechat\Wirechat\Enums\MessageType;
+use Wirechat\Wirechat\Enums\ParticipantRole;
+use Wirechat\Wirechat\Models\Attachment;
+use Wirechat\Wirechat\Models\Conversation;
+use Wirechat\Wirechat\Models\Group;
+use Wirechat\Wirechat\Models\Message;
+use Wirechat\Wirechat\Models\Participant;
 
 class MigrateChattifyToWirechat extends Command
 {

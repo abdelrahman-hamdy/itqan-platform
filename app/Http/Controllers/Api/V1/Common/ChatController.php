@@ -13,8 +13,9 @@ use App\Services\ChatPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Namu\WireChat\Models\Conversation;
-use Namu\WireChat\Models\Message;
+use Wirechat\Wirechat\Models\Conversation;
+use Wirechat\Wirechat\Models\Message;
+use Wirechat\Wirechat\Models\Participant;
 
 class ChatController extends Controller
 {
@@ -169,7 +170,7 @@ class ChatController extends Controller
                         'id' => $conversation->lastMessage->id,
                         'body' => $conversation->lastMessage->body,
                         'type' => $conversation->lastMessage->type,
-                        'is_mine' => $conversation->lastMessage->sendable_id === $user->id,
+                        'is_mine' => $conversation->lastMessage->sendable?->id === $user->id,
                         'created_at' => $conversation->lastMessage->created_at->toISOString(),
                     ] : null,
                     'unread_count' => $unreadCount,
@@ -229,10 +230,14 @@ class ChatController extends Controller
         if ($existingConversation) {
             // Send message to existing conversation if provided
             if ($request->filled('message')) {
+                $senderParticipant = Participant::where('conversation_id', $existingConversation->id)
+                    ->where('participantable_id', $user->id)
+                    ->where('participantable_type', User::class)
+                    ->first();
+
                 $message = Message::create([
                     'conversation_id' => $existingConversation->id,
-                    'sendable_id' => $user->id,
-                    'sendable_type' => User::class,
+                    'participant_id' => $senderParticipant->id,
                     'body' => $request->message,
                     'type' => 'text',
                 ]);
@@ -264,10 +269,14 @@ class ChatController extends Controller
 
         // Send initial message if provided
         if ($request->filled('message')) {
+            $senderParticipant = Participant::where('conversation_id', $conversation->id)
+                ->where('participantable_id', $user->id)
+                ->where('participantable_type', User::class)
+                ->first();
+
             Message::create([
                 'conversation_id' => $conversation->id,
-                'sendable_id' => $user->id,
-                'sendable_type' => User::class,
+                'participant_id' => $senderParticipant->id,
                 'body' => $request->message,
                 'type' => 'text',
             ]);
@@ -438,9 +447,9 @@ class ChatController extends Controller
                 'body' => $message->body,
                 'type' => $message->type,
                 'attachments' => $message->attachments ?? [],
-                'is_mine' => $message->sendable_id === $user->id,
+                'is_mine' => $message->sendable?->id === $user->id,
                 'sender' => [
-                    'id' => $message->sendable_id,
+                    'id' => $message->sendable?->id,
                     'name' => $message->sendable?->name,
                     'avatar' => $message->sendable?->avatar
                         ? asset('storage/'.$message->sendable->avatar)
@@ -479,10 +488,14 @@ class ChatController extends Controller
             return $this->notFound(__('Conversation not found.'));
         }
 
+        $senderParticipant = Participant::where('conversation_id', $conversation->id)
+            ->where('participantable_id', $user->id)
+            ->where('participantable_type', User::class)
+            ->first();
+
         $messageData = [
             'conversation_id' => $conversation->id,
-            'sendable_id' => $user->id,
-            'sendable_type' => User::class,
+            'participant_id' => $senderParticipant->id,
             'type' => 'text',
         ];
 
@@ -623,7 +636,7 @@ class ChatController extends Controller
         }
 
         // Only sender can edit their message
-        if ($message->sendable_id !== $user->id || $message->sendable_type !== User::class) {
+        if ($message->sendable?->id !== $user->id || ! ($message->sendable instanceof User)) {
             return $this->error(
                 __('You can only edit your own messages.'),
                 403,
@@ -661,7 +674,7 @@ class ChatController extends Controller
         }
 
         // Only sender can delete their message
-        if ($message->sendable_id !== $user->id || $message->sendable_type !== User::class) {
+        if ($message->sendable?->id !== $user->id || ! ($message->sendable instanceof User)) {
             return $this->error(
                 __('You can only delete your own messages.'),
                 403,
@@ -869,7 +882,7 @@ class ChatController extends Controller
                         'id' => $conversation->lastMessage->id,
                         'body' => $conversation->lastMessage->body,
                         'type' => $conversation->lastMessage->type,
-                        'is_mine' => $conversation->lastMessage->sendable_id === $user->id,
+                        'is_mine' => $conversation->lastMessage->sendable?->id === $user->id,
                         'created_at' => $conversation->lastMessage->created_at->toISOString(),
                     ] : null,
                     'unread_count' => $unreadCount,
@@ -985,7 +998,7 @@ class ChatController extends Controller
                         'size' => $attachment->size ?? null,
                         'mime' => $attachment->mime_type ?? null,
                         'sent_by' => [
-                            'id' => $message->sendable_id,
+                            'id' => $message->sendable?->id,
                             'name' => $message->sendable?->name,
                         ],
                         'sent_at' => $message->created_at->toISOString(),

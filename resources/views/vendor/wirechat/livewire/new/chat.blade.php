@@ -1,4 +1,4 @@
-@use('Namu\WireChat\Facades\WireChat')
+@use('Wirechat\Wirechat\Facades\Wirechat')
 <div id="new-chat-modal ">
 
     <div 
@@ -34,7 +34,7 @@
     <div class="relative w-full">
 
         {{-- New Group button --}}
-        @if (WireChat::showNewGroupModalButton() && auth()->user()->canCreateGroups())
+        @if (Wirechat::showNewGroupModalButton() && auth()->user()->canCreateGroups())
 
         {{-- Buton to trigger opening of new grop modal --}}
         <x-wirechat::actions.new-group widget="{{$this->isWidget()}}">
