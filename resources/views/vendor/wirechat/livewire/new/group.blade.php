@@ -204,15 +204,15 @@
                                 <li class="flex cursor-pointer group gap-2 items-center p-2">
 
                                     <label
-                                        wire:click="toggleMember('{{ $user->id }}',{{ json_encode(get_class($user)) }})"
+                                        wire:click="toggleMember('{{ $user['id'] }}',{{ json_encode($user['type']) }})"
                                         class="flex cursor-pointer gap-2 items-center w-full">
-                                        <x-wirechat::avatar  src="{{ $user->cover_url }}" class="w-10 h-10" />
+                                        <x-wirechat::avatar  src="{{ $user['wirechat_avatar_url'] }}" class="w-10 h-10" />
 
                                         <p class="group-hover:underline transition-all truncate">
-                                            {{ $user->display_name }}</p>
+                                            {{ $user['wirechat_name'] }}</p>
 
                                         <div class="ml-auto">
-                                            @if ($selectedMembers->contains(fn($member) => $member->id == $user->id && get_class($member) == get_class($user)))
+                                            @if ($selectedMembers->contains(fn($member) => $member->id == $user['id'] && $member->getMorphClass() == $user['type']))
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                                     fill="currentColor"
                                                     class="bi bi-plus-square-fill w-6 h-6 text-green-500"

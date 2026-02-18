@@ -90,7 +90,7 @@
         encodedType = @js(\Wirechat\Wirechat\Helpers\MorphClassResolver::encode(auth()->user()->getMorphClass()));
 
         {{-- We listen to notify participant event --}}
-        Echo.private(`participant.${encodedType}.${userId}`)
+        Echo.private(`itqan.participant.${encodedType}.${userId}`)
             .listen('.Wirechat\\Wirechat\\Events\\NotifyParticipant', (e) => {
 
                 {{--Ignore if user is currently open in the chat  --}}

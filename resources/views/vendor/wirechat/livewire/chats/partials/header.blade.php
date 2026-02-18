@@ -7,9 +7,9 @@
     {{-- Title/name and Icon --}}
     <section class=" justify-between flex items-center   pb-2">
 
-        @if (isset($title))
+        @if (isset($heading))
             <div class="flex items-center gap-2 truncate  " wire:ignore>
-                <h2 class=" text-2xl font-bold dark:text-white"  dusk="title">{{$title}}</h2>
+                <h2 class=" text-2xl font-bold dark:text-white"  dusk="heading">{{$heading}}</h2>
             </div>
         @endif
 
@@ -20,7 +20,7 @@
             {{-- New chat button removed as per user request --}}
 
             {{-- Only show if is not widget --}}
-            @if ($showHomeRouteButton)
+            @if ($redirectToHomeAction)
             @php
                 // Navigate to profile page based on user type
                 $profileRoute = match(auth()->user()?->user_type) {
@@ -51,7 +51,7 @@
     </section>
 
     {{-- Search input --}}
-    @if ($allowChatsSearch)
+    @if ($chatsSearch)
         <section class="mt-4">
             <div class="px-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 grid grid-cols-12 items-center transition-colors duration-200">
 

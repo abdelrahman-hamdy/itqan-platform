@@ -34,10 +34,10 @@
     <div class="relative w-full">
 
         {{-- New Group button --}}
-        @if (Wirechat::showNewGroupModalButton() && auth()->user()->canCreateGroups())
+        @if ($this->panel()->hasCreateGroupAction() && auth()->user()->canCreateGroups())
 
         {{-- Buton to trigger opening of new grop modal --}}
-        <x-wirechat::actions.new-group widget="{{$this->isWidget()}}">
+        <x-wirechat::actions.new-group widget="{{$this->isWidget()}}" panel="{{$this->panel}}">
         <button  @dusk="open_new_group_modal_button"  class="flex items-center gap-3 my-4  rounded-lg p-2 w-full border  transition-colors border-[var(--wc-light-border)]  dark:border-[var(--wc-dark-border)] hover:border-[var(--wc-light-secondary)] dark:hover:border-[var(--wc-dark-secondary)]" >
             <span style=" color: var(--wc-brand-primary); " class="p-1 bg-gray-100  rounded-full ">
 
@@ -59,13 +59,13 @@
 
                     @foreach ($users as $key => $user)
                         <li wire:key="user-{{ $key }}"
-                            wire:click="createConversation('{{ $user->id }}',{{ json_encode(get_class($user)) }})"
+                            wire:click="createConversation('{{ $user['id'] }}',{{ json_encode($user['type']) }})"
                             class="flex cursor-pointer group gap-2 items-center p-2">
 
-                            <x-wirechat::avatar :src="$user->cover_url" class="w-10 h-10" />
+                            <x-wirechat::avatar :src="$user['wirechat_avatar_url']" class="w-10 h-10" />
 
                             <p class="group-hover:underline transition-all">
-                                {{ $user->display_name }}</p>
+                                {{ $user['wirechat_name'] }}</p>
 
                         </li>
                     @endforeach
