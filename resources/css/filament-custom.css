@@ -6,17 +6,17 @@
  */
 
 /* Custom CSS files needed in Filament panels */
-@import 'calendar.css';
+@import './calendar.css' layer(utilities);
 
-@tailwind utilities;
+@import 'tailwindcss/utilities' layer(utilities);
+
+@config '../../tailwind.config.js';
 
 /* Custom utilities from app.css that Filament panels may need */
-@layer utilities {
-    .scrollbar-hide {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-    }
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }

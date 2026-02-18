@@ -1,4 +1,3 @@
-import defaultTheme from 'tailwindcss/defaultTheme';
 import forms from '@tailwindcss/forms';
 import typography from '@tailwindcss/typography';
 import aspectRatio from '@tailwindcss/aspect-ratio';
@@ -78,12 +77,12 @@ export default {
         'via-blue-600',
         'to-indigo-700',
         'bg-gradient-to-br',
-        
+
         // Business section gradients
         'from-teal-600',
         'via-cyan-600',
         'to-blue-600',
-        
+
         // Common gradient combinations
         'from-slate-800',
         'via-blue-900',
@@ -111,7 +110,7 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Tajawal', ...defaultTheme.fontFamily.sans],
+                sans: ['Tajawal', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
                 arabic: ['Tajawal'],
             },
             colors: {
@@ -130,9 +129,8 @@ export default {
         forms,
         typography,
         aspectRatio,
-        require('tailwindcss-rtl'),
     ],
 
     // Dark mode support
     darkMode: 'class',
-}; 
+};

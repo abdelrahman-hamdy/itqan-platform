@@ -6,6 +6,7 @@ use App\Enums\NotificationCategory;
 use App\Services\NotificationService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -21,10 +22,6 @@ class NotificationCenter extends Component
     public $perPage = 15;
 
     public $hasMore = true;
-
-    protected $listeners = [
-        'notification.sent' => 'handleNotificationEvent',
-    ];
 
     public function mount()
     {
@@ -102,6 +99,7 @@ class NotificationCenter extends Component
         $this->dispatch('notification-deleted', ['id' => $notificationId]);
     }
 
+    #[On('notification.sent')]
     public function handleNotificationEvent($event = null)
     {
         $this->loadUnreadCount();

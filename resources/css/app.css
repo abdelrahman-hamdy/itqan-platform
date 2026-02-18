@@ -6,46 +6,64 @@
 /* ==========================================================================
    Icon Libraries - Bundled via npm for better caching and offline support
    ========================================================================== */
-@import 'remixicon/fonts/remixicon.css';
-@import 'flag-icons/css/flag-icons.min.css';
+@import 'remixicon/fonts/remixicon.css' layer(base);
+@import 'flag-icons/css/flag-icons.min.css' layer(base);
 
 /* Import modular CSS files - must be before @tailwind directives */
-@import 'calendar.css';
-@import 'meeting-interface.css';
-@import 'progress.css';
-@import 'chat.css';
-@import 'chat-enhanced.css';
-@import './components/phone-input.css';
+@import './calendar.css' layer(base);
+@import './meeting-interface.css' layer(base);
+@import './progress.css' layer(base);
+@import './chat.css' layer(base);
+@import './chat-enhanced.css' layer(base);
+@import './components/phone-input.css' layer(base);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-@layer utilities {
-    .scrollbar-hide {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-    }
+@config '../../tailwind.config.js';
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
 }
 
-/* ==========================================================================
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  /* ==========================================================================
    Sticky Sidebar - CSS-only replacement for sticky-sidebar-v2
    Applies only on desktop (lg breakpoint) to match previous JS behavior
    ========================================================================== */
-@media (min-width: 1024px) {
+  @media (min-width: 1024px) {
     [data-sticky-sidebar] {
-        position: sticky;
-        top: 104px; /* ~80px header + 24px gap */
-        align-self: start;
+      position: sticky;
+      top: 104px; /* ~80px header + 24px gap */
+      align-self: start;
     }
-}
+  }
 
-/* ==========================================================================
+  /* ==========================================================================
    Base Layer - Global font and foundational styles
    ========================================================================== */
+}
 @layer base {
     /* Apply Tajawal font globally at the base level */
     html {
@@ -87,39 +105,8 @@ html {
     font-family: 'Tajawal', sans-serif;
 }
 
-/* ==========================================================================
-   RTL/LTR Logical Properties - Using CSS logical properties for bidirectional support
-   ========================================================================== */
-
-/* Logical margin utilities */
-.ms-auto { margin-inline-start: auto; }
-.me-auto { margin-inline-end: auto; }
-.ms-1 { margin-inline-start: 0.25rem; }
-.me-1 { margin-inline-end: 0.25rem; }
-.ms-2 { margin-inline-start: 0.5rem; }
-.me-2 { margin-inline-end: 0.5rem; }
-.ms-3 { margin-inline-start: 0.75rem; }
-.me-3 { margin-inline-end: 0.75rem; }
-.ms-4 { margin-inline-start: 1rem; }
-.me-4 { margin-inline-end: 1rem; }
-
-/* Logical padding utilities */
-.ps-1 { padding-inline-start: 0.25rem; }
-.pe-1 { padding-inline-end: 0.25rem; }
-.ps-2 { padding-inline-start: 0.5rem; }
-.pe-2 { padding-inline-end: 0.5rem; }
-.ps-3 { padding-inline-start: 0.75rem; }
-.pe-3 { padding-inline-end: 0.75rem; }
-.ps-4 { padding-inline-start: 1rem; }
-.pe-4 { padding-inline-end: 1rem; }
-
-/* Logical positioning utilities */
-.start-0 { inset-inline-start: 0; }
-.end-0 { inset-inline-end: 0; }
-
-/* Logical border utilities */
-.border-s { border-inline-start-width: 1px; }
-.border-e { border-inline-end-width: 1px; }
+/* RTL/LTR Logical Properties - ms-*, me-*, ps-*, pe-*, start-*, end-*, border-s/e
+   are all built-in in TailwindCSS v4. Custom definitions removed. */
 
 /* ==========================================================================
    Sidebar and Main Content Layout - Direction-aware positioning
@@ -258,14 +245,7 @@ html {
     border-bottom-right-radius: 0;
 }
 
-/* Text alignment utilities that respect direction */
-.text-start {
-    text-align: start;
-}
-
-.text-end {
-    text-align: end;
-}
+/* text-start and text-end are built-in in TailwindCSS v4 */
 
 /* Float utilities that respect direction */
 [dir="rtl"] .float-start { float: right; }
@@ -505,27 +485,7 @@ input[type="number"],
 }
 
 
-/* Line clamp utilities */
-.line-clamp-1 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 1;
-}
-
-.line-clamp-2 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-}
-
-.line-clamp-3 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-}
+/* line-clamp-* utilities are built-in in TailwindCSS v4 */
 
 /* Modern Animations and Effects */
 @keyframes float {
