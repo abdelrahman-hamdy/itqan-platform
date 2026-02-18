@@ -28,6 +28,7 @@ use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontWeight;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
@@ -175,6 +176,14 @@ class StudentProfileResource extends BaseStudentProfileResource
             })
             ->sortable()
             ->toggleable(isToggledHiddenByDefault: true);
+
+        $columns[] = IconColumn::make('user.active_status')
+            ->label('الحالة')
+            ->boolean()
+            ->trueIcon('heroicon-o-check-circle')
+            ->falseIcon('heroicon-o-x-circle')
+            ->trueColor('success')
+            ->falseColor('danger');
 
         $columns[] = TextColumn::make('enrollment_date')
             ->label('تاريخ التسجيل')
