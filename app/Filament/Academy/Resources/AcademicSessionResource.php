@@ -9,12 +9,10 @@ use App\Filament\Academy\Resources\AcademicSessionResource\Pages\EditAcademicSes
 use App\Filament\Academy\Resources\AcademicSessionResource\Pages\ListAcademicSessions;
 use App\Filament\Academy\Resources\AcademicSessionResource\Pages\ViewAcademicSession;
 use App\Filament\Shared\Actions\MeetingActions;
-use App\Filament\Shared\Actions\SessionStatusActions;
 use App\Filament\Shared\Resources\BaseAcademicSessionResource;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicTeacherProfile;
 use App\Models\User;
-use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -132,10 +130,6 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                 EditAction::make()
                     ->label('تعديل'),
                 MeetingActions::viewMeeting('academic'),
-                static::makeStartSessionAction(),
-                static::makeCompleteSessionAction(),
-                static::makeJoinMeetingAction(),
-                SessionStatusActions::cancelSession(role: 'admin'),
                 DeleteAction::make()
                     ->label('حذف'),
             ]),

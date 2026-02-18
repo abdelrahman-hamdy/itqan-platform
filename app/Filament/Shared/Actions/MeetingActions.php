@@ -2,7 +2,6 @@
 
 namespace App\Filament\Shared\Actions;
 
-use App\Enums\SessionStatus;
 use Filament\Actions\Action;
 
 class MeetingActions
@@ -16,13 +15,7 @@ class MeetingActions
             ->label(__('supervisor.observation.view_meeting'))
             ->icon('heroicon-o-video-camera')
             ->color('info')
-            ->visible(fn ($record): bool => ! empty($record->meeting_room_name)
-                && in_array(
-                    $record->status instanceof SessionStatus
-                        ? $record->status
-                        : SessionStatus::tryFrom($record->status),
-                    [SessionStatus::READY, SessionStatus::ONGOING]
-                ))
+            ->visible(fn ($record): bool => ! empty($record->meeting_room_name))
             ->url(function ($record) use ($sessionType): string {
                 $subdomain = $record->academy?->subdomain
                     ?? ($sessionType === 'interactive'

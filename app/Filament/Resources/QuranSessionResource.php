@@ -3,20 +3,20 @@
 namespace App\Filament\Resources;
 
 use App\Enums\SessionStatus;
-use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Resources\QuranSessionResource\Pages;
 use App\Filament\Resources\QuranSessionResource\Pages\CreateQuranSession;
 use App\Filament\Resources\QuranSessionResource\Pages\EditQuranSession;
 use App\Filament\Resources\QuranSessionResource\Pages\ListQuranSessions;
 use App\Filament\Resources\QuranSessionResource\Pages\ViewQuranSession;
+use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Shared\Resources\BaseQuranSessionResource;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\User;
 use App\Services\AcademyContextService;
-use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
@@ -131,6 +131,7 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ViewAction::make()->label('عرض'),
                 EditAction::make()->label('تعديل'),
                 MeetingActions::viewMeeting('quran'),
+                DeleteAction::make()->label('حذف'),
                 RestoreAction::make()->label(__('filament.actions.restore')),
                 ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
             ]),

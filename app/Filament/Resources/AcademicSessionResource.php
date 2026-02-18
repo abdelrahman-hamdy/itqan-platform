@@ -2,41 +2,38 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Actions\ActionGroup;
-use Filament\Actions\Action;
-use App\Filament\Shared\Actions\MeetingActions;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Schemas\Components\Grid;
 use App\Enums\AttendanceStatus;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Forms\Components\DatePicker;
-use Filament\Tables\Columns\TextColumn;
-use App\Filament\Resources\AcademicSessionResource\Pages\ListAcademicSessions;
-use App\Filament\Resources\AcademicSessionResource\Pages\CreateAcademicSession;
-use App\Filament\Resources\AcademicSessionResource\Pages\ViewAcademicSession;
-use App\Filament\Resources\AcademicSessionResource\Pages\EditAcademicSession;
 use App\Enums\SessionStatus;
 use App\Filament\Resources\AcademicSessionResource\Pages;
+use App\Filament\Resources\AcademicSessionResource\Pages\CreateAcademicSession;
+use App\Filament\Resources\AcademicSessionResource\Pages\EditAcademicSession;
+use App\Filament\Resources\AcademicSessionResource\Pages\ListAcademicSessions;
+use App\Filament\Resources\AcademicSessionResource\Pages\ViewAcademicSession;
+use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Shared\Resources\BaseAcademicSessionResource;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicTeacherProfile;
 use App\Models\User;
-use Filament\Forms;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Tables;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -66,7 +63,7 @@ class AcademicSessionResource extends BaseAcademicSessionResource
 
     protected static ?string $navigationLabel = 'الجلسات الأكاديمية';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة التعليم الأكاديمي';
 
     protected static ?int $navigationSort = 2;
 
@@ -137,18 +134,13 @@ class AcademicSessionResource extends BaseAcademicSessionResource
     {
         return [
             ActionGroup::make([
-                MeetingActions::viewMeeting('academic'),
-
                 ViewAction::make()
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
+                MeetingActions::viewMeeting('academic'),
                 DeleteAction::make()
                     ->label('حذف'),
-
-                static::makeStartSessionAction(),
-                static::makeCompleteSessionAction(),
-                static::makeJoinMeetingAction(),
 
                 RestoreAction::make()
                     ->label(__('filament.actions.restore')),

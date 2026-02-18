@@ -2,14 +2,12 @@
 
 namespace App\Filament\Academy\Resources;
 
-use App\Enums\SessionStatus;
 use App\Filament\Academy\Resources\InteractiveCourseSessionResource\Pages\EditInteractiveCourseSession;
 use App\Filament\Academy\Resources\InteractiveCourseSessionResource\Pages\ListInteractiveCourseSessions;
 use App\Filament\Academy\Resources\InteractiveCourseSessionResource\Pages\ViewInteractiveCourseSession;
 use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Shared\Resources\BaseInteractiveCourseSessionResource;
 use App\Models\InteractiveCourse;
-use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -92,10 +90,6 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
                 EditAction::make()
                     ->label('تعديل'),
                 MeetingActions::viewMeeting('interactive'),
-                static::makeStartSessionAction(),
-                static::makeCompleteSessionAction(),
-                static::makeCancelSessionAction('admin'),
-                static::makeJoinMeetingAction(),
                 DeleteAction::make()
                     ->label('حذف'),
             ]),

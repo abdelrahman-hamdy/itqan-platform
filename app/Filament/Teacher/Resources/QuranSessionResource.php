@@ -6,7 +6,6 @@ use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Shared\Actions\MeetingActions;
-use App\Filament\Shared\Actions\SessionStatusActions;
 use App\Filament\Shared\Resources\BaseQuranSessionResource;
 use App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 use App\Filament\Teacher\Resources\QuranSessionResource\Pages\CreateQuranSession;
@@ -18,20 +17,19 @@ use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\User;
 use App\Services\AcademyContextService;
-use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Schemas\Components\Section;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -101,30 +99,6 @@ class QuranSessionResource extends BaseQuranSessionResource
                 EditAction::make()
                     ->label('تعديل'),
                 MeetingActions::viewMeeting('quran'),
-                Action::make('start_session')
-                    ->label('بدء الجلسة')
-                    ->icon('heroicon-o-play')
-                    ->color('success')
-                    ->visible(fn (QuranSession $record): bool => $record->status === SessionStatus::SCHEDULED->value)
-                    ->action(function (QuranSession $record) {
-                        $record->update([
-                            'status' => SessionStatus::ONGOING->value,
-                            'started_at' => now(),
-                        ]);
-                    }),
-                Action::make('complete_session')
-                    ->label('إنهاء الجلسة')
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(fn (QuranSession $record): bool => $record->status === SessionStatus::ONGOING->value)
-                    ->action(function (QuranSession $record) {
-                        $record->update([
-                            'status' => SessionStatus::COMPLETED->value,
-                            'ended_at' => now(),
-                            'actual_duration_minutes' => now()->diffInMinutes($record->started_at),
-                        ]);
-                    }),
-                SessionStatusActions::cancelSession(role: 'teacher'),
                 DeleteAction::make()
                     ->label('حذف')
                     ->after(function (QuranSession $record) {

@@ -8,13 +8,11 @@ use App\Filament\Academy\Resources\QuranSessionResource\Pages\EditQuranSession;
 use App\Filament\Academy\Resources\QuranSessionResource\Pages\ListQuranSessions;
 use App\Filament\Academy\Resources\QuranSessionResource\Pages\ViewQuranSession;
 use App\Filament\Shared\Actions\MeetingActions;
-use App\Filament\Shared\Actions\SessionStatusActions;
 use App\Filament\Shared\Resources\BaseQuranSessionResource;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\User;
 use App\Services\AcademyContextService;
-use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -130,7 +128,6 @@ class QuranSessionResource extends BaseQuranSessionResource
                 EditAction::make()
                     ->label('تعديل'),
                 MeetingActions::viewMeeting('quran'),
-                ...SessionStatusActions::all('admin'),
                 DeleteAction::make()
                     ->label('حذف'),
             ]),

@@ -2,29 +2,27 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
+use App\Enums\SessionStatus;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages\CreateInteractiveCourseSession;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages\EditInteractiveCourseSession;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages\ListInteractiveCourseSessions;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages\ViewInteractiveCourseSession;
 use App\Filament\Shared\Actions\MeetingActions;
-use Filament\Actions\ActionGroup;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
+use App\Filament\Shared\Resources\BaseInteractiveCourseSessionResource;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
-use App\Enums\SessionStatus;
-use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages\ListInteractiveCourseSessions;
-use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages\CreateInteractiveCourseSession;
-use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages\ViewInteractiveCourseSession;
-use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages\EditInteractiveCourseSession;
-use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages;
-use App\Filament\Shared\Resources\BaseInteractiveCourseSessionResource;
 use App\Models\InteractiveCourseSession;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -42,7 +40,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     // Navigation Configuration
     // ========================================
 
-    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
+    protected static string|\UnitEnum|null $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 2;
 
@@ -124,11 +122,6 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
                 EditAction::make()
                     ->label('تعديل'),
                 MeetingActions::viewMeeting('interactive'),
-
-                static::makeStartSessionAction(),
-                static::makeCompleteSessionAction(),
-                static::makeCancelSessionAction('teacher'),
-                static::makeJoinMeetingAction(),
             ]),
         ];
     }

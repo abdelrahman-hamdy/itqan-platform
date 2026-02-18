@@ -2,33 +2,29 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Actions\ActionGroup;
-use Filament\Actions\Action;
-use App\Enums\SessionStatus;
-use App\Filament\Shared\Actions\MeetingActions;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Filters\SelectFilter;
-use App\Filament\Resources\InteractiveCourseSessionResource\Pages\ListInteractiveCourseSessions;
-use App\Filament\Resources\InteractiveCourseSessionResource\Pages\CreateInteractiveCourseSession;
-use App\Filament\Resources\InteractiveCourseSessionResource\Pages\ViewInteractiveCourseSession;
-use App\Filament\Resources\InteractiveCourseSessionResource\Pages\EditInteractiveCourseSession;
 use App\Filament\Resources\InteractiveCourseSessionResource\Pages;
+use App\Filament\Resources\InteractiveCourseSessionResource\Pages\CreateInteractiveCourseSession;
+use App\Filament\Resources\InteractiveCourseSessionResource\Pages\EditInteractiveCourseSession;
+use App\Filament\Resources\InteractiveCourseSessionResource\Pages\ListInteractiveCourseSessions;
+use App\Filament\Resources\InteractiveCourseSessionResource\Pages\ViewInteractiveCourseSession;
+use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Shared\Resources\BaseInteractiveCourseSessionResource;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -56,7 +52,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     // Navigation Configuration
     // ========================================
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة التعليم الأكاديمي';
 
     protected static ?int $navigationSort = 3;
 
@@ -110,19 +106,13 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     {
         return [
             ActionGroup::make([
-                MeetingActions::viewMeeting('interactive'),
-
                 ViewAction::make()
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
+                MeetingActions::viewMeeting('interactive'),
                 DeleteAction::make()
                     ->label('حذف'),
-
-                static::makeStartSessionAction(),
-                static::makeCompleteSessionAction(),
-                static::makeCancelSessionAction('admin'),
-                static::makeJoinMeetingAction(),
 
                 RestoreAction::make()
                     ->label(__('filament.actions.restore')),
