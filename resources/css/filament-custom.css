@@ -1,16 +1,25 @@
 /*
  * Custom CSS for Filament panels.
- * Only includes Tailwind utilities and custom CSS needed by Filament hook views.
- * Does NOT include @tailwind base (conflicts with Filament's own reset)
- * Does NOT include icon libraries (flag-icons, remixicon)
+ * Includes Tailwind theme (CSS variables) + utilities for custom Filament components.
+ * Does NOT include tailwindcss/preflight (conflicts with Filament's own reset).
+ * Does NOT include icon libraries (flag-icons, remixicon).
  */
 
 /* Custom CSS files needed in Filament panels */
 @import './calendar.css' layer(utilities);
 
+/* TailwindCSS v4: theme defines CSS variables (--color-*, --spacing-*, etc.)
+   that utilities reference. Without it, bg-blue-500 etc. resolve to nothing. */
+@import 'tailwindcss/theme' layer(theme);
 @import 'tailwindcss/utilities' layer(utilities);
 
 @config '../../tailwind.config.js';
+
+/* TailwindCSS v4: partial imports do NOT auto-detect content.
+   @source directives tell Tailwind where to scan for utility class usage. */
+@source "../../app/Filament";
+@source "../../app/Livewire";
+@source "../../resources/views";
 
 /* Custom utilities from app.css that Filament panels may need */
 @utility scrollbar-hide {
