@@ -13,7 +13,7 @@ use Wirechat\Wirechat\Livewire\Chat\Group\Info as GroupInfo;
 use Wirechat\Wirechat\Livewire\Chat\Group\Members;
 use Wirechat\Wirechat\Livewire\Chat\Group\Permissions;
 use Wirechat\Wirechat\Livewire\Chat\Info;
-use Wirechat\Wirechat\Livewire\Chats\Chats;
+use App\Livewire\Chat\Chats;
 use Wirechat\Wirechat\Livewire\Modals\Modal;
 use Wirechat\Wirechat\Livewire\New\Chat as NewChat;
 use Wirechat\Wirechat\Livewire\New\Group as NewGroup;
@@ -21,6 +21,7 @@ use Wirechat\Wirechat\Livewire\Pages\Chat as View;
 use Wirechat\Wirechat\Livewire\Pages\Chats as Index;
 use Wirechat\Wirechat\Livewire\Widgets\Wirechat as WireChatWidget;
 use Wirechat\Wirechat\Middleware\BelongsToConversation;
+use App\Support\ItqanPanel;
 use Wirechat\Wirechat\Panel;
 use Wirechat\Wirechat\PanelRegistry;
 use Wirechat\Wirechat\Services\WirechatService;
@@ -51,7 +52,7 @@ class WireChatServiceProvider extends ServiceProvider
 
         // Register default WireChat panel (required since v0.5.0)
         $this->app->afterResolving(PanelRegistry::class, function (PanelRegistry $registry) {
-            $panel = Panel::make()
+            $panel = ItqanPanel::make()
                 ->id('itqan')
                 ->default()
                 ->registerRoutes(false)
