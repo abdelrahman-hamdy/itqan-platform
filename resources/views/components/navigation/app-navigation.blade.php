@@ -366,8 +366,7 @@
            class="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-all duration-200"
            aria-label="{{ __('components.navigation.app.messages.open_messages') }}">
           <i class="ri-message-2-line text-xl"></i>
-          <span id="unread-count-badge" class="absolute top-0 left-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-600 rounded-full hidden">
-            0
+          <span id="unread-count-badge" class="absolute top-0 start-0 items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-600 rounded-full" style="display:none">
           </span>
         </a>
         <script>
@@ -386,9 +385,9 @@
                     if (badge && data.unread_count !== undefined) {
                         if (data.unread_count > 0) {
                             badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
-                            badge.classList.remove('hidden');
+                            badge.style.display = 'inline-flex';
                         } else {
-                            badge.classList.add('hidden');
+                            badge.style.display = 'none';
                         }
                     }
                 })

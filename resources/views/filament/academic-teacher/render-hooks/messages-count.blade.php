@@ -4,7 +4,7 @@
     position: relative;
     display: inline-flex;
     align-items: center;
-    margin-left: 1rem;
+    margin-inline-start: 1rem;
 }
 
 .message-count-icon {
@@ -28,7 +28,7 @@
 .message-count-badge {
     position: absolute;
     top: -8px;
-    right: -8px;
+    inset-inline-end: -8px;
     background-color: #10b981;
     color: white;
     font-size: 0.75rem;
@@ -52,7 +52,7 @@
        class="message-count-icon"
        title="الرسائل">
         <i class="ri-message-2-line"></i>
-        <span id="filament-unread-count-badge" class="message-count-badge">0</span>
+        <span id="filament-unread-count-badge" class="message-count-badge"></span>
     </a>
 </div>
 
