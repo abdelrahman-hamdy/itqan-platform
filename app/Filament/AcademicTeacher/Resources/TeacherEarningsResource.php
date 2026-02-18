@@ -155,11 +155,6 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
                 ->falseColor('success')
                 ->toggleable(isToggledHiddenByDefault: true),
 
-            TextColumn::make('payout.reference_number')
-                ->label('رقم الدفعة')
-                ->placeholder('لم تصرف بعد')
-                ->toggleable(isToggledHiddenByDefault: true),
-
             TextColumn::make('calculated_at')
                 ->label('تاريخ الحساب')
                 ->dateTime('Y-m-d')
@@ -279,9 +274,6 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
                         IconEntry::make('is_disputed')
                             ->label('متنازع')
                             ->boolean(),
-                        TextEntry::make('payout.reference_number')
-                            ->label('رقم الدفعة')
-                            ->placeholder('لم تصرف بعد'),
                         TextEntry::make('dispute_notes')
                             ->label('ملاحظات النزاع')
                             ->visible(fn ($record) => $record->is_disputed),
