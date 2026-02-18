@@ -13,6 +13,7 @@ use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use App\ValueObjects\CalendarEventId;
 use Carbon\Carbon;
+use Livewire\Attributes\On;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
@@ -332,6 +333,7 @@ trait CalendarWidgetBehavior
     /**
      * Refresh the calendar
      */
+    #[On('refresh-calendar')]
     public function refreshCalendar(): void
     {
         $this->dispatch('filament-fullcalendar--refresh');

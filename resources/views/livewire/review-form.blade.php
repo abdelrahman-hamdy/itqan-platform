@@ -78,7 +78,7 @@
                                 <p class="text-gray-700">{{ $cannotReviewReason }}</p>
                             </div>
                         @else
-                            <form wire:submit.prevent="submitReview">
+                            <form wire:submit="submitReview">
                                 {{-- Star Rating --}}
                                 <div class="mb-6">
                                     <label class="block text-sm font-medium text-gray-700 mb-3 text-center">

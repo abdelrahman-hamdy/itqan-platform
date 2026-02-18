@@ -18,6 +18,7 @@ use App\Filament\Shared\Traits\FormatsCalendarData;
 use App\Services\AcademyContextService;
 use App\Services\Calendar\CalendarConfiguration;
 use App\Services\Calendar\CalendarEventHandler;
+use Livewire\Attributes\On;
 use App\Services\Calendar\EventFetchingService;
 use App\ValueObjects\CalendarEventId;
 use Carbon\Carbon;
@@ -78,13 +79,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
      */
     public ?string $editingEventId = null;
 
-    /**
-     * Event listeners for real-time updates
-     */
-    protected $listeners = [
-        'refresh-calendar' => 'refreshCalendar',
-        'triggerEditAction' => 'handleTriggerEditAction',
-    ];
+    // Event listeners migrated to #[On()] attributes on individual methods
 
     /**
      * Configuration instance
@@ -673,6 +668,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
     /**
      * Handle trigger edit action event (kept for backwards compatibility)
      */
+    #[On('triggerEditAction')]
     public function handleTriggerEditAction(string $eventId): void
     {
         $this->openEditDialog($eventId);

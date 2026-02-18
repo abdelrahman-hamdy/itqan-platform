@@ -18,6 +18,7 @@ use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\User;
+use Livewire\Attributes\On;
 use App\Services\AcademyContextService;
 use App\Services\Calendar\CalendarConfiguration;
 use App\Services\Calendar\CalendarEventHandler;
@@ -64,10 +65,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
 
     public ?string $editingEventId = null;
 
-    protected $listeners = [
-        'refresh-calendar' => 'refreshCalendar',
-        'teacherSelected' => 'handleTeacherSelected',
-    ];
+    // Event listeners migrated to #[On()] attributes on individual methods
 
     protected ?CalendarConfiguration $configuration = null;
 
@@ -82,6 +80,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
     /**
      * Handle teacher selection from parent page
      */
+    #[On('teacherSelected')]
     public function handleTeacherSelected(int $teacherId, string $teacherType): void
     {
         $this->selectedTeacherId = $teacherId;
