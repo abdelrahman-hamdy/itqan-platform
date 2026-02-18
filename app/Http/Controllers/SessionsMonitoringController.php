@@ -13,8 +13,9 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * Frontend sessions monitoring page for Supervisors & SuperAdmins.
- * Lists all sessions in scope with filters, allowing observation of active meetings.
+ * Frontend sessions monitoring page.
+ * Index: Admins, Supervisors, SuperAdmins can list all sessions.
+ * Show: All authenticated staff (including teachers) can view their own sessions.
  */
 class SessionsMonitoringController extends Controller
 {
@@ -54,7 +55,8 @@ class SessionsMonitoringController extends Controller
     {
         $user = auth()->user();
 
-        if (! $user->isSupervisor() && ! $user->isSuperAdmin() && ! $user->isAdmin()) {
+        if (! $user->isSupervisor() && ! $user->isSuperAdmin() && ! $user->isAdmin()
+            && ! $user->isQuranTeacher() && ! $user->isAcademicTeacher()) {
             abort(403);
         }
 
@@ -130,8 +132,8 @@ class SessionsMonitoringController extends Controller
         // Order: ongoing/ready first, then nearest upcoming, then past (most recent first)
         return $query
             ->orderByRaw("CASE WHEN status IN ('ready', 'ongoing') THEN 0 WHEN scheduled_at >= NOW() THEN 1 ELSE 2 END")
-            ->orderByRaw("CASE WHEN scheduled_at >= NOW() THEN scheduled_at END ASC")
-            ->orderByRaw("CASE WHEN scheduled_at < NOW() THEN scheduled_at END DESC")
+            ->orderByRaw('CASE WHEN scheduled_at >= NOW() THEN scheduled_at END ASC')
+            ->orderByRaw('CASE WHEN scheduled_at < NOW() THEN scheduled_at END DESC')
             ->paginate(15)
             ->withQueryString();
     }
@@ -141,11 +143,13 @@ class SessionsMonitoringController extends Controller
         $query = QuranSession::query()
             ->with(['quranTeacher', 'circle', 'student', 'individualCircle', 'academy']);
 
-        if ($user->isSuperAdmin()) {
-            $academyId = AcademyContextService::getCurrentAcademyId();
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
+            $academyId = $user->isAdmin() ? $user->academy_id : AcademyContextService::getCurrentAcademyId();
             if ($academyId) {
                 $query->where('academy_id', $academyId);
             }
+        } elseif ($user->isQuranTeacher()) {
+            $query->where('quran_teacher_id', $user->id);
         } else {
             // Supervisor: scoped to assigned teachers
             $teacherIds = $user->supervisorProfile?->getAssignedQuranTeacherIds() ?? [];
@@ -160,11 +164,14 @@ class SessionsMonitoringController extends Controller
         $query = AcademicSession::query()
             ->with(['academicTeacher.user', 'academicIndividualLesson.academicSubject', 'student', 'academy']);
 
-        if ($user->isSuperAdmin()) {
-            $academyId = AcademyContextService::getCurrentAcademyId();
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
+            $academyId = $user->isAdmin() ? $user->academy_id : AcademyContextService::getCurrentAcademyId();
             if ($academyId) {
                 $query->where('academy_id', $academyId);
             }
+        } elseif ($user->isAcademicTeacher()) {
+            $teacherProfileId = $user->academicTeacherProfile?->id;
+            $query->where('academic_teacher_id', $teacherProfileId);
         } else {
             $profileIds = $user->supervisorProfile?->getAssignedAcademicTeacherIds() ?? [];
             $query->whereIn('academic_teacher_id', $profileIds);
@@ -178,11 +185,14 @@ class SessionsMonitoringController extends Controller
         $query = InteractiveCourseSession::query()
             ->with(['course.assignedTeacher.user', 'course.subject', 'course.academy']);
 
-        if ($user->isSuperAdmin()) {
-            $academyId = AcademyContextService::getCurrentAcademyId();
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
+            $academyId = $user->isAdmin() ? $user->academy_id : AcademyContextService::getCurrentAcademyId();
             if ($academyId) {
                 $query->whereHas('course', fn ($q) => $q->where('academy_id', $academyId));
             }
+        } elseif ($user->isAcademicTeacher()) {
+            $teacherProfileId = $user->academicTeacherProfile?->id;
+            $query->whereHas('course', fn ($q) => $q->where('assigned_teacher_id', $teacherProfileId));
         } else {
             $courseIds = $user->supervisorProfile?->getDerivedInteractiveCourseIds() ?? [];
             $query->whereIn('course_id', $courseIds);
