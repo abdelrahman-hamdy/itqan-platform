@@ -55,10 +55,9 @@
             class="py-3 flex gap-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-all duration-200 relative w-full cursor-pointer px-2 group"
             :class="{
                 'bg-gray-50 dark:bg-gray-800 border-e-4 border-primary-500 shadow-sm': $wire.selectedConversationId == conversationID,
-                'bg-blue-50/60 dark:bg-blue-900/20 border-e-2 border-green-500': showUnreadStatus && $wire.selectedConversationId != conversationID,
             }">
 
-            <div class="shrink-0 relative">
+            <div class="shrink-0">
                 @if($conversation->isGroup() && $chatGroup)
                     {{-- Entity-type-based group avatar --}}
                     @php $avatarStyle = $chatGroup->getGroupAvatarStyle(); @endphp
@@ -74,8 +73,6 @@
                         group="{{ $conversation->isGroup() }}"
                         :src="$group ? $group?->cover_url : $receiver?->cover_url ?? null" class="w-12 h-12" />
                 @endif
-                {{-- Unread indicator circle on avatar --}}
-                <div x-show="showUnreadStatus" class="absolute -top-0.5 -end-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
             </div>
 
             <aside class="flex justify-between w-full">
@@ -83,6 +80,9 @@
 
                     {{-- name --}}
                     <div class="flex gap-1 mb-1 w-full items-center">
+                        {{-- Unread blue dot --}}
+                        <div x-show="showUnreadStatus" x-cloak class="w-2.5 h-2.5 bg-blue-500 rounded-full shrink-0"></div>
+
                         <h6 class="truncate text-gray-900 dark:text-white"
                         :class="showUnreadStatus ? 'font-bold' : 'font-semibold'">
                             {{ $group ? $group?->name : $receiver?->display_name }}
