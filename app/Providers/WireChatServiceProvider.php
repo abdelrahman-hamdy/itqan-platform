@@ -21,13 +21,15 @@ use Wirechat\Wirechat\Livewire\Pages\Chat as View;
 use Wirechat\Wirechat\Livewire\Pages\Chats as Index;
 use Wirechat\Wirechat\Livewire\Widgets\Wirechat as WireChatWidget;
 use Wirechat\Wirechat\Middleware\BelongsToConversation;
+use Wirechat\Wirechat\Panel;
+use Wirechat\Wirechat\PanelRegistry;
 use Wirechat\Wirechat\Services\WirechatService;
 
 /**
  * Custom WireChat Service Provider
  *
  * Extends ServiceProvider directly and copies all WireChat functionality
- * EXCEPT the route loading. We define our own routes in routes/web.php
+ * EXCEPT the route loading. We define our own routes in routes/web/chat.php
  * inside the subdomain group for proper multi-tenant support.
  */
 class WireChatServiceProvider extends ServiceProvider
@@ -45,6 +47,29 @@ class WireChatServiceProvider extends ServiceProvider
         // Register facade
         $this->app->singleton('wirechat', function ($app) {
             return new WirechatService;
+        });
+
+        // Register default WireChat panel (required since v0.5.0)
+        $this->app->afterResolving(PanelRegistry::class, function (PanelRegistry $registry) {
+            $panel = Panel::make()
+                ->id('itqan')
+                ->default()
+                ->registerRoutes(false)
+                ->middleware(['web', 'auth:web'])
+                ->guards(['web'])
+                ->layout('wirechat::layouts.app')
+                ->broadcasting(true)
+                ->messagesQueue('messages')
+                ->eventsQueue('default')
+                ->groups(true)
+                ->maxGroupMembers(1000)
+                ->attachments(true)
+                ->chatsSearch(true)
+                ->searchableAttributes(['name'])
+                ->createChatAction(true)
+                ->createGroupAction(true);
+
+            $registry->register($panel);
         });
     }
 
