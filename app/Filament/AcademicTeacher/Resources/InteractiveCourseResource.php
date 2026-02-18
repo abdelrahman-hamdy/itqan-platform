@@ -2,30 +2,29 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\TagsInput;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Textarea;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\Action;
-use Filament\Actions\BulkAction;
-use App\Models\AcademicSubject;
-use App\Models\AcademicGradeLevel;
-use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages\ListInteractiveCourses;
-use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages\ViewInteractiveCourse;
-use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages\EditInteractiveCourse;
 use App\Enums\InteractiveCourseStatus;
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages\EditInteractiveCourse;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages\ListInteractiveCourses;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages\ViewInteractiveCourse;
 use App\Filament\Shared\Resources\BaseInteractiveCourseResource;
+use App\Models\AcademicGradeLevel;
+use App\Models\AcademicSubject;
 use App\Models\InteractiveCourse;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\TernaryFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -46,11 +45,11 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     // Navigation Configuration
     // ========================================
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-presentation-chart-bar';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-presentation-chart-bar';
 
     protected static ?string $navigationLabel = 'الدورات التفاعلية';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
+    protected static string|\UnitEnum|null $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 3;
 
@@ -240,42 +239,44 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make()
-                ->label('عرض')
-                ->icon('heroicon-m-eye'),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض')
+                    ->icon('heroicon-m-eye'),
 
-            EditAction::make()
-                ->label('تعديل')
-                ->icon('heroicon-m-pencil'),
+                EditAction::make()
+                    ->label('تعديل')
+                    ->icon('heroicon-m-pencil'),
 
-            Action::make('manage_sessions')
-                ->label('إدارة الجلسات')
-                ->icon('heroicon-m-calendar')
-                ->color('info')
-                ->url(fn (InteractiveCourse $record): string => InteractiveCourseSessionResource::getUrl('index', [
-                    'tableFilters' => [
-                        'course_id' => ['value' => $record->id],
-                    ],
-                ])
-                ),
+                Action::make('manage_sessions')
+                    ->label('إدارة الجلسات')
+                    ->icon('heroicon-m-calendar')
+                    ->color('info')
+                    ->url(fn (InteractiveCourse $record): string => InteractiveCourseSessionResource::getUrl('index', [
+                        'tableFilters' => [
+                            'course_id' => ['value' => $record->id],
+                        ],
+                    ])
+                    ),
 
-            Action::make('view_enrolled_students')
-                ->label('الطلاب المسجلين')
-                ->icon('heroicon-m-users')
-                ->color('success')
-                ->modalHeading(fn (InteractiveCourse $record): string => 'الطلاب المسجلين في: '.$record->title)
-                ->modalDescription(fn (InteractiveCourse $record): string => 'إجمالي الطلاب المسجلين: '.$record->enrolledStudents()->count().' من أصل '.$record->max_students
-                )
-                ->modalContent(fn (InteractiveCourse $record): HtmlString => new HtmlString(
-                    '<div class="space-y-2">'.
-                    $record->enrolledStudents()->with('user')->get()
-                        ->map(fn ($student) => '<div class="flex items-center gap-2"><span class="text-gray-600">•</span><span>'.e($student->user->name).'</span><span class="text-gray-500 text-sm">('.e($student->user->email).')</span></div>')
-                        ->join('').
-                    '</div>'
-                )
-                )
-                ->modalSubmitAction(false)
-                ->modalCancelActionLabel('إغلاق'),
+                Action::make('view_enrolled_students')
+                    ->label('الطلاب المسجلين')
+                    ->icon('heroicon-m-users')
+                    ->color('success')
+                    ->modalHeading(fn (InteractiveCourse $record): string => 'الطلاب المسجلين في: '.$record->title)
+                    ->modalDescription(fn (InteractiveCourse $record): string => 'إجمالي الطلاب المسجلين: '.$record->enrolledStudents()->count().' من أصل '.$record->max_students
+                    )
+                    ->modalContent(fn (InteractiveCourse $record): HtmlString => new HtmlString(
+                        '<div class="space-y-2">'.
+                        $record->enrolledStudents()->with('user')->get()
+                            ->map(fn ($student) => '<div class="flex items-center gap-2"><span class="text-gray-600">•</span><span>'.e($student->user->name).'</span><span class="text-gray-500 text-sm">('.e($student->user->email).')</span></div>')
+                            ->join('').
+                        '</div>'
+                    )
+                    )
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('إغلاق'),
+            ]),
         ];
     }
 

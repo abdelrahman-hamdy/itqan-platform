@@ -15,11 +15,12 @@ use App\Models\Quiz;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\RecordedCourse;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Facades\Filament;
 use Filament\Tables\Table;
 
@@ -122,14 +123,20 @@ class QuizResource extends BaseQuizResource
 
         return $table
             ->recordActions([
-                ViewAction::make()->label('عرض'),
-                static::getAssignAction(),
-                EditAction::make(),
-                DeleteAction::make(),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('عرض'),
+                    EditAction::make()
+                        ->label('تعديل'),
+                    static::getAssignAction(),
+                    DeleteAction::make()
+                        ->label('حذف'),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->label('حذف المحدد'),
                 ]),
             ]);
     }

@@ -2,32 +2,29 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
-use Closure;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\QuizResource\RelationManagers\QuestionsRelationManager;
-use App\Filament\Resources\QuizResource\Pages\ListQuizzes;
 use App\Filament\Resources\QuizResource\Pages\CreateQuiz;
-use App\Filament\Resources\QuizResource\Pages\ViewQuiz;
 use App\Filament\Resources\QuizResource\Pages\EditQuiz;
-use App\Filament\Resources\QuizResource\Pages;
-use App\Filament\Resources\QuizResource\RelationManagers;
+use App\Filament\Resources\QuizResource\Pages\ListQuizzes;
+use App\Filament\Resources\QuizResource\Pages\ViewQuiz;
+use App\Filament\Resources\QuizResource\RelationManagers\QuestionsRelationManager;
 use App\Models\Academy;
 use App\Models\Quiz;
 use App\Services\AcademyContextService;
-use Filament\Forms;
-use Filament\Tables;
+use Closure;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -36,9 +33,9 @@ class QuizResource extends BaseResource
 {
     protected static ?string $model = Quiz::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة الاختبارات';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة الاختبارات';
 
     protected static ?string $navigationLabel = 'بنك الاختبارات';
 
@@ -214,8 +211,10 @@ class QuizResource extends BaseResource
             ])
             ->deferFilters(false)
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                ActionGroup::make([
+                    ViewAction::make()->label('عرض'),
+                    EditAction::make()->label('تعديل'),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

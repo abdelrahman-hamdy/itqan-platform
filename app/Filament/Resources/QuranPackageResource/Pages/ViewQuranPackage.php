@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\QuranPackageResource\Pages;
 
-use Filament\Actions\EditAction;
-use Filament\Actions\Action;
-use App\Models\QuranPackage;
-use App\Filament\Resources\QuranPackageResource;
-use Filament\Actions;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use App\Filament\Resources\QuranPackageResource;
+use App\Models\QuranPackage;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 
 /**
  * @property QuranPackage $record
@@ -41,6 +41,8 @@ class ViewQuranPackage extends ViewRecord
                 ->modalDescription('هل أنت متأكد من إلغاء تفعيل هذه الباقة؟ لن يتمكن الطلاب من الاشتراك فيها.')
                 ->action(fn () => $this->record->update(['is_active' => false]))
                 ->visible(fn () => $this->record->is_active),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }

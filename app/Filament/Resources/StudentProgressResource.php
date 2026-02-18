@@ -2,32 +2,30 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Hidden;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
+use App\Enums\EnrollmentStatus;
+use App\Filament\Resources\StudentProgressResource\Pages\CreateStudentProgress;
+use App\Filament\Resources\StudentProgressResource\Pages\EditStudentProgress;
+use App\Filament\Resources\StudentProgressResource\Pages\ListStudentProgress;
+use App\Filament\Resources\StudentProgressResource\Pages\ViewStudentProgress;
+use App\Models\CourseSubscription;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\StudentProgressResource\Pages\ListStudentProgress;
-use App\Filament\Resources\StudentProgressResource\Pages\CreateStudentProgress;
-use App\Filament\Resources\StudentProgressResource\Pages\ViewStudentProgress;
-use App\Filament\Resources\StudentProgressResource\Pages\EditStudentProgress;
-use App\Enums\EnrollmentStatus;
-use App\Filament\Resources\StudentProgressResource\Pages;
-use App\Models\CourseSubscription;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -35,7 +33,7 @@ class StudentProgressResource extends BaseResource
 {
     protected static ?string $model = CourseSubscription::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-chart-bar-square';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar-square';
 
     protected static ?string $navigationLabel = 'تقدم الدورات المسجلة';
 
@@ -43,7 +41,7 @@ class StudentProgressResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'تقدم الدورات';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة الدورات المسجلة';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة الدورات المسجلة';
 
     protected static ?int $navigationSort = 3;
 
@@ -218,26 +216,26 @@ class StudentProgressResource extends BaseResource
             ])
             ->deferFilters(false)
             ->recordActions([
-                ViewAction::make()
-                    ->label('عرض'),
-                EditAction::make()
-                    ->label('تعديل'),
-                Action::make('markComplete')
-                    ->label('تحديد كمكتمل')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading('تحديد كمكتمل')
-                    ->modalDescription('سيتم تحديد هذه الدورة كمكتملة بنسبة 100%. هل أنت متأكد؟')
-                    ->action(fn (CourseSubscription $record) => $record->markAsCompleted())
-                    ->visible(fn (CourseSubscription $record) => ! $record->isCompleted()),
-                Action::make('issueCertificate')
-                    ->label('إصدار شهادة')
-                    ->icon('heroicon-o-academic-cap')
-                    ->color('primary')
-                    ->requiresConfirmation()
-                    ->action(fn (CourseSubscription $record) => $record->issueCertificateForCourse())
-                    ->visible(fn (CourseSubscription $record) => $record->can_earn_certificate),
+                ActionGroup::make([
+                    ViewAction::make()->label('عرض'),
+                    EditAction::make()->label('تعديل'),
+                    Action::make('markComplete')
+                        ->label('تحديد كمكتمل')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('تحديد كمكتمل')
+                        ->modalDescription('سيتم تحديد هذه الدورة كمكتملة بنسبة 100%. هل أنت متأكد؟')
+                        ->action(fn (CourseSubscription $record) => $record->markAsCompleted())
+                        ->visible(fn (CourseSubscription $record) => ! $record->isCompleted()),
+                    Action::make('issueCertificate')
+                        ->label('إصدار شهادة')
+                        ->icon('heroicon-o-academic-cap')
+                        ->color('primary')
+                        ->requiresConfirmation()
+                        ->action(fn (CourseSubscription $record) => $record->issueCertificateForCourse())
+                        ->visible(fn (CourseSubscription $record) => $record->can_earn_certificate),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

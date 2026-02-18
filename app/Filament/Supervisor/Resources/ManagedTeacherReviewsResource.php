@@ -2,17 +2,17 @@
 
 namespace App\Filament\Supervisor\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Tables\Filters\SelectFilter;
-use App\Filament\Supervisor\Resources\ManagedTeacherReviewsResource\Pages\ListManagedTeacherReviews;
-use App\Filament\Supervisor\Resources\ManagedTeacherReviewsResource\Pages\ViewManagedTeacherReview;
 use App\Enums\UserType;
 use App\Filament\Shared\Resources\BaseTeacherReviewResource;
 use App\Filament\Supervisor\Resources\ManagedTeacherReviewsResource\Pages;
+use App\Filament\Supervisor\Resources\ManagedTeacherReviewsResource\Pages\ListManagedTeacherReviews;
+use App\Filament\Supervisor\Resources\ManagedTeacherReviewsResource\Pages\ViewManagedTeacherReview;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
 use App\Models\User;
-use Filament\Tables;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -25,7 +25,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class ManagedTeacherReviewsResource extends BaseTeacherReviewResource
 {
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المعلمين';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة المعلمين';
 
     protected static ?int $navigationSort = 4;
 
@@ -85,8 +85,10 @@ class ManagedTeacherReviewsResource extends BaseTeacherReviewResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make()
-                ->label('عرض'),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+            ]),
         ];
     }
 

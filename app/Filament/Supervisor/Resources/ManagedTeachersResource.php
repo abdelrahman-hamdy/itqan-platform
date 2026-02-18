@@ -2,25 +2,23 @@
 
 namespace App\Filament\Supervisor\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Actions\ViewAction;
-use Filament\Actions\Action;
+use App\Enums\UserType;
 use App\Filament\Supervisor\Resources\ManagedTeachersResource\Pages\ListManagedTeachers;
 use App\Filament\Supervisor\Resources\ManagedTeachersResource\Pages\ViewManagedTeacher;
-use App\Enums\UserType;
-use App\Filament\Supervisor\Resources\ManagedTeachersResource\Pages;
 use App\Models\User;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -33,7 +31,7 @@ class ManagedTeachersResource extends BaseSupervisorResource
 {
     protected static ?string $model = User::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $navigationLabel = 'المعلمون';
 
@@ -41,7 +39,7 @@ class ManagedTeachersResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'المعلمون';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المعلمين';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة المعلمين';
 
     protected static ?int $navigationSort = 1;
 
@@ -185,15 +183,31 @@ class ManagedTeachersResource extends BaseSupervisorResource
             ])
             ->deferFilters(false)
             ->recordActions([
-                ViewAction::make()
-                    ->label('عرض'),
-                Action::make('view_earnings')
-                    ->label('الأرباح')
-                    ->icon('heroicon-o-currency-dollar')
-                    ->url(fn (User $record): string => ManagedTeacherEarningsResource::getUrl('index', [
-                        'tableFilters[teacher_id][value]' => $record->id,
-                    ]))
-                    ->visible(fn () => static::canManageTeachers()),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('عرض'),
+                    Action::make('view_earnings')
+                        ->label('الأرباح')
+                        ->icon('heroicon-o-currency-dollar')
+                        ->url(fn (User $record): string => ManagedTeacherEarningsResource::getUrl('index', [
+                            'tableFilters[teacher_id][value]' => $record->id,
+                        ]))
+                        ->visible(fn () => static::canManageTeachers()),
+                    Action::make('activate')
+                        ->label('تفعيل المعلم')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(fn ($record) => $record->update(['active_status' => true]))
+                        ->visible(fn ($record) => ! $record->active_status),
+                    Action::make('deactivate')
+                        ->label('إيقاف المعلم')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(fn ($record) => $record->update(['active_status' => false]))
+                        ->visible(fn ($record) => $record->active_status),
+                ]),
             ])
             ->toolbarActions([
                 // No bulk actions for supervisors

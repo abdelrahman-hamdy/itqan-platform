@@ -2,32 +2,32 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\TextColumn;
-use App\Models\QuranSubscription;
-use App\Models\AcademicSubscription;
-use App\Models\InteractiveCourseEnrollment;
-use App\Filament\Resources\StudentProfileResource\Pages\ListStudentProfiles;
-use App\Filament\Resources\StudentProfileResource\Pages\CreateStudentProfile;
-use App\Filament\Resources\StudentProfileResource\Pages\ViewStudentProfile;
-use App\Filament\Resources\StudentProfileResource\Pages\EditStudentProfile;
 use App\Enums\UserType;
 use App\Filament\Resources\StudentProfileResource\Pages;
+use App\Filament\Resources\StudentProfileResource\Pages\CreateStudentProfile;
+use App\Filament\Resources\StudentProfileResource\Pages\EditStudentProfile;
+use App\Filament\Resources\StudentProfileResource\Pages\ListStudentProfiles;
+use App\Filament\Resources\StudentProfileResource\Pages\ViewStudentProfile;
 use App\Filament\Shared\Resources\Profiles\BaseStudentProfileResource;
 use App\Helpers\CountryList;
 use App\Models\AcademicGradeLevel;
+use App\Models\AcademicSubscription;
+use App\Models\InteractiveCourseEnrollment;
+use App\Models\QuranSubscription;
 use App\Services\AcademyContextService;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -52,13 +52,13 @@ class StudentProfileResource extends BaseStudentProfileResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            EditAction::make(),
-            DeleteAction::make(),
-            RestoreAction::make()
-                ->label(__('filament.actions.restore')),
-            ForceDeleteAction::make()
-                ->label(__('filament.actions.force_delete')),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
+                EditAction::make()->label('تعديل'),
+                DeleteAction::make()->label('حذف'),
+                RestoreAction::make()->label(__('filament.actions.restore')),
+                ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+            ]),
         ];
     }
 

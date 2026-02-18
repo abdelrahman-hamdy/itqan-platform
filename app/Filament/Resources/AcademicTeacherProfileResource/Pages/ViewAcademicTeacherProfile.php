@@ -2,10 +2,11 @@
 
 namespace App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 
-use Filament\Actions\EditAction;
-use App\Filament\Resources\AcademicTeacherProfileResource;
-use Filament\Actions;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use App\Filament\Resources\AcademicTeacherProfileResource;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 
 class ViewAcademicTeacherProfile extends ViewRecord
 {
@@ -14,7 +15,17 @@ class ViewAcademicTeacherProfile extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            EditAction::make()
+                ->label('تعديل'),
+            Action::make('toggle_active')
+                ->label(fn () => $this->record->user?->active_status ? 'تعطيل الحساب' : 'تفعيل الحساب')
+                ->icon(fn () => $this->record->user?->active_status ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                ->color(fn () => $this->record->user?->active_status ? 'warning' : 'success')
+                ->requiresConfirmation()
+                ->action(fn () => $this->record->user?->update(['active_status' => ! $this->record->user->active_status]))
+                ->visible(fn () => $this->record->user !== null),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }

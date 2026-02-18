@@ -2,14 +2,19 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
-use App\Filament\AcademicTeacher\Resources\QuizResource\Pages\ListQuizzes;
+use App\Enums\QuizAssignableType;
 use App\Filament\AcademicTeacher\Resources\QuizResource\Pages\CreateQuiz;
 use App\Filament\AcademicTeacher\Resources\QuizResource\Pages\EditQuiz;
-use App\Enums\QuizAssignableType;
-use App\Filament\AcademicTeacher\Resources\QuizResource\Pages;
+use App\Filament\AcademicTeacher\Resources\QuizResource\Pages\ListQuizzes;
 use App\Filament\Shared\Resources\BaseQuizResource;
 use App\Models\AcademicIndividualLesson;
 use App\Models\InteractiveCourse;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Tables\Table;
 
 /**
  * Quiz Resource for AcademicTeacher Panel
@@ -54,6 +59,26 @@ class QuizResource extends BaseQuizResource
         return InteractiveCourse::where('assigned_teacher_id', $teacherId)
             ->pluck('title', 'id')
             ->toArray();
+    }
+
+    public static function table(Table $table): Table
+    {
+        return parent::table($table)
+            ->recordActions([
+                ActionGroup::make([
+                    EditAction::make()
+                        ->label('تعديل'),
+                    static::getAssignAction(),
+                    DeleteAction::make()
+                        ->label('حذف'),
+                ]),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
+                        ->label('حذف المحدد'),
+                ]),
+            ]);
     }
 
     public static function getPages(): array

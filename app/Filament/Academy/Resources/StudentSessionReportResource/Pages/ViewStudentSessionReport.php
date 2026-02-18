@@ -2,9 +2,10 @@
 
 namespace App\Filament\Academy\Resources\StudentSessionReportResource\Pages;
 
-use Filament\Actions\EditAction;
 use App\Filament\Academy\Resources\StudentSessionReportResource;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 
 class ViewStudentSessionReport extends ViewRecord
 {
@@ -15,6 +16,8 @@ class ViewStudentSessionReport extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }

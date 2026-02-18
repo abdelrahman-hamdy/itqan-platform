@@ -2,28 +2,27 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
+use App\Filament\Resources\ParentProfileResource\Pages;
+use App\Filament\Resources\ParentProfileResource\Pages\CreateParentProfile;
+use App\Filament\Resources\ParentProfileResource\Pages\EditParentProfile;
+use App\Filament\Resources\ParentProfileResource\Pages\ListParentProfiles;
+use App\Filament\Resources\ParentProfileResource\Pages\ViewParentProfile;
+use App\Filament\Resources\ParentProfileResource\RelationManagers\StudentsRelationManager;
+use App\Filament\Shared\Resources\Profiles\BaseParentProfileResource;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Support\Enums\FontWeight;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use App\Filament\Resources\ParentProfileResource\RelationManagers\StudentsRelationManager;
-use App\Filament\Resources\ParentProfileResource\Pages\ListParentProfiles;
-use App\Filament\Resources\ParentProfileResource\Pages\CreateParentProfile;
-use App\Filament\Resources\ParentProfileResource\Pages\ViewParentProfile;
-use App\Filament\Resources\ParentProfileResource\Pages\EditParentProfile;
-use App\Filament\Resources\ParentProfileResource\Pages;
-use App\Filament\Resources\ParentProfileResource\RelationManagers;
-use App\Filament\Shared\Resources\Profiles\BaseParentProfileResource;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -48,14 +47,14 @@ class ParentProfileResource extends BaseParentProfileResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            EditAction::make(),
-            static::getToggleActiveAction(),
-            DeleteAction::make(),
-            RestoreAction::make()
-                ->label(__('filament.actions.restore')),
-            ForceDeleteAction::make()
-                ->label(__('filament.actions.force_delete')),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
+                EditAction::make()->label('تعديل'),
+                static::getToggleActiveAction(),
+                DeleteAction::make()->label('حذف'),
+                RestoreAction::make()->label(__('filament.actions.restore')),
+                ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+            ]),
         ];
     }
 

@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\CourseReviewResource\Pages;
 
-use Filament\Actions\EditAction;
-use App\Filament\Resources\CourseReviewResource;
-use Filament\Actions;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use App\Filament\Resources\CourseReviewResource;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 
 class ViewCourseReview extends ViewRecord
 {
@@ -14,7 +14,10 @@ class ViewCourseReview extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            EditAction::make()
+                ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }

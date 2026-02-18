@@ -2,30 +2,27 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Facades\Filament;
-use Filament\Forms\Components\DatePicker;
-use Filament\Tables\Filters\TrashedFilter;
-use App\Filament\Resources\InteractiveCourseResource\RelationManagers\EnrollmentsRelationManager;
-use App\Filament\Resources\InteractiveCourseResource\Pages\ListInteractiveCourses;
+use App\Filament\Resources\InteractiveCourseResource\Pages;
 use App\Filament\Resources\InteractiveCourseResource\Pages\CreateInteractiveCourse;
 use App\Filament\Resources\InteractiveCourseResource\Pages\EditInteractiveCourse;
-use App\Filament\Resources\InteractiveCourseResource\Pages;
-use App\Filament\Resources\InteractiveCourseResource\RelationManagers;
+use App\Filament\Resources\InteractiveCourseResource\Pages\ListInteractiveCourses;
+use App\Filament\Resources\InteractiveCourseResource\RelationManagers\EnrollmentsRelationManager;
 use App\Filament\Shared\Resources\BaseInteractiveCourseResource;
-use App\Services\AcademyContextService;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Facades\Filament;
+use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\TrashedFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -49,7 +46,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
 
     protected static ?string $navigationLabel = 'الدورات التفاعلية';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة التعليم الأكاديمي';
 
     protected static ?int $navigationSort = 3;
 
@@ -87,13 +84,13 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            EditAction::make(),
-            DeleteAction::make(),
-            RestoreAction::make()
-                ->label(__('filament.actions.restore')),
-            ForceDeleteAction::make()
-                ->label(__('filament.actions.force_delete')),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
+                EditAction::make()->label('تعديل'),
+                DeleteAction::make()->label('حذف'),
+                RestoreAction::make()->label(__('filament.actions.restore')),
+                ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+            ]),
         ];
     }
 

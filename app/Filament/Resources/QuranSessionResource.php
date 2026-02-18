@@ -2,36 +2,35 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Actions\Action;
-use App\Filament\Pages\ObserveSessionPage;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Forms\Components\DatePicker;
-use App\Filament\Resources\QuranSessionResource\Pages\ListQuranSessions;
-use App\Filament\Resources\QuranSessionResource\Pages\CreateQuranSession;
-use App\Filament\Resources\QuranSessionResource\Pages\ViewQuranSession;
-use App\Filament\Resources\QuranSessionResource\Pages\EditQuranSession;
 use App\Enums\SessionStatus;
+use App\Filament\Pages\ObserveSessionPage;
 use App\Filament\Resources\QuranSessionResource\Pages;
+use App\Filament\Resources\QuranSessionResource\Pages\CreateQuranSession;
+use App\Filament\Resources\QuranSessionResource\Pages\EditQuranSession;
+use App\Filament\Resources\QuranSessionResource\Pages\ListQuranSessions;
+use App\Filament\Resources\QuranSessionResource\Pages\ViewQuranSession;
 use App\Filament\Shared\Resources\BaseQuranSessionResource;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\User;
 use App\Services\AcademyContextService;
-use Filament\Forms;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Tables;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -61,7 +60,7 @@ class QuranSessionResource extends BaseQuranSessionResource
 
     protected static ?string $navigationLabel = 'جلسات القرآن';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة القرآن';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 7;
 
@@ -128,28 +127,26 @@ class QuranSessionResource extends BaseQuranSessionResource
     protected static function getTableActions(): array
     {
         return [
-            Action::make('observe_meeting')
-                ->label('مراقبة الجلسة')
-                ->icon('heroicon-o-eye')
-                ->color('info')
-                ->visible(fn ($record): bool => $record->meeting_room_name
-                    && in_array(
-                        $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
-                        [SessionStatus::READY, SessionStatus::ONGOING]
-                    ))
-                ->url(fn ($record): string => ObserveSessionPage::getUrl().'?'.http_build_query([
-                    'sessionId' => $record->id,
-                    'sessionType' => 'quran',
-                ]))
-                ->openUrlInNewTab(),
-            ViewAction::make()
-                ->label('عرض'),
-            EditAction::make()
-                ->label('تعديل'),
-            RestoreAction::make()
-                ->label(__('filament.actions.restore')),
-            ForceDeleteAction::make()
-                ->label(__('filament.actions.force_delete')),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
+                EditAction::make()->label('تعديل'),
+                Action::make('observe_meeting')
+                    ->label('مراقبة الجلسة')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->visible(fn ($record): bool => $record->meeting_room_name
+                        && in_array(
+                            $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
+                            [SessionStatus::READY, SessionStatus::ONGOING]
+                        ))
+                    ->url(fn ($record): string => ObserveSessionPage::getUrl().'?'.http_build_query([
+                        'sessionId' => $record->id,
+                        'sessionType' => 'quran',
+                    ]))
+                    ->openUrlInNewTab(),
+                RestoreAction::make()->label(__('filament.actions.restore')),
+                ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+            ]),
         ];
     }
 

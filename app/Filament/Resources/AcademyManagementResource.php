@@ -2,55 +2,54 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\Action;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use App\Filament\Resources\AcademyManagementResource\Pages\ListAcademyManagements;
-use App\Filament\Resources\AcademyManagementResource\Pages\CreateAcademyManagement;
-use App\Filament\Resources\AcademyManagementResource\Pages\EditAcademyManagement;
-use App\Filament\Resources\AcademyManagementResource\Pages\ViewAcademyManagement;
-use Illuminate\Support\HtmlString;
-use ValueError;
 use App\Enums\GradientPalette;
 use App\Enums\TailwindColor;
-use App\Filament\Resources\AcademyManagementResource\Pages;
+use App\Filament\Resources\AcademyManagementResource\Pages\CreateAcademyManagement;
+use App\Filament\Resources\AcademyManagementResource\Pages\EditAcademyManagement;
+use App\Filament\Resources\AcademyManagementResource\Pages\ListAcademyManagements;
+use App\Filament\Resources\AcademyManagementResource\Pages\ViewAcademyManagement;
 use App\Models\Academy;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
 use App\Models\RecordedCourse;
 use App\Services\AcademyAdminSyncService;
 use App\Services\AcademyContextService;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Tables;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\HtmlString;
+use ValueError;
 
 class AcademyManagementResource extends BaseResource
 {
     protected static ?string $model = Academy::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-building-office-2';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-office-2';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة النظام';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة النظام';
 
     protected static ?string $navigationLabel = 'إدارة الأكاديميات';
 
@@ -319,32 +318,32 @@ class AcademyManagementResource extends BaseResource
             ])
             ->deferFilters(false)
             ->recordActions([
-                Action::make('select_academy')
-                    ->label('اختيار هذه الأكاديمية')
-                    ->icon('heroicon-o-cursor-arrow-rays')
-                    ->color('primary')
-                    ->action(function (Academy $record) {
-                        // Set academy context using our service
-                        AcademyContextService::setAcademyContext($record->id);
-                    })
-                    ->successRedirectUrl(fn () => request()->url())
-                    ->requiresConfirmation()
-                    ->modalHeading('اختيار الأكاديمية')
-                    ->modalDescription(fn (Academy $record) => "هل تريد اختيار أكاديمية '{$record->name}' للإدارة؟ سيتم تحديث جميع الصفحات لعرض بيانات هذه الأكاديمية.")
-                    ->modalSubmitActionLabel('اختيار الأكاديمية'),
-
-                Action::make('view_academy')
-                    ->label('زيارة الأكاديمية')
-                    ->icon('heroicon-o-arrow-top-right-on-square')
-                    ->color('info')
-                    ->url(fn (Academy $record): string => "https://{$record->subdomain}.".config('app.domain', 'itqanway.com'))
-                    ->openUrlInNewTab(),
-
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
-                RestoreAction::make()->label(__('filament.actions.restore')),
-                ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+                ActionGroup::make([
+                    ViewAction::make()->label('عرض'),
+                    EditAction::make()->label('تعديل'),
+                    Action::make('select_academy')
+                        ->label('اختيار هذه الأكاديمية')
+                        ->icon('heroicon-o-cursor-arrow-rays')
+                        ->color('primary')
+                        ->action(function (Academy $record) {
+                            // Set academy context using our service
+                            AcademyContextService::setAcademyContext($record->id);
+                        })
+                        ->successRedirectUrl(fn () => request()->url())
+                        ->requiresConfirmation()
+                        ->modalHeading('اختيار الأكاديمية')
+                        ->modalDescription(fn (Academy $record) => "هل تريد اختيار أكاديمية '{$record->name}' للإدارة؟ سيتم تحديث جميع الصفحات لعرض بيانات هذه الأكاديمية.")
+                        ->modalSubmitActionLabel('اختيار الأكاديمية'),
+                    Action::make('view_academy')
+                        ->label('زيارة الأكاديمية')
+                        ->icon('heroicon-o-arrow-top-right-on-square')
+                        ->color('info')
+                        ->url(fn (Academy $record): string => "https://{$record->subdomain}.".config('app.domain', 'itqanway.com'))
+                        ->openUrlInNewTab(),
+                    DeleteAction::make()->label('حذف'),
+                    RestoreAction::make()->label(__('filament.actions.restore')),
+                    ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

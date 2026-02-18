@@ -15,10 +15,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -91,6 +87,10 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     {
         return [
             ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تعديل'),
                 Action::make('observe_meeting')
                     ->label('مراقبة الجلسة')
                     ->icon('heroicon-o-eye')
@@ -105,23 +105,12 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
                         'sessionType' => 'interactive',
                     ]))
                     ->openUrlInNewTab(),
-
-                ViewAction::make()
-                    ->label('عرض'),
-                EditAction::make()
-                    ->label('تعديل'),
-                DeleteAction::make()
-                    ->label('حذف'),
-
                 static::makeStartSessionAction(),
                 static::makeCompleteSessionAction(),
                 static::makeCancelSessionAction('admin'),
                 static::makeJoinMeetingAction(),
-
-                RestoreAction::make()
-                    ->label(__('filament.actions.restore')),
-                ForceDeleteAction::make()
-                    ->label(__('filament.actions.force_delete')),
+                DeleteAction::make()
+                    ->label('حذف'),
             ]),
         ];
     }
@@ -133,11 +122,8 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     {
         return [
             BulkActionGroup::make([
-                DeleteBulkAction::make(),
-                RestoreBulkAction::make()
-                    ->label(__('filament.actions.restore_selected')),
-                ForceDeleteBulkAction::make()
-                    ->label(__('filament.actions.force_delete_selected')),
+                DeleteBulkAction::make()
+                    ->label('حذف المحدد'),
             ]),
         ];
     }

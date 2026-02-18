@@ -14,11 +14,12 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use App\Filament\Resources\BaseResource;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
@@ -236,9 +237,11 @@ abstract class BaseQuizAssignmentResource extends BaseResource
             ])
             ->deferFilters(false)
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
+                ActionGroup::make([
+                    ViewAction::make()->label('عرض'),
+                    EditAction::make()->label('تعديل'),
+                    DeleteAction::make()->label('حذف'),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

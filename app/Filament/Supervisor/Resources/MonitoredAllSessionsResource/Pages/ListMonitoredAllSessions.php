@@ -2,39 +2,38 @@
 
 namespace App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages;
 
-use Filament\Actions\Action;
-use Filament\Actions\CreateAction;
-use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Components\Utilities\Get;
-use App\Models\User;
-use App\Models\QuranCircle;
-use App\Models\QuranIndividualCircle;
-use Filament\Forms\Components\DatePicker;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Forms\Components\Textarea;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use App\Enums\AttendanceStatus;
-use App\Models\AcademicTeacherProfile;
-use App\Models\AcademicIndividualLesson;
-use App\Models\InteractiveCourse;
 use App\Enums\SessionStatus;
 use App\Filament\Shared\Tables\SessionTableColumns;
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource;
+use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
+use App\Models\AcademicTeacherProfile;
+use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseSession;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
+use App\Models\User;
 use App\Services\AcademyContextService;
-use Filament\Forms;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Tables;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -282,36 +281,38 @@ class ListMonitoredAllSessions extends ListRecords
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions([
-                $this->getObserveAction('quran'),
-                ViewAction::make()
-                    ->label('عرض')
-                    ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.view', [
-                        'record' => $record->id,
-                        'type' => 'quran',
-                    ])),
-                EditAction::make()
-                    ->label('تعديل')
-                    ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.edit', [
-                        'record' => $record->id,
-                        'type' => 'quran',
-                    ])),
-                Action::make('add_note')
-                    ->label('ملاحظة')
-                    ->icon('heroicon-o-pencil-square')
-                    ->color('warning')
-                    ->schema([
-                        Textarea::make('supervisor_notes')
-                            ->label('ملاحظات المشرف')
-                            ->rows(4)
-                            ->default(fn ($record) => $record->supervisor_notes),
-                    ])
-                    ->action(function ($record, array $data): void {
-                        $record->update([
-                            'supervisor_notes' => $data['supervisor_notes'],
-                        ]);
-                    }),
-                DeleteAction::make()
-                    ->label('حذف'),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('عرض')
+                        ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.view', [
+                            'record' => $record->id,
+                            'type' => 'quran',
+                        ])),
+                    $this->getObserveAction('quran'),
+                    EditAction::make()
+                        ->label('تعديل')
+                        ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.edit', [
+                            'record' => $record->id,
+                            'type' => 'quran',
+                        ])),
+                    Action::make('add_note')
+                        ->label('ملاحظة')
+                        ->icon('heroicon-o-pencil-square')
+                        ->color('warning')
+                        ->schema([
+                            Textarea::make('supervisor_notes')
+                                ->label('ملاحظات المشرف')
+                                ->rows(4)
+                                ->default(fn ($record) => $record->supervisor_notes),
+                        ])
+                        ->action(function ($record, array $data): void {
+                            $record->update([
+                                'supervisor_notes' => $data['supervisor_notes'],
+                            ]);
+                        }),
+                    DeleteAction::make()
+                        ->label('حذف'),
+                ]),
             ])
             ->toolbarActions([
                 DeleteBulkAction::make(),
@@ -424,36 +425,38 @@ class ListMonitoredAllSessions extends ListRecords
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions([
-                $this->getObserveAction('academic'),
-                ViewAction::make()
-                    ->label('عرض')
-                    ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.view', [
-                        'record' => $record->id,
-                        'type' => 'academic',
-                    ])),
-                EditAction::make()
-                    ->label('تعديل')
-                    ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.edit', [
-                        'record' => $record->id,
-                        'type' => 'academic',
-                    ])),
-                Action::make('add_note')
-                    ->label('ملاحظة')
-                    ->icon('heroicon-o-pencil-square')
-                    ->color('warning')
-                    ->schema([
-                        Textarea::make('supervisor_notes')
-                            ->label('ملاحظات المشرف')
-                            ->rows(4)
-                            ->default(fn ($record) => $record->supervisor_notes),
-                    ])
-                    ->action(function ($record, array $data): void {
-                        $record->update([
-                            'supervisor_notes' => $data['supervisor_notes'],
-                        ]);
-                    }),
-                DeleteAction::make()
-                    ->label('حذف'),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('عرض')
+                        ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.view', [
+                            'record' => $record->id,
+                            'type' => 'academic',
+                        ])),
+                    $this->getObserveAction('academic'),
+                    EditAction::make()
+                        ->label('تعديل')
+                        ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.edit', [
+                            'record' => $record->id,
+                            'type' => 'academic',
+                        ])),
+                    Action::make('add_note')
+                        ->label('ملاحظة')
+                        ->icon('heroicon-o-pencil-square')
+                        ->color('warning')
+                        ->schema([
+                            Textarea::make('supervisor_notes')
+                                ->label('ملاحظات المشرف')
+                                ->rows(4)
+                                ->default(fn ($record) => $record->supervisor_notes),
+                        ])
+                        ->action(function ($record, array $data): void {
+                            $record->update([
+                                'supervisor_notes' => $data['supervisor_notes'],
+                            ]);
+                        }),
+                    DeleteAction::make()
+                        ->label('حذف'),
+                ]),
             ])
             ->toolbarActions([
                 DeleteBulkAction::make(),
@@ -534,36 +537,38 @@ class ListMonitoredAllSessions extends ListRecords
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions([
-                $this->getObserveAction('interactive'),
-                ViewAction::make()
-                    ->label('عرض')
-                    ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.view', [
-                        'record' => $record->id,
-                        'type' => 'interactive',
-                    ])),
-                EditAction::make()
-                    ->label('تعديل')
-                    ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.edit', [
-                        'record' => $record->id,
-                        'type' => 'interactive',
-                    ])),
-                Action::make('add_note')
-                    ->label('ملاحظة')
-                    ->icon('heroicon-o-pencil-square')
-                    ->color('warning')
-                    ->schema([
-                        Textarea::make('supervisor_notes')
-                            ->label('ملاحظات المشرف')
-                            ->rows(4)
-                            ->default(fn ($record) => $record->supervisor_notes),
-                    ])
-                    ->action(function ($record, array $data): void {
-                        $record->update([
-                            'supervisor_notes' => $data['supervisor_notes'],
-                        ]);
-                    }),
-                DeleteAction::make()
-                    ->label('حذف'),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('عرض')
+                        ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.view', [
+                            'record' => $record->id,
+                            'type' => 'interactive',
+                        ])),
+                    $this->getObserveAction('interactive'),
+                    EditAction::make()
+                        ->label('تعديل')
+                        ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.edit', [
+                            'record' => $record->id,
+                            'type' => 'interactive',
+                        ])),
+                    Action::make('add_note')
+                        ->label('ملاحظة')
+                        ->icon('heroicon-o-pencil-square')
+                        ->color('warning')
+                        ->schema([
+                            Textarea::make('supervisor_notes')
+                                ->label('ملاحظات المشرف')
+                                ->rows(4)
+                                ->default(fn ($record) => $record->supervisor_notes),
+                        ])
+                        ->action(function ($record, array $data): void {
+                            $record->update([
+                                'supervisor_notes' => $data['supervisor_notes'],
+                            ]);
+                        }),
+                    DeleteAction::make()
+                        ->label('حذف'),
+                ]),
             ])
             ->toolbarActions([
                 DeleteBulkAction::make(),

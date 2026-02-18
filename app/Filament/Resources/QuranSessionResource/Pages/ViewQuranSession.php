@@ -2,19 +2,19 @@
 
 namespace App\Filament\Resources\QuranSessionResource\Pages;
 
-use Filament\Actions\EditAction;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\IconEntry;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
-use App\Filament\Resources\QuranSessionResource;
-use Filament\Actions;
-use Filament\Infolists;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use App\Filament\Resources\QuranSessionResource;
+use App\Filament\Shared\Actions\SessionStatusActions;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
 class ViewQuranSession extends ViewRecord
 {
@@ -25,6 +25,11 @@ class ViewQuranSession extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
+            SessionStatusActions::startSession(),
+            SessionStatusActions::completeSession(),
+            SessionStatusActions::cancelSession(role: 'admin'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 

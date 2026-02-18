@@ -2,29 +2,26 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
+use App\Filament\Resources\PaymentResource\Pages\CreatePayment;
+use App\Filament\Resources\PaymentResource\Pages\EditPayment;
+use App\Filament\Resources\PaymentResource\Pages\ListPayments;
+use App\Filament\Resources\PaymentResource\Pages\ViewPayment;
+use App\Filament\Shared\Resources\Financial\BasePaymentResource;
+use App\Models\Payment;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Schema;
-use App\Filament\Resources\PaymentResource\Pages\ListPayments;
-use App\Filament\Resources\PaymentResource\Pages\CreatePayment;
-use App\Filament\Resources\PaymentResource\Pages\ViewPayment;
-use App\Filament\Resources\PaymentResource\Pages\EditPayment;
-use App\Filament\Resources\PaymentResource\Pages;
-use App\Filament\Shared\Resources\Financial\BasePaymentResource;
-use App\Models\Academy;
-use App\Models\Payment;
-use Filament\Forms;
-use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 
 class PaymentResource extends BasePaymentResource
 {
     protected static ?string $model = Payment::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-banknotes';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
 
     protected static ?string $navigationLabel = 'المدفوعات';
 
@@ -32,7 +29,7 @@ class PaymentResource extends BasePaymentResource
 
     protected static ?string $pluralModelLabel = 'المدفوعات';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'المالية';
+    protected static string|\UnitEnum|null $navigationGroup = 'المالية';
 
     protected static ?int $navigationSort = 1;
 
@@ -49,13 +46,13 @@ class PaymentResource extends BasePaymentResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make()
-                ->label('عرض'),
-            EditAction::make()
-                ->label('تعديل'),
-            static::getMarkCompletedAction(),
-            static::getGenerateInvoiceAction(),
-            static::getDownloadInvoiceAction(),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
+                EditAction::make()->label('تعديل'),
+                static::getMarkCompletedAction(),
+                static::getGenerateInvoiceAction(),
+                static::getDownloadInvoiceAction(),
+            ]),
         ];
     }
 

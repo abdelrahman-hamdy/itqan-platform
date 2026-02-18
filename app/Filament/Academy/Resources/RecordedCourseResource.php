@@ -2,34 +2,32 @@
 
 namespace App\Filament\Academy\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\BulkAction;
-use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\Textarea;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers\SectionsRelationManager;
-use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers\LessonsRelationManager;
-use App\Filament\Academy\Resources\RecordedCourseResource\Pages\ListRecordedCourses;
+use App\Filament\Academy\Resources\RecordedCourseResource\Pages;
 use App\Filament\Academy\Resources\RecordedCourseResource\Pages\CreateRecordedCourse;
 use App\Filament\Academy\Resources\RecordedCourseResource\Pages\EditRecordedCourse;
+use App\Filament\Academy\Resources\RecordedCourseResource\Pages\ListRecordedCourses;
 use App\Filament\Academy\Resources\RecordedCourseResource\Pages\ViewRecordedCourse;
-use App\Filament\Academy\Resources\RecordedCourseResource\Pages;
-use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers;
+use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers\LessonsRelationManager;
+use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers\SectionsRelationManager;
 use App\Filament\Shared\Resources\Courses\BaseRecordedCourseResource;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
 use App\Models\RecordedCourse;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -59,27 +57,30 @@ class RecordedCourseResource extends BaseRecordedCourseResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            EditAction::make(),
-            Action::make('publish')
-                ->label('نشر')
-                ->icon('heroicon-o-check-circle')
-                ->color('success')
-                ->requiresConfirmation()
-                ->action(function (RecordedCourse $record) {
-                    $record->update(['is_published' => true]);
-                })
-                ->visible(fn (RecordedCourse $record): bool => ! $record->is_published),
-
-            Action::make('unpublish')
-                ->label('إلغاء النشر')
-                ->icon('heroicon-o-x-circle')
-                ->color('danger')
-                ->requiresConfirmation()
-                ->action(function (RecordedCourse $record) {
-                    $record->update(['is_published' => false]);
-                })
-                ->visible(fn (RecordedCourse $record): bool => $record->is_published),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تعديل'),
+                Action::make('publish')
+                    ->label('نشر')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(function (RecordedCourse $record) {
+                        $record->update(['is_published' => true]);
+                    })
+                    ->visible(fn (RecordedCourse $record): bool => ! $record->is_published),
+                Action::make('unpublish')
+                    ->label('إلغاء النشر')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(function (RecordedCourse $record) {
+                        $record->update(['is_published' => false]);
+                    })
+                    ->visible(fn (RecordedCourse $record): bool => $record->is_published),
+            ]),
         ];
     }
 

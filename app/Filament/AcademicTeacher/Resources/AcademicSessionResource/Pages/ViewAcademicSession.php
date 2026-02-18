@@ -2,18 +2,17 @@
 
 namespace App\Filament\AcademicTeacher\Resources\AcademicSessionResource\Pages;
 
-use Filament\Actions\EditAction;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\IconEntry;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionResource;
-use Filament\Actions;
-use Filament\Infolists;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use App\Filament\Shared\Actions\SessionStatusActions;
+use Filament\Actions\EditAction;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
 class ViewAcademicSession extends ViewRecord
 {
@@ -24,6 +23,9 @@ class ViewAcademicSession extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
+            SessionStatusActions::startSession(),
+            SessionStatusActions::completeSession(),
+            SessionStatusActions::cancelSession(role: 'teacher'),
         ];
     }
 

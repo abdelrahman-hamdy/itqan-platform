@@ -2,36 +2,35 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Actions\ReplicateAction;
-use Filament\Forms\Components\Toggle;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\Textarea;
-use Filament\Schemas\Components\Utilities\Get;
-use App\Filament\Resources\RecordedCourseResource\Pages\ListRecordedCourses;
+use App\Filament\Resources\RecordedCourseResource\Pages;
 use App\Filament\Resources\RecordedCourseResource\Pages\CreateRecordedCourse;
 use App\Filament\Resources\RecordedCourseResource\Pages\EditRecordedCourse;
+use App\Filament\Resources\RecordedCourseResource\Pages\ListRecordedCourses;
 use App\Filament\Resources\RecordedCourseResource\Pages\ViewRecordedCourse;
-use App\Filament\Resources\RecordedCourseResource\Pages;
 use App\Filament\Shared\Resources\Courses\BaseRecordedCourseResource;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\Academy;
 use App\Models\RecordedCourse;
 use App\Services\AcademyContextService;
-use Filament\Forms;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\ReplicateAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Tables;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -56,42 +55,42 @@ class RecordedCourseResource extends BaseRecordedCourseResource
     protected static function getTableActions(): array
     {
         return [
-            ReplicateAction::make()
-                ->label('نسخ الدورة')
-                ->schema([
-                    Toggle::make('copy_sections')
-                        ->label('نسخ الأقسام والدروس')
-                        ->default(true)
-                        ->helperText('نسخ جميع الأقسام والدروس مع الدورة'),
-                ])
-                ->beforeReplicaSaved(function (RecordedCourse $replica): void {
-                    $replica->title = $replica->title.' (نسخة)';
-                    $replica->is_published = false;
-                    $replica->slug = $replica->slug.'-copy-'.time();
-                })
-                ->afterReplicaSaved(function (RecordedCourse $original, RecordedCourse $replica, array $data): void {
-                    if ($data['copy_sections'] ?? true) {
-                        foreach ($original->sections as $section) {
-                            $newSection = $section->replicate(['recorded_course_id']);
-                            $newSection->recorded_course_id = $replica->id;
-                            $newSection->save();
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
+                EditAction::make()->label('تعديل'),
+                ReplicateAction::make()
+                    ->label('نسخ الدورة')
+                    ->schema([
+                        Toggle::make('copy_sections')
+                            ->label('نسخ الأقسام والدروس')
+                            ->default(true)
+                            ->helperText('نسخ جميع الأقسام والدروس مع الدورة'),
+                    ])
+                    ->beforeReplicaSaved(function (RecordedCourse $replica): void {
+                        $replica->title = $replica->title.' (نسخة)';
+                        $replica->is_published = false;
+                        $replica->slug = $replica->slug.'-copy-'.time();
+                    })
+                    ->afterReplicaSaved(function (RecordedCourse $original, RecordedCourse $replica, array $data): void {
+                        if ($data['copy_sections'] ?? true) {
+                            foreach ($original->sections as $section) {
+                                $newSection = $section->replicate(['recorded_course_id']);
+                                $newSection->recorded_course_id = $replica->id;
+                                $newSection->save();
 
-                            foreach ($section->lessons as $lesson) {
-                                $newLesson = $lesson->replicate(['course_section_id']);
-                                $newLesson->course_section_id = $newSection->id;
-                                $newLesson->save();
+                                foreach ($section->lessons as $lesson) {
+                                    $newLesson = $lesson->replicate(['course_section_id']);
+                                    $newLesson->course_section_id = $newSection->id;
+                                    $newLesson->save();
+                                }
                             }
                         }
-                    }
-                })
-                ->successNotificationTitle('تم نسخ الدورة بنجاح'),
-            ViewAction::make(),
-            EditAction::make(),
-            DeleteAction::make(),
-            RestoreAction::make()
-                ->label(__('filament.actions.restore')),
-            ForceDeleteAction::make()
-                ->label(__('filament.actions.force_delete')),
+                    })
+                    ->successNotificationTitle('تم نسخ الدورة بنجاح'),
+                DeleteAction::make()->label('حذف'),
+                RestoreAction::make()->label(__('filament.actions.restore')),
+                ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+            ]),
         ];
     }
 

@@ -2,35 +2,33 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
+use App\Enums\ReviewStatus;
+use App\Filament\Resources\CourseReviewResource\Pages\CreateCourseReview;
+use App\Filament\Resources\CourseReviewResource\Pages\EditCourseReview;
+use App\Filament\Resources\CourseReviewResource\Pages\ListCourseReviews;
+use App\Filament\Resources\CourseReviewResource\Pages\ViewCourseReview;
+use App\Models\CourseReview;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\Action;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\BulkAction;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use App\Filament\Resources\CourseReviewResource\Pages\ListCourseReviews;
-use App\Filament\Resources\CourseReviewResource\Pages\CreateCourseReview;
-use App\Filament\Resources\CourseReviewResource\Pages\ViewCourseReview;
-use App\Filament\Resources\CourseReviewResource\Pages\EditCourseReview;
-use App\Enums\ReviewStatus;
-use App\Filament\Resources\CourseReviewResource\Pages;
-use App\Models\CourseReview;
-use Filament\Forms;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -39,7 +37,7 @@ class CourseReviewResource extends BaseResource
 {
     protected static ?string $model = CourseReview::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-chat-bubble-left-ellipsis';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-chat-bubble-left-ellipsis';
 
     protected static ?string $navigationLabel = 'تقييمات الدورات';
 
@@ -47,7 +45,7 @@ class CourseReviewResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'تقييمات الدورات';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'التقييمات والمراجعات';
+    protected static string|\UnitEnum|null $navigationGroup = 'التقييمات والمراجعات';
 
     protected static ?int $navigationSort = 2;
 
@@ -208,27 +206,25 @@ class CourseReviewResource extends BaseResource
             ])
             ->deferFilters(false)
             ->recordActions([
-                Action::make('approve')
-                    ->label('اعتماد')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->visible(fn ($record) => ! $record->is_approved)
-                    ->action(fn ($record) => $record->approve()),
-
-                Action::make('reject')
-                    ->label('رفض')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->visible(fn ($record) => $record->is_approved)
-                    ->action(fn ($record) => $record->reject()),
-
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
-                RestoreAction::make()
-                    ->label(__('filament.actions.restore')),
-                ForceDeleteAction::make()
-                    ->label(__('filament.actions.force_delete')),
+                ActionGroup::make([
+                    ViewAction::make()->label('عرض'),
+                    EditAction::make()->label('تعديل'),
+                    Action::make('approve')
+                        ->label('اعتماد')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->visible(fn ($record) => ! $record->is_approved)
+                        ->action(fn ($record) => $record->approve()),
+                    Action::make('reject')
+                        ->label('رفض')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->visible(fn ($record) => $record->is_approved)
+                        ->action(fn ($record) => $record->reject()),
+                    DeleteAction::make()->label('حذف'),
+                    RestoreAction::make()->label(__('filament.actions.restore')),
+                    ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

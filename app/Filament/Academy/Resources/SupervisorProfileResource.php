@@ -2,17 +2,16 @@
 
 namespace App\Filament\Academy\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Tables\Columns\ImageColumn;
-use App\Filament\Academy\Resources\SupervisorProfileResource\Pages\ListSupervisorProfiles;
-use App\Filament\Academy\Resources\SupervisorProfileResource\Pages\CreateSupervisorProfile;
-use App\Filament\Academy\Resources\SupervisorProfileResource\Pages\ViewSupervisorProfile;
-use App\Filament\Academy\Resources\SupervisorProfileResource\Pages\EditSupervisorProfile;
 use App\Enums\UserType;
-use App\Filament\Academy\Resources\SupervisorProfileResource\Pages;
+use App\Filament\Academy\Resources\SupervisorProfileResource\Pages\CreateSupervisorProfile;
+use App\Filament\Academy\Resources\SupervisorProfileResource\Pages\EditSupervisorProfile;
+use App\Filament\Academy\Resources\SupervisorProfileResource\Pages\ListSupervisorProfiles;
+use App\Filament\Academy\Resources\SupervisorProfileResource\Pages\ViewSupervisorProfile;
 use App\Filament\Shared\Resources\Profiles\BaseSupervisorProfileResource;
-use Filament\Tables;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\ImageColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,14 +20,19 @@ class SupervisorProfileResource extends BaseSupervisorProfileResource
     protected static function scopeEloquentQuery(Builder $query): Builder
     {
         $academyId = Auth::user()->academy_id;
+
         return $query->where('academy_id', $academyId);
     }
 
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            EditAction::make(),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تعديل'),
+            ]),
         ];
     }
 

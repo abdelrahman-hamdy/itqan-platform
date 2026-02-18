@@ -3,8 +3,9 @@
 namespace App\Filament\Academy\Resources\MeetingAttendanceResource\Pages;
 
 use App\Filament\Academy\Resources\MeetingAttendanceResource;
-use Filament\Actions\EditAction;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 
 class ViewMeetingAttendance extends ViewRecord
 {
@@ -15,6 +16,8 @@ class ViewMeetingAttendance extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }

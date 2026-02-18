@@ -2,48 +2,51 @@
 
 namespace App\Filament\Academy\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
-use App\Models\User;
-use App\Models\AcademicTeacherProfile;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Components\Utilities\Get;
-use App\Models\AcademicSubject;
-use App\Models\AcademicGradeLevel;
-use App\Models\AcademicPackage;
-use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\DatePicker;
-use Filament\Schemas\Schema;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Infolists\Components\TextEntry;
-use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages\ListAcademicSubscriptions;
-use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages\CreateAcademicSubscription;
-use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages\ViewAcademicSubscription;
-use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages\EditAcademicSubscription;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\UserType;
-use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages;
+use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages\CreateAcademicSubscription;
+use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages\EditAcademicSubscription;
+use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages\ListAcademicSubscriptions;
+use App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages\ViewAcademicSubscription;
 use App\Filament\Shared\Resources\BaseSubscriptionResource;
+use App\Models\AcademicGradeLevel;
+use App\Models\AcademicPackage;
+use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
-use Filament\Forms;
-use Filament\Infolists;
-use Filament\Tables;
+use App\Models\AcademicTeacherProfile;
+use App\Models\User;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 
 class AcademicSubscriptionResource extends BaseSubscriptionResource
 {
     protected static ?string $model = AcademicSubscription::class;
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
+
     protected static ?string $navigationLabel = 'الاشتراكات الأكاديمية';
+
     protected static ?string $modelLabel = 'اشتراك أكاديمي';
+
     protected static ?string $pluralModelLabel = 'الاشتراكات الأكاديمية';
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة التعليم الأكاديمي';
+
     protected static ?int $navigationSort = 2;
 
     protected static function getBasicInfoFormSection(): Section
@@ -352,11 +355,15 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            EditAction::make(),
-            static::getCancelPendingAction(),
-            static::getPauseAction(),
-            static::getResumeAction(),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تعديل'),
+                static::getCancelPendingAction(),
+                static::getPauseAction(),
+                static::getResumeAction(),
+            ]),
         ];
     }
 

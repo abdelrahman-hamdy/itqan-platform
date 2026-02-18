@@ -2,40 +2,38 @@
 
 namespace App\Filament\Resources;
 
-use App\Services\AcademyContextService;
-use Illuminate\Database\Eloquent\Model;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\ColorPicker;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ColorColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\BusinessServiceCategoryResource\Pages\ListBusinessServiceCategories;
 use App\Filament\Resources\BusinessServiceCategoryResource\Pages\CreateBusinessServiceCategory;
 use App\Filament\Resources\BusinessServiceCategoryResource\Pages\EditBusinessServiceCategory;
-use App\Filament\Resources\BusinessServiceCategoryResource\Pages;
+use App\Filament\Resources\BusinessServiceCategoryResource\Pages\ListBusinessServiceCategories;
 use App\Models\BusinessServiceCategory;
-use Filament\Forms;
+use App\Services\AcademyContextService;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\ColorColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class BusinessServiceCategoryResource extends Resource
 {
     protected static ?string $model = BusinessServiceCategory::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'خدمات الأعمال';
+    protected static string|\UnitEnum|null $navigationGroup = 'خدمات الأعمال';
 
     protected static ?string $navigationLabel = 'تصنيفات الخدمات';
 
@@ -306,10 +304,10 @@ class BusinessServiceCategoryResource extends Resource
             ])
             ->deferFilters(false)
             ->recordActions([
-                EditAction::make()
-                    ->label('تعديل'),
-                DeleteAction::make()
-                    ->label('حذف'),
+                ActionGroup::make([
+                    EditAction::make()->label('تعديل'),
+                    DeleteAction::make()->label('حذف'),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

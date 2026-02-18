@@ -2,24 +2,23 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
-use App\Models\User;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Tables\Filters\SelectFilter;
-use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\ListInteractiveSessionReports;
-use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\CreateInteractiveSessionReport;
-use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\ViewInteractiveSessionReport;
-use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\EditInteractiveSessionReport;
 use App\Enums\UserType;
 use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages;
+use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\CreateInteractiveSessionReport;
+use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\EditInteractiveSessionReport;
+use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\ListInteractiveSessionReports;
+use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\ViewInteractiveSessionReport;
 use App\Filament\Shared\Resources\BaseInteractiveSessionReportResource;
 use App\Models\InteractiveSessionReport;
-use Filament\Forms;
-use Filament\Tables;
+use App\Models\User;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Section;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -37,7 +36,7 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     // Navigation Configuration
     // ========================================
 
-    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والتقييمات';
+    protected static string|\UnitEnum|null $navigationGroup = 'التقارير والتقييمات';
 
     protected static ?int $navigationSort = 2;
 
@@ -99,10 +98,12 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make()
-                ->label('عرض'),
-            EditAction::make()
-                ->label('تقييم'),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تقييم'),
+            ]),
         ];
     }
 

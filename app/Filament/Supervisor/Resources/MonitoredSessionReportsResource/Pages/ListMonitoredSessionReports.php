@@ -2,22 +2,22 @@
 
 namespace App\Filament\Supervisor\Resources\MonitoredSessionReportsResource\Pages;
 
-use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Tables\Columns\TextColumn;
-use BackedEnum;
-use ValueError;
-use Filament\Tables\Filters\SelectFilter;
-use App\Models\User;
-use Filament\Tables\Filters\Filter;
-use Filament\Actions\ViewAction;
 use App\Enums\AttendanceStatus;
 use App\Filament\Supervisor\Resources\MonitoredSessionReportsResource;
 use App\Models\AcademicSessionReport;
 use App\Models\StudentSessionReport;
+use App\Models\User;
+use BackedEnum;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Tables;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use ValueError;
 
 class ListMonitoredSessionReports extends ListRecords
 {
@@ -222,12 +222,14 @@ class ListMonitoredSessionReports extends ListRecords
             ])
             ->deferFilters(false)
             ->recordActions([
-                ViewAction::make()
-                    ->label('عرض')
-                    ->url(fn ($record): string => route('filament.supervisor.resources.monitored-session-reports.view', [
-                        'record' => $record->id,
-                        'type' => 'quran',
-                    ])),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('عرض')
+                        ->url(fn ($record): string => route('filament.supervisor.resources.monitored-session-reports.view', [
+                            'record' => $record->id,
+                            'type' => 'quran',
+                        ])),
+                ]),
             ])
             ->toolbarActions([]);
     }
@@ -330,12 +332,14 @@ class ListMonitoredSessionReports extends ListRecords
             ])
             ->deferFilters(false)
             ->recordActions([
-                ViewAction::make()
-                    ->label('عرض')
-                    ->url(fn ($record): string => route('filament.supervisor.resources.monitored-session-reports.view', [
-                        'record' => $record->id,
-                        'type' => 'academic',
-                    ])),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('عرض')
+                        ->url(fn ($record): string => route('filament.supervisor.resources.monitored-session-reports.view', [
+                            'record' => $record->id,
+                            'type' => 'academic',
+                        ])),
+                ]),
             ])
             ->toolbarActions([]);
     }

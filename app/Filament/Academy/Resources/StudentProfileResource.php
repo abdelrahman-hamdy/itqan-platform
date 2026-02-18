@@ -2,21 +2,21 @@
 
 namespace App\Filament\Academy\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\TextColumn;
-use App\Filament\Academy\Resources\StudentProfileResource\Pages\ListStudentProfiles;
-use App\Filament\Academy\Resources\StudentProfileResource\Pages\CreateStudentProfile;
-use App\Filament\Academy\Resources\StudentProfileResource\Pages\ViewStudentProfile;
-use App\Filament\Academy\Resources\StudentProfileResource\Pages\EditStudentProfile;
 use App\Enums\UserType;
 use App\Filament\Academy\Resources\StudentProfileResource\Pages;
+use App\Filament\Academy\Resources\StudentProfileResource\Pages\CreateStudentProfile;
+use App\Filament\Academy\Resources\StudentProfileResource\Pages\EditStudentProfile;
+use App\Filament\Academy\Resources\StudentProfileResource\Pages\ListStudentProfiles;
+use App\Filament\Academy\Resources\StudentProfileResource\Pages\ViewStudentProfile;
 use App\Filament\Shared\Resources\Profiles\BaseStudentProfileResource;
 use App\Helpers\CountryList;
 use App\Models\AcademicGradeLevel;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -39,9 +39,12 @@ class StudentProfileResource extends BaseStudentProfileResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            EditAction::make(),
-            // Academy admins cannot delete students
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تعديل'),
+            ]),
         ];
     }
 

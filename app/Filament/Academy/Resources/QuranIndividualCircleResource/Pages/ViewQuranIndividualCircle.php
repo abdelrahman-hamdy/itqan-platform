@@ -4,6 +4,7 @@ namespace App\Filament\Academy\Resources\QuranIndividualCircleResource\Pages;
 
 use App\Filament\Academy\Resources\QuranIndividualCircleResource;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 
 class ViewQuranIndividualCircle extends ViewRecord
@@ -15,6 +16,8 @@ class ViewQuranIndividualCircle extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }

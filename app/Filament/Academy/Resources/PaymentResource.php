@@ -2,24 +2,23 @@
 
 namespace App\Filament\Academy\Resources;
 
-use Filament\Actions\ViewAction;
+use App\Filament\Academy\Resources\PaymentResource\Pages;
+use App\Filament\Academy\Resources\PaymentResource\Pages\CreatePayment;
+use App\Filament\Academy\Resources\PaymentResource\Pages\EditPayment;
+use App\Filament\Academy\Resources\PaymentResource\Pages\ListPayments;
+use App\Filament\Academy\Resources\PaymentResource\Pages\ViewPayment;
+use App\Filament\Shared\Resources\Financial\BasePaymentResource;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Schema;
-use App\Filament\Academy\Resources\PaymentResource\Pages\ListPayments;
-use App\Filament\Academy\Resources\PaymentResource\Pages\CreatePayment;
-use App\Filament\Academy\Resources\PaymentResource\Pages\ViewPayment;
-use App\Filament\Academy\Resources\PaymentResource\Pages\EditPayment;
-use App\Filament\Academy\Resources\PaymentResource\Pages;
-use App\Filament\Shared\Resources\Financial\BasePaymentResource;
-use Filament\Forms;
-use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class PaymentResource extends BasePaymentResource
 {
-    protected static string | \UnitEnum | null $navigationGroup = 'المالية';
+    protected static string|\UnitEnum|null $navigationGroup = 'المالية';
 
     protected static ?int $navigationSort = 1;
 
@@ -38,13 +37,15 @@ class PaymentResource extends BasePaymentResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make()
-                ->label('عرض'),
-            EditAction::make()
-                ->label('تعديل'),
-            static::getMarkCompletedAction(),
-            static::getGenerateInvoiceAction(),
-            static::getDownloadInvoiceAction(),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تعديل'),
+                static::getMarkCompletedAction(),
+                static::getGenerateInvoiceAction(),
+                static::getDownloadInvoiceAction(),
+            ]),
         ];
     }
 

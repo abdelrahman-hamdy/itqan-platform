@@ -2,43 +2,40 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Notifications\Notification;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\BulkAction;
-use Filament\Schemas\Components\Grid;
-use Filament\Infolists\Components\TextEntry;
-use App\Filament\Resources\AcademicSubjectResource\Pages\ListAcademicSubjects;
 use App\Filament\Resources\AcademicSubjectResource\Pages\CreateAcademicSubject;
-use App\Filament\Resources\AcademicSubjectResource\Pages\ViewAcademicSubject;
 use App\Filament\Resources\AcademicSubjectResource\Pages\EditAcademicSubject;
-use App\Filament\Resources\AcademicSubjectResource\Pages;
+use App\Filament\Resources\AcademicSubjectResource\Pages\ListAcademicSubjects;
+use App\Filament\Resources\AcademicSubjectResource\Pages\ViewAcademicSubject;
 use App\Models\AcademicSubject;
-use Filament\Forms;
-use Filament\Infolists\Components;
-use Filament\Tables;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 class AcademicSubjectResource extends BaseResource
 {
     protected static ?string $model = AcademicSubject::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $navigationLabel = 'المواد الأكاديمية';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة التعليم الأكاديمي';
 
     protected static ?int $navigationSort = 4;
 
@@ -145,81 +142,81 @@ class AcademicSubjectResource extends BaseResource
             ])
             ->deferFilters(false)
             ->recordActions([
-                ViewAction::make()
-                    ->label('عرض'),
-                EditAction::make()
-                    ->label('تعديل'),
-                DeleteAction::make()
-                    ->label('حذف')
-                    ->before(function (AcademicSubject $record, DeleteAction $action) {
-                        $dependencies = [];
+                ActionGroup::make([
+                    ViewAction::make()->label('عرض'),
+                    EditAction::make()->label('تعديل'),
+                    DeleteAction::make()
+                        ->label('حذف')
+                        ->before(function (AcademicSubject $record, DeleteAction $action) {
+                            $dependencies = [];
 
-                        if ($record->teachers()->count() > 0) {
-                            $dependencies[] = 'معلمين ('.$record->teachers()->count().')';
-                        }
-                        if ($record->academicIndividualLessons()->count() > 0) {
-                            $dependencies[] = 'دروس فردية ('.$record->academicIndividualLessons()->count().')';
-                        }
-                        if ($record->interactiveCourses()->count() > 0) {
-                            $dependencies[] = 'دورات تفاعلية ('.$record->interactiveCourses()->count().')';
-                        }
-                        if ($record->recordedCourses()->count() > 0) {
-                            $dependencies[] = 'دورات مسجلة ('.$record->recordedCourses()->count().')';
-                        }
-
-                        if (! empty($dependencies)) {
-                            Notification::make()
-                                ->danger()
-                                ->title('لا يمكن حذف المادة الأكاديمية')
-                                ->body('يوجد سجلات مرتبطة: '.implode('، ', $dependencies))
-                                ->persistent()
-                                ->send();
-
-                            $action->cancel();
-                        }
-                    }),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make()
-                        ->label('حذف المحدد')
-                        ->before(function ($records, DeleteBulkAction $action) {
-                            $blockedRecords = [];
-
-                            foreach ($records as $record) {
-                                $hasDependencies = $record->teachers()->count() > 0
-                                    || $record->academicIndividualLessons()->count() > 0
-                                    || $record->interactiveCourses()->count() > 0
-                                    || $record->recordedCourses()->count() > 0;
-
-                                if ($hasDependencies) {
-                                    $blockedRecords[] = $record->name;
-                                }
+                            if ($record->teachers()->count() > 0) {
+                                $dependencies[] = 'معلمين ('.$record->teachers()->count().')';
+                            }
+                            if ($record->academicIndividualLessons()->count() > 0) {
+                                $dependencies[] = 'دروس فردية ('.$record->academicIndividualLessons()->count().')';
+                            }
+                            if ($record->interactiveCourses()->count() > 0) {
+                                $dependencies[] = 'دورات تفاعلية ('.$record->interactiveCourses()->count().')';
+                            }
+                            if ($record->recordedCourses()->count() > 0) {
+                                $dependencies[] = 'دورات مسجلة ('.$record->recordedCourses()->count().')';
                             }
 
-                            if (! empty($blockedRecords)) {
+                            if (! empty($dependencies)) {
                                 Notification::make()
                                     ->danger()
-                                    ->title('لا يمكن حذف بعض المواد')
-                                    ->body('المواد التالية لديها سجلات مرتبطة: '.implode('، ', $blockedRecords))
+                                    ->title('لا يمكن حذف المادة الأكاديمية')
+                                    ->body('يوجد سجلات مرتبطة: '.implode('، ', $dependencies))
                                     ->persistent()
                                     ->send();
 
                                 $action->cancel();
                             }
                         }),
+                ]),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                        DeleteBulkAction::make()
+                            ->label('حذف المحدد')
+                            ->before(function ($records, DeleteBulkAction $action) {
+                                $blockedRecords = [];
 
-                    BulkAction::make('activate')
-                        ->label('تفعيل المحدد')
-                        ->icon('heroicon-o-check-circle')
-                        ->color('success')
-                        ->action(fn ($records) => $records->each(fn ($record) => $record->update(['is_active' => true]))),
+                                foreach ($records as $record) {
+                                    $hasDependencies = $record->teachers()->count() > 0
+                                        || $record->academicIndividualLessons()->count() > 0
+                                        || $record->interactiveCourses()->count() > 0
+                                        || $record->recordedCourses()->count() > 0;
 
-                    BulkAction::make('deactivate')
-                        ->label('إلغاء تفعيل المحدد')
-                        ->icon('heroicon-o-x-circle')
-                        ->color('danger')
-                        ->action(fn ($records) => $records->each(fn ($record) => $record->update(['is_active' => false]))),
+                                    if ($hasDependencies) {
+                                        $blockedRecords[] = $record->name;
+                                    }
+                                }
+
+                                if (! empty($blockedRecords)) {
+                                    Notification::make()
+                                        ->danger()
+                                        ->title('لا يمكن حذف بعض المواد')
+                                        ->body('المواد التالية لديها سجلات مرتبطة: '.implode('، ', $blockedRecords))
+                                        ->persistent()
+                                        ->send();
+
+                                    $action->cancel();
+                                }
+                            }),
+
+                        BulkAction::make('activate')
+                            ->label('تفعيل المحدد')
+                            ->icon('heroicon-o-check-circle')
+                            ->color('success')
+                            ->action(fn ($records) => $records->each(fn ($record) => $record->update(['is_active' => true]))),
+
+                        BulkAction::make('deactivate')
+                            ->label('إلغاء تفعيل المحدد')
+                            ->icon('heroicon-o-x-circle')
+                            ->color('danger')
+                            ->action(fn ($records) => $records->each(fn ($record) => $record->update(['is_active' => false]))),
                 ]),
             ])
             ->defaultSort('name', 'asc');

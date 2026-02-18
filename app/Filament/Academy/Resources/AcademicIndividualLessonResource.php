@@ -20,10 +20,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Hidden;
@@ -152,10 +148,6 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
                     ])),
                 DeleteAction::make()
                     ->label('حذف'),
-                RestoreAction::make()
-                    ->label('استعادة'),
-                ForceDeleteAction::make()
-                    ->label('حذف نهائي'),
             ]),
         ];
     }
@@ -167,11 +159,8 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
     {
         return [
             BulkActionGroup::make([
-                DeleteBulkAction::make(),
-                RestoreBulkAction::make()
-                    ->label(__('filament.actions.restore_selected')),
-                ForceDeleteBulkAction::make()
-                    ->label(__('filament.actions.force_delete_selected')),
+                DeleteBulkAction::make()
+                    ->label('حذف المحدد'),
             ]),
         ];
     }

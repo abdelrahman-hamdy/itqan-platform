@@ -2,17 +2,18 @@
 
 namespace App\Filament\Academy\Resources\RecordedCourseResource\Pages;
 
-use Filament\Actions\EditAction;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
 use App\Filament\Academy\Resources\RecordedCourseResource;
-use Filament\Actions;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\TextEntry;
-use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
 class ViewRecordedCourse extends ViewRecord
 {
@@ -23,6 +24,22 @@ class ViewRecordedCourse extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل الدورة'),
+            Action::make('publish')
+                ->label('نشر الدورة')
+                ->icon('heroicon-o-globe-alt')
+                ->color('success')
+                ->requiresConfirmation()
+                ->action(fn () => $this->record->update(['is_published' => true]))
+                ->visible(fn () => ! $this->record->is_published),
+            Action::make('unpublish')
+                ->label('إلغاء النشر')
+                ->icon('heroicon-o-eye-slash')
+                ->color('warning')
+                ->requiresConfirmation()
+                ->action(fn () => $this->record->update(['is_published' => false]))
+                ->visible(fn () => $this->record->is_published),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 

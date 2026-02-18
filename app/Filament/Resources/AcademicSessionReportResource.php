@@ -2,27 +2,26 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
+use App\Filament\Resources\AcademicSessionReportResource\Pages;
+use App\Filament\Resources\AcademicSessionReportResource\Pages\CreateAcademicSessionReport;
+use App\Filament\Resources\AcademicSessionReportResource\Pages\EditAcademicSessionReport;
+use App\Filament\Resources\AcademicSessionReportResource\Pages\ListAcademicSessionReports;
+use App\Filament\Resources\AcademicSessionReportResource\Pages\ViewAcademicSessionReport;
+use App\Filament\Shared\Resources\BaseAcademicSessionReportResource;
 use App\Models\User;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Tables\Filters\SelectFilter;
-use App\Filament\Resources\AcademicSessionReportResource\Pages\ListAcademicSessionReports;
-use App\Filament\Resources\AcademicSessionReportResource\Pages\CreateAcademicSessionReport;
-use App\Filament\Resources\AcademicSessionReportResource\Pages\ViewAcademicSessionReport;
-use App\Filament\Resources\AcademicSessionReportResource\Pages\EditAcademicSessionReport;
-use App\Filament\Resources\AcademicSessionReportResource\Pages;
-use App\Filament\Shared\Resources\BaseAcademicSessionReportResource;
-use Filament\Forms;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -37,9 +36,9 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     // Navigation Configuration
     // ========================================
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والحضور';
+    protected static string|\UnitEnum|null $navigationGroup = 'التقارير والحضور';
 
     protected static ?int $navigationSort = 2;
 
@@ -121,8 +120,10 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            EditAction::make(),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
+                EditAction::make()->label('تعديل'),
+            ]),
         ];
     }
 

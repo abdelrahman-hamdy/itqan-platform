@@ -2,45 +2,43 @@
 
 namespace App\Filament\Resources;
 
-use App\Services\AcademyContextService;
-use Illuminate\Database\Eloquent\Model;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\DatePicker;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\BulkAction;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\BusinessServiceRequestResource\Pages\ListBusinessServiceRequests;
-use App\Filament\Resources\BusinessServiceRequestResource\Pages\CreateBusinessServiceRequest;
-use App\Filament\Resources\BusinessServiceRequestResource\Pages\ViewBusinessServiceRequest;
-use App\Filament\Resources\BusinessServiceRequestResource\Pages\EditBusinessServiceRequest;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
-use App\Filament\Resources\BusinessServiceRequestResource\Pages;
+use App\Filament\Resources\BusinessServiceRequestResource\Pages\CreateBusinessServiceRequest;
+use App\Filament\Resources\BusinessServiceRequestResource\Pages\EditBusinessServiceRequest;
+use App\Filament\Resources\BusinessServiceRequestResource\Pages\ListBusinessServiceRequests;
+use App\Filament\Resources\BusinessServiceRequestResource\Pages\ViewBusinessServiceRequest;
 use App\Models\BusinessServiceRequest;
-use Filament\Forms;
+use App\Services\AcademyContextService;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class BusinessServiceRequestResource extends Resource
 {
     protected static ?string $model = BusinessServiceRequest::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'خدمات الأعمال';
+    protected static string|\UnitEnum|null $navigationGroup = 'خدمات الأعمال';
 
     protected static ?string $navigationLabel = 'طلبات الأعمال';
 
@@ -288,51 +286,50 @@ class BusinessServiceRequestResource extends Resource
             ])
             ->deferFilters(false)
             ->recordActions([
-                ViewAction::make()
-                    ->label('عرض'),
-                EditAction::make()
-                    ->label('تعديل'),
-                DeleteAction::make()
-                    ->label('حذف')
-                    ->requiresConfirmation()
-                    ->modalHeading('تأكيد الحذف')
-                    ->modalDescription('هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.')
-                    ->modalSubmitActionLabel('حذف')
-                    ->modalCancelActionLabel('إلغاء'),
-                Action::make('mark_reviewed')
-                    ->label('مراجعة')
-                    ->icon('heroicon-o-eye')
-                    ->color('info')
-                    ->visible(fn (BusinessServiceRequest $record): bool => $record->status === SessionSubscriptionStatus::PENDING->value)
-                    ->requiresConfirmation()
-                    ->modalHeading('تأكيد المراجعة')
-                    ->modalDescription('هل تريد وضع علامة مراجعة على هذا الطلب؟')
-                    ->modalSubmitActionLabel('مراجعة')
-                    ->modalCancelActionLabel('إلغاء')
-                    ->action(function (BusinessServiceRequest $record): void {
-                        $record->update(['status' => 'reviewed']);
-                    }),
-
-                Action::make('change_status')
-                    ->label('تغيير الحالة')
-                    ->icon('heroicon-o-arrow-path')
-                    ->schema([
-                        Select::make('status')
-                            ->label('الحالة الجديدة')
-                            ->options([
-                                SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
-                                'reviewed' => 'تم المراجعة',
-                                'approved' => 'مقبول',
-                                'rejected' => 'مرفوض',
-                                SessionStatus::COMPLETED->value => 'مكتمل',
-                            ])
-                            ->required(),
-                        Textarea::make('admin_notes')
-                            ->label('ملاحظات إدارية'),
-                    ])
-                    ->action(function (array $data, BusinessServiceRequest $record): void {
-                        $record->update($data);
-                    }),
+                ActionGroup::make([
+                    ViewAction::make()->label('عرض'),
+                    EditAction::make()->label('تعديل'),
+                    Action::make('mark_reviewed')
+                        ->label('مراجعة')
+                        ->icon('heroicon-o-eye')
+                        ->color('info')
+                        ->visible(fn (BusinessServiceRequest $record): bool => $record->status === SessionSubscriptionStatus::PENDING->value)
+                        ->requiresConfirmation()
+                        ->modalHeading('تأكيد المراجعة')
+                        ->modalDescription('هل تريد وضع علامة مراجعة على هذا الطلب؟')
+                        ->modalSubmitActionLabel('مراجعة')
+                        ->modalCancelActionLabel('إلغاء')
+                        ->action(function (BusinessServiceRequest $record): void {
+                            $record->update(['status' => 'reviewed']);
+                        }),
+                    Action::make('change_status')
+                        ->label('تغيير الحالة')
+                        ->icon('heroicon-o-arrow-path')
+                        ->schema([
+                            Select::make('status')
+                                ->label('الحالة الجديدة')
+                                ->options([
+                                    SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
+                                    'reviewed' => 'تم المراجعة',
+                                    'approved' => 'مقبول',
+                                    'rejected' => 'مرفوض',
+                                    SessionStatus::COMPLETED->value => 'مكتمل',
+                                ])
+                                ->required(),
+                            Textarea::make('admin_notes')
+                                ->label('ملاحظات إدارية'),
+                        ])
+                        ->action(function (array $data, BusinessServiceRequest $record): void {
+                            $record->update($data);
+                        }),
+                    DeleteAction::make()
+                        ->label('حذف')
+                        ->requiresConfirmation()
+                        ->modalHeading('تأكيد الحذف')
+                        ->modalDescription('هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.')
+                        ->modalSubmitActionLabel('حذف')
+                        ->modalCancelActionLabel('إلغاء'),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

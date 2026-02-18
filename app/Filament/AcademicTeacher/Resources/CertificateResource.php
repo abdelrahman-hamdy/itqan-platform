@@ -2,10 +2,15 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use App\Constants\DefaultAcademy;
 use App\Filament\AcademicTeacher\Resources\CertificateResource\Pages\ListCertificates;
 use App\Filament\AcademicTeacher\Resources\CertificateResource\Pages\ViewCertificate;
-use App\Filament\AcademicTeacher\Resources\CertificateResource\Pages;
 use App\Filament\Shared\Resources\BaseCertificateResource;
+use App\Models\Certificate;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Tables\Table;
 
 /**
  * Certificate Resource for AcademicTeacher Panel
@@ -14,9 +19,37 @@ use App\Filament\Shared\Resources\BaseCertificateResource;
  */
 class CertificateResource extends BaseCertificateResource
 {
-    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والتقييمات';
+    protected static string|\UnitEnum|null $navigationGroup = 'التقارير والتقييمات';
 
     protected static ?int $navigationSort = 3;
+
+    public static function table(Table $table): Table
+    {
+        return parent::table($table)
+            ->recordActions([
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('التفاصيل'),
+                    Action::make('view_pdf')
+                        ->label('عرض PDF')
+                        ->icon('heroicon-o-eye')
+                        ->color('primary')
+                        ->url(fn (Certificate $record): string => route('student.certificate.view', [
+                            'subdomain' => $record->academy?->subdomain ?? DefaultAcademy::subdomain(),
+                            'certificate' => $record->id,
+                        ]))
+                        ->openUrlInNewTab(),
+                    Action::make('download')
+                        ->label('تحميل')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->color('success')
+                        ->url(fn (Certificate $record): string => route('student.certificate.download', [
+                            'subdomain' => $record->academy?->subdomain ?? DefaultAcademy::subdomain(),
+                            'certificate' => $record->id,
+                        ])),
+                ]),
+            ]);
+    }
 
     public static function getPages(): array
     {

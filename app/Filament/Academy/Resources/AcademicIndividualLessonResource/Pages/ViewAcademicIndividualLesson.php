@@ -4,6 +4,7 @@ namespace App\Filament\Academy\Resources\AcademicIndividualLessonResource\Pages;
 
 use App\Filament\Academy\Resources\AcademicIndividualLessonResource;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 
 class ViewAcademicIndividualLesson extends ViewRecord
@@ -15,6 +16,8 @@ class ViewAcademicIndividualLesson extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }

@@ -2,29 +2,28 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
+use App\Filament\Resources\StudentSessionReportResource\Pages;
+use App\Filament\Resources\StudentSessionReportResource\Pages\CreateStudentSessionReport;
+use App\Filament\Resources\StudentSessionReportResource\Pages\EditStudentSessionReport;
+use App\Filament\Resources\StudentSessionReportResource\Pages\ListStudentSessionReports;
+use App\Filament\Resources\StudentSessionReportResource\Pages\ViewStudentSessionReport;
+use App\Filament\Shared\Resources\BaseStudentSessionReportResource;
 use App\Models\User;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use App\Filament\Resources\StudentSessionReportResource\Pages\ListStudentSessionReports;
-use App\Filament\Resources\StudentSessionReportResource\Pages\CreateStudentSessionReport;
-use App\Filament\Resources\StudentSessionReportResource\Pages\ViewStudentSessionReport;
-use App\Filament\Resources\StudentSessionReportResource\Pages\EditStudentSessionReport;
-use App\Filament\Resources\StudentSessionReportResource\Pages;
-use App\Filament\Shared\Resources\BaseStudentSessionReportResource;
-use Filament\Forms;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -39,7 +38,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     // Navigation Configuration
     // ========================================
 
-    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والحضور';
+    protected static string|\UnitEnum|null $navigationGroup = 'التقارير والحضور';
 
     protected static ?int $navigationSort = 1;
 
@@ -121,8 +120,10 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            EditAction::make(),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
+                EditAction::make()->label('تعديل'),
+            ]),
         ];
     }
 

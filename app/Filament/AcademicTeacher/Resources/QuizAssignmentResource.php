@@ -2,14 +2,20 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
-use App\Filament\AcademicTeacher\Resources\QuizAssignmentResource\Pages\ListQuizAssignments;
+use App\Enums\QuizAssignableType;
 use App\Filament\AcademicTeacher\Resources\QuizAssignmentResource\Pages\CreateQuizAssignment;
 use App\Filament\AcademicTeacher\Resources\QuizAssignmentResource\Pages\EditQuizAssignment;
-use App\Enums\QuizAssignableType;
-use App\Filament\AcademicTeacher\Resources\QuizAssignmentResource\Pages;
+use App\Filament\AcademicTeacher\Resources\QuizAssignmentResource\Pages\ListQuizAssignments;
 use App\Filament\Shared\Resources\BaseQuizAssignmentResource;
 use App\Models\AcademicIndividualLesson;
 use App\Models\InteractiveCourse;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Tables\Table;
 
 /**
  * Quiz Assignment Resource for AcademicTeacher Panel
@@ -101,6 +107,27 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
         }
 
         return $assignable->title ?? $assignable->name ?? $assignable->id;
+    }
+
+    public static function table(Table $table): Table
+    {
+        return parent::table($table)
+            ->recordActions([
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('عرض'),
+                    EditAction::make()
+                        ->label('تعديل'),
+                    DeleteAction::make()
+                        ->label('حذف'),
+                ]),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
+                        ->label('حذف المحدد'),
+                ]),
+            ]);
     }
 
     public static function getPages(): array

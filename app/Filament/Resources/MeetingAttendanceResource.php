@@ -2,47 +2,45 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Components\Utilities\Get;
-use App\Models\User;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Toggle;
-use Filament\Tables\Columns\TextColumn;
-use ValueError;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use App\Models\AcademicIndividualLesson;
-use App\Models\InteractiveCourse;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Models\QuranCircle;
-use App\Models\QuranIndividualCircle;
-use App\Filament\Resources\MeetingAttendanceResource\Pages\ListMeetingAttendances;
-use App\Filament\Resources\MeetingAttendanceResource\Pages\ViewMeetingAttendance;
-use App\Filament\Resources\MeetingAttendanceResource\Pages\EditMeetingAttendance;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionDuration;
-use App\Filament\Resources\MeetingAttendanceResource\Pages;
+use App\Filament\Resources\MeetingAttendanceResource\Pages\EditMeetingAttendance;
+use App\Filament\Resources\MeetingAttendanceResource\Pages\ListMeetingAttendances;
+use App\Filament\Resources\MeetingAttendanceResource\Pages\ViewMeetingAttendance;
+use App\Models\AcademicIndividualLesson;
+use App\Models\InteractiveCourse;
 use App\Models\MeetingAttendance;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
+use App\Models\User;
 use Carbon\Carbon;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use ValueError;
 
 class MeetingAttendanceResource extends BaseResource
 {
     protected static ?string $model = MeetingAttendance::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user-group';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
 
     protected static ?string $navigationLabel = 'سجل الحضور';
 
@@ -50,7 +48,7 @@ class MeetingAttendanceResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'سجل الحضور';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والحضور';
+    protected static string|\UnitEnum|null $navigationGroup = 'التقارير والحضور';
 
     protected static ?int $navigationSort = 4;
 
@@ -372,8 +370,10 @@ class MeetingAttendanceResource extends BaseResource
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                ActionGroup::make([
+                    ViewAction::make()->label('عرض'),
+                    EditAction::make()->label('تعديل'),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

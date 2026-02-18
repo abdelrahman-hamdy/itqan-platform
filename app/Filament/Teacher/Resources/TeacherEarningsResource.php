@@ -2,23 +2,22 @@
 
 namespace App\Filament\Teacher\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Table;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\IconEntry;
-use App\Filament\Teacher\Resources\TeacherEarningsResource\Pages\ListTeacherEarnings;
-use App\Filament\Teacher\Resources\TeacherEarningsResource\Pages\ViewTeacherEarning;
 use App\Filament\Shared\Resources\BaseTeacherEarningResource;
 use App\Filament\Teacher\Resources\TeacherEarningsResource\Pages;
-use Filament\Infolists;
-use Filament\Tables;
+use App\Filament\Teacher\Resources\TeacherEarningsResource\Pages\ListTeacherEarnings;
+use App\Filament\Teacher\Resources\TeacherEarningsResource\Pages\ViewTeacherEarning;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -40,7 +39,7 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
 
     protected static ?string $pluralModelLabel = 'أرباحي';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'المالية';
+    protected static string|\UnitEnum|null $navigationGroup = 'المالية';
 
     protected static ?int $navigationSort = 1;
 
@@ -72,8 +71,10 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make()
-                ->label('عرض'),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+            ]),
         ];
     }
 

@@ -2,10 +2,10 @@
 
 namespace App\Filament\Academy\Resources\SavedPaymentMethodResource\Pages;
 
-use Filament\Actions\EditAction;
 use App\Filament\Academy\Resources\SavedPaymentMethodResource;
-use Filament\Actions;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 
 class ViewSavedPaymentMethod extends ViewRecord
 {
@@ -16,6 +16,8 @@ class ViewSavedPaymentMethod extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }

@@ -2,33 +2,32 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Facades\Filament;
-use Illuminate\Database\Eloquent\Builder;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Actions\EditAction;
-use App\Filament\Resources\PaymentSettingsResource\Pages\ManagePaymentSettings;
-use App\Filament\Resources\PaymentSettingsResource\Pages\EditPaymentSettings;
 use App\Enums\UserType;
-use App\Filament\Resources\PaymentSettingsResource\Pages;
+use App\Filament\Resources\PaymentSettingsResource\Pages\EditPaymentSettings;
+use App\Filament\Resources\PaymentSettingsResource\Pages\ManagePaymentSettings;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\EditAction;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Tables;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class PaymentSettingsResource extends BaseResource
 {
     protected static ?string $model = Academy::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-credit-card';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-credit-card';
 
     protected static ?string $navigationLabel = 'إعدادات الدفع';
 
@@ -313,7 +312,9 @@ class PaymentSettingsResource extends BaseResource
             ->filters([])
             ->deferFilters(false)
             ->recordActions([
-                EditAction::make(),
+                ActionGroup::make([
+                    EditAction::make()->label('تعديل'),
+                ]),
             ])
             ->paginated(false)
             ->poll('30s');

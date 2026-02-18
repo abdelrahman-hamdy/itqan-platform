@@ -2,43 +2,43 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\FileUpload;
+use App\Enums\UserType;
+use App\Filament\Concerns\TenantAwareFileUpload;
+use App\Filament\Resources\AdminResource\Pages\CreateAdmin;
+use App\Filament\Resources\AdminResource\Pages\EditAdmin;
+use App\Filament\Resources\AdminResource\Pages\ListAdmins;
+use App\Filament\Resources\AdminResource\Pages\ViewAdmin;
+use App\Models\Academy;
+use App\Models\User;
 use App\Rules\PasswordRules;
+use App\Services\AcademyAdminSyncService;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use App\Filament\Resources\AdminResource\Pages\ListAdmins;
-use App\Filament\Resources\AdminResource\Pages\CreateAdmin;
-use App\Filament\Resources\AdminResource\Pages\ViewAdmin;
-use App\Filament\Resources\AdminResource\Pages\EditAdmin;
-use App\Enums\UserType;
-use App\Filament\Concerns\TenantAwareFileUpload;
-use App\Filament\Resources\AdminResource\Pages;
-use App\Models\Academy;
-use App\Models\User;
-use App\Services\AcademyAdminSyncService;
-use Filament\Forms;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -49,9 +49,9 @@ class AdminResource extends BaseResource
 
     protected static ?string $model = User::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-shield-check';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-shield-check';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المستخدمين';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة المستخدمين';
 
     protected static ?string $navigationLabel = 'المديرون';
 
@@ -215,21 +215,45 @@ class AdminResource extends BaseResource
             ])
             ->deferFilters(false)
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
-                RestoreAction::make()
-                    ->label(__('filament.actions.restore')),
-                ForceDeleteAction::make()
-                    ->label(__('filament.actions.force_delete')),
+                ActionGroup::make([
+                    ViewAction::make()->label('عرض'),
+                    EditAction::make()->label('تعديل'),
+                    Action::make('activate')
+                        ->label('تفعيل')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(fn ($record) => $record->update(['active_status' => true]))
+                        ->visible(fn ($record) => ! $record->active_status),
+                    Action::make('deactivate')
+                        ->label('إيقاف')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(fn ($record) => $record->update(['active_status' => false]))
+                        ->visible(fn ($record) => $record->active_status),
+                    DeleteAction::make()->label('حذف'),
+                    RestoreAction::make()->label(__('filament.actions.restore')),
+                    ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    RestoreBulkAction::make()
-                        ->label(__('filament.actions.restore_selected')),
-                    ForceDeleteBulkAction::make()
-                        ->label(__('filament.actions.force_delete_selected')),
+                    BulkAction::make('activate')
+                        ->label('تفعيل المحددين')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(fn ($records) => $records->each(fn ($record) => $record->update(['active_status' => true]))),
+                    BulkAction::make('deactivate')
+                        ->label('إيقاف المحددين')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(fn ($records) => $records->each(fn ($record) => $record->update(['active_status' => false]))),
+                    DeleteBulkAction::make()->label('حذف المحدد'),
+                    RestoreBulkAction::make()->label(__('filament.actions.restore_selected')),
+                    ForceDeleteBulkAction::make()->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
     }

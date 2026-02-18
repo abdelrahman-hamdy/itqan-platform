@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\AcademyManagementResource\Pages;
 
-use Filament\Actions\EditAction;
-use App\Filament\Resources\AcademyManagementResource;
-use Filament\Actions;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use App\Filament\Resources\AcademyManagementResource;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 
 class ViewAcademyManagement extends ViewRecord
 {
@@ -14,7 +14,10 @@ class ViewAcademyManagement extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            EditAction::make()
+                ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }

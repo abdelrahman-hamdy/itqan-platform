@@ -2,23 +2,22 @@
 
 namespace App\Filament\Academy\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use App\Filament\Academy\Resources\ParentProfileResource\RelationManagers\StudentsRelationManager;
-use App\Filament\Academy\Resources\ParentProfileResource\Pages\ListParentProfiles;
-use App\Filament\Academy\Resources\ParentProfileResource\Pages\CreateParentProfile;
-use App\Filament\Academy\Resources\ParentProfileResource\Pages\ViewParentProfile;
-use App\Filament\Academy\Resources\ParentProfileResource\Pages\EditParentProfile;
 use App\Enums\UserType;
 use App\Filament\Academy\Resources\ParentProfileResource\Pages;
-use App\Filament\Academy\Resources\ParentProfileResource\RelationManagers;
+use App\Filament\Academy\Resources\ParentProfileResource\Pages\CreateParentProfile;
+use App\Filament\Academy\Resources\ParentProfileResource\Pages\EditParentProfile;
+use App\Filament\Academy\Resources\ParentProfileResource\Pages\ListParentProfiles;
+use App\Filament\Academy\Resources\ParentProfileResource\Pages\ViewParentProfile;
+use App\Filament\Academy\Resources\ParentProfileResource\RelationManagers\StudentsRelationManager;
 use App\Filament\Shared\Resources\Profiles\BaseParentProfileResource;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -39,10 +38,13 @@ class ParentProfileResource extends BaseParentProfileResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            EditAction::make(),
-            static::getToggleActiveAction(),
-            // Academy admins cannot delete parents
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تعديل'),
+                static::getToggleActiveAction(),
+            ]),
         ];
     }
 

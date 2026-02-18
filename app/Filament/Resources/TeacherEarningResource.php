@@ -2,35 +2,34 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Facades\Filament;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Table;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Tables\Filters\SelectFilter;
-use DB;
-use Filament\Tables\Filters\Filter;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Filament\Tables\Filters\Indicator;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Textarea;
+use App\Filament\Resources\TeacherEarningResource\Pages;
 use App\Filament\Resources\TeacherEarningResource\Pages\ListTeacherEarnings;
 use App\Filament\Resources\TeacherEarningResource\Pages\ViewTeacherEarning;
-use App\Filament\Resources\TeacherEarningResource\Pages;
 use App\Filament\Shared\Resources\BaseTeacherEarningResource;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
-use Filament\Forms;
-use Filament\Tables;
+use DB;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Facades\Filament;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Grid;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\Indicator;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -47,7 +46,7 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     // Navigation Configuration
     // ========================================
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إعدادات المعلمين';
+    protected static string|\UnitEnum|null $navigationGroup = 'إعدادات المعلمين';
 
     protected static ?int $navigationSort = 2;
 
@@ -71,15 +70,15 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            static::getFinalizeAction(),
-            static::getDisputeAction(),
-            static::getResolveDisputeAction(),
-            DeleteAction::make(),
-            RestoreAction::make()
-                ->label(__('filament.actions.restore')),
-            ForceDeleteAction::make()
-                ->label(__('filament.actions.force_delete')),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
+                static::getFinalizeAction(),
+                static::getDisputeAction(),
+                static::getResolveDisputeAction(),
+                DeleteAction::make()->label('حذف'),
+                RestoreAction::make()->label(__('filament.actions.restore')),
+                ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+            ]),
         ];
     }
 

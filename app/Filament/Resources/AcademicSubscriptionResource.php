@@ -2,48 +2,43 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
-use App\Services\AcademyContextService;
-use App\Models\User;
-use App\Models\AcademicTeacherProfile;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Components\Utilities\Get;
-use App\Models\AcademicSubject;
-use App\Models\AcademicGradeLevel;
-use App\Models\AcademicPackage;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\DatePicker;
-use Filament\Schemas\Schema;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use App\Filament\Resources\AcademicSubscriptionResource\Pages\ViewAcademicSubscription;
-use Filament\Infolists\Components\TextEntry;
-use App\Filament\Resources\AcademicSubscriptionResource\Pages\ListAcademicSubscriptions;
-use App\Filament\Resources\AcademicSubscriptionResource\Pages\CreateAcademicSubscription;
-use App\Filament\Resources\AcademicSubscriptionResource\Pages\EditAcademicSubscription;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\UserType;
 use App\Filament\Concerns\HasCrossAcademyAccess;
-use App\Filament\Resources\AcademicSubscriptionResource\Pages;
+use App\Filament\Resources\AcademicSubscriptionResource\Pages\CreateAcademicSubscription;
+use App\Filament\Resources\AcademicSubscriptionResource\Pages\EditAcademicSubscription;
+use App\Filament\Resources\AcademicSubscriptionResource\Pages\ListAcademicSubscriptions;
+use App\Filament\Resources\AcademicSubscriptionResource\Pages\ViewAcademicSubscription;
 use App\Filament\Shared\Resources\BaseSubscriptionResource;
+use App\Models\AcademicGradeLevel;
+use App\Models\AcademicPackage;
+use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
-use Filament\Forms;
-use Filament\Forms\Components\Textarea;
+use App\Models\AcademicTeacherProfile;
+use App\Models\User;
+use App\Services\AcademyContextService;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Infolists;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -53,11 +48,17 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     use HasCrossAcademyAccess;
 
     protected static ?string $model = AcademicSubscription::class;
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
+
     protected static ?string $navigationLabel = 'الاشتراكات الأكاديمية';
+
     protected static ?string $modelLabel = 'اشتراك أكاديمي';
+
     protected static ?string $pluralModelLabel = 'الاشتراكات الأكاديمية';
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة التعليم الأكاديمي';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة التعليم الأكاديمي';
+
     protected static ?int $navigationSort = 2;
 
     protected static function getBasicInfoFormSection(): Section
@@ -376,15 +377,17 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            EditAction::make(),
-            static::getCancelPendingAction(),
-            static::getPauseAction(),
-            static::getResumeAction(),
-            static::getExtendSubscriptionAction(),
-            DeleteAction::make(),
-            RestoreAction::make()->label(__('filament.actions.restore')),
-            ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
+                EditAction::make()->label('تعديل'),
+                static::getCancelPendingAction(),
+                static::getPauseAction(),
+                static::getResumeAction(),
+                static::getExtendSubscriptionAction(),
+                DeleteAction::make()->label('حذف'),
+                RestoreAction::make()->label(__('filament.actions.restore')),
+                ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+            ]),
         ];
     }
 

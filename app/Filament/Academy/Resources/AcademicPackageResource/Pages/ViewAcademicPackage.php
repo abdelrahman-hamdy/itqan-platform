@@ -1,10 +1,23 @@
 <?php
+
 namespace App\Filament\Academy\Resources\AcademicPackageResource\Pages;
-use Filament\Actions\EditAction;
+
 use App\Filament\Academy\Resources\AcademicPackageResource;
-use Filament\Actions;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
-class ViewAcademicPackage extends ViewRecord {
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
+
+class ViewAcademicPackage extends ViewRecord
+{
     protected static string $resource = AcademicPackageResource::class;
-    protected function getHeaderActions(): array { return [EditAction::make()]; }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            EditAction::make()
+                ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
+        ];
+    }
 }

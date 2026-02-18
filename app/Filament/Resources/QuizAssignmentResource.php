@@ -2,32 +2,30 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\QuizAssignmentResource\Pages\ListQuizAssignments;
+use App\Enums\QuizAssignableType;
 use App\Filament\Resources\QuizAssignmentResource\Pages\CreateQuizAssignment;
 use App\Filament\Resources\QuizAssignmentResource\Pages\EditQuizAssignment;
-use App\Enums\QuizAssignableType;
-use App\Filament\Resources\QuizAssignmentResource\Pages;
+use App\Filament\Resources\QuizAssignmentResource\Pages\ListQuizAssignments;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
 use App\Services\AcademyContextService;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -35,9 +33,9 @@ class QuizAssignmentResource extends BaseResource
 {
     protected static ?string $model = QuizAssignment::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-plus';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-plus';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة الاختبارات';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة الاختبارات';
 
     protected static ?string $navigationLabel = 'تعيين الاختبارات';
 
@@ -268,8 +266,10 @@ class QuizAssignmentResource extends BaseResource
             ])
             ->deferFilters(false)
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                ActionGroup::make([
+                    EditAction::make()->label('تعديل'),
+                    DeleteAction::make()->label('حذف'),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -2,28 +2,25 @@
 
 namespace App\Filament\Supervisor\Resources;
 
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use App\Models\User;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\DatePicker;
-use Filament\Actions\Action;
-use Filament\Actions\ViewAction;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\IconEntry;
-use App\Filament\Supervisor\Resources\MonitoredCertificatesResource\Pages\ListMonitoredCertificates;
-use App\Filament\Supervisor\Resources\MonitoredCertificatesResource\Pages\ViewMonitoredCertificate;
 use App\Constants\DefaultAcademy;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
-use App\Filament\Supervisor\Resources\MonitoredCertificatesResource\Pages;
+use App\Filament\Supervisor\Resources\MonitoredCertificatesResource\Pages\ListMonitoredCertificates;
+use App\Filament\Supervisor\Resources\MonitoredCertificatesResource\Pages\ViewMonitoredCertificate;
 use App\Models\Certificate;
-use Filament\Forms;
-use Filament\Infolists;
-use Filament\Tables;
+use App\Models\User;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -37,7 +34,7 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
 {
     protected static ?string $model = Certificate::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $navigationLabel = 'الشهادات';
 
@@ -45,7 +42,7 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'الشهادات';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'التقارير';
+    protected static string|\UnitEnum|null $navigationGroup = 'التقارير';
 
     protected static ?int $navigationSort = 2;
 
@@ -184,27 +181,27 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
             ])
             ->deferFilters(false)
             ->recordActions([
-                Action::make('view_pdf')
-                    ->label('عرض PDF')
-                    ->icon('heroicon-o-eye')
-                    ->color('primary')
-                    ->url(fn (Certificate $record): string => route('student.certificate.view', [
-                        'subdomain' => $record->academy?->subdomain ?? DefaultAcademy::subdomain(),
-                        'certificate' => $record->id,
-                    ]))
-                    ->openUrlInNewTab(),
-
-                Action::make('download')
-                    ->label('تحميل')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->url(fn (Certificate $record): string => route('student.certificate.download', [
-                        'subdomain' => $record->academy?->subdomain ?? DefaultAcademy::subdomain(),
-                        'certificate' => $record->id,
-                    ])),
-
-                ViewAction::make()
-                    ->label('التفاصيل'),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('التفاصيل'),
+                    Action::make('view_pdf')
+                        ->label('عرض PDF')
+                        ->icon('heroicon-o-eye')
+                        ->color('primary')
+                        ->url(fn (Certificate $record): string => route('student.certificate.view', [
+                            'subdomain' => $record->academy?->subdomain ?? DefaultAcademy::subdomain(),
+                            'certificate' => $record->id,
+                        ]))
+                        ->openUrlInNewTab(),
+                    Action::make('download')
+                        ->label('تحميل')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->color('success')
+                        ->url(fn (Certificate $record): string => route('student.certificate.download', [
+                            'subdomain' => $record->academy?->subdomain ?? DefaultAcademy::subdomain(),
+                            'certificate' => $record->id,
+                        ])),
+                ]),
             ])
             ->toolbarActions([
                 // No bulk actions for supervisors

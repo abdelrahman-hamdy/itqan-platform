@@ -2,38 +2,36 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\TenantAwareFileUpload;
+use App\Filament\Resources\PortfolioItemResource\Pages\CreatePortfolioItem;
+use App\Filament\Resources\PortfolioItemResource\Pages\EditPortfolioItem;
+use App\Filament\Resources\PortfolioItemResource\Pages\ListPortfolioItems;
+use App\Filament\Resources\PortfolioItemResource\Pages\ViewPortfolioItem;
+use App\Models\PortfolioItem;
 use App\Services\AcademyContextService;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Select;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\PortfolioItemResource\Pages\ListPortfolioItems;
-use App\Filament\Resources\PortfolioItemResource\Pages\CreatePortfolioItem;
-use App\Filament\Resources\PortfolioItemResource\Pages\ViewPortfolioItem;
-use App\Filament\Resources\PortfolioItemResource\Pages\EditPortfolioItem;
-use App\Filament\Concerns\TenantAwareFileUpload;
-use App\Filament\Resources\PortfolioItemResource\Pages;
-use App\Models\PortfolioItem;
-use Filament\Forms;
-use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class PortfolioItemResource extends Resource
 {
@@ -41,9 +39,9 @@ class PortfolioItemResource extends Resource
 
     protected static ?string $model = PortfolioItem::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-photo';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-photo';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'خدمات الأعمال';
+    protected static string|\UnitEnum|null $navigationGroup = 'خدمات الأعمال';
 
     protected static ?string $navigationLabel = 'البورتفوليو';
 
@@ -229,12 +227,11 @@ class PortfolioItemResource extends Resource
             ])
             ->deferFilters(false)
             ->recordActions([
-                ViewAction::make()
-                    ->label('عرض'),
-                EditAction::make()
-                    ->label('تعديل'),
-                DeleteAction::make()
-                    ->label('حذف'),
+                ActionGroup::make([
+                    ViewAction::make()->label('عرض'),
+                    EditAction::make()->label('تعديل'),
+                    DeleteAction::make()->label('حذف'),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

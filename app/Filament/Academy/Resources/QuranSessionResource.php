@@ -8,20 +8,18 @@ use App\Filament\Academy\Resources\QuranSessionResource\Pages\EditQuranSession;
 use App\Filament\Academy\Resources\QuranSessionResource\Pages\ListQuranSessions;
 use App\Filament\Academy\Resources\QuranSessionResource\Pages\ViewQuranSession;
 use App\Filament\Pages\ObserveSessionPage;
+use App\Filament\Shared\Actions\SessionStatusActions;
 use App\Filament\Shared\Resources\BaseQuranSessionResource;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -126,30 +124,29 @@ class QuranSessionResource extends BaseQuranSessionResource
     protected static function getTableActions(): array
     {
         return [
-            Action::make('observe_meeting')
-                ->label('مراقبة الجلسة')
-                ->icon('heroicon-o-eye')
-                ->color('info')
-                ->visible(fn ($record): bool => $record->meeting_room_name
-                    && in_array(
-                        $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
-                        [SessionStatus::READY, SessionStatus::ONGOING]
-                    ))
-                ->url(fn ($record): string => ObserveSessionPage::getUrl().'?'.http_build_query([
-                    'sessionId' => $record->id,
-                    'sessionType' => 'quran',
-                ]))
-                ->openUrlInNewTab(),
-            ViewAction::make()
-                ->label('عرض'),
-            EditAction::make()
-                ->label('تعديل'),
-            DeleteAction::make()
-                ->label('حذف'),
-            RestoreAction::make()
-                ->label(__('filament.actions.restore')),
-            ForceDeleteAction::make()
-                ->label(__('filament.actions.force_delete')),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تعديل'),
+                Action::make('observe_meeting')
+                    ->label('مراقبة الجلسة')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->visible(fn ($record): bool => $record->meeting_room_name
+                        && in_array(
+                            $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
+                            [SessionStatus::READY, SessionStatus::ONGOING]
+                        ))
+                    ->url(fn ($record): string => ObserveSessionPage::getUrl().'?'.http_build_query([
+                        'sessionId' => $record->id,
+                        'sessionType' => 'quran',
+                    ]))
+                    ->openUrlInNewTab(),
+                ...SessionStatusActions::all('admin'),
+                DeleteAction::make()
+                    ->label('حذف'),
+            ]),
         ];
     }
 
@@ -160,11 +157,8 @@ class QuranSessionResource extends BaseQuranSessionResource
     {
         return [
             BulkActionGroup::make([
-                DeleteBulkAction::make(),
-                RestoreBulkAction::make()
-                    ->label(__('filament.actions.restore_selected')),
-                ForceDeleteBulkAction::make()
-                    ->label(__('filament.actions.force_delete_selected')),
+                DeleteBulkAction::make()
+                    ->label('حذف المحدد'),
             ]),
         ];
     }

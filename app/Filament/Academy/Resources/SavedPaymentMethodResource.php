@@ -2,17 +2,16 @@
 
 namespace App\Filament\Academy\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Forms\Components\Select;
-use Filament\Schemas\Schema;
+use App\Filament\Academy\Resources\SavedPaymentMethodResource\Pages;
+use App\Filament\Academy\Resources\SavedPaymentMethodResource\Pages\EditSavedPaymentMethod;
 use App\Filament\Academy\Resources\SavedPaymentMethodResource\Pages\ListSavedPaymentMethods;
 use App\Filament\Academy\Resources\SavedPaymentMethodResource\Pages\ViewSavedPaymentMethod;
-use App\Filament\Academy\Resources\SavedPaymentMethodResource\Pages\EditSavedPaymentMethod;
-use App\Filament\Academy\Resources\SavedPaymentMethodResource\Pages;
 use App\Filament\Shared\Resources\Financial\BaseSavedPaymentMethodResource;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -20,7 +19,7 @@ class SavedPaymentMethodResource extends BaseSavedPaymentMethodResource
 {
     protected static ?string $navigationLabel = 'طرق الدفع المحفوظة';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'المالية';
+    protected static string|\UnitEnum|null $navigationGroup = 'المالية';
 
     protected static ?int $navigationSort = 2;
 
@@ -39,12 +38,14 @@ class SavedPaymentMethodResource extends BaseSavedPaymentMethodResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make()
-                ->label('عرض'),
-            EditAction::make()
-                ->label('تعديل'),
-            static::getToggleActiveAction(),
-            static::getSetDefaultAction(),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تعديل'),
+                static::getToggleActiveAction(),
+                static::getSetDefaultAction(),
+            ]),
         ];
     }
 

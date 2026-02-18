@@ -2,27 +2,25 @@
 
 namespace App\Filament\Supervisor\Resources;
 
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Actions\ViewAction;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\IconEntry;
-use App\Models\QuranCircle;
-use App\Models\QuranIndividualCircle;
-use App\Models\AcademicIndividualLesson;
-use App\Models\InteractiveCourse;
+use App\Enums\QuizAssignableType;
 use App\Filament\Supervisor\Resources\MonitoredQuizAssignmentsResource\Pages\ListMonitoredQuizAssignments;
 use App\Filament\Supervisor\Resources\MonitoredQuizAssignmentsResource\Pages\ViewMonitoredQuizAssignment;
-use App\Enums\QuizAssignableType;
-use App\Filament\Supervisor\Resources\MonitoredQuizAssignmentsResource\Pages;
+use App\Models\AcademicIndividualLesson;
+use App\Models\InteractiveCourse;
 use App\Models\QuizAssignment;
-use Filament\Infolists;
-use Filament\Tables;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -36,7 +34,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
 {
     protected static ?string $model = QuizAssignment::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-list';
 
     protected static ?string $navigationLabel = 'تعيينات الاختبارات';
 
@@ -44,7 +42,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'تعيينات الاختبارات';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'الاختبارات';
+    protected static string|\UnitEnum|null $navigationGroup = 'الاختبارات';
 
     protected static ?int $navigationSort = 2;
 
@@ -176,8 +174,10 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
             ])
             ->deferFilters(false)
             ->recordActions([
-                ViewAction::make()
-                    ->label('عرض'),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('عرض'),
+                ]),
             ])
             ->toolbarActions([
                 // No bulk actions for supervisors

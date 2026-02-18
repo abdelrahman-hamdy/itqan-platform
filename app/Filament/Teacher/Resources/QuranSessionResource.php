@@ -2,34 +2,33 @@
 
 namespace App\Filament\Teacher\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Actions\ActionGroup;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Illuminate\Support\Collection;
-use App\Models\QuranIndividualCircle;
-use App\Filament\Teacher\Resources\QuranSessionResource\Pages\ListQuranSessions;
-use App\Filament\Teacher\Resources\QuranSessionResource\Pages\CreateQuranSession;
-use App\Filament\Teacher\Resources\QuranSessionResource\Pages\ViewQuranSession;
-use App\Filament\Teacher\Resources\QuranSessionResource\Pages\EditQuranSession;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Shared\Actions\SessionStatusActions;
 use App\Filament\Shared\Resources\BaseQuranSessionResource;
 use App\Filament\Teacher\Resources\QuranSessionResource\Pages;
+use App\Filament\Teacher\Resources\QuranSessionResource\Pages\CreateQuranSession;
+use App\Filament\Teacher\Resources\QuranSessionResource\Pages\EditQuranSession;
+use App\Filament\Teacher\Resources\QuranSessionResource\Pages\ListQuranSessions;
+use App\Filament\Teacher\Resources\QuranSessionResource\Pages\ViewQuranSession;
+use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
-use Filament\Tables;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -45,11 +44,11 @@ class QuranSessionResource extends BaseQuranSessionResource
     // Navigation Configuration
     // ========================================
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-video-camera';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-video-camera';
 
     protected static ?string $navigationLabel = 'جلساتي';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
+    protected static string|\UnitEnum|null $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 1;
 
@@ -93,13 +92,6 @@ class QuranSessionResource extends BaseQuranSessionResource
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
-                DeleteAction::make()
-                    ->label('حذف')
-                    ->after(function (QuranSession $record) {
-                        if ($record->individualCircle) {
-                            $record->individualCircle->updateSessionCounts();
-                        }
-                    }),
                 Action::make('start_session')
                     ->label('بدء الجلسة')
                     ->icon('heroicon-o-play')
@@ -124,6 +116,13 @@ class QuranSessionResource extends BaseQuranSessionResource
                         ]);
                     }),
                 SessionStatusActions::cancelSession(role: 'teacher'),
+                DeleteAction::make()
+                    ->label('حذف')
+                    ->after(function (QuranSession $record) {
+                        if ($record->individualCircle) {
+                            $record->individualCircle->updateSessionCounts();
+                        }
+                    }),
             ]),
         ];
     }

@@ -2,28 +2,27 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Select;
-use App\Models\User;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Models\AcademicTeacherProfile;
-use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages\ListAcademicIndividualLessons;
-use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages\CreateAcademicIndividualLesson;
-use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages\ViewAcademicIndividualLesson;
-use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages\EditAcademicIndividualLesson;
 use App\Enums\UserType;
 use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages;
+use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages\CreateAcademicIndividualLesson;
+use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages\EditAcademicIndividualLesson;
+use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages\ListAcademicIndividualLessons;
+use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages\ViewAcademicIndividualLesson;
 use App\Filament\Shared\Resources\BaseAcademicIndividualLessonResource;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
-use Filament\Forms;
-use Filament\Tables;
+use App\Models\AcademicTeacherProfile;
+use App\Models\User;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -41,7 +40,7 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
     // Navigation Configuration
     // ========================================
 
-    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
+    protected static string|\UnitEnum|null $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 4;
 
@@ -145,10 +144,12 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make()
-                ->label('عرض'),
-            EditAction::make()
-                ->label('تعديل'),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تعديل'),
+            ]),
         ];
     }
 

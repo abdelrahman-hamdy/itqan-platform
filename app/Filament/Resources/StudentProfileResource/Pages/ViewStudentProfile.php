@@ -2,11 +2,10 @@
 
 namespace App\Filament\Resources\StudentProfileResource\Pages;
 
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use App\Filament\Resources\StudentProfileResource;
-use Filament\Actions;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use App\Filament\Resources\StudentProfileResource;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 
 class ViewStudentProfile extends ViewRecord
 {
@@ -15,8 +14,10 @@ class ViewStudentProfile extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
-            DeleteAction::make(),
+            EditAction::make()
+                ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }

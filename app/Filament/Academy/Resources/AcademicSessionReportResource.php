@@ -6,6 +6,7 @@ use App\Filament\Academy\Resources\AcademicSessionReportResource\Pages\EditAcade
 use App\Filament\Academy\Resources\AcademicSessionReportResource\Pages\ListAcademicSessionReports;
 use App\Filament\Academy\Resources\AcademicSessionReportResource\Pages\ViewAcademicSessionReport;
 use App\Filament\Shared\Resources\BaseAcademicSessionReportResource;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -21,7 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class AcademicSessionReportResource extends BaseAcademicSessionReportResource
 {
-    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والحضور';
+    protected static string|\UnitEnum|null $navigationGroup = 'التقارير والحضور';
 
     protected static ?int $navigationSort = 2;
 
@@ -58,12 +59,14 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make()
-                ->label('عرض'),
-            EditAction::make()
-                ->label('تعديل'),
-            DeleteAction::make()
-                ->label('حذف'),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تعديل'),
+                DeleteAction::make()
+                    ->label('حذف'),
+            ]),
         ];
     }
 

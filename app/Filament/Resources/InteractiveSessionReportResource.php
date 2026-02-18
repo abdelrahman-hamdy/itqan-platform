@@ -2,28 +2,27 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
+use App\Filament\Resources\InteractiveSessionReportResource\Pages;
+use App\Filament\Resources\InteractiveSessionReportResource\Pages\CreateInteractiveSessionReport;
+use App\Filament\Resources\InteractiveSessionReportResource\Pages\EditInteractiveSessionReport;
+use App\Filament\Resources\InteractiveSessionReportResource\Pages\ListInteractiveSessionReports;
+use App\Filament\Resources\InteractiveSessionReportResource\Pages\ViewInteractiveSessionReport;
+use App\Filament\Shared\Resources\BaseInteractiveSessionReportResource;
 use App\Models\User;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Filters\SelectFilter;
-use App\Filament\Resources\InteractiveSessionReportResource\Pages\ListInteractiveSessionReports;
-use App\Filament\Resources\InteractiveSessionReportResource\Pages\CreateInteractiveSessionReport;
-use App\Filament\Resources\InteractiveSessionReportResource\Pages\ViewInteractiveSessionReport;
-use App\Filament\Resources\InteractiveSessionReportResource\Pages\EditInteractiveSessionReport;
-use App\Filament\Resources\InteractiveSessionReportResource\Pages;
-use App\Filament\Shared\Resources\BaseInteractiveSessionReportResource;
-use Filament\Forms;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -38,7 +37,7 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     // Navigation Configuration
     // ========================================
 
-    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والحضور';
+    protected static string|\UnitEnum|null $navigationGroup = 'التقارير والحضور';
 
     protected static ?int $navigationSort = 3;
 
@@ -120,8 +119,10 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            EditAction::make(),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
+                EditAction::make()->label('تعديل'),
+            ]),
         ];
     }
 

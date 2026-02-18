@@ -2,24 +2,24 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Tables\Columns\ImageColumn;
-use App\Filament\Resources\SupervisorProfileResource\Pages\ListSupervisorProfiles;
 use App\Filament\Resources\SupervisorProfileResource\Pages\CreateSupervisorProfile;
-use App\Filament\Resources\SupervisorProfileResource\Pages\ViewSupervisorProfile;
 use App\Filament\Resources\SupervisorProfileResource\Pages\EditSupervisorProfile;
-use App\Filament\Resources\SupervisorProfileResource\Pages;
+use App\Filament\Resources\SupervisorProfileResource\Pages\ListSupervisorProfiles;
+use App\Filament\Resources\SupervisorProfileResource\Pages\ViewSupervisorProfile;
 use App\Filament\Shared\Resources\Profiles\BaseSupervisorProfileResource;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\ImageColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -38,11 +38,27 @@ class SupervisorProfileResource extends BaseSupervisorProfileResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make(),
-            EditAction::make(),
-            DeleteAction::make(),
-            RestoreAction::make(),
-            ForceDeleteAction::make(),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
+                EditAction::make()->label('تعديل'),
+                Action::make('activate')
+                    ->label('تفعيل')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => $record->user?->update(['active_status' => true]))
+                    ->visible(fn ($record) => $record->user && ! $record->user->active_status),
+                Action::make('deactivate')
+                    ->label('إيقاف')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => $record->user?->update(['active_status' => false]))
+                    ->visible(fn ($record) => $record->user && $record->user->active_status),
+                DeleteAction::make()->label('حذف'),
+                RestoreAction::make()->label(__('filament.actions.restore')),
+                ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+            ]),
         ];
     }
 
@@ -50,9 +66,21 @@ class SupervisorProfileResource extends BaseSupervisorProfileResource
     {
         return [
             BulkActionGroup::make([
-                DeleteBulkAction::make(),
-                RestoreBulkAction::make(),
-                ForceDeleteBulkAction::make(),
+                BulkAction::make('activate')
+                    ->label('تفعيل المحددين')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => true]))),
+                BulkAction::make('deactivate')
+                    ->label('إيقاف المحددين')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => false]))),
+                DeleteBulkAction::make()->label('حذف المحدد'),
+                RestoreBulkAction::make()->label(__('filament.actions.restore_selected')),
+                ForceDeleteBulkAction::make()->label(__('filament.actions.force_delete_selected')),
             ]),
         ];
     }

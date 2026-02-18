@@ -2,37 +2,35 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\DatePicker;
-use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\Action;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use App\Filament\Resources\CertificateResource\Pages\ListCertificates;
-use App\Filament\Resources\CertificateResource\Pages\ViewCertificate;
-use App\Filament\Resources\CertificateResource\Pages\EditCertificate;
 use App\Constants\DefaultAcademy;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
-use App\Filament\Resources\CertificateResource\Pages;
+use App\Filament\Resources\CertificateResource\Pages\EditCertificate;
+use App\Filament\Resources\CertificateResource\Pages\ListCertificates;
+use App\Filament\Resources\CertificateResource\Pages\ViewCertificate;
 use App\Models\Certificate;
 use App\Services\CertificateService;
-use Filament\Forms;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
-use Filament\Tables;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -41,7 +39,7 @@ class CertificateResource extends BaseResource
 {
     protected static ?string $model = Certificate::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $navigationLabel = 'الشهادات';
 
@@ -49,7 +47,7 @@ class CertificateResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'الشهادات';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة الشهادات';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة الشهادات';
 
     protected static ?int $navigationSort = 1;
 
@@ -209,54 +207,50 @@ class CertificateResource extends BaseResource
             ])
             ->deferFilters(false)
             ->recordActions([
-                Action::make('view_pdf')
-                    ->label('عرض PDF')
-                    ->icon('heroicon-o-eye')
-                    ->color('primary')
-                    ->url(fn (Certificate $record): string => route('student.certificate.view', [
-                        'subdomain' => $record->academy?->subdomain ?? DefaultAcademy::subdomain(),
-                        'certificate' => $record->id,
-                    ]))
-                    ->openUrlInNewTab(),
-
-                Action::make('download')
-                    ->label('تحميل')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->url(fn (Certificate $record): string => route('student.certificate.download', [
-                        'subdomain' => $record->academy?->subdomain ?? DefaultAcademy::subdomain(),
-                        'certificate' => $record->id,
-                    ])),
-
-                ViewAction::make()
-                    ->label('التفاصيل'),
-
-                EditAction::make()
-                    ->label('تعديل'),
-
-                Action::make('revoke')
-                    ->label('إلغاء')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('إلغاء الشهادة')
-                    ->modalDescription('هل أنت متأكد من إلغاء هذه الشهادة؟ سيتم حذفها نهائياً.')
-                    ->modalSubmitActionLabel('إلغاء الشهادة')
-                    ->action(function (Certificate $record) {
-                        $certificateService = app(CertificateService::class);
-                        if ($certificateService->revokeCertificate($record)) {
-                            Notification::make()
-                                ->success()
-                                ->title('تم إلغاء الشهادة بنجاح')
-                                ->send();
-                        } else {
-                            Notification::make()
-                                ->danger()
-                                ->title('فشل إلغاء الشهادة')
-                                ->send();
-                        }
-                    })
-                    ->visible(fn (Certificate $record) => ! $record->trashed()),
+                ActionGroup::make([
+                    ViewAction::make()->label('التفاصيل'),
+                    EditAction::make()->label('تعديل'),
+                    Action::make('view_pdf')
+                        ->label('عرض PDF')
+                        ->icon('heroicon-o-eye')
+                        ->color('primary')
+                        ->url(fn (Certificate $record): string => route('student.certificate.view', [
+                            'subdomain' => $record->academy?->subdomain ?? DefaultAcademy::subdomain(),
+                            'certificate' => $record->id,
+                        ]))
+                        ->openUrlInNewTab(),
+                    Action::make('download')
+                        ->label('تحميل')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->color('success')
+                        ->url(fn (Certificate $record): string => route('student.certificate.download', [
+                            'subdomain' => $record->academy?->subdomain ?? DefaultAcademy::subdomain(),
+                            'certificate' => $record->id,
+                        ])),
+                    Action::make('revoke')
+                        ->label('إلغاء')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('إلغاء الشهادة')
+                        ->modalDescription('هل أنت متأكد من إلغاء هذه الشهادة؟ سيتم حذفها نهائياً.')
+                        ->modalSubmitActionLabel('إلغاء الشهادة')
+                        ->action(function (Certificate $record) {
+                            $certificateService = app(CertificateService::class);
+                            if ($certificateService->revokeCertificate($record)) {
+                                Notification::make()
+                                    ->success()
+                                    ->title('تم إلغاء الشهادة بنجاح')
+                                    ->send();
+                            } else {
+                                Notification::make()
+                                    ->danger()
+                                    ->title('فشل إلغاء الشهادة')
+                                    ->send();
+                            }
+                        })
+                        ->visible(fn (Certificate $record) => ! $record->trashed()),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

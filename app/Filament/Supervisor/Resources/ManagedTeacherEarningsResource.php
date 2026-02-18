@@ -2,19 +2,19 @@
 
 namespace App\Filament\Supervisor\Resources;
 
-use Filament\Actions\ViewAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource\Pages\ListManagedTeacherEarnings;
-use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource\Pages\ViewManagedTeacherEarning;
 use App\Enums\UserType;
 use App\Filament\Shared\Resources\BaseTeacherEarningResource;
 use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource\Pages;
+use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource\Pages\ListManagedTeacherEarnings;
+use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource\Pages\ViewManagedTeacherEarning;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
 use App\Models\User;
-use Filament\Tables;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
 {
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المعلمين';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة المعلمين';
 
     protected static ?int $navigationSort = 2;
 
@@ -87,11 +87,13 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
     protected static function getTableActions(): array
     {
         return [
-            static::getFinalizeAction(),
-            static::getDisputeAction(),
-            static::getResolveDisputeAction(),
-            ViewAction::make()
-                ->label('عرض'),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                static::getFinalizeAction(),
+                static::getDisputeAction(),
+                static::getResolveDisputeAction(),
+            ]),
         ];
     }
 

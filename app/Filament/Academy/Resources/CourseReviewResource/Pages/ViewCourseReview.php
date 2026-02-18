@@ -3,8 +3,9 @@
 namespace App\Filament\Academy\Resources\CourseReviewResource\Pages;
 
 use App\Filament\Academy\Resources\CourseReviewResource;
-use Filament\Actions\EditAction;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 
 class ViewCourseReview extends ViewRecord
 {
@@ -15,6 +16,8 @@ class ViewCourseReview extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }

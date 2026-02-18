@@ -2,23 +2,22 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
-use App\Models\User;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages\ListAcademicSessionReports;
-use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages\CreateAcademicSessionReport;
-use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages\ViewAcademicSessionReport;
-use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages\EditAcademicSessionReport;
 use App\Enums\UserType;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages;
+use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages\CreateAcademicSessionReport;
+use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages\EditAcademicSessionReport;
+use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages\ListAcademicSessionReports;
+use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages\ViewAcademicSessionReport;
 use App\Filament\Shared\Resources\BaseAcademicSessionReportResource;
 use App\Models\AcademicSessionReport;
-use Filament\Forms;
-use Filament\Tables;
+use App\Models\User;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Section;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -36,7 +35,7 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     // Navigation Configuration
     // ========================================
 
-    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والتقييمات';
+    protected static string|\UnitEnum|null $navigationGroup = 'التقارير والتقييمات';
 
     protected static ?int $navigationSort = 1;
 
@@ -88,10 +87,12 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make()
-                ->label('عرض'),
-            EditAction::make()
-                ->label('تعديل'),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تعديل'),
+            ]),
         ];
     }
 

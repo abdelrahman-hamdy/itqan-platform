@@ -2,41 +2,40 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use ValueError;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use App\Filament\Resources\AcademyGeneralSettingsResource\Pages\ManageAcademyGeneralSettings;
-use App\Filament\Resources\AcademyGeneralSettingsResource\Pages\EditGeneralSettings;
 use App\Enums\Country;
 use App\Enums\Currency;
 use App\Enums\NotificationCategory;
 use App\Enums\TeachingLanguage;
 use App\Enums\Timezone;
 use App\Enums\UserType;
-use App\Filament\Resources\AcademyGeneralSettingsResource\Pages;
+use App\Filament\Resources\AcademyGeneralSettingsResource\Pages\EditGeneralSettings;
+use App\Filament\Resources\AcademyGeneralSettingsResource\Pages\ManageAcademyGeneralSettings;
 use App\Models\AcademicPackage;
 use App\Models\Academy;
 use App\Models\QuranPackage;
 use App\Services\AcademyContextService;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Tables;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use ValueError;
 
 class AcademyGeneralSettingsResource extends BaseResource
 {
     protected static ?string $model = Academy::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-globe-alt';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-globe-alt';
 
     protected static ?string $navigationLabel = 'الإعدادات العامة';
 
@@ -44,7 +43,7 @@ class AcademyGeneralSettingsResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'الإعدادات العامة';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة الأكاديميات';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة الأكاديميات';
 
     protected static ?int $navigationSort = 2;
 
@@ -493,8 +492,10 @@ class AcademyGeneralSettingsResource extends BaseResource
             ->filters([])
             ->deferFilters(false)
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                ActionGroup::make([
+                    ViewAction::make()->label('عرض'),
+                    EditAction::make()->label('تعديل'),
+                ]),
             ])
             ->paginated(false)
             ->poll('30s');

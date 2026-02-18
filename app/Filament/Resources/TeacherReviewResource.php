@@ -2,32 +2,30 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Actions\Action;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\BulkAction;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
-use App\Filament\Resources\TeacherReviewResource\Pages\ListTeacherReviews;
-use App\Filament\Resources\TeacherReviewResource\Pages\CreateTeacherReview;
-use App\Filament\Resources\TeacherReviewResource\Pages\ViewTeacherReview;
-use App\Filament\Resources\TeacherReviewResource\Pages\EditTeacherReview;
-use App\Enums\ReviewStatus;
 use App\Filament\Resources\TeacherReviewResource\Pages;
+use App\Filament\Resources\TeacherReviewResource\Pages\CreateTeacherReview;
+use App\Filament\Resources\TeacherReviewResource\Pages\EditTeacherReview;
+use App\Filament\Resources\TeacherReviewResource\Pages\ListTeacherReviews;
+use App\Filament\Resources\TeacherReviewResource\Pages\ViewTeacherReview;
 use App\Filament\Shared\Resources\BaseTeacherReviewResource;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -45,7 +43,7 @@ class TeacherReviewResource extends BaseTeacherReviewResource
     // Navigation Configuration
     // ========================================
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إعدادات المعلمين';
+    protected static string|\UnitEnum|null $navigationGroup = 'إعدادات المعلمين';
 
     protected static ?int $navigationSort = 1;
 
@@ -69,27 +67,25 @@ class TeacherReviewResource extends BaseTeacherReviewResource
     protected static function getTableActions(): array
     {
         return [
-            Action::make('approve')
-                ->label('اعتماد')
-                ->icon('heroicon-o-check-circle')
-                ->color('success')
-                ->visible(fn ($record) => ! $record->is_approved && ! $record->trashed())
-                ->action(fn ($record) => $record->approve()),
-
-            Action::make('reject')
-                ->label('رفض')
-                ->icon('heroicon-o-x-circle')
-                ->color('danger')
-                ->visible(fn ($record) => $record->is_approved && ! $record->trashed())
-                ->action(fn ($record) => $record->reject()),
-
-            ViewAction::make(),
-            EditAction::make(),
-            DeleteAction::make(),
-            RestoreAction::make()
-                ->label(__('filament.actions.restore')),
-            ForceDeleteAction::make()
-                ->label(__('filament.actions.force_delete')),
+            ActionGroup::make([
+                ViewAction::make()->label('عرض'),
+                EditAction::make()->label('تعديل'),
+                Action::make('approve')
+                    ->label('اعتماد')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn ($record) => ! $record->is_approved && ! $record->trashed())
+                    ->action(fn ($record) => $record->approve()),
+                Action::make('reject')
+                    ->label('رفض')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn ($record) => $record->is_approved && ! $record->trashed())
+                    ->action(fn ($record) => $record->reject()),
+                DeleteAction::make()->label('حذف'),
+                RestoreAction::make()->label(__('filament.actions.restore')),
+                ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+            ]),
         ];
     }
 

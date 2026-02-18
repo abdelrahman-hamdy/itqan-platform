@@ -2,16 +2,15 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use App\Filament\AcademicTeacher\Resources\SessionRecordingResource\Pages;
+use App\Filament\AcademicTeacher\Resources\SessionRecordingResource\Pages\ListSessionRecordings;
+use App\Filament\AcademicTeacher\Resources\SessionRecordingResource\Pages\ViewSessionRecording;
+use App\Filament\Shared\Resources\BaseSessionRecordingResource;
+use App\Models\InteractiveCourse;
+use App\Models\InteractiveCourseSession;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Filters\SelectFilter;
-use App\Models\InteractiveCourse;
-use App\Filament\AcademicTeacher\Resources\SessionRecordingResource\Pages\ListSessionRecordings;
-use App\Filament\AcademicTeacher\Resources\SessionRecordingResource\Pages\ViewSessionRecording;
-use App\Filament\AcademicTeacher\Resources\SessionRecordingResource\Pages;
-use App\Filament\Shared\Resources\BaseSessionRecordingResource;
-use App\Models\InteractiveCourseSession;
-use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -29,7 +28,7 @@ class SessionRecordingResource extends BaseSessionRecordingResource
     // Navigation Configuration
     // ========================================
 
-    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
+    protected static string|\UnitEnum|null $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 5;
 

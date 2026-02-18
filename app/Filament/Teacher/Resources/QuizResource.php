@@ -2,14 +2,19 @@
 
 namespace App\Filament\Teacher\Resources;
 
-use App\Filament\Teacher\Resources\QuizResource\Pages\ListQuizzes;
-use App\Filament\Teacher\Resources\QuizResource\Pages\CreateQuiz;
-use App\Filament\Teacher\Resources\QuizResource\Pages\EditQuiz;
 use App\Enums\QuizAssignableType;
 use App\Filament\Shared\Resources\BaseQuizResource;
-use App\Filament\Teacher\Resources\QuizResource\Pages;
+use App\Filament\Teacher\Resources\QuizResource\Pages\CreateQuiz;
+use App\Filament\Teacher\Resources\QuizResource\Pages\EditQuiz;
+use App\Filament\Teacher\Resources\QuizResource\Pages\ListQuizzes;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Tables\Table;
 
 /**
  * Quiz Resource for Teacher (Quran) Panel
@@ -65,6 +70,26 @@ class QuizResource extends BaseQuizResource
     protected static function getAssignableTargetLabel(): string
     {
         return 'الحلقة';
+    }
+
+    public static function table(Table $table): Table
+    {
+        return parent::table($table)
+            ->recordActions([
+                ActionGroup::make([
+                    EditAction::make()
+                        ->label('تعديل'),
+                    static::getAssignAction(),
+                    DeleteAction::make()
+                        ->label('حذف'),
+                ]),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
+                        ->label('حذف المحدد'),
+                ]),
+            ]);
     }
 
     public static function getPages(): array

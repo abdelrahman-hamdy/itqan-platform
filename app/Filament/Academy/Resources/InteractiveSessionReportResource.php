@@ -6,6 +6,7 @@ use App\Filament\Academy\Resources\InteractiveSessionReportResource\Pages\EditIn
 use App\Filament\Academy\Resources\InteractiveSessionReportResource\Pages\ListInteractiveSessionReports;
 use App\Filament\Academy\Resources\InteractiveSessionReportResource\Pages\ViewInteractiveSessionReport;
 use App\Filament\Shared\Resources\BaseInteractiveSessionReportResource;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class InteractiveSessionReportResource extends BaseInteractiveSessionReportResource
 {
-    protected static string | \UnitEnum | null $navigationGroup = 'التقارير والحضور';
+    protected static string|\UnitEnum|null $navigationGroup = 'التقارير والحضور';
 
     protected static ?int $navigationSort = 3;
 
@@ -63,12 +64,14 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     protected static function getTableActions(): array
     {
         return [
-            ViewAction::make()
-                ->label('عرض'),
-            EditAction::make()
-                ->label('تعديل'),
-            DeleteAction::make()
-                ->label('حذف'),
+            ActionGroup::make([
+                ViewAction::make()
+                    ->label('عرض'),
+                EditAction::make()
+                    ->label('تعديل'),
+                DeleteAction::make()
+                    ->label('حذف'),
+            ]),
         ];
     }
 

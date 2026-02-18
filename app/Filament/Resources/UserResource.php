@@ -2,40 +2,38 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\TextInput;
+use App\Enums\UserType;
+use App\Filament\Concerns\TenantAwareFileUpload;
+use App\Filament\Resources\UserResource\Pages\ListUsers;
+use App\Models\User;
+use App\Rules\PasswordRules;
+use App\Services\AcademyContextService;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use App\Rules\PasswordRules;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Support\Enums\FontWeight;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\Action;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\BulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use App\Filament\Resources\UserResource\Pages\ListUsers;
-use App\Enums\UserType;
-use App\Filament\Concerns\TenantAwareFileUpload;
-use App\Filament\Resources\UserResource\Pages;
-use App\Models\User;
-use App\Services\AcademyContextService;
-use Filament\Forms;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -54,9 +52,9 @@ class UserResource extends BaseResource
 
     protected static ?string $model = User::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-users';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-users';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المستخدمين';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة المستخدمين';
 
     protected static ?string $navigationLabel = 'جميع المستخدمين';
 
@@ -260,36 +258,36 @@ class UserResource extends BaseResource
             ])
             ->deferFilters(false)
             ->recordActions([
-                // Redirect to profile resource based on user type
-                Action::make('view_profile')
-                    ->label('عرض الملف')
-                    ->icon('heroicon-o-eye')
-                    ->url(fn (User $record) => static::getProfileUrl($record, 'view'))
-                    ->visible(fn (User $record) => static::hasProfile($record)),
-                Action::make('edit_profile')
-                    ->label('تعديل الملف')
-                    ->icon('heroicon-o-pencil')
-                    ->url(fn (User $record) => static::getProfileUrl($record, 'edit'))
-                    ->visible(fn (User $record) => static::hasProfile($record)),
-                Action::make('activate')
-                    ->label('تفعيل')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->action(fn (User $record) => $record->update(['active_status' => true]))
-                    ->visible(fn (User $record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]) && ! $record->active_status),
-                Action::make('deactivate')
-                    ->label('إيقاف')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(fn (User $record) => $record->update(['active_status' => false]))
-                    ->visible(fn (User $record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]) && $record->active_status),
-                DeleteAction::make(),
-                RestoreAction::make()
-                    ->label(__('filament.actions.restore')),
-                ForceDeleteAction::make()
-                    ->label(__('filament.actions.force_delete')),
+                ActionGroup::make([
+                    // Redirect to profile resource based on user type
+                    Action::make('view_profile')
+                        ->label('عرض الملف')
+                        ->icon('heroicon-o-eye')
+                        ->url(fn (User $record) => static::getProfileUrl($record, 'view'))
+                        ->visible(fn (User $record) => static::hasProfile($record)),
+                    Action::make('edit_profile')
+                        ->label('تعديل الملف')
+                        ->icon('heroicon-o-pencil')
+                        ->url(fn (User $record) => static::getProfileUrl($record, 'edit'))
+                        ->visible(fn (User $record) => static::hasProfile($record)),
+                    Action::make('activate')
+                        ->label('تفعيل')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(fn (User $record) => $record->update(['active_status' => true]))
+                        ->visible(fn (User $record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]) && ! $record->active_status),
+                    Action::make('deactivate')
+                        ->label('إيقاف')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(fn (User $record) => $record->update(['active_status' => false]))
+                        ->visible(fn (User $record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]) && $record->active_status),
+                    DeleteAction::make()->label('حذف'),
+                    RestoreAction::make()->label(__('filament.actions.restore')),
+                    ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

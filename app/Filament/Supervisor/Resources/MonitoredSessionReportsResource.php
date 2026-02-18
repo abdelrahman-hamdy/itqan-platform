@@ -2,26 +2,24 @@
 
 namespace App\Filament\Supervisor\Resources;
 
-use Filament\Tables\Columns\TextColumn;
-use ValueError;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use App\Models\User;
-use Filament\Tables\Filters\Filter;
-use Filament\Actions\ViewAction;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\IconEntry;
+use App\Enums\AttendanceStatus;
 use App\Filament\Supervisor\Resources\MonitoredSessionReportsResource\Pages\ListMonitoredSessionReports;
 use App\Filament\Supervisor\Resources\MonitoredSessionReportsResource\Pages\ViewMonitoredSessionReport;
-use App\Enums\AttendanceStatus;
-use App\Filament\Supervisor\Resources\MonitoredSessionReportsResource\Pages;
 use App\Models\StudentSessionReport;
-use Filament\Infolists;
-use Filament\Tables;
+use App\Models\User;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use ValueError;
 
 /**
  * Monitored Session Reports Resource for Supervisor Panel
@@ -34,7 +32,7 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
     // Default model for Quran reports (tabs switch between models)
     protected static ?string $model = StudentSessionReport::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-chart-bar';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-chart-bar';
 
     protected static ?string $navigationLabel = 'تقارير الجلسات';
 
@@ -42,7 +40,7 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'تقارير الجلسات';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'التقارير';
+    protected static string|\UnitEnum|null $navigationGroup = 'التقارير';
 
     protected static ?int $navigationSort = 1;
 
@@ -206,8 +204,10 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                     })),
             ])
             ->recordActions([
-                ViewAction::make()
-                    ->label('عرض'),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('عرض'),
+                ]),
             ])
             ->toolbarActions([
                 // No bulk actions for supervisors
@@ -332,8 +332,10 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                     ->query(fn (Builder $query): Builder => $query->where('homework_degree', '<', 6)),
             ])
             ->recordActions([
-                ViewAction::make()
-                    ->label('عرض'),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('عرض'),
+                ]),
             ])
             ->toolbarActions([
                 // No bulk actions for supervisors

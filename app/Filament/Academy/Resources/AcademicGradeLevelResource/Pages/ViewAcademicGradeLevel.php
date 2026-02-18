@@ -3,8 +3,9 @@
 namespace App\Filament\Academy\Resources\AcademicGradeLevelResource\Pages;
 
 use App\Filament\Academy\Resources\AcademicGradeLevelResource;
-use Filament\Actions\EditAction;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 
 class ViewAcademicGradeLevel extends ViewRecord
 {
@@ -15,6 +16,8 @@ class ViewAcademicGradeLevel extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }
