@@ -110,8 +110,7 @@ class QuranCircleResource extends BaseQuranCircleResource
                     ->label('الجلسات')
                     ->icon('heroicon-o-calendar-days')
                     ->url(fn (QuranCircle $record): string => QuranSessionResource::getUrl('index', [
-                        'tableFilters[filter_by][filter_type]' => 'group_circle',
-                        'tableFilters[filter_by][filter_value]' => $record->id,
+                        'tableFilters[circle_id][value]' => $record->id,
                     ])),
             ]),
         ];

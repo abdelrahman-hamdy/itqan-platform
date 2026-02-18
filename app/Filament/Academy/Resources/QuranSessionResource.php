@@ -296,74 +296,46 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->label('نوع الجلسة')
                 ->options(static::getSessionTypeOptions()),
 
-            Filter::make('filter_by')
-                ->schema([
-                    Grid::make(2)
-                        ->schema([
-                            Select::make('filter_type')
-                                ->label('تصفية حسب')
-                                ->options([
-                                    'group_circle' => 'الحلقة الجماعية',
-                                    'individual_circle' => 'الحلقة الفردية',
-                                    'teacher' => 'المعلم',
-                                    'student' => 'الطالب',
-                                ])
-                                ->live()
-                                ->afterStateUpdated(fn (Set $set) => $set('filter_value', null)),
+            SelectFilter::make('individual_circle_id')
+                ->label('الحلقة الفردية')
+                ->options(fn () => QuranIndividualCircle::where('academy_id', auth()->user()->academy_id)
+                    ->with(['student', 'quranTeacher'])
+                    ->get()
+                    ->mapWithKeys(fn ($ic) => [
+                        $ic->id => trim(($ic->student?->first_name ?? '').' '.($ic->student?->last_name ?? ''))
+                            .' - '.trim(($ic->quranTeacher?->first_name ?? '').' '.($ic->quranTeacher?->last_name ?? '')),
+                    ])
+                )
+                ->searchable(),
 
-                            Select::make('filter_value')
-                                ->label('القيمة')
-                                ->options(function (Get $get) use ($academyId) {
-                                    return match ($get('filter_type')) {
-                                        'group_circle' => QuranCircle::where('academy_id', $academyId)
-                                            ->pluck('name', 'id')
-                                            ->toArray(),
-                                        'individual_circle' => QuranIndividualCircle::where('academy_id', $academyId)
-                                            ->with(['student', 'quranTeacher'])
-                                            ->get()
-                                            ->mapWithKeys(fn ($ic) => [
-                                                $ic->id => trim(($ic->student?->first_name ?? '').' '.($ic->student?->last_name ?? ''))
-                                                    .' - '.trim(($ic->quranTeacher?->first_name ?? '').' '.($ic->quranTeacher?->last_name ?? '')),
-                                            ])
-                                            ->toArray(),
-                                        'teacher' => User::where('academy_id', $academyId)
-                                            ->whereHas('quranTeacherProfile')
-                                            ->get()
-                                            ->mapWithKeys(fn ($u) => [
-                                                $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'معلم #'.$u->id,
-                                            ])
-                                            ->toArray(),
-                                        'student' => User::where('academy_id', $academyId)
-                                            ->where('user_type', 'student')
-                                            ->get()
-                                            ->mapWithKeys(fn ($u) => [
-                                                $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
-                                            ])
-                                            ->toArray(),
-                                        default => [],
-                                    };
-                                })
-                                ->searchable()
-                                ->visible(fn (Get $get) => filled($get('filter_type'))),
-                        ]),
-                ])
-                ->query(function (Builder $query, array $data): Builder {
-                    $type = $data['filter_type'] ?? null;
-                    $value = $data['filter_value'] ?? null;
+            SelectFilter::make('circle_id')
+                ->label('الحلقة الجماعية')
+                ->options(fn () => QuranCircle::where('academy_id', auth()->user()->academy_id)
+                    ->pluck('name', 'id')
+                )
+                ->searchable(),
 
-                    if (! $type || ! $value) {
-                        return $query;
-                    }
+            SelectFilter::make('quran_teacher_id')
+                ->label('المعلم')
+                ->options(fn () => User::where('academy_id', auth()->user()->academy_id)
+                    ->whereHas('quranTeacherProfile')
+                    ->get()
+                    ->mapWithKeys(fn ($u) => [
+                        $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'معلم #'.$u->id,
+                    ])
+                )
+                ->searchable(),
 
-                    return match ($type) {
-                        'group_circle' => $query->where('circle_id', $value),
-                        'individual_circle' => $query->where('individual_circle_id', $value),
-                        'teacher' => $query->where('quran_teacher_id', $value),
-                        'student' => $query->where('student_id', $value),
-                        default => $query,
-                    };
-                })
-                ->columnSpan(2),
+            SelectFilter::make('student_id')
+                ->label('الطالب')
+                ->options(fn () => User::where('academy_id', auth()->user()->academy_id)
+                    ->where('user_type', 'student')
+                    ->get()
+                    ->mapWithKeys(fn ($u) => [
+                        $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
+                    ])
+                )
+                ->searchable(),
 
             Filter::make('date_range')
                 ->schema([

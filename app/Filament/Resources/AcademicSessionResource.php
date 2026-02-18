@@ -218,71 +218,41 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                     AttendanceStatus::options()
                 )),
 
-            Filter::make('filter_by')
-                ->schema([
-                    Grid::make(2)
-                        ->schema([
-                            Select::make('filter_type')
-                                ->label('تصفية حسب')
-                                ->options([
-                                    'teacher' => 'المعلم',
-                                    'student' => 'الطالب',
-                                    'individual_lesson' => 'الدرس الفردي',
-                                ])
-                                ->live()
-                                ->afterStateUpdated(fn (Set $set) => $set('filter_value', null)),
+            SelectFilter::make('academic_teacher_id')
+                ->label('المعلم')
+                ->options(fn () => AcademicTeacherProfile::query()
+                    ->with('user')
+                    ->get()
+                    ->mapWithKeys(fn ($profile) => [
+                        $profile->id => $profile->user
+                            ? trim(($profile->user->first_name ?? '').' '.($profile->user->last_name ?? '')) ?: 'معلم #'.$profile->id
+                            : 'معلم #'.$profile->id,
+                    ])
+                )
+                ->searchable(),
 
-                            Select::make('filter_value')
-                                ->label('القيمة')
-                                ->options(function (Get $get) {
-                                    return match ($get('filter_type')) {
-                                        'teacher' => AcademicTeacherProfile::query()
-                                            ->with('user')
-                                            ->get()
-                                            ->mapWithKeys(fn ($profile) => [
-                                                $profile->id => $profile->user
-                                                    ? trim(($profile->user->first_name ?? '').' '.($profile->user->last_name ?? '')) ?: 'معلم #'.$profile->id
-                                                    : 'معلم #'.$profile->id,
-                                            ])
-                                            ->toArray(),
-                                        'student' => User::query()
-                                            ->where('user_type', 'student')
-                                            ->get()
-                                            ->mapWithKeys(fn ($u) => [
-                                                $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
-                                            ])
-                                            ->toArray(),
-                                        'individual_lesson' => AcademicIndividualLesson::query()
-                                            ->with(['student', 'academicTeacher.user'])
-                                            ->get()
-                                            ->mapWithKeys(fn ($lesson) => [
-                                                $lesson->id => ($lesson->name ?? 'درس #'.$lesson->id)
-                                                    .' - '.trim(($lesson->student?->first_name ?? '').' '.($lesson->student?->last_name ?? '')),
-                                            ])
-                                            ->toArray(),
-                                        default => [],
-                                    };
-                                })
-                                ->searchable()
-                                ->visible(fn (Get $get) => filled($get('filter_type'))),
-                        ]),
-                ])
-                ->query(function (Builder $query, array $data): Builder {
-                    $type = $data['filter_type'] ?? null;
-                    $value = $data['filter_value'] ?? null;
+            SelectFilter::make('student_id')
+                ->label('الطالب')
+                ->options(fn () => User::query()
+                    ->where('user_type', 'student')
+                    ->get()
+                    ->mapWithKeys(fn ($u) => [
+                        $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
+                    ])
+                )
+                ->searchable(),
 
-                    if (! $type || ! $value) {
-                        return $query;
-                    }
-
-                    return match ($type) {
-                        'teacher' => $query->where('academic_teacher_id', $value),
-                        'student' => $query->where('student_id', $value),
-                        'individual_lesson' => $query->where('academic_individual_lesson_id', $value),
-                        default => $query,
-                    };
-                })
-                ->columnSpan(2),
+            SelectFilter::make('academic_individual_lesson_id')
+                ->label('الدرس الفردي')
+                ->options(fn () => AcademicIndividualLesson::query()
+                    ->with(['student', 'academicTeacher.user'])
+                    ->get()
+                    ->mapWithKeys(fn ($lesson) => [
+                        $lesson->id => ($lesson->name ?? 'درس #'.$lesson->id)
+                            .' - '.trim(($lesson->student?->first_name ?? '').' '.($lesson->student?->last_name ?? '')),
+                    ])
+                )
+                ->searchable(),
 
             Filter::make('date_range')
                 ->schema([

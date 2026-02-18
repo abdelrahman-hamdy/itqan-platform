@@ -155,8 +155,7 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
                     ->label('الجلسات')
                     ->icon('heroicon-o-calendar-days')
                     ->url(fn (AcademicIndividualLesson $record): string => AcademicSessionResource::getUrl('index', [
-                        'tableFilters[filter_by][filter_type]' => 'individual_lesson',
-                        'tableFilters[filter_by][filter_value]' => $record->id,
+                        'tableFilters[academic_individual_lesson_id][value]' => $record->id,
                     ])),
             ]),
         ];

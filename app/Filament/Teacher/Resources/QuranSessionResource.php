@@ -239,73 +239,41 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->label('نوع الجلسة')
                 ->options(static::getSessionTypeOptions()),
 
-            Filter::make('filter_by')
-                ->schema([
-                    Grid::make(2)
-                        ->schema([
-                            Select::make('filter_type')
-                                ->label('تصفية حسب')
-                                ->options([
-                                    'group_circle' => 'الحلقة الجماعية',
-                                    'individual_circle' => 'الحلقة الفردية',
-                                    'student' => 'الطالب',
-                                ])
-                                ->live()
-                                ->afterStateUpdated(fn (Set $set) => $set('filter_value', null)),
+            SelectFilter::make('individual_circle_id')
+                ->label('الحلقة الفردية')
+                ->options(fn () => QuranIndividualCircle::where('quran_teacher_id', Auth::id())
+                    ->with(['student'])
+                    ->get()
+                    ->mapWithKeys(fn ($ic) => [
+                        $ic->id => trim(($ic->student?->first_name ?? '').' '.($ic->student?->last_name ?? ''))
+                            ?: 'حلقة #'.$ic->id,
+                    ])
+                )
+                ->searchable(),
 
-                            Select::make('filter_value')
-                                ->label('القيمة')
-                                ->options(function (Get $get) {
-                                    $teacherId = Auth::id();
+            SelectFilter::make('circle_id')
+                ->label('الحلقة الجماعية')
+                ->options(fn () => QuranCircle::where('quran_teacher_id', Auth::id())
+                    ->pluck('name', 'id')
+                )
+                ->searchable(),
 
-                                    return match ($get('filter_type')) {
-                                        'group_circle' => QuranCircle::where('quran_teacher_id', $teacherId)
-                                            ->pluck('name', 'id')
-                                            ->toArray(),
-                                        'individual_circle' => QuranIndividualCircle::where('quran_teacher_id', $teacherId)
-                                            ->with(['student'])
-                                            ->get()
-                                            ->mapWithKeys(fn ($ic) => [
-                                                $ic->id => trim(($ic->student?->first_name ?? '').' '.($ic->student?->last_name ?? ''))
-                                                    ?: 'حلقة #'.$ic->id,
-                                            ])
-                                            ->toArray(),
-                                        'student' => User::where('user_type', 'student')
-                                            ->whereIn('id', function ($query) use ($teacherId) {
-                                                $query->select('student_id')
-                                                    ->from('quran_sessions')
-                                                    ->where('quran_teacher_id', $teacherId)
-                                                    ->whereNotNull('student_id')
-                                                    ->distinct();
-                                            })
-                                            ->get()
-                                            ->mapWithKeys(fn ($u) => [
-                                                $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
-                                            ])
-                                            ->toArray(),
-                                        default => [],
-                                    };
-                                })
-                                ->searchable()
-                                ->visible(fn (Get $get) => filled($get('filter_type'))),
-                        ]),
-                ])
-                ->query(function (Builder $query, array $data): Builder {
-                    $type = $data['filter_type'] ?? null;
-                    $value = $data['filter_value'] ?? null;
-
-                    if (! $type || ! $value) {
-                        return $query;
-                    }
-
-                    return match ($type) {
-                        'group_circle' => $query->where('circle_id', $value),
-                        'individual_circle' => $query->where('individual_circle_id', $value),
-                        'student' => $query->where('student_id', $value),
-                        default => $query,
-                    };
-                })
-                ->columnSpan(2),
+            SelectFilter::make('student_id')
+                ->label('الطالب')
+                ->options(fn () => User::where('user_type', 'student')
+                    ->whereIn('id', function ($query) {
+                        $query->select('student_id')
+                            ->from('quran_sessions')
+                            ->where('quran_teacher_id', Auth::id())
+                            ->whereNotNull('student_id')
+                            ->distinct();
+                    })
+                    ->get()
+                    ->mapWithKeys(fn ($u) => [
+                        $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
+                    ])
+                )
+                ->searchable(),
 
             Filter::make('date_range')
                 ->schema([
