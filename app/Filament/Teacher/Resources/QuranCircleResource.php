@@ -106,16 +106,13 @@ class QuranCircleResource extends BaseQuranCircleResource
                 EditAction::make()
                     ->label('تعديل'),
 
-                Action::make('view_circle')
-                    ->label('عرض تفاصيل الحلقة')
-                    ->icon('heroicon-o-eye')
-                    ->color('info')
-                    ->url(fn (QuranCircle $record): string => route('teacher.group-circles.show', [
-                        'subdomain' => Auth::user()->academy->subdomain,
-                        'circle' => $record->id,
-                    ])
-                    )
-                    ->openUrlInNewTab(),
+                Action::make('view_sessions')
+                    ->label('الجلسات')
+                    ->icon('heroicon-o-calendar-days')
+                    ->url(fn (QuranCircle $record): string => QuranSessionResource::getUrl('index', [
+                        'tableFilters[filter_by][filter_type]' => 'group_circle',
+                        'tableFilters[filter_by][filter_value]' => $record->id,
+                    ])),
             ]),
         ];
     }

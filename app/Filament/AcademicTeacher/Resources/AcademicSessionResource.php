@@ -6,11 +6,17 @@ use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use App\Filament\Shared\Actions\MeetingActions;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Schemas\Components\Grid;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use App\Models\User;
 use App\Models\AcademicTeacherProfile;
@@ -19,8 +25,10 @@ use App\Filament\AcademicTeacher\Resources\AcademicSessionResource\Pages\ListAca
 use App\Filament\AcademicTeacher\Resources\AcademicSessionResource\Pages\CreateAcademicSession;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionResource\Pages\ViewAcademicSession;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionResource\Pages\EditAcademicSession;
+use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
+use App\Models\AcademicIndividualLesson;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionResource\Pages;
 use App\Filament\Shared\Actions\SessionStatusActions;
 use App\Filament\Shared\Resources\BaseAcademicSessionResource;
@@ -112,6 +120,7 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
+                MeetingActions::viewMeeting('academic'),
 
                 static::makeStartSessionAction(),
                 static::makeCompleteSessionAction(),
@@ -143,16 +152,97 @@ class AcademicSessionResource extends BaseAcademicSessionResource
     protected static function getTableFilters(): array
     {
         return [
-            ...parent::getTableFilters(),
+            SelectFilter::make('status')
+                ->label('الحالة')
+                ->options(SessionStatus::options()),
 
-            SelectFilter::make('student_id')
-                ->label('الطالب')
-                ->options(fn () => User::query()
-                    ->where('user_type', UserType::STUDENT->value)
-                    ->whereNotNull('name')
-                    ->pluck('name', 'id')
-                )
-                ->searchable(),
+            SelectFilter::make('attendance_status')
+                ->label('حالة الحضور')
+                ->options(array_merge(
+                    [SessionStatus::SCHEDULED->value => SessionStatus::SCHEDULED->label()],
+                    AttendanceStatus::options()
+                )),
+
+            Filter::make('filter_by')
+                ->schema([
+                    Grid::make(2)
+                        ->schema([
+                            Select::make('filter_type')
+                                ->label('تصفية حسب')
+                                ->options([
+                                    'student' => 'الطالب',
+                                    'individual_lesson' => 'الدرس الفردي',
+                                ])
+                                ->live()
+                                ->afterStateUpdated(fn (Set $set) => $set('filter_value', null)),
+
+                            Select::make('filter_value')
+                                ->label('القيمة')
+                                ->options(function (Get $get) {
+                                    $teacherProfile = static::getCurrentAcademicTeacherProfile();
+
+                                    return match ($get('filter_type')) {
+                                        'student' => User::query()
+                                            ->where('user_type', UserType::STUDENT->value)
+                                            ->whereIn('id', function ($query) use ($teacherProfile) {
+                                                $query->select('student_id')
+                                                    ->from('academic_sessions')
+                                                    ->where('academic_teacher_id', $teacherProfile?->id)
+                                                    ->whereNotNull('student_id')
+                                                    ->distinct();
+                                            })
+                                            ->get()
+                                            ->mapWithKeys(fn ($u) => [
+                                                $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
+                                            ])
+                                            ->toArray(),
+                                        'individual_lesson' => AcademicIndividualLesson::where('academic_teacher_id', $teacherProfile?->id)
+                                            ->with(['student'])
+                                            ->get()
+                                            ->mapWithKeys(fn ($lesson) => [
+                                                $lesson->id => ($lesson->name ?? 'درس #'.$lesson->id)
+                                                    .' - '.trim(($lesson->student?->first_name ?? '').' '.($lesson->student?->last_name ?? '')),
+                                            ])
+                                            ->toArray(),
+                                        default => [],
+                                    };
+                                })
+                                ->searchable()
+                                ->visible(fn (Get $get) => filled($get('filter_type'))),
+                        ]),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    $type = $data['filter_type'] ?? null;
+                    $value = $data['filter_value'] ?? null;
+
+                    if (! $type || ! $value) {
+                        return $query;
+                    }
+
+                    return match ($type) {
+                        'student' => $query->where('student_id', $value),
+                        'individual_lesson' => $query->where('academic_individual_lesson_id', $value),
+                        default => $query,
+                    };
+                })
+                ->columnSpan(2),
+
+            Filter::make('date_range')
+                ->schema([
+                    Grid::make(2)
+                        ->schema([
+                            DatePicker::make('from')
+                                ->label('من تاريخ'),
+                            DatePicker::make('until')
+                                ->label('إلى تاريخ'),
+                        ]),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return $query
+                        ->when($data['from'] ?? null, fn (Builder $q, $date) => $q->whereDate('scheduled_at', '>=', $date))
+                        ->when($data['until'] ?? null, fn (Builder $q, $date) => $q->whereDate('scheduled_at', '<=', $date));
+                })
+                ->columnSpan(2),
         ];
     }
 

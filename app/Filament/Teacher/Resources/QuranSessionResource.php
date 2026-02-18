@@ -5,6 +5,7 @@ namespace App\Filament\Teacher\Resources;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Shared\Actions\SessionStatusActions;
 use App\Filament\Shared\Resources\BaseQuranSessionResource;
 use App\Filament\Teacher\Resources\QuranSessionResource\Pages;
@@ -12,8 +13,10 @@ use App\Filament\Teacher\Resources\QuranSessionResource\Pages\CreateQuranSession
 use App\Filament\Teacher\Resources\QuranSessionResource\Pages\EditQuranSession;
 use App\Filament\Teacher\Resources\QuranSessionResource\Pages\ListQuranSessions;
 use App\Filament\Teacher\Resources\QuranSessionResource\Pages\ViewQuranSession;
+use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
+use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -24,6 +27,11 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Schemas\Components\Grid;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -92,6 +100,7 @@ class QuranSessionResource extends BaseQuranSessionResource
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
+                MeetingActions::viewMeeting('quran'),
                 Action::make('start_session')
                     ->label('بدء الجلسة')
                     ->icon('heroicon-o-play')
@@ -248,51 +257,98 @@ class QuranSessionResource extends BaseQuranSessionResource
     protected static function getTableFilters(): array
     {
         return [
-            SelectFilter::make('period')
-                ->label('الفترة الزمنية')
-                ->options([
-                    'today' => 'اليوم',
-                    'this_week' => 'هذا الأسبوع',
-                    'this_month' => 'هذا الشهر',
-                    'last_week' => 'الأسبوع الماضي',
-                    'last_month' => 'الشهر الماضي',
-                ])
-                ->query(function (Builder $query, array $data): Builder {
-                    return match ($data['value'] ?? null) {
-                        'today' => $query->whereDate('scheduled_at', today()),
-                        'this_week' => $query->whereBetween('scheduled_at', [
-                            now()->startOfWeek(),
-                            now()->endOfWeek(),
-                        ]),
-                        'this_month' => $query->whereYear('scheduled_at', now()->year)
-                            ->whereMonth('scheduled_at', now()->month),
-                        'last_week' => $query->whereBetween('scheduled_at', [
-                            now()->subWeek()->startOfWeek(),
-                            now()->subWeek()->endOfWeek(),
-                        ]),
-                        'last_month' => $query->whereYear('scheduled_at', now()->subMonth()->year)
-                            ->whereMonth('scheduled_at', now()->subMonth()->month),
-                        default => $query,
-                    };
-                }),
+            SelectFilter::make('status')
+                ->label('الحالة')
+                ->options(SessionStatus::options()),
 
             SelectFilter::make('session_type')
                 ->label('نوع الجلسة')
                 ->options(static::getSessionTypeOptions()),
 
-            SelectFilter::make('status')
-                ->label('الحالة')
-                ->options(SessionStatus::options()),
+            Filter::make('filter_by')
+                ->schema([
+                    Grid::make(2)
+                        ->schema([
+                            Select::make('filter_type')
+                                ->label('تصفية حسب')
+                                ->options([
+                                    'group_circle' => 'الحلقة الجماعية',
+                                    'individual_circle' => 'الحلقة الفردية',
+                                    'student' => 'الطالب',
+                                ])
+                                ->live()
+                                ->afterStateUpdated(fn (Set $set) => $set('filter_value', null)),
 
-            SelectFilter::make('attendance_status')
-                ->label('الحضور')
-                ->options([
-                    AttendanceStatus::ATTENDED->value => 'حاضر',
-                    AttendanceStatus::ABSENT->value => 'غائب',
-                    AttendanceStatus::LATE->value => 'متأخر',
-                    AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                    SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
-                ]),
+                            Select::make('filter_value')
+                                ->label('القيمة')
+                                ->options(function (Get $get) {
+                                    $teacherId = Auth::id();
+
+                                    return match ($get('filter_type')) {
+                                        'group_circle' => QuranCircle::where('quran_teacher_id', $teacherId)
+                                            ->pluck('name', 'id')
+                                            ->toArray(),
+                                        'individual_circle' => QuranIndividualCircle::where('quran_teacher_id', $teacherId)
+                                            ->with(['student'])
+                                            ->get()
+                                            ->mapWithKeys(fn ($ic) => [
+                                                $ic->id => trim(($ic->student?->first_name ?? '').' '.($ic->student?->last_name ?? ''))
+                                                    ?: 'حلقة #'.$ic->id,
+                                            ])
+                                            ->toArray(),
+                                        'student' => User::where('user_type', 'student')
+                                            ->whereIn('id', function ($query) use ($teacherId) {
+                                                $query->select('student_id')
+                                                    ->from('quran_sessions')
+                                                    ->where('quran_teacher_id', $teacherId)
+                                                    ->whereNotNull('student_id')
+                                                    ->distinct();
+                                            })
+                                            ->get()
+                                            ->mapWithKeys(fn ($u) => [
+                                                $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
+                                            ])
+                                            ->toArray(),
+                                        default => [],
+                                    };
+                                })
+                                ->searchable()
+                                ->visible(fn (Get $get) => filled($get('filter_type'))),
+                        ]),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    $type = $data['filter_type'] ?? null;
+                    $value = $data['filter_value'] ?? null;
+
+                    if (! $type || ! $value) {
+                        return $query;
+                    }
+
+                    return match ($type) {
+                        'group_circle' => $query->where('circle_id', $value),
+                        'individual_circle' => $query->where('individual_circle_id', $value),
+                        'student' => $query->where('student_id', $value),
+                        default => $query,
+                    };
+                })
+                ->columnSpan(2),
+
+            Filter::make('date_range')
+                ->schema([
+                    Grid::make(2)
+                        ->schema([
+                            DatePicker::make('from')
+                                ->label('من تاريخ'),
+                            DatePicker::make('until')
+                                ->label('إلى تاريخ'),
+                        ]),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return $query
+                        ->when($data['from'] ?? null, fn (Builder $q, $date) => $q->whereDate('scheduled_at', '>=', $date))
+                        ->when($data['until'] ?? null, fn (Builder $q, $date) => $q->whereDate('scheduled_at', '<=', $date));
+                })
+                ->columnSpan(2),
         ];
     }
 

@@ -10,6 +10,8 @@ use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Page
 use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages\ViewAcademicIndividualLesson;
 use App\Filament\Shared\Resources\BaseAcademicIndividualLessonResource;
 use App\Models\AcademicGradeLevel;
+use App\Models\AcademicIndividualLesson;
+use Filament\Actions\Action;
 use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
 use App\Models\User;
@@ -149,6 +151,13 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
+                Action::make('view_sessions')
+                    ->label('الجلسات')
+                    ->icon('heroicon-o-calendar-days')
+                    ->url(fn (AcademicIndividualLesson $record): string => AcademicSessionResource::getUrl('index', [
+                        'tableFilters[filter_by][filter_type]' => 'individual_lesson',
+                        'tableFilters[filter_by][filter_value]' => $record->id,
+                    ])),
             ]),
         ];
     }

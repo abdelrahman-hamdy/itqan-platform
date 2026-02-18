@@ -173,6 +173,13 @@ class QuranCircleResource extends BaseQuranCircleResource
                         'status' => true,
                         'enrollment_status' => CircleEnrollmentStatus::OPEN,
                     ])),
+                Action::make('view_sessions')
+                    ->label('الجلسات')
+                    ->icon('heroicon-o-calendar-days')
+                    ->url(fn (QuranCircle $record): string => QuranSessionResource::getUrl('index', [
+                        'tableFilters[filter_by][filter_type]' => 'group_circle',
+                        'tableFilters[filter_by][filter_value]' => $record->id,
+                    ])),
                 DeleteAction::make()
                     ->label('حذف'),
                 RestoreAction::make()

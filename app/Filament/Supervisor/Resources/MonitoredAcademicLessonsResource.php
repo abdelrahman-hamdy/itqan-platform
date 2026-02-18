@@ -292,6 +292,8 @@ class MonitoredAcademicLessonsResource extends BaseSupervisorResource
                         ->icon('heroicon-o-calendar-days')
                         ->url(fn (AcademicIndividualLesson $record): string => MonitoredAllSessionsResource::getUrl('index', [
                             'activeTab' => 'academic',
+                            'tableFilters[filter_by][filter_type]' => 'individual_lesson',
+                            'tableFilters[filter_by][filter_value]' => $record->id,
                         ])),
                     DeleteAction::make()
                         ->label('حذف'),

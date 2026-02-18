@@ -157,7 +157,8 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                     ->label('الجلسات')
                     ->icon('heroicon-o-calendar-days')
                     ->url(fn (QuranIndividualCircle $record): string => QuranSessionResource::getUrl('index', [
-                        'tableFilters[individual_circle_id][value]' => $record->id,
+                        'tableFilters[filter_by][filter_type]' => 'individual_circle',
+                        'tableFilters[filter_by][filter_value]' => $record->id,
                     ])),
                 DeleteAction::make()
                     ->label('حذف'),

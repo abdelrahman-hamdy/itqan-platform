@@ -346,6 +346,8 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                         ->icon('heroicon-o-calendar-days')
                         ->url(fn (QuranIndividualCircle $record): string => MonitoredAllSessionsResource::getUrl('index', [
                             'activeTab' => 'quran',
+                            'tableFilters[filter_by][filter_type]' => 'individual_circle',
+                            'tableFilters[filter_by][filter_value]' => $record->id,
                         ])),
                     DeleteAction::make()
                         ->label('حذف'),
