@@ -58,7 +58,7 @@
                 'bg-blue-50/60 dark:bg-blue-900/20 border-e-2 border-green-500': showUnreadStatus && $wire.selectedConversationId != conversationID,
             }">
 
-            <div class="shrink-0">
+            <div class="shrink-0 relative">
                 @if($conversation->isGroup() && $chatGroup)
                     {{-- Entity-type-based group avatar --}}
                     @php $avatarStyle = $chatGroup->getGroupAvatarStyle(); @endphp
@@ -74,6 +74,8 @@
                         group="{{ $conversation->isGroup() }}"
                         :src="$group ? $group?->cover_url : $receiver?->cover_url ?? null" class="w-12 h-12" />
                 @endif
+                {{-- Unread indicator circle on avatar --}}
+                <div x-show="showUnreadStatus" class="absolute -top-0.5 -end-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
             </div>
 
             <aside class="flex justify-between w-full">

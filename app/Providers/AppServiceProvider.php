@@ -43,6 +43,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use App\Models\AcademicHomeworkSubmission;
 use App\Observers\HomeworkSubmissionObserver;
 use App\Models\InteractiveCourseHomeworkSubmission;
+use App\Livewire\Chat\Chats;
 use App\Livewire\Chat\Info;
 use App\Livewire\Filament\DatabaseNotifications;
 use App\Policies\CertificatePolicy;
@@ -275,8 +276,9 @@ class AppServiceProvider extends ServiceProvider
         AcademicHomeworkSubmission::observe(HomeworkSubmissionObserver::class);
         InteractiveCourseHomeworkSubmission::observe(HomeworkSubmissionObserver::class);
 
-        // Override WireChat Info component with custom implementation
+        // Override WireChat components with custom implementations
         Livewire::component('wirechat.chat.info', Info::class);
+        Livewire::component('wirechat.chats', Chats::class);
 
         // Override Filament DatabaseNotifications with custom per-panel category filtering
         // Must run after Filament registers its components (after all providers boot)
