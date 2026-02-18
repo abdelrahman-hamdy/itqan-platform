@@ -6,7 +6,6 @@ use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
-use App\Services\AcademyContextService;
 use App\Services\MeetingObserverService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -29,7 +28,7 @@ class SessionsMonitoringController extends Controller
     {
         $user = auth()->user();
 
-        if (! $user->isSupervisor() && ! $user->isSuperAdmin() && ! $user->isAdmin()) {
+        if (! $user->isSupervisor() && ! $user->isSuperAdmin() && ! $user->isAcademyAdmin()) {
             abort(403);
         }
 
@@ -55,7 +54,7 @@ class SessionsMonitoringController extends Controller
     {
         $user = auth()->user();
 
-        if (! $user->isSupervisor() && ! $user->isSuperAdmin() && ! $user->isAdmin()
+        if (! $user->isSupervisor() && ! $user->isSuperAdmin() && ! $user->isAcademyAdmin()
             && ! $user->isQuranTeacher() && ! $user->isAcademicTeacher()) {
             abort(403);
         }
@@ -143,11 +142,9 @@ class SessionsMonitoringController extends Controller
         $query = QuranSession::query()
             ->with(['quranTeacher', 'circle', 'student', 'individualCircle', 'academy']);
 
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
-            $academyId = $user->isAdmin() ? $user->academy_id : AcademyContextService::getCurrentAcademyId();
-            if ($academyId) {
-                $query->where('academy_id', $academyId);
-            }
+        // Admin/SuperAdmin: rely on ScopedToAcademyForWeb global scope for academy filtering
+        if ($user->isSuperAdmin() || $user->isAcademyAdmin()) {
+            // No explicit filter needed — global scope handles academy_id
         } elseif ($user->isQuranTeacher()) {
             $query->where('quran_teacher_id', $user->id);
         } else {
@@ -164,11 +161,9 @@ class SessionsMonitoringController extends Controller
         $query = AcademicSession::query()
             ->with(['academicTeacher.user', 'academicIndividualLesson.academicSubject', 'student', 'academy']);
 
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
-            $academyId = $user->isAdmin() ? $user->academy_id : AcademyContextService::getCurrentAcademyId();
-            if ($academyId) {
-                $query->where('academy_id', $academyId);
-            }
+        // Admin/SuperAdmin: rely on ScopedToAcademyForWeb global scope for academy filtering
+        if ($user->isSuperAdmin() || $user->isAcademyAdmin()) {
+            // No explicit filter needed — global scope handles academy_id
         } elseif ($user->isAcademicTeacher()) {
             $teacherProfileId = $user->academicTeacherProfile?->id;
             $query->where('academic_teacher_id', $teacherProfileId);
@@ -185,11 +180,9 @@ class SessionsMonitoringController extends Controller
         $query = InteractiveCourseSession::query()
             ->with(['course.assignedTeacher.user', 'course.subject', 'course.academy']);
 
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
-            $academyId = $user->isAdmin() ? $user->academy_id : AcademyContextService::getCurrentAcademyId();
-            if ($academyId) {
-                $query->whereHas('course', fn ($q) => $q->where('academy_id', $academyId));
-            }
+        // Admin/SuperAdmin: rely on ScopedToAcademyForWeb global scope for academy filtering
+        if ($user->isSuperAdmin() || $user->isAcademyAdmin()) {
+            // No explicit filter needed — global scope handles academy_id
         } elseif ($user->isAcademicTeacher()) {
             $teacherProfileId = $user->academicTeacherProfile?->id;
             $query->whereHas('course', fn ($q) => $q->where('assigned_teacher_id', $teacherProfileId));
