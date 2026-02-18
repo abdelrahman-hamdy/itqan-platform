@@ -73,24 +73,13 @@
 
         @scroll-bottom.window="
         requestAnimationFrame(() => {
-            {{-- overflow-y: hidden; is used to hide the vertical scrollbar initially. --}}
-            $el.style.overflowY='hidden';
-
-
-
-            {{-- scroll the element down --}}
             $el.scrollTop = $el.scrollHeight;
-
-            {{-- After updating the chat height, overflowY is set back to 'auto',
-                which allows the browser to determine whether to display the scrollbar
-                based on the content height.  --}}
-               $el.style.overflowY='auto';
         });
     "
 
 
     x-cloak
-     class='flex flex-col h-full  relative gap-2 gap-y-4 p-4 md:p-5 lg:p-8  grow  overscroll-contain overflow-x-hidden w-full my-auto bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950 dark:to-blue-950'
+     class='flex flex-col h-full  relative gap-2 gap-y-4 p-4 md:p-5 lg:p-8  grow  overscroll-contain overflow-x-hidden overflow-y-auto w-full my-auto bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950 dark:to-blue-950'
     style="contain: content" >
 
 
@@ -118,7 +107,19 @@
                 x-transition:leave-start="opacity-100 translate-y-0"
                 x-transition:leave-end="opacity-0 -translate-y-4"
                 class="sticky top-0 uppercase p-2 shadow-md px-3 z-50 rounded-xl border border-gray-300 dark:border-gray-600 text-sm flex text-center justify-center bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 w-32 mx-auto font-medium">
-                {{ $date }}
+                @php
+                    $translatedDate = match($date) {
+                        'Monday' => 'الاثنين',
+                        'Tuesday' => 'الثلاثاء',
+                        'Wednesday' => 'الأربعاء',
+                        'Thursday' => 'الخميس',
+                        'Friday' => 'الجمعة',
+                        'Saturday' => 'السبت',
+                        'Sunday' => 'الأحد',
+                        default => $date,
+                    };
+                @endphp
+                {{ $translatedDate }}
             </div>
 
             @foreach ($messageGroup as $key => $message)
@@ -166,7 +167,7 @@
                     <div class="w-full">
                         <div @class([
                             'flex flex-col gap-y-2',
-                            'ml-auto' => $belongsToAuth])>
+                            'ms-auto' => $belongsToAuth])>
 
 
 
@@ -174,8 +175,8 @@
                             @if ($parent != null)
                                 <div @class([
                                     'max-w-fit   flex flex-col gap-y-2',
-                                    'ml-auto' => $belongsToAuth,
-                                    // 'ml-9 sm:ms-10' => !$belongsToAuth,
+                                    'ms-auto' => $belongsToAuth,
+                                    // 'ms-9 sm:ms-10' => !$belongsToAuth,
                                 ])>
 
 
@@ -205,8 +206,8 @@
 
                                     <div @class([
                                         'px-1 border-gray-300 dark:border-gray-600 overflow-hidden ',
-                                        ' border-r-4 ml-auto' => $belongsToAuth,
-                                        ' border-l-4 mr-auto ' => !$belongsToAuth,
+                                        ' border-e-4 ms-auto' => $belongsToAuth,
+                                        ' border-s-4 me-auto ' => !$belongsToAuth,
                                     ])>
                                         <p
                                             class=" bg-gray-100 dark:text-white break-all  dark:bg-gray-700 text-gray-900 line-clamp-1 text-sm  rounded-full max-w-fit   px-3 py-1 ">

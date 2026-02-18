@@ -6,8 +6,7 @@
 /* ==========================================================================
    Icon Libraries - Bundled via npm for better caching and offline support
    ========================================================================== */
-@import 'remixicon/fonts/remixicon.css' layer(base);
-@import 'flag-icons/css/flag-icons.min.css' layer(base);
+/* remixicon and flag-icons are imported via app.js to ensure Vite resolves font/svg URLs */
 
 /* Import modular CSS files - must be before @tailwind directives */
 @import './calendar.css' layer(base);

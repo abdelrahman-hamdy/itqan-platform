@@ -1,4 +1,8 @@
 import './bootstrap';
+// Icon libraries imported via JS so Vite resolves font/svg url() references properly
+// (CSS @import was processed by PostCSS/TailwindCSS which lost the URL resolution context)
+import 'remixicon/fonts/remixicon.css';
+import 'flag-icons/css/flag-icons.min.css';
 import '../css/app.css';
 import Alpine from 'alpinejs';
 import AOS from 'aos';

@@ -16,29 +16,29 @@
 
         'max-w-max  h-[200px] min-h-[210px] bg-[var(--wc-light-secondary)] dark:bg-[var(--wc-dark-secondary)]   object-scale-down  grow-0 shrink  overflow-hidden  rounded-3xl cursor-pointer hover:opacity-90 transition-opacity',
 
-        'rounded-br-md rounded-tr-2xl' => ($isSameAsNext && $isNotSameAsPrevious && $belongsToAuth),
+        'rounded-ee-md rounded-se-2xl' => ($isSameAsNext && $isNotSameAsPrevious && $belongsToAuth),
 
-        // Middle message on RIGHT
-        'rounded-r-md' => ($isSameAsPrevious && $belongsToAuth),
+        // Middle message on END
+        'rounded-e-md' => ($isSameAsPrevious && $belongsToAuth),
 
-        // Standalone message RIGHT
-        'rounded-br-xl rounded-r-xl' => ($isNotSameAsPrevious && $isNotSameAsNext && $belongsToAuth),
+        // Standalone message END
+        'rounded-ee-xl rounded-e-xl' => ($isNotSameAsPrevious && $isNotSameAsNext && $belongsToAuth),
 
-        // Last Message on RIGHT
-        'rounded-br-2xl' => ($isNotSameAsNext && $belongsToAuth),
+        // Last Message on END
+        'rounded-ee-2xl' => ($isNotSameAsNext && $belongsToAuth),
 
-        // LEFT
-        // First message on LEFT
-        'rounded-bl-md rounded-tl-2xl' => ($isSameAsNext && $isNotSameAsPrevious && !$belongsToAuth),
+        // START (non-auth messages)
+        // First message on START
+        'rounded-es-md rounded-ss-2xl' => ($isSameAsNext && $isNotSameAsPrevious && !$belongsToAuth),
 
-        // Middle message on LEFT
-        'rounded-l-md' => ($isSameAsPrevious && !$belongsToAuth),
+        // Middle message on START
+        'rounded-s-md' => ($isSameAsPrevious && !$belongsToAuth),
 
-        // Standalone message LEFT
-        'rounded-bl-xl rounded-l-xl' => ($isNotSameAsPrevious && $isNotSameAsNext && !$belongsToAuth),
+        // Standalone message START
+        'rounded-es-xl rounded-s-xl' => ($isNotSameAsPrevious && $isNotSameAsNext && !$belongsToAuth),
 
-        // Last message on LEFT
-        'rounded-bl-2xl' => ($isNotSameAsNext && !$belongsToAuth),
+        // Last message on START
+        'rounded-es-2xl' => ($isNotSameAsNext && !$belongsToAuth),
         ])
 
         loading="lazy" src="{{$attachment?->url}}" alt="{{  __('wirechat::chat.labels.attachment') }}">

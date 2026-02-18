@@ -22,33 +22,33 @@
     'text-white' => $belongsToAuth, // Background color for messages sent by the authenticated user
     'bg-white dark:bg-gray-800 dark:text-white shadow-sm' => !$belongsToAuth,
 
-    // Message styles based on position and ownership
+    // Message styles based on position and ownership (using logical properties for RTL support)
 
-    // RIGHT
-    // First message on RIGHT
-    'rounded-br-md rounded-tr-2xl' => ($isSameAsNext && $isNotSameAsPrevious && $belongsToAuth),
+    // END (auth messages - right in LTR, left in RTL)
+    // First message on END
+    'rounded-ee-md rounded-se-2xl' => ($isSameAsNext && $isNotSameAsPrevious && $belongsToAuth),
 
-    // Middle message on RIGHT
-    'rounded-r-md' => ($isSameAsPrevious && $belongsToAuth),
+    // Middle message on END
+    'rounded-e-md' => ($isSameAsPrevious && $belongsToAuth),
 
-    // Standalone message RIGHT
-    'rounded-br-xl rounded-r-xl' => ($isNotSameAsPrevious && $isNotSameAsNext && $belongsToAuth),
+    // Standalone message END
+    'rounded-ee-xl rounded-e-xl' => ($isNotSameAsPrevious && $isNotSameAsNext && $belongsToAuth),
 
-    // Last Message on RIGHT
-    'rounded-br-2xl' => ($isNotSameAsNext && $belongsToAuth),
+    // Last Message on END
+    'rounded-ee-2xl' => ($isNotSameAsNext && $belongsToAuth),
 
-    // LEFT
-    // First message on LEFT
-    'rounded-bl-md rounded-tl-2xl' => ($isSameAsNext && $isNotSameAsPrevious && !$belongsToAuth),
+    // START (non-auth messages - left in LTR, right in RTL)
+    // First message on START
+    'rounded-es-md rounded-ss-2xl' => ($isSameAsNext && $isNotSameAsPrevious && !$belongsToAuth),
 
-    // Middle message on LEFT
-    'rounded-l-md' => ($isSameAsPrevious && !$belongsToAuth),
+    // Middle message on START
+    'rounded-s-md' => ($isSameAsPrevious && !$belongsToAuth),
 
-    // Standalone message LEFT
-    'rounded-bl-xl rounded-l-xl' => ($isNotSameAsPrevious && $isNotSameAsNext && !$belongsToAuth),
+    // Standalone message START
+    'rounded-es-xl rounded-s-xl' => ($isNotSameAsPrevious && $isNotSameAsNext && !$belongsToAuth),
 
-    // Last message on LEFT
-    'rounded-bl-2xl' => ($isNotSameAsNext && !$belongsToAuth),
+    // Last message on START
+    'rounded-es-2xl' => ($isNotSameAsNext && !$belongsToAuth),
 ])
 >
 @if (!$belongsToAuth && $isGroup)
@@ -69,7 +69,7 @@
 
 {{-- Display the created time based on different conditions --}}
 <span
-@class(['text-[11px] ml-auto ',  'text-gray-700 dark:text-gray-300' => !$belongsToAuth,'text-gray-100' => $belongsToAuth])>
+@class(['text-[11px] ms-auto ',  'text-gray-700 dark:text-gray-300' => !$belongsToAuth,'text-gray-100' => $belongsToAuth])>
     @php
         // If the message was created today, show only the time (e.g., 1:00 AM)
         echo $message?->created_at->format('H:i');
