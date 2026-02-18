@@ -152,7 +152,6 @@ class AcademicSessionController extends BaseStudentSessionController
             return $this->notFound(__('Academic session not found or not completed yet.'));
         }
 
-        // TODO: Add student_rating and student_feedback columns to academic_sessions table
         return $this->error(__('Feedback submission is not yet available.'), 501, 'NOT_IMPLEMENTED');
     }
 

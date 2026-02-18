@@ -68,8 +68,6 @@ abstract class BaseStudentSessionController extends Controller
         $base['description'] = $session->description;
         $base['notes'] = $session->session_notes ?? null;
         $base['teacher_feedback'] = $session->teacher_feedback ?? null;
-        $base['student_rating'] = null; // TODO: Add student_rating column to session tables
-        $base['student_feedback'] = null; // TODO: Add student_feedback column to session tables
 
         // Meeting data is stored directly on the session model (no separate meeting relationship)
         if ($session->meeting_link || $session->meeting_room_name) {

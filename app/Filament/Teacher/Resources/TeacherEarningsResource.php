@@ -62,7 +62,7 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
             $query->whereRaw('1 = 0');
         }
 
-        return $query;
+        return $query->with(['academy']);
     }
 
     /**

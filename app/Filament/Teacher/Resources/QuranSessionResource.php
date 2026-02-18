@@ -76,7 +76,7 @@ class QuranSessionResource extends BaseQuranSessionResource
         return $query
             ->where('quran_teacher_id', $user->id)
             ->where('academy_id', $user->academy_id)
-            ->with(['subscription']);
+            ->with(['subscription', 'student', 'academy']);
     }
 
     /**

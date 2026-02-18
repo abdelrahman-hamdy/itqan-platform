@@ -194,7 +194,6 @@ class InteractiveSessionController extends BaseStudentSessionController
             return $this->notFound(__('Interactive session not found or not completed yet.'));
         }
 
-        // TODO: Add student_rating and student_feedback columns to interactive_course_sessions table
         return $this->error(__('Feedback submission is not yet available.'), 501, 'NOT_IMPLEMENTED');
     }
 

@@ -351,7 +351,7 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
         $academyId = auth()->user()->academy_id;
 
         return $query->where('academy_id', $academyId)
-            ->with(['student', 'teacher.user', 'subject', 'gradeLevel']);
+            ->with(['student', 'teacher.user', 'subject', 'gradeLevel', 'academy']);
     }
 
     protected static function getTableActions(): array

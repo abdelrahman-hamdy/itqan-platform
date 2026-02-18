@@ -4,16 +4,14 @@ namespace App\Services;
 
 use Exception;
 use App\Contracts\CircleEnrollmentServiceInterface;
-use App\Enums\CircleEnrollmentStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Enums\SubscriptionPaymentStatus;
-use App\Exceptions\EnrollmentCapacityException;
-use App\Models\Payment;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleEnrollment;
 use App\Models\QuranSubscription;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
+use App\Services\Circle\CircleEnrollmentStatusService;
+use App\Services\Circle\CircleEnrollmentValidator;
+use App\Services\Circle\CircleFreeEnrollmentService;
+use App\Services\Circle\CirclePaidEnrollmentService;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -27,9 +25,22 @@ use Illuminate\Support\Facades\Log;
  *
  * Extracted from StudentProfileController to reduce controller size.
  * Handles enrollInCircle() and leaveCircle() logic (~200 lines).
+ *
+ * This class is a thin delegate — all logic lives in the Circle sub-services:
+ * @see CircleEnrollmentValidator
+ * @see CirclePaidEnrollmentService
+ * @see CircleFreeEnrollmentService
+ * @see CircleEnrollmentStatusService
  */
 class CircleEnrollmentService implements CircleEnrollmentServiceInterface
 {
+    public function __construct(
+        private readonly CircleEnrollmentValidator $validator,
+        private readonly CirclePaidEnrollmentService $paidEnrollment,
+        private readonly CircleFreeEnrollmentService $freeEnrollment,
+        private readonly CircleEnrollmentStatusService $statusService,
+    ) {}
+
     /**
      * Enroll a student in a Quran circle.
      *
@@ -87,180 +98,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      */
     protected function createPendingSubscriptionForPayment(User $user, QuranCircle $circle, $academy, ?string $paymentGateway = null): array
     {
-        try {
-            $result = DB::transaction(function () use ($circle, $user, $academy) {
-                // Lock the circle row to check capacity
-                $lockedCircle = QuranCircle::lockForUpdate()->find($circle->id);
-
-                // Double-check capacity
-                if ($lockedCircle->enrolled_students >= $lockedCircle->max_students) {
-                    throw EnrollmentCapacityException::circleFull(
-                        circleId: (string) $lockedCircle->id,
-                        currentCount: $lockedCircle->enrolled_students,
-                        maxCapacity: $lockedCircle->max_students,
-                        circleName: $lockedCircle->name ?? null
-                    );
-                }
-
-                // Check for existing pending subscription for this circle
-                $existingSubscription = QuranSubscription::where('student_id', $user->id)
-                    ->where('academy_id', $academy->id)
-                    ->where('education_unit_id', $lockedCircle->id)
-                    ->where('education_unit_type', QuranCircle::class)
-                    ->where('subscription_type', 'group')
-                    ->where('status', SessionSubscriptionStatus::PENDING)
-                    ->where('payment_status', SubscriptionPaymentStatus::PENDING)
-                    ->first();
-
-                if ($existingSubscription) {
-                    Log::info('[CircleEnrollment] Found existing pending subscription', [
-                        'subscription_id' => $existingSubscription->id,
-                    ]);
-
-                    return ['subscription' => $existingSubscription, 'is_existing' => true];
-                }
-
-                // Create PENDING subscription - student is NOT enrolled yet
-                $subscription = QuranSubscription::create([
-                    'academy_id' => $academy->id,
-                    'student_id' => $user->id,
-                    'quran_teacher_id' => $lockedCircle->quran_teacher_id,
-                    'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
-                    'subscription_type' => 'group',
-                    'education_unit_id' => $lockedCircle->id,
-                    'education_unit_type' => QuranCircle::class,
-                    'total_sessions' => $lockedCircle->monthly_sessions_count ?? 8,
-                    'sessions_used' => 0,
-                    'sessions_remaining' => $lockedCircle->monthly_sessions_count ?? 8,
-                    'total_price' => $lockedCircle->monthly_fee,
-                    'discount_amount' => 0,
-                    'final_price' => $lockedCircle->monthly_fee,
-                    'currency' => $lockedCircle->currency ?? getCurrencyCode(null, $academy),
-                    'billing_cycle' => 'monthly',
-                    'payment_status' => SubscriptionPaymentStatus::PENDING,
-                    'status' => SessionSubscriptionStatus::PENDING,
-                    'memorization_level' => $lockedCircle->memorization_level ?? 'beginner',
-                    'starts_at' => now(),
-                    'auto_renew' => true,
-                ]);
-
-                Log::info('[CircleEnrollment] Created pending subscription for paid circle', [
-                    'subscription_id' => $subscription->id,
-                    'status' => $subscription->status,
-                    'payment_status' => $subscription->payment_status,
-                ]);
-
-                return ['subscription' => $subscription, 'is_existing' => false, 'circle' => $lockedCircle];
-            });
-
-            $subscription = $result['subscription'];
-            $lockedCircle = $result['circle'] ?? $circle;
-
-            // Calculate tax (15% VAT) - same as individual subscriptions
-            $price = $lockedCircle->monthly_fee;
-            $taxAmount = round($price * 0.15, 2);
-            $totalAmount = $price + $taxAmount;
-
-            // Get payment gateway (use provided or academy default)
-            $paymentSettings = $academy->getPaymentSettings();
-            $gateway = $paymentGateway ?? $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
-
-            // Create payment record - same flow as individual subscriptions
-            $payment = Payment::create([
-                'academy_id' => $academy->id,
-                'user_id' => $user->id,
-                'subscription_id' => $subscription->id,
-                'payable_type' => QuranSubscription::class,
-                'payable_id' => $subscription->id,
-                'payment_code' => Payment::generatePaymentCode($academy->id, 'QSP'),
-                'payment_method' => $gateway,
-                'payment_gateway' => $gateway,
-                'payment_type' => 'subscription',
-                'amount' => $totalAmount,
-                'net_amount' => $price,
-                'currency' => $lockedCircle->currency ?? getCurrencyCode(null, $academy),
-                'tax_amount' => $taxAmount,
-                'tax_percentage' => 15,
-                'status' => 'pending',
-                'payment_status' => 'pending',
-                'save_card' => $subscription->auto_renew,
-                'created_by' => $user->id,
-            ]);
-
-            Log::info('[CircleEnrollment] Created payment record', [
-                'payment_id' => $payment->id,
-                'subscription_id' => $subscription->id,
-                'amount' => $totalAmount,
-                'gateway' => $gateway,
-            ]);
-
-            // Process payment with configured gateway - get redirect URL (same as individual subscriptions)
-            $paymentService = app(PaymentService::class);
-            $studentProfile = $user->studentProfile;
-            $studentName = $studentProfile?->full_name ?? $user->name ?? 'Student';
-            $studentPhone = $studentProfile?->phone ?? $user->phone ?? '';
-
-            $paymentResult = $paymentService->processPayment($payment, [
-                'customer_name' => $studentName,
-                'customer_email' => $user->email,
-                'customer_phone' => $studentPhone,
-                'save_card' => $subscription->auto_renew,
-            ]);
-
-            Log::info('[CircleEnrollment] Payment service result', [
-                'payment_id' => $payment->id,
-                'success' => $paymentResult['success'] ?? false,
-                'has_redirect' => isset($paymentResult['redirect_url']),
-                'has_iframe' => isset($paymentResult['iframe_url']),
-            ]);
-
-            // Get the payment gateway URL
-            $paymentUrl = $paymentResult['redirect_url'] ?? $paymentResult['iframe_url'] ?? null;
-
-            if (! $paymentUrl) {
-                // Payment initiation failed
-                Log::error('[CircleEnrollment] Payment initiation failed - no redirect URL', [
-                    'payment_id' => $payment->id,
-                    'result' => $paymentResult,
-                ]);
-
-                // Clean up
-                $payment->delete();
-                $subscription->delete();
-
-                return [
-                    'success' => false,
-                    'error' => __('payments.subscription.payment_init_failed').': '.($paymentResult['error'] ?? __('payments.subscription.unknown_error')),
-                ];
-            }
-
-            return [
-                'success' => true,
-                'requires_payment' => true,
-                'message' => __('circles.payment_required'),
-                'subscription' => $subscription,
-                'payment' => $payment,
-                'payment_url' => $paymentUrl,
-            ];
-        } catch (EnrollmentCapacityException $e) {
-            $e->report();
-
-            return [
-                'success' => false,
-                'error' => $e->getMessage(),
-                'error_type' => 'capacity_exceeded',
-                'available_slots' => $e->getAvailableSlots(),
-            ];
-        } catch (Exception $e) {
-            Log::error('[CircleEnrollment] Error creating pending subscription', [
-                'user_id' => $user->id,
-                'circle_id' => $circle->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            throw $e;
-        }
+        return $this->paidEnrollment->createPendingSubscriptionForPayment($user, $circle, $academy, $paymentGateway);
     }
 
     /**
@@ -268,125 +106,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      */
     protected function enrollImmediately(User $user, QuranCircle $circle, $academy, bool $createSubscription): array
     {
-        try {
-            $result = DB::transaction(function () use ($circle, $user, $academy, $createSubscription) {
-                // Lock the circle row to prevent race conditions during enrollment
-                $lockedCircle = QuranCircle::lockForUpdate()->find($circle->id);
-
-                // Double-check capacity after acquiring lock
-                if ($lockedCircle->enrolled_students >= $lockedCircle->max_students) {
-                    throw EnrollmentCapacityException::circleFull(
-                        circleId: (string) $lockedCircle->id,
-                        currentCount: $lockedCircle->enrolled_students,
-                        maxCapacity: $lockedCircle->max_students,
-                        circleName: $lockedCircle->name ?? null
-                    );
-                }
-
-                // Create enrollment using the new QuranCircleEnrollment model
-                $enrollment = QuranCircleEnrollment::create([
-                    'circle_id' => $lockedCircle->id,
-                    'student_id' => $user->id,
-                    'enrolled_at' => now(),
-                    'status' => QuranCircleEnrollment::STATUS_ENROLLED,
-                    'attendance_count' => 0,
-                    'missed_sessions' => 0,
-                    'makeup_sessions_used' => 0,
-                    'current_level' => $lockedCircle->memorization_level ?? 'beginner',
-                ]);
-
-                // Also maintain backward compatibility with pivot table
-                if (! $lockedCircle->students()->where('users.id', $user->id)->exists()) {
-                    $lockedCircle->students()->attach($user->id, [
-                        'enrolled_at' => now(),
-                        'status' => QuranCircleEnrollment::STATUS_ENROLLED,
-                        'attendance_count' => 0,
-                        'missed_sessions' => 0,
-                        'makeup_sessions_used' => 0,
-                        'current_level' => $lockedCircle->memorization_level ?? 'beginner',
-                    ]);
-                }
-
-                $subscription = null;
-
-                // Create free subscription
-                if ($createSubscription) {
-                    $subscription = QuranSubscription::create([
-                        'academy_id' => $academy->id,
-                        'student_id' => $user->id,
-                        'quran_teacher_id' => $lockedCircle->quran_teacher_id,
-                        'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
-                        'subscription_type' => 'group',
-                        'education_unit_id' => $lockedCircle->id,
-                        'education_unit_type' => QuranCircle::class,
-                        'total_sessions' => $lockedCircle->monthly_sessions_count ?? 8,
-                        'sessions_used' => 0,
-                        'sessions_remaining' => $lockedCircle->monthly_sessions_count ?? 8,
-                        'total_price' => 0,
-                        'discount_amount' => 0,
-                        'final_price' => 0,
-                        'currency' => getCurrencyCode(null, $academy),
-                        'billing_cycle' => 'monthly',
-                        'payment_status' => SubscriptionPaymentStatus::PAID,
-                        'status' => SessionSubscriptionStatus::ACTIVE,
-                        'memorization_level' => $lockedCircle->memorization_level ?? 'beginner',
-                        'starts_at' => now(),
-                        'auto_renew' => false,
-                    ]);
-
-                    // Link the enrollment to the subscription
-                    $enrollment->update(['subscription_id' => $subscription->id]);
-                }
-
-                // Update circle enrollment count atomically
-                $lockedCircle->increment('enrolled_students');
-
-                // Refresh the locked instance to get updated count
-                $lockedCircle->refresh();
-
-                // Check if circle is now full using refreshed count
-                if ($lockedCircle->enrolled_students >= $lockedCircle->max_students) {
-                    $lockedCircle->update(['enrollment_status' => CircleEnrollmentStatus::FULL]);
-                }
-
-                Log::info('[CircleEnrollment] Free circle enrollment completed', [
-                    'user_id' => $user->id,
-                    'circle_id' => $lockedCircle->id,
-                    'enrollment_id' => $enrollment->id,
-                    'subscription_id' => $subscription?->id,
-                ]);
-
-                return [
-                    'enrollment' => $enrollment,
-                    'subscription' => $subscription,
-                ];
-            });
-
-            return [
-                'success' => true,
-                'requires_payment' => false,
-                'message' => __('circles.enrollment_success'),
-                'enrollment' => $result['enrollment'],
-                'subscription' => $result['subscription'],
-            ];
-        } catch (EnrollmentCapacityException $e) {
-            $e->report();
-
-            return [
-                'success' => false,
-                'error' => $e->getMessage(),
-                'error_type' => 'capacity_exceeded',
-                'available_slots' => $e->getAvailableSlots(),
-            ];
-        } catch (Exception $e) {
-            Log::error('[CircleEnrollment] Error enrolling student in free circle', [
-                'user_id' => $user->id,
-                'circle_id' => $circle->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            throw $e;
-        }
+        return $this->freeEnrollment->enrollImmediately($user, $circle, $academy, $createSubscription);
     }
 
     /**
@@ -433,7 +153,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
         }
 
         try {
-            DB::transaction(function () use ($circle, $user, $subscription) {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($circle, $user, $subscription) {
                 $lockedCircle = QuranCircle::lockForUpdate()->find($circle->id);
 
                 // Create enrollment
@@ -468,7 +188,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                 // Check if circle is now full
                 $lockedCircle->refresh();
                 if ($lockedCircle->enrolled_students >= $lockedCircle->max_students) {
-                    $lockedCircle->update(['enrollment_status' => CircleEnrollmentStatus::FULL]);
+                    $lockedCircle->update(['enrollment_status' => \App\Enums\CircleEnrollmentStatus::FULL]);
                 }
 
                 Log::info('[CircleEnrollment] Enrollment completed after payment', [
@@ -515,69 +235,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      */
     public function leave(User $user, QuranCircle $circle, bool $cancelSubscription = true): array
     {
-        // Check if student is enrolled
-        if (! $this->isEnrolled($user, $circle)) {
-            return [
-                'success' => false,
-                'error' => 'You are not enrolled in this circle',
-            ];
-        }
-
-        try {
-            DB::transaction(function () use ($circle, $user, $cancelSubscription) {
-                $academy = $user->academy;
-
-                // Lock the circle row to prevent race conditions
-                $lockedCircle = QuranCircle::lockForUpdate()->find($circle->id);
-
-                // Find the enrollment record using new model
-                $enrollment = QuranCircleEnrollment::where('circle_id', $lockedCircle->id)
-                    ->where('student_id', $user->id)
-                    ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)
-                    ->first();
-
-                // Mark enrollment as dropped (not deleted - preserves history)
-                if ($enrollment) {
-                    $enrollment->drop();
-
-                    // Cancel linked subscription if requested
-                    if ($cancelSubscription && $enrollment->subscription_id) {
-                        $subscription = $enrollment->subscription;
-                        if ($subscription && in_array($subscription->status, [SessionSubscriptionStatus::ACTIVE, SessionSubscriptionStatus::PENDING])) {
-                            $subscription->cancel('Student left the circle');
-                        }
-                        // Unlink subscription from enrollment
-                        $enrollment->unlinkSubscription();
-                    }
-                }
-
-                // Also update pivot table for backward compatibility
-                $lockedCircle->students()->updateExistingPivot($user->id, [
-                    'status' => QuranCircleEnrollment::STATUS_DROPPED,
-                ]);
-
-                // Update circle enrollment count atomically
-                $lockedCircle->decrement('enrolled_students');
-
-                // If circle was full, open it for enrollment
-                if ($lockedCircle->enrollment_status === CircleEnrollmentStatus::FULL) {
-                    $lockedCircle->update(['enrollment_status' => CircleEnrollmentStatus::OPEN]);
-                }
-            });
-
-            return [
-                'success' => true,
-                'message' => 'تم إلغاء تسجيلك من الحلقة بنجاح',
-            ];
-        } catch (Exception $e) {
-            Log::error('Error removing student from circle', [
-                'user_id' => $user->id,
-                'circle_id' => $circle->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            throw $e;
-        }
+        return $this->statusService->leave($user, $circle, $cancelSubscription);
     }
 
     /**
@@ -586,21 +244,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      */
     public function isEnrolled(User $user, QuranCircle $circle): bool
     {
-        // Check using new enrollment model first
-        $enrollment = QuranCircleEnrollment::where('circle_id', $circle->id)
-            ->where('student_id', $user->id)
-            ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)
-            ->exists();
-
-        if ($enrollment) {
-            return true;
-        }
-
-        // Fallback to pivot table for legacy data
-        return $circle->students()
-            ->where('users.id', $user->id)
-            ->wherePivot('status', QuranCircleEnrollment::STATUS_ENROLLED)
-            ->exists();
+        return $this->statusService->isEnrolled($user, $circle);
     }
 
     /**
@@ -608,10 +252,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      */
     public function getEnrollment(User $user, QuranCircle $circle): ?QuranCircleEnrollment
     {
-        return QuranCircleEnrollment::where('circle_id', $circle->id)
-            ->where('student_id', $user->id)
-            ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)
-            ->first();
+        return $this->statusService->getEnrollment($user, $circle);
     }
 
     /**
@@ -619,7 +260,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      */
     public function canEnroll(User $user, QuranCircle $circle): bool
     {
-        return $this->validateEnrollment($user, $circle)['eligible'];
+        return $this->validator->canEnroll($user, $circle);
     }
 
     /**
@@ -629,39 +270,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      */
     protected function validateEnrollment(User $user, QuranCircle $circle): array
     {
-        // Check if already enrolled
-        if ($this->isEnrolled($user, $circle)) {
-            return [
-                'eligible' => false,
-                'reason' => 'You are already enrolled in this circle',
-            ];
-        }
-
-        // Check if circle is active
-        if ($circle->status !== true) {
-            return [
-                'eligible' => false,
-                'reason' => 'This circle is not active',
-            ];
-        }
-
-        // Check if circle is open for enrollment
-        if ($circle->enrollment_status !== CircleEnrollmentStatus::OPEN) {
-            return [
-                'eligible' => false,
-                'reason' => 'This circle is not open for enrollment',
-            ];
-        }
-
-        // Check if circle is full
-        if ($circle->enrolled_students >= $circle->max_students) {
-            return [
-                'eligible' => false,
-                'reason' => 'This circle is full',
-            ];
-        }
-
-        return ['eligible' => true];
+        return $this->validator->validateEnrollment($user, $circle);
     }
 
     /**
@@ -678,89 +287,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      */
     public function getOrCreateSubscription(User $user, QuranCircle $circle): ?QuranSubscription
     {
-        // Get enrollment using new model
-        $enrollment = $this->getEnrollment($user, $circle);
-
-        if (! $enrollment) {
-            // Fallback check with legacy method
-            if (! $this->isEnrolled($user, $circle)) {
-                return null;
-            }
-        }
-
-        $academy = $user->academy;
-
-        // Validate user has an academy association for subscription creation
-        if (! $academy) {
-            return null; // Cannot create subscription without academy context
-        }
-
-        // If we have an enrollment with linked subscription, return it
-        if ($enrollment && $enrollment->subscription_id) {
-            $subscription = $enrollment->subscription;
-            if ($subscription && in_array($subscription->status, [SessionSubscriptionStatus::ACTIVE, SessionSubscriptionStatus::PENDING])) {
-                $subscription->load(['package', 'quranTeacherUser']);
-
-                return $subscription;
-            }
-        }
-
-        // Try to find existing subscription via polymorphic relationship (new architecture)
-        $subscription = QuranSubscription::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->where('education_unit_id', $circle->id)
-            ->where('education_unit_type', QuranCircle::class)
-            ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
-            ->with(['package', 'quranTeacherUser'])
-            ->first();
-
-        // Fallback to legacy query
-        if (! $subscription) {
-            $subscription = QuranSubscription::where('student_id', $user->id)
-                ->where('academy_id', $academy->id)
-                ->where('quran_teacher_id', $circle->quran_teacher_id)
-                ->where('subscription_type', 'group')
-                ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
-                ->with(['package', 'quranTeacherUser'])
-                ->first();
-        }
-
-        // If no subscription exists, create one with polymorphic linking
-        if (! $subscription) {
-            $subscription = QuranSubscription::create([
-                'academy_id' => $academy->id,
-                'student_id' => $user->id,
-                'quran_teacher_id' => $circle->quran_teacher_id,
-                'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
-                'subscription_type' => 'group',
-                // Link to education unit (polymorphic relationship)
-                'education_unit_id' => $circle->id,
-                'education_unit_type' => QuranCircle::class,
-                'total_sessions' => $circle->monthly_sessions_count ?? 8,
-                'sessions_used' => 0,
-                'sessions_remaining' => $circle->monthly_sessions_count ?? 8,
-                'total_price' => $circle->monthly_fee ?? 0,
-                'discount_amount' => 0,
-                'final_price' => $circle->monthly_fee ?? 0,
-                'currency' => getCurrencyCode(null, $academy),
-                'billing_cycle' => 'monthly',
-                'payment_status' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? 'pending' : 'paid',
-                'status' => SessionSubscriptionStatus::ACTIVE->value,
-                'memorization_level' => $circle->memorization_level ?? 'beginner',
-                'starts_at' => now(),
-                'next_payment_at' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? now()->addMonth() : null,
-                'auto_renew' => true,
-            ]);
-
-            // Link subscription to enrollment
-            if ($enrollment) {
-                $enrollment->update(['subscription_id' => $subscription->id]);
-            }
-
-            $subscription->load(['package', 'quranTeacherUser']);
-        }
-
-        return $subscription;
+        return $this->statusService->getOrCreateSubscription($user, $circle);
     }
 
     /**
@@ -771,16 +298,6 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      */
     public function linkSubscriptionToEnrollment(QuranCircleEnrollment $enrollment, QuranSubscription $subscription): QuranCircleEnrollment
     {
-        $enrollment->update(['subscription_id' => $subscription->id]);
-
-        // Also update subscription's education unit if not set
-        if (! $subscription->education_unit_id) {
-            $subscription->update([
-                'education_unit_id' => $enrollment->circle_id,
-                'education_unit_type' => QuranCircle::class,
-            ]);
-        }
-
-        return $enrollment;
+        return $this->statusService->linkSubscriptionToEnrollment($enrollment, $subscription);
     }
 }

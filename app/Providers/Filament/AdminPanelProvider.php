@@ -245,8 +245,8 @@ class AdminPanelProvider extends PanelProvider
 
     public function boot(): void
     {
-        // Temporarily increase memory limit to debug memory exhaustion
-        ini_set('memory_limit', '2048M');
+        // Memory limit for admin panel operations
+        ini_set('memory_limit', '512M');
 
         // Set Arabic locale for the admin panel
         app()->setLocale('ar');

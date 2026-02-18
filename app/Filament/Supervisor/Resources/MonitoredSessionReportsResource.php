@@ -45,6 +45,14 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
     protected static ?int $navigationSort = 1;
 
     /**
+     * Eager load relationships to prevent N+1 queries.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['session', 'student', 'teacher']);
+    }
+
+    /**
      * Supervisors cannot create reports.
      */
     public static function canCreate(): bool

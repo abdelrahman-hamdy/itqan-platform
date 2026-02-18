@@ -8,7 +8,10 @@ use App\Services\Payment\AcademyPaymentGatewayFactory;
 use App\Services\Payment\EasyKashSignatureService;
 use App\Services\Payment\PaymentGatewayManager;
 use App\Services\Payment\PaymentMethodService;
+use App\Services\Payment\PaymentRenewalService;
+use App\Services\Payment\PaymentResultHandler;
 use App\Services\Payment\PaymentStateMachine;
+use App\Services\Payment\PaymentVerificationService;
 use App\Services\Payment\PaymobSignatureService;
 use App\Services\PaymentService;
 use Illuminate\Support\ServiceProvider;
@@ -59,14 +62,38 @@ class PaymentServiceProvider extends ServiceProvider
             );
         });
 
+        // Register PaymentResultHandler
+        $this->app->singleton(PaymentResultHandler::class, function ($app) {
+            return new PaymentResultHandler(
+                $app->make(NotificationService::class)
+            );
+        });
+
+        // Register PaymentRenewalService
+        $this->app->singleton(PaymentRenewalService::class, function ($app) {
+            return new PaymentRenewalService(
+                $app->make(PaymentMethodService::class),
+                $app->make(PaymentResultHandler::class)
+            );
+        });
+
+        // Register PaymentVerificationService
+        $this->app->singleton(PaymentVerificationService::class, function ($app) {
+            return new PaymentVerificationService(
+                $app->make(PaymentGatewayManager::class),
+                $app->make(AcademyPaymentGatewayFactory::class)
+            );
+        });
+
         // Register PaymentService with dependencies
         $this->app->singleton(PaymentService::class, function ($app) {
             return new PaymentService(
                 $app->make(PaymentGatewayManager::class),
                 $app->make(PaymentStateMachine::class),
-                $app->make(NotificationService::class),
                 $app->make(AcademyPaymentGatewayFactory::class),
-                $app->make(PaymentMethodService::class)
+                $app->make(PaymentResultHandler::class),
+                $app->make(PaymentRenewalService::class),
+                $app->make(PaymentVerificationService::class)
             );
         });
 

@@ -396,17 +396,15 @@ class CalculateSessionAttendance implements ShouldQueue
      */
     private function getReportClass($session): ?string
     {
-        $sessionClass = get_class($session);
-
-        if (str_contains($sessionClass, 'QuranSession')) {
+        if ($session instanceof QuranSession) {
             return StudentSessionReport::class;
         }
 
-        if (str_contains($sessionClass, 'AcademicSession')) {
+        if ($session instanceof AcademicSession) {
             return AcademicSessionReport::class;
         }
 
-        if (str_contains($sessionClass, 'InteractiveCourseSession')) {
+        if ($session instanceof InteractiveCourseSession) {
             return InteractiveSessionReport::class;
         }
 

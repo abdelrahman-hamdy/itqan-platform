@@ -20,8 +20,8 @@ use Illuminate\Support\Facades\DB;
 
 class TestSubscriptionConsumption extends Command
 {
-    protected $signature = 'test:subscription-consumption {--cleanup : Only run cleanup without tests}';
-    protected $description = 'Test subscription consumption for all session types';
+    protected $signature = 'test:subscription-consumption {--cleanup : Only run cleanup without tests (uses forceDelete on real data)} {--email= : Email of the student user to use for tests}';
+    protected $description = 'Test subscription consumption for all session types. WARNING: --cleanup uses forceDelete on real data.';
 
     private $academy;
     private $student;
@@ -29,6 +29,11 @@ class TestSubscriptionConsumption extends Command
     private $academicTeacher;
     private $testData = [];
     private $results = [];
+
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
 
     public function handle()
     {
@@ -62,9 +67,10 @@ class TestSubscriptionConsumption extends Command
             throw new Exception('No academy found');
         }
 
-        $this->student = User::where('email', 'abdelrahman260598@gmail.com')->first();
+        $email = $this->option('email') ?? 'abdelrahman260598@gmail.com';
+        $this->student = User::where('email', $email)->first();
         if (!$this->student) {
-            throw new Exception('Test student not found');
+            throw new Exception("Test student not found for email: {$email}");
         }
 
         $this->quranTeacher = User::whereHas('quranTeacherProfile')->first();
