@@ -11,7 +11,10 @@ use App\Filament\Academy\Resources\StudentProfileResource\Pages\ViewStudentProfi
 use App\Filament\Shared\Resources\Profiles\BaseStudentProfileResource;
 use App\Helpers\CountryList;
 use App\Models\AcademicGradeLevel;
+use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontWeight;
@@ -44,6 +47,20 @@ class StudentProfileResource extends BaseStudentProfileResource
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
+                Action::make('activate')
+                    ->label('تفعيل')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => $record->user?->update(['active_status' => true]))
+                    ->visible(fn ($record) => $record->user && ! $record->user->active_status),
+                Action::make('deactivate')
+                    ->label('إيقاف')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => $record->user?->update(['active_status' => false]))
+                    ->visible(fn ($record) => $record->user && $record->user->active_status),
             ]),
         ];
     }
@@ -51,7 +68,20 @@ class StudentProfileResource extends BaseStudentProfileResource
     protected static function getTableBulkActions(): array
     {
         return [
-            // No bulk actions for academy admins
+            BulkActionGroup::make([
+                BulkAction::make('activate')
+                    ->label('تفعيل المحددين')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => true]))),
+                BulkAction::make('deactivate')
+                    ->label('إيقاف المحددين')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => false]))),
+            ]),
         ];
     }
 

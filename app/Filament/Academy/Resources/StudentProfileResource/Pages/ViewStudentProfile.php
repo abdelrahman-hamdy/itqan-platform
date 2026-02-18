@@ -4,7 +4,7 @@ namespace App\Filament\Academy\Resources\StudentProfileResource\Pages;
 
 use App\Filament\Academy\Resources\StudentProfileResource;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
-use Filament\Actions\DeleteAction;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 
 class ViewStudentProfile extends ViewRecord
@@ -16,8 +16,20 @@ class ViewStudentProfile extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
-            DeleteAction::make()
-                ->label('حذف'),
+            Action::make('activate')
+                ->label('تفعيل')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->requiresConfirmation()
+                ->action(fn () => $this->record->user?->update(['active_status' => true]))
+                ->visible(fn () => $this->record->user && ! $this->record->user->active_status),
+            Action::make('deactivate')
+                ->label('إيقاف')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->action(fn () => $this->record->user?->update(['active_status' => false]))
+                ->visible(fn () => $this->record->user && $this->record->user->active_status),
         ];
     }
 }

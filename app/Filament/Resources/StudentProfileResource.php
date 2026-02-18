@@ -15,7 +15,9 @@ use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourseEnrollment;
 use App\Models\QuranSubscription;
 use App\Services\AcademyContextService;
+use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -55,6 +57,20 @@ class StudentProfileResource extends BaseStudentProfileResource
             ActionGroup::make([
                 ViewAction::make()->label('عرض'),
                 EditAction::make()->label('تعديل'),
+                Action::make('activate')
+                    ->label('تفعيل')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => $record->user?->update(['active_status' => true]))
+                    ->visible(fn ($record) => $record->user && ! $record->user->active_status),
+                Action::make('deactivate')
+                    ->label('إيقاف')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => $record->user?->update(['active_status' => false]))
+                    ->visible(fn ($record) => $record->user && $record->user->active_status),
                 DeleteAction::make()->label('حذف'),
                 RestoreAction::make()->label(__('filament.actions.restore')),
                 ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
@@ -66,6 +82,18 @@ class StudentProfileResource extends BaseStudentProfileResource
     {
         return [
             BulkActionGroup::make([
+                BulkAction::make('activate')
+                    ->label('تفعيل المحددين')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => true]))),
+                BulkAction::make('deactivate')
+                    ->label('إيقاف المحددين')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => false]))),
                 DeleteBulkAction::make(),
                 RestoreBulkAction::make()
                     ->label(__('filament.actions.restore_selected')),

@@ -20,6 +20,7 @@ use App\Helpers\CountryList;
 use App\Models\StudentProfile;
 use Filament\Forms;
 use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -259,6 +260,14 @@ abstract class BaseStudentProfileResource extends BaseResource
                 ->searchable()
                 ->toggleable(),
 
+            IconColumn::make('user.active_status')
+                ->label('الحالة')
+                ->boolean()
+                ->trueIcon('heroicon-o-check-circle')
+                ->falseIcon('heroicon-o-x-circle')
+                ->trueColor('success')
+                ->falseColor('danger'),
+
             TextColumn::make('created_at')
                 ->label('تاريخ التسجيل')
                 ->dateTime()
@@ -292,7 +301,7 @@ abstract class BaseStudentProfileResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
-            ->with(['parent', 'gradeLevel.academy']);
+            ->with(['user', 'parent', 'gradeLevel.academy']);
 
         return static::scopeEloquentQuery($query);
     }
