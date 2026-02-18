@@ -2,29 +2,25 @@
 
 namespace App\Filament\Teacher\Resources;
 
-use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Section;
-use Carbon\Carbon;
-use Filament\Actions\ActionGroup;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
-use Filament\Actions\BulkAction;
-use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages\ListQuranTrialRequests;
-use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages\ViewQuranTrialRequest;
-use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages\EditQuranTrialRequest;
 use App\Enums\TrialRequestStatus;
 use App\Filament\Shared\Resources\BaseQuranTrialRequestResource;
-use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages;
+use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages\EditQuranTrialRequest;
+use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages\ListQuranTrialRequests;
+use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages\ViewQuranTrialRequest;
 use App\Models\QuranTrialRequest;
 use App\Services\AcademyContextService;
+use Carbon\Carbon;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -214,36 +210,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                         ];
                     }),
 
-                Action::make('schedule_session')
-                    ->label('جدولة الجلسة')
-                    ->icon('heroicon-m-calendar')
-                    ->color('info')
-                    ->visible(fn (QuranTrialRequest $record): bool => $record->status === TrialRequestStatus::PENDING)
-                    ->schema([
-                        DateTimePicker::make('scheduled_at')
-                            ->label('موعد الجلسة التجريبية')
-                            ->required()
-                            ->native(false)
-                            ->timezone(AcademyContextService::getTimezone())
-                            ->minDate(now())
-                            ->helperText('سيتم إنشاء غرفة اجتماع LiveKit تلقائياً'),
-
-                        Textarea::make('teacher_message')
-                            ->label('رسالة للطالب (اختياري)')
-                            ->rows(3)
-                            ->placeholder('اكتب رسالة ترحيبية أو تعليمات للطالب...'),
-                    ])
-                    ->action(function (QuranTrialRequest $record, array $data) {
-                        // Rename field to match base class expectation
-                        $data['teacher_response'] = $data['teacher_message'] ?? null;
-                        static::executeScheduleAction($record, $data);
-                    })
-                    ->successNotificationTitle('تم جدولة الجلسة بنجاح')
-                    ->successNotification(fn ($record) => Notification::make()
-                        ->success()
-                        ->title('تم جدولة الجلسة التجريبية')
-                        ->body("تم إنشاء غرفة اجتماع LiveKit للطالب {$record->student_name}")
-                    ),
+                static::makeScheduleAction(),
             ]),
         ];
     }

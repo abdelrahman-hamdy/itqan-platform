@@ -17,13 +17,7 @@ class ViewQuranTrialRequest extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
-            Action::make('complete')
-                ->label('تحديد كمكتمل')
-                ->icon('heroicon-o-check-circle')
-                ->color('success')
-                ->requiresConfirmation()
-                ->action(fn () => $this->record->update(['status' => TrialRequestStatus::COMPLETED]))
-                ->visible(fn () => $this->record->status === TrialRequestStatus::SCHEDULED),
+            QuranTrialRequestResource::makeScheduleAction(),
             Action::make('cancel')
                 ->label('إلغاء الطلب')
                 ->icon('heroicon-o-x-circle')

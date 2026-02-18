@@ -20,6 +20,7 @@ use App\Enums\TrialRequestStatus;
 use App\Models\QuranTrialRequest;
 use App\Services\AcademyContextService;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -285,8 +286,9 @@ abstract class BaseQuranTrialRequestResource extends Resource
 
     /**
      * Create the schedule trial session action - shared logic.
+     * Public so view pages can reuse it.
      */
-    protected static function makeScheduleAction(): Action
+    public static function makeScheduleAction(): Action
     {
         return Action::make('schedule')
             ->label('جدولة')
@@ -294,18 +296,54 @@ abstract class BaseQuranTrialRequestResource extends Resource
             ->color('warning')
             ->visible(fn (QuranTrialRequest $record) => $record->canBeScheduled())
             ->schema([
-                DateTimePicker::make('scheduled_at')
-                    ->label('موعد الجلسة')
-                    ->required()
-                    ->native(false)
-                    ->timezone(AcademyContextService::getTimezone())
-                    ->minDate(now())
-                    ->helperText('سيتم إنشاء غرفة اجتماع LiveKit تلقائياً'),
+                Section::make('معلومات الطلب')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                Placeholder::make('student_name_display')
+                                    ->label('اسم الطالب')
+                                    ->content(fn (QuranTrialRequest $record) => $record->student_name ?? '-'),
 
-                Textarea::make('teacher_response')
-                    ->label('رسالة للطالب (اختياري)')
-                    ->rows(3)
-                    ->placeholder('اكتب رسالة ترحيبية أو تعليمات للطالب...'),
+                                Placeholder::make('student_age_display')
+                                    ->label('العمر')
+                                    ->content(fn (QuranTrialRequest $record) => $record->student_age ? $record->student_age.' سنة' : '-'),
+
+                                Placeholder::make('phone_display')
+                                    ->label('رقم الهاتف')
+                                    ->content(fn (QuranTrialRequest $record) => $record->phone ?? '-'),
+
+                                Placeholder::make('email_display')
+                                    ->label('البريد الإلكتروني')
+                                    ->content(fn (QuranTrialRequest $record) => $record->email ?? '-'),
+
+                                Placeholder::make('current_level_display')
+                                    ->label('المستوى الحالي')
+                                    ->content(fn (QuranTrialRequest $record) => QuranTrialRequest::LEVELS[$record->current_level] ?? $record->current_level ?? '-'),
+
+                                Placeholder::make('preferred_time_display')
+                                    ->label('الوقت المفضل')
+                                    ->content(fn (QuranTrialRequest $record) => QuranTrialRequest::TIMES[$record->preferred_time] ?? $record->preferred_time ?? '-'),
+                            ]),
+
+                        Placeholder::make('learning_goals_display')
+                            ->label('أهداف التعلم')
+                            ->content(fn (QuranTrialRequest $record) => $record->learning_goals ? implode('، ', $record->learning_goals) : '-'),
+
+                        Placeholder::make('notes_display')
+                            ->label('ملاحظات الطالب')
+                            ->content(fn (QuranTrialRequest $record) => $record->notes ?? '-'),
+                    ]),
+
+                Section::make('جدولة الجلسة')
+                    ->schema([
+                        DateTimePicker::make('scheduled_at')
+                            ->label('موعد الجلسة')
+                            ->required()
+                            ->native(false)
+                            ->timezone(AcademyContextService::getTimezone())
+                            ->minDate(now())
+                            ->helperText('سيتم إنشاء غرفة اجتماع LiveKit تلقائياً'),
+                    ]),
             ])
             ->action(function (QuranTrialRequest $record, array $data) {
                 static::executeScheduleAction($record, $data);
@@ -324,15 +362,14 @@ abstract class BaseQuranTrialRequestResource extends Resource
     protected static function executeScheduleAction(QuranTrialRequest $record, array $data): void
     {
         try {
-            // Parse the datetime in academy timezone
-            $scheduledAt = Carbon::parse($data['scheduled_at'], AcademyContextService::getTimezone());
-            $teacherResponse = $data['teacher_response'] ?? 'تم جدولة الجلسة التجريبية';
+            // DateTimePicker with ->timezone() already converts to UTC
+            $scheduledAtUtc = Carbon::parse($data['scheduled_at']);
 
-            // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
-            $scheduledAtUtc = AcademyContextService::toUtcForStorage($scheduledAt);
+            // Academy timezone version for session code display
+            $scheduledAtLocal = $scheduledAtUtc->copy()->setTimezone(AcademyContextService::getTimezone());
 
-            // Generate unique session code (use original timezone for display in code)
-            $sessionCode = 'TR-'.str_pad($record->teacher_id, 3, '0', STR_PAD_LEFT).'-'.$scheduledAt->format('Ymd-Hi');
+            // Generate unique session code (use academy timezone for display in code)
+            $sessionCode = 'TR-'.str_pad($record->teacher_id, 3, '0', STR_PAD_LEFT).'-'.$scheduledAtLocal->format('Ymd-Hi');
 
             // Use naming service for consistent session naming
             $namingService = app(SessionNamingService::class);
@@ -349,7 +386,7 @@ abstract class BaseQuranTrialRequestResource extends Resource
                 'duration_minutes' => 30,
                 'status' => SessionStatus::SCHEDULED,
                 'title' => $namingService->generateTrialSessionTitle($record->student_name),
-                'description' => $teacherResponse ?: $namingService->generateTrialSessionDescription(),
+                'description' => $namingService->generateTrialSessionDescription(),
                 'location_type' => 'online',
                 'created_by' => auth()->id(),
                 'scheduled_by' => auth()->id(),

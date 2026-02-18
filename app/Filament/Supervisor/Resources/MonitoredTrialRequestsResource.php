@@ -245,30 +245,7 @@ class MonitoredTrialRequestsResource extends BaseQuranTrialRequestResource
                     ->label('تعديل')
                     ->icon('heroicon-m-pencil'),
 
-                Action::make('schedule_session')
-                    ->label('جدولة الجلسة')
-                    ->icon('heroicon-m-calendar')
-                    ->color('info')
-                    ->visible(fn (QuranTrialRequest $record): bool => $record->status === TrialRequestStatus::PENDING)
-                    ->schema([
-                        DateTimePicker::make('scheduled_at')
-                            ->label('موعد الجلسة التجريبية')
-                            ->required()
-                            ->native(false)
-                            ->timezone(AcademyContextService::getTimezone())
-                            ->minDate(now())
-                            ->helperText('سيتم إنشاء غرفة اجتماع LiveKit تلقائياً'),
-
-                        Textarea::make('teacher_message')
-                            ->label('رسالة للطالب (اختياري)')
-                            ->rows(3)
-                            ->placeholder('اكتب رسالة ترحيبية أو تعليمات للطالب...'),
-                    ])
-                    ->action(function (QuranTrialRequest $record, array $data) {
-                        $data['teacher_response'] = $data['teacher_message'] ?? null;
-                        static::executeScheduleAction($record, $data);
-                    })
-                    ->successNotificationTitle('تم جدولة الجلسة بنجاح'),
+                static::makeScheduleAction(),
 
                 Action::make('cancel_request')
                     ->label('إلغاء الطلب')
