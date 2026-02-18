@@ -15,6 +15,8 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontWeight;
@@ -62,6 +64,8 @@ class StudentProfileResource extends BaseStudentProfileResource
                     ->requiresConfirmation()
                     ->action(fn ($record) => $record->user?->update(['active_status' => false]))
                     ->visible(fn ($record) => $record->user && $record->user->active_status),
+                DeleteAction::make()
+                    ->label('حذف'),
             ]),
         ];
     }
@@ -82,6 +86,7 @@ class StudentProfileResource extends BaseStudentProfileResource
                     ->color('danger')
                     ->requiresConfirmation()
                     ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => false]))),
+                DeleteBulkAction::make(),
             ]),
         ];
     }
@@ -228,8 +233,7 @@ class StudentProfileResource extends BaseStudentProfileResource
 
     public static function canDelete($record): bool
     {
-        // Academy admins cannot delete students
-        return false;
+        return true;
     }
 
     public static function canCreate(): bool

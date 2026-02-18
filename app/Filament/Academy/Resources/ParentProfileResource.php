@@ -12,6 +12,8 @@ use App\Filament\Academy\Resources\ParentProfileResource\RelationManagers\Studen
 use App\Filament\Shared\Resources\Profiles\BaseParentProfileResource;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontWeight;
@@ -44,6 +46,8 @@ class ParentProfileResource extends BaseParentProfileResource
                 EditAction::make()
                     ->label('تعديل'),
                 static::getToggleActiveAction(),
+                DeleteAction::make()
+                    ->label('حذف'),
             ]),
         ];
     }
@@ -54,6 +58,7 @@ class ParentProfileResource extends BaseParentProfileResource
             BulkActionGroup::make([
                 static::getActivateBulkAction(),
                 static::getDeactivateBulkAction(),
+                DeleteBulkAction::make(),
             ]),
         ];
     }
@@ -158,8 +163,7 @@ class ParentProfileResource extends BaseParentProfileResource
 
     public static function canDelete($record): bool
     {
-        // Academy admins cannot delete parents
-        return false;
+        return true;
     }
 
     public static function canCreate(): bool

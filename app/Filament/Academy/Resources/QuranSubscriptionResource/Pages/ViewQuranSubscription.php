@@ -8,6 +8,7 @@ use App\Enums\SubscriptionPaymentStatus;
 use App\Filament\Academy\Resources\QuranSubscriptionResource;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Textarea;
 
@@ -89,6 +90,8 @@ class ViewQuranSubscription extends ViewRecord
                         ->update(['status' => SessionStatus::CANCELLED->value]);
                 })
                 ->visible(fn () => $this->record->status !== SessionSubscriptionStatus::CANCELLED),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }

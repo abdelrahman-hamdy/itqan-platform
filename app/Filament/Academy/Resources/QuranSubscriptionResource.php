@@ -17,6 +17,8 @@ use App\Models\QuranTeacherProfile;
 use App\Models\User;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DateTimePicker;
@@ -349,6 +351,8 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                 static::getPauseAction(),
                 static::getResumeAction(),
                 static::getCancelPendingAction(),
+                DeleteAction::make()
+                    ->label('حذف'),
             ]),
         ];
     }
@@ -358,13 +362,14 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
         return [
             BulkActionGroup::make([
                 static::getBulkCancelPendingAction(),
+                DeleteBulkAction::make(),
             ]),
         ];
     }
 
     public static function canDelete($record): bool
     {
-        return false;
+        return true;
     }
 
     protected static function getTypeSpecificInfolistSections(): array

@@ -10,6 +10,9 @@ use App\Filament\Academy\Resources\QuranTeacherProfileResource\Pages\ViewQuranTe
 use App\Filament\Shared\Resources\Profiles\BaseQuranTeacherProfileResource;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\ImageColumn;
@@ -41,13 +44,19 @@ class QuranTeacherProfileResource extends BaseQuranTeacherProfileResource
                             'active_status' => ! $record->user->active_status,
                         ]);
                     }),
+                DeleteAction::make()
+                    ->label('حذف'),
             ]),
         ];
     }
 
     protected static function getTableBulkActions(): array
     {
-        return [];
+        return [
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+            ]),
+        ];
     }
 
     protected static function getTableColumns(): array
@@ -68,7 +77,7 @@ class QuranTeacherProfileResource extends BaseQuranTeacherProfileResource
 
     public static function canDelete($record): bool
     {
-        return false;
+        return true;
     }
 
     public static function getPages(): array

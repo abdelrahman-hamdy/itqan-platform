@@ -18,6 +18,8 @@ use App\Models\AcademicTeacherProfile;
 use App\Models\User;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
@@ -363,6 +365,8 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                 static::getCancelPendingAction(),
                 static::getPauseAction(),
                 static::getResumeAction(),
+                DeleteAction::make()
+                    ->label('حذف'),
             ]),
         ];
     }
@@ -372,13 +376,14 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
         return [
             BulkActionGroup::make([
                 static::getBulkCancelPendingAction(),
+                DeleteBulkAction::make(),
             ]),
         ];
     }
 
     public static function canDelete($record): bool
     {
-        return false;
+        return true;
     }
 
     protected static function getTypeSpecificInfolistSections(): array

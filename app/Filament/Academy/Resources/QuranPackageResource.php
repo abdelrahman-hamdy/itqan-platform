@@ -10,6 +10,9 @@ use App\Filament\Academy\Resources\QuranPackageResource\Pages\ViewQuranPackage;
 use App\Filament\Shared\Resources\BasePackageResource;
 use App\Models\QuranPackage;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Illuminate\Database\Eloquent\Builder;
@@ -42,13 +45,19 @@ class QuranPackageResource extends BasePackageResource
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
+                DeleteAction::make()
+                    ->label('حذف'),
             ]),
         ];
     }
 
     protected static function getTableBulkActions(): array
     {
-        return [];
+        return [
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+            ]),
+        ];
     }
 
     public static function canViewAny(): bool
@@ -58,7 +67,7 @@ class QuranPackageResource extends BasePackageResource
 
     public static function canDelete($record): bool
     {
-        return false;
+        return true;
     }
 
     public static function getPages(): array

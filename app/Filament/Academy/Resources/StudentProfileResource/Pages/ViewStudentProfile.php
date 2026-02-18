@@ -5,6 +5,7 @@ namespace App\Filament\Academy\Resources\StudentProfileResource\Pages;
 use App\Filament\Academy\Resources\StudentProfileResource;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 
 class ViewStudentProfile extends ViewRecord
@@ -30,6 +31,8 @@ class ViewStudentProfile extends ViewRecord
                 ->requiresConfirmation()
                 ->action(fn () => $this->record->user?->update(['active_status' => false]))
                 ->visible(fn () => $this->record->user && $this->record->user->active_status),
+            DeleteAction::make()
+                ->label('حذف'),
         ];
     }
 }
