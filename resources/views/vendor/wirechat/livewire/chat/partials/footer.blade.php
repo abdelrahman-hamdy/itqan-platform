@@ -219,20 +219,48 @@
                         {{-- Get the current cursor position --}}
                         var startPos = textarea.selectionStart;
                         var endPos = textarea.selectionEnd;
-                
+
                         {{-- Insert a line break character at the cursor position --}}
                         var text = textarea.value;
                         var newText = text.substring(0, startPos) + '\n' + text.substring(endPos, text.length);
-                
+
                         {{-- Update the textarea value and cursor position --}}
                         textarea.value = newText;
                         textarea.selectionStart = startPos + 1; // Set cursor position after the inserted newline
                         textarea.selectionEnd = startPos + 1;
-                
+
                         {{-- update height of element smoothly --}}
                         textarea.style.height = 'auto';
                         textarea.style.height = textarea.scrollHeight + 'px';
-                
+
+                    },
+                    async sendOptimistic() {
+                        const bodyText = this.body?.trim();
+                        const hasMedia = $wire.media && $wire.media.length > 0;
+                        const hasFiles = $wire.files && $wire.files.length > 0;
+
+                        if (!bodyText && !hasMedia && !hasFiles) return;
+
+                        // Show optimistic message for text-only sends
+                        if (bodyText && !hasMedia && !hasFiles) {
+                            const now = new Date();
+                            const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                            window.dispatchEvent(new CustomEvent('add-optimistic-message', {
+                                detail: { body: bodyText, time: time }
+                            }));
+                        }
+
+                        // Visually clear textarea immediately (don't touch entangled state so server gets the real body)
+                        if (this.$refs.body) {
+                            this.$refs.body.value = '';
+                            this.$refs.body.style.height = 'auto';
+                        }
+
+                        try {
+                            await $wire.sendMessage();
+                        } finally {
+                            window.dispatchEvent(new CustomEvent('clear-optimistic'));
+                        }
                     }
                 }" x-init="{{-- Emoji picture click event listener --}}
                 document.querySelector('emoji-picker')
@@ -256,7 +284,7 @@
                 
                         inputField.setSelectionRange(startPos + emoji.length, startPos + emoji.length);
                     });"
-                    @submit.prevent="((body && body?.trim().length > 0) || ($wire.media && $wire.media.length > 0)|| ($wire.files && $wire.files.length > 0)) ? $wire.sendMessage() : null"
+                    @submit.prevent="sendOptimistic()"
                     method="POST" autocapitalize="off" @class(['flex items-center col-span-12 w-full  gap-2 gap-5'])>
                     @csrf
 
@@ -411,7 +439,7 @@
                             @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px';"
                             @keydown.shift.enter.prevent="insertNewLine($el)" {{-- @keydown.enter.prevent prevents the
                                default behavior of Enter key press only if Shift is not held down. --}} @keydown.enter.prevent=""
-                            @keyup.enter.prevent="$event.shiftKey ? null : (((body && body?.trim().length > 0) || ($wire.media && $wire.media.length > 0)) ? $wire.sendMessage() : null)"
+                            @keyup.enter.prevent="$event.shiftKey ? null : sendOptimistic()"
                             class="w-full disabled:cursor-progress resize-none h-auto max-h-20  sm:max-h-72 flex grow border-0 outline-0 focus:border-0 focus:ring-0  hover:ring-0 rounded-lg   dark:text-white bg-none dark:bg-inherit  focus:outline-hidden   "
                             x-init="document.querySelector('emoji-picker')
                                 .addEventListener('emoji-click', event => {

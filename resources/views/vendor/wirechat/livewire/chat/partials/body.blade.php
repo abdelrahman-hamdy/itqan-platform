@@ -5,6 +5,7 @@
     lastScrollTop: 0,
     showDateLabel: false,
     scrollTimeout: null,
+    optimisticMessages: [],
     scrollToBottom() {
         $el.scrollTo({
             top: $el.scrollHeight,
@@ -23,6 +24,19 @@
         // Update the previous height to the new height
         height = newHeight;
 
+    },
+    addOptimistic(detail) {
+        this.optimisticMessages.push({
+            id: Date.now(),
+            body: detail.body,
+            time: detail.time,
+        });
+        this.$nextTick(() => {
+            this.$el.scrollTop = this.$el.scrollHeight;
+        });
+    },
+    clearOptimistic() {
+        this.optimisticMessages = [];
     }
 
     }"
@@ -77,6 +91,8 @@
         });
     "
 
+    @add-optimistic-message.window="addOptimistic($event.detail)"
+    @clear-optimistic.window="clearOptimistic()"
 
     x-cloak
      class='flex flex-col h-full  relative gap-2 gap-y-4 p-4 md:p-5 lg:p-8  grow  overscroll-contain overflow-x-hidden overflow-y-auto w-full my-auto bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950 dark:to-blue-950'
@@ -371,5 +387,32 @@
 
 
     @endif
+
+    {{-- Optimistic messages (shown instantly before server confirms) --}}
+    <template x-for="msg in optimisticMessages" :key="msg.id">
+        <div class="flex gap-2">
+            <div class="w-full">
+                <div class="flex flex-col gap-y-2 ms-auto">
+                    <div class="flex gap-1 md:gap-4 justify-end">
+                        <div class="flex flex-col gap-2 max-w-[95%] relative">
+                            <div class="flex flex-wrap max-w-fit text-[15px] border border-gray-200/40 rounded-xl p-2.5 flex-col text-white rounded-ee-xl rounded-e-xl opacity-60"
+                                 style="background-color: var(--wc-brand-primary)">
+                                <pre class="whitespace-pre-line break-all tracking-normal text-sm md:text-base"
+                                     style="font-family: inherit"
+                                     x-text="msg.body"></pre>
+                                <span class="text-[11px] ms-auto text-gray-100 flex items-center gap-1">
+                                    <span x-text="msg.time"></span>
+                                    <svg class="w-3 h-3 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
 
 </main>
