@@ -81,8 +81,7 @@ class TeacherProfilePolicy
      */
     public function delete(User $user, $profile): bool
     {
-        // Only super_admin can delete teacher profiles
-        return $user->hasRole(UserType::SUPER_ADMIN->value);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
     }
 
     /**

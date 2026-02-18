@@ -80,8 +80,7 @@ class ParentProfilePolicy
      */
     public function delete(User $user, ParentProfile $parentProfile): bool
     {
-        // Only super_admins can delete parent profiles
-        return $user->user_type === UserType::SUPER_ADMIN->value;
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
     }
 
     /**

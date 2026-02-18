@@ -83,8 +83,7 @@ class PaymentPolicy
      */
     public function delete(User $user, Payment $payment): bool
     {
-        // Only superadmin can delete payments
-        return $user->hasRole(UserType::SUPER_ADMIN->value);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
     }
 
     /**

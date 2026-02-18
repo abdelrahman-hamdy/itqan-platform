@@ -88,8 +88,7 @@ class SubscriptionPolicy
      */
     public function delete(User $user, $subscription): bool
     {
-        // Only superadmin can delete subscriptions
-        return $user->hasRole(UserType::SUPER_ADMIN->value);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
     }
 
     /**

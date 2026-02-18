@@ -79,8 +79,12 @@ class StudentProfilePolicy
      */
     public function delete(User $user, StudentProfile $profile): bool
     {
-        // Only superadmin can delete student profiles
-        return $user->hasRole(UserType::SUPER_ADMIN->value);
+        // Admins can delete student profiles in their academy
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
+            return $this->sameAcademy($user, $profile);
+        }
+
+        return false;
     }
 
     /**
