@@ -7,7 +7,7 @@ use App\Enums\QuranSurah;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
-use App\Filament\Shared\Actions\SessionStatusActions;
+use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Teacher\Resources\QuranSessionResource;
 use App\Services\AcademyContextService;
 use Filament\Actions\EditAction;
@@ -26,9 +26,7 @@ class ViewQuranSession extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
-            SessionStatusActions::startSession(),
-            SessionStatusActions::completeSession(),
-            SessionStatusActions::cancelSession(role: 'teacher'),
+            MeetingActions::viewMeeting('quran'),
         ];
     }
 

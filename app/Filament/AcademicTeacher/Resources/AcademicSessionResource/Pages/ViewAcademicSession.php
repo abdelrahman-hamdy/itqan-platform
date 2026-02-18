@@ -6,7 +6,7 @@ use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionResource;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
-use App\Filament\Shared\Actions\SessionStatusActions;
+use App\Filament\Shared\Actions\MeetingActions;
 use Filament\Actions\EditAction;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -23,9 +23,7 @@ class ViewAcademicSession extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
-            SessionStatusActions::startSession(),
-            SessionStatusActions::completeSession(),
-            SessionStatusActions::cancelSession(role: 'teacher'),
+            MeetingActions::viewMeeting('academic'),
         ];
     }
 

@@ -15,7 +15,6 @@ class MeetingActions
             ->label(__('supervisor.observation.view_meeting'))
             ->icon('heroicon-o-video-camera')
             ->color('info')
-            ->visible(fn ($record): bool => ! empty($record->meeting_room_name))
             ->url(function ($record) use ($sessionType): string {
                 $subdomain = $record->academy?->subdomain
                     ?? ($sessionType === 'interactive'

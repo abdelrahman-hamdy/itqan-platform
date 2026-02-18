@@ -4,7 +4,7 @@ namespace App\Filament\Academy\Resources\QuranSessionResource\Pages;
 
 use App\Filament\Academy\Resources\QuranSessionResource;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
-use App\Filament\Shared\Actions\SessionStatusActions;
+use App\Filament\Shared\Actions\MeetingActions;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 
@@ -17,9 +17,7 @@ class ViewQuranSession extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
-            SessionStatusActions::startSession(),
-            SessionStatusActions::completeSession(),
-            SessionStatusActions::cancelSession(role: 'admin'),
+            MeetingActions::viewMeeting('quran'),
             DeleteAction::make()
                 ->label('حذف'),
         ];

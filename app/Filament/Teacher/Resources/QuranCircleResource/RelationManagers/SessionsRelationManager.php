@@ -3,9 +3,7 @@
 namespace App\Filament\Teacher\Resources\QuranCircleResource\RelationManagers;
 
 use App\Enums\SessionStatus;
-use App\Models\QuranSession;
 use App\Services\AcademyContextService;
-use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
@@ -106,32 +104,6 @@ class SessionsRelationManager extends RelationManager
                         ->label('تعديل'),
                     DeleteAction::make()
                         ->label('حذف'),
-                    Action::make('start_session')
-                        ->label('بدء الجلسة')
-                        ->icon('heroicon-o-play')
-                        ->color('success')
-                        ->visible(fn (QuranSession $record): bool => $record->status instanceof SessionStatus
-                                ? $record->status->canStart()
-                                : in_array($record->status, [SessionStatus::SCHEDULED->value, SessionStatus::READY->value]))
-                        ->action(function (QuranSession $record) {
-                            $record->update([
-                                'status' => SessionStatus::ONGOING,
-                                'started_at' => now(),
-                            ]);
-                        }),
-                    Action::make('complete_session')
-                        ->label('إنهاء الجلسة')
-                        ->icon('heroicon-o-check')
-                        ->color('success')
-                        ->visible(fn (QuranSession $record): bool => $record->status instanceof SessionStatus
-                                ? $record->status === SessionStatus::ONGOING
-                                : $record->status === SessionStatus::ONGOING->value)
-                        ->action(function (QuranSession $record) {
-                            $record->update([
-                                'status' => SessionStatus::COMPLETED,
-                                'ended_at' => now(),
-                            ]);
-                        }),
                 ]),
             ])
             ->toolbarActions([

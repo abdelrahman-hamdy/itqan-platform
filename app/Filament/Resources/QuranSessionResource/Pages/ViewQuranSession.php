@@ -7,7 +7,7 @@ use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
 use App\Filament\Resources\QuranSessionResource;
-use App\Filament\Shared\Actions\SessionStatusActions;
+use App\Filament\Shared\Actions\MeetingActions;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Infolists\Components\IconEntry;
@@ -25,9 +25,7 @@ class ViewQuranSession extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
-            SessionStatusActions::startSession(),
-            SessionStatusActions::completeSession(),
-            SessionStatusActions::cancelSession(role: 'admin'),
+            MeetingActions::viewMeeting('quran'),
             DeleteAction::make()
                 ->label('حذف'),
         ];
