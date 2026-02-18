@@ -53,8 +53,10 @@
         @else
         wire:navigate href="{{ route(Wirechat::viewRouteName(), $conversation->id) }}" @endif
             class="py-3 flex gap-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-all duration-200 relative w-full cursor-pointer px-2 group"
-            :class="$wire.selectedConversationId == conversationID &&
-                'bg-gray-50 dark:bg-gray-800 border-r-4 border-primary-500 shadow-sm'">
+            :class="{
+                'bg-gray-50 dark:bg-gray-800 border-e-4 border-primary-500 shadow-sm': $wire.selectedConversationId == conversationID,
+                'bg-blue-50/60 dark:bg-blue-900/20 border-e-2 border-green-500': showUnreadStatus && $wire.selectedConversationId != conversationID,
+            }">
 
             <div class="shrink-0">
                 @if($conversation->isGroup() && $chatGroup)
@@ -79,7 +81,8 @@
 
                     {{-- name --}}
                     <div class="flex gap-1 mb-1 w-full items-center">
-                        <h6 class="truncate font-semibold text-gray-900 dark:text-white">
+                        <h6 class="truncate text-gray-900 dark:text-white"
+                        :class="showUnreadStatus ? 'font-bold' : 'font-semibold'">
                             {{ $group ? $group?->name : $receiver?->display_name }}
                         </h6>
 
