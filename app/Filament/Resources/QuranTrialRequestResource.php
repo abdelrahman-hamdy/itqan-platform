@@ -257,6 +257,8 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                     DatePicker::make('scheduled_until')
                         ->label('إلى تاريخ'),
                 ])
+                ->columns(2)
+                ->columnSpanFull()
                 ->query(function (Builder $query, array $data): Builder {
                     return $query
                         ->when(
