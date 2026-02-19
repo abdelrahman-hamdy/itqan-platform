@@ -21,6 +21,11 @@ class SyncSupervisorChatMemberships extends Command
 
     protected $description = 'Synchronize supervisor memberships in all chat groups based on current supervisor assignments.';
 
+    public function isHidden(): bool
+    {
+        return true;
+    }
+
     protected SupervisorResolutionService $supervisorService;
 
     protected bool $dryRun;

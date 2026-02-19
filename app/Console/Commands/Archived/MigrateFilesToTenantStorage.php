@@ -101,6 +101,7 @@ class MigrateFilesToTenantStorage extends Command
     {
         $this->info('📁 Migrating User avatars...');
 
+        // CLI context — no tenant scope available; migration must span all tenants
         User::withoutGlobalScopes()
             ->whereNotNull('avatar')
             ->where('avatar', 'not like', 'tenants/%')
@@ -149,6 +150,7 @@ class MigrateFilesToTenantStorage extends Command
     {
         $this->info('📁 Migrating ParentProfile avatars...');
 
+        // CLI context — no tenant scope available; migration must span all tenants
         ParentProfile::withoutGlobalScopes()
             ->whereNotNull('avatar')
             ->where('avatar', 'not like', 'tenants/%')
@@ -169,6 +171,7 @@ class MigrateFilesToTenantStorage extends Command
     {
         $this->info('📁 Migrating QuranTeacherProfile avatars...');
 
+        // CLI context — no tenant scope available; migration must span all tenants
         QuranTeacherProfile::withoutGlobalScopes()
             ->whereNotNull('avatar')
             ->where('avatar', 'not like', 'tenants/%')
@@ -189,6 +192,7 @@ class MigrateFilesToTenantStorage extends Command
     {
         $this->info('📁 Migrating AcademicTeacherProfile avatars...');
 
+        // CLI context — no tenant scope available; migration must span all tenants
         AcademicTeacherProfile::withoutGlobalScopes()
             ->whereNotNull('avatar')
             ->where('avatar', 'not like', 'tenants/%')
@@ -209,6 +213,7 @@ class MigrateFilesToTenantStorage extends Command
     {
         $this->info('📁 Migrating SupervisorProfile avatars...');
 
+        // CLI context — no tenant scope available; migration must span all tenants
         SupervisorProfile::withoutGlobalScopes()
             ->whereNotNull('avatar')
             ->where('avatar', 'not like', 'tenants/%')
@@ -229,6 +234,7 @@ class MigrateFilesToTenantStorage extends Command
     {
         $this->info('📁 Migrating Academy branding files...');
 
+        // CLI context — no tenant scope available; migration must span all tenants
         Academy::withoutGlobalScopes()->chunk($this->batchSize, function ($academies) {
             foreach ($academies as $academy) {
                 // Logo
@@ -253,6 +259,7 @@ class MigrateFilesToTenantStorage extends Command
     {
         $this->info('📁 Migrating Lesson videos and attachments...');
 
+        // CLI context — no tenant scope available; migration must span all tenants
         Lesson::withoutGlobalScopes()
             ->with('recordedCourse')
             ->where(function ($query) {
@@ -283,6 +290,7 @@ class MigrateFilesToTenantStorage extends Command
     {
         $this->info('📁 Migrating RecordedCourse thumbnails...');
 
+        // CLI context — no tenant scope available; migration must span all tenants
         RecordedCourse::withoutGlobalScopes()
             ->whereNotNull('thumbnail_url')
             ->where('thumbnail_url', 'not like', 'tenants/%')

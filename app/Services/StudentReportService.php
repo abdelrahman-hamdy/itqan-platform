@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\StudentReportServiceInterface;
 use App\Enums\SessionStatus;
 use App\Enums\AttendanceStatus;
 use App\Models\MeetingAttendance;
@@ -11,7 +12,7 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
-class StudentReportService
+class StudentReportService implements StudentReportServiceInterface
 {
     /**
      * Generate or update student session report based on meeting attendance.

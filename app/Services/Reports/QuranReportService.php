@@ -14,6 +14,7 @@ use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\StudentSessionReport;
 use App\Models\User;
+use App\Contracts\QuranReportServiceInterface;
 use Illuminate\Support\Collection;
 
 /**
@@ -24,7 +25,7 @@ use Illuminate\Support\Collection;
  *
  * REFACTORED: Now uses DTOs instead of raw arrays for type safety and consistency.
  */
-class QuranReportService extends BaseReportService
+class QuranReportService extends BaseReportService implements QuranReportServiceInterface
 {
     /**
      * Generate comprehensive report for individual circle

@@ -20,11 +20,11 @@ use App\Models\InteractiveCourse;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
+use App\Contracts\QuranReportServiceInterface;
 use App\Services\ParentChildVerificationService;
 use App\Services\ParentDataService;
 use App\Services\Reports\AcademicReportService;
 use App\Services\Reports\InteractiveCourseReportService;
-use App\Services\Reports\QuranReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -40,7 +40,7 @@ class ParentReportController extends Controller
     public function __construct(
         protected ParentDataService $dataService,
         protected ParentChildVerificationService $verificationService,
-        protected QuranReportService $quranReportService,
+        protected QuranReportServiceInterface $quranReportService,
         protected AcademicReportService $academicReportService,
         protected InteractiveCourseReportService $interactiveReportService
     ) {

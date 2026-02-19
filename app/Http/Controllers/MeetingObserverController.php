@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\MeetingObserverServiceInterface;
 use App\Http\Traits\Api\ApiResponses;
-use App\Services\MeetingObserverService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,7 +12,7 @@ class MeetingObserverController extends Controller
     use ApiResponses;
 
     public function __construct(
-        private MeetingObserverService $observerService
+        private MeetingObserverServiceInterface $observerService
     ) {}
 
     /**

@@ -24,6 +24,11 @@ class ExtendQuranCircleSchedules extends Command
      */
     protected $description = 'Extend session generation for all active Quran circle schedules';
 
+    public function isHidden(): bool
+    {
+        return true;
+    }
+
     /**
      * Execute the console command.
      */

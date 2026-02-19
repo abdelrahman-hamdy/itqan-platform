@@ -23,10 +23,10 @@ use App\Exceptions\WebhookValidationException;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
 use App\Models\User;
+use App\Contracts\SessionMeetingServiceInterface;
 use App\Services\AttendanceEventService;
 use App\Services\RecordingService;
 use App\Services\RoomPermissionService;
-use App\Services\SessionMeetingService;
 use App\Services\UnifiedSessionStatusService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,7 +38,7 @@ class LiveKitWebhookController extends Controller
     use ApiResponses;
 
     public function __construct(
-        protected SessionMeetingService $sessionMeetingService,
+        protected SessionMeetingServiceInterface $sessionMeetingService,
         protected UnifiedSessionStatusService $statusService,
         protected AttendanceEventService $eventService,
         protected RecordingService $recordingService,

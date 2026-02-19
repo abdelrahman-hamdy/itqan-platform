@@ -430,9 +430,49 @@ class ChatGroupService
             return;
         }
 
-        // TODO: Implement similar logic to syncQuranCircleMembers
-        // Get current members, expected members, add new, remove old
-        logger()->debug('syncInteractiveCourseMembers not yet implemented', ['group_id' => $group->id]);
+        // Get current member IDs
+        $currentMemberIds = $group->memberships()->pluck('user_id')->toArray();
+
+        // Get expected member IDs
+        $expectedMemberIds = [];
+
+        // Teacher (assignedTeacher returns AcademicTeacherProfile, which has user_id)
+        $course->load('assignedTeacher');
+        $teacher = $course->assignedTeacher;
+        if ($teacher && $teacher->user_id) {
+            $expectedMemberIds[] = $teacher->user_id;
+        }
+
+        // Enrolled students - eager load to prevent N+1
+        // enrolledStudents() returns InteractiveCourseEnrollment models filtered by ENROLLED status
+        // Each enrollment has a student() relationship returning StudentProfile (with user_id)
+        $course->load('enrolledStudents.student');
+        foreach ($course->enrolledStudents as $enrollment) {
+            if ($enrollment->student && $enrollment->student->user_id) {
+                $expectedMemberIds[] = $enrollment->student->user_id;
+            }
+        }
+
+        // Add new members
+        $toAdd = array_diff($expectedMemberIds, $currentMemberIds);
+        foreach ($toAdd as $userId) {
+            $user = User::find($userId);
+            if ($user) {
+                $role = ($teacher && $teacher->user_id == $userId)
+                        ? ChatGroup::ROLE_ADMIN
+                        : ChatGroup::ROLE_MEMBER;
+                $this->addMember($group, $user, $role);
+            }
+        }
+
+        // Remove old members
+        $toRemove = array_diff($currentMemberIds, $expectedMemberIds);
+        foreach ($toRemove as $userId) {
+            $user = User::find($userId);
+            if ($user) {
+                $this->removeMember($group, $user);
+            }
+        }
     }
 
     /**
@@ -445,8 +485,46 @@ class ChatGroupService
             return;
         }
 
-        // TODO: Implement similar logic to syncQuranCircleMembers
-        // Get current members, expected members, add new, remove old
-        logger()->debug('syncRecordedCourseMembers not yet implemented', ['group_id' => $group->id]);
+        // Get current member IDs
+        $currentMemberIds = $group->memberships()->pluck('user_id')->toArray();
+
+        // Get expected member IDs
+        $expectedMemberIds = [];
+
+        // Academy admin is the owner/moderator for recorded course groups
+        // (mirroring createForRecordedCourse which uses academy->admin as moderator)
+        $academy = $course->academy;
+        $owner = $academy ? $academy->admin : null;
+        if ($owner) {
+            $expectedMemberIds[] = $owner->id;
+        }
+
+        // Enrolled students - enrolledStudents() returns User models directly via BelongsToMany
+        // (filtered by course_subscriptions.status = 'active')
+        $course->load('enrolledStudents');
+        foreach ($course->enrolledStudents as $studentUser) {
+            $expectedMemberIds[] = $studentUser->id;
+        }
+
+        // Add new members
+        $toAdd = array_diff($expectedMemberIds, $currentMemberIds);
+        foreach ($toAdd as $userId) {
+            $user = User::find($userId);
+            if ($user) {
+                $role = ($owner && $owner->id == $userId)
+                        ? ChatGroup::ROLE_MODERATOR
+                        : ChatGroup::ROLE_MEMBER;
+                $this->addMember($group, $user, $role);
+            }
+        }
+
+        // Remove old members
+        $toRemove = array_diff($currentMemberIds, $expectedMemberIds);
+        foreach ($toRemove as $userId) {
+            $user = User::find($userId);
+            if ($user) {
+                $this->removeMember($group, $user);
+            }
+        }
     }
 }

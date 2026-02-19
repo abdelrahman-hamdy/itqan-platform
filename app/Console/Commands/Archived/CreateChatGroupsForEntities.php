@@ -33,6 +33,11 @@ class CreateChatGroupsForEntities extends Command
 
     protected $chatGroupService;
 
+    public function isHidden(): bool
+    {
+        return true;
+    }
+
     public function __construct(ChatGroupService $chatGroupService)
     {
         parent::__construct();

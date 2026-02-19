@@ -7,8 +7,8 @@ use App\Models\InteractiveCourseHomework;
 use App\Models\AcademicSession;
 use App\Models\QuranSession;
 use App\Models\AcademicHomework;
+use App\Contracts\UnifiedHomeworkServiceInterface;
 use App\Http\Middleware\ChildSelectionMiddleware;
-use App\Services\UnifiedHomeworkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -22,9 +22,9 @@ use Illuminate\View\View;
  */
 class ParentHomeworkController extends Controller
 {
-    protected UnifiedHomeworkService $homeworkService;
+    protected UnifiedHomeworkServiceInterface $homeworkService;
 
-    public function __construct(UnifiedHomeworkService $homeworkService)
+    public function __construct(UnifiedHomeworkServiceInterface $homeworkService)
     {
         $this->homeworkService = $homeworkService;
 

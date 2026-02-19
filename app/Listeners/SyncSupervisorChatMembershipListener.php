@@ -4,9 +4,9 @@ namespace App\Listeners;
 
 use Exception;
 use Throwable;
+use App\Contracts\SupervisedChatGroupServiceInterface;
 use App\Events\SupervisorAssignmentChangedEvent;
 use App\Models\User;
-use App\Services\SupervisedChatGroupService;
 use App\Services\SupervisorResolutionService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
@@ -22,7 +22,7 @@ class SyncSupervisorChatMembershipListener implements ShouldQueue
      * Create the event listener.
      */
     public function __construct(
-        protected SupervisedChatGroupService $chatGroupService,
+        protected SupervisedChatGroupServiceInterface $chatGroupService,
         protected SupervisorResolutionService $supervisorService
     ) {}
 

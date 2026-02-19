@@ -25,6 +25,11 @@ class SendTestTeacherActivationEmail extends Command
      */
     protected $description = 'Send a test teacher account activation email to verify the template';
 
+    public function isHidden(): bool
+    {
+        return true;
+    }
+
     /**
      * Execute the console command.
      */

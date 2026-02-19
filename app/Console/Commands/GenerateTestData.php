@@ -160,17 +160,23 @@ class GenerateTestData extends Command
             // Delete academy-related data (order matters for foreign keys)
             // Delete subscriptions first
             QuranSubscription::withoutGlobalScopes()->where('academy_id', $academy->id)->forceDelete();
+            // CLI context — no tenant scope available; deleting all test data for this academy
             AcademicSubscription::withoutGlobalScopes()->where('academy_id', $academy->id)->forceDelete();
+            // CLI context — no tenant scope available; deleting all test data for this academy
             CourseSubscription::withoutGlobalScopes()->where('academy_id', $academy->id)->forceDelete();
 
             // Delete sessions
             QuranSession::withoutGlobalScopes()->where('academy_id', $academy->id)->forceDelete();
+            // CLI context — no tenant scope available; deleting all test data for this academy
             AcademicSession::withoutGlobalScopes()->where('academy_id', $academy->id)->forceDelete();
 
             // Delete interactive course sessions (through course)
             $courseIds = InteractiveCourse::withoutGlobalScopes()->where('academy_id', $academy->id)->pluck('id');
+            // CLI context — no tenant scope available; deleting all test data for this academy
             InteractiveCourseSession::withoutGlobalScopes()->whereIn('course_id', $courseIds)->forceDelete();
+            // CLI context — no tenant scope available; deleting all test data for this academy
             InteractiveCourseEnrollment::withoutGlobalScopes()->where('academy_id', $academy->id)->forceDelete();
+            // CLI context — no tenant scope available; deleting all test data for this academy
             InteractiveCourse::withoutGlobalScopes()->where('academy_id', $academy->id)->forceDelete();
 
             // Delete individual lessons
@@ -178,9 +184,13 @@ class GenerateTestData extends Command
 
             // Delete other data
             AcademySettings::where('academy_id', $academy->id)->delete();
+            // CLI context — no tenant scope available; deleting all test data for this academy
             AcademicGradeLevel::withoutGlobalScopes()->where('academy_id', $academy->id)->delete();
+            // CLI context — no tenant scope available; deleting all test data for this academy
             AcademicSubject::withoutGlobalScopes()->where('academy_id', $academy->id)->delete();
+            // CLI context — no tenant scope available; deleting all test data for this academy
             AcademicPackage::withoutGlobalScopes()->where('academy_id', $academy->id)->delete();
+            // CLI context — no tenant scope available; deleting all test data for this academy
             QuranCircle::withoutGlobalScopes()->where('academy_id', $academy->id)->forceDelete();
             Quiz::where('academy_id', $academy->id)->delete();
 
@@ -406,6 +416,7 @@ class GenerateTestData extends Command
         $this->info('📖 Creating Quran Structure...');
 
         $quranTeacher = $this->testUsers['quran_teacher'];
+        // CLI context — no tenant scope available; loading teacher profile by user ID
         $quranTeacherProfile = QuranTeacherProfile::withoutGlobalScopes()
             ->where('user_id', $quranTeacher->id)
             ->first();
@@ -449,8 +460,10 @@ class GenerateTestData extends Command
         $quranTeacher = $this->testUsers['quran_teacher'];
         $academicTeacher = $this->testUsers['academic_teacher'];
 
+        // CLI context — no tenant scope available; loading teacher profiles by user ID
         $quranTeacherProfile = QuranTeacherProfile::withoutGlobalScopes()
             ->where('user_id', $quranTeacher->id)->first();
+        // CLI context — no tenant scope available; loading teacher profiles by user ID
         $academicTeacherProfile = AcademicTeacherProfile::withoutGlobalScopes()
             ->where('user_id', $academicTeacher->id)->first();
 
@@ -487,6 +500,7 @@ class GenerateTestData extends Command
         // Create an individual lesson for academic sessions
         $subject = AcademicSubject::withoutGlobalScopes()
             ->where('academy_id', $this->academy->id)->first();
+        // CLI context — no tenant scope available; loading grade level by academy ID
         $gradeLevel = AcademicGradeLevel::withoutGlobalScopes()
             ->where('academy_id', $this->academy->id)->first();
 
@@ -615,8 +629,10 @@ class GenerateTestData extends Command
         $quranTeacher = $this->testUsers['quran_teacher'];
         $academicTeacher = $this->testUsers['academic_teacher'];
 
+        // CLI context — no tenant scope available; loading teacher profiles by user ID
         $quranTeacherProfile = QuranTeacherProfile::withoutGlobalScopes()
             ->where('user_id', $quranTeacher->id)->first();
+        // CLI context — no tenant scope available; loading teacher profiles by user ID
         $academicTeacherProfile = AcademicTeacherProfile::withoutGlobalScopes()
             ->where('user_id', $academicTeacher->id)->first();
 
@@ -664,7 +680,9 @@ class GenerateTestData extends Command
 
         // Create Academic Subscription
         $subject = AcademicSubject::withoutGlobalScopes()->where('academy_id', $this->academy->id)->first();
+        // CLI context — no tenant scope available; loading grade level by academy ID
         $gradeLevel = AcademicGradeLevel::withoutGlobalScopes()->where('academy_id', $this->academy->id)->first();
+        // CLI context — no tenant scope available; loading package by academy ID
         $package = AcademicPackage::withoutGlobalScopes()->where('academy_id', $this->academy->id)->first();
 
         AcademicSubscription::firstOrCreate(
@@ -889,6 +907,7 @@ class GenerateTestData extends Command
             ->first();
 
         if ($subscription) {
+            // CLI context — no tenant scope available; loading student profile by user ID
             $studentProfile = StudentProfile::withoutGlobalScopes()->where('user_id', $student->id)->first();
             if ($studentProfile) {
                 Certificate::firstOrCreate(
@@ -930,6 +949,7 @@ class GenerateTestData extends Command
             ->first();
 
         if ($quranSession) {
+            // CLI context — no tenant scope available; loading student profile by user ID
             $studentProfile = StudentProfile::withoutGlobalScopes()->where('user_id', $student->id)->first();
             if ($studentProfile) {
                 StudentSessionReport::firstOrCreate(
@@ -957,6 +977,7 @@ class GenerateTestData extends Command
             ->first();
 
         if ($academicSession) {
+            // CLI context — no tenant scope available; loading student profile by user ID
             $studentProfile = StudentProfile::withoutGlobalScopes()->where('user_id', $student->id)->first();
             if ($studentProfile) {
                 AcademicSessionReport::firstOrCreate(

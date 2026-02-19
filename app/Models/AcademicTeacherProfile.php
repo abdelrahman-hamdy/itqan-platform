@@ -76,6 +76,7 @@ class AcademicTeacherProfile extends Model
 
         return DB::transaction(function () use ($academyId, $prefix) {
             // Use lockForUpdate to prevent concurrent reads of the same max number
+            // Bypass academy scope — generating unique code requires seeing all codes across contexts
             $maxNumber = static::withoutGlobalScopes()
                 ->where('academy_id', $academyId)
                 ->where('teacher_code', 'LIKE', $prefix.'%')

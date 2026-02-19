@@ -125,20 +125,20 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarWidth('16rem')
             ->sidebarFullyCollapsibleOnDesktop()
             ->navigationGroups([
-                'إدارة النظام',
-                'إدارة الأكاديميات',
-                'إدارة المستخدمين',
-                'إدارة القرآن',
-                'إدارة تحفيظ القرآن',
-                'إدارة التعليم الأكاديمي',
-                'إدارة الدورات التفاعلية',
-                'إدارة الدورات المسجلة',
-                'إدارة الاختبارات',
-                'المالية',
-                'إعدادات المعلمين',
-                'التقارير والحضور',
-                'إدارة الشهادات',
-                'أدوات المطور',
+                __('filament.nav_groups.system_management'),
+                __('filament.nav_groups.academy_management'),
+                __('filament.nav_groups.user_management'),
+                __('filament.nav_groups.quran_management'),
+                __('filament.nav_groups.quran_memorization'),
+                __('filament.nav_groups.academic_management'),
+                __('filament.nav_groups.interactive_courses'),
+                __('filament.nav_groups.recorded_courses'),
+                __('filament.nav_groups.exams'),
+                __('filament.nav_groups.payments'),
+                __('filament.nav_groups.teacher_settings'),
+                __('filament.nav_groups.reports_attendance'),
+                __('filament.nav_groups.certificates'),
+                __('filament.nav_groups.developer_tools'),
             ])
             ->authMiddleware([
                 Authenticate::class,
@@ -147,7 +147,7 @@ class AdminPanelProvider extends PanelProvider
                 FilamentSpatieLaravelHealthPlugin::make()
                     ->usingPage(HealthCheckResults::class)
                     ->authorize(fn (): bool => auth()->user()?->isSuperAdmin())
-                    ->navigationGroup('أدوات المطور')
+                    ->navigationGroup(__('filament.nav_groups.developer_tools'))
                     ->navigationLabel('حالة النظام')
                     ->navigationIcon('heroicon-o-heart')
                     ->navigationSort(1),

@@ -53,6 +53,7 @@ abstract class BasePaymentResource extends BaseResource
                 ->relationship(
                     'user',
                     'first_name',
+                    // Admin panel access — user selector must span all academies, not global scope
                     modifyQueryUsing: fn (Builder $query) => $query->withoutGlobalScopes(),
                 )
                 ->getOptionLabelFromRecordUsing(fn ($record) => $record->name)

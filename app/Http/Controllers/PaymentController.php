@@ -202,6 +202,7 @@ class PaymentController extends Controller
      */
     public function downloadReceipt(Request $request): StreamedResponse
     {
+        // No academy context in payment receipt download — intentional cross-tenant access
         $payment = Payment::withoutGlobalScopes()->findOrFail($request->route('payment'));
 
         $this->authorize('downloadReceipt', $payment);

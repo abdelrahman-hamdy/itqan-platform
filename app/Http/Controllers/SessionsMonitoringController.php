@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\MeetingObserverServiceInterface;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
-use App\Services\MeetingObserverService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,7 +19,7 @@ use Illuminate\View\View;
 class SessionsMonitoringController extends Controller
 {
     public function __construct(
-        protected MeetingObserverService $observerService,
+        protected MeetingObserverServiceInterface $observerService,
     ) {
         $this->middleware(['auth']);
     }

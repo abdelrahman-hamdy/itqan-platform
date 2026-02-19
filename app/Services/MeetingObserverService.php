@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\MeetingObserverServiceInterface;
 use App\Models\AcademicTeacherProfile;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
@@ -12,7 +13,7 @@ use App\Models\QuranSession;
 use App\Models\User;
 use App\Services\LiveKit\LiveKitTokenGenerator;
 
-class MeetingObserverService
+class MeetingObserverService implements MeetingObserverServiceInterface
 {
     public function __construct(
         private LiveKitTokenGenerator $tokenGenerator

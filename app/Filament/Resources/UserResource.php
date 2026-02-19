@@ -66,6 +66,7 @@ class UserResource extends BaseResource
 
     public static function getEloquentQuery(): Builder
     {
+        // Include soft-deleted records for admin management
         $query = parent::getEloquentQuery()
             ->with(['academy', 'quranTeacherProfile', 'academicTeacherProfile', 'studentProfile', 'parentProfile', 'supervisorProfile'])
             ->withoutGlobalScopes([

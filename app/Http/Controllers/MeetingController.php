@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use Exception;
 use App\Enums\UserType;
+use App\Contracts\SessionMeetingServiceInterface;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
 use App\Services\LiveKitService;
-use App\Services\SessionMeetingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -18,9 +18,9 @@ class MeetingController extends Controller
 
     private LiveKitService $livekitService;
 
-    private SessionMeetingService $sessionMeetingService;
+    private SessionMeetingServiceInterface $sessionMeetingService;
 
-    public function __construct(LiveKitService $livekitService, SessionMeetingService $sessionMeetingService)
+    public function __construct(LiveKitService $livekitService, SessionMeetingServiceInterface $sessionMeetingService)
     {
         $this->livekitService = $livekitService;
         $this->sessionMeetingService = $sessionMeetingService;

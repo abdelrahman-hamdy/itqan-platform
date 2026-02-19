@@ -38,16 +38,19 @@ trait HasProfiles
      */
     public function quranTeacherProfile(): HasOne
     {
+        // User accesses own profile regardless of current academy context
         return $this->hasOne(QuranTeacherProfile::class)->withoutGlobalScope('academy');
     }
 
     public function academicTeacherProfile(): HasOne
     {
+        // User accesses own profile regardless of current academy context
         return $this->hasOne(AcademicTeacherProfile::class)->withoutGlobalScope('academy');
     }
 
     public function studentProfile(): HasOne
     {
+        // User accesses own profile regardless of current academy context
         return $this->hasOne(StudentProfile::class)->withoutGlobalScope('academy');
     }
 
@@ -57,16 +60,19 @@ trait HasProfiles
      */
     public function studentProfileUnscoped(): HasOne
     {
+        // User accesses own profile regardless of current academy context
         return $this->hasOne(StudentProfile::class)->withoutGlobalScopes();
     }
 
     public function parentProfile(): HasOne
     {
+        // User accesses own profile regardless of current academy context
         return $this->hasOne(ParentProfile::class)->withoutGlobalScope('academy');
     }
 
     public function supervisorProfile(): HasOne
     {
+        // User accesses own profile regardless of current academy context
         return $this->hasOne(SupervisorProfile::class)->withoutGlobalScope('academy');
     }
 

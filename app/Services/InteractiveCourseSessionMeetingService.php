@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Exception;
+use App\Contracts\InteractiveCourseSessionMeetingServiceInterface;
 use App\Enums\SessionStatus;
 use App\Models\InteractiveCourseSession;
 use App\Services\Traits\SessionMeetingTrait;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Log;
  * Uses SessionMeetingTrait for common meeting management logic shared
  * with SessionMeetingService (Quran) and AcademicSessionMeetingService.
  */
-class InteractiveCourseSessionMeetingService
+class InteractiveCourseSessionMeetingService implements InteractiveCourseSessionMeetingServiceInterface
 {
     use SessionMeetingTrait;
 

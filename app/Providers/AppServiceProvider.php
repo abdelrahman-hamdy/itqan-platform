@@ -33,6 +33,22 @@ use App\Contracts\RecordingServiceInterface;
 use App\Services\RecordingService;
 use App\Contracts\ChatPermissionServiceInterface;
 use App\Services\ChatPermissionService;
+use App\Contracts\UnifiedHomeworkServiceInterface;
+use App\Services\UnifiedHomeworkService;
+use App\Contracts\QuranReportServiceInterface;
+use App\Services\Reports\QuranReportService;
+use App\Contracts\StudentReportServiceInterface;
+use App\Services\StudentReportService;
+use App\Contracts\MeetingObserverServiceInterface;
+use App\Services\MeetingObserverService;
+use App\Contracts\SupervisedChatGroupServiceInterface;
+use App\Services\SupervisedChatGroupService;
+use App\Contracts\SessionMeetingServiceInterface;
+use App\Services\SessionMeetingService;
+use App\Contracts\AcademicSessionMeetingServiceInterface;
+use App\Services\AcademicSessionMeetingService;
+use App\Contracts\InteractiveCourseSessionMeetingServiceInterface;
+use App\Services\InteractiveCourseSessionMeetingService;
 use Filament\Http\Controllers\RedirectToTenantController;
 use App\Http\Middleware\CustomAuthenticate;
 use App\Http\Middleware\RoleMiddleware;
@@ -158,6 +174,14 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AutoMeetingCreationServiceInterface::class, AutoMeetingCreationService::class);
         $this->app->bind(RecordingServiceInterface::class, RecordingService::class);
         $this->app->bind(ChatPermissionServiceInterface::class, ChatPermissionService::class);
+        $this->app->bind(UnifiedHomeworkServiceInterface::class, UnifiedHomeworkService::class);
+        $this->app->bind(QuranReportServiceInterface::class, QuranReportService::class);
+        $this->app->bind(StudentReportServiceInterface::class, StudentReportService::class);
+        $this->app->bind(MeetingObserverServiceInterface::class, MeetingObserverService::class);
+        $this->app->bind(SupervisedChatGroupServiceInterface::class, SupervisedChatGroupService::class);
+        $this->app->bind(SessionMeetingServiceInterface::class, SessionMeetingService::class);
+        $this->app->bind(AcademicSessionMeetingServiceInterface::class, AcademicSessionMeetingService::class);
+        $this->app->bind(InteractiveCourseSessionMeetingServiceInterface::class, InteractiveCourseSessionMeetingService::class);
 
         // Override Filament's RedirectToTenantController to fix Livewire redirect return type issue
         $this->app->bind(

@@ -90,6 +90,7 @@ class ListHomeworkSubmissions extends ListRecords
         ";
 
         // Use from with raw subquery - filters will apply to the outer query
+        // Admin panel access — scoped by panel authorization, not global scope; union query requires unscoped base
         return AcademicHomeworkSubmission::query()
             ->withoutGlobalScopes()
             ->from(DB::raw("({$unionSql}) as submissions"));

@@ -391,6 +391,7 @@ class StudentProfileResource extends BaseStudentProfileResource
             return null;
         }
 
+        // Bypass academy scope — relationship scoped by direct FK, not academy context
         $gradeLevel = AcademicGradeLevel::withoutGlobalScope('academy')
             ->find($record->grade_level_id);
 

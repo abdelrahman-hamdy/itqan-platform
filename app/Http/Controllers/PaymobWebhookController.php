@@ -628,6 +628,7 @@ class PaymobWebhookController extends Controller
         if ($isSuccess && ! $errorOccurred && $transactionId) {
             // Store transaction ID for reference (but don't change status)
             DB::transaction(function () use ($payment, $transactionId, $request) {
+                // No academy context in webhook/queue — intentional cross-tenant access
                 $freshPayment = Payment::withoutGlobalScopes()->lockForUpdate()->find($payment->id);
 
                 if (! $freshPayment) {

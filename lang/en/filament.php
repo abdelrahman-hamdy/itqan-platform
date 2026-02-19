@@ -118,6 +118,15 @@ return [
         'settings' => 'Settings',
         'reports' => 'Reports',
         'payments' => 'Payments',
+        'system_management' => 'System Management',
+        'academy_management' => 'Academy Management',
+        'quran_memorization' => 'Quran Memorization',
+        'interactive_courses' => 'Interactive Courses',
+        'certificates' => 'Certificates',
+        'developer_tools' => 'Developer Tools',
+        'exams' => 'Exams',
+        'reviews' => 'Reviews & Ratings',
+        'reports_attendance' => 'Reports & Attendance',
     ],
 
     // Common Labels

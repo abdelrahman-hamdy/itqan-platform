@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Teacher;
 
 use Exception;
+use App\Contracts\StudentReportServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Models\User;
-use App\Services\StudentReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,9 +19,9 @@ class StudentReportController extends Controller
 {
     use ApiResponses;
 
-    protected StudentReportService $studentReportService;
+    protected StudentReportServiceInterface $studentReportService;
 
-    public function __construct(StudentReportService $studentReportService)
+    public function __construct(StudentReportServiceInterface $studentReportService)
     {
         $this->studentReportService = $studentReportService;
     }

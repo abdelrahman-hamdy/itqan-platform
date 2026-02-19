@@ -11,6 +11,7 @@ use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
+use App\Contracts\UnifiedHomeworkServiceInterface;
 use Illuminate\Support\Collection;
 
 /**
@@ -28,7 +29,7 @@ use Illuminate\Support\Collection;
  * - Interactive: Uses InteractiveCourseHomework
  * - Quran: View-only, no submission model (evaluated via session report)
  */
-class UnifiedHomeworkService
+class UnifiedHomeworkService implements UnifiedHomeworkServiceInterface
 {
     /**
      * Get all homework for a student across all types

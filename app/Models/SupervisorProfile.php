@@ -49,6 +49,7 @@ class SupervisorProfile extends Model
                 $prefix = 'SUP-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
 
                 // Find the highest existing sequence number for this academy
+                // Bypass academy scope — code generation needs to see all existing codes to ensure uniqueness
                 $maxCode = static::withoutGlobalScopes()
                     ->where('supervisor_code', 'like', $prefix.'%')
                     ->orderByRaw('CAST(SUBSTRING(supervisor_code, -4) AS UNSIGNED) DESC')

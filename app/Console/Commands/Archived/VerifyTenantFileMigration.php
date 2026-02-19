@@ -31,6 +31,11 @@ class VerifyTenantFileMigration extends Command
 
     protected $description = 'Verify all file paths in database exist in storage';
 
+    public function isHidden(): bool
+    {
+        return true;
+    }
+
     private int $validCount = 0;
 
     private int $missingCount = 0;
@@ -210,6 +215,7 @@ class VerifyTenantFileMigration extends Command
     {
         $this->info('📁 Verifying Lesson files...');
 
+        // CLI context — no tenant scope available; migration verification must span all tenants
         Lesson::withoutGlobalScopes()
             ->with('recordedCourse')
             ->where(function ($query) {

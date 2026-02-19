@@ -81,6 +81,7 @@ describe('StudentProfileResource Authorization', function () {
 
             // Load profiles before changing context (to bypass academy scope)
             $profile1 = \App\Models\StudentProfile::withoutGlobalScopes()->where('user_id', $student1->id)->first();
+            // Bypass scope for setup/migration — not a tenant-aware operation
             $profile2 = \App\Models\StudentProfile::withoutGlobalScopes()->where('user_id', $student2->id)->first();
 
             $superAdmin = createSuperAdmin();

@@ -3,9 +3,9 @@
 namespace App\Console\Commands;
 
 use Exception;
+use App\Contracts\SessionMeetingServiceInterface;
 use App\Services\AcademyContextService;
 use App\Services\CronJobLogger;
-use App\Services\SessionMeetingService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -23,11 +23,11 @@ class ManageSessionMeetings extends Command
      */
     protected $description = 'Manage LiveKit meetings for scheduled sessions - auto-create, update status, and cleanup';
 
-    private SessionMeetingService $sessionMeetingService;
+    private SessionMeetingServiceInterface $sessionMeetingService;
 
     private CronJobLogger $cronJobLogger;
 
-    public function __construct(SessionMeetingService $sessionMeetingService, CronJobLogger $cronJobLogger)
+    public function __construct(SessionMeetingServiceInterface $sessionMeetingService, CronJobLogger $cronJobLogger)
     {
         parent::__construct();
         $this->sessionMeetingService = $sessionMeetingService;

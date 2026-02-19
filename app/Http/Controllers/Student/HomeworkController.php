@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Student;
 use Exception;
 use App\Models\AcademicHomework;
 use App\Models\InteractiveCourseHomework;
+use App\Contracts\UnifiedHomeworkServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SubmitStudentHomeworkRequest;
 use App\Services\HomeworkService;
-use App\Services\UnifiedHomeworkService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,11 +18,11 @@ class HomeworkController extends Controller
 {
     protected HomeworkService $homeworkService;
 
-    protected UnifiedHomeworkService $unifiedHomeworkService;
+    protected UnifiedHomeworkServiceInterface $unifiedHomeworkService;
 
     public function __construct(
         HomeworkService $homeworkService,
-        UnifiedHomeworkService $unifiedHomeworkService
+        UnifiedHomeworkServiceInterface $unifiedHomeworkService
     ) {
         $this->middleware('auth');
         $this->middleware('role:student');

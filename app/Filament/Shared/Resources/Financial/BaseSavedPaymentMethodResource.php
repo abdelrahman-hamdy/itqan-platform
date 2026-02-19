@@ -348,6 +348,7 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
     // Apply panel-specific scoping
     public static function getEloquentQuery(): Builder
     {
+        // Include soft-deleted records for admin management
         $query = parent::getEloquentQuery()
             ->with(['user', 'academy'])
             ->withoutGlobalScopes([

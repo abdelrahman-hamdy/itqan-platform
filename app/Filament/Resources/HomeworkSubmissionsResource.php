@@ -72,6 +72,7 @@ class HomeworkSubmissionsResource extends BaseResource
      */
     public static function getEloquentQuery(): Builder
     {
+        // Include soft-deleted records for admin management
         return parent::getEloquentQuery()
             ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with(['student', 'homework', 'session', 'grader']);

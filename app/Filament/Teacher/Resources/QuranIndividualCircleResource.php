@@ -63,6 +63,7 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
     {
         return $query
             ->where('quran_teacher_id', Auth::id())
+            // Include soft-deleted records for admin management
             ->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 

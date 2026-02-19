@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1\Common;
 
+use App\Contracts\SupervisedChatGroupServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\User;
-use App\Services\SupervisedChatGroupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -22,9 +22,9 @@ class SupervisedChatController extends Controller
 {
     use ApiResponses;
 
-    protected SupervisedChatGroupService $chatGroupService;
+    protected SupervisedChatGroupServiceInterface $chatGroupService;
 
-    public function __construct(SupervisedChatGroupService $chatGroupService)
+    public function __construct(SupervisedChatGroupServiceInterface $chatGroupService)
     {
         $this->chatGroupService = $chatGroupService;
     }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\SupervisedChatGroupServiceInterface;
 use App\Models\AcademicIndividualLesson;
 use App\Models\ChatGroup;
 use App\Models\InteractiveCourse;
@@ -11,7 +12,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class SupervisedChatGroupService extends ChatGroupService
+class SupervisedChatGroupService extends ChatGroupService implements SupervisedChatGroupServiceInterface
 {
     protected SupervisorResolutionService $supervisorService;
 

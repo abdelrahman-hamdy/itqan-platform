@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Contracts\QuranReportServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\HasDateRangeFilter;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
-use App\Services\Reports\QuranReportService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -14,9 +14,9 @@ class CircleReportController extends Controller
 {
     use HasDateRangeFilter;
 
-    protected QuranReportService $reportService;
+    protected QuranReportServiceInterface $reportService;
 
-    public function __construct(QuranReportService $reportService)
+    public function __construct(QuranReportServiceInterface $reportService)
     {
         $this->reportService = $reportService;
     }

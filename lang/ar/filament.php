@@ -118,6 +118,15 @@ return [
         'settings' => 'الإعدادات',
         'reports' => 'التقارير',
         'payments' => 'المدفوعات',
+        'system_management' => 'إدارة النظام',
+        'academy_management' => 'إدارة الأكاديميات',
+        'quran_memorization' => 'إدارة تحفيظ القرآن',
+        'interactive_courses' => 'إدارة الدورات التفاعلية',
+        'certificates' => 'إدارة الشهادات',
+        'developer_tools' => 'أدوات المطور',
+        'exams' => 'الاختبارات',
+        'reviews' => 'التقييمات والمراجعات',
+        'reports_attendance' => 'التقارير والحضور',
     ],
 
     // Common Labels

@@ -242,6 +242,7 @@ class QuizResource extends BaseResource
 
     public static function getEloquentQuery(): Builder
     {
+        // Include soft-deleted records for admin management
         $query = parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,

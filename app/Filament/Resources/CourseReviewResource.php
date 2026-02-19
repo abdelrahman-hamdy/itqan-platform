@@ -54,6 +54,7 @@ class CourseReviewResource extends BaseResource
      */
     public static function getEloquentQuery(): Builder
     {
+        // Include soft-deleted records for admin management
         return parent::getEloquentQuery()
             ->with(['user', 'reviewable'])
             ->withoutGlobalScopes([

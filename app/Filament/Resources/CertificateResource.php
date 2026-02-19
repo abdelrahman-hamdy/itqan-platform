@@ -266,6 +266,7 @@ class CertificateResource extends BaseResource
 
     public static function getEloquentQuery(): Builder
     {
+        // Include soft-deleted records for admin management
         return parent::getEloquentQuery()
             ->with(['student', 'academy', 'teacher', 'issuedBy'])
             ->withoutGlobalScopes([

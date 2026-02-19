@@ -16,6 +16,11 @@ class FixAcademyAdminIntegrity extends Command
 
     protected $description = 'Check and fix Academy-Admin data integrity issues';
 
+    public function isHidden(): bool
+    {
+        return true;
+    }
+
     public function handle(): int
     {
         $dryRun = $this->option('dry-run');

@@ -370,6 +370,7 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
 
     protected static function scopeEloquentQuery(Builder $query): Builder
     {
+        // Include soft-deleted records for admin management
         return $query->withoutGlobalScopes([SoftDeletingScope::class])
             ->with(['student', 'teacher.user', 'subject', 'gradeLevel', 'academy']);
     }

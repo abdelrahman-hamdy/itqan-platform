@@ -10,8 +10,8 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
+use App\Contracts\MeetingObserverServiceInterface;
 use App\Services\AcademyContextService;
-use App\Services\MeetingObserverService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,7 +25,7 @@ class SessionMonitoringController extends Controller
     use ApiResponses;
 
     public function __construct(
-        protected MeetingObserverService $observerService,
+        protected MeetingObserverServiceInterface $observerService,
     ) {}
 
     /**
