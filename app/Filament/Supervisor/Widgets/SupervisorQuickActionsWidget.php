@@ -6,7 +6,9 @@ use App\Enums\InteractiveCourseStatus;
 use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource;
 use App\Filament\Supervisor\Resources\ManagedTeachersResource;
 use App\Filament\Supervisor\Resources\MonitoredAcademicLessonsResource;
-use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource;
+use App\Filament\Supervisor\Resources\MonitoredAcademicSessionsResource;
+use App\Filament\Supervisor\Resources\MonitoredInteractiveCourseSessionsResource;
+use App\Filament\Supervisor\Resources\MonitoredQuranSessionsResource;
 use App\Filament\Supervisor\Resources\MonitoredGroupCirclesResource;
 use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource;
 use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource;
@@ -104,13 +106,35 @@ class SupervisorQuickActionsWidget extends Widget
             ];
         }
 
-        // All Sessions (unified)
-        if (! empty($quranTeacherIds) || ! empty($academicTeacherIds) || ! empty($interactiveCourseIds)) {
+        // Session quick links
+        if (! empty($quranTeacherIds)) {
             $actions[] = [
-                'title' => 'جميع الجلسات',
+                'title' => 'جلسات القرآن',
                 'count' => '',
-                'description' => 'عرض جميع الجلسات',
-                'url' => MonitoredAllSessionsResource::getUrl('index'),
+                'description' => 'عرض جلسات القرآن',
+                'url' => MonitoredQuranSessionsResource::getUrl('index'),
+                'icon' => 'heroicon-o-calendar-days',
+                'color' => 'gray',
+            ];
+        }
+
+        if (! empty($academicTeacherIds)) {
+            $actions[] = [
+                'title' => 'الجلسات الأكاديمية',
+                'count' => '',
+                'description' => 'عرض الجلسات الأكاديمية',
+                'url' => MonitoredAcademicSessionsResource::getUrl('index'),
+                'icon' => 'heroicon-o-calendar-days',
+                'color' => 'gray',
+            ];
+        }
+
+        if (! empty($interactiveCourseIds)) {
+            $actions[] = [
+                'title' => 'جلسات الدورات',
+                'count' => '',
+                'description' => 'عرض جلسات الدورات',
+                'url' => MonitoredInteractiveCourseSessionsResource::getUrl('index'),
                 'icon' => 'heroicon-o-calendar-days',
                 'color' => 'gray',
             ];

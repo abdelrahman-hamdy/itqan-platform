@@ -12,6 +12,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Toggle;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\Filter;
@@ -436,24 +437,29 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                     ->label('المادة')
                     ->relationship('subject', 'name')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder('الكل'),
 
                 SelectFilter::make('grade_level_id')
                     ->label('المرحلة')
                     ->relationship('gradeLevel', 'name')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder('الكل'),
 
                 SelectFilter::make('status')
                     ->label('الحالة')
-                    ->options(InteractiveCourseStatus::options()),
+                    ->options(InteractiveCourseStatus::options())
+                    ->placeholder('الكل'),
 
                 SelectFilter::make('difficulty_level')
                     ->label('مستوى الصعوبة')
-                    ->options(DifficultyLevel::options()),
+                    ->options(DifficultyLevel::options())
+                    ->placeholder('الكل'),
 
                 TernaryFilter::make('is_published')
                     ->label('منشور')
+                    ->placeholder('الكل')
                     ->trueLabel('منشور')
                     ->falseLabel('غير منشور'),
 
@@ -469,6 +475,8 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                         ->where('end_date', '>=', now()))
                     ->toggle(),
             ])
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([
@@ -479,8 +487,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                     Action::make('view_sessions')
                         ->label('الجلسات')
                         ->icon('heroicon-o-calendar-days')
-                        ->url(fn (InteractiveCourse $record): string => MonitoredAllSessionsResource::getUrl('index', [
-                            'activeTab' => 'interactive',
+                        ->url(fn (InteractiveCourse $record): string => MonitoredInteractiveCourseSessionsResource::getUrl('index', [
                             'tableFilters[course_id][value]' => $record->id,
                         ])),
                     DeleteAction::make()

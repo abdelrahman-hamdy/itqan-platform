@@ -4,7 +4,9 @@ namespace App\Filament\Supervisor\Widgets;
 
 use Filament\Actions\Action;
 use App\Enums\SessionStatus;
-use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource;
+use App\Filament\Supervisor\Resources\MonitoredAcademicSessionsResource;
+use App\Filament\Supervisor\Resources\MonitoredInteractiveCourseSessionsResource;
+use App\Filament\Supervisor\Resources\MonitoredQuranSessionsResource;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
@@ -78,11 +80,24 @@ class TodaySessionsWidget extends BaseWidget
             ->emptyStateDescription('لا توجد جلسات مجدولة لهذا اليوم')
             ->emptyStateIcon('heroicon-o-calendar')
             ->headerActions([
-                Action::make('view_all')
-                    ->label('عرض الكل')
-                    ->url(MonitoredAllSessionsResource::getUrl('index'))
-                    ->icon('heroicon-o-arrow-right')
-                    ->color('gray'),
+                Action::make('view_quran')
+                    ->label('جلسات القرآن')
+                    ->url(MonitoredQuranSessionsResource::getUrl('index'))
+                    ->icon('heroicon-o-book-open')
+                    ->color('success')
+                    ->visible(fn () => MonitoredQuranSessionsResource::hasAssignedQuranTeachers()),
+                Action::make('view_academic')
+                    ->label('جلسات أكاديمية')
+                    ->url(MonitoredAcademicSessionsResource::getUrl('index'))
+                    ->icon('heroicon-o-academic-cap')
+                    ->color('warning')
+                    ->visible(fn () => MonitoredAcademicSessionsResource::hasAssignedAcademicTeachers()),
+                Action::make('view_interactive')
+                    ->label('جلسات الدورات')
+                    ->url(MonitoredInteractiveCourseSessionsResource::getUrl('index'))
+                    ->icon('heroicon-o-video-camera')
+                    ->color('info')
+                    ->visible(fn () => MonitoredInteractiveCourseSessionsResource::hasDerivedInteractiveCourses()),
             ]);
     }
 

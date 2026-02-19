@@ -409,11 +409,13 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                 TernaryFilter::make('status')
                     ->label('الحالة')
                     ->trueLabel('نشطة')
-                    ->falseLabel('متوقفة'),
+                    ->falseLabel('متوقفة')
+                    ->placeholder('الكل'),
 
                 SelectFilter::make('memorization_level')
                     ->label('مستوى الحفظ')
-                    ->options(DifficultyLevel::options()),
+                    ->options(DifficultyLevel::options())
+                    ->placeholder('الكل'),
 
                 SelectFilter::make('enrollment_status')
                     ->label('حالة التسجيل')
@@ -421,7 +423,8 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                         'open' => 'مفتوح',
                         'closed' => 'مغلق',
                         'full' => 'ممتلئ',
-                    ]),
+                    ])
+                    ->placeholder('الكل'),
 
                 SelectFilter::make('age_group')
                     ->label('الفئة العمرية')
@@ -430,7 +433,8 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                         'youth' => 'شباب',
                         'adults' => 'كبار',
                         'all_ages' => 'كل الفئات',
-                    ]),
+                    ])
+                    ->placeholder('الكل'),
 
                 SelectFilter::make('gender_type')
                     ->label('النوع')
@@ -438,7 +442,8 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                         'male' => 'رجال',
                         'female' => 'نساء',
                         'mixed' => 'مختلط',
-                    ]),
+                    ])
+                    ->placeholder('الكل'),
 
                 SelectFilter::make('quran_teacher_id')
                     ->label('المعلم')
@@ -450,7 +455,8 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
                     })
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder('الكل'),
             ])
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
@@ -478,9 +484,8 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                     Action::make('view_sessions')
                         ->label('الجلسات')
                         ->icon('heroicon-o-calendar-days')
-                        ->url(fn (QuranCircle $record): string => MonitoredAllSessionsResource::getUrl('index', [
+                        ->url(fn (QuranCircle $record): string => MonitoredQuranSessionsResource::getUrl('index', [
                             'tableFilters[circle_id][value]' => $record->id,
-                            'activeTab' => 'quran',
                         ])),
                     DeleteAction::make()
                         ->label('حذف'),

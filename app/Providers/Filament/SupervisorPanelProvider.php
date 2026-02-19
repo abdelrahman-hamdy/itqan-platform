@@ -43,11 +43,11 @@ class SupervisorPanelProvider extends PanelProvider
             ->brandName('لوحة المشرف')
             ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'purple', 'panelType' => 'supervisor']))
             ->navigationGroups([
-                'إدارة الجلسات',
-                'حلقات القرآن',
+                'إدارة القرآن',
                 'الدروس الأكاديمية',
                 'الدورات التفاعلية',
-                'التقارير والحضور',
+                'التقارير',
+                'الاختبارات',
                 'إدارة المعلمين',
                 'ملفي الشخصي',
             ])

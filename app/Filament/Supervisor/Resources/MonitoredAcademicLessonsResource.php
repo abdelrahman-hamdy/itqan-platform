@@ -10,6 +10,7 @@ use Filament\Forms\Components\Select;
 use App\Models\AcademicTeacherProfile;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
@@ -272,14 +273,18 @@ class MonitoredAcademicLessonsResource extends BaseSupervisorResource
                             ->mapWithKeys(fn ($profile) => [$profile->id => $profile->user?->name ?? 'غير محدد']);
                     })
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder('الكل'),
 
                 SelectFilter::make('academic_subject_id')
                     ->label('المادة')
                     ->relationship('academicSubject', 'name')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder('الكل'),
             ])
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([
@@ -290,9 +295,8 @@ class MonitoredAcademicLessonsResource extends BaseSupervisorResource
                     Action::make('view_sessions')
                         ->label('الجلسات')
                         ->icon('heroicon-o-calendar-days')
-                        ->url(fn (AcademicIndividualLesson $record): string => MonitoredAllSessionsResource::getUrl('index', [
+                        ->url(fn (AcademicIndividualLesson $record): string => MonitoredAcademicSessionsResource::getUrl('index', [
                             'tableFilters[academic_individual_lesson_id][value]' => $record->id,
-                            'activeTab' => 'academic',
                         ])),
                     DeleteAction::make()
                         ->label('حذف'),

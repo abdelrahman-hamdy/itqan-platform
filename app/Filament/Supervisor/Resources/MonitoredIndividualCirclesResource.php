@@ -296,11 +296,13 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
 
                 SelectFilter::make('specialization')
                     ->label('التخصص')
-                    ->options(QuranIndividualCircle::SPECIALIZATIONS),
+                    ->options(QuranIndividualCircle::SPECIALIZATIONS)
+                    ->placeholder('الكل'),
 
                 SelectFilter::make('memorization_level')
                     ->label('مستوى الحفظ')
-                    ->options(QuranIndividualCircle::MEMORIZATION_LEVELS),
+                    ->options(QuranIndividualCircle::MEMORIZATION_LEVELS)
+                    ->placeholder('الكل'),
 
                 SelectFilter::make('quran_teacher_id')
                     ->label('المعلم')
@@ -312,7 +314,8 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                             ->mapWithKeys(fn ($user) => [$user->id => $user->name]);
                     })
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder('الكل'),
 
                 Filter::make('has_progress')
                     ->label('لها تقدم')
@@ -344,9 +347,8 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                     Action::make('view_sessions')
                         ->label('الجلسات')
                         ->icon('heroicon-o-calendar-days')
-                        ->url(fn (QuranIndividualCircle $record): string => MonitoredAllSessionsResource::getUrl('index', [
+                        ->url(fn (QuranIndividualCircle $record): string => MonitoredQuranSessionsResource::getUrl('index', [
                             'tableFilters[individual_circle_id][value]' => $record->id,
-                            'activeTab' => 'quran',
                         ])),
                     DeleteAction::make()
                         ->label('حذف'),
