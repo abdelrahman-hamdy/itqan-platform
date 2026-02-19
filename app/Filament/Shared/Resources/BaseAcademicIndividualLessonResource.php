@@ -13,6 +13,7 @@ use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -163,6 +164,8 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
@@ -235,6 +238,12 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
             SelectFilter::make('academic_subject_id')
                 ->label('المادة')
                 ->relationship('academicSubject', 'name')
+                ->searchable()
+                ->preload(),
+
+            SelectFilter::make('academic_grade_level_id')
+                ->label('المستوى الدراسي')
+                ->relationship('academicGradeLevel', 'name')
                 ->searchable()
                 ->preload(),
         ];

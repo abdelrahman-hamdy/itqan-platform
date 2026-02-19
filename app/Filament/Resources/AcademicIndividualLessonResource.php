@@ -21,7 +21,6 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Schemas\Components\Grid;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use App\Filament\Resources\AcademicIndividualLessonResource\Pages\ListAcademicIndividualLessons;
 use App\Filament\Resources\AcademicIndividualLessonResource\Pages\CreateAcademicIndividualLesson;
 use App\Filament\Resources\AcademicIndividualLessonResource\Pages\ViewAcademicIndividualLesson;
@@ -288,9 +287,6 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
                 ->relationship('academicTeacher.user', 'name')
                 ->searchable()
                 ->preload(),
-
-            TrashedFilter::make()
-                ->label(__('filament.filters.trashed')),
         ];
     }
 

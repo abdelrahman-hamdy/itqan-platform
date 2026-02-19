@@ -30,7 +30,6 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -275,9 +274,6 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
                 ->relationship('academicTeacher.user', 'name')
                 ->searchable()
                 ->preload(),
-
-            TrashedFilter::make()
-                ->label(__('filament.filters.trashed')),
         ];
     }
 
