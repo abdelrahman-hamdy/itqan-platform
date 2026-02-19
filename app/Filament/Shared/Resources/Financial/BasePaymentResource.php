@@ -255,13 +255,22 @@ abstract class BasePaymentResource extends BaseResource
 
             SelectFilter::make('payment_gateway')
                 ->label('بوابة الدفع')
-                ->options([
-                    'paymob'   => 'Paymob',
-                    'easykash' => 'EasyKash',
-                    'tap'      => 'Tap',
-                ])
+                ->options(fn () => Payment::query()
+                    ->select('payment_gateway')
+                    ->distinct()
+                    ->whereNotNull('payment_gateway')
+                    ->pluck('payment_gateway')
+                    ->mapWithKeys(fn ($v) => [$v => match ($v) {
+                        'paymob'   => 'Paymob',
+                        'easykash' => 'EasyKash',
+                        'tap'      => 'Tap',
+                        default    => ucfirst($v),
+                    }])
+                    ->toArray()
+                )
                 ->placeholder('الكل'),
 
+            // Date range spans 2 columns so from/until appear side-by-side
             Filter::make('paid_at')
                 ->label('تاريخ الدفع')
                 ->schema([
@@ -272,6 +281,8 @@ abstract class BasePaymentResource extends BaseResource
                         ->label(__('filament.filters.to_date'))
                         ->native(false),
                 ])
+                ->columns(2)
+                ->columnSpan(2)
                 ->query(function (Builder $query, array $data): Builder {
                     return $query
                         ->when(
@@ -294,6 +305,24 @@ abstract class BasePaymentResource extends BaseResource
 
                     return $indicators;
                 }),
+
+            SelectFilter::make('user_id')
+                ->label('المستخدم')
+                ->options(function () {
+                    return static::getEloquentQuery()
+                        ->with(['user' => fn ($q) => $q->withoutGlobalScopes()->select('id', 'first_name', 'last_name')])
+                        ->whereNotNull('user_id')
+                        ->select('user_id')
+                        ->distinct()
+                        ->get()
+                        ->pluck('user')
+                        ->filter()
+                        ->unique('id')
+                        ->mapWithKeys(fn ($u) => [$u->id => $u->name])
+                        ->toArray();
+                })
+                ->searchable()
+                ->placeholder('الكل'),
         ];
     }
 
