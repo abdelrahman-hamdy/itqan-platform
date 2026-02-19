@@ -190,7 +190,7 @@ class MonitoredAcademicSessionsResource extends BaseSupervisorResource
                                 ->rows(4)
                                 ->default(fn ($record) => $record->supervisor_notes),
                         ])
-                        ->action(fn ($record, array $data): void => $record->update([
+                        ->action(fn ($record, array $data) => $record->update([
                             'supervisor_notes' => $data['supervisor_notes'],
                         ])),
                     DeleteAction::make()->label('حذف'),
