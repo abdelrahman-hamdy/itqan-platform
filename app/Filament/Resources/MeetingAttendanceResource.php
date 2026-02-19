@@ -291,21 +291,32 @@ class MeetingAttendanceResource extends BaseResource
                     ->schema([
                         Select::make('session_type')
                             ->label('نوع الجلسة')
-                            ->options(__('enums.session_type'))
+                            ->options([
+                                'individual_quran' => 'حلقات قرآن فردية',
+                                'group_quran' => 'حلقات قرآن جماعية',
+                                'academic' => __('enums.session_type.academic'),
+                                'interactive' => __('enums.session_type.interactive'),
+                            ])
                             ->live()
                             ->afterStateUpdated(fn (Set $set) => $set('source_id', null)),
                         Select::make('source_id')
                             ->label(fn (Get $get): string => match ($get('session_type')) {
-                                'quran' => 'الحلقة',
+                                'individual_quran' => 'الحلقة الفردية',
+                                'group_quran' => 'الحلقة الجماعية',
                                 'academic' => 'الدرس',
                                 'interactive' => 'الدورة',
-                                default => 'الحلقة / الدورة',
+                                default => 'المصدر',
                             })
                             ->searchable()
                             ->preload()
                             ->options(function (Get $get): array {
                                 return match ($get('session_type')) {
-                                    'quran' => static::getQuranSourceOptions(),
+                                    'individual_quran' => QuranIndividualCircle::query()
+                                        ->pluck('name', 'id')
+                                        ->toArray(),
+                                    'group_quran' => QuranCircle::query()
+                                        ->pluck('name', 'id')
+                                        ->toArray(),
                                     'academic' => AcademicIndividualLesson::query()
                                         ->pluck('name', 'id')
                                         ->toArray(),
@@ -320,44 +331,66 @@ class MeetingAttendanceResource extends BaseResource
                     ->columns(2)
                     ->columnSpan(2)
                     ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when($data['session_type'] ?? null, fn (Builder $q, string $type) => $q->where('session_type', $type))
-                            ->when($data['source_id'] ?? null, function (Builder $q) use ($data) {
-                                $sourceId = $data['source_id'];
-                                $sessionType = $data['session_type'];
+                        $sessionType = $data['session_type'] ?? null;
+                        $sourceId = $data['source_id'] ?? null;
 
-                                if ($sessionType === 'quran') {
-                                    $q->whereIn('session_id', function ($sub) use ($sourceId) {
-                                        $sub->select('id')->from('quran_sessions');
-                                        if (str_starts_with($sourceId, 'circle:')) {
-                                            $sub->where('circle_id', (int) str_replace('circle:', '', $sourceId));
-                                        } else {
-                                            $sub->where('individual_circle_id', (int) str_replace('individual:', '', $sourceId));
-                                        }
-                                    });
-                                } elseif ($sessionType === 'academic') {
-                                    $q->whereIn('session_id', function ($sub) use ($sourceId) {
-                                        $sub->select('id')->from('academic_sessions')
-                                            ->where('academic_individual_lesson_id', (int) $sourceId);
-                                    });
-                                } elseif ($sessionType === 'interactive') {
-                                    $q->whereIn('session_id', function ($sub) use ($sourceId) {
-                                        $sub->select('id')->from('interactive_course_sessions')
-                                            ->where('course_id', (int) $sourceId);
-                                    });
-                                }
+                        if (! $sessionType) {
+                            return $query;
+                        }
 
-                                return $q;
-                            });
+                        if ($sessionType === 'individual_quran') {
+                            $query->where('session_type', 'quran')
+                                ->whereIn('session_id', function ($sub) use ($sourceId) {
+                                    $sub->select('id')->from('quran_sessions')
+                                        ->whereNotNull('individual_circle_id');
+                                    if ($sourceId) {
+                                        $sub->where('individual_circle_id', (int) $sourceId);
+                                    }
+                                });
+                        } elseif ($sessionType === 'group_quran') {
+                            $query->where('session_type', 'quran')
+                                ->whereIn('session_id', function ($sub) use ($sourceId) {
+                                    $sub->select('id')->from('quran_sessions')
+                                        ->whereNotNull('circle_id');
+                                    if ($sourceId) {
+                                        $sub->where('circle_id', (int) $sourceId);
+                                    }
+                                });
+                        } elseif ($sessionType === 'academic') {
+                            $query->where('session_type', 'academic');
+                            if ($sourceId) {
+                                $query->whereIn('session_id', function ($sub) use ($sourceId) {
+                                    $sub->select('id')->from('academic_sessions')
+                                        ->where('academic_individual_lesson_id', (int) $sourceId);
+                                });
+                            }
+                        } elseif ($sessionType === 'interactive') {
+                            $query->where('session_type', 'interactive');
+                            if ($sourceId) {
+                                $query->whereIn('session_id', function ($sub) use ($sourceId) {
+                                    $sub->select('id')->from('interactive_course_sessions')
+                                        ->where('course_id', (int) $sourceId);
+                                });
+                            }
+                        }
+
+                        return $query;
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if ($data['session_type'] ?? null) {
-                            $indicators['session_type'] = 'نوع الجلسة: '.__("enums.session_type.{$data['session_type']}");
+                            $labels = [
+                                'individual_quran' => 'حلقات قرآن فردية',
+                                'group_quran' => 'حلقات قرآن جماعية',
+                                'academic' => __('enums.session_type.academic'),
+                                'interactive' => __('enums.session_type.interactive'),
+                            ];
+                            $indicators['session_type'] = 'نوع الجلسة: '.($labels[$data['session_type']] ?? $data['session_type']);
                         }
                         if ($data['source_id'] ?? null) {
                             $indicators['source_id'] = match ($data['session_type'] ?? '') {
-                                'quran' => 'الحلقة محددة',
+                                'individual_quran' => 'الحلقة الفردية محددة',
+                                'group_quran' => 'الحلقة الجماعية محددة',
                                 'academic' => 'الدرس محدد',
                                 'interactive' => 'الدورة محددة',
                                 default => 'المصدر محدد',
@@ -381,23 +414,6 @@ class MeetingAttendanceResource extends BaseResource
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
-    }
-
-    private static function getQuranSourceOptions(): array
-    {
-        $options = [];
-
-        $circles = QuranCircle::query()->pluck('name', 'id');
-        foreach ($circles as $id => $name) {
-            $options["circle:{$id}"] = 'حلقة جماعية: '.($name ?: "#{$id}");
-        }
-
-        $individuals = QuranIndividualCircle::query()->pluck('name', 'id');
-        foreach ($individuals as $id => $name) {
-            $options["individual:{$id}"] = 'حلقة فردية: '.($name ?: "#{$id}");
-        }
-
-        return $options;
     }
 
     public static function getRelations(): array
