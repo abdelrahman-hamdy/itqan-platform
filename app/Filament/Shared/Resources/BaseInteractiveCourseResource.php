@@ -16,7 +16,6 @@ use Exception;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Toggle;
-use App\Enums\DifficultyLevel;
 use App\Enums\InteractiveCourseStatus;
 use App\Enums\SessionDuration;
 use App\Models\AcademicGradeLevel;
@@ -28,7 +27,7 @@ use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -447,6 +446,8 @@ abstract class BaseInteractiveCourseResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions());
@@ -559,37 +560,26 @@ abstract class BaseInteractiveCourseResource extends Resource
         return [
             SelectFilter::make('status')
                 ->label('الحالة')
-                ->options(InteractiveCourseStatus::options()),
+                ->options(InteractiveCourseStatus::options())
+                ->searchable(),
 
             SelectFilter::make('subject_id')
                 ->label('المادة')
-                ->relationship('subject', 'name'),
+                ->relationship('subject', 'name')
+                ->searchable()
+                ->preload(),
 
             SelectFilter::make('grade_level_id')
                 ->label('المرحلة')
-                ->relationship('gradeLevel', 'name'),
-
-            SelectFilter::make('difficulty_level')
-                ->label('مستوى الصعوبة')
-                ->options(DifficultyLevel::options()),
+                ->relationship('gradeLevel', 'name')
+                ->searchable()
+                ->preload(),
 
             TernaryFilter::make('is_published')
                 ->label('منشور')
                 ->placeholder('الكل')
                 ->trueLabel('منشور')
                 ->falseLabel('غير منشور'),
-
-            Filter::make('upcoming')
-                ->label(__('filament.filters.upcoming'))
-                ->query(fn (Builder $query) => $query->where('start_date', '>', now()))
-                ->toggle(),
-
-            Filter::make('ongoing')
-                ->label(__('filament.filters.ongoing'))
-                ->query(fn (Builder $query) => $query
-                    ->where('start_date', '<=', now())
-                    ->where('end_date', '>=', now()))
-                ->toggle(),
         ];
     }
 
