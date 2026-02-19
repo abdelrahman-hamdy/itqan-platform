@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Enums\EnrollmentStatus;
-use App\Filament\Resources\StudentProgressResource\Pages\CreateStudentProgress;
 use App\Filament\Resources\StudentProgressResource\Pages\EditStudentProgress;
 use App\Filament\Resources\StudentProgressResource\Pages\ListStudentProgress;
 use App\Filament\Resources\StudentProgressResource\Pages\ViewStudentProgress;
@@ -24,8 +23,9 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -44,6 +44,11 @@ class StudentProgressResource extends BaseResource
     protected static string|\UnitEnum|null $navigationGroup = 'إدارة الدورات المسجلة';
 
     protected static ?int $navigationSort = 3;
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
 
     protected static ?string $slug = 'recorded-course-progress';
 
@@ -206,14 +211,14 @@ class StudentProgressResource extends BaseResource
                     ->searchable()
                     ->preload(),
 
-                Filter::make('has_certificate')
-                    ->label('حاصل على شهادة')
-                    ->query(fn (Builder $query) => $query->where('certificate_issued', true)),
-
-                Filter::make('last_week')
-                    ->label('نشط هذا الأسبوع')
-                    ->query(fn (Builder $query) => $query->where('last_accessed_at', '>=', now()->subWeek())),
+                TernaryFilter::make('certificate_issued')
+                    ->label('الشهادة')
+                    ->placeholder('الكل')
+                    ->trueLabel('حاصل على شهادة')
+                    ->falseLabel('بدون شهادة'),
             ])
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(3)
             ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([
@@ -256,7 +261,6 @@ class StudentProgressResource extends BaseResource
     {
         return [
             'index' => ListStudentProgress::route('/'),
-            'create' => CreateStudentProgress::route('/create'),
             'view' => ViewStudentProgress::route('/{record}'),
             'edit' => EditStudentProgress::route('/{record}/edit'),
         ];
