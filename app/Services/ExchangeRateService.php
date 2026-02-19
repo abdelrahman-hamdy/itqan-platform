@@ -130,6 +130,20 @@ class ExchangeRateService
                 'source' => 'db_fallback',
             ]);
 
+            $hoursOld = $stored->fetched_at->diffInHours(now());
+            if ($hoursOld > 24) {
+                Log::error('Exchange rate is stale', [
+                    'from' => $from,
+                    'to' => $to,
+                    'rate' => $stored->rate,
+                    'hours_old' => $hoursOld,
+                    'fetched_at' => $stored->fetched_at->toDateTimeString(),
+                ]);
+                if (class_exists(\Sentry\SentrySdk::class)) {
+                    \Sentry\captureMessage("Stale exchange rate in use: {$from}→{$to} ({$hoursOld}h old)", \Sentry\Severity::warning());
+                }
+            }
+
             return (float) $stored->rate;
         }
 

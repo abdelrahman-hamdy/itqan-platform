@@ -34,8 +34,26 @@ class MediaObserver
      */
     private function sanitizeMediaName(string $filename): string
     {
-        // Get the file extension
-        $extension = pathinfo($filename, PATHINFO_EXTENSION);
+        // Get the file extension and lowercase it immediately
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+
+        // Validate the extension against an allowlist of safe file types
+        $allowedExtensions = [
+            // Video
+            'mp4', 'webm', 'mov', 'avi', 'mkv', 'm4v',
+            // Audio
+            'mp3', 'wav', 'ogg', 'm4a', 'aac',
+            // Images
+            'jpg', 'jpeg', 'png', 'gif', 'webp',
+            // Documents
+            'pdf', 'doc', 'docx',
+            // Archives
+            'zip',
+        ];
+
+        if (! empty($extension) && ! in_array($extension, $allowedExtensions)) {
+            throw new \InvalidArgumentException("File type '{$extension}' is not allowed for course media.");
+        }
 
         // Generate a safe filename with timestamp and unique ID
         $timestamp = date('YmdHis');
@@ -53,9 +71,9 @@ class MediaObserver
             $newFilename = substr($newFilename, 0, 200);
         }
 
-        // Add the extension
+        // Add the lowercased extension
         if (! empty($extension)) {
-            $newFilename .= '.'.strtolower($extension);
+            $newFilename .= '.'.$extension;
         }
 
         return $newFilename;

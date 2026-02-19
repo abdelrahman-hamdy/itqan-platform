@@ -354,7 +354,10 @@ class MeetingDataChannelController extends Controller
      */
     public function testConnectivity(QuranSession $session): JsonResponse
     {
-        $this->authorize('participate', $session);
+        $user = auth()->user();
+        if (!$user || !$user->isSuperAdmin()) {
+            abort(403, 'Only super administrators can use the connectivity test endpoint.');
+        }
 
         try {
             $testData = [

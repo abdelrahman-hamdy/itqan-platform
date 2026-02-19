@@ -37,6 +37,11 @@ class TestSubscriptionConsumption extends Command
 
     public function handle()
     {
+        if (app()->environment('production')) {
+            $this->error('This command cannot be run in production.');
+            return Command::FAILURE;
+        }
+
         if ($this->option('cleanup')) {
             return $this->cleanupOnly();
         }

@@ -28,14 +28,19 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Health Check Routes (No Middleware - Must be accessible by load balancers)
+| Health Check Routes
 |--------------------------------------------------------------------------
 */
 
-Route::prefix('health')->group(function () {
-    Route::get('/', [HealthCheckController::class, 'health']);
+// Liveness probes — public but rate-limited (used by load balancers)
+Route::prefix('health')->middleware(['throttle:30,1'])->group(function () {
     Route::get('/live', [HealthCheckController::class, 'live']);
     Route::get('/ready', [HealthCheckController::class, 'ready']);
+});
+
+// Detailed health checks — restricted to authenticated users
+Route::prefix('health')->middleware(['auth:web', 'throttle:10,1'])->group(function () {
+    Route::get('/', [HealthCheckController::class, 'health']);
     Route::get('/db', [HealthCheckController::class, 'database']);
     Route::get('/redis', [HealthCheckController::class, 'redis']);
     Route::get('/queue', [HealthCheckController::class, 'queue']);
