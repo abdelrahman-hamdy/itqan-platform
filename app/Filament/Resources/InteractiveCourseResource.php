@@ -22,7 +22,6 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
-use Filament\Tables\Filters\TrashedFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -185,38 +184,31 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
         return [
             ...parent::getTableFilters(),
 
-            Filter::make('created_at')
+            Filter::make('created_at_from')
                 ->schema([
-                    DatePicker::make('from')
+                    DatePicker::make('value')
                         ->label(__('filament.filters.from_date')),
-                    DatePicker::make('until')
+                ])
+                ->query(fn (Builder $query, array $data): Builder => $query->when(
+                    $data['value'] ?? null,
+                    fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                ))
+                ->indicateUsing(fn (array $data): array => isset($data['value']) && $data['value']
+                    ? ['value' => __('filament.filters.from_date').': '.$data['value']]
+                    : []),
+
+            Filter::make('created_at_until')
+                ->schema([
+                    DatePicker::make('value')
                         ->label(__('filament.filters.to_date')),
                 ])
-                ->query(function (Builder $query, array $data): Builder {
-                    return $query
-                        ->when(
-                            $data['from'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
-                        )
-                        ->when(
-                            $data['until'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
-                        );
-                })
-                ->indicateUsing(function (array $data): array {
-                    $indicators = [];
-                    if ($data['from'] ?? null) {
-                        $indicators['from'] = __('filament.filters.from_date').': '.$data['from'];
-                    }
-                    if ($data['until'] ?? null) {
-                        $indicators['until'] = __('filament.filters.to_date').': '.$data['until'];
-                    }
-
-                    return $indicators;
-                }),
-
-            TrashedFilter::make()
-                ->label(__('filament.filters.trashed')),
+                ->query(fn (Builder $query, array $data): Builder => $query->when(
+                    $data['value'] ?? null,
+                    fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                ))
+                ->indicateUsing(fn (array $data): array => isset($data['value']) && $data['value']
+                    ? ['value' => __('filament.filters.to_date').': '.$data['value']]
+                    : []),
         ];
     }
 
