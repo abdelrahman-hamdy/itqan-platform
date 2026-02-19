@@ -3,13 +3,8 @@
 namespace App\Filament\Resources\AcademicSubjectResource\Pages;
 
 use Filament\Actions\CreateAction;
-use Filament\Schemas\Components\Tabs\Tab;
-use App\Models\AcademicSubject;
 use App\Filament\Resources\AcademicSubjectResource;
-use App\Services\AcademyContextService;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
-use Illuminate\Database\Eloquent\Builder;
 
 class ListAcademicSubjects extends ListRecords
 {
@@ -26,33 +21,4 @@ class ListAcademicSubjects extends ListRecords
         ];
     }
 
-    public function getTabs(): array
-    {
-        return [
-            'all' => Tab::make('الكل')
-                ->badge(function () {
-                    $academyId = AcademyContextService::getCurrentAcademyId();
-
-                    return $academyId ? AcademicSubject::where('academy_id', $academyId)->count() : 0;
-                }),
-
-            'active' => Tab::make('نشطة')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_active', true))
-                ->badge(function () {
-                    $academyId = AcademyContextService::getCurrentAcademyId();
-
-                    return $academyId ? AcademicSubject::where('academy_id', $academyId)->where('is_active', true)->count() : 0;
-                })
-                ->badgeColor('success'),
-
-            'inactive' => Tab::make('غير نشطة')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_active', false))
-                ->badge(function () {
-                    $academyId = AcademyContextService::getCurrentAcademyId();
-
-                    return $academyId ? AcademicSubject::where('academy_id', $academyId)->where('is_active', false)->count() : 0;
-                })
-                ->badgeColor('danger'),
-        ];
-    }
 }

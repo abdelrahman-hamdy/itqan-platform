@@ -24,7 +24,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 class AcademicSubjectResource extends BaseResource
@@ -133,14 +132,7 @@ class AcademicSubjectResource extends BaseResource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                TernaryFilter::make('is_active')
-                    ->label('الحالة')
-                    ->placeholder('الكل')
-                    ->trueLabel('نشطة')
-                    ->falseLabel('غير نشطة'),
-            ])
-            ->deferFilters(false)
+            ->filters([])
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()->label('عرض'),
