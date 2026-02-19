@@ -60,6 +60,11 @@ class QuranPackageResource extends BasePackageResource
         ];
     }
 
+    protected static function getTableFilters(): array
+    {
+        return [];
+    }
+
     public static function canViewAny(): bool
     {
         return auth()->user()?->hasRole(UserType::ADMIN->value) && auth()->user()?->academy_id !== null;

@@ -60,6 +60,11 @@ class QuranPackageResource extends BasePackageResource
             RestoreBulkAction::make(), ForceDeleteBulkAction::make()])];
     }
 
+    protected static function getTableFilters(): array
+    {
+        return [];
+    }
+
     protected static function getTableColumns(): array
     {
         return array_merge([static::getAcademyColumn()], parent::getTableColumns());
