@@ -35,8 +35,6 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -301,22 +299,7 @@ class AcademyManagementResource extends BaseResource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                TrashedFilter::make()->label(__('filament.filters.trashed')),
-
-                TernaryFilter::make('is_active')
-                    ->label('مفعلة')
-                    ->placeholder('الكل')
-                    ->trueLabel('مفعلة')
-                    ->falseLabel('غير مفعلة'),
-
-                TernaryFilter::make('maintenance_mode')
-                    ->label('وضع الصيانة')
-                    ->placeholder('الكل')
-                    ->trueLabel('تحت الصيانة')
-                    ->falseLabel('غير في الصيانة'),
-            ])
-            ->deferFilters(false)
+            ->filters([])
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()->label('عرض'),
