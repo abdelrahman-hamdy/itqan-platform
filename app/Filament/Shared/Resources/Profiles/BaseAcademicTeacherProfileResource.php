@@ -13,6 +13,9 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Schemas\Components\Component;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use App\Enums\Gender;
@@ -76,8 +79,31 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->columns(static::getTableColumns())->filters([])
+        return $table->columns(static::getTableColumns())
+            ->filters(static::getTableFilters())
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
+            ->deferFilters(false)
             ->recordActions(static::getTableActions())->toolbarActions(static::getTableBulkActions());
+    }
+
+    protected static function getTableFilters(): array
+    {
+        return [
+            SelectFilter::make('gender')
+                ->label('الجنس')
+                ->options(Gender::options()),
+
+            TernaryFilter::make('active_status')
+                ->label('حالة الحساب')
+                ->placeholder('الكل')
+                ->trueLabel('نشط')
+                ->falseLabel('غير نشط')
+                ->queries(
+                    true: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', true)),
+                    false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', false)),
+                ),
+        ];
     }
 
     protected static function getTableColumns(): array
