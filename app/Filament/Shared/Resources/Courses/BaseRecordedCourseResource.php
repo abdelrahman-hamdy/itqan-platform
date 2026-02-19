@@ -18,10 +18,8 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\FileUpload;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\DatePicker;
 use App\Enums\CertificateTemplateStyle;
-use App\Enums\DifficultyLevel;
+use Filament\Tables\Enums\FiltersLayout;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\RecordedCourse;
@@ -411,6 +409,8 @@ abstract class BaseRecordedCourseResource extends Resource
         return $table
             ->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions());
@@ -461,13 +461,19 @@ abstract class BaseRecordedCourseResource extends Resource
         return [
             TernaryFilter::make('is_published')
                 ->label(__('filament.is_published'))
+                ->placeholder(__('filament.all'))
                 ->trueLabel(__('filament.tabs.published'))
-                ->falseLabel(__('filament.tabs.draft'))
-                ->placeholder(__('filament.all')),
+                ->falseLabel(__('filament.tabs.draft')),
 
-            SelectFilter::make('difficulty_level')
-                ->label(__('filament.difficulty_level'))
-                ->options(DifficultyLevel::options()),
+            TernaryFilter::make('is_free')
+                ->label(__('filament.course.is_free'))
+                ->placeholder(__('filament.all'))
+                ->trueLabel(__('filament.tabs.free'))
+                ->falseLabel(__('filament.tabs.paid'))
+                ->queries(
+                    true: fn (Builder $query) => $query->where('price', 0),
+                    false: fn (Builder $query) => $query->where('price', '>', 0),
+                ),
 
             SelectFilter::make('subject_id')
                 ->label(__('filament.course.subject'))
@@ -480,46 +486,6 @@ abstract class BaseRecordedCourseResource extends Resource
                 ->relationship('gradeLevel', 'name')
                 ->searchable()
                 ->preload(),
-
-            TernaryFilter::make('is_free')
-                ->label(__('filament.course.is_free'))
-                ->trueLabel(__('filament.tabs.free'))
-                ->falseLabel(__('filament.tabs.paid'))
-                ->placeholder(__('filament.all'))
-                ->queries(
-                    true: fn (Builder $query) => $query->where('price', 0),
-                    false: fn (Builder $query) => $query->where('price', '>', 0),
-                ),
-
-            Filter::make('created_at')
-                ->schema([
-                    DatePicker::make('from')
-                        ->label(__('filament.filters.from_date')),
-                    DatePicker::make('until')
-                        ->label(__('filament.filters.to_date')),
-                ])
-                ->query(function (Builder $query, array $data): Builder {
-                    return $query
-                        ->when(
-                            $data['from'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
-                        )
-                        ->when(
-                            $data['until'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
-                        );
-                })
-                ->indicateUsing(function (array $data): array {
-                    $indicators = [];
-                    if ($data['from'] ?? null) {
-                        $indicators['from'] = __('filament.filters.from_date').': '.$data['from'];
-                    }
-                    if ($data['until'] ?? null) {
-                        $indicators['until'] = __('filament.filters.to_date').': '.$data['until'];
-                    }
-
-                    return $indicators;
-                }),
         ];
     }
 
