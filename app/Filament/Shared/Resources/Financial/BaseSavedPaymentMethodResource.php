@@ -282,12 +282,6 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
                 ->placeholder('الكل')
                 ->trueLabel('نشطة')
                 ->falseLabel('غير نشطة'),
-
-            TernaryFilter::make('is_default')
-                ->label('افتراضية')
-                ->placeholder('الكل')
-                ->trueLabel('افتراضية')
-                ->falseLabel('غير افتراضية'),
         ];
     }
 
