@@ -24,6 +24,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -206,9 +207,12 @@ class QuizResource extends BaseResource
             ->filters([
                 TernaryFilter::make('is_active')
                     ->label('الحالة')
+                    ->placeholder('الكل')
                     ->trueLabel('نشط')
                     ->falseLabel('غير نشط'),
             ])
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([

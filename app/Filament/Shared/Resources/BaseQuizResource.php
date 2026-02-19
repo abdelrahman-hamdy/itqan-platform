@@ -13,6 +13,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Forms\Components\Hidden;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
@@ -235,8 +236,13 @@ abstract class BaseQuizResource extends BaseResource
             ])
             ->filters([
                 TernaryFilter::make('is_active')
-                    ->label('الحالة'),
+                    ->label('الحالة')
+                    ->placeholder('الكل')
+                    ->trueLabel('نشط')
+                    ->falseLabel('غير نشط'),
             ])
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions([
                 static::getAssignAction(),
