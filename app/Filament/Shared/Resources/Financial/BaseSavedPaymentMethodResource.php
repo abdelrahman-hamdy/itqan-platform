@@ -10,9 +10,9 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Actions\Action;
 use Filament\Tables\Table;
 use App\Filament\Resources\BaseResource;
@@ -261,28 +261,38 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
         return [
             SelectFilter::make('gateway')
                 ->label('بوابة الدفع')
-                ->options([
-                    'paymob' => 'Paymob',
-                    'easykash' => 'EasyKash',
-                    'tap' => 'Tap Payments',
-                ]),
+                ->options(fn () => SavedPaymentMethod::query()
+                    ->select('gateway')
+                    ->distinct()
+                    ->whereNotNull('gateway')
+                    ->pluck('gateway')
+                    ->mapWithKeys(fn ($v) => [$v => match ($v) {
+                        'paymob'   => 'Paymob',
+                        'easykash' => 'EasyKash',
+                        'tap'      => 'Tap Payments',
+                        default    => ucfirst($v),
+                    }])
+                    ->toArray()
+                )
+                ->placeholder('الكل'),
 
             SelectFilter::make('type')
                 ->label('النوع')
-                ->options([
-                    SavedPaymentMethod::TYPE_CARD => 'بطاقة',
-                    SavedPaymentMethod::TYPE_WALLET => 'محفظة',
-                    SavedPaymentMethod::TYPE_APPLE_PAY => 'Apple Pay',
-                ]),
-
-            SelectFilter::make('brand')
-                ->label('العلامة التجارية')
-                ->options([
-                    SavedPaymentMethod::BRAND_VISA => 'Visa',
-                    SavedPaymentMethod::BRAND_MASTERCARD => 'Mastercard',
-                    SavedPaymentMethod::BRAND_MEEZA => 'Meeza',
-                    SavedPaymentMethod::BRAND_AMEX => 'Amex',
-                ]),
+                ->options(fn () => SavedPaymentMethod::query()
+                    ->select('type')
+                    ->distinct()
+                    ->whereNotNull('type')
+                    ->pluck('type')
+                    ->mapWithKeys(fn ($v) => [$v => match ($v) {
+                        SavedPaymentMethod::TYPE_CARD         => 'بطاقة',
+                        SavedPaymentMethod::TYPE_WALLET       => 'محفظة',
+                        SavedPaymentMethod::TYPE_APPLE_PAY    => 'Apple Pay',
+                        SavedPaymentMethod::TYPE_BANK_ACCOUNT => 'حساب بنكي',
+                        default                               => ucfirst($v),
+                    }])
+                    ->toArray()
+                )
+                ->placeholder('الكل'),
 
             TernaryFilter::make('is_active')
                 ->label('الحالة')
@@ -295,9 +305,6 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
                 ->placeholder('الكل')
                 ->trueLabel('افتراضية')
                 ->falseLabel('غير افتراضية'),
-
-            TrashedFilter::make()
-                ->label('المحذوفة'),
         ];
     }
 
@@ -363,6 +370,8 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
         return $table
             ->columns(static::getSharedTableColumns())
             ->filters(static::getSharedFilters())
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
