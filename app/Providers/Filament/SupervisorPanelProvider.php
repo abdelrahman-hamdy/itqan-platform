@@ -47,9 +47,7 @@ class SupervisorPanelProvider extends PanelProvider
                 'الدروس الأكاديمية',
                 'الدورات التفاعلية',
                 'التقارير',
-                'الاختبارات',
                 'إدارة المعلمين',
-                'ملفي الشخصي',
             ])
             ->discoverResources(in: app_path('Filament/Supervisor/Resources'), for: 'App\\Filament\\Supervisor\\Resources')
             ->resources([

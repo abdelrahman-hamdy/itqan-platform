@@ -44,7 +44,7 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
 
     protected static string|\UnitEnum|null $navigationGroup = 'التقارير';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 4;
 
     /**
      * Supervisors cannot create certificates.

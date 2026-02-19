@@ -51,9 +51,9 @@ class SupervisorCalendar extends Page implements HasForms
 
     protected static ?string $title = 'تقويم المعلمين';
 
-    protected static ?int $navigationSort = 11;
+    protected static ?int $navigationSort = 1;
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة الجلسات';
+    protected static string | \UnitEnum | null $navigationGroup = '';
 
     // Selected teacher data
     public ?int $selectedTeacherId = null;
