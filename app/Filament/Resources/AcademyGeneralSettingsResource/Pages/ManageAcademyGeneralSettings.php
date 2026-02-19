@@ -209,8 +209,7 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
                 ->label('حفظ الإعدادات')
                 ->action('save')
                 ->keyBindings(['mod+s'])
-                ->color('success')
-                ->icon('heroicon-o-check'),
+                ->color('primary'),
         ];
     }
 }

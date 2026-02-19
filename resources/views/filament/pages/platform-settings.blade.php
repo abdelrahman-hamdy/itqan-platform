@@ -2,7 +2,7 @@
     <form wire:submit="save">
         {{ $this->form }}
 
-        <div class="mt-6 flex justify-end">
+        <div class="mt-6 flex justify-start">
             @foreach ($this->getFormActions() as $action)
                 {{ $action }}
             @endforeach
