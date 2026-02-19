@@ -26,6 +26,7 @@ auth.json
 /public/build/
 /public/hot
 /public/storage
+/public/livewire-uploads
 /public/css/filament/
 /public/js/filament/
 /public/fonts/filament/
