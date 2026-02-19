@@ -3,8 +3,8 @@
 namespace App\Filament\Shared\Resources;
 
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Grid;
@@ -111,6 +111,8 @@ abstract class BaseSessionRecordingResource extends BaseResource
             ->columns(static::getTableColumns())
             ->defaultSort('started_at', 'desc')
             ->filters(static::getTableFilters())
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
@@ -212,31 +214,10 @@ abstract class BaseSessionRecordingResource extends BaseResource
     protected static function getTableFilters(): array
     {
         return [
-            // Status Filter
             SelectFilter::make('status')
                 ->label('الحالة')
                 ->options(RecordingStatus::options())
-                ->multiple(),
-
-            // Date Range Filter - Recordings from today
-            Filter::make('recorded_today')
-                ->label('تسجيلات اليوم')
-                ->query(fn (Builder $query): Builder => $query->whereDate('started_at', today())),
-
-            // Date Range Filter - Recordings this week
-            Filter::make('recorded_this_week')
-                ->label('تسجيلات هذا الأسبوع')
-                ->query(fn (Builder $query): Builder => $query->whereBetween('started_at', [
-                    now()->startOfWeek(),
-                    now()->endOfWeek(),
-                ])),
-
-            // Available Recordings Only (completed with file_path)
-            Filter::make('available_only')
-                ->label('المتاحة للتحميل فقط')
-                ->query(fn (Builder $query): Builder => $query
-                    ->where('status', RecordingStatus::COMPLETED->value)
-                    ->whereNotNull('file_path')),
+                ->searchable(),
         ];
     }
 
