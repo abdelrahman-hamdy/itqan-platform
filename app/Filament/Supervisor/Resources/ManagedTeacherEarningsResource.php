@@ -2,20 +2,22 @@
 
 namespace App\Filament\Supervisor\Resources;
 
-use App\Enums\UserType;
 use App\Filament\Shared\Resources\BaseTeacherEarningResource;
-use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource\Pages;
 use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource\Pages\ListManagedTeacherEarnings;
 use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource\Pages\ViewManagedTeacherEarning;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
-use App\Models\User;
+use DB;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\ViewAction;
-use Filament\Tables\Columns\TextColumn;
+use Filament\Schemas\Components\Grid;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Filament\Forms\Components\TextInput;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -29,7 +31,7 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
 {
     protected static string|\UnitEnum|null $navigationGroup = 'إدارة المعلمين';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     // ========================================
     // Navigation Visibility
@@ -74,7 +76,6 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
                 }
             });
         } else {
-            // No teachers assigned - return empty result
             $query->whereRaw('1 = 0');
         }
 
@@ -109,71 +110,189 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
         ];
     }
 
-    // Note: canCreate(), canEdit(), canDelete() use base class defaults (return false)
-
     // ========================================
-    // Supervisor-Specific Customizations
+    // Table Override with Comprehensive Filters
     // ========================================
 
-    /**
-     * Override table to add teacher filter and session date column.
-     */
     public static function table(Table $table): Table
     {
         return parent::table($table)
-            ->columns([
-                ...static::getTableColumns(),
-                TextColumn::make('session_completed_at')
-                    ->label('تاريخ الجلسة')
-                    ->dateTime('Y-m-d H:i')
-                    ->sortable(),
-            ])
-            ->filters([
-                ...static::getTableFilters(),
-                static::getTeacherFilter(),
-            ])
-            ->deferFilters(false)
-            ->defaultSort('session_completed_at', 'desc');
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(3)
+            ->deferFilters(false);
     }
 
-    /**
-     * Additional teacher filter for Supervisor panel.
-     */
-    protected static function getTeacherFilter(): SelectFilter
+    protected static function getTableFilters(): array
     {
-        return SelectFilter::make('teacher_id')
-            ->label('المعلم')
-            ->options(function () {
-                $teacherIds = BaseSupervisorResource::getAllAssignedTeacherIds();
+        $profileIds = static::getAssignedTeacherProfileIds();
 
-                return User::whereIn('id', $teacherIds)
-                    ->get()
-                    ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
-            })
-            ->query(function (Builder $query, array $data) {
-                if (! empty($data['value'])) {
-                    $userId = $data['value'];
-                    $user = User::find($userId);
+        return [
+            SelectFilter::make('teacher')
+                ->label('المعلم')
+                ->options(function () use ($profileIds) {
+                    $options = [];
 
-                    if ($user) {
-                        if ($user->user_type === UserType::QURAN_TEACHER->value) {
-                            $profile = $user->quranTeacherProfile;
-                            if ($profile) {
-                                $query->where('teacher_type', QuranTeacherProfile::class)
-                                    ->where('teacher_id', $profile->id);
-                            }
-                        } elseif ($user->user_type === UserType::ACADEMIC_TEACHER->value) {
-                            $profile = $user->academicTeacherProfile;
-                            if ($profile) {
-                                $query->where('teacher_type', AcademicTeacherProfile::class)
-                                    ->where('teacher_id', $profile->id);
+                    if (! empty($profileIds['quran'])) {
+                        $quranTeachers = QuranTeacherProfile::with('user')
+                            ->whereIn('id', $profileIds['quran'])
+                            ->get();
+                        foreach ($quranTeachers as $teacher) {
+                            if ($teacher->user) {
+                                $options['quran_'.$teacher->id] = $teacher->user->name.' (قرآن)';
                             }
                         }
                     }
-                }
-            })
-            ->searchable()
-            ->preload();
+
+                    if (! empty($profileIds['academic'])) {
+                        $academicTeachers = AcademicTeacherProfile::with('user')
+                            ->whereIn('id', $profileIds['academic'])
+                            ->get();
+                        foreach ($academicTeachers as $teacher) {
+                            if ($teacher->user) {
+                                $options['academic_'.$teacher->id] = $teacher->user->name.' (أكاديمي)';
+                            }
+                        }
+                    }
+
+                    return $options;
+                })
+                ->searchable()
+                ->multiple()
+                ->query(function (Builder $query, array $data): Builder {
+                    if (! empty($data['values'])) {
+                        $quranIds = [];
+                        $academicIds = [];
+
+                        foreach ($data['values'] as $value) {
+                            $parts = explode('_', $value, 2);
+                            if (count($parts) === 2) {
+                                [$type, $id] = $parts;
+                                if ($type === 'quran') {
+                                    $quranIds[] = $id;
+                                } elseif ($type === 'academic') {
+                                    $academicIds[] = $id;
+                                }
+                            }
+                        }
+
+                        return $query->where(function ($query) use ($quranIds, $academicIds) {
+                            if (! empty($quranIds)) {
+                                $query->orWhere(function ($q) use ($quranIds) {
+                                    $q->where('teacher_type', QuranTeacherProfile::class)
+                                        ->whereIn('teacher_id', $quranIds);
+                                });
+                            }
+                            if (! empty($academicIds)) {
+                                $query->orWhere(function ($q) use ($academicIds) {
+                                    $q->where('teacher_type', AcademicTeacherProfile::class)
+                                        ->whereIn('teacher_id', $academicIds);
+                                });
+                            }
+                        });
+                    }
+
+                    return $query;
+                }),
+
+            SelectFilter::make('teacher_type')
+                ->label('نوع المعلم')
+                ->options([
+                    QuranTeacherProfile::class => 'معلم قرآن',
+                    AcademicTeacherProfile::class => 'معلم أكاديمي',
+                ])
+                ->multiple(),
+
+            SelectFilter::make('earning_month')
+                ->label('الشهر')
+                ->options(function () {
+                    return DB::table('teacher_earnings')
+                        ->selectRaw('DATE_FORMAT(earning_month, "%Y-%m") as month_key, DATE_FORMAT(earning_month, "%M %Y") as month_label, MAX(earning_month) as sort_date')
+                        ->groupBy('month_key', 'month_label')
+                        ->orderBy('sort_date', 'desc')
+                        ->limit(24)
+                        ->pluck('month_label', 'month_key')
+                        ->toArray();
+                })
+                ->query(function (Builder $query, array $data): Builder {
+                    if (! empty($data['value'])) {
+                        [$year, $month] = explode('-', $data['value']);
+
+                        return $query
+                            ->whereYear('earning_month', '=', $year)
+                            ->whereMonth('earning_month', '=', $month);
+                    }
+
+                    return $query;
+                }),
+
+            SelectFilter::make('status')
+                ->label('الحالة')
+                ->options([
+                    'finalized' => 'مؤكد',
+                    'disputed' => 'معترض عليه',
+                    'pending' => 'معلق',
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return match ($data['value'] ?? null) {
+                        'finalized' => $query->where('is_finalized', true)->where('is_disputed', false),
+                        'disputed' => $query->where('is_disputed', true),
+                        'pending' => $query->where('is_finalized', false)->where('is_disputed', false),
+                        default => $query,
+                    };
+                }),
+
+            SelectFilter::make('calculation_method')
+                ->label('طريقة الحساب')
+                ->options([
+                    'individual_rate' => __('earnings.calculation_methods.individual_rate'),
+                    'group_rate' => __('earnings.calculation_methods.group_rate'),
+                    'per_session' => __('earnings.calculation_methods.per_session'),
+                    'per_student' => __('earnings.calculation_methods.per_student'),
+                    'fixed' => __('earnings.calculation_methods.fixed'),
+                ])
+                ->multiple(),
+
+            Filter::make('amount_range')
+                ->schema([
+                    Grid::make(2)
+                        ->schema([
+                            TextInput::make('amount_from')
+                                ->label('من')
+                                ->numeric()
+                                ->prefix(getCurrencySymbol()),
+                            TextInput::make('amount_to')
+                                ->label('إلى')
+                                ->numeric()
+                                ->prefix(getCurrencySymbol()),
+                        ]),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return $query
+                        ->when(
+                            $data['amount_from'],
+                            fn (Builder $query, $amount): Builder => $query->where('amount', '>=', $amount),
+                        )
+                        ->when(
+                            $data['amount_to'],
+                            fn (Builder $query, $amount): Builder => $query->where('amount', '<=', $amount),
+                        );
+                })
+                ->indicateUsing(function (array $data): array {
+                    $indicators = [];
+
+                    if ($data['amount_from'] ?? null) {
+                        $indicators[] = Indicator::make('من: '.number_format($data['amount_from'], 2).' '.getCurrencySymbol())
+                            ->removeField('amount_from');
+                    }
+
+                    if ($data['amount_to'] ?? null) {
+                        $indicators[] = Indicator::make('إلى: '.number_format($data['amount_to'], 2).' '.getCurrencySymbol())
+                            ->removeField('amount_to');
+                    }
+
+                    return $indicators;
+                }),
+        ];
     }
 
     // ========================================

@@ -3,8 +3,9 @@
 namespace App\Filament\Supervisor\Widgets;
 
 use App\Enums\InteractiveCourseStatus;
+use App\Filament\Supervisor\Resources\ManagedAcademicTeachersResource;
+use App\Filament\Supervisor\Resources\ManagedQuranTeachersResource;
 use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource;
-use App\Filament\Supervisor\Resources\ManagedTeachersResource;
 use App\Filament\Supervisor\Resources\MonitoredAcademicLessonsResource;
 use App\Filament\Supervisor\Resources\MonitoredAcademicSessionsResource;
 use App\Filament\Supervisor\Resources\MonitoredInteractiveCourseSessionsResource;
@@ -142,18 +143,29 @@ class SupervisorQuickActionsWidget extends Widget
 
         // Teacher management actions (if enabled)
         if ($profile->canManageTeachers()) {
-            $totalTeachers = count($quranTeacherIds) + count($academicTeacherIds);
-
-            if ($totalTeachers > 0) {
+            if (! empty($quranTeacherIds)) {
                 $actions[] = [
-                    'title' => 'إدارة المعلمين',
-                    'count' => $totalTeachers,
+                    'title' => 'معلمو القرآن',
+                    'count' => count($quranTeacherIds),
                     'description' => 'معلم تحت الإدارة',
-                    'url' => ManagedTeachersResource::getUrl('index'),
-                    'icon' => 'heroicon-o-users',
+                    'url' => ManagedQuranTeachersResource::getUrl('index'),
+                    'icon' => 'heroicon-o-book-open',
                     'color' => 'gray',
                 ];
+            }
 
+            if (! empty($academicTeacherIds)) {
+                $actions[] = [
+                    'title' => 'المعلمون الأكاديميون',
+                    'count' => count($academicTeacherIds),
+                    'description' => 'معلم تحت الإدارة',
+                    'url' => ManagedAcademicTeachersResource::getUrl('index'),
+                    'icon' => 'heroicon-o-academic-cap',
+                    'color' => 'gray',
+                ];
+            }
+
+            if (! empty($quranTeacherIds) || ! empty($academicTeacherIds)) {
                 $actions[] = [
                     'title' => 'أرباح المعلمين',
                     'count' => '',
