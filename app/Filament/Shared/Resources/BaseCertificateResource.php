@@ -11,7 +11,9 @@ use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Forms\Components\DatePicker;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -175,22 +177,22 @@ abstract class BaseCertificateResource extends BaseResource
                     ->options(CertificateType::class)
                     ->multiple(),
 
-                SelectFilter::make('template_style')
-                    ->label('التصميم')
-                    ->options(CertificateTemplateStyle::class)
-                    ->multiple(),
-
-                Filter::make('is_manual')
-                    ->label('يدوية فقط')
-                    ->query(fn (Builder $query): Builder => $query->where('is_manual', true)),
+                TernaryFilter::make('is_manual')
+                    ->label('نوع الإصدار')
+                    ->placeholder('الكل')
+                    ->trueLabel('يدوية')
+                    ->falseLabel('تلقائية'),
 
                 Filter::make('issued_at')
+                    ->label('تاريخ الإصدار')
                     ->schema([
                         DatePicker::make('issued_from')
                             ->label('من تاريخ'),
                         DatePicker::make('issued_until')
                             ->label('إلى تاريخ'),
                     ])
+                    ->columns(2)
+                    ->columnSpan(2)
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
@@ -203,6 +205,8 @@ abstract class BaseCertificateResource extends BaseResource
                             );
                     }),
             ])
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([

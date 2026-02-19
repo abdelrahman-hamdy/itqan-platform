@@ -3,12 +3,10 @@
 namespace App\Filament\Supervisor\Resources;
 
 use App\Constants\DefaultAcademy;
-use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
 use App\Filament\Supervisor\Resources\MonitoredCertificatesResource\Pages\ListMonitoredCertificates;
 use App\Filament\Supervisor\Resources\MonitoredCertificatesResource\Pages\ViewMonitoredCertificate;
 use App\Models\Certificate;
-use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
@@ -19,8 +17,10 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -136,37 +136,22 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
                     ->options(CertificateType::class)
                     ->multiple(),
 
-                SelectFilter::make('template_style')
-                    ->label('التصميم')
-                    ->options(CertificateTemplateStyle::class)
-                    ->multiple(),
-
-                SelectFilter::make('teacher_id')
-                    ->label('المعلم')
-                    ->options(function () {
-                        $allTeacherIds = array_merge(
-                            static::getAssignedQuranTeacherIds(),
-                            static::getAssignedAcademicTeacherIds()
-                        );
-
-                        return User::whereIn('id', $allTeacherIds)
-                            ->get()
-                            ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
-                    })
-                    ->searchable()
-                    ->preload(),
-
-                Filter::make('is_manual')
-                    ->label('يدوية فقط')
-                    ->query(fn (Builder $query): Builder => $query->where('is_manual', true)),
+                TernaryFilter::make('is_manual')
+                    ->label('نوع الإصدار')
+                    ->placeholder('الكل')
+                    ->trueLabel('يدوية')
+                    ->falseLabel('تلقائية'),
 
                 Filter::make('issued_at')
+                    ->label('تاريخ الإصدار')
                     ->schema([
                         DatePicker::make('issued_from')
                             ->label('من تاريخ'),
                         DatePicker::make('issued_until')
                             ->label('إلى تاريخ'),
                     ])
+                    ->columns(2)
+                    ->columnSpan(2)
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
@@ -179,6 +164,8 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
                             );
                     }),
             ])
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([
