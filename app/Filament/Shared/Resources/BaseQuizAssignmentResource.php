@@ -12,6 +12,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Actions\ActionGroup;
@@ -228,13 +229,17 @@ abstract class BaseQuizAssignmentResource extends BaseResource
             ->filters([
                 SelectFilter::make('assignable_type')
                     ->label(static::getAssignableTypeLabel())
-                    ->options(static::getAssignableTypes()),
+                    ->options(static::getAssignableTypes())
+                    ->placeholder('الكل'),
 
                 TernaryFilter::make('is_visible')
-                    ->label('الحالة')
+                    ->label('الظهور')
+                    ->placeholder('الكل')
                     ->trueLabel('مرئي')
                     ->falseLabel('مخفي'),
             ])
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([
