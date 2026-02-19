@@ -90,6 +90,12 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
     protected static function getTableFilters(): array
     {
         return [
+            SelectFilter::make('subject')
+                ->label('المادة')
+                ->relationship('subjects', 'name')
+                ->searchable()
+                ->preload(),
+
             SelectFilter::make('gender')
                 ->label('الجنس')
                 ->options(Gender::options()),
@@ -100,8 +106,8 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
                 ->trueLabel('نشط')
                 ->falseLabel('غير نشط')
                 ->queries(
-                    true: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', true)),
-                    false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', false)),
+                    true: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', 1)),
+                    false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where(fn ($inner) => $inner->where('active_status', 0)->orWhereNull('active_status'))),
                 ),
         ];
     }

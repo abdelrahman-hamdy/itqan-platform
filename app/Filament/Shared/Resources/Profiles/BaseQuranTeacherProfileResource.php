@@ -13,6 +13,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
+use App\Enums\EducationalQualification;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -90,9 +91,19 @@ abstract class BaseQuranTeacherProfileResource extends Resource
     protected static function getTableFilters(): array
     {
         return [
+            SelectFilter::make('educational_qualification')
+                ->label('المؤهل العلمي')
+                ->options(EducationalQualification::options()),
+
             SelectFilter::make('gender')
                 ->label('الجنس')
                 ->options(Gender::options()),
+
+            TernaryFilter::make('offers_trial_sessions')
+                ->label('جلسات تجريبية')
+                ->placeholder('الكل')
+                ->trueLabel('يقدم')
+                ->falseLabel('لا يقدم'),
 
             TernaryFilter::make('active_status')
                 ->label('حالة الحساب')
@@ -100,8 +111,8 @@ abstract class BaseQuranTeacherProfileResource extends Resource
                 ->trueLabel('نشط')
                 ->falseLabel('غير نشط')
                 ->queries(
-                    true: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', true)),
-                    false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', false)),
+                    true: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', 1)),
+                    false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where(fn ($inner) => $inner->where('active_status', 0)->orWhereNull('active_status'))),
                 ),
         ];
     }

@@ -12,6 +12,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use App\Enums\Gender;
 use App\Filament\Concerns\TenantAwareFileUpload;
@@ -290,6 +291,16 @@ abstract class BaseStudentProfileResource extends BaseResource
             SelectFilter::make('gender')
                 ->label('الجنس')
                 ->options(Gender::options()),
+
+            TernaryFilter::make('has_parent')
+                ->label('ولي الأمر')
+                ->placeholder('الكل')
+                ->trueLabel('مرتبط بولي أمر')
+                ->falseLabel('غير مرتبط')
+                ->queries(
+                    true: fn (Builder $query) => $query->whereNotNull('parent_id'),
+                    false: fn (Builder $query) => $query->whereNull('parent_id'),
+                ),
         ];
     }
 
