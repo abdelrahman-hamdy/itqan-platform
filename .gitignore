@@ -26,6 +26,9 @@ auth.json
 /public/build/
 /public/hot
 /public/storage
+/public/css/filament/
+/public/js/filament/
+/public/fonts/filament/
 
 # ----------------
 # Laravel Cache & Storage
