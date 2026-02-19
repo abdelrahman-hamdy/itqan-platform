@@ -410,7 +410,7 @@ abstract class BaseRecordedCourseResource extends Resource
             ->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
             ->filtersLayout(FiltersLayout::AboveContent)
-            ->filtersFormColumns(4)
+            ->filtersFormColumns(3)
             ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions());
@@ -464,16 +464,6 @@ abstract class BaseRecordedCourseResource extends Resource
                 ->placeholder(__('filament.all'))
                 ->trueLabel(__('filament.tabs.published'))
                 ->falseLabel(__('filament.tabs.draft')),
-
-            TernaryFilter::make('is_free')
-                ->label(__('filament.course.is_free'))
-                ->placeholder(__('filament.all'))
-                ->trueLabel(__('filament.tabs.free'))
-                ->falseLabel(__('filament.tabs.paid'))
-                ->queries(
-                    true: fn (Builder $query) => $query->where('price', 0),
-                    false: fn (Builder $query) => $query->where('price', '>', 0),
-                ),
 
             SelectFilter::make('subject_id')
                 ->label(__('filament.course.subject'))
