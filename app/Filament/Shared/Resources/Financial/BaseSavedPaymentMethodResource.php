@@ -261,37 +261,21 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
         return [
             SelectFilter::make('gateway')
                 ->label('بوابة الدفع')
-                ->options(fn () => SavedPaymentMethod::query()
-                    ->select('gateway')
-                    ->distinct()
-                    ->whereNotNull('gateway')
-                    ->pluck('gateway')
-                    ->mapWithKeys(fn ($v) => [$v => match ($v) {
-                        'paymob'   => 'Paymob',
-                        'easykash' => 'EasyKash',
-                        'tap'      => 'Tap Payments',
-                        default    => ucfirst($v),
-                    }])
-                    ->toArray()
-                )
+                ->options([
+                    'paymob'   => 'Paymob',
+                    'easykash' => 'EasyKash',
+                    'tap'      => 'Tap Payments',
+                ])
                 ->placeholder('الكل'),
 
             SelectFilter::make('type')
                 ->label('النوع')
-                ->options(fn () => SavedPaymentMethod::query()
-                    ->select('type')
-                    ->distinct()
-                    ->whereNotNull('type')
-                    ->pluck('type')
-                    ->mapWithKeys(fn ($v) => [$v => match ($v) {
-                        SavedPaymentMethod::TYPE_CARD         => 'بطاقة',
-                        SavedPaymentMethod::TYPE_WALLET       => 'محفظة',
-                        SavedPaymentMethod::TYPE_APPLE_PAY    => 'Apple Pay',
-                        SavedPaymentMethod::TYPE_BANK_ACCOUNT => 'حساب بنكي',
-                        default                               => ucfirst($v),
-                    }])
-                    ->toArray()
-                )
+                ->options([
+                    SavedPaymentMethod::TYPE_CARD         => 'بطاقة',
+                    SavedPaymentMethod::TYPE_WALLET       => 'محفظة',
+                    SavedPaymentMethod::TYPE_APPLE_PAY    => 'Apple Pay',
+                    SavedPaymentMethod::TYPE_BANK_ACCOUNT => 'حساب بنكي',
+                ])
                 ->placeholder('الكل'),
 
             TernaryFilter::make('is_active')
