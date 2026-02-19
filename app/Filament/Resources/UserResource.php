@@ -31,9 +31,6 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -240,24 +237,7 @@ class UserResource extends BaseResource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                SelectFilter::make('user_type')
-                    ->label('نوع المستخدم')
-                    ->options([
-                        'student' => 'طالب',
-                        'parent' => 'ولي أمر',
-                        'quran_teacher' => 'معلم قرآن',
-                        'academic_teacher' => 'معلم أكاديمي',
-                        'supervisor' => 'مشرف',
-                        'admin' => 'مدير',
-                        'super_admin' => 'مدير عام',
-                    ]),
-                TernaryFilter::make('active_status')
-                    ->label('حساب نشط'),
-                TrashedFilter::make()
-                    ->label(__('filament.filters.trashed')),
-            ])
-            ->deferFilters(false)
+            ->filters([])
             ->recordActions([
                 ActionGroup::make([
                     // Redirect to profile resource based on user type

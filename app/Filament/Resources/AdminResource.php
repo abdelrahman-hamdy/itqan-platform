@@ -36,9 +36,6 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -200,20 +197,7 @@ class AdminResource extends BaseResource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                SelectFilter::make('user_type')
-                    ->label('نوع المستخدم')
-                    ->options([
-                        'admin' => 'مدير',
-                    ]),
-                TernaryFilter::make('active_status')
-                    ->label('الحالة')
-                    ->trueLabel('نشط')
-                    ->falseLabel('غير نشط'),
-                TrashedFilter::make()
-                    ->label(__('filament.filters.trashed')),
-            ])
-            ->deferFilters(false)
+            ->filters([])
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()->label('عرض'),
