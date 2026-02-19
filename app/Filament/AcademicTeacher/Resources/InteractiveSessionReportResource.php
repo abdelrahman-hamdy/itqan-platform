@@ -4,7 +4,6 @@ namespace App\Filament\AcademicTeacher\Resources;
 
 use App\Enums\UserType;
 use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages;
-use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\CreateInteractiveSessionReport;
 use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\EditInteractiveSessionReport;
 use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\ListInteractiveSessionReports;
 use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages\ViewInteractiveSessionReport;
@@ -195,7 +194,6 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     {
         return [
             'index' => ListInteractiveSessionReports::route('/'),
-            'create' => CreateInteractiveSessionReport::route('/create'),
             'view' => ViewInteractiveSessionReport::route('/{record}'),
             'edit' => EditInteractiveSessionReport::route('/{record}/edit'),
         ];

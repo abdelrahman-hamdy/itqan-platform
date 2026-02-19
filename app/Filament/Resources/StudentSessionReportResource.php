@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\StudentSessionReportResource\Pages;
-use App\Filament\Resources\StudentSessionReportResource\Pages\CreateStudentSessionReport;
 use App\Filament\Resources\StudentSessionReportResource\Pages\EditStudentSessionReport;
 use App\Filament\Resources\StudentSessionReportResource\Pages\ListStudentSessionReports;
 use App\Filament\Resources\StudentSessionReportResource\Pages\ViewStudentSessionReport;
@@ -305,7 +304,6 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     {
         return [
             'index' => ListStudentSessionReports::route('/'),
-            'create' => CreateStudentSessionReport::route('/create'),
             'view' => ViewStudentSessionReport::route('/{record}'),
             'edit' => EditStudentSessionReport::route('/{record}/edit'),
         ];

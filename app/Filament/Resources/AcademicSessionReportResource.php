@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\AcademicSessionReportResource\Pages;
-use App\Filament\Resources\AcademicSessionReportResource\Pages\CreateAcademicSessionReport;
 use App\Filament\Resources\AcademicSessionReportResource\Pages\EditAcademicSessionReport;
 use App\Filament\Resources\AcademicSessionReportResource\Pages\ListAcademicSessionReports;
 use App\Filament\Resources\AcademicSessionReportResource\Pages\ViewAcademicSessionReport;
@@ -289,7 +288,6 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     {
         return [
             'index' => ListAcademicSessionReports::route('/'),
-            'create' => CreateAcademicSessionReport::route('/create'),
             'view' => ViewAcademicSessionReport::route('/{record}'),
             'edit' => EditAcademicSessionReport::route('/{record}/edit'),
         ];

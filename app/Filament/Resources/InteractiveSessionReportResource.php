@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\InteractiveSessionReportResource\Pages;
-use App\Filament\Resources\InteractiveSessionReportResource\Pages\CreateInteractiveSessionReport;
 use App\Filament\Resources\InteractiveSessionReportResource\Pages\EditInteractiveSessionReport;
 use App\Filament\Resources\InteractiveSessionReportResource\Pages\ListInteractiveSessionReports;
 use App\Filament\Resources\InteractiveSessionReportResource\Pages\ViewInteractiveSessionReport;
@@ -299,7 +298,6 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     {
         return [
             'index' => ListInteractiveSessionReports::route('/'),
-            'create' => CreateInteractiveSessionReport::route('/create'),
             'view' => ViewInteractiveSessionReport::route('/{record}'),
             'edit' => EditInteractiveSessionReport::route('/{record}/edit'),
         ];
