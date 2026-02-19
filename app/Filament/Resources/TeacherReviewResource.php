@@ -248,16 +248,6 @@ class TeacherReviewResource extends BaseTeacherReviewResource
     }
 
     // ========================================
-    // Table Filters Override (with TrashedFilter)
-    // ========================================
-
-    protected static function getTableFilters(): array
-    {
-        // Filters panel removed - using tabs only for filtering
-        return [];
-    }
-
-    // ========================================
     // Pages
     // ========================================
 

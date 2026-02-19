@@ -9,6 +9,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use App\Models\AcademicTeacherProfile;
@@ -157,6 +158,8 @@ abstract class BaseTeacherReviewResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(2)
             ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions());
@@ -222,20 +225,11 @@ abstract class BaseTeacherReviewResource extends Resource
                     AcademicTeacherProfile::class => 'معلم أكاديمي',
                 ]),
 
-            SelectFilter::make('rating')
-                ->label('التقييم')
-                ->options([
-                    '5' => '5 نجوم',
-                    '4' => '4 نجوم',
-                    '3' => '3 نجوم',
-                    '2' => '2 نجوم',
-                    '1' => '1 نجمة',
-                ]),
-
             TernaryFilter::make('is_approved')
-                ->label('الموافقة')
+                ->label('حالة الموافقة')
+                ->placeholder('الكل')
                 ->trueLabel('موافق عليه')
-                ->falseLabel('في الانتظار'),
+                ->falseLabel('بانتظار الموافقة'),
         ];
     }
 
