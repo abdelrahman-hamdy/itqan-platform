@@ -10,6 +10,7 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
+use App\Services\Payment\PaymentGatewayManager;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -261,21 +262,20 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
         return [
             SelectFilter::make('gateway')
                 ->label('بوابة الدفع')
-                ->options([
-                    'paymob'   => 'Paymob',
-                    'easykash' => 'EasyKash',
-                    'tap'      => 'Tap Payments',
-                ])
+                ->options(fn () => collect(app(PaymentGatewayManager::class)->getAvailableGateways())
+                    ->mapWithKeys(fn ($key) => [$key => match ($key) {
+                        'paymob'   => 'Paymob',
+                        'easykash' => 'EasyKash',
+                        'tap'      => 'Tap Payments',
+                        default    => ucfirst($key),
+                    }])
+                    ->toArray()
+                )
                 ->placeholder('الكل'),
 
             SelectFilter::make('type')
                 ->label('النوع')
-                ->options([
-                    SavedPaymentMethod::TYPE_CARD         => 'بطاقة',
-                    SavedPaymentMethod::TYPE_WALLET       => 'محفظة',
-                    SavedPaymentMethod::TYPE_APPLE_PAY    => 'Apple Pay',
-                    SavedPaymentMethod::TYPE_BANK_ACCOUNT => 'حساب بنكي',
-                ])
+                ->options(fn () => SavedPaymentMethod::typeOptions())
                 ->placeholder('الكل'),
 
             TernaryFilter::make('is_active')

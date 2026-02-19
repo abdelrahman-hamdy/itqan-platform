@@ -302,17 +302,26 @@ class SavedPaymentMethod extends Model
     }
 
     /**
+     * All supported payment method types with their Arabic labels.
+     *
+     * @return array<string, string>
+     */
+    public static function typeOptions(): array
+    {
+        return [
+            self::TYPE_CARD         => 'بطاقة',
+            self::TYPE_WALLET       => 'محفظة',
+            self::TYPE_APPLE_PAY    => 'Apple Pay',
+            self::TYPE_BANK_ACCOUNT => 'حساب بنكي',
+        ];
+    }
+
+    /**
      * Get the type display name in Arabic
      */
     public function getTypeDisplayName(): string
     {
-        return match ($this->type) {
-            self::TYPE_CARD => 'بطاقة',
-            self::TYPE_WALLET => 'محفظة',
-            self::TYPE_APPLE_PAY => 'Apple Pay',
-            self::TYPE_BANK_ACCOUNT => 'حساب بنكي',
-            default => $this->type,
-        };
+        return static::typeOptions()[$this->type] ?? $this->type;
     }
 
     /**
