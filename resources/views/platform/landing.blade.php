@@ -7,7 +7,7 @@
 <section data-hero class="relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 py-20" style="min-height: min(100vh, 56rem); padding-top: 6rem;">
     <!-- Background Pattern Layer -->
     <div class="absolute inset-0 opacity-20">
-        <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 100px 100px; background-repeat: repeat;"></div>
+        <div class="absolute inset-0" style="background-image: url('/app-design-assets/bg-pattern1.png'); background-size: 100px 100px; background-repeat: repeat;"></div>
     </div>
     
     <!-- Enhanced Background Elements (static for performance with backdrop-filter) -->
@@ -111,7 +111,7 @@
                 <!-- User Info -->
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-full overflow-hidden">
-                        <img src="/assets/images/user-avatar2.png" alt="أحمد محمد" class="w-full h-full object-cover">
+                        <img src="/app-design-assets/user-avatar2.png" alt="أحمد محمد" class="w-full h-full object-cover">
                     </div>
                     <div>
                         <p class="text-sm font-medium text-white">أحمد محمد</p>
@@ -150,7 +150,7 @@
                 <!-- User Info -->
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-full overflow-hidden">
-                        <img src="/assets/images/user-avatar1.png" alt="فاطمة علي" class="w-full h-full object-cover">
+                        <img src="/app-design-assets/user-avatar1.png" alt="فاطمة علي" class="w-full h-full object-cover">
                     </div>
                     <div>
                         <p class="text-sm font-medium text-white">فاطمة علي</p>
@@ -189,7 +189,7 @@
                 <!-- User Info -->
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-full overflow-hidden">
-                        <img src="/assets/images/user-avatar3.png" alt="عمر حسن" class="w-full h-full object-cover">
+                        <img src="/app-design-assets/user-avatar3.png" alt="عمر حسن" class="w-full h-full object-cover">
                     </div>
                     <div>
                         <p class="text-sm font-medium text-white">عمر حسن</p>
@@ -208,7 +208,7 @@
     
     <!-- Background Pattern -->
     <div class="absolute inset-0 opacity-5">
-        <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
+        <div class="absolute inset-0" style="background-image: url('/app-design-assets/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
 </div>
 
     <!-- Subtle Background Elements -->
@@ -371,7 +371,7 @@
     
     <!-- Background Pattern -->
     <div class="absolute inset-0 opacity-5">
-        <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
+        <div class="absolute inset-0" style="background-image: url('/app-design-assets/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
 </div>
 
     <!-- Subtle Background Elements -->
@@ -535,7 +535,7 @@
     
     <!-- Background Pattern -->
     <div class="absolute inset-0 opacity-5">
-        <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
+        <div class="absolute inset-0" style="background-image: url('/app-design-assets/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
     </div>
     
     <!-- Subtle Background Elements -->

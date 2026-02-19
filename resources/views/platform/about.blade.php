@@ -4,7 +4,7 @@
 
 @section('content')
     <!-- Hero Section -->
-    <div data-hero class="relative text-white py-20 pt-40 overflow-hidden flex items-center justify-center" style="min-height: 70vh; background-image: url('/assets/images/about-us-page-cover.png'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+    <div data-hero class="relative text-white py-20 pt-40 overflow-hidden flex items-center justify-center" style="min-height: 70vh; background-image: url('/app-design-assets/about-us-page-cover.png'); background-size: cover; background-position: center; background-repeat: no-repeat;">
         <!-- Dark Overlay -->
         <div class="absolute inset-0 bg-black/50"></div>
         
@@ -41,7 +41,7 @@
         
         <!-- Background Pattern -->
         <div class="absolute inset-0 opacity-5">
-            <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
+            <div class="absolute inset-0" style="background-image: url('/app-design-assets/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
         </div>
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -127,7 +127,7 @@
         
         <!-- Background Pattern -->
         <div class="absolute inset-0 opacity-5">
-            <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
+            <div class="absolute inset-0" style="background-image: url('/app-design-assets/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
         </div>
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -223,7 +223,7 @@
         
         <!-- Background Pattern -->
         <div class="absolute inset-0 opacity-5">
-            <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
+            <div class="absolute inset-0" style="background-image: url('/app-design-assets/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
         </div>
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -317,7 +317,7 @@
     <section class="py-24 bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden">
         <!-- Background Pattern -->
         <div class="absolute inset-0 opacity-5">
-            <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 100px 100px; background-repeat: repeat;"></div>
+            <div class="absolute inset-0" style="background-image: url('/app-design-assets/bg-pattern1.png'); background-size: 100px 100px; background-repeat: repeat;"></div>
         </div>
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
