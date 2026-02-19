@@ -7,6 +7,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\DatePicker;
@@ -249,14 +250,27 @@ abstract class BasePaymentResource extends BaseResource
             SelectFilter::make('status')
                 ->label(__('filament.status'))
                 ->options(PaymentStatus::options())
-                ->multiple(),
+                ->multiple()
+                ->placeholder('الكل'),
+
+            SelectFilter::make('payment_gateway')
+                ->label('بوابة الدفع')
+                ->options([
+                    'paymob'   => 'Paymob',
+                    'easykash' => 'EasyKash',
+                    'tap'      => 'Tap',
+                ])
+                ->placeholder('الكل'),
 
             Filter::make('paid_at')
+                ->label('تاريخ الدفع')
                 ->schema([
                     DatePicker::make('from')
-                        ->label(__('filament.filters.from_date')),
+                        ->label(__('filament.filters.from_date'))
+                        ->native(false),
                     DatePicker::make('until')
-                        ->label(__('filament.filters.to_date')),
+                        ->label(__('filament.filters.to_date'))
+                        ->native(false),
                 ])
                 ->query(function (Builder $query, array $data): Builder {
                     return $query
@@ -374,6 +388,8 @@ abstract class BasePaymentResource extends BaseResource
         return $table
             ->columns(static::getSharedTableColumns())
             ->filters(static::getSharedFilters())
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
