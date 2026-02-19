@@ -2,9 +2,12 @@
     <form wire:submit="save">
         {{ $this->form }}
 
-        <x-filament-panels::form.actions
-            :actions="$this->getCachedFormActions()"
-            :full-width="$this->hasFullWidthFormActions()"
-        />
+        <div class="mt-6 flex justify-end">
+            @foreach ($this->getFormActions() as $action)
+                {{ $action }}
+            @endforeach
+        </div>
     </form>
+
+    <x-filament-actions::modals />
 </x-filament-panels::page>
