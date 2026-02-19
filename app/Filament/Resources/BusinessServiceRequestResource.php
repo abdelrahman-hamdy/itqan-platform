@@ -26,6 +26,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -256,22 +257,28 @@ class BusinessServiceRequestResource extends Resource
                         'approved' => 'مقبول',
                         'rejected' => 'مرفوض',
                         SessionStatus::COMPLETED->value => 'مكتمل',
-                    ]),
+                    ])
+                    ->placeholder('الكل'),
 
                 SelectFilter::make('service_category_id')
                     ->label('نوع الخدمة')
                     ->relationship('serviceCategory', 'name')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder('الكل'),
 
                 Filter::make('created_at')
                     ->label('تاريخ الطلب')
                     ->schema([
                         DatePicker::make('created_from')
-                            ->label('من تاريخ'),
+                            ->label('من تاريخ')
+                            ->native(false),
                         DatePicker::make('created_until')
-                            ->label('إلى تاريخ'),
+                            ->label('إلى تاريخ')
+                            ->native(false),
                     ])
+                    ->columns(2)
+                    ->columnSpan(2)
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
@@ -284,6 +291,8 @@ class BusinessServiceRequestResource extends Resource
                             );
                     }),
             ])
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([

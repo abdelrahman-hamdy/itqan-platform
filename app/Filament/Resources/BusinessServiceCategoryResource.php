@@ -23,7 +23,6 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
@@ -295,14 +294,7 @@ class BusinessServiceCategoryResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                TernaryFilter::make('is_active')
-                    ->label('الحالة')
-                    ->placeholder('جميع التصنيفات')
-                    ->trueLabel('التصنيفات النشطة فقط')
-                    ->falseLabel('التصنيفات غير النشطة فقط'),
-            ])
-            ->deferFilters(false)
+            ->filters([])
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make()->label('تعديل'),
