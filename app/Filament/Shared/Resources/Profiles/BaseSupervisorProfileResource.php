@@ -174,6 +174,12 @@ abstract class BaseSupervisorProfileResource extends Resource
                 ->label('الجنس')
                 ->options(Gender::options()),
 
+            TernaryFilter::make('can_manage_teachers')
+                ->label('إدارة المعلمين')
+                ->placeholder('الكل')
+                ->trueLabel('يملك صلاحية')
+                ->falseLabel('لا يملك صلاحية'),
+
             TernaryFilter::make('active_status')
                 ->label('حالة الحساب')
                 ->placeholder('الكل')

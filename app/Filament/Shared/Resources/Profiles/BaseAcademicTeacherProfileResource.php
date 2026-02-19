@@ -20,6 +20,7 @@ use Filament\Schemas\Components\Component;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use App\Enums\Gender;
 use App\Filament\Concerns\TenantAwareFileUpload;
+use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
 use App\Services\AcademyContextService;
 use Filament\Facades\Filament;
@@ -92,9 +93,14 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
         return [
             SelectFilter::make('subject')
                 ->label('المادة')
-                ->relationship('subjects', 'name')
+                ->options(fn () => AcademicSubject::query()->pluck('name', 'id')->toArray())
                 ->searchable()
-                ->preload(),
+                ->query(fn (Builder $query, array $data): Builder =>
+                    $query->when(
+                        $data['value'] ?? null,
+                        fn (Builder $q, $value) => $q->whereHas('subjects', fn ($s) => $s->where('academic_subjects.id', $value))
+                    )
+                ),
 
             SelectFilter::make('gender')
                 ->label('الجنس')
