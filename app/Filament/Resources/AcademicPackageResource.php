@@ -65,6 +65,11 @@ class AcademicPackageResource extends BasePackageResource
         return array_merge([static::getAcademyColumn()], parent::getTableColumns());
     }
 
+    protected static function getTableFilters(): array
+    {
+        return [];
+    }
+
     public static function getPages(): array
     {
         return ['index' => ListAcademicPackages::route('/'), 'create' => CreateAcademicPackage::route('/create'),

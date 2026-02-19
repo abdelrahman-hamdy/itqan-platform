@@ -24,6 +24,8 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -179,7 +181,18 @@ class AcademicGradeLevelResource extends BaseResource
                     ->trueLabel('نشط')
                     ->falseLabel('غير نشط'),
 
+                Filter::make('has_courses')
+                    ->label('لديه دورات مسجلة')
+                    ->query(fn (Builder $query) => $query->whereHas('recordedCourses'))
+                    ->toggle(),
+
+                Filter::make('has_interactive_courses')
+                    ->label('لديه دورات تفاعلية')
+                    ->query(fn (Builder $query) => $query->whereHas('interactiveCourses'))
+                    ->toggle(),
             ])
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(3)
             ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([
