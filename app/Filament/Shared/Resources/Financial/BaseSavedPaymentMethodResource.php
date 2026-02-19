@@ -262,11 +262,10 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
         return [
             SelectFilter::make('gateway')
                 ->label('بوابة الدفع')
-                ->options(fn () => collect(app(PaymentGatewayManager::class)->getAvailableGateways())
+                ->options(fn () => collect(array_keys(app(PaymentGatewayManager::class)->getConfiguredGateways()))
                     ->mapWithKeys(fn ($key) => [$key => match ($key) {
                         'paymob'   => 'Paymob',
                         'easykash' => 'EasyKash',
-                        'tap'      => 'Tap Payments',
                         default    => ucfirst($key),
                     }])
                     ->toArray()
