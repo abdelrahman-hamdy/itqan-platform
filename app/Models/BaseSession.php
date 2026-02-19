@@ -169,12 +169,17 @@ abstract class BaseSession extends Model implements MeetingCapable
     protected $fillable = [];
 
     /**
-     * Constructor to initialize fillable from static $baseFillable
+     * Constructor to initialize fillable from static $baseFillable.
+     * Only sets fillable if child hasn't already merged parent fields.
+     * Child classes pre-populate $this->fillable via array_merge() before calling parent.
      */
     public function __construct(array $attributes = [])
     {
-        // Initialize fillable from static base fillable
-        $this->fillable = static::$baseFillable;
+        // Only initialize fillable from base if child hasn't already merged parent fields.
+        // Child classes pre-populate $this->fillable via array_merge() before calling parent.
+        if (empty($this->fillable)) {
+            $this->fillable = static::$baseFillable;
+        }
         parent::__construct($attributes);
     }
 

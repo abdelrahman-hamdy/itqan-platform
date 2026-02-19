@@ -380,11 +380,17 @@ class StudentProfileResource extends BaseStudentProfileResource
 
     protected static function getRecordAcademyId($record): ?int
     {
+        // Use direct academy_id column first (fast path, available since migration)
+        $directId = $record->getAttributes()['academy_id'] ?? null;
+        if ($directId !== null) {
+            return (int) $directId;
+        }
+
+        // Fallback: resolve via grade level for legacy records without academy_id column value
         if (! $record->grade_level_id) {
             return null;
         }
 
-        // Query grade level directly, bypassing the academy scope
         $gradeLevel = AcademicGradeLevel::withoutGlobalScope('academy')
             ->find($record->grade_level_id);
 

@@ -503,6 +503,17 @@ class ChatController extends Controller
             $messageData['body'] = $request->body;
         }
 
+        // Validate attachment if present
+        if ($request->hasFile('attachment')) {
+            $request->validate([
+                'attachment' => 'file|max:20480|mimes:pdf,doc,docx,jpg,jpeg,png,gif,webp,mp4,mp3,aac,zip',
+            ], [
+                'attachment.file' => 'يجب أن يكون المرفق ملفاً صحيحاً',
+                'attachment.max' => 'حجم الملف يجب أن لا يتجاوز 20 ميجابايت',
+                'attachment.mimes' => 'نوع الملف غير مسموح. الأنواع المسموح بها: PDF, Word, صور, فيديو, صوت, ZIP',
+            ]);
+        }
+
         // Handle attachment
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');

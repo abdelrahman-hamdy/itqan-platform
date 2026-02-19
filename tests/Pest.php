@@ -257,6 +257,7 @@ function createStudent(?\App\Models\Academy $academy = null): \App\Models\User
     // Create profile directly - use insert to bypass all model events and scopes
     $profileData = [
         'user_id' => $user->id,
+        'academy_id' => $academy->id,
         'grade_level_id' => $gradeLevel->id,
         'student_code' => 'ST-'.uniqid(),
         'email' => fake()->unique()->safeEmail(),

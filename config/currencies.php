@@ -18,20 +18,22 @@ return [
     | Exchange Rates (relative to SAR)
     |--------------------------------------------------------------------------
     |
-    | Static exchange rates for currency conversion.
+    | Static exchange rates for currency conversion (secondary fallback only).
     | All rates are relative to 1 SAR (Saudi Riyal).
-    | Example: 'EGP' => 13.25 means 1 SAR = 13.25 EGP.
     |
-    | These are approximate rates and should be updated periodically.
-    | For production use with real-time rates, integrate an exchange rate API
-    | and cache the results here.
+    | NOTE: SAR→EGP is NOT listed here. It is fetched live from open.er-api.com
+    | and stored in the exchange_rates database table (auto-refreshed daily).
+    | Run: php artisan exchange-rates:refresh
+    |
+    | Only add currencies here if they don't need real-time accuracy.
     |
     */
 
     'exchange_rates' => [
         'SAR' => 1.0,
         'AED' => 0.98,     // 1 SAR ≈ 0.98 AED
-        'EGP' => 13.25,    // 1 SAR ≈ 13.25 EGP
+        // EGP intentionally excluded — SAR→EGP rate is fetched live from open.er-api.com
+        // and stored in the exchange_rates DB table (run: php artisan exchange-rates:refresh)
         'QAR' => 0.97,     // 1 SAR ≈ 0.97 QAR
         'KWD' => 0.082,    // 1 SAR ≈ 0.082 KWD
         'BHD' => 0.10,     // 1 SAR ≈ 0.10 BHD

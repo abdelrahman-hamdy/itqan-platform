@@ -55,8 +55,21 @@ require __DIR__.'/auth.php';
 |--------------------------------------------------------------------------
 | Session Status and Attendance APIs (Global - Priority Routes)
 |--------------------------------------------------------------------------
-| These routes must be loaded BEFORE subdomain routes to ensure they take
-| priority. They handle session status and attendance for LiveKit interface.
+| URL patterns handled: /web-api/sessions/{id}/status,
+|   /web-api/academic-sessions/{id}/status,
+|   /web-api/quran-sessions/{id}/status,
+|   /web-api/academic-sessions/{id}/attendance-status,
+|   /web-api/quran-sessions/{id}/attendance-status,
+|   /web-api/sessions/{id}/attendance-status
+|   Plus subdomain-scoped: /notifications, /api/notifications/*,
+|   /api/chat/unreadCount, /csrf-token, /custom-file-upload
+|
+| WHY ORDER MATTERS: The global /web-api/* routes (without a domain
+| constraint) must be registered before subdomain route groups so that
+| Laravel's router resolves them first. If subdomain groups were registered
+| first, a request to /web-api/sessions/1/status on a subdomain host could
+| potentially match a wildcard subdomain route before reaching the correct
+| global handler. Loading this file first guarantees correct priority.
 */
 
 require __DIR__.'/web/api.php';
@@ -75,7 +88,27 @@ require __DIR__.'/web/public.php';
 |--------------------------------------------------------------------------
 | Lesson & Course Learning Routes
 |--------------------------------------------------------------------------
-| IMPORTANT: Must be loaded BEFORE other course routes to avoid conflicts.
+| URL patterns handled (all under subdomain domain group):
+|   GET/POST /courses/{courseId}/lessons/{lessonId}/progress
+|   POST     /courses/{courseId}/lessons/{lessonId}/complete
+|   GET      /courses/{courseId}/lessons/{lessonId}
+|   POST/DELETE /courses/{courseId}/lessons/{lessonId}/bookmark
+|   POST/GET /courses/{courseId}/lessons/{lessonId}/notes
+|   POST     /courses/{courseId}/lessons/{lessonId}/rate
+|   GET      /courses/{courseId}/lessons/{lessonId}/transcript
+|   GET      /courses/{courseId}/lessons/{lessonId}/materials
+|   GET/OPTIONS /courses/{courseId}/lessons/{lessonId}/video
+|   GET      /courses/{courseId}/progress
+|   GET/POST /api/courses/{courseId}/... (auth-gated progress API)
+|
+| WHY ORDER MATTERS: All routes in this file use ->where() numeric
+| constraints ([0-9]+) on {courseId} and {lessonId}, so they only match
+| URLs where those segments are integers. However, they must still be
+| registered BEFORE other course routes in student.php/teacher.php that
+| use slug-based or catch-all course parameters — if those slug routes
+| were registered first, a URL like /courses/42/lessons/7 could match a
+| broader slug pattern before reaching the specific lesson route defined
+| here, causing the wrong controller to handle the request.
 */
 
 require __DIR__.'/web/lessons.php';

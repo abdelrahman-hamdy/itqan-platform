@@ -34,12 +34,12 @@ class SubmitStudentHomeworkRequest extends FormRequest
             // For now, use flexible validation
             $validationRules['text'] = 'required_without:files|string|min:10';
             $validationRules['files'] = 'required_without:text|array';
-            $validationRules['files.*'] = 'file|max:10240'; // 10MB
+            $validationRules['files.*'] = 'file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png,gif,webp,zip,rar'; // 10MB
         } else {
             // Default validation for other types
             $validationRules['text'] = 'required_without:files|string|min:10';
             $validationRules['files'] = 'required_without:text|array';
-            $validationRules['files.*'] = 'file|max:10240'; // 10MB
+            $validationRules['files.*'] = 'file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png,gif,webp,zip,rar'; // 10MB
         }
 
         return $validationRules;
@@ -62,6 +62,7 @@ class SubmitStudentHomeworkRequest extends FormRequest
             'files.array' => 'يجب أن تكون الملفات مصفوفة',
             'files.*.file' => 'يجب أن يكون كل عنصر ملفاً صحيحاً',
             'files.*.max' => 'حجم الملف يجب أن لا يتجاوز 10 ميجابايت',
+            'files.*.mimes' => 'نوع الملف غير مسموح. الأنواع المسموح بها: PDF, Word, صور, ZIP',
         ];
     }
 }

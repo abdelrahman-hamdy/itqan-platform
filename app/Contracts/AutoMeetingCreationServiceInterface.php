@@ -98,6 +98,7 @@ interface AutoMeetingCreationServiceInterface
      *               - meeting_url: Created meeting URL (if successful)
      *               - room_name: Created room name (if successful)
      *               - error: Error message (if failed)
+     * @note Returns immediately with error in production environment
      */
     public function testMeetingCreation(QuranSession $session): array;
 }

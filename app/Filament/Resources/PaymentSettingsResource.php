@@ -11,6 +11,7 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -160,6 +161,27 @@ class PaymentSettingsResource extends BaseResource
                     ->collapsible()
                     ->collapsed()
                     ->schema([
+                        Placeholder::make('sar_egp_rate_info')
+                            ->label('سعر التحويل SAR ← EGP (للباي موب فقط)')
+                            ->content(function (): \Illuminate\Support\HtmlString {
+                                $service = app(\App\Services\ExchangeRateService::class);
+                                $stored = $service->getStoredRate('SAR', 'EGP');
+
+                                if (! $stored) {
+                                    return new \Illuminate\Support\HtmlString(
+                                        '<span class="text-warning-600 dark:text-warning-400">لم يتم جلب سعر الصرف بعد. قم بتشغيل: <code>php artisan exchange-rates:refresh</code></span>'
+                                    );
+                                }
+
+                                $rate = number_format($stored['rate'], 4);
+                                $updatedAt = $stored['fetched_at']->format('Y-m-d H:i');
+
+                                return new \Illuminate\Support\HtmlString(
+                                    "<strong>1 SAR = {$rate} EGP</strong><br><small class=\"text-gray-500\">آخر تحديث: {$updatedAt}</small>"
+                                );
+                            })
+                            ->columnSpanFull(),
+
                         Toggle::make('payment_settings.paymob.use_global')
                             ->label('استخدام البيانات العامة')
                             ->helperText('عند التفعيل، سيتم استخدام بيانات باي موب المحددة في إعدادات المنصة الرئيسية')

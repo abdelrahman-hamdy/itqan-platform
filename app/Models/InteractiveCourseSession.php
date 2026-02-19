@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use DB;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Collection;
@@ -48,31 +47,32 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     ];
 
     /**
-     * Constructor - Merge parent fillable with child-specific fields
-     * This approach avoids duplicating 37 BaseSession fields while maintaining consistency
+     * Constructor - Merge parent fillable with child-specific fields.
+     * Pre-merges $this->fillable before calling parent so BaseSession's constructor
+     * sees a non-empty array and skips its own initialization.
      */
     public function __construct(array $attributes = [])
     {
         // Merge parent's static base fillable fields with child-specific fields FIRST
         $this->fillable = array_merge(parent::$baseFillable, $this->fillable);
 
-        // Call grandparent (Model) constructor directly to avoid BaseSession overwriting fillable
-        Model::__construct($attributes);
+        // Call parent constructor (BaseSession) - it now safely skips fillable init if already set
+        parent::__construct($attributes);
     }
 
     /**
      * Boot method - Override parent's ScopedToAcademyForWeb trait
      *
-     * InteractiveCourseSession doesn't have an academy_id column directly.
-     * It gets academy through the course relationship.
-     * We override the global scope to use whereHas('course') instead.
+     * InteractiveCourseSession has an academy_id column (backfilled from course).
+     * We override the global scope to filter directly on the column instead of
+     * using a slower whereHas('course') subquery.
      */
     protected static function booted(): void
     {
         // Remove parent's academy_web scope that filters by academy_id column
         static::withoutGlobalScope('academy_web');
 
-        // Add our own scope that filters via course relationship
+        // Add our own scope that filters directly via the academy_id column
         static::addGlobalScope('academy_web', function (Builder $builder) {
             // Skip in console context (jobs, commands)
             if (app()->runningInConsole() && ! app()->runningUnitTests()) {
@@ -90,9 +90,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
 
             // Only apply scoping if a specific academy is selected
             if ($currentAcademyId) {
-                $builder->whereHas('course', function (Builder $query) use ($currentAcademyId) {
-                    $query->where('academy_id', $currentAcademyId);
-                });
+                $builder->where('interactive_course_sessions.academy_id', $currentAcademyId);
             }
         });
 

@@ -367,6 +367,16 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
      */
     public function testMeetingCreation(QuranSession $session): array
     {
+        // Safety guard: prevent accidental test meeting creation in production
+        if (app()->isProduction()) {
+            return [
+                'success' => false,
+                'message' => 'Test methods are disabled in production environment',
+                'session_id' => $session->id,
+                'error' => 'Not available in production',
+            ];
+        }
+
         try {
             $videoSettings = VideoSettings::forAcademy($session->academy);
 

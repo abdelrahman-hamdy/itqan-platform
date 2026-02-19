@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ExchangeRate;
 use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -66,6 +67,9 @@ class ExchangeRateService
             // Cache for 1 hour
             Cache::put($cacheKey, $rate, $this->cacheDuration);
 
+            // Also persist to DB as last-known rate
+            $this->persistRate($from, $to, $rate);
+
             Log::channel('payments')->info('Exchange rate fetched from API', [
                 'from' => $from,
                 'to' => $to,
@@ -89,7 +93,7 @@ class ExchangeRateService
     }
 
     /**
-     * Fallback to static rates from config if API fails.
+     * Fallback to static rates from config if API fails, then DB stored rate.
      */
     private function getFallbackRate(string $from, string $to): float
     {
@@ -98,29 +102,78 @@ class ExchangeRateService
         $fromRate = $rates[$from] ?? null;
         $toRate = $rates[$to] ?? null;
 
-        if ($fromRate === null || $toRate === null || $fromRate == 0) {
-            // Ultimate fallback: Use hardcoded SAR→EGP rate
-            if ($from === 'SAR' && $to === 'EGP') {
-                Log::channel('payments')->warning('Using emergency fallback rate for SAR→EGP');
+        if ($fromRate !== null && $toRate !== null && $fromRate != 0) {
+            $amountInSar = 1 / $fromRate;
+            $rate = $amountInSar * $toRate;
 
-                return 12.69; // Emergency fallback (update periodically)
-            }
+            Log::channel('payments')->warning('Using fallback config rates', [
+                'from' => $from,
+                'to' => $to,
+                'rate' => $rate,
+                'source' => 'config_fallback',
+            ]);
 
-            throw new Exception("No fallback rate available for {$from} to {$to}");
+            return $rate;
         }
 
-        // Convert FROM → SAR → TO using config rates
-        $amountInSar = 1 / $fromRate;
-        $rate = $amountInSar * $toRate;
+        // Try DB last-known rate
+        $stored = ExchangeRate::where('from_currency', $from)
+            ->where('to_currency', $to)
+            ->first();
 
-        Log::channel('payments')->warning('Using fallback config rates', [
-            'from' => $from,
-            'to' => $to,
-            'rate' => $rate,
-            'source' => 'config_fallback',
-        ]);
+        if ($stored) {
+            Log::channel('payments')->warning('Using stored DB rate as fallback', [
+                'from' => $from,
+                'to' => $to,
+                'rate' => $stored->rate,
+                'fetched_at' => $stored->fetched_at,
+                'source' => 'db_fallback',
+            ]);
 
-        return $rate;
+            return (float) $stored->rate;
+        }
+
+        throw new Exception("No exchange rate available for {$from} to {$to}. Please run exchange-rates:refresh command.");
+    }
+
+    /**
+     * Persist the fetched exchange rate to the database as a last-known rate.
+     */
+    private function persistRate(string $from, string $to, float $rate): void
+    {
+        try {
+            ExchangeRate::updateOrCreate(
+                ['from_currency' => $from, 'to_currency' => $to],
+                ['rate' => $rate, 'fetched_at' => now()]
+            );
+        } catch (\Exception $e) {
+            Log::channel('payments')->warning('Failed to persist exchange rate to DB', [
+                'from' => $from,
+                'to' => $to,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Get the stored DB rate for display purposes (e.g. Filament admin panel).
+     *
+     * @return array{rate: float, fetched_at: \Illuminate\Support\Carbon}|null
+     */
+    public function getStoredRate(string $from, string $to): ?array
+    {
+        $stored = ExchangeRate::where('from_currency', strtoupper($from))
+            ->where('to_currency', strtoupper($to))
+            ->first();
+
+        if (! $stored) {
+            return null;
+        }
+
+        return [
+            'rate' => (float) $stored->rate,
+            'fetched_at' => $stored->fetched_at,
+        ];
     }
 
     /**
@@ -142,15 +195,14 @@ class ExchangeRateService
 
     /**
      * Clear cached rates (useful for testing or manual refresh).
+     * When no params are provided, does nothing to avoid flushing the entire cache.
      */
-    public function clearCache(string $from = null, string $to = null): void
+    public function clearCache(?string $from = null, ?string $to = null): void
     {
         if ($from && $to) {
-            $cacheKey = "exchange_rate_{$from}_{$to}";
+            $cacheKey = "exchange_rate_" . strtoupper($from) . "_" . strtoupper($to);
             Cache::forget($cacheKey);
-        } else {
-            // Clear all exchange rate caches
-            Cache::flush(); // Or use Cache::tags() if using Redis
         }
+        // No-op when called without params - do NOT flush entire cache
     }
 }

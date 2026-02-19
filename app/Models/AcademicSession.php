@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Services\NotificationService;
 use Exception;
 use DB;
@@ -116,16 +115,17 @@ class AcademicSession extends BaseSession
     ];
 
     /**
-     * Constructor - Merge parent fillable with child-specific fields
-     * This approach avoids duplicating 37 BaseSession fields while maintaining consistency
+     * Constructor - Merge parent fillable with child-specific fields.
+     * Pre-merges $this->fillable before calling parent so BaseSession's constructor
+     * sees a non-empty array and skips its own initialization.
      */
     public function __construct(array $attributes = [])
     {
         // Merge parent's static base fillable fields with child-specific fields FIRST
         $this->fillable = array_merge(parent::$baseFillable, $this->fillable);
 
-        // Call grandparent (Model) constructor directly to avoid BaseSession overwriting fillable
-        Model::__construct($attributes);
+        // Call parent constructor (BaseSession) - it now safely skips fillable init if already set
+        parent::__construct($attributes);
     }
 
     /**

@@ -267,6 +267,19 @@ Schedule::command('payments:send-missed-notifications')
     ->description('Send notifications for successful payments that missed webhook delivery');
 
 // ════════════════════════════════════════════════════════════════
+// EXCHANGE RATE MAINTENANCE
+// ════════════════════════════════════════════════════════════════
+
+// Refresh exchange rates daily (open.er-api.com updates daily)
+// Run at 06:30 after subscription renewals (06:00) complete
+Schedule::command('exchange-rates:refresh')
+    ->name('refresh-exchange-rates')
+    ->dailyAt('06:30')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Fetch latest SAR→EGP exchange rates and persist to database');
+
+// ════════════════════════════════════════════════════════════════
 // HEALTH MONITORING (Spatie Health)
 // ════════════════════════════════════════════════════════════════
 
