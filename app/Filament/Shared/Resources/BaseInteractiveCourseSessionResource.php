@@ -13,7 +13,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\Filter;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Actions\Action;
 use App\Enums\SessionDuration;
@@ -230,6 +230,8 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
             ->columns(static::getTableColumns())
             ->defaultSort('scheduled_at', 'desc')
             ->filters(static::getTableFilters())
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
@@ -308,15 +310,8 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
         return [
             SelectFilter::make('status')
                 ->label('الحالة')
-                ->options(SessionStatus::options()),
-
-            Filter::make('scheduled_today')
-                ->label('جلسات اليوم')
-                ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
-
-            Filter::make('scheduled_this_week')
-                ->label('جلسات هذا الأسبوع')
-                ->query(fn (Builder $query): Builder => $query->thisWeek()),
+                ->options(SessionStatus::options())
+                ->searchable(),
 
             TernaryFilter::make('homework_assigned')
                 ->label('الواجبات')
