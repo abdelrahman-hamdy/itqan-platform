@@ -10,8 +10,8 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use App\Enums\Gender;
 use App\Filament\Concerns\TenantAwareFileUpload;
@@ -219,6 +219,8 @@ abstract class BaseStudentProfileResource extends BaseResource
         return $table
             ->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
@@ -288,9 +290,6 @@ abstract class BaseStudentProfileResource extends BaseResource
             SelectFilter::make('gender')
                 ->label('الجنس')
                 ->options(Gender::options()),
-
-            TrashedFilter::make()
-                ->label(__('filament.filters.trashed')),
         ];
     }
 

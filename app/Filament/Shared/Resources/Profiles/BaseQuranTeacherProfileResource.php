@@ -13,7 +13,6 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Schemas\Components\Component;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use App\Enums\Gender;
@@ -77,8 +76,7 @@ abstract class BaseQuranTeacherProfileResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->columns(static::getTableColumns())->filters(static::getTableFilters())
-            ->deferFilters(false)
+        return $table->columns(static::getTableColumns())->filters([])
             ->recordActions(static::getTableActions())->toolbarActions(static::getTableBulkActions());
     }
 
@@ -93,11 +91,6 @@ abstract class BaseQuranTeacherProfileResource extends Resource
                 ->falseIcon('heroicon-o-x-circle')->trueColor('success')->falseColor('danger'),
             TextColumn::make('created_at')->label('تاريخ الإنشاء')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
         ];
-    }
-
-    protected static function getTableFilters(): array
-    {
-        return [TrashedFilter::make()];
     }
 
     public static function getEloquentQuery(): Builder

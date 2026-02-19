@@ -14,8 +14,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Schemas\Components\Component;
@@ -229,6 +229,8 @@ abstract class BaseParentProfileResource extends Resource
         return $table
             ->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions());
@@ -307,9 +309,6 @@ abstract class BaseParentProfileResource extends Resource
                     true: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', true)),
                     false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', false)),
                 ),
-
-            TrashedFilter::make()
-                ->label(__('filament.filters.trashed')),
         ];
     }
 

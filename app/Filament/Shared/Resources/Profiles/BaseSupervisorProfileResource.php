@@ -13,7 +13,6 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Schemas\Components\Component;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use App\Enums\Gender;
@@ -157,8 +156,7 @@ abstract class BaseSupervisorProfileResource extends Resource
     {
         return $table
             ->columns(static::getTableColumns())
-            ->filters(static::getTableFilters())
-            ->deferFilters(false)
+            ->filters([])
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions());
     }
@@ -197,13 +195,6 @@ abstract class BaseSupervisorProfileResource extends Resource
                 ->dateTime()
                 ->sortable()
                 ->toggleable(isToggledHiddenByDefault: true),
-        ];
-    }
-
-    protected static function getTableFilters(): array
-    {
-        return [
-            TrashedFilter::make(),
         ];
     }
 
