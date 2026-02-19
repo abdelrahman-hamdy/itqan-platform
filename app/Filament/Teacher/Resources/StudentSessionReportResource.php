@@ -194,7 +194,8 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     // ========================================
 
     /**
-     * Custom table columns with session type and scheduled_at.
+     * Teacher-specific table columns extending the base set.
+     * Adds session date and session type; uses base-standard badge/color/enum handling.
      */
     protected static function getTableColumns(): array
     {
@@ -211,84 +212,87 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
 
             TextColumn::make('session.session_type')
                 ->label('نوع الجلسة')
-                ->formatStateUsing(fn (string $state): string => match ($state) {
+                ->formatStateUsing(fn (mixed $state): string => match ((string) $state) {
                     'individual' => 'فردية',
                     'group' => 'جماعية',
-                    default => $state,
+                    default => (string) $state,
                 })
                 ->badge()
-                ->color(fn (string $state): string => match ($state) {
+                ->color(fn (mixed $state): string => match ((string) $state) {
                     'individual' => 'info',
                     'group' => 'success',
                     default => 'gray',
                 }),
 
+            // Use base-standard enum handling via tryFrom to avoid manual match/switch
             TextColumn::make('attendance_status')
+                ->label('الحضور')
                 ->badge()
-                ->label('حالة الحضور')
                 ->formatStateUsing(function (mixed $state): string {
                     if ($state instanceof AttendanceStatus) {
-                        return match ($state) {
-                            AttendanceStatus::ATTENDED => 'حاضر',
-                            AttendanceStatus::LATE => 'متأخر',
-                            AttendanceStatus::LEFT => 'غادر مبكراً',
-                            AttendanceStatus::ABSENT => 'غائب',
-                        };
+                        return $state->label();
                     }
 
-                    return match ($state) {
-                        'attended' => 'حاضر',
-                        'late' => 'متأخر',
-                        'left', 'leaved' => 'غادر مبكراً',
-                        'absent' => 'غائب',
-                        default => (string) $state,
-                    };
+                    return AttendanceStatus::tryFrom($state ?? '')?->label() ?? (string) $state;
                 })
                 ->color(function (mixed $state): string {
                     if ($state instanceof AttendanceStatus) {
-                        return match ($state) {
-                            AttendanceStatus::ATTENDED => 'success',
-                            AttendanceStatus::LATE => 'warning',
-                            AttendanceStatus::LEFT => 'info',
-                            AttendanceStatus::ABSENT => 'danger',
-                        };
+                        return $state->color();
                     }
 
-                    return match ($state) {
-                        'attended' => 'success',
-                        'late' => 'warning',
-                        'left', 'leaved' => 'info',
-                        'absent' => 'danger',
-                        default => 'gray',
-                    };
+                    return AttendanceStatus::tryFrom($state ?? '')?->color() ?? 'gray';
                 }),
 
             TextColumn::make('attendance_percentage')
                 ->label('نسبة الحضور')
-                ->suffix('%')
-                ->numeric(2)
-                ->sortable(),
+                ->numeric()
+                ->sortable()
+                ->formatStateUsing(fn (?string $state): string => $state ? $state.'%' : '-')
+                ->toggleable(),
 
+            TextColumn::make('actual_attendance_minutes')
+                ->label('مدة الحضور')
+                ->formatStateUsing(fn (?string $state): string => $state ? $state.' دقيقة' : '-')
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
+
+            // Base-standard color-coded badges for memorization scores
             TextColumn::make('new_memorization_degree')
-                ->label('درجة الحفظ')
-                ->suffix('/10')
-                ->sortable(),
+                ->label('الحفظ الجديد')
+                ->numeric()
+                ->sortable()
+                ->badge()
+                ->color(fn (?string $state): string => match (true) {
+                    $state === null => 'gray',
+                    (float) $state >= 8 => 'success',
+                    (float) $state >= 6 => 'warning',
+                    default => 'danger',
+                })
+                ->formatStateUsing(fn (?string $state): string => $state ? $state.'/10' : 'لم يقيم'),
 
             TextColumn::make('reservation_degree')
-                ->label('درجة المراجعة')
-                ->suffix('/10')
-                ->sortable(),
+                ->label('المراجعة')
+                ->numeric()
+                ->sortable()
+                ->badge()
+                ->color(fn (?string $state): string => match (true) {
+                    $state === null => 'gray',
+                    (float) $state >= 8 => 'success',
+                    (float) $state >= 6 => 'warning',
+                    default => 'danger',
+                })
+                ->formatStateUsing(fn (?string $state): string => $state ? $state.'/10' : 'لم يقيم'),
 
-            IconColumn::make('is_calculated')
-                ->label('محسوب تلقائياً')
+            IconColumn::make('manually_evaluated')
+                ->label('تعديل يدوي')
                 ->boolean()
-                ->trueIcon('heroicon-o-check-circle')
-                ->falseIcon('heroicon-o-pencil'),
+                ->toggleable(isToggledHiddenByDefault: true),
 
             TextColumn::make('evaluated_at')
                 ->label('تاريخ التقييم')
                 ->dateTime('Y-m-d H:i')
-                ->sortable(),
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
         ];
     }
 
@@ -297,15 +301,41 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     // ========================================
 
     /**
-     * Session type and date range filters for teachers.
+     * Base filters (attendance_status, evaluation_status, student_id) plus
+     * teacher-specific additions: session_type and date_range.
      */
     protected static function getTableFilters(): array
     {
         return [
+            // From base
             SelectFilter::make('attendance_status')
                 ->label('حالة الحضور')
                 ->options(AttendanceStatus::options()),
 
+            // From base — useful for finding reports still needing evaluation
+            SelectFilter::make('evaluation_status')
+                ->label('حالة التقييم')
+                ->options([
+                    'evaluated' => 'تم التقييم',
+                    'not_evaluated' => 'لم يتم التقييم',
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return match ($data['value'] ?? null) {
+                        'evaluated' => $query->where(fn ($q) => $q->whereNotNull('new_memorization_degree')->orWhereNotNull('reservation_degree')),
+                        'not_evaluated' => $query->whereNull('new_memorization_degree')->whereNull('reservation_degree'),
+                        default => $query,
+                    };
+                }),
+
+            // From base — filter by specific student
+            SelectFilter::make('student_id')
+                ->label('الطالب')
+                ->relationship('student', 'first_name', fn (Builder $query) => $query->where('user_type', 'student'))
+                ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->first_name ?? 'طالب #'.$record->id)
+                ->searchable()
+                ->preload(),
+
+            // Teacher-specific — filter by session type (فردية / جماعية)
             SelectFilter::make('session_type')
                 ->label('نوع الجلسة')
                 ->options([
@@ -322,6 +352,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
                     });
                 }),
 
+            // Teacher-specific — date range on session scheduled_at
             Filter::make('date_range')
                 ->schema([
                     DatePicker::make('from')
