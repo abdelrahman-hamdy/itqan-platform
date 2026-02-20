@@ -90,6 +90,7 @@ class PendingHomeworkWidget extends BaseWidget
                     ->color(fn ($state) => $state ? 'danger' : 'success'),
             ])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 Action::make('grade')
                     ->label('تصحيح')

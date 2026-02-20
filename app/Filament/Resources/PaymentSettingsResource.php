@@ -333,6 +333,7 @@ class PaymentSettingsResource extends BaseResource
             ])
             ->filters([])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make()->label('تعديل'),

@@ -403,6 +403,7 @@ class MeetingAttendanceResource extends BaseResource
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()->label('عرض'),

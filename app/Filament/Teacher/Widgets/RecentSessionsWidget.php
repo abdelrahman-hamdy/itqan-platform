@@ -108,6 +108,7 @@ class RecentSessionsWidget extends BaseWidget
                     }),
             ])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 Action::make('view')
                     ->label('عرض')

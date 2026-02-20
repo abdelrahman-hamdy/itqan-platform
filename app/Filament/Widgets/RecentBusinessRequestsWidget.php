@@ -107,6 +107,7 @@ class RecentBusinessRequestsWidget extends BaseWidget
             ->emptyStateIcon('heroicon-o-document-text')
             ->defaultSort('created_at', 'desc')
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->paginated(false)
             ->striped();
     }

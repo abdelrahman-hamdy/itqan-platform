@@ -412,6 +412,7 @@ abstract class BaseRecordedCourseResource extends Resource
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions());
     }

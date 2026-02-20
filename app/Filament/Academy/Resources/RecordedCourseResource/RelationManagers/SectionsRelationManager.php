@@ -147,6 +147,7 @@ class SectionsRelationManager extends RelationManager
                     ->falseLabel('مدفوع'),
             ])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->headerActions([
                 CreateAction::make()
                     ->label('إضافة قسم جديد'),

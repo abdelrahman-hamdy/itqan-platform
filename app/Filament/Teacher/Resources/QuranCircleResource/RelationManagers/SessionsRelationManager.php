@@ -94,6 +94,7 @@ class SessionsRelationManager extends RelationManager
                 //
             ])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->headerActions([
                 CreateAction::make()
                     ->label('إضافة جلسة'),

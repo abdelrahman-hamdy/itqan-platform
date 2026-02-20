@@ -74,6 +74,7 @@ class TodaySessionsWidget extends BaseWidget
             ])
             ->defaultSort('scheduled_at', 'asc')
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->paginated([5, 10, 25])
             ->defaultPaginationPageOption(5)
             ->emptyStateHeading('لا توجد جلسات اليوم')

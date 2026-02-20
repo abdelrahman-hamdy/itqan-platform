@@ -190,6 +190,7 @@ abstract class BaseAcademicSessionReportResource extends BaseResource
             ->filters(static::getTableFilters(), layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
             ->emptyStateHeading('لا توجد تقارير')

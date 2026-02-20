@@ -64,6 +64,7 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
                     ->alignCenter(),
             ])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->emptyStateHeading('لا توجد مسؤوليات محددة')
             ->emptyStateDescription('يمكنك تحديد المعلمين والدورات من صفحة التعديل')
             ->emptyStateIcon('heroicon-o-clipboard-document-list');

@@ -302,6 +302,7 @@ class BusinessServiceCategoryResource extends Resource
             ])
             ->filters([])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make()->label('تعديل'),

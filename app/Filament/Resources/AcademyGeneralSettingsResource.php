@@ -491,6 +491,7 @@ class AcademyGeneralSettingsResource extends BaseResource
             ])
             ->filters([])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()->label('عرض'),

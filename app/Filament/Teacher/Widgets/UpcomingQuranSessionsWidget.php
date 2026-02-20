@@ -81,6 +81,7 @@ class UpcomingQuranSessionsWidget extends BaseWidget
                     ->color(fn ($state) => $state instanceof SessionStatus ? $state->color() : 'gray'),
             ])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 Action::make('view')
                     ->label('عرض')

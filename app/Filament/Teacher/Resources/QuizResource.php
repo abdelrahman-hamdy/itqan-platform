@@ -76,6 +76,7 @@ class QuizResource extends BaseQuizResource
     {
         return parent::table($table)
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make()

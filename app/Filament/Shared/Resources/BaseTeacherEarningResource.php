@@ -269,6 +269,7 @@ abstract class BaseTeacherEarningResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions());
     }

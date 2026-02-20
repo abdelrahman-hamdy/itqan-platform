@@ -123,6 +123,7 @@ class QuizResource extends BaseQuizResource
 
         return $table
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()

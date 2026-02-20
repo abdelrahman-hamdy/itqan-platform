@@ -478,6 +478,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()

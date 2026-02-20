@@ -413,6 +413,7 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     {
         return parent::table($table)
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordUrl(fn (AcademicSubscription $record): string => ViewAcademicSubscription::getUrl([$record->id]));
     }
 

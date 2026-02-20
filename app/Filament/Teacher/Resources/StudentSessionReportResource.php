@@ -393,6 +393,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     {
         return parent::table($table)
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->defaultSort('session.scheduled_at', 'desc')
             ->paginated([10, 25, 50, 100]);
     }

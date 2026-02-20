@@ -233,6 +233,7 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
             ->emptyStateHeading('لا توجد جلسات')

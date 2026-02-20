@@ -126,6 +126,7 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
     {
         return parent::table($table)
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()

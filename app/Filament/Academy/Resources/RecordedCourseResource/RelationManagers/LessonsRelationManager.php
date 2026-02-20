@@ -342,6 +342,7 @@ class LessonsRelationManager extends RelationManager
                     ->falseLabel('مدفوع'),
             ])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->headerActions([
                 CreateAction::make()
                     ->label('إضافة درس جديد')

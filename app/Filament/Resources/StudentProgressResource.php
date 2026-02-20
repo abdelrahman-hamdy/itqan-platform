@@ -223,6 +223,7 @@ class StudentProgressResource extends BaseResource
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()->label('عرض'),

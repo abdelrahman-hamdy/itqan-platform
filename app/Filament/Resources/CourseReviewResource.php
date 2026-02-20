@@ -210,6 +210,7 @@ class CourseReviewResource extends BaseResource
                     ->label(__('filament.filters.trashed')),
             ])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()->label('عرض'),

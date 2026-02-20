@@ -24,6 +24,7 @@ use App\Filament\Resources\QuranSessionResource;
 use App\Filament\Resources\QuranSubscriptionResource;
 use App\Filament\Resources\QuranTrialRequestResource;
 use App\Filament\Resources\RecordedCourseResource;
+use App\Filament\Resources\StudentProfileResource;
 use App\Filament\Resources\TeacherReviewResource;
 use App\Filament\Resources\UserResource;
 use App\Models\AcademicHomeworkSubmission;

@@ -119,7 +119,8 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
         return parent::table($table)
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
-            ->deferFilters(false);
+            ->deferFilters(false)
+            ->deferColumnManager(false);
     }
 
     protected static function getTableFilters(): array

@@ -243,6 +243,7 @@ class UserResource extends BaseResource
             ])
             ->filters([])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 ActionGroup::make([
                     // Redirect to profile resource based on user type

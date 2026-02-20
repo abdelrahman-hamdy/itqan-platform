@@ -153,6 +153,7 @@ class QuestionsRelationManager extends RelationManager
                 //
             ])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->headerActions([
                 CreateAction::make()
                     ->mutateDataUsing(function (array $data): array {

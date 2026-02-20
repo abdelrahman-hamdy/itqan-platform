@@ -110,6 +110,7 @@ class RecentActivitiesWidget extends BaseWidget
                     ->sortable(),
             ])
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions([
                 Action::make('view')
                     ->label('عرض')

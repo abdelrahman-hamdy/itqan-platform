@@ -161,6 +161,7 @@ abstract class BaseTeacherReviewResource extends Resource
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(2)
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions());
     }

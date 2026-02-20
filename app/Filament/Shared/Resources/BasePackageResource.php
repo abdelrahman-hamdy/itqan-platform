@@ -91,6 +91,7 @@ abstract class BasePackageResource extends Resource
     {
         return $table->columns(static::getTableColumns())->filters(static::getTableFilters())
             ->deferFilters(false)
+            ->deferColumnManager(false)
             ->recordActions(static::getTableActions())->toolbarActions(static::getTableBulkActions())->defaultSort('sort_order');
     }
 
