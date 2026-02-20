@@ -95,7 +95,9 @@ class SuperAdminControlPanelWidget extends Widget
                 'label' => 'اشتراكات معلقة',
                 'icon' => 'heroicon-o-credit-card',
                 'color' => 'warning',
-                'url' => QuranSubscriptionResource::getUrl('index'),
+                'url' => route('filament.admin.resources.quran-subscriptions.index', [
+                    'tableFilters[status][value]' => 'pending',
+                ]),
                 'urgent' => true,
             ],
             'trial_requests' => [
@@ -104,7 +106,9 @@ class SuperAdminControlPanelWidget extends Widget
                 'label' => 'طلبات تجربة',
                 'icon' => 'heroicon-o-beaker',
                 'color' => 'warning',
-                'url' => QuranTrialRequestResource::getUrl('index'),
+                'url' => route('filament.admin.resources.quran-trial-requests.index', [
+                    'tableFilters[status][value]' => 'pending',
+                ]),
                 'urgent' => true,
             ],
             'session_requests' => [
@@ -127,7 +131,9 @@ class SuperAdminControlPanelWidget extends Widget
                 'label' => 'مدفوعات معلقة',
                 'icon' => 'heroicon-o-banknotes',
                 'color' => 'danger',
-                'url' => PaymentResource::getUrl('index'),
+                'url' => route('filament.admin.resources.payments.index', [
+                    'tableFilters[status][values][0]' => 'pending',
+                ]),
                 'urgent' => true,
             ],
             'failed_payments' => [
@@ -137,7 +143,9 @@ class SuperAdminControlPanelWidget extends Widget
                 'label' => 'مدفوعات فاشلة اليوم',
                 'icon' => 'heroicon-o-exclamation-circle',
                 'color' => 'danger',
-                'url' => PaymentResource::getUrl('index'),
+                'url' => route('filament.admin.resources.payments.index', [
+                    'tableFilters[status][values][0]' => 'failed',
+                ]),
                 'urgent' => true,
             ],
             'expiring_subs' => [
@@ -152,7 +160,9 @@ class SuperAdminControlPanelWidget extends Widget
                 'label' => 'اشتراكات تنتهي قريباً',
                 'icon' => 'heroicon-o-exclamation-triangle',
                 'color' => 'danger',
-                'url' => QuranSubscriptionResource::getUrl('index'),
+                'url' => route('filament.admin.resources.quran-subscriptions.index', [
+                    'tableFilters[status][value]' => 'active',
+                ]),
                 'urgent' => true,
             ],
             'business_requests' => [
@@ -171,7 +181,9 @@ class SuperAdminControlPanelWidget extends Widget
                 'label' => 'مراجعات بانتظار الموافقة',
                 'icon' => 'heroicon-o-star',
                 'color' => 'info',
-                'url' => TeacherReviewResource::getUrl('index'),
+                'url' => route('filament.admin.resources.teacher-reviews.index', [
+                    'tableFilters[is_approved][value]' => '0',
+                ]),
                 'urgent' => false,
             ],
             'homework' => [
@@ -190,7 +202,9 @@ class SuperAdminControlPanelWidget extends Widget
                 'label' => 'واجبات بانتظار التصحيح',
                 'icon' => 'heroicon-o-document-check',
                 'color' => 'info',
-                'url' => HomeworkSubmissionsResource::getUrl('index'),
+                'url' => route('filament.admin.resources.homework-submissions.index', [
+                    'tableFilters[submission_status][value]' => 'submitted',
+                ]),
                 'urgent' => false,
             ],
             'inactive_users' => [
