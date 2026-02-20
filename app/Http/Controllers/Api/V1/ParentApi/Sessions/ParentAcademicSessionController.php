@@ -92,7 +92,7 @@ class ParentAcademicSessionController extends BaseParentSessionController
 
         $session = AcademicSession::where('id', $id)
             ->whereIn('student_id', $childUserIds)
-            ->with(['academicTeacher.user', 'student.user', 'academicSubscription', 'reports'])
+            ->with(['academicTeacher.user', 'student', 'academicSubscription', 'reports'])
             ->first();
 
         if (! $session) {

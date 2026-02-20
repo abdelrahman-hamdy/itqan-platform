@@ -80,7 +80,7 @@ class HomeworkController extends Controller
             ->with([
                 'academicTeacher.user',
                 'academicSubscription',
-                'student.user',
+                'student',
                 'homeworkSubmissions',
             ]);
 
@@ -117,7 +117,7 @@ class HomeworkController extends Controller
                 'status' => $currentStatus,
                 'child' => [
                     'id' => $session->student_id,
-                    'name' => $session->student?->full_name ?? $session->student?->user?->name,
+                    'name' => $session->student?->full_name ?? $session->student?->name,
                 ],
                 'teacher' => $session->academicTeacher?->user ? [
                     'id' => $session->academicTeacher->user->id,
@@ -207,7 +207,7 @@ class HomeworkController extends Controller
             ->with([
                 'academicTeacher.user',
                 'academicSubscription',
-                'student.user',
+                'student',
                 'homeworkSubmissions',
             ])
             ->first();
@@ -237,7 +237,7 @@ class HomeworkController extends Controller
                 },
                 'child' => [
                     'id' => $session->student_id,
-                    'name' => $session->student?->full_name ?? $session->student?->user?->name,
+                    'name' => $session->student?->full_name ?? $session->student?->name,
                     'avatar' => $session->student?->avatar
                         ? asset('storage/'.$session->student->avatar)
                         : null,

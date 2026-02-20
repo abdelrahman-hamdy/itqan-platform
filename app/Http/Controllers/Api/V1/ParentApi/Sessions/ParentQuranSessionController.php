@@ -93,7 +93,7 @@ class ParentQuranSessionController extends BaseParentSessionController
 
         $session = QuranSession::where('id', $id)
             ->whereIn('student_id', $childUserIds)
-            ->with(['quranTeacher', 'student.user', 'individualCircle', 'circle', 'reports'])
+            ->with(['quranTeacher', 'student', 'individualCircle', 'circle', 'reports'])
             ->first();
 
         if (! $session) {

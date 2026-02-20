@@ -356,6 +356,14 @@ class AcademicSession extends BaseSession
     }
 
     /**
+     * Alias for attendanceRecords() - for consistency with QuranSession/InteractiveCourseSession
+     */
+    public function attendances(): HasMany
+    {
+        return $this->attendanceRecords();
+    }
+
+    /**
      * Get the academic homework assignments for this session
      */
     public function homeworkAssignments(): HasMany

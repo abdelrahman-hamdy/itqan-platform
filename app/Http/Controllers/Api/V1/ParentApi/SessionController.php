@@ -170,11 +170,11 @@ class SessionController extends Controller
         $session = match ($type) {
             'quran' => QuranSession::where('id', $id)
                 ->whereIn('student_id', $childUserIds)
-                ->with(['quranTeacher', 'student.user', 'individualCircle', 'circle', 'reports'])
+                ->with(['quranTeacher', 'student', 'individualCircle', 'circle', 'reports'])
                 ->first(),
             'academic' => AcademicSession::where('id', $id)
                 ->whereIn('student_id', $childUserIds)
-                ->with(['academicTeacher.user', 'student.user', 'academicSubscription', 'reports'])
+                ->with(['academicTeacher.user', 'student', 'academicSubscription', 'reports'])
                 ->first(),
             'interactive' => $this->getInteractiveSession($id, $childUserIds),
             default => null,

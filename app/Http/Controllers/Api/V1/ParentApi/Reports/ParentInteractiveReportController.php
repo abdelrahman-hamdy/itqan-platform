@@ -72,7 +72,7 @@ class ParentInteractiveReportController extends BaseParentReportController
 
         $subscription = CourseSubscription::where('id', $id)
             ->whereIn('student_id', $childUserIds)
-            ->with(['interactiveCourse', 'student.user'])
+            ->with(['interactiveCourse', 'student'])
             ->first();
 
         if (! $subscription) {
@@ -139,7 +139,7 @@ class ParentInteractiveReportController extends BaseParentReportController
             ] : null,
             'child' => [
                 'id' => $subscription->student?->id,
-                'name' => $subscription->student?->user?->name ?? $subscription->student?->full_name,
+                'name' => $subscription->student?->name ?? $subscription->student?->full_name,
             ],
             'progress' => [
                 'completed_sessions' => $subscription->completed_sessions ?? 0,

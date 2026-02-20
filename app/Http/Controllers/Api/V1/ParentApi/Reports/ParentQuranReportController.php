@@ -120,7 +120,7 @@ class ParentQuranReportController extends BaseParentReportController
 
         $subscription = QuranSubscription::where('id', $id)
             ->whereIn('student_id', $childUserIds)
-            ->with(['quranTeacher.user', 'student.user', 'sessions.reports'])
+            ->with(['quranTeacher.user', 'student', 'sessions.reports'])
             ->first();
 
         if (! $subscription) {
@@ -217,7 +217,7 @@ class ParentQuranReportController extends BaseParentReportController
             ],
             'child' => [
                 'id' => $subscription->student?->id,
-                'name' => $subscription->student?->user?->name ?? $subscription->student?->full_name,
+                'name' => $subscription->student?->name ?? $subscription->student?->full_name,
             ],
             'teacher' => $subscription->quranTeacher?->user ? [
                 'id' => $subscription->quranTeacher->user->id,

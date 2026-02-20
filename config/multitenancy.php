@@ -141,6 +141,8 @@ return [
         \App\Jobs\ReconcileOrphanedAttendanceEvents::class,
         // Subscription grace period expiry (iterates over all academies)
         \App\Jobs\ExpireGracePeriodSubscriptions::class,
+        // Earnings calculation (receives session model with academy context via SerializesModels)
+        \App\Jobs\CalculateSessionEarningsJob::class,
         // Spatie Health queue check job (platform-wide, not tenant-specific)
         \Spatie\Health\Jobs\HealthQueueJob::class,
     ],

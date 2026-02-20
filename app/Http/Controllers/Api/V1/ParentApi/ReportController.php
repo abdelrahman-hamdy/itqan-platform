@@ -197,11 +197,11 @@ class ReportController extends Controller
         $subscription = match ($type) {
             'quran' => QuranSubscription::where('id', $id)
                 ->whereIn('student_id', $childUserIds)
-                ->with(['quranTeacher.user', 'student.user', 'sessions.reports'])
+                ->with(['quranTeacher.user', 'student', 'sessions.reports'])
                 ->first(),
             'academic' => AcademicSubscription::where('id', $id)
                 ->whereIn('student_id', $childUserIds)
-                ->with(['academicTeacher.user', 'student.user', 'sessions.reports'])
+                ->with(['academicTeacher.user', 'student', 'sessions.reports'])
                 ->first(),
             default => null,
         };
@@ -232,7 +232,7 @@ class ReportController extends Controller
             ],
             'child' => [
                 'id' => $subscription->student?->id,
-                'name' => $subscription->student?->user?->name ?? $subscription->student?->full_name,
+                'name' => $subscription->student?->name ?? $subscription->student?->full_name,
             ],
             'teacher' => $type === 'quran'
                 ? ($subscription->quranTeacher?->user ? [

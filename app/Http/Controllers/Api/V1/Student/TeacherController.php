@@ -225,7 +225,7 @@ class TeacherController extends Controller
 
         $teacher = AcademicTeacherProfile::where('id', $id)
             ->where('academy_id', $academy->id)
-            ->with(['user', 'subjects', 'gradeLevels', 'packages'])
+            ->with(['user', 'subjects', 'gradeLevels'])
             ->first();
 
         if (! $teacher) {
@@ -271,15 +271,7 @@ class TeacherController extends Controller
                 'available_time_end' => $teacher->available_time_end?->format('H:i'),
                 'is_subscribed' => $lesson !== null,
                 'subscription_id' => $lesson?->id,
-                'available_packages' => $teacher->packages->where('is_active', true)->map(fn ($pkg) => [
-                    'id' => $pkg->id,
-                    'name' => $pkg->name,
-                    'description' => $pkg->description,
-                    'sessions_per_week' => $pkg->sessions_per_week,
-                    'session_duration_minutes' => $pkg->session_duration_minutes,
-                    'monthly_price' => $pkg->monthly_price,
-                    'features' => $pkg->features ?? [],
-                ])->toArray(),
+                'available_packages' => [], // TODO: academic_teacher_packages pivot table not yet created
             ],
         ], __('Teacher retrieved successfully'));
     }

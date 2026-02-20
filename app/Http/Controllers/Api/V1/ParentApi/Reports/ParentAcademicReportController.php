@@ -120,7 +120,7 @@ class ParentAcademicReportController extends BaseParentReportController
 
         $subscription = AcademicSubscription::where('id', $id)
             ->whereIn('student_id', $childUserIds)
-            ->with(['academicTeacher.user', 'student.user', 'sessions.reports'])
+            ->with(['academicTeacher.user', 'student', 'sessions.reports'])
             ->first();
 
         if (! $subscription) {
@@ -214,7 +214,7 @@ class ParentAcademicReportController extends BaseParentReportController
             ],
             'child' => [
                 'id' => $subscription->student?->id,
-                'name' => $subscription->student?->user?->name ?? $subscription->student?->full_name,
+                'name' => $subscription->student?->name ?? $subscription->student?->full_name,
             ],
             'teacher' => $subscription->academicTeacher?->user ? [
                 'id' => $subscription->academicTeacher->user->id,

@@ -166,11 +166,11 @@ class SubscriptionController extends Controller
         $subscription = match ($type) {
             'quran' => QuranSubscription::where('id', $id)
                 ->whereIn('student_id', $childUserIds)
-                ->with(['quranTeacher.user', 'individualCircle', 'circle', 'student.user', 'sessions'])
+                ->with(['quranTeacher.user', 'individualCircle', 'circle', 'student', 'sessions'])
                 ->first(),
             'academic' => AcademicSubscription::where('id', $id)
                 ->whereIn('student_id', $childUserIds)
-                ->with(['academicTeacher.user', 'subject', 'student.user', 'sessions'])
+                ->with(['academicTeacher.user', 'subject', 'student', 'sessions'])
                 ->first(),
             'course' => CourseSubscription::where('id', $id)
                 ->whereIn('student_id', $childUserIds)
@@ -200,7 +200,7 @@ class SubscriptionController extends Controller
 
         if ($type === 'quran') {
             return array_merge($base, [
-                'child_name' => $subscription->student?->user?->name ?? $subscription->student?->full_name,
+                'child_name' => $subscription->student?->name ?? $subscription->student?->full_name,
                 'name' => $subscription->individualCircle?->name ?? $subscription->circle?->name ?? 'اشتراك قرآني',
                 'circle_type' => $subscription->circle_id ? 'group' : 'individual',
                 'teacher' => $subscription->quranTeacher?->user ? [
@@ -232,7 +232,7 @@ class SubscriptionController extends Controller
 
         if ($type === 'academic') {
             return array_merge($base, [
-                'child_name' => $subscription->student?->user?->name ?? 'طالب',
+                'child_name' => $subscription->student?->name ?? 'طالب',
                 'name' => $subscription->subject?->name ?? $subscription->subject_name ?? 'اشتراك أكاديمي',
                 'subject' => $subscription->subject ? [
                     'id' => $subscription->subject->id,
