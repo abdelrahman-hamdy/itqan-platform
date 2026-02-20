@@ -38,6 +38,7 @@ use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class SuperAdminControlPanelWidget extends Widget
 {
@@ -107,11 +108,13 @@ class SuperAdminControlPanelWidget extends Widget
                 'urgent' => true,
             ],
             'session_requests' => [
-                'count' => SessionRequest::where('academy_id', $academyId)
-                    ->whereIn('status', [
-                        SessionRequestStatus::PENDING->value,
-                        SessionRequestStatus::AGREED->value,
-                    ])->count(),
+                'count' => Schema::hasTable('session_requests')
+                    ? SessionRequest::where('academy_id', $academyId)
+                        ->whereIn('status', [
+                            SessionRequestStatus::PENDING->value,
+                            SessionRequestStatus::AGREED->value,
+                        ])->count()
+                    : 0,
                 'label' => 'طلبات جلسات',
                 'icon' => 'heroicon-o-calendar',
                 'color' => 'warning',
