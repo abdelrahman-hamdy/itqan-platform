@@ -1,6 +1,5 @@
 @php
     use Filament\Facades\Filament;
-    use Illuminate\Support\Facades\Storage;
 
     // Get current tenant (academy) - may be null for non-tenant panels
     $tenant = Filament::getTenant();
@@ -33,13 +32,10 @@
     };
 
     // Determine logo URL - only for tenant-based panels with actual logos
+    // logo_url is an accessor on Academy that generates the full URL from the logo column
     $logoUrl = null;
-    if ($tenant) {
-        if ($tenant->logo_url) {
-            $logoUrl = $tenant->logo_url;
-        } elseif ($tenant->logo) {
-            $logoUrl = Storage::url($tenant->logo);
-        }
+    if ($tenant && $tenant->logo) {
+        $logoUrl = $tenant->logo_url;
     }
 @endphp
 

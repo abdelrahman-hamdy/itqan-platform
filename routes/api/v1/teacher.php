@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\Teacher\Quran\CircleController as QuranCircleCon
 use App\Http\Controllers\Api\V1\Teacher\Quran\SessionController as QuranSessionController;
 use App\Http\Controllers\Api\V1\Teacher\ScheduleController;
 use App\Http\Controllers\Api\V1\Teacher\StudentController;
+use App\Http\Controllers\Api\V1\Teacher\TrialRequestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -92,6 +93,25 @@ Route::middleware('api.is.teacher')->group(function () {
             Route::put('/{id}/notes', [QuranSessionController::class, 'updateNotes'])
                 ->name('api.v1.teacher.quran.sessions.notes');
         });
+
+    });
+
+    // Trial Requests (Quran teachers only, but at /teacher/trial-requests to match mobile)
+    Route::prefix('trial-requests')->middleware('api.is.quran-teacher')->group(function () {
+        Route::get('/', [TrialRequestController::class, 'index'])
+            ->name('api.v1.teacher.trial-requests.index');
+
+        Route::get('/{id}', [TrialRequestController::class, 'show'])
+            ->name('api.v1.teacher.trial-requests.show');
+
+        Route::post('/{id}/approve', [TrialRequestController::class, 'approve'])
+            ->name('api.v1.teacher.trial-requests.approve');
+
+        Route::post('/{id}/schedule', [TrialRequestController::class, 'schedule'])
+            ->name('api.v1.teacher.trial-requests.schedule');
+
+        Route::post('/{id}/reject', [TrialRequestController::class, 'reject'])
+            ->name('api.v1.teacher.trial-requests.reject');
     });
 
     // Academic Teacher Routes

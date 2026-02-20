@@ -105,7 +105,7 @@ class TrialRequestController extends Controller
 
         // Check if student already has a pending/approved trial with this teacher
         $existingRequest = QuranTrialRequest::where('student_id', $student->id)
-            ->where('quran_teacher_profile_id', $validated['teacher_id'])
+            ->where('teacher_id', $validated['teacher_id'])
             ->whereIn('status', ['pending', 'approved', 'scheduled'])
             ->first();
 
@@ -117,7 +117,7 @@ class TrialRequestController extends Controller
         $trialRequest = QuranTrialRequest::create([
             'academy_id' => $academy->id,
             'student_id' => $student->id,
-            'quran_teacher_profile_id' => $validated['teacher_id'],
+            'teacher_id' => $validated['teacher_id'],
             'student_notes' => $validated['student_notes'] ?? null,
             'current_level' => $validated['current_level'] ?? null,
             'preferred_time' => $validated['preferred_time'] ?? null,
@@ -174,7 +174,7 @@ class TrialRequestController extends Controller
     {
         return [
             'id' => (string) $request->id,
-            'teacher_id' => (string) $request->quran_teacher_profile_id,
+            'teacher_id' => (string) $request->teacher_id,
             'teacher_name' => $request->quranTeacher?->user?->name ?? $request->quranTeacher?->full_name ?? 'Unknown',
             'teacher_avatar_url' => $request->quranTeacher?->user?->avatar
                 ? asset('storage/'.$request->quranTeacher->user->avatar)

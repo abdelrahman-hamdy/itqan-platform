@@ -99,9 +99,9 @@ class ScheduleController extends Controller
         $sessions = [];
 
         if ($user->isQuranTeacher()) {
-            $quranTeacherId = $user->quranTeacherProfile?->id;
+            $quranTeacherId = $user->id;
 
-            if ($quranTeacherId) {
+            if ($user->quranTeacherProfile) {
                 $quranSessions = QuranSession::where('quran_teacher_id', $quranTeacherId)
                     ->whereBetween('scheduled_at', [$startDate->startOfDay(), $endDate->endOfDay()])
                     ->whereNotIn('status', [SessionStatus::CANCELLED->value])

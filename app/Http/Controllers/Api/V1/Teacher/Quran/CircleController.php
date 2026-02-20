@@ -22,11 +22,12 @@ class CircleController extends Controller
     public function individualIndex(Request $request): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $query = QuranIndividualCircle::where('quran_teacher_id', $quranTeacherId)
             ->with(['student', 'subscription']);
@@ -67,11 +68,12 @@ class CircleController extends Controller
     public function individualShow(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $circle = QuranIndividualCircle::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
@@ -169,11 +171,12 @@ class CircleController extends Controller
     public function groupIndex(Request $request): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $query = QuranCircle::where('quran_teacher_id', $quranTeacherId)
             ->withCount('students');
@@ -208,11 +211,12 @@ class CircleController extends Controller
     public function groupShow(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $circle = QuranCircle::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
@@ -277,11 +281,12 @@ class CircleController extends Controller
     public function groupStudents(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $circle = QuranCircle::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
@@ -350,11 +355,12 @@ class CircleController extends Controller
     public function groupCertificates(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $circle = QuranCircle::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)

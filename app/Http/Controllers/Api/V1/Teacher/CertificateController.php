@@ -110,11 +110,11 @@ class CertificateController extends Controller
         string $achievementText,
         string $templateStyle
     ) {
-        $quranTeacherId = $user->quranTeacherProfile?->id;
-
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             throw new Exception(__('Quran teacher profile not found.'));
         }
+
+        $quranTeacherId = $user->id;
 
         $circle = QuranIndividualCircle::where('id', $circleId)
             ->where('quran_teacher_id', $quranTeacherId)
@@ -152,11 +152,11 @@ class CertificateController extends Controller
         string $achievementText,
         string $templateStyle
     ) {
-        $quranTeacherId = $user->quranTeacherProfile?->id;
-
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             throw new Exception(__('Quran teacher profile not found.'));
         }
+
+        $quranTeacherId = $user->id;
 
         $circle = QuranCircle::where('id', $circleId)
             ->where('quran_teacher_id', $quranTeacherId)

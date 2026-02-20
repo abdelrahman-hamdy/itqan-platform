@@ -80,9 +80,9 @@ class DashboardController extends Controller
             $completedStatus = SessionStatus::COMPLETED->value;
 
             if ($user->isQuranTeacher()) {
-                $quranTeacherId = $user->quranTeacherProfile?->id;
+                $quranTeacherId = $user->id;
 
-                if ($quranTeacherId) {
+                if ($user->quranTeacherProfile) {
                     // Single aggregated query for all Quran stats
                     $quranStats = QuranSession::where('quran_teacher_id', $quranTeacherId)
                         ->selectRaw('
@@ -153,9 +153,9 @@ class DashboardController extends Controller
         $sessions = [];
 
         if ($user->isQuranTeacher()) {
-            $quranTeacherId = $user->quranTeacherProfile?->id;
+            $quranTeacherId = $user->id;
 
-            if ($quranTeacherId) {
+            if ($user->quranTeacherProfile) {
                 $quranSessions = QuranSession::where('quran_teacher_id', $quranTeacherId)
                     ->whereDate('scheduled_at', $today)
                     ->whereNotIn('status', [SessionStatus::CANCELLED->value])
@@ -246,9 +246,9 @@ class DashboardController extends Controller
         $sessions = [];
 
         if ($user->isQuranTeacher()) {
-            $quranTeacherId = $user->quranTeacherProfile?->id;
+            $quranTeacherId = $user->id;
 
-            if ($quranTeacherId) {
+            if ($user->quranTeacherProfile) {
                 $quranSessions = QuranSession::where('quran_teacher_id', $quranTeacherId)
                     ->where('scheduled_at', '>', $now)
                     ->where('scheduled_at', '<=', $endDate)
@@ -313,9 +313,9 @@ class DashboardController extends Controller
         $activities = [];
 
         if ($user->isQuranTeacher()) {
-            $quranTeacherId = $user->quranTeacherProfile?->id;
+            $quranTeacherId = $user->id;
 
-            if ($quranTeacherId) {
+            if ($user->quranTeacherProfile) {
                 $recentQuran = QuranSession::where('quran_teacher_id', $quranTeacherId)
                     ->where('status', SessionStatus::COMPLETED->value)
                     ->with(['student'])

@@ -142,11 +142,11 @@ class MeetingController extends Controller
     protected function getSession($user, string $type, int $id)
     {
         if ($type === 'quran') {
-            $quranTeacherId = $user->quranTeacherProfile?->id;
-
-            if (! $quranTeacherId) {
+            if (! $user->quranTeacherProfile) {
                 return null;
             }
+
+            $quranTeacherId = $user->id;
 
             return QuranSession::where('id', $id)
                 ->where('quran_teacher_id', $quranTeacherId)

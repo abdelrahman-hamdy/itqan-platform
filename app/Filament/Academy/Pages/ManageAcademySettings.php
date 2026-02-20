@@ -89,10 +89,10 @@ class ManageAcademySettings extends Page implements HasForms
 
                 Section::make('العلامة التجارية')
                     ->schema([
-                        FileUpload::make('logo_url')
+                        FileUpload::make('logo')
                             ->label('الشعار')
                             ->image()
-                            ->directory('academies/logos')
+                            ->directory('academy-logos')
                             ->visibility('public')
                             ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/svg+xml'])
                             ->maxSize(2048),
@@ -100,7 +100,7 @@ class ManageAcademySettings extends Page implements HasForms
                         FileUpload::make('favicon')
                             ->label('أيقونة الموقع')
                             ->image()
-                            ->directory('academies/favicons')
+                            ->directory('academy-favicons')
                             ->visibility('public')
                             ->acceptedFileTypes(['image/png', 'image/x-icon', 'image/vnd.microsoft.icon'])
                             ->maxSize(512),

@@ -24,11 +24,12 @@ class SessionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $query = QuranSession::where('quran_teacher_id', $quranTeacherId)
             ->with(['student', 'individualCircle', 'circle']);
@@ -80,11 +81,12 @@ class SessionController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $session = QuranSession::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
@@ -138,11 +140,12 @@ class SessionController extends Controller
     public function complete(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $session = QuranSession::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
@@ -221,11 +224,12 @@ class SessionController extends Controller
     public function cancel(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $session = QuranSession::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
@@ -274,11 +278,12 @@ class SessionController extends Controller
     public function reschedule(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $session = QuranSession::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
@@ -331,11 +336,12 @@ class SessionController extends Controller
     public function markAbsent(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $session = QuranSession::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
@@ -385,11 +391,12 @@ class SessionController extends Controller
     public function evaluate(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $session = QuranSession::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
@@ -451,11 +458,12 @@ class SessionController extends Controller
     public function updateNotes(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (! $quranTeacherId) {
+        if (! $user->quranTeacherProfile) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
+
+        $quranTeacherId = $user->id;
 
         $session = QuranSession::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)

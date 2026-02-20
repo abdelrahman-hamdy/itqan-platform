@@ -27,14 +27,10 @@
         }
     }
 
-    // Determine logo URL - try different accessor methods
+    // Determine logo URL - logo_url is an accessor that generates full URL from logo column
     $logoUrl = null;
-    if ($academy) {
-        if (isset($academy->logo_url) && $academy->logo_url) {
-            $logoUrl = $academy->logo_url;
-        } elseif (isset($academy->logo) && $academy->logo) {
-            $logoUrl = Storage::url($academy->logo);
-        }
+    if ($academy && $academy->logo) {
+        $logoUrl = $academy->logo_url;
     }
 
     // Size mappings

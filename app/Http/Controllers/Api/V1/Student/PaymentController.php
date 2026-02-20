@@ -142,7 +142,7 @@ class PaymentController extends Controller
                     'address' => $academy->address,
                     'phone' => $academy->phone,
                     'email' => $academy->email,
-                    'logo' => $academy->logo_url ? asset('storage/'.$academy->logo_url) : null,
+                    'logo' => $academy->logo_url,
                 ],
             ],
         ], __('Receipt retrieved successfully'));

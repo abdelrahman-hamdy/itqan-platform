@@ -28,9 +28,9 @@ class StudentController extends Controller
         $students = collect();
 
         if ($user->isQuranTeacher()) {
-            $quranTeacherId = $user->quranTeacherProfile?->id;
+            $quranTeacherId = $user->id;
 
-            if ($quranTeacherId) {
+            if ($user->quranTeacherProfile) {
                 // Get students from Quran sessions
                 $quranStudentIds = QuranSession::where('quran_teacher_id', $quranTeacherId)
                     ->distinct()
@@ -133,7 +133,7 @@ class StudentController extends Controller
         $studentUserId = $student->user?->id ?? $student->id;
 
         if ($user->isQuranTeacher()) {
-            $quranTeacherId = $user->quranTeacherProfile?->id;
+            $quranTeacherId = $user->id;
             $hasAccess = QuranSession::where('quran_teacher_id', $quranTeacherId)
                 ->where('student_id', $studentUserId)
                 ->exists();
@@ -155,7 +155,7 @@ class StudentController extends Controller
         $academicStats = null;
 
         if ($user->isQuranTeacher()) {
-            $quranTeacherId = $user->quranTeacherProfile?->id;
+            $quranTeacherId = $user->id;
             $quranSessions = QuranSession::where('quran_teacher_id', $quranTeacherId)
                 ->where('student_id', $studentUserId)
                 ->get();
@@ -242,11 +242,11 @@ class StudentController extends Controller
         $studentUserId = $student->user?->id ?? $student->id;
 
         if ($request->session_type === 'quran') {
-            $quranTeacherId = $user->quranTeacherProfile?->id;
-
-            if (! $quranTeacherId) {
+            if (! $user->quranTeacherProfile) {
                 return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
             }
+
+            $quranTeacherId = $user->id;
 
             $session = QuranSession::where('id', $request->session_id)
                 ->where('quran_teacher_id', $quranTeacherId)
