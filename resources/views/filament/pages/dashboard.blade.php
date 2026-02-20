@@ -52,6 +52,11 @@
                 </div>
             </div>
 
+            {{-- SuperAdmin Control Panel --}}
+            @if(\App\Filament\Widgets\SuperAdminControlPanelWidget::canView())
+                @livewire(\App\Filament\Widgets\SuperAdminControlPanelWidget::class)
+            @endif
+
             <!-- Quick Actions -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Academic Management -->

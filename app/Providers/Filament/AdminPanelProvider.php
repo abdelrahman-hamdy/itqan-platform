@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\Login;
 use Filament\Pages\Dashboard;
+use App\Filament\Widgets\SuperAdminControlPanelWidget;
 use App\Filament\Widgets\SuperAdminStatsWidget;
 use App\Filament\Widgets\SuperAdminMonthlyStatsWidget;
 use App\Filament\Widgets\UserAnalyticsChartWidget;
@@ -99,6 +100,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->widgets([
                 // Only show these specific widgets - no auto-discovery
+                SuperAdminControlPanelWidget::class,
                 SuperAdminStatsWidget::class,
                 SuperAdminMonthlyStatsWidget::class,
                 UserAnalyticsChartWidget::class,
