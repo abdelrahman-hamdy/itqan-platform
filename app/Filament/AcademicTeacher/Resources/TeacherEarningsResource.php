@@ -113,6 +113,7 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
             TextColumn::make('calculation_method')
                 ->label('طريقة الحساب')
                 ->badge()
+                ->toggleable()
                 ->formatStateUsing(fn (string $state): string => match ($state) {
                     'individual_rate' => 'جلسة فردية',
                     'group_rate' => 'جلسة جماعية',

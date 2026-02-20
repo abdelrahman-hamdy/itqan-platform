@@ -165,7 +165,8 @@ class StudentProgressResource extends BaseResource
                 TextColumn::make('lessons_progress')
                     ->label('الدروس')
                     ->getStateUsing(fn ($record) => "{$record->completed_lessons}/{$record->total_lessons}")
-                    ->description(fn ($record) => 'درس مكتمل'),
+                    ->description(fn ($record) => 'درس مكتمل')
+                    ->toggleable(),
 
                 IconColumn::make('certificate_issued')
                     ->label('شهادة')
@@ -180,12 +181,14 @@ class StudentProgressResource extends BaseResource
                     ->label('آخر دخول')
                     ->since()
                     ->sortable()
-                    ->placeholder('لم يدخل بعد'),
+                    ->placeholder('لم يدخل بعد')
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('تاريخ التسجيل')
                     ->date('Y-m-d')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('last_accessed_at', 'desc')
             ->filters([

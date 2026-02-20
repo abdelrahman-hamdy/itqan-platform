@@ -179,53 +179,58 @@ abstract class BaseQuizAssignmentResource extends BaseResource
             ]);
     }
 
+    protected static function getTableColumns(): array
+    {
+        return [
+            static::getAcademyColumn(),
+
+            TextColumn::make('quiz.title')
+                ->label('الاختبار')
+                ->searchable()
+                ->sortable(),
+
+            TextColumn::make('assignable_type')
+                ->label(static::getAssignableTypeLabel())
+                ->formatStateUsing(fn ($state) => static::getAssignableTypes()[$state] ?? $state),
+
+            TextColumn::make('assignable')
+                ->label(static::getAssignableTargetLabel())
+                ->formatStateUsing(fn ($record) => static::formatAssignableName($record)),
+
+            IconColumn::make('is_visible')
+                ->label('مرئي')
+                ->boolean(),
+
+            TextColumn::make('max_attempts')
+                ->label('المحاولات')
+                ->sortable(),
+
+            TextColumn::make('attempts_count')
+                ->label('عدد التقديمات')
+                ->counts('attempts'),
+
+            TextColumn::make('available_from')
+                ->label('متاح من')
+                ->dateTime('Y-m-d H:i')
+                ->placeholder('فوري'),
+
+            TextColumn::make('available_until')
+                ->label('متاح حتى')
+                ->dateTime('Y-m-d H:i')
+                ->placeholder('دائم'),
+
+            TextColumn::make('created_at')
+                ->label('تاريخ الإنشاء')
+                ->dateTime('Y-m-d')
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
+        ];
+    }
+
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([
-                static::getAcademyColumn(),
-
-                TextColumn::make('quiz.title')
-                    ->label('الاختبار')
-                    ->searchable()
-                    ->sortable(),
-
-                TextColumn::make('assignable_type')
-                    ->label(static::getAssignableTypeLabel())
-                    ->formatStateUsing(fn ($state) => static::getAssignableTypes()[$state] ?? $state),
-
-                TextColumn::make('assignable')
-                    ->label(static::getAssignableTargetLabel())
-                    ->formatStateUsing(fn ($record) => static::formatAssignableName($record)),
-
-                IconColumn::make('is_visible')
-                    ->label('مرئي')
-                    ->boolean(),
-
-                TextColumn::make('max_attempts')
-                    ->label('المحاولات')
-                    ->sortable(),
-
-                TextColumn::make('attempts_count')
-                    ->label('عدد التقديمات')
-                    ->counts('attempts'),
-
-                TextColumn::make('available_from')
-                    ->label('متاح من')
-                    ->dateTime('Y-m-d H:i')
-                    ->placeholder('فوري'),
-
-                TextColumn::make('available_until')
-                    ->label('متاح حتى')
-                    ->dateTime('Y-m-d H:i')
-                    ->placeholder('دائم'),
-
-                TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
-                    ->dateTime('Y-m-d')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
+            ->columns(static::getTableColumns())
             ->filters([
                 SelectFilter::make('assignable_type')
                     ->label(static::getAssignableTypeLabel())

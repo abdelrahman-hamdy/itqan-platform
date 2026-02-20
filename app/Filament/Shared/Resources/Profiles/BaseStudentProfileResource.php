@@ -251,7 +251,8 @@ abstract class BaseStudentProfileResource extends BaseResource
             TextColumn::make('gradeLevel.name')
                 ->label('المرحلة الدراسية')
                 ->sortable()
-                ->searchable(),
+                ->searchable()
+                ->toggleable(),
 
             TextColumn::make('parent.full_name')
                 ->label('ولي الأمر')

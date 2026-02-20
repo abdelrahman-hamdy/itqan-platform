@@ -233,7 +233,8 @@ abstract class BaseStudentSessionReportResource extends BaseResource
                     (float) $state >= 6 => 'warning',
                     default => 'danger',
                 })
-                ->formatStateUsing(fn (?string $state): string => $state ? $state.'/10' : 'لم يقيم'),
+                ->formatStateUsing(fn (?string $state): string => $state ? $state.'/10' : 'لم يقيم')
+                ->toggleable(),
 
             TextColumn::make('reservation_degree')
                 ->label('المراجعة')
@@ -246,7 +247,8 @@ abstract class BaseStudentSessionReportResource extends BaseResource
                     (float) $state >= 6 => 'warning',
                     default => 'danger',
                 })
-                ->formatStateUsing(fn (?string $state): string => $state ? $state.'/10' : 'لم يقيم'),
+                ->formatStateUsing(fn (?string $state): string => $state ? $state.'/10' : 'لم يقيم')
+                ->toggleable(),
 
             TextColumn::make('attendance_status')
                 ->label('الحضور')
@@ -268,7 +270,8 @@ abstract class BaseStudentSessionReportResource extends BaseResource
                     }
 
                     return AttendanceStatus::tryFrom($state ?? '')?->color() ?? 'gray';
-                }),
+                })
+                ->toggleable(),
 
             TextColumn::make('attendance_percentage')
                 ->label('نسبة الحضور')

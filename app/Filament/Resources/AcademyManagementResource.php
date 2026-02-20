@@ -258,13 +258,15 @@ class AcademyManagementResource extends BaseResource
                     ->default('غير محدد')
                     ->badge()
                     ->color('warning')
-                    ->icon('heroicon-o-user-circle'),
+                    ->icon('heroicon-o-user-circle')
+                    ->toggleable(),
 
                 TextColumn::make('users_count')
                     ->label('المستخدمين')
                     ->counts('users')
                     ->alignCenter()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('recorded_courses_count')
                     ->label('الدورات المسجلة')
@@ -273,7 +275,8 @@ class AcademyManagementResource extends BaseResource
                     })
                     ->alignCenter()
                     ->badge()
-                    ->color('info'),
+                    ->color('info')
+                    ->toggleable(),
 
                 TextColumn::make('interactive_courses_count')
                     ->label('الدورات التفاعلية')
@@ -282,7 +285,8 @@ class AcademyManagementResource extends BaseResource
                     })
                     ->alignCenter()
                     ->badge()
-                    ->color('warning'),
+                    ->color('warning')
+                    ->toggleable(),
 
                 TextColumn::make('quran_circles_count')
                     ->label('حلقات القرآن')
@@ -291,7 +295,8 @@ class AcademyManagementResource extends BaseResource
                     })
                     ->alignCenter()
                     ->badge()
-                    ->color('success'),
+                    ->color('success')
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')

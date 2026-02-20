@@ -174,7 +174,8 @@ class PortfolioItemResource extends Resource
                     ->size(80)
                     ->disk('public')
                     ->visibility('public')
-                    ->defaultImageUrl(asset('images/portfolio-placeholder.jpg')),
+                    ->defaultImageUrl(asset('images/portfolio-placeholder.jpg'))
+                    ->toggleable(),
 
                 TextColumn::make('project_name')
                     ->label('اسم المشروع')
@@ -187,17 +188,20 @@ class PortfolioItemResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->badge()
-                    ->color('primary'),
+                    ->color('primary')
+                    ->toggleable(),
 
                 TextColumn::make('project_description')
                     ->label('الوصف')
                     ->limit(80)
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
 
                 TextColumn::make('sort_order')
                     ->label('الترتيب')
                     ->sortable()
-                    ->badge(),
+                    ->badge()
+                    ->toggleable(),
 
                 IconColumn::make('is_active')
                     ->label('الحالة')
@@ -205,7 +209,8 @@ class PortfolioItemResource extends Resource
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
-                    ->falseColor('danger'),
+                    ->falseColor('danger')
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')

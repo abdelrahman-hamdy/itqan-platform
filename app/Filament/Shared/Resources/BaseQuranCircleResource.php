@@ -266,12 +266,14 @@ abstract class BaseQuranCircleResource extends Resource
             TextColumn::make('memorization_level')
                 ->badge()
                 ->label('المستوى')
-                ->formatStateUsing(fn (string $state): string => static::formatMemorizationLevel($state)),
+                ->formatStateUsing(fn (string $state): string => static::formatMemorizationLevel($state))
+                ->toggleable(),
 
             TextColumn::make('age_group')
                 ->badge()
                 ->label('الفئة العمرية')
-                ->formatStateUsing(fn (string $state): string => static::formatAgeGroup($state)),
+                ->formatStateUsing(fn (string $state): string => static::formatAgeGroup($state))
+                ->toggleable(),
 
             TextColumn::make('gender_type')
                 ->badge()
@@ -281,17 +283,20 @@ abstract class BaseQuranCircleResource extends Resource
                     'info' => 'male',
                     'success' => 'female',
                     'warning' => 'mixed',
-                ]),
+                ])
+                ->toggleable(),
 
             TextColumn::make('students_count')
                 ->label('المسجلون')
                 ->alignCenter()
                 ->color('info')
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('max_students')
                 ->label('الحد الأقصى')
-                ->alignCenter(),
+                ->alignCenter()
+                ->toggleable(),
 
             TextColumn::make('schedule_days')
                 ->label('أيام الانعقاد')

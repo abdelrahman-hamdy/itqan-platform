@@ -209,7 +209,8 @@ abstract class BaseSupervisorProfileResource extends Resource
                 ->label('البريد الإلكتروني')
                 ->searchable()
                 ->sortable()
-                ->copyable(),
+                ->copyable()
+                ->toggleable(),
             TextColumn::make('phone')
                 ->label('رقم الهاتف')
                 ->searchable()

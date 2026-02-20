@@ -87,6 +87,24 @@ class SessionRecordingResource extends BaseSessionRecordingResource
     }
 
     // ========================================
+    // Table Columns Override (SuperAdmin-specific)
+    // ========================================
+
+    protected static function getTableColumns(): array
+    {
+        $essentialNames = ['session_title', 'status'];
+        $columns = parent::getTableColumns();
+
+        foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
+        }
+
+        return $columns;
+    }
+
+    // ========================================
     // Additional Filters for SuperAdmin
     // ========================================
 

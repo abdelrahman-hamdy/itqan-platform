@@ -106,25 +106,29 @@ class AcademicSubjectResource extends BaseResource
                     ->label('نشطة')
                     ->boolean()
                     ->trueColor('success')
-                    ->falseColor('danger'),
+                    ->falseColor('danger')
+                    ->toggleable(),
 
                 TextColumn::make('teachers_count')
                     ->label('عدد المعلمين')
                     ->counts('teachers')
                     ->badge()
-                    ->color('info'),
+                    ->color('info')
+                    ->toggleable(),
 
                 TextColumn::make('interactive_courses_count')
                     ->label('الدورات التفاعلية')
                     ->counts('interactiveCourses')
                     ->badge()
-                    ->color('success'),
+                    ->color('success')
+                    ->toggleable(),
 
                 TextColumn::make('recorded_courses_count')
                     ->label('الدورات المسجلة')
                     ->counts('recordedCourses')
                     ->badge()
-                    ->color('warning'),
+                    ->color('warning')
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')

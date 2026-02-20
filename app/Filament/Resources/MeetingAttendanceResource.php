@@ -211,35 +211,6 @@ class MeetingAttendanceResource extends BaseResource
                     )
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('user_type')
-                    ->label('النوع')
-                    ->badge()
-                    ->formatStateUsing(fn (string $state): string => __("enums.attendance_user_type.{$state}") ?? $state)
-                    ->color(fn (string $state): string => match ($state) {
-                        'student' => 'info',
-                        'teacher' => 'success',
-                        default => 'gray',
-                    }),
-                TextColumn::make('session_type')
-                    ->label('نوع الجلسة')
-                    ->badge()
-                    ->formatStateUsing(function (?string $state): string {
-                        if (! $state) {
-                            return '-';
-                        }
-                        $key = "enums.session_type.{$state}";
-                        $translated = __($key);
-
-                        return $translated !== $key ? $translated : $state;
-                    })
-                    ->color(fn (?string $state): string => match ($state) {
-                        'quran', 'individual' => 'primary',
-                        'academic' => 'success',
-                        'interactive' => 'warning',
-                        'group' => 'info',
-                        default => 'gray',
-                    })
-                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
@@ -263,12 +234,42 @@ class MeetingAttendanceResource extends BaseResource
                             return (string) $state;
                         }
                     }),
+                TextColumn::make('user_type')
+                    ->label('النوع')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => __("enums.attendance_user_type.{$state}") ?? $state)
+                    ->color(fn (string $state): string => match ($state) {
+                        'student' => 'info',
+                        'teacher' => 'success',
+                        default => 'gray',
+                    })
+                    ->toggleable(),
+                TextColumn::make('session_type')
+                    ->label('نوع الجلسة')
+                    ->badge()
+                    ->formatStateUsing(function (?string $state): string {
+                        if (! $state) {
+                            return '-';
+                        }
+                        $key = "enums.session_type.{$state}";
+                        $translated = __($key);
+
+                        return $translated !== $key ? $translated : $state;
+                    })
+                    ->color(fn (?string $state): string => match ($state) {
+                        'quran', 'individual' => 'primary',
+                        'academic' => 'success',
+                        'interactive' => 'warning',
+                        'group' => 'info',
+                        default => 'gray',
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('attendance_percentage')
                     ->label('نسبة الحضور')
                     ->numeric()
                     ->sortable()
                     ->formatStateUsing(fn (string $state): string => $state.'%')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(),
                 TextColumn::make('total_duration_minutes')
                     ->label('وقت الحضور (دقيقة)')
                     ->numeric()

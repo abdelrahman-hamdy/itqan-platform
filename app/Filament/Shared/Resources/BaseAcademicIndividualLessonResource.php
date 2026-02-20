@@ -194,7 +194,8 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
             TextColumn::make('student.name')
                 ->label('الطالب')
                 ->searchable()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('academicSubject.name')
                 ->label('المادة')
@@ -209,7 +210,8 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
             TextColumn::make('sessions_completed')
                 ->label('الجلسات')
                 ->suffix(fn (AcademicIndividualLesson $record): string => " / {$record->total_sessions}")
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('progress_percentage')
                 ->label('التقدم')
@@ -219,7 +221,8 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
                     (float) $state >= 80 => 'success',
                     (float) $state >= 50 => 'warning',
                     default => 'danger',
-                }),
+                })
+                ->toggleable(),
 
             TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')

@@ -245,24 +245,28 @@ abstract class BaseAcademicSessionResource extends BaseResource
             TextColumn::make('title')
                 ->label('العنوان')
                 ->searchable()
-                ->limit(30),
+                ->limit(30)
+                ->toggleable(),
 
             TextColumn::make('student.id')
                 ->label('الطالب')
                 ->formatStateUsing(fn ($record) => trim(($record->student?->first_name ?? '').' '.($record->student?->last_name ?? '')) ?: 'طالب #'.($record->student_id ?? '-')
                 )
-                ->searchable(),
+                ->searchable()
+                ->toggleable(),
 
             TextColumn::make('scheduled_at')
                 ->label('موعد الجلسة')
                 ->dateTime()
                 ->timezone(fn ($record) => $record->academy?->timezone?->value ?? AcademyContextService::getTimezone())
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('duration_minutes')
                 ->label('المدة')
                 ->suffix(' دقيقة')
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('status')
                 ->badge()
@@ -291,12 +295,14 @@ abstract class BaseAcademicSessionResource extends BaseResource
                     $status = AttendanceStatus::tryFrom($state);
 
                     return $status?->label() ?? $state;
-                }),
+                })
+                ->toggleable(),
 
             IconColumn::make('hasHomework')
                 ->label('واجب')
                 ->boolean()
-                ->getStateUsing(fn ($record) => ! empty($record->homework_description) || ! empty($record->homework_file)),
+                ->getStateUsing(fn ($record) => ! empty($record->homework_description) || ! empty($record->homework_file))
+                ->toggleable(),
 
             TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')

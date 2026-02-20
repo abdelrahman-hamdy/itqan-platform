@@ -231,7 +231,8 @@ abstract class BaseSubscriptionResource extends Resource
                     'warning' => SubscriptionPaymentStatus::PENDING->value,
                     'success' => SubscriptionPaymentStatus::PAID->value,
                     'danger' => SubscriptionPaymentStatus::FAILED->value,
-                ]),
+                ])
+                ->toggleable(),
 
             TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')

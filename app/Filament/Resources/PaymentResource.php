@@ -92,6 +92,24 @@ class PaymentResource extends BasePaymentResource
             ]);
     }
 
+    // ========================================
+    // Table Columns Override (SuperAdmin-specific)
+    // ========================================
+
+    protected static function getSharedTableColumns(): array
+    {
+        $essentialNames = ['payment_code', 'user.first_name', 'status'];
+        $columns = parent::getSharedTableColumns();
+
+        foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
+        }
+
+        return $columns;
+    }
+
     // Table is handled by parent class (BasePaymentResource)
 
     public static function getRelations(): array

@@ -318,22 +318,26 @@ class QuranCircleResource extends BaseQuranCircleResource
             TextColumn::make('name')
                 ->label('اسم الدائرة')
                 ->searchable()
-                ->limit(30),
+                ->limit(30)
+                ->toggleable(),
 
             TextColumn::make('quranTeacher.name')
                 ->label('المعلم')
                 ->searchable()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('memorization_level')
                 ->badge()
                 ->label('المستوى')
-                ->formatStateUsing(fn (string $state): string => static::formatMemorizationLevel($state)),
+                ->formatStateUsing(fn (string $state): string => static::formatMemorizationLevel($state))
+                ->toggleable(),
 
             TextColumn::make('age_group')
                 ->badge()
                 ->label('الفئة العمرية')
-                ->formatStateUsing(fn (string $state): string => static::formatAgeGroup($state)),
+                ->formatStateUsing(fn (string $state): string => static::formatAgeGroup($state))
+                ->toggleable(),
 
             TextColumn::make('gender_type')
                 ->badge()
@@ -343,17 +347,20 @@ class QuranCircleResource extends BaseQuranCircleResource
                     'info' => 'male',
                     'success' => 'female',
                     'warning' => 'mixed',
-                ]),
+                ])
+                ->toggleable(),
 
             TextColumn::make('students_count')
                 ->label('المسجلون')
                 ->alignCenter()
                 ->color('info')
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('max_students')
                 ->label('الحد الأقصى')
-                ->alignCenter(),
+                ->alignCenter()
+                ->toggleable(),
 
             TextColumn::make('schedule_status')
                 ->label('حالة الجدولة')
@@ -402,7 +409,8 @@ class QuranCircleResource extends BaseQuranCircleResource
                     };
                 })
                 ->alignCenter()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
         ];
     }
 

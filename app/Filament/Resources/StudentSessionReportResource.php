@@ -230,11 +230,15 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     {
         $columns = parent::getTableColumns();
 
+        // Essential columns that should always be visible
+        $essentialNames = ['session.title', 'student.name'];
+
         // Add teacher column
         $teacherColumn = TextColumn::make('teacher.name')
             ->label('المعلم')
             ->searchable()
-            ->sortable();
+            ->sortable()
+            ->toggleable();
 
         // Add academy column
         $academyColumn = static::getAcademyColumn();
@@ -255,6 +259,9 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
         // Insert columns at appropriate positions
         $result = [];
         foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
             $result[] = $column;
 
             // Add teacher after student

@@ -98,9 +98,9 @@ abstract class BasePackageResource extends Resource
     {
         return [
             TextColumn::make('name')->label('اسم الباقة')->searchable()->sortable()->weight('bold'),
-            TextColumn::make('sessions_per_month')->label('عدد الحصص/شهر')->sortable()->alignCenter()->badge()->color('info'),
-            TextColumn::make('session_duration_minutes')->label('مدة الحصة')->sortable()->alignCenter()->suffix(' دقيقة')->badge()->color('warning'),
-            TextColumn::make('monthly_price')->label('السعر الشهري')->money(getCurrencyCode())->sortable()->alignEnd(),
+            TextColumn::make('sessions_per_month')->label('عدد الحصص/شهر')->sortable()->alignCenter()->badge()->color('info')->toggleable(),
+            TextColumn::make('session_duration_minutes')->label('مدة الحصة')->sortable()->alignCenter()->suffix(' دقيقة')->badge()->color('warning')->toggleable(),
+            TextColumn::make('monthly_price')->label('السعر الشهري')->money(getCurrencyCode())->sortable()->alignEnd()->toggleable(),
             TextColumn::make('quarterly_price')->label('السعر الربع سنوي')->money(getCurrencyCode())->toggleable(isToggledHiddenByDefault: true)->alignEnd(),
             TextColumn::make('yearly_price')->label('السعر السنوي')->money(getCurrencyCode())->toggleable(isToggledHiddenByDefault: true)->alignEnd(),
             IconColumn::make('is_active')->label('مفعلة')->boolean()->trueIcon('heroicon-o-check-circle')->falseIcon('heroicon-o-x-circle')->trueColor('success')->falseColor('danger'),

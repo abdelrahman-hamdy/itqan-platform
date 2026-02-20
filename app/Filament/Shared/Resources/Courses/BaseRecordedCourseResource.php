@@ -435,21 +435,25 @@ abstract class BaseRecordedCourseResource extends Resource
 
             TextColumn::make('subject.name')
                 ->label('المادة')
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('gradeLevel.name')
                 ->label('الصف الدراسي')
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('price')
                 ->label('السعر')
                 ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')
                 ->dateTime()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
         ];
     }
 

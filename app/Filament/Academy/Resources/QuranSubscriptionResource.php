@@ -265,7 +265,8 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                 ->icons([
                     'heroicon-o-user' => 'individual',
                     'heroicon-o-user-group' => 'group',
-                ]),
+                ])
+                ->toggleable(),
 
             TextColumn::make('circle_name')
                 ->label('الحلقة')
@@ -276,21 +277,25 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
 
                     return $record->quranCircle?->name ?? 'لم يتم تحديد الحلقة';
                 })
-                ->limit(25),
+                ->limit(25)
+                ->toggleable(),
 
             TextColumn::make('quranTeacher.full_name')
                 ->label('المعلم')
                 ->searchable()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('package.name')
                 ->label('اسم الباقة')
                 ->searchable()
-                ->limit(20),
+                ->limit(20)
+                ->toggleable(),
 
             TextColumn::make('total_sessions')
                 ->label('إجمالي الجلسات')
-                ->alignCenter(),
+                ->alignCenter()
+                ->toggleable(),
 
             TextColumn::make('sessions_remaining')
                 ->label('المتبقية')
@@ -300,7 +305,8 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                     $state >= 5 => 'success',
                     $state >= 2 => 'warning',
                     default => 'danger',
-                }),
+                })
+                ->toggleable(),
 
             TextColumn::make('total_price')
                 ->label('سعر الاشتراك')
@@ -311,7 +317,8 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
             TextColumn::make('end_date')
                 ->label('تاريخ الانتهاء')
                 ->date()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
         ];
     }
 

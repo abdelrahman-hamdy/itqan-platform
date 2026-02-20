@@ -294,7 +294,8 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                             ->orWhereHas('quranCircle', fn ($q) => $q->where('name', 'like', "%{$search}%"));
                     });
                 })
-                ->limit(25),
+                ->limit(25)
+                ->toggleable(),
 
             TextColumn::make('quranTeacher.full_name')
                 ->label('المعلم')
@@ -304,21 +305,25 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
             TextColumn::make('package.name')
                 ->label('اسم الباقة')
                 ->searchable()
-                ->limit(20),
+                ->limit(20)
+                ->toggleable(),
 
             TextColumn::make('total_sessions')
                 ->label('إجمالي الجلسات')
-                ->alignCenter(),
+                ->alignCenter()
+                ->toggleable(),
 
             TextColumn::make('total_sessions_scheduled')
                 ->label('المجدولة')
                 ->alignCenter()
-                ->color('primary'),
+                ->color('primary')
+                ->toggleable(),
 
             TextColumn::make('total_sessions_completed')
                 ->label('المكتملة')
                 ->alignCenter()
-                ->color('success'),
+                ->color('success')
+                ->toggleable(),
 
             TextColumn::make('total_sessions_missed')
                 ->label('الفائتة')
@@ -340,12 +345,14 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                 ->label('سعر الاشتراك')
                 ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                 ->sortable()
-                ->weight(FontWeight::Bold),
+                ->weight(FontWeight::Bold)
+                ->toggleable(),
 
             TextColumn::make('end_date')
                 ->label('تاريخ الانتهاء')
                 ->date()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
         ];
     }
 

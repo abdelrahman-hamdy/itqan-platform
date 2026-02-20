@@ -198,7 +198,8 @@ abstract class BaseQuizResource extends BaseResource
                 TextColumn::make('questions_count')
                     ->label('عدد الأسئلة')
                     ->counts('questions')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('duration_minutes')
                     ->label('المدة')
@@ -207,7 +208,8 @@ abstract class BaseQuizResource extends BaseResource
 
                 TextColumn::make('passing_score')
                     ->label('درجة النجاح')
-                    ->formatStateUsing(fn ($state) => "{$state}%"),
+                    ->formatStateUsing(fn ($state) => "{$state}%")
+                    ->toggleable(),
 
                 IconColumn::make('is_active')
                     ->label('نشط')

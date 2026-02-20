@@ -262,13 +262,16 @@ class BusinessServiceCategoryResource extends Resource
                 TextColumn::make('description')
                     ->label('الوصف')
                     ->limit(50)
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
 
                 ColorColumn::make('color')
-                    ->label('اللون'),
+                    ->label('اللون')
+                    ->toggleable(),
 
                 IconColumn::make('icon')
-                    ->label('الأيقونة'),
+                    ->label('الأيقونة')
+                    ->toggleable(),
 
                 IconColumn::make('is_active')
                     ->label('الحالة')
@@ -276,17 +279,20 @@ class BusinessServiceCategoryResource extends Resource
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
-                    ->falseColor('danger'),
+                    ->falseColor('danger')
+                    ->toggleable(),
 
                 TextColumn::make('serviceRequests_count')
                     ->label('عدد الطلبات')
                     ->counts('serviceRequests')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('portfolioItems_count')
                     ->label('عدد أعمال البورتفوليو')
                     ->counts('portfolioItems')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')

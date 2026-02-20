@@ -180,12 +180,14 @@ abstract class BaseTeacherReviewResource extends Resource
                 ->label('نوع المعلم')
                 ->formatStateUsing(fn ($state) => static::formatTeacherTypeShort($state))
                 ->badge()
-                ->color(fn ($state) => static::getTeacherTypeColor($state)),
+                ->color(fn ($state) => static::getTeacherTypeColor($state))
+                ->toggleable(),
 
             TextColumn::make('student.full_name')
                 ->label('الطالب')
                 ->searchable()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('rating')
                 ->label('التقييم')
@@ -194,12 +196,14 @@ abstract class BaseTeacherReviewResource extends Resource
 
                     return str_repeat('★', $rating).str_repeat('☆', 5 - $rating);
                 })
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('comment')
                 ->label('التعليق')
                 ->limit(50)
-                ->wrap(),
+                ->wrap()
+                ->toggleable(),
 
             IconColumn::make('is_approved')
                 ->label('موافق عليه')
@@ -208,7 +212,8 @@ abstract class BaseTeacherReviewResource extends Resource
             TextColumn::make('created_at')
                 ->label('التاريخ')
                 ->dateTime('Y-m-d H:i')
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
         ];
     }
 

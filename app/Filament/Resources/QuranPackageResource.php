@@ -67,7 +67,16 @@ class QuranPackageResource extends BasePackageResource
 
     protected static function getTableColumns(): array
     {
-        return array_merge([static::getAcademyColumn()], parent::getTableColumns());
+        $essentialNames = ['name'];
+        $columns = parent::getTableColumns();
+
+        foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
+        }
+
+        return array_merge([static::getAcademyColumn()], $columns);
     }
 
     public static function getPages(): array

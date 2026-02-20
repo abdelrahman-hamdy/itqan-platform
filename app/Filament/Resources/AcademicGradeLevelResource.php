@@ -127,7 +127,7 @@ class AcademicGradeLevelResource extends BaseResource
     {
         return $table
             ->columns([
-                static::getAcademyColumn(), // Add academy column when viewing all academies
+                static::getAcademyColumn(),
                 TextColumn::make('name')
                     ->label('اسم الصف')
                     ->searchable()
@@ -159,14 +159,13 @@ class AcademicGradeLevelResource extends BaseResource
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                static::getAcademyColumn(),
-
                 IconColumn::make('is_active')
                     ->label('نشط')
                     ->boolean()
                     ->trueColor('success')
                     ->falseColor('danger')
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')

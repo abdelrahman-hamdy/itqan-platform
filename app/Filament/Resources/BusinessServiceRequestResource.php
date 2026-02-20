@@ -189,41 +189,6 @@ class BusinessServiceRequestResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('client_email')
-                    ->label('البريد الإلكتروني')
-                    ->searchable()
-                    ->copyable(),
-
-                TextColumn::make('client_phone')
-                    ->label('رقم الهاتف')
-                    ->searchable()
-                    ->copyable(),
-
-                TextColumn::make('serviceCategory.name')
-                    ->label('نوع الخدمة')
-                    ->searchable()
-                    ->sortable(),
-
-                TextColumn::make('project_budget')
-                    ->label('الميزانية')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        '500-1000' => '500 - 1000 ر.س',
-                        '1000-3000' => '1000 - 3000 ر.س',
-                        '3000-5000' => '3000 - 5000 ر.س',
-                        '5000-10000' => '5000 - 10000 ر.س',
-                        '10000+' => 'أكثر من 10000 ر.س',
-                        default => $state,
-                    }),
-
-                TextColumn::make('project_deadline')
-                    ->label('الموعد')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'urgent' => 'عاجل (أسبوع)',
-                        'normal' => 'عادي (أسبوعين)',
-                        'flexible' => 'مرن (شهر أو أكثر)',
-                        default => $state,
-                    }),
-
                 TextColumn::make('status')
                     ->badge()
                     ->label('الحالة')
@@ -243,10 +208,51 @@ class BusinessServiceRequestResource extends Resource
                         default => $state,
                     }),
 
+                TextColumn::make('client_email')
+                    ->label('البريد الإلكتروني')
+                    ->searchable()
+                    ->copyable()
+                    ->toggleable(),
+
+                TextColumn::make('client_phone')
+                    ->label('رقم الهاتف')
+                    ->searchable()
+                    ->copyable()
+                    ->toggleable(),
+
+                TextColumn::make('serviceCategory.name')
+                    ->label('نوع الخدمة')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
+
+                TextColumn::make('project_budget')
+                    ->label('الميزانية')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        '500-1000' => '500 - 1000 ر.س',
+                        '1000-3000' => '1000 - 3000 ر.س',
+                        '3000-5000' => '3000 - 5000 ر.س',
+                        '5000-10000' => '5000 - 10000 ر.س',
+                        '10000+' => 'أكثر من 10000 ر.س',
+                        default => $state,
+                    })
+                    ->toggleable(),
+
+                TextColumn::make('project_deadline')
+                    ->label('الموعد')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'urgent' => 'عاجل (أسبوع)',
+                        'normal' => 'عادي (أسبوعين)',
+                        'flexible' => 'مرن (شهر أو أكثر)',
+                        default => $state,
+                    })
+                    ->toggleable(),
+
                 TextColumn::make('created_at')
                     ->label('تاريخ الطلب')
                     ->dateTime('d/m/Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('status')

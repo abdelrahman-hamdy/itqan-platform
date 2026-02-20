@@ -478,12 +478,14 @@ abstract class BaseInteractiveCourseResource extends Resource
             TextColumn::make('subject.name')
                 ->label('المادة')
                 ->badge()
-                ->color('info'),
+                ->color('info')
+                ->toggleable(),
 
             TextColumn::make('gradeLevel.name')
                 ->label('المرحلة')
                 ->badge()
-                ->color('success'),
+                ->color('success')
+                ->toggleable(),
 
             TextColumn::make('assignedTeacher.user.name')
                 ->label('المعلم')
@@ -496,7 +498,8 @@ abstract class BaseInteractiveCourseResource extends Resource
                     return $record->assignedTeacher->user
                         ? $record->assignedTeacher->user->name
                         : $record->assignedTeacher->full_name;
-                }),
+                })
+                ->toggleable(),
 
             TextColumn::make('enrollments_count')
                 ->label('المسجلين')
@@ -508,7 +511,8 @@ abstract class BaseInteractiveCourseResource extends Resource
                     $percentage = ($record->enrollments_count / $record->max_students) * 100;
 
                     return $percentage >= 80 ? 'danger' : ($percentage >= 60 ? 'warning' : 'success');
-                }),
+                })
+                ->toggleable(),
 
             TextColumn::make('student_price')
                 ->label('السعر')

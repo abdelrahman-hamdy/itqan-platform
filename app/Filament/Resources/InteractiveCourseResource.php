@@ -135,7 +135,10 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     {
         $columns = parent::getTableColumns();
 
-        // Add course type column
+        // Essential columns that should always be visible
+        $essentialNames = ['course_code', 'title', 'status'];
+
+        // Add course type column (toggleable)
         $courseTypeColumn = TextColumn::make('course_type_in_arabic')
             ->label('النوع')
             ->badge()
@@ -143,13 +146,19 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
                 'مكثف' => 'warning',
                 'تحضير للامتحانات' => 'danger',
                 default => 'primary',
-            });
+            })
+            ->toggleable();
 
         // Add academy column for global view
         $academyColumn = static::getAcademyColumn();
-        // Insert columns at appropriate positions
+
+        // Insert columns at appropriate positions, making non-essential parent columns toggleable
         $result = [];
         foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
+
             // Add academy column after gradeLevel
             if ($column->getName() === 'gradeLevel.name') {
                 $result[] = $column;

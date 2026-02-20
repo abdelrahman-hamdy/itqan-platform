@@ -221,25 +221,33 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     {
         $columns = parent::getTableColumns();
 
-        // Add teacher column after student
+        // Essential columns that should always be visible
+        $essentialNames = ['session.title', 'student.name'];
+
+        // Add teacher column after student (toggleable)
         $teacherColumn = TextColumn::make('teacher.name')
             ->label('المعلم')
             ->searchable()
-            ->sortable();
+            ->sortable()
+            ->toggleable();
 
         // Add academy column
         $academyColumn = static::getAcademyColumn();
 
-        // Add attendance percentage column
+        // Add attendance percentage column (toggleable)
         $attendancePercentageColumn = TextColumn::make('attendance_percentage')
             ->label('نسبة الحضور')
             ->numeric()
             ->sortable()
-            ->formatStateUsing(fn (string $state): string => $state.'%');
+            ->formatStateUsing(fn (string $state): string => $state.'%')
+            ->toggleable();
 
-        // Insert columns at appropriate positions
+        // Insert columns at appropriate positions, making non-essential parent columns toggleable
         $result = [];
         foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
             $result[] = $column;
 
             // Add teacher after student

@@ -217,22 +217,6 @@ class TeacherReviewResource extends BaseTeacherReviewResource
                 ->searchable()
                 ->sortable(),
 
-            TextColumn::make('reviewable_type')
-                ->label('نوع المعلم')
-                ->formatStateUsing(fn ($state) => static::formatTeacherTypeShort($state))
-                ->badge()
-                ->color(fn ($state) => static::getTeacherTypeColor($state)),
-
-            TextColumn::make('rating')
-                ->label('التقييم')
-                ->formatStateUsing(fn ($state) => number_format($state, 1).'/5')
-                ->color('warning'),
-
-            TextColumn::make('comment')
-                ->label('التعليق')
-                ->limit(50)
-                ->tooltip(fn ($record) => $record->comment),
-
             TextColumn::make('status')
                 ->label('الحالة')
                 ->badge()
@@ -240,10 +224,30 @@ class TeacherReviewResource extends BaseTeacherReviewResource
                 ->color(fn ($record) => $record->status->color())
                 ->icon(fn ($record) => $record->status->icon()),
 
+            TextColumn::make('reviewable_type')
+                ->label('نوع المعلم')
+                ->formatStateUsing(fn ($state) => static::formatTeacherTypeShort($state))
+                ->badge()
+                ->color(fn ($state) => static::getTeacherTypeColor($state))
+                ->toggleable(),
+
+            TextColumn::make('rating')
+                ->label('التقييم')
+                ->formatStateUsing(fn ($state) => number_format($state, 1).'/5')
+                ->color('warning')
+                ->toggleable(),
+
+            TextColumn::make('comment')
+                ->label('التعليق')
+                ->limit(50)
+                ->tooltip(fn ($record) => $record->comment)
+                ->toggleable(),
+
             TextColumn::make('created_at')
                 ->label('تاريخ التقييم')
                 ->dateTime('Y-m-d H:i')
-                ->sortable(),
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
         ];
     }
 

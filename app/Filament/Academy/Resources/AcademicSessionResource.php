@@ -198,7 +198,8 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                     ? trim(($record->academicTeacher->user->first_name ?? '').' '.($record->academicTeacher->user->last_name ?? '')) ?: 'معلم #'.$record->academicTeacher->id
                     : 'معلم #'.($record->academic_teacher_id ?? '-')
             )
-            ->searchable();
+            ->searchable()
+            ->toggleable();
 
         // Find position after title column and insert
         $result = [];

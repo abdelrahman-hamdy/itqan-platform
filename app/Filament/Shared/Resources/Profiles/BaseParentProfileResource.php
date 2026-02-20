@@ -255,7 +255,8 @@ abstract class BaseParentProfileResource extends Resource
                 ->label('البريد الإلكتروني')
                 ->searchable()
                 ->sortable()
-                ->copyable(),
+                ->copyable()
+                ->toggleable(),
 
             TextColumn::make('phone')
                 ->label('رقم الهاتف')

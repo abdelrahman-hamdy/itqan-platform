@@ -302,30 +302,36 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
             TextColumn::make('teacher.user.name')
                 ->label('المعلم')
                 ->searchable()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('subject.name')
                 ->label('المادة')
-                ->searchable(),
+                ->searchable()
+                ->toggleable(),
 
             TextColumn::make('gradeLevel.name')
                 ->label('المرحلة')
-                ->searchable(),
+                ->searchable()
+                ->toggleable(),
 
             TextColumn::make('final_monthly_amount')
                 ->label('المبلغ الشهري')
                 ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('start_date')
                 ->label('تاريخ البدء')
                 ->date()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('next_billing_date')
                 ->label('الفوترة التالية')
                 ->date()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
         ];
     }
 

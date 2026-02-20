@@ -115,7 +115,8 @@ class StudentProfileResource extends BaseStudentProfileResource
         $columns[] = ImageColumn::make('avatar')
             ->label('الصورة')
             ->circular()
-            ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff');
+            ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff')
+            ->toggleable();
 
         // Add shared columns from base
         $columns[] = TextColumn::make('student_code')
@@ -134,18 +135,21 @@ class StudentProfileResource extends BaseStudentProfileResource
             ->label('البريد الإلكتروني')
             ->searchable()
             ->sortable()
-            ->copyable();
+            ->copyable()
+            ->toggleable();
 
         $columns[] = TextColumn::make('gradeLevel.name')
             ->label('المرحلة الدراسية')
-            ->sortable();
+            ->sortable()
+            ->toggleable();
 
         $columns[] = TextColumn::make('parent.full_name')
             ->label('ولي الأمر')
             ->searchable(['first_name', 'last_name'])
             ->sortable()
             ->default('—')
-            ->description(fn ($record) => $record->parent?->parent_code);
+            ->description(fn ($record) => $record->parent?->parent_code)
+            ->toggleable();
 
         $columns[] = TextColumn::make('nationality')
             ->label('الجنسية')

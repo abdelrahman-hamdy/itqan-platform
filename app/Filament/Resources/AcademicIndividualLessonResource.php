@@ -247,20 +247,27 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
     {
         $columns = parent::getTableColumns();
 
-        // Add teacher column after lesson name
+        // Essential columns that should always be visible
+        $essentialNames = ['lesson_code', 'name'];
+
+        // Add teacher column after student
         $teacherColumn = TextColumn::make('academicTeacher.user.name')
             ->label('المعلم')
             ->searchable()
-            ->sortable();
+            ->sortable()
+            ->toggleable();
 
         // Insert columns at appropriate positions
         $result = [];
         foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
             $result[] = $column;
 
             // Add teacher column after student
             if ($column->getName() === 'student.name') {
-                array_splice($result, count($result) - 1, 0, [$teacherColumn]);
+                $result[] = $teacherColumn;
             }
         }
 

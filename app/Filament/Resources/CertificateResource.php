@@ -126,11 +126,13 @@ class CertificateResource extends BaseResource
                 TextColumn::make('certificate_type')
                     ->label('النوع')
                     ->badge()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('template_style')
                     ->label('التصميم')
-                    ->badge(),
+                    ->badge()
+                    ->toggleable(),
 
                 static::getAcademyColumn(),
 

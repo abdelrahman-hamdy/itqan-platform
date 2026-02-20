@@ -212,7 +212,8 @@ abstract class BaseInteractiveSessionReportResource extends BaseResource
             TextColumn::make('session.scheduled_date')
                 ->label('تاريخ الجلسة')
                 ->date('Y-m-d')
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('student.name')
                 ->label('الطالب')
@@ -230,7 +231,8 @@ abstract class BaseInteractiveSessionReportResource extends BaseResource
                     (float) $state >= 6 => 'warning',
                     default => 'danger',
                 })
-                ->formatStateUsing(fn (?string $state): string => $state ? $state.'/10' : 'لم يقيم'),
+                ->formatStateUsing(fn (?string $state): string => $state ? $state.'/10' : 'لم يقيم')
+                ->toggleable(),
 
             TextColumn::make('attendance_status')
                 ->label('الحضور')
@@ -252,7 +254,8 @@ abstract class BaseInteractiveSessionReportResource extends BaseResource
                     }
 
                     return AttendanceStatus::tryFrom($state ?? '')?->color() ?? 'gray';
-                }),
+                })
+                ->toggleable(),
 
             TextColumn::make('actual_attendance_minutes')
                 ->label('مدة الحضور')

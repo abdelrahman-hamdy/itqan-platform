@@ -165,7 +165,8 @@ class AdminResource extends BaseResource
             ->columns([
                 ImageColumn::make('avatar')
                     ->label('الصورة')
-                    ->circular(),
+                    ->circular()
+                    ->toggleable(),
                 TextColumn::make('name')
                     ->label('الاسم الكامل')
                     ->searchable(['first_name', 'last_name'])
@@ -176,7 +177,8 @@ class AdminResource extends BaseResource
                     ->sortable(),
                 TextColumn::make('phone')
                     ->label('رقم الهاتف')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
                 static::getAcademyColumn(),
                 IconColumn::make('active_status')
                     ->label('الحالة')
@@ -185,7 +187,8 @@ class AdminResource extends BaseResource
                     ->trueColor('success')
                     ->falseColor('danger')
                     ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle'),
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->toggleable(),
                 TextColumn::make('last_login_at')
                     ->label('آخر تسجيل دخول')
                     ->dateTime()

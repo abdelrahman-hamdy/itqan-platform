@@ -88,7 +88,8 @@ class ParentProfileResource extends BaseParentProfileResource
         $columns[] = ImageColumn::make('avatar')
             ->label('الصورة')
             ->circular()
-            ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff');
+            ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff')
+            ->toggleable();
 
         // Add shared columns from base
         $columns[] = TextColumn::make('parent_code')
@@ -107,17 +108,20 @@ class ParentProfileResource extends BaseParentProfileResource
             ->label('البريد الإلكتروني')
             ->searchable()
             ->sortable()
-            ->copyable();
+            ->copyable()
+            ->toggleable();
 
         $columns[] = TextColumn::make('phone')
             ->label('رقم الهاتف')
             ->searchable()
-            ->copyable();
+            ->copyable()
+            ->toggleable();
 
         $columns[] = IconColumn::make('has_students')
             ->label('مرتبط بطلاب')
             ->boolean()
-            ->getStateUsing(fn ($record) => $record->students()->exists());
+            ->getStateUsing(fn ($record) => $record->students()->exists())
+            ->toggleable();
 
         $columns[] = IconColumn::make('user.active_status')
             ->label('نشط')
@@ -126,7 +130,8 @@ class ParentProfileResource extends BaseParentProfileResource
             ->falseIcon('heroicon-o-x-circle')
             ->trueColor('success')
             ->falseColor('danger')
-            ->sortable();
+            ->sortable()
+            ->toggleable();
 
         $columns[] = TextColumn::make('created_at')
             ->label(__('filament.created_at'))

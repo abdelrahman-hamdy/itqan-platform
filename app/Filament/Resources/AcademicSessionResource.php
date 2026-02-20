@@ -284,18 +284,25 @@ class AcademicSessionResource extends BaseAcademicSessionResource
     {
         $columns = parent::getTableColumns();
 
-        // Insert teacher column after title
+        // Essential columns that should always be visible
+        $essentialNames = ['session_code', 'status'];
+
+        // Insert teacher column after title (toggleable)
         $teacherColumn = TextColumn::make('academicTeacher.user.id')
             ->label('المعلم')
             ->formatStateUsing(fn ($record) => $record->academicTeacher?->user
                     ? trim(($record->academicTeacher->user->first_name ?? '').' '.($record->academicTeacher->user->last_name ?? '')) ?: 'معلم #'.$record->academicTeacher->id
                     : 'معلم #'.($record->academic_teacher_id ?? '-')
             )
-            ->searchable();
+            ->searchable()
+            ->toggleable();
 
-        // Find position after title column and insert
+        // Build result: make non-essential parent columns toggleable
         $result = [];
         foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
             $result[] = $column;
             if ($column->getName() === 'title') {
                 $result[] = $teacherColumn;

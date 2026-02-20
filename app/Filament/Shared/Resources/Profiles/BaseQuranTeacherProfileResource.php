@@ -122,7 +122,7 @@ abstract class BaseQuranTeacherProfileResource extends Resource
         return [
             TextColumn::make('teacher_code')->label('رمز المعلم')->searchable()->sortable()->weight('bold')->copyable(),
             TextColumn::make('full_name')->label('الاسم الكامل')->searchable(['first_name', 'last_name'])->sortable(),
-            TextColumn::make('email')->label('البريد الإلكتروني')->searchable()->sortable()->copyable(),
+            TextColumn::make('email')->label('البريد الإلكتروني')->searchable()->sortable()->copyable()->toggleable(),
             TextColumn::make('phone')->label('رقم الهاتف')->searchable()->toggleable(isToggledHiddenByDefault: true),
             IconColumn::make('user.active_status')->label('نشط')->boolean()->trueIcon('heroicon-o-check-circle')
                 ->falseIcon('heroicon-o-x-circle')->trueColor('success')->falseColor('danger'),

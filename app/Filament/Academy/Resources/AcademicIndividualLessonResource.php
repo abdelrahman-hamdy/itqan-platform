@@ -241,7 +241,8 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
         $teacherColumn = TextColumn::make('academicTeacher.user.name')
             ->label('المعلم')
             ->searchable()
-            ->sortable();
+            ->sortable()
+            ->toggleable();
 
         // Insert columns at appropriate positions
         $result = [];

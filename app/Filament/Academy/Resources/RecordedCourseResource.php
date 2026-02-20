@@ -193,7 +193,8 @@ class RecordedCourseResource extends BaseRecordedCourseResource
             TextColumn::make('instructor.user.name')
                 ->label('المدرب')
                 ->searchable()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
         ]);
 
         // Add published status badge
@@ -201,7 +202,8 @@ class RecordedCourseResource extends BaseRecordedCourseResource
             ->label('منشور')
             ->boolean()
             ->trueIcon('heroicon-o-check-circle')
-            ->falseIcon('heroicon-o-x-circle');
+            ->falseIcon('heroicon-o-x-circle')
+            ->toggleable();
 
         return $columns;
     }

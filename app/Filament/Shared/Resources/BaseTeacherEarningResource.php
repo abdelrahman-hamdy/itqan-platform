@@ -288,23 +288,27 @@ abstract class BaseTeacherEarningResource extends Resource
                 ->label('نوع المعلم')
                 ->formatStateUsing(fn ($state) => static::formatTeacherTypeShort($state))
                 ->badge()
-                ->color(fn ($state) => static::getTeacherTypeColor($state)),
+                ->color(fn ($state) => static::getTeacherTypeColor($state))
+                ->toggleable(),
 
             TextColumn::make('amount')
                 ->label('المبلغ')
                 ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('calculation_method')
                 ->label('طريقة الحساب')
                 ->formatStateUsing(fn ($record) => $record->calculation_method_label)
                 ->badge()
-                ->color('gray'),
+                ->color('gray')
+                ->toggleable(),
 
             TextColumn::make('earning_month')
                 ->label('الشهر')
                 ->date('M Y')
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             IconColumn::make('is_finalized')
                 ->label('مؤكد')
@@ -314,7 +318,8 @@ abstract class BaseTeacherEarningResource extends Resource
                 ->label('معترض')
                 ->boolean()
                 ->trueColor('danger')
-                ->falseColor('gray'),
+                ->falseColor('gray')
+                ->toggleable(),
 
             TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')

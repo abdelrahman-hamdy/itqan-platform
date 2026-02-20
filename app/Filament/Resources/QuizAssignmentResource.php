@@ -64,6 +64,24 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
         };
     }
 
+    // ========================================
+    // Table Columns Override (SuperAdmin-specific)
+    // ========================================
+
+    protected static function getTableColumns(): array
+    {
+        $essentialNames = ['quiz.title', 'is_visible'];
+        $columns = parent::getTableColumns();
+
+        foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
+        }
+
+        return $columns;
+    }
+
     /**
      * SuperAdmin sees all assignments — no teacher filter.
      */

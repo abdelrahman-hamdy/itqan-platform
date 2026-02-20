@@ -145,11 +145,13 @@ abstract class BaseCertificateResource extends BaseResource
                 TextColumn::make('certificate_type')
                     ->label('النوع')
                     ->badge()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('template_style')
                     ->label('التصميم')
-                    ->badge(),
+                    ->badge()
+                    ->toggleable(),
 
                 IconColumn::make('is_manual')
                     ->label('يدوية')
@@ -157,12 +159,14 @@ abstract class BaseCertificateResource extends BaseResource
                     ->trueIcon('heroicon-o-pencil-square')
                     ->falseIcon('heroicon-o-cog')
                     ->trueColor('purple')
-                    ->falseColor('blue'),
+                    ->falseColor('blue')
+                    ->toggleable(),
 
                 TextColumn::make('issued_at')
                     ->label('تاريخ الإصدار')
                     ->dateTime('d/m/Y h:i A')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')

@@ -247,9 +247,15 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
             ->formatStateUsing(fn (string $state): string => $state.'%')
             ->toggleable();
 
+        // Essential columns that should always be visible
+        $essentialNames = ['session.title', 'student.name'];
+
         // Insert columns at appropriate positions
         $result = [];
         foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
             $result[] = $column;
 
             // Add teacher after student

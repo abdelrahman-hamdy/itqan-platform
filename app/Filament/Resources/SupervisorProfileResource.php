@@ -19,7 +19,9 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -88,14 +90,47 @@ class SupervisorProfileResource extends BaseSupervisorProfileResource
 
     protected static function getTableColumns(): array
     {
-        return array_merge(
-            [static::getAcademyColumn()],
-            [ImageColumn::make('avatar')
+        return [
+            static::getAcademyColumn(),
+            ImageColumn::make('avatar')
                 ->label('الصورة')
                 ->circular()
-                ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url').'?name='.urlencode($record->full_name ?? 'N/A').'&background=9333ea&color=fff')],
-            parent::getTableColumns()
-        );
+                ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url').'?name='.urlencode($record->full_name ?? 'N/A').'&background=9333ea&color=fff')
+                ->toggleable(),
+            TextColumn::make('supervisor_code')
+                ->label('رمز المشرف')
+                ->searchable()
+                ->sortable()
+                ->weight('bold')
+                ->copyable(),
+            TextColumn::make('full_name')
+                ->label('الاسم الكامل')
+                ->searchable(['first_name', 'last_name'])
+                ->sortable(),
+            TextColumn::make('email')
+                ->label('البريد الإلكتروني')
+                ->searchable()
+                ->sortable()
+                ->copyable()
+                ->toggleable(),
+            TextColumn::make('phone')
+                ->label('رقم الهاتف')
+                ->searchable()
+                ->toggleable(isToggledHiddenByDefault: true),
+            IconColumn::make('user.active_status')
+                ->label('نشط')
+                ->boolean()
+                ->trueIcon('heroicon-o-check-circle')
+                ->falseIcon('heroicon-o-x-circle')
+                ->trueColor('success')
+                ->falseColor('danger')
+                ->toggleable(),
+            TextColumn::make('created_at')
+                ->label('تاريخ الإنشاء')
+                ->dateTime()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
+        ];
     }
 
     public static function getPages(): array

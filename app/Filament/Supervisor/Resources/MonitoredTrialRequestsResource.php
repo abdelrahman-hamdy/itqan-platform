@@ -312,7 +312,8 @@ class MonitoredTrialRequestsResource extends BaseQuranTrialRequestResource
             TextColumn::make('teacher.full_name')
                 ->label('المعلم')
                 ->searchable()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('student_age')
                 ->label('العمر')
@@ -343,7 +344,8 @@ class MonitoredTrialRequestsResource extends BaseQuranTrialRequestResource
                 ->dateTime('d/m/Y h:i A')
                 ->timezone(fn ($record) => $record->academy?->timezone?->value ?? AcademyContextService::getTimezone())
                 ->sortable()
-                ->placeholder('غير مجدول'),
+                ->placeholder('غير مجدول')
+                ->toggleable(),
 
             TextColumn::make('rating')
                 ->label('التقييم')

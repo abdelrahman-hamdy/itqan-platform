@@ -201,7 +201,14 @@ class RecordedCourseResource extends BaseRecordedCourseResource
 
     protected static function getTableColumns(): array
     {
+        $essentialNames = ['course_code', 'title'];
         $columns = parent::getTableColumns();
+
+        foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
+        }
 
         // Add academy column when viewing all academies
         if (static::isViewingAllAcademies()) {

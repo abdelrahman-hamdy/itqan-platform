@@ -214,25 +214,29 @@ abstract class BaseQuranIndividualCircleResource extends Resource
                     'warning' => 'interpretation',
                     'danger' => 'tajweed',
                     'primary' => 'complete',
-                ]),
+                ])
+                ->toggleable(),
 
             TextColumn::make('memorization_level')
                 ->label('المستوى')
                 ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::MEMORIZATION_LEVELS[$state] ?? $state)
                 ->badge()
-                ->color('gray'),
+                ->color('gray')
+                ->toggleable(),
 
             TextColumn::make('sessions_completed')
                 ->label('الجلسات المكتملة')
                 ->numeric()
                 ->sortable()
-                ->alignCenter(),
+                ->alignCenter()
+                ->toggleable(),
 
             TextColumn::make('total_memorized_pages')
                 ->label('صفحات الحفظ')
                 ->numeric()
                 ->sortable()
-                ->alignCenter(),
+                ->alignCenter()
+                ->toggleable(),
 
             TextColumn::make('total_reviewed_pages')
                 ->label('صفحات المراجعة')

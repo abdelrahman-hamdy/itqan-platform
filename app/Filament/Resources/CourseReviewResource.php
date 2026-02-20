@@ -141,6 +141,19 @@ class CourseReviewResource extends BaseResource
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('status')
+                    ->label('الحالة')
+                    ->badge()
+                    ->formatStateUsing(fn ($record) => $record->status->label())
+                    ->color(fn ($record) => $record->status->color())
+                    ->icon(fn ($record) => $record->status->icon()),
+
+                TextColumn::make('rating')
+                    ->label('التقييم')
+                    ->formatStateUsing(fn ($state) => str_repeat('★', $state).str_repeat('☆', 5 - $state))
+                    ->color('warning')
+                    ->toggleable(),
+
                 TextColumn::make('reviewable_type')
                     ->label('نوع الدورة')
                     ->formatStateUsing(fn ($state) => match ($state) {
@@ -153,29 +166,20 @@ class CourseReviewResource extends BaseResource
                         'App\\Models\\RecordedCourse' => 'info',
                         'App\\Models\\InteractiveCourse' => 'success',
                         default => 'gray',
-                    }),
-
-                TextColumn::make('rating')
-                    ->label('التقييم')
-                    ->formatStateUsing(fn ($state) => str_repeat('★', $state).str_repeat('☆', 5 - $state))
-                    ->color('warning'),
+                    })
+                    ->toggleable(),
 
                 TextColumn::make('review')
                     ->label('التعليق')
                     ->limit(50)
-                    ->tooltip(fn ($record) => $record->review),
-
-                TextColumn::make('status')
-                    ->label('الحالة')
-                    ->badge()
-                    ->formatStateUsing(fn ($record) => $record->status->label())
-                    ->color(fn ($record) => $record->status->color())
-                    ->icon(fn ($record) => $record->status->icon()),
+                    ->tooltip(fn ($record) => $record->review)
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('تاريخ التقييم')
                     ->dateTime('Y-m-d H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('is_approved')

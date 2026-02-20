@@ -62,7 +62,16 @@ class AcademicPackageResource extends BasePackageResource
 
     protected static function getTableColumns(): array
     {
-        return array_merge([static::getAcademyColumn()], parent::getTableColumns());
+        $essentialNames = ['name'];
+        $columns = parent::getTableColumns();
+
+        foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
+        }
+
+        return array_merge([static::getAcademyColumn()], $columns);
     }
 
     protected static function getTableFilters(): array

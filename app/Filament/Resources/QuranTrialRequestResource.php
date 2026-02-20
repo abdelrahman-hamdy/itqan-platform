@@ -212,8 +212,17 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
      */
     protected static function getTableColumns(): array
     {
+        $essentialNames = ['request_code', 'status'];
+        $columns = parent::getTableColumns();
+
+        foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
+        }
+
         return [
-            ...parent::getTableColumns(),
+            ...$columns,
 
             TextColumn::make('teacher.full_name')
                 ->label('المعلم')

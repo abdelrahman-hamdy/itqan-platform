@@ -149,7 +149,8 @@ class QuranSessionResource extends BaseQuranSessionResource
             TextColumn::make('title')
                 ->label('عنوان الجلسة')
                 ->searchable()
-                ->limit(30),
+                ->limit(30)
+                ->toggleable(),
 
             TextColumn::make('student.name')
                 ->label('الطالب')
@@ -164,7 +165,8 @@ class QuranSessionResource extends BaseQuranSessionResource
                     'success' => 'group',
                     'warning' => 'trial',
                 ])
-                ->formatStateUsing(fn (string $state): string => static::formatSessionType($state)),
+                ->formatStateUsing(fn (string $state): string => static::formatSessionType($state))
+                ->toggleable(),
 
             TextColumn::make('scheduled_at')
                 ->label('موعد الجلسة')

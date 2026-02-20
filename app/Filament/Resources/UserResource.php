@@ -179,7 +179,8 @@ class UserResource extends BaseResource
                 ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->name ?? 'N/A').'&background=4169E1&color=fff'),
+                    ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->name ?? 'N/A').'&background=4169E1&color=fff')
+                    ->toggleable(),
                 TextColumn::make('name')
                     ->label('الاسم')
                     ->searchable(['first_name', 'last_name'])
@@ -194,7 +195,8 @@ class UserResource extends BaseResource
                     ->label('رقم الهاتف')
                     ->searchable()
                     ->sortable()
-                    ->copyable(),
+                    ->copyable()
+                    ->toggleable(),
                 TextColumn::make('user_type')
                     ->badge()
                     ->label('نوع المستخدم')
@@ -225,8 +227,10 @@ class UserResource extends BaseResource
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
-                    ->falseColor('danger'),
-                static::getAcademyColumn(),                TextColumn::make('last_login_at')
+                    ->falseColor('danger')
+                    ->toggleable(),
+                static::getAcademyColumn(),
+                TextColumn::make('last_login_at')
                     ->label(__('filament.last_login_at'))
                     ->dateTime()
                     ->sortable()

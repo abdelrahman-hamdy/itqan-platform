@@ -179,6 +179,24 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     }
 
     // ========================================
+    // Table Columns Override (SuperAdmin-specific)
+    // ========================================
+
+    protected static function getTableColumns(): array
+    {
+        $essentialNames = ['session_code', 'status'];
+        $columns = parent::getTableColumns();
+
+        foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
+        }
+
+        return $columns;
+    }
+
+    // ========================================
     // Table Filters Override (SuperAdmin-specific)
     // ========================================
 

@@ -185,7 +185,8 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
         $attendanceColumn = TextColumn::make('attendance_count')
             ->label('عدد الحضور')
             ->numeric()
-            ->sortable();
+            ->sortable()
+            ->toggleable();
 
         $result = [];
         foreach ($columns as $column) {

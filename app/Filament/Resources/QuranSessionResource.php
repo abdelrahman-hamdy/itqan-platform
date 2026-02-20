@@ -199,17 +199,32 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->searchable()
                 ->sortable(),
 
+            TextColumn::make('status')
+                ->badge()
+                ->label('الحالة')
+                ->formatStateUsing(function ($state): string {
+                    if ($state instanceof SessionStatus) {
+                        return $state->label();
+                    }
+                    $status = SessionStatus::tryFrom($state);
+
+                    return $status?->label() ?? $state;
+                })
+                ->colors(SessionStatus::colorOptions()),
+
             TextColumn::make('title')
                 ->label('العنوان')
                 ->searchable()
-                ->limit(30),
+                ->limit(30)
+                ->toggleable(),
 
             TextColumn::make('quranTeacher.id')
                 ->label('المعلم')
                 ->formatStateUsing(fn ($record) => trim(($record->quranTeacher?->first_name ?? '').' '.($record->quranTeacher?->last_name ?? '')) ?: 'معلم #'.($record->quranTeacher?->id ?? '-')
                 )
                 ->searchable()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('circle_display')
                 ->label('الحلقة')
@@ -259,20 +274,6 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->label('المدة')
                 ->suffix(' د')
                 ->sortable()
-                ->toggleable(),
-
-            TextColumn::make('status')
-                ->badge()
-                ->label('الحالة')
-                ->formatStateUsing(function ($state): string {
-                    if ($state instanceof SessionStatus) {
-                        return $state->label();
-                    }
-                    $status = SessionStatus::tryFrom($state);
-
-                    return $status?->label() ?? $state;
-                })
-                ->colors(SessionStatus::colorOptions())
                 ->toggleable(),
 
             TextColumn::make('created_at')

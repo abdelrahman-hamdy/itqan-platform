@@ -73,6 +73,24 @@ class SavedPaymentMethodResource extends BaseSavedPaymentMethodResource
     }
 
     // ========================================
+    // Table Columns Override (SuperAdmin-specific)
+    // ========================================
+
+    protected static function getSharedTableColumns(): array
+    {
+        $essentialNames = ['user.name', 'is_active'];
+        $columns = parent::getSharedTableColumns();
+
+        foreach ($columns as $column) {
+            if (! in_array($column->getName(), $essentialNames)) {
+                $column->toggleable();
+            }
+        }
+
+        return $columns;
+    }
+
+    // ========================================
     // Form - Uses Parent Sections
     // ========================================
 

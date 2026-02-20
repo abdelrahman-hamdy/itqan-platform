@@ -236,12 +236,14 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
             TextColumn::make('quranTeacher.name')
                 ->label('المعلم')
                 ->searchable()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('student.name')
                 ->label('الطالب')
                 ->searchable()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('specialization')
                 ->badge()
@@ -253,19 +255,22 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                     'warning' => 'interpretation',
                     'danger' => 'tajweed',
                     'primary' => 'complete',
-                ]),
+                ])
+                ->toggleable(),
 
             TextColumn::make('memorization_level')
                 ->badge()
                 ->label('المستوى')
                 ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::MEMORIZATION_LEVELS[$state] ?? $state)
-                ->color('gray'),
+                ->color('gray')
+                ->toggleable(),
 
             TextColumn::make('sessions_completed')
                 ->label('الجلسات')
                 ->formatStateUsing(fn ($record): string => "{$record->sessions_completed} / {$record->total_sessions}")
                 ->alignCenter()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             IconColumn::make('is_active')
                 ->label('الحالة')

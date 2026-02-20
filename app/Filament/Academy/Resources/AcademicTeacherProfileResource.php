@@ -65,7 +65,8 @@ class AcademicTeacherProfileResource extends BaseAcademicTeacherProfileResource
             [ImageColumn::make('avatar')
                 ->label('الصورة')
                 ->circular()
-                ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url').'?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff')],
+                ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url').'?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff')
+                ->toggleable()],
             parent::getTableColumns()
         );
     }

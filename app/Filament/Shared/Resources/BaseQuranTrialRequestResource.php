@@ -231,14 +231,16 @@ abstract class BaseQuranTrialRequestResource extends Resource
                 ->label('المستوى')
                 ->formatStateUsing(fn (string $state): string => QuranTrialRequest::LEVELS[$state] ?? $state)
                 ->badge()
-                ->color('info'),
+                ->color('info')
+                ->toggleable(),
 
             TextColumn::make('trialSession.scheduled_at')
                 ->label('موعد الجلسة')
                 ->dateTime('d/m/Y h:i A')
                 ->timezone(fn ($record) => $record->academy?->timezone?->value ?? AcademyContextService::getTimezone())
                 ->sortable()
-                ->placeholder('لم يتم الجدولة'),
+                ->placeholder('لم يتم الجدولة')
+                ->toggleable(),
 
             TextColumn::make('rating')
                 ->label('التقييم')
@@ -254,7 +256,8 @@ abstract class BaseQuranTrialRequestResource extends Resource
                     $state >= 8 => 'success',
                     $state >= 5 => 'warning',
                     default => 'danger',
-                }),
+                })
+                ->toggleable(),
 
             TextColumn::make('created_at')
                 ->label('تاريخ الطلب')

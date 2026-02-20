@@ -333,7 +333,8 @@ abstract class BaseQuranSessionResource extends BaseResource
             TextColumn::make('title')
                 ->label('عنوان الجلسة')
                 ->searchable()
-                ->limit(30),
+                ->limit(30)
+                ->toggleable(),
 
             TextColumn::make('session_type')
                 ->badge()
@@ -343,13 +344,15 @@ abstract class BaseQuranSessionResource extends BaseResource
                     'primary' => 'individual',
                     'success' => 'group',
                     'warning' => 'trial',
-                ]),
+                ])
+                ->toggleable(),
 
             TextColumn::make('scheduled_at')
                 ->label('موعد الجلسة')
                 ->dateTime('Y-m-d H:i')
                 ->timezone(AcademyContextService::getTimezone())
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('duration_minutes')
                 ->label('المدة')

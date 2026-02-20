@@ -208,7 +208,8 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
             TextColumn::make('session.scheduled_at')
                 ->label('تاريخ الجلسة')
                 ->dateTime('Y-m-d H:i')
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('session.session_type')
                 ->label('نوع الجلسة')
@@ -222,12 +223,14 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
                     'individual' => 'info',
                     'group' => 'success',
                     default => 'gray',
-                }),
+                })
+                ->toggleable(),
 
             // Use base-standard enum handling via tryFrom to avoid manual match/switch
             TextColumn::make('attendance_status')
                 ->label('الحضور')
                 ->badge()
+                ->toggleable()
                 ->formatStateUsing(function (mixed $state): string {
                     if ($state instanceof AttendanceStatus) {
                         return $state->label();
@@ -262,6 +265,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
                 ->numeric()
                 ->sortable()
                 ->badge()
+                ->toggleable()
                 ->color(fn (?string $state): string => match (true) {
                     $state === null => 'gray',
                     (float) $state >= 8 => 'success',
@@ -275,6 +279,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
                 ->numeric()
                 ->sortable()
                 ->badge()
+                ->toggleable()
                 ->color(fn (?string $state): string => match (true) {
                     $state === null => 'gray',
                     (float) $state >= 8 => 'success',
