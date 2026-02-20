@@ -301,6 +301,7 @@ class BusinessServiceCategoryResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([])
+            ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make()->label('تعديل'),

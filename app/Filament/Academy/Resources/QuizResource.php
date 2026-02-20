@@ -122,6 +122,7 @@ class QuizResource extends BaseQuizResource
         $table = parent::table($table);
 
         return $table
+            ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()

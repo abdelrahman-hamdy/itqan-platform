@@ -26,6 +26,7 @@ class CertificateResource extends BaseCertificateResource
     public static function table(Table $table): Table
     {
         return parent::table($table)
+            ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()

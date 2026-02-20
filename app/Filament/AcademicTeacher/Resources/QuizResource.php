@@ -64,6 +64,7 @@ class QuizResource extends BaseQuizResource
     public static function table(Table $table): Table
     {
         return parent::table($table)
+            ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make()

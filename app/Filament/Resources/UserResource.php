@@ -242,6 +242,7 @@ class UserResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([])
+            ->deferFilters(false)
             ->recordActions([
                 ActionGroup::make([
                     // Redirect to profile resource based on user type
