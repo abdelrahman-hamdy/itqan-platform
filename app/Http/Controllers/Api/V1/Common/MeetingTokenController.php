@@ -205,7 +205,7 @@ class MeetingTokenController extends Controller
         if ($session->meeting_room_name) {
             return $this->success([
                 'meeting_room_name' => $session->meeting_room_name,
-                'meeting_link' => $session->meeting_link,
+                'meeting_url' => $session->meeting_link,
                 'meeting_id' => $session->meeting_id,
                 'session_id' => $session->id,
                 'session_type' => $sessionType,
@@ -238,7 +238,7 @@ class MeetingTokenController extends Controller
 
             return $this->success([
                 'meeting_room_name' => $session->meeting_room_name,
-                'meeting_link' => $session->meeting_link,
+                'meeting_url' => $session->meeting_link,
                 'meeting_id' => $session->meeting_id,
                 'session_id' => $session->id,
                 'session_type' => $sessionType,

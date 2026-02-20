@@ -71,14 +71,23 @@ abstract class BaseParentSessionController extends Controller
      */
     protected function formatBaseSession(string $type, $session, $student): array
     {
+        $teacher = $this->resolveSessionTeacher($session, $type);
+
         return [
             'id' => $session->id,
             'type' => $type,
             'child_id' => $student->id,
             'child_name' => $student->full_name,
+            'student_id' => $this->getStudentUserId($student),
+            'student_name' => $student->full_name,
+            'session_code' => $session->session_code ?? null,
             'status' => is_object($session->status) ? $session->status->value : $session->status,
             'scheduled_at' => $session->scheduled_at?->toISOString(),
             'duration_minutes' => $session->duration_minutes ?? 60,
+            'teacher' => $this->formatTeacherData($teacher),
+            'meeting_url' => $session->meeting_link ?? null,
+            'can_join' => $this->canJoinSession($session),
+            'has_meeting' => ! empty($session->meeting_link),
         ];
     }
 

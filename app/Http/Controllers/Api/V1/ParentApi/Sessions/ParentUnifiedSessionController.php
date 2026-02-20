@@ -601,7 +601,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
                     'notes' => $report->notes,
                     'evaluated_at' => $report->evaluated_at?->toISOString(),
                 ] : null,
-                'meeting_link' => $session->meeting_link,
+                'meeting_url' => $session->meeting_link,
                 'started_at' => $session->started_at?->toISOString(),
                 'ended_at' => $session->ended_at?->toISOString(),
             ]);
@@ -628,7 +628,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
                     'notes' => $report->notes,
                     'teacher_feedback' => $report->teacher_feedback,
                 ] : null,
-                'meeting_link' => $session->meeting_link,
+                'meeting_url' => $session->meeting_link,
                 'started_at' => $session->started_at?->toISOString(),
                 'ended_at' => $session->ended_at?->toISOString(),
             ]);
@@ -652,7 +652,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
             ] : null,
             'description' => $session->description,
             'materials' => $session->materials ?? [],
-            'meeting_link' => $session->meeting_link,
+            'meeting_url' => $session->meeting_link,
         ]);
     }
 }

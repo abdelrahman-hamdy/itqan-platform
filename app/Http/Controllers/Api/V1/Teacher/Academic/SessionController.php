@@ -64,7 +64,7 @@ class SessionController extends Controller
                 'scheduled_at' => $session->scheduled_at?->toISOString(),
                 'duration_minutes' => $session->duration_minutes ?? 60,
                 'status' => $session->status->value ?? $session->status,
-                'meeting_link' => $session->meeting_link,
+                'meeting_url' => $session->meeting_link,
             ];
         }
 
@@ -103,7 +103,7 @@ class SessionController extends Controller
                 'scheduled_at' => $session->scheduled_at?->toISOString(),
                 'duration_minutes' => $session->duration_minutes ?? 60,
                 'status' => $session->status->value ?? $session->status,
-                'meeting_link' => $session->meeting_link,
+                'meeting_url' => $session->meeting_link,
             ];
         }
 
@@ -162,7 +162,7 @@ class SessionController extends Controller
                     'scheduled_at' => $session->scheduled_at?->toISOString(),
                     'duration_minutes' => $session->duration_minutes ?? 60,
                     'status' => $session->status->value ?? $session->status,
-                    'meeting_link' => $session->meeting_link,
+                    'meeting_url' => $session->meeting_link,
                     'homework' => $session->homework,
                     'lesson_content' => $session->lesson_content,
                     'topics_covered' => $session->topics_covered ?? [],
@@ -205,7 +205,7 @@ class SessionController extends Controller
                     'scheduled_at' => $interactiveSession->scheduled_at?->toISOString(),
                     'duration_minutes' => $interactiveSession->duration_minutes ?? 60,
                     'status' => $interactiveSession->status->value ?? $interactiveSession->status,
-                    'meeting_link' => $interactiveSession->meeting_link,
+                    'meeting_url' => $interactiveSession->meeting_link,
                     'materials' => $interactiveSession->materials ?? [],
                     'created_at' => $interactiveSession->created_at->toISOString(),
                 ],

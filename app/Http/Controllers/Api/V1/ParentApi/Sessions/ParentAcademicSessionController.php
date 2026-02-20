@@ -242,7 +242,7 @@ class ParentAcademicSessionController extends BaseParentSessionController
                 'notes' => $report->notes,
                 'teacher_feedback' => $report->teacher_feedback,
             ] : null,
-            'meeting_link' => $session->meeting_link,
+            'meeting_url' => $session->meeting_link,
             'started_at' => $session->started_at?->toISOString(),
             'ended_at' => $session->ended_at?->toISOString(),
         ]);

@@ -47,7 +47,7 @@ class MeetingController extends Controller
         // Check if meeting already exists
         if ($session->meeting_link) {
             return $this->success([
-                'meeting_link' => $session->meeting_link,
+                'meeting_url' => $session->meeting_link,
                 'room_name' => $session->meeting_room_name,
             ], __('Meeting already exists'));
         }
@@ -68,7 +68,7 @@ class MeetingController extends Controller
             ]);
 
             return $this->created([
-                'meeting_link' => $session->meeting_link,
+                'meeting_url' => $session->meeting_link,
                 'room_name' => $roomName,
             ], __('Meeting created successfully'));
         } catch (Exception $e) {

@@ -269,7 +269,7 @@ class ParentInteractiveSessionController extends BaseParentSessionController
             ] : null,
             'description' => $session->description,
             'materials' => $session->materials ?? [],
-            'meeting_link' => $session->meeting_link,
+            'meeting_url' => $session->meeting_link,
         ]);
     }
 }

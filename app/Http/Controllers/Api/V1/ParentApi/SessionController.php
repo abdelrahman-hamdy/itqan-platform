@@ -445,7 +445,7 @@ class SessionController extends Controller
                     'notes' => $report->notes,
                     'evaluated_at' => $report->evaluated_at?->toISOString(),
                 ] : null,
-                'meeting_link' => $session->meeting_link,
+                'meeting_url' => $session->meeting_link,
                 'started_at' => $session->started_at?->toISOString(),
                 'ended_at' => $session->ended_at?->toISOString(),
             ]);
@@ -472,7 +472,7 @@ class SessionController extends Controller
                     'notes' => $report->notes,
                     'teacher_feedback' => $report->teacher_feedback,
                 ] : null,
-                'meeting_link' => $session->meeting_link,
+                'meeting_url' => $session->meeting_link,
                 'started_at' => $session->started_at?->toISOString(),
                 'ended_at' => $session->ended_at?->toISOString(),
             ]);
@@ -496,7 +496,7 @@ class SessionController extends Controller
             ] : null,
             'description' => $session->description,
             'materials' => $session->materials ?? [],
-            'meeting_link' => $session->meeting_link,
+            'meeting_url' => $session->meeting_link,
         ]);
     }
 

@@ -119,7 +119,7 @@ class ScheduleController extends Controller
                         'scheduled_at' => $session->scheduled_at?->toISOString(),
                         'duration_minutes' => $session->duration_minutes ?? 60,
                         'status' => $session->status->value ?? $session->status,
-                        'meeting_link' => $session->meeting_link,
+                        'meeting_url' => $session->meeting_link,
                     ];
                 }
             }
@@ -146,7 +146,7 @@ class ScheduleController extends Controller
                         'scheduled_at' => $session->scheduled_at?->toISOString(),
                         'duration_minutes' => $session->duration_minutes ?? 60,
                         'status' => $session->status->value ?? $session->status,
-                        'meeting_link' => $session->meeting_link,
+                        'meeting_url' => $session->meeting_link,
                     ];
                 }
 
@@ -170,7 +170,7 @@ class ScheduleController extends Controller
                         'scheduled_at' => $session->scheduled_at?->toISOString(),
                         'duration_minutes' => $session->duration_minutes ?? 60,
                         'status' => $session->status->value ?? $session->status,
-                        'meeting_link' => $session->meeting_link,
+                        'meeting_url' => $session->meeting_link,
                     ];
                 }
             }

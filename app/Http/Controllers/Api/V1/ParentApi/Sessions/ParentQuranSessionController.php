@@ -249,7 +249,7 @@ class ParentQuranSessionController extends BaseParentSessionController
                 'notes' => $report->notes,
                 'evaluated_at' => $report->evaluated_at?->toISOString(),
             ] : null,
-            'meeting_link' => $session->meeting_link,
+            'meeting_url' => $session->meeting_link,
             'started_at' => $session->started_at?->toISOString(),
             'ended_at' => $session->ended_at?->toISOString(),
         ]);

@@ -7,9 +7,11 @@ use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Course;
 use App\Models\CourseSubscription;
+use App\Models\RecordedCourse;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
 use App\Models\SubscriptionAccessLog;
+use App\Services\AcademyContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -27,7 +29,7 @@ class MobilePurchaseController extends Controller
     {
         $validator = Validator::make(compact('type', 'id'), [
             'type' => ['required', 'in:course,quran_teacher,academic_teacher'],
-            'id' => ['required', 'uuid'],
+            'id' => ['required'],
         ]);
 
         if ($validator->fails()) {
@@ -69,9 +71,7 @@ class MobilePurchaseController extends Controller
 
         // Log purchase attempt
         SubscriptionAccessLog::create([
-            'tenant_id' => getTenantId(),
-            'subscription_type' => null,
-            'subscription_id' => null,
+            'academy_id' => AcademyContextService::getApiContextAcademyId(),
             'user_id' => $user->id,
             'platform' => 'mobile',
             'action' => 'purchase_attempted',
@@ -107,7 +107,7 @@ class MobilePurchaseController extends Controller
     public function confirmPurchase(Request $request)
     {
         $validated = $request->validate([
-            'subscription_id' => ['required', 'uuid'],
+            'subscription_id' => ['required'],
         ]);
 
         $user = $request->user();
@@ -148,9 +148,9 @@ class MobilePurchaseController extends Controller
     protected function findResource(string $type, string $id)
     {
         return match ($type) {
-            'course' => Course::find($id),
-            'quran_teacher' => QuranTeacherProfile::find($id),
-            'academic_teacher' => AcademicTeacherProfile::find($id),
+            'course' => RecordedCourse::find($id) ?? Course::find($id),
+            'quran_teacher' => QuranTeacherProfile::where('user_id', $id)->first() ?? QuranTeacherProfile::find($id),
+            'academic_teacher' => AcademicTeacherProfile::where('user_id', $id)->first() ?? AcademicTeacherProfile::find($id),
             default => null,
         };
     }

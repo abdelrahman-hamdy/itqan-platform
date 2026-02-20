@@ -66,7 +66,7 @@ abstract class BaseStudentSessionController extends Controller
         $base['session_code'] = $session->session_code ?? null;
 
         $base['description'] = $session->description;
-        $base['notes'] = $session->session_notes ?? null;
+        $base['session_notes'] = $session->session_notes ?? null;
         $base['teacher_feedback'] = $session->teacher_feedback ?? null;
 
         // Meeting data is stored directly on the session model (no separate meeting relationship)
