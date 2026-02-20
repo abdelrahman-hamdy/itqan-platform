@@ -27,28 +27,36 @@
             {{-- Mini Stats Row --}}
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                 <div class="rounded-lg bg-gray-50 dark:bg-white/5 p-3 text-center ring-1 ring-gray-950/5 dark:ring-white/10">
-                    <div class="text-xl font-extrabold {{ $quickStats['total_pending'] > 0 ? 'text-danger-600 dark:text-danger-400' : 'text-success-600 dark:text-success-400' }}">
-                        {{ $quickStats['total_pending'] }}
-                    </div>
-                    <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-0.5">بنود معلقة</div>
-                </div>
-                <div class="rounded-lg bg-gray-50 dark:bg-white/5 p-3 text-center ring-1 ring-gray-950/5 dark:ring-white/10">
                     <div class="text-xl font-extrabold text-info-600 dark:text-info-400">
                         {{ $quickStats['today_sessions'] }}
                     </div>
                     <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-0.5">جلسات اليوم</div>
                 </div>
                 <div class="rounded-lg bg-gray-50 dark:bg-white/5 p-3 text-center ring-1 ring-gray-950/5 dark:ring-white/10">
+                    <div class="flex items-center justify-center gap-1.5">
+                        @if($quickStats['ongoing_sessions'] > 0)
+                            <span class="relative flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
+                            </span>
+                        @endif
+                        <span class="text-xl font-extrabold text-primary-600 dark:text-primary-400">
+                            {{ $quickStats['ongoing_sessions'] }}
+                        </span>
+                    </div>
+                    <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-0.5">جارية الآن</div>
+                </div>
+                <div class="rounded-lg bg-gray-50 dark:bg-white/5 p-3 text-center ring-1 ring-gray-950/5 dark:ring-white/10">
+                    <div class="text-xl font-extrabold text-success-600 dark:text-success-400">
+                        {{ $quickStats['completed_today'] }}
+                    </div>
+                    <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-0.5">مكتملة اليوم</div>
+                </div>
+                <div class="rounded-lg bg-gray-50 dark:bg-white/5 p-3 text-center ring-1 ring-gray-950/5 dark:ring-white/10">
                     <div class="text-xl font-extrabold text-success-600 dark:text-success-400">
                         {{ $quickStats['active_subscriptions'] }}
                     </div>
                     <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-0.5">اشتراكات نشطة</div>
-                </div>
-                <div class="rounded-lg bg-gray-50 dark:bg-white/5 p-3 text-center ring-1 ring-gray-950/5 dark:ring-white/10">
-                    <div class="text-xl font-extrabold text-warning-600 dark:text-warning-400">
-                        {{ number_format($quickStats['monthly_revenue'], 0) }}
-                    </div>
-                    <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-0.5">إيرادات الشهر</div>
                 </div>
             </div>
 
@@ -77,9 +85,9 @@
                 <x-filament::tabs.item
                     alpine-active="activeTab === 'actions'"
                     x-on:click="activeTab = 'actions'"
-                    icon="heroicon-m-bolt"
+                    icon="heroicon-m-plus-circle"
                 >
-                    إجراءات سريعة
+                    إنشاء جديد
                 </x-filament::tabs.item>
             </x-filament::tabs>
 
@@ -132,7 +140,7 @@
                 @if(collect($today)->sum('total') > 0)
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         @foreach($today as $type => $session)
-                            <div class="rounded-xl bg-gray-50 dark:bg-white/5 p-4 ring-1 ring-gray-950/5 dark:ring-white/10">
+                            <div class="rounded-xl bg-white dark:bg-white/5 p-4 ring-1 ring-gray-950/5 dark:ring-white/10">
                                 <div class="flex items-center justify-between mb-3">
                                     <div class="flex items-center gap-2">
                                         <x-dynamic-component :component="$session['icon']" class="w-5 h-5 text-{{ $session['color'] }}-500" />
@@ -203,111 +211,34 @@
                 @endif
             </div>
 
-            {{-- Tab Content: Quick Actions --}}
+            {{-- Tab Content: Quick Create Actions --}}
             <div x-show="activeTab === 'actions'" x-cloak class="mt-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-
-                    {{-- Quran Section --}}
-                    <div class="rounded-xl bg-gray-50 dark:bg-white/5 p-4 ring-1 ring-gray-950/5 dark:ring-white/10">
-                        <div class="flex items-center gap-2 mb-3 pb-3 border-b border-gray-200 dark:border-white/10">
-                            <div class="w-8 h-8 bg-success-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <x-heroicon-o-book-open class="w-4 h-4 text-white" />
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    @foreach($actions as $action)
+                        @php
+                            $actionIconBg = match($action['color']) {
+                                'success' => 'bg-success-50 dark:bg-success-500/10',
+                                'info' => 'bg-info-50 dark:bg-info-500/10',
+                                'warning' => 'bg-warning-50 dark:bg-warning-500/10',
+                                'primary' => 'bg-primary-50 dark:bg-primary-500/10',
+                                default => 'bg-gray-100 dark:bg-gray-500/10',
+                            };
+                            $actionIconColor = match($action['color']) {
+                                'success' => 'text-success-600 dark:text-success-400',
+                                'info' => 'text-info-600 dark:text-info-400',
+                                'warning' => 'text-warning-600 dark:text-warning-400',
+                                'primary' => 'text-primary-600 dark:text-primary-400',
+                                default => 'text-gray-600 dark:text-gray-400',
+                            };
+                        @endphp
+                        <a href="{{ $action['url'] }}"
+                           class="group flex flex-col items-center gap-2 p-4 rounded-xl bg-white dark:bg-white/5 ring-1 ring-gray-950/5 dark:ring-white/10 hover:ring-primary-500/50 dark:hover:ring-primary-400/30 hover:shadow-sm transition-all text-center">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center {{ $actionIconBg }} group-hover:scale-110 transition-transform">
+                                <x-dynamic-component :component="$action['icon']" class="w-5 h-5 {{ $actionIconColor }}" />
                             </div>
-                            <h4 class="text-sm font-bold text-gray-950 dark:text-white">القرآن الكريم</h4>
-                        </div>
-                        <div class="space-y-1">
-                            <x-filament::link href="{{ route('filament.admin.resources.quran-circles.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                حلقات القرآن
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.quran-individual-circles.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                الحلقات الفردية
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.quran-packages.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                باقات القرآن
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.quran-sessions.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                جلسات القرآن
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.quran-teacher-profiles.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                معلمو القرآن
-                            </x-filament::link>
-                        </div>
-                    </div>
-
-                    {{-- Academic Section --}}
-                    <div class="rounded-xl bg-gray-50 dark:bg-white/5 p-4 ring-1 ring-gray-950/5 dark:ring-white/10">
-                        <div class="flex items-center gap-2 mb-3 pb-3 border-b border-gray-200 dark:border-white/10">
-                            <div class="w-8 h-8 bg-info-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <x-heroicon-o-academic-cap class="w-4 h-4 text-white" />
-                            </div>
-                            <h4 class="text-sm font-bold text-gray-950 dark:text-white">القسم الأكاديمي</h4>
-                        </div>
-                        <div class="space-y-1">
-                            <x-filament::link href="{{ route('filament.admin.resources.academic-teacher-profiles.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                المدرسين الأكاديميين
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.academic-packages.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                الباقات الأكاديمية
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.academic-sessions.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                الجلسات الأكاديمية
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.interactive-courses.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                الدورات التفاعلية
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.recorded-courses.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                الدورات المسجلة
-                            </x-filament::link>
-                        </div>
-                    </div>
-
-                    {{-- Users Section --}}
-                    <div class="rounded-xl bg-gray-50 dark:bg-white/5 p-4 ring-1 ring-gray-950/5 dark:ring-white/10">
-                        <div class="flex items-center gap-2 mb-3 pb-3 border-b border-gray-200 dark:border-white/10">
-                            <div class="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <x-heroicon-o-users class="w-4 h-4 text-white" />
-                            </div>
-                            <h4 class="text-sm font-bold text-gray-950 dark:text-white">المستخدمين</h4>
-                        </div>
-                        <div class="space-y-1">
-                            <x-filament::link href="{{ route('filament.admin.resources.student-profiles.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                الطلاب
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.parent-profiles.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                أولياء الأمور
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.supervisor-profiles.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                المشرفين
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.users.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                جميع المستخدمين
-                            </x-filament::link>
-                        </div>
-                    </div>
-
-                    {{-- Finance Section --}}
-                    <div class="rounded-xl bg-gray-50 dark:bg-white/5 p-4 ring-1 ring-gray-950/5 dark:ring-white/10">
-                        <div class="flex items-center gap-2 mb-3 pb-3 border-b border-gray-200 dark:border-white/10">
-                            <div class="w-8 h-8 bg-warning-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <x-heroicon-o-banknotes class="w-4 h-4 text-white" />
-                            </div>
-                            <h4 class="text-sm font-bold text-gray-950 dark:text-white">المالية</h4>
-                        </div>
-                        <div class="space-y-1">
-                            <x-filament::link href="{{ route('filament.admin.resources.payments.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                المدفوعات
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.quran-subscriptions.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                اشتراكات القرآن
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.academic-subscriptions.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                الاشتراكات الأكاديمية
-                            </x-filament::link>
-                            <x-filament::link href="{{ route('filament.admin.resources.teacher-earnings.index') }}" icon="heroicon-m-chevron-left" icon-position="after" class="justify-between w-full">
-                                أرباح المعلمين
-                            </x-filament::link>
-                        </div>
-                    </div>
+                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 leading-tight">{{ $action['label'] }}</span>
+                        </a>
+                    @endforeach
                 </div>
             </div>
 

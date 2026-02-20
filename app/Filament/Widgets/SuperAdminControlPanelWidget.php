@@ -9,15 +9,21 @@ use App\Enums\SessionRequestStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
+use App\Filament\Resources\AcademicPackageResource;
 use App\Filament\Resources\AcademicSessionResource;
 use App\Filament\Resources\AcademicSubscriptionResource;
 use App\Filament\Resources\BusinessServiceRequestResource;
 use App\Filament\Resources\HomeworkSubmissionsResource;
+use App\Filament\Resources\InteractiveCourseResource;
 use App\Filament\Resources\InteractiveCourseSessionResource;
 use App\Filament\Resources\PaymentResource;
+use App\Filament\Resources\QuranCircleResource;
+use App\Filament\Resources\QuranIndividualCircleResource;
+use App\Filament\Resources\QuranPackageResource;
 use App\Filament\Resources\QuranSessionResource;
 use App\Filament\Resources\QuranSubscriptionResource;
 use App\Filament\Resources\QuranTrialRequestResource;
+use App\Filament\Resources\RecordedCourseResource;
 use App\Filament\Resources\TeacherReviewResource;
 use App\Filament\Resources\UserResource;
 use App\Models\AcademicHomeworkSubmission;
@@ -63,13 +69,14 @@ class SuperAdminControlPanelWidget extends Widget
                 'pending' => [],
                 'today' => [],
                 'quickStats' => [],
+                'actions' => [],
                 'academyName' => '',
             ];
         }
 
         $cacheKey = 'sa_cp_' . $academy->id;
 
-        return Cache::remember($cacheKey, 30, function () use ($academy) {
+        $data = Cache::remember($cacheKey, 30, function () use ($academy) {
             $pending = $this->getPendingWorkflowData($academy);
             $today = $this->getTodaySessionsData($academy);
 
@@ -80,6 +87,10 @@ class SuperAdminControlPanelWidget extends Widget
                 'academyName' => $academy->name,
             ];
         });
+
+        $data['actions'] = $this->getQuickActionsData();
+
+        return $data;
     }
 
     private function getPendingWorkflowData(Academy $academy): array
@@ -281,23 +292,36 @@ class SuperAdminControlPanelWidget extends Widget
         $academyId = $academy->id;
         $totalPending = collect($pending)->sum('count');
         $totalTodaySessions = collect($today)->sum('total');
+        $ongoingSessions = collect($today)->sum('ongoing');
+        $completedToday = collect($today)->sum('completed');
 
         $activeSubscriptions = QuranSubscription::where('academy_id', $academyId)
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)->count()
             + AcademicSubscription::where('academy_id', $academyId)
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
 
-        $monthlyRevenue = Payment::where('academy_id', $academyId)
-            ->where('status', PaymentStatus::COMPLETED->value)
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->sum('amount');
-
         return [
             'total_pending' => $totalPending,
             'today_sessions' => $totalTodaySessions,
+            'ongoing_sessions' => $ongoingSessions,
+            'completed_today' => $completedToday,
             'active_subscriptions' => $activeSubscriptions,
-            'monthly_revenue' => $monthlyRevenue,
+        ];
+    }
+
+    private function getQuickActionsData(): array
+    {
+        return [
+            ['label' => 'اشتراك قرآن جديد', 'icon' => 'heroicon-o-book-open', 'url' => QuranSubscriptionResource::getUrl('create'), 'color' => 'success'],
+            ['label' => 'اشتراك أكاديمي جديد', 'icon' => 'heroicon-o-academic-cap', 'url' => AcademicSubscriptionResource::getUrl('create'), 'color' => 'info'],
+            ['label' => 'إضافة مستخدم', 'icon' => 'heroicon-o-user-plus', 'url' => UserResource::getUrl('create'), 'color' => 'primary'],
+            ['label' => 'تسجيل مدفوعة', 'icon' => 'heroicon-o-banknotes', 'url' => PaymentResource::getUrl('create'), 'color' => 'warning'],
+            ['label' => 'حلقة قرآن جديدة', 'icon' => 'heroicon-o-user-group', 'url' => QuranCircleResource::getUrl('create'), 'color' => 'success'],
+            ['label' => 'حلقة فردية جديدة', 'icon' => 'heroicon-o-user', 'url' => QuranIndividualCircleResource::getUrl('create'), 'color' => 'success'],
+            ['label' => 'باقة قرآن جديدة', 'icon' => 'heroicon-o-cube', 'url' => QuranPackageResource::getUrl('create'), 'color' => 'success'],
+            ['label' => 'باقة أكاديمية جديدة', 'icon' => 'heroicon-o-cube-transparent', 'url' => AcademicPackageResource::getUrl('create'), 'color' => 'info'],
+            ['label' => 'دورة تفاعلية جديدة', 'icon' => 'heroicon-o-video-camera', 'url' => InteractiveCourseResource::getUrl('create'), 'color' => 'info'],
+            ['label' => 'دورة مسجلة جديدة', 'icon' => 'heroicon-o-play-circle', 'url' => RecordedCourseResource::getUrl('create'), 'color' => 'info'],
         ];
     }
 
