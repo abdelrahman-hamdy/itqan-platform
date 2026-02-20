@@ -241,43 +241,43 @@ describe('Cross-Panel Access Logic', function () {
         expect($admin->canAccessPanel(\Filament\Facades\Filament::getPanel('supervisor')))->toBeFalse();
     });
 
-    it('quran teacher can access teacher and academy panels only', function () {
+    it('quran teacher can access teacher panel only', function () {
         $academy = createAcademy();
         $teacher = createQuranTeacher($academy);
 
         // Can access
         expect($teacher->canAccessPanel(\Filament\Facades\Filament::getPanel('teacher')))->toBeTrue();
-        expect($teacher->canAccessPanel(\Filament\Facades\Filament::getPanel('academy')))->toBeTrue();
 
         // Cannot access
+        expect($teacher->canAccessPanel(\Filament\Facades\Filament::getPanel('academy')))->toBeFalse();
         expect($teacher->canAccessPanel(\Filament\Facades\Filament::getPanel('admin')))->toBeFalse();
         expect($teacher->canAccessPanel(\Filament\Facades\Filament::getPanel('academic-teacher')))->toBeFalse();
         expect($teacher->canAccessPanel(\Filament\Facades\Filament::getPanel('supervisor')))->toBeFalse();
     });
 
-    it('academic teacher can access academic-teacher and academy panels only', function () {
+    it('academic teacher can access academic-teacher panel only', function () {
         $academy = createAcademy();
         $teacher = createAcademicTeacher($academy);
 
         // Can access
         expect($teacher->canAccessPanel(\Filament\Facades\Filament::getPanel('academic-teacher')))->toBeTrue();
-        expect($teacher->canAccessPanel(\Filament\Facades\Filament::getPanel('academy')))->toBeTrue();
 
         // Cannot access
+        expect($teacher->canAccessPanel(\Filament\Facades\Filament::getPanel('academy')))->toBeFalse();
         expect($teacher->canAccessPanel(\Filament\Facades\Filament::getPanel('admin')))->toBeFalse();
         expect($teacher->canAccessPanel(\Filament\Facades\Filament::getPanel('teacher')))->toBeFalse();
         expect($teacher->canAccessPanel(\Filament\Facades\Filament::getPanel('supervisor')))->toBeFalse();
     });
 
-    it('supervisor can access supervisor and academy panels only', function () {
+    it('supervisor can access supervisor panel only', function () {
         $academy = createAcademy();
         $supervisor = createSupervisor($academy);
 
         // Can access
         expect($supervisor->canAccessPanel(\Filament\Facades\Filament::getPanel('supervisor')))->toBeTrue();
-        expect($supervisor->canAccessPanel(\Filament\Facades\Filament::getPanel('academy')))->toBeTrue();
 
         // Cannot access
+        expect($supervisor->canAccessPanel(\Filament\Facades\Filament::getPanel('academy')))->toBeFalse();
         expect($supervisor->canAccessPanel(\Filament\Facades\Filament::getPanel('admin')))->toBeFalse();
         expect($supervisor->canAccessPanel(\Filament\Facades\Filament::getPanel('teacher')))->toBeFalse();
         expect($supervisor->canAccessPanel(\Filament\Facades\Filament::getPanel('academic-teacher')))->toBeFalse();

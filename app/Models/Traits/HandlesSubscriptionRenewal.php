@@ -263,21 +263,21 @@ trait HandlesSubscriptionRenewal
             return;
         }
 
-        // Final failure: cancel the subscription
-        $metadata['renewal_cancelled_after_attempts'] = $failedCount;
+        // Enter grace period instead of immediate cancellation
+        $gracePeriodDays = config('payments.renewal.grace_period_days', 3);
+        $metadata['grace_period_expires_at'] = now()->addDays($gracePeriodDays)->toIso8601String();
+        $metadata['grace_period_started_at'] = now()->toIso8601String();
 
         $this->update([
-            'status' => SessionSubscriptionStatus::CANCELLED,
+            'status' => SessionSubscriptionStatus::ACTIVE, // Keep active during grace period
             'payment_status' => SubscriptionPaymentStatus::FAILED,
-            'auto_renew' => false,
-            'cancellation_reason' => "فشل الدفع التلقائي بعد {$failedCount} محاولات: ".$reason,
-            'cancelled_at' => now(),
             'metadata' => $metadata,
         ]);
 
-        Log::warning("Subscription {$this->id} cancelled after {$failedCount} failed renewal attempts", [
+        Log::warning("Subscription {$this->id} entered grace period after {$failedCount} failed renewal attempts", [
             'reason' => $reason,
-            'ends_at' => $this->ends_at?->toDateString(),
+            'grace_period_days' => $gracePeriodDays,
+            'grace_period_expires_at' => now()->addDays($gracePeriodDays)->toDateString(),
         ]);
 
         // Send failure notification

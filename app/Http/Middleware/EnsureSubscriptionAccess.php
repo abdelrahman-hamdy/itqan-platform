@@ -12,6 +12,7 @@ use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
 use App\Models\QuranSubscription;
 use App\Models\SubscriptionAccessLog;
+use App\Services\AcademyContextService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -90,7 +91,7 @@ class EnsureSubscriptionAccess
             'quran_session' => $this->findQuranSubscriptionForSession($user, $resourceId),
             'academic_session' => $this->findAcademicSubscriptionForSession($user, $resourceId),
             'interactive_course' => $this->findCourseSubscriptionForCourse($user, $resourceId, 'interactive'),
-            'recorded_course' => $this->findCourseSubscriptionForCourse($user, $resourceId, 'recorded'),
+            'recorded_course', 'course' => $this->findCourseSubscriptionForCourse($user, $resourceId, 'recorded'),
             default => null,
         };
     }
@@ -107,18 +108,11 @@ class EnsureSubscriptionAccess
             return null;
         }
 
-        // Find subscription that matches this student and session's circle/teacher
+        // Find subscription that matches this student and session's teacher
+        // No status filter — canAccess() will determine if access is allowed
         return QuranSubscription::where('student_id', $user->id)
-            ->where('status', SessionSubscriptionStatus::ACTIVE)
-            ->where(function ($query) use ($session) {
-                if ($session->individual_circle_id) {
-                    $query->whereHas('individualCircle', function ($q) use ($session) {
-                        $q->where('id', $session->individual_circle_id);
-                    });
-                } elseif ($session->circle_id) {
-                    $query->where('quran_circle_id', $session->circle_id);
-                }
-            })
+            ->where('quran_teacher_id', $session->quran_teacher_id)
+            ->orderByDesc('created_at')
             ->first();
     }
 
@@ -134,12 +128,11 @@ class EnsureSubscriptionAccess
             return null;
         }
 
-        // Find subscription that matches this student and session's lesson
+        // Find subscription that matches this student and session's teacher
+        // No status filter — canAccess() will determine if access is allowed
         return AcademicSubscription::where('student_id', $user->id)
-            ->where('status', SessionSubscriptionStatus::ACTIVE)
-            ->whereHas('lesson', function ($q) use ($session) {
-                $q->where('id', $session->academic_individual_lesson_id);
-            })
+            ->where('teacher_id', $session->academic_teacher_id)
+            ->orderByDesc('created_at')
             ->first();
     }
 
@@ -151,10 +144,10 @@ class EnsureSubscriptionAccess
         $courseTypeValue = $courseType instanceof CourseType ? $courseType->value : $courseType;
         $column = $courseTypeValue === 'interactive' ? 'interactive_course_id' : 'recorded_course_id';
 
+        // No status filter — canAccess() will determine if access is allowed
         return CourseSubscription::where('student_id', $user->id)
             ->where($column, $courseId)
-            ->where('course_type', $courseType)
-            ->where('status', EnrollmentStatus::ENROLLED)
+            ->orderByDesc('created_at')
             ->first();
     }
 
@@ -210,7 +203,7 @@ class EnsureSubscriptionAccess
         ?string $reason = null
     ): void {
         SubscriptionAccessLog::create([
-            'tenant_id' => getTenantId(),
+            'academy_id' => $request->attributes->get('academy')?->id ?? AcademyContextService::getApiContextAcademyId(),
             'subscription_type' => $subscription ? get_class($subscription) : null,
             'subscription_id' => $subscription?->id,
             'user_id' => $user->id,
@@ -231,12 +224,19 @@ class EnsureSubscriptionAccess
      */
     protected function detectPlatform(Request $request): string
     {
-        if ($request->header('X-Platform') === 'mobile') {
+        $platform = $request->header('X-Platform');
+
+        if ($platform === 'mobile') {
             return 'mobile';
         }
 
-        if ($request->is('api/*') || $request->is('api/v1/*')) {
-            return 'mobile'; // Assume API calls are from mobile
+        if ($platform === 'web') {
+            return 'web';
+        }
+
+        // Default: API requests without explicit header are assumed mobile
+        if ($request->is('api/*')) {
+            return 'mobile';
         }
 
         return 'web';

@@ -51,13 +51,10 @@ class StudentProfileFactory extends Factory
     public function configure(): static
     {
         return $this->afterMaking(function (StudentProfile $profile) {
-            // If academy_id was set (not a real column), use it to set grade_level
+            // If academy_id was set, use it to set grade_level
             $rawAttributes = $profile->getAttributes();
             if (array_key_exists('academy_id', $rawAttributes)) {
                 $academyId = $rawAttributes['academy_id'];
-
-                // Remove academy_id from the model's attributes to prevent SQL error
-                $profile->offsetUnset('academy_id');
 
                 // If no grade level is set, create one for this academy
                 // Use withoutGlobalScopes to bypass academy scoping during factory creation

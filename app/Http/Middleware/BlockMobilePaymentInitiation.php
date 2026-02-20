@@ -82,6 +82,7 @@ class BlockMobilePaymentInitiation
         $paymentPatterns = [
             'api/v1/payments/create-intent',
             'api/v1/payments/charge-saved',
+            'api/v1/student/payments',
             'api/v1/student/subscriptions/*/purchase',
             'api/v1/student/courses/*/purchase',
             'api/v1/student/courses/*/enroll',

@@ -24,15 +24,16 @@ return Application::configure(basePath: dirname(__DIR__))
         ['middleware' => ['web', 'auth']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Runs before route resolution to block mobile payment initiation on non-existent routes
+        $middleware->prepend([
+            \App\Http\Middleware\BlockMobilePaymentInitiation::class,
+        ]);
+
         $middleware->web([
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\ContentSecurityPolicy::class,
             \App\Http\Middleware\ResolveTenantFromSubdomain::class,
             \App\Http\Middleware\CheckMaintenanceMode::class,
-        ]);
-
-        $middleware->api([
-            \App\Http\Middleware\BlockMobilePaymentInitiation::class,
         ]);
 
         $middleware->alias([

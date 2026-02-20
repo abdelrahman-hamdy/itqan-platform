@@ -26,9 +26,7 @@ class RecordedCourseFactory extends Factory
             'subject_id' => AcademicSubject::factory(),
             'grade_level_id' => AcademicGradeLevel::factory(),
             'title' => fake()->sentence(4),
-            'title_en' => fake()->sentence(4),
             'description' => fake()->paragraph(),
-            'description_en' => fake()->paragraph(),
             'course_code' => 'RC-'.fake()->unique()->numberBetween(1000, 9999),
             'duration_hours' => fake()->numberBetween(5, 50),
             'language' => 'ar',
@@ -42,7 +40,6 @@ class RecordedCourseFactory extends Factory
             'total_enrollments' => 0,
             'difficulty_level' => fake()->randomElement(['very_easy', 'easy', 'medium', 'hard', 'very_hard']),
             'status' => 'draft',
-            'created_by' => User::factory(),
         ];
     }
 

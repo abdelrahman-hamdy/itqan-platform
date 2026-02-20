@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 class EasyKashSignatureService
 {
     public function __construct(
-        private string $secretKey
+        private ?string $secretKey = null
     ) {}
 
     /**

@@ -13,21 +13,21 @@ return new class extends Migration
     {
         Schema::create('subscription_access_logs', function (Blueprint $table) {
             $table->id();
-            $table->uuid('tenant_id');
-            $table->morphs('subscription'); // subscription_type, subscription_id
-            $table->uuid('user_id');
+            $table->unsignedBigInteger('academy_id')->nullable();
+            $table->nullableMorphs('subscription'); // subscription_type, subscription_id
+            $table->unsignedBigInteger('user_id');
             $table->string('platform', 20); // web|mobile
             $table->string('action', 50); // access_granted|access_denied|purchase_attempted
             $table->string('resource_type', 100)->nullable(); // session|course|lesson
-            $table->uuid('resource_id')->nullable();
+            $table->string('resource_id', 50)->nullable();
             $table->json('metadata')->nullable(); // IP, user_agent, error_reason
             $table->timestamps();
 
             $table->index(['subscription_type', 'subscription_id', 'created_at'], 'sal_sub_type_id_created_idx');
             $table->index(['user_id', 'platform', 'created_at'], 'sal_user_platform_created_idx');
             $table->index(['action', 'created_at'], 'sal_action_created_idx');
-            $table->index(['tenant_id']);
-            // Note: No foreign key constraints - tenant_id is managed via global scopes
+            $table->index(['academy_id']);
+            // Note: No foreign key constraints - academy_id is managed via global scopes
         });
     }
 

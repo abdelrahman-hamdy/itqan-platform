@@ -62,6 +62,7 @@ Route::middleware('api.is.student')->group(function () {
             Route::get('/', [QuranSessionController::class, 'index'])
                 ->name('api.v1.student.sessions.quran.index');
             Route::get('/{id}', [QuranSessionController::class, 'show'])
+                ->middleware('subscription.access:quran_session')
                 ->name('api.v1.student.sessions.quran.show');
             Route::post('/{id}/feedback', [QuranSessionController::class, 'submitFeedback'])
                 ->name('api.v1.student.sessions.quran.feedback');
@@ -71,6 +72,7 @@ Route::middleware('api.is.student')->group(function () {
             Route::get('/', [AcademicSessionController::class, 'index'])
                 ->name('api.v1.student.sessions.academic.index');
             Route::get('/{id}', [AcademicSessionController::class, 'show'])
+                ->middleware('subscription.access:academic_session')
                 ->name('api.v1.student.sessions.academic.show');
             Route::post('/{id}/feedback', [AcademicSessionController::class, 'submitFeedback'])
                 ->name('api.v1.student.sessions.academic.feedback');
@@ -260,6 +262,7 @@ Route::middleware('api.is.student')->group(function () {
             ->name('api.v1.student.courses.recorded.index');
 
         Route::get('/{id}', [RecordedCourseController::class, 'show'])
+            ->middleware('subscription.access:course')
             ->name('api.v1.student.courses.recorded.show');
 
         Route::get('/{id}/lessons', [RecordedCourseController::class, 'lessons'])

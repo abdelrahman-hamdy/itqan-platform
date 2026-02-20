@@ -9,6 +9,7 @@ use App\Services\NotificationService;
 use App\Enums\NotificationType;
 use App\Constants\DefaultAcademy;
 use App\Enums\BillingCycle;
+use App\Enums\EnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\BaseSubscription;
@@ -357,8 +358,8 @@ class BaseSubscriptionObserver
      */
     protected function broadcastStatusChange(
         BaseSubscription $subscription,
-        SessionSubscriptionStatus|string|null $oldStatus,
-        SessionSubscriptionStatus|string $newStatus
+        SessionSubscriptionStatus|EnrollmentStatus|string|null $oldStatus,
+        SessionSubscriptionStatus|EnrollmentStatus|string $newStatus
     ): void {
         try {
             // Broadcasting not yet implemented - will be added when real-time updates are required

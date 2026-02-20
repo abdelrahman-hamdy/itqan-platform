@@ -107,6 +107,7 @@ class ProcessSubscriptionRenewalsCommand extends Command
     private function simulateRenewals(bool $isVerbose): array
     {
         $dueSubscriptions = $this->renewalService->getDueForRenewal();
+        $dueSubscriptions->load('student');
 
         $results = [
             'processed' => 0,
@@ -123,7 +124,7 @@ class ProcessSubscriptionRenewalsCommand extends Command
                 'id' => $subscription->id,
                 'code' => $subscription->subscription_code,
                 'type' => $subscription->getSubscriptionType(),
-                'student' => $subscription->student?->user?->name ?? 'Unknown',
+                'student' => $subscription->student?->name ?? 'Unknown',
                 'renewal_price' => $subscription->calculateRenewalPrice(),
                 'next_billing_date' => $subscription->next_billing_date?->format('Y-m-d'),
             ];
@@ -186,6 +187,7 @@ class ProcessSubscriptionRenewalsCommand extends Command
 
         $this->info('');
         $this->info('Subscription renewal processing completed.');
+        \Log::info('Subscription renewal processing completed.');
     }
 
     /**

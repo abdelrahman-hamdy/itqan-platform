@@ -63,7 +63,6 @@ class RenewalProcessor
         try {
             if (! $this->canProcessRenewal($subscription)) {
                 Log::info("Subscription {$subscription->id} skipped - not eligible for renewal");
-                $lock->release();
 
                 return false;
             }
@@ -74,10 +73,10 @@ class RenewalProcessor
 
             return $this->processRenewalManually($subscription);
         } catch (Exception $e) {
-            // Release lock on failure so retry is possible
-            $lock->release();
-
             throw $e;
+        } finally {
+            // Always release the lock so the subscription can be retried
+            $lock->release();
         }
     }
 

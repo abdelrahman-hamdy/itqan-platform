@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\PurchaseSource;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -12,7 +13,7 @@ use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
 use App\Models\RecordedCourse;
-use App\Models\Student;
+use App\Models\StudentProfile;
 use App\Models\SubscriptionAccessLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,10 +29,10 @@ beforeEach(function () {
     // Create student
     $this->student = User::factory()->create([
         'academy_id' => $this->academy->id,
-        'role' => 'student',
+        'user_type' => 'student',
     ]);
 
-    Student::factory()->create([
+    StudentProfile::factory()->create([
         'user_id' => $this->student->id,
         'academy_id' => $this->academy->id,
     ]);
@@ -39,7 +40,7 @@ beforeEach(function () {
     // Create Quran teacher
     $this->quranTeacher = User::factory()->create([
         'academy_id' => $this->academy->id,
-        'role' => 'teacher',
+        'user_type' => 'quran_teacher',
     ]);
 
     QuranTeacherProfile::factory()->create([
@@ -50,10 +51,10 @@ beforeEach(function () {
     // Create Academic teacher
     $this->academicTeacher = User::factory()->create([
         'academy_id' => $this->academy->id,
-        'role' => 'teacher',
+        'user_type' => 'academic_teacher',
     ]);
 
-    AcademicTeacherProfile::factory()->create([
+    $this->academicTeacherProfile = AcademicTeacherProfile::factory()->create([
         'user_id' => $this->academicTeacher->id,
         'academy_id' => $this->academy->id,
     ]);
@@ -78,7 +79,8 @@ test('unpaid quran subscription denies access to sessions', function () {
 
     // Attempt to access session
     $response = $this->actingAs($this->student, 'sanctum')
-        ->getJson("/api/v1/student/quran-sessions/{$session->id}");
+        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+        ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     // Should be denied
     $response->assertStatus(403);
@@ -112,7 +114,8 @@ test('paused subscription denies access to sessions', function () {
     ]);
 
     $response = $this->actingAs($this->student, 'sanctum')
-        ->getJson("/api/v1/student/quran-sessions/{$session->id}");
+        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+        ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     $response->assertStatus(403);
     $response->assertJson([
@@ -139,7 +142,8 @@ test('active paid subscription grants access to sessions', function () {
     ]);
 
     $response = $this->actingAs($this->student, 'sanctum')
-        ->getJson("/api/v1/student/quran-sessions/{$session->id}");
+        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+        ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     // Should be allowed
     $response->assertStatus(200);
@@ -160,7 +164,7 @@ test('academic subscription access control works correctly', function () {
     $subscription = AcademicSubscription::factory()->create([
         'academy_id' => $this->academy->id,
         'student_id' => $this->student->id,
-        'academic_teacher_id' => $this->academicTeacher->id,
+        'teacher_id' => $this->academicTeacherProfile->id,
         'status' => SessionSubscriptionStatus::ACTIVE,
         'payment_status' => SubscriptionPaymentStatus::PAID,
     ]);
@@ -168,11 +172,12 @@ test('academic subscription access control works correctly', function () {
     $session = AcademicSession::factory()->create([
         'academy_id' => $this->academy->id,
         'student_id' => $this->student->id,
-        'academic_teacher_id' => $this->academicTeacher->id,
+        'academic_teacher_id' => $this->academicTeacherProfile->id,
     ]);
 
     $response = $this->actingAs($this->student, 'sanctum')
-        ->getJson("/api/v1/student/academic-sessions/{$session->id}");
+        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+        ->getJson("/api/v1/student/sessions/academic/{$session->id}");
 
     $response->assertStatus(200);
 
@@ -186,7 +191,6 @@ test('recorded course subscription access control', function () {
     $course = RecordedCourse::factory()->create([
         'academy_id' => $this->academy->id,
         'price' => 200,
-        'is_free' => false,
     ]);
 
     // Create active subscription
@@ -194,11 +198,12 @@ test('recorded course subscription access control', function () {
         'academy_id' => $this->academy->id,
         'student_id' => $this->student->id,
         'recorded_course_id' => $course->id,
-        'status' => SessionSubscriptionStatus::ACTIVE,
+        'status' => EnrollmentStatus::ENROLLED,
         'payment_status' => SubscriptionPaymentStatus::PAID,
     ]);
 
     $response = $this->actingAs($this->student, 'sanctum')
+        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/courses/recorded/{$course->id}");
 
     $response->assertStatus(200);
@@ -222,7 +227,8 @@ test('access logs are created for all access attempts', function () {
 
     // First attempt - denied
     $this->actingAs($this->student, 'sanctum')
-        ->getJson("/api/v1/student/quran-sessions/{$session->id}");
+        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+        ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     expect(SubscriptionAccessLog::count())->toBe(1);
 
@@ -234,7 +240,8 @@ test('access logs are created for all access attempts', function () {
 
     // Second attempt - granted
     $this->actingAs($this->student, 'sanctum')
-        ->getJson("/api/v1/student/quran-sessions/{$session->id}");
+        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+        ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     expect(SubscriptionAccessLog::count())->toBe(2);
 
@@ -261,15 +268,18 @@ test('platform detection works correctly', function () {
 
     // Access from mobile
     $this->actingAs($this->student, 'sanctum')
+        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->withHeader('X-Platform', 'mobile')
-        ->getJson("/api/v1/student/quran-sessions/{$session->id}");
+        ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     $subscription->refresh();
     expect($subscription->last_accessed_platform)->toBe('mobile');
 
-    // Access from web
-    $this->actingAs($this->student)
-        ->getJson("/api/v1/student/quran-sessions/{$session->id}");
+    // Access from web (explicit web platform header)
+    $this->actingAs($this->student, 'sanctum')
+        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+        ->withHeader('X-Platform', 'web')
+        ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     $subscription->refresh();
     expect($subscription->last_accessed_platform)->toBe('web');
@@ -291,10 +301,11 @@ test('access denial includes correct web purchase URL', function () {
     ]);
 
     $response = $this->actingAs($this->student, 'sanctum')
-        ->getJson("/api/v1/student/quran-sessions/{$session->id}");
+        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+        ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     $response->assertStatus(403);
     $webUrl = $response->json('web_url');
-    expect($webUrl)->toContain('purchase-url');
-    expect($webUrl)->toContain('quran_session');
+    expect($webUrl)->toContain('mobile-purchase');
+    expect($webUrl)->toContain('quran_teacher');
 });

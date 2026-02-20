@@ -287,7 +287,9 @@ class Payment extends Model
         // Update subscription's purchase_source from payment metadata
         if ($this->payable instanceof BaseSubscription) {
             $metadata = is_string($this->metadata) ? json_decode($this->metadata, true) : ($this->metadata ?? []);
-            $purchaseSource = $metadata['purchase_source'] ?? 'web';
+            $rawSource = $metadata['purchase_source'] ?? 'web';
+            // Mobile purchases are completed via web browser — map to 'web'
+            $purchaseSource = ($rawSource === 'mobile') ? 'web' : ($rawSource ?: 'web');
 
             $this->payable->update([
                 'purchase_source' => $purchaseSource,
@@ -411,17 +413,22 @@ class Payment extends Model
         ]);
         $data['metadata'] = json_encode($metadata);
 
+        // Generate payment code before insert to satisfy NOT NULL constraint
+        if (! isset($data['payment_code'])) {
+            $academyId = $data['academy_id'] ?? 0;
+            $data['payment_code'] = 'PAY-'.$academyId.'-'.now()->format('ymdHis').'-'.\Illuminate\Support\Str::random(4);
+        }
+
+        // Set default amounts before insert (updateAmounts() will recalculate after)
+        $amount = $data['amount'] ?? 0;
+        $data['net_amount'] = $data['net_amount'] ?? $amount;
+        $data['fees'] = $data['fees'] ?? 0;
+        $data['tax_amount'] = $data['tax_amount'] ?? 0;
+
         $payment = self::create($data);
 
-        // Calculate fees and taxes
+        // Recalculate fees and taxes
         $payment->updateAmounts();
-
-        // Generate payment code if not provided
-        if (! $payment->payment_code) {
-            $payment->update([
-                'payment_code' => 'PAY-'.$payment->academy_id.'-'.$payment->id,
-            ]);
-        }
 
         return $payment;
     }
