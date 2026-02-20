@@ -819,6 +819,7 @@ class ChatController extends Controller
                     ->map(fn ($p) => [
                         'id' => $p->participantable_id,
                         'name' => $p->participantable?->name,
+                        'user_type' => $p->participantable?->user_type,
                         'avatar' => $p->participantable?->avatar
                             ? asset('storage/'.$p->participantable->avatar)
                             : null,
