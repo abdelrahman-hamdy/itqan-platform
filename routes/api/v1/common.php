@@ -26,17 +26,17 @@ Route::prefix('notifications')->group(function () {
     Route::get('/unread-count', [NotificationController::class, 'unreadCount'])
         ->name('api.v1.notifications.unread-count');
 
-    Route::put('/{id}/read', [NotificationController::class, 'markAsRead'])
-        ->name('api.v1.notifications.mark-read');
-
     Route::put('/read-all', [NotificationController::class, 'markAllAsRead'])
         ->name('api.v1.notifications.mark-all-read');
 
-    Route::delete('/{id}', [NotificationController::class, 'destroy'])
-        ->name('api.v1.notifications.destroy');
-
     Route::delete('/clear-all', [NotificationController::class, 'clearAll'])
         ->name('api.v1.notifications.clear-all');
+
+    Route::put('/{id}/read', [NotificationController::class, 'markAsRead'])
+        ->name('api.v1.notifications.mark-read');
+
+    Route::delete('/{id}', [NotificationController::class, 'destroy'])
+        ->name('api.v1.notifications.destroy');
 
     // Device tokens for push notifications (FCM)
     Route::post('/device-token', [NotificationController::class, 'registerDeviceToken'])
