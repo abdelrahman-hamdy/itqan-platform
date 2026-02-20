@@ -67,15 +67,35 @@ Goal: Make the mobile app production-ready and error-free like the web app.
 | 4 | `AcademyModel.itqan()` hardcoded `https://itqan-academy.com` | Changed to `https://itqanway.com` (actual production domain) |
 | 5 | `getPurchaseUrl()` used POST with body params | Changed to GET with URL path segments `/student/purchase-url/{type}/{id}` |
 
-### Files Changed (Mobile)
+### Commit: 7b2e888 (mobile repo, local) - Deep Field Alignment
+
+| # | Issue | Fix |
+|---|-------|-----|
+| 6 | Quiz: 6 field name mismatches (total_questions, time_limit_minutes, etc.) | Added fallback parsing for both API and mobile field names |
+| 7 | Homework: structural mismatch (flat vs nested teacher/submission) | Handle both nested API objects and flat fields |
+| 8 | Homework: `HomeworkSubmission.submittedAt` null crash | Changed from `DateTime` to `DateTime?` |
+| 9 | Teacher: `bio` vs `bio_arabic`, `bio_en` vs `bio_english` | Added fallbacks for API field names |
+| 10 | Teacher: `subjects` array of objects vs strings | Handle both `{id, name}` objects and plain strings |
+| 11 | Subscription: `startDate`/`endDate` default to `DateTime.now()` for pending | Made nullable `DateTime?`, updated 5 UI files |
+
+### Files Changed (Mobile) - All Commits
 - `lib/core/utils/currency_helper.dart` (NEW)
 - `lib/models/payment/payment_model.dart`
 - `lib/models/user/teacher_model.dart`
 - `lib/models/package/teacher_package_model.dart`
+- `lib/models/quiz/quiz_model.dart`
+- `lib/models/homework/homework_model.dart`
+- `lib/models/subscription/subscription_model.dart`
 - `lib/core/api/api_endpoints.dart`
 - `lib/models/academy/academy_model.dart`
 - `lib/data/repositories/payment_repository_impl.dart`
 - `lib/domain/repositories/payment_repository.dart`
+- `lib/features/teacher/screens/homework_grading_screen.dart`
+- `lib/features/student/screens/subscriptions_screen.dart`
+- `lib/features/parent/screens/parent_subscriptions_screen.dart`
+- `lib/widgets/cards/subscription_card.dart`
+- `lib/widgets/resource_detail/subscription_info_widget.dart`
+- `lib/widgets/section_detail/subscription_info_card.dart`
 
 ---
 
@@ -99,12 +119,12 @@ Backend code quality improvements found during audit:
 | Model | Status | Notes |
 |-------|--------|-------|
 | SessionModel | ALIGNED | `meeting_url` standardized, `session_notes` fixed |
-| SubscriptionModel | ALIGNED | Handles 5 types, proper fallbacks |
+| SubscriptionModel | FIXED | Nullable dates for pending subscriptions, 5 UI files updated |
 | PaymentModel | FIXED | Currency now dynamic via CurrencyHelper |
 | UserModel | ALIGNED | `avatar_url` → `avatar` fallback works |
-| TeacherModel | ALIGNED | `bio_arabic`/`bio_english` correct, subjects handled |
-| HomeworkModel | ALIGNED | Handles nested and flat structures |
-| QuizModel | ALIGNED | All field names match |
+| TeacherModel | FIXED | Bio fallbacks (bio/bio_en), subjects handles objects+strings |
+| HomeworkModel | FIXED | Nested teacher/submission objects, submittedAt null safety |
+| QuizModel | FIXED | 6 field name fallbacks (total_questions, time_limit_minutes, etc.) |
 | ConversationModel | FIXED | `user_type` now in archived participants |
 | AcademyModel | FIXED | Production URL corrected |
 | ParticipantModel | ALIGNED | Reads `user_type` from JSON |
@@ -148,10 +168,12 @@ Two academy logos return 404 on admin pages. Low priority cosmetic issue.
 | Feb 20 | `5496def8` | Orphaned Supervisor files cleanup | Deployed |
 | Feb 20 | `f22c2b2b` | Archived chat user_type fix (J) | Deployed |
 | Feb 20 | `bfaedb2` | Mobile: currency, endpoints, URLs | Local (mobile repo) |
+| Feb 20 | `7b2e888` | Mobile: quiz, homework, teacher, subscription model fixes | Local (mobile repo) |
 
 ---
 
 ## Test Results
 - **Backend:** 205 tests pass, 22 skipped, 0 failures
 - **Production API:** 420 requests across 7 roles, 0 server errors
-- **Mobile:** All model parsing verified against actual API responses
+- **Mobile:** All 10 critical models verified - 0 Dart analyzer errors
+- **Mobile fixes:** 18 files changed across 2 commits (currency, endpoints, field names, null safety)
