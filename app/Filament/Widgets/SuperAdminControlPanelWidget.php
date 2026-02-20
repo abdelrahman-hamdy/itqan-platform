@@ -315,7 +315,7 @@ class SuperAdminControlPanelWidget extends Widget
         return [
             ['label' => 'اشتراك قرآن جديد', 'icon' => 'heroicon-o-book-open', 'url' => QuranSubscriptionResource::getUrl('create'), 'color' => 'success'],
             ['label' => 'اشتراك أكاديمي جديد', 'icon' => 'heroicon-o-academic-cap', 'url' => AcademicSubscriptionResource::getUrl('create'), 'color' => 'info'],
-            ['label' => 'إضافة مستخدم', 'icon' => 'heroicon-o-user-plus', 'url' => UserResource::getUrl('create'), 'color' => 'primary'],
+            ['label' => 'إضافة طالب جديد', 'icon' => 'heroicon-o-user-plus', 'url' => StudentProfileResource::getUrl('create'), 'color' => 'primary'],
             ['label' => 'تسجيل مدفوعة', 'icon' => 'heroicon-o-banknotes', 'url' => PaymentResource::getUrl('create'), 'color' => 'warning'],
             ['label' => 'حلقة قرآن جديدة', 'icon' => 'heroicon-o-user-group', 'url' => QuranCircleResource::getUrl('create'), 'color' => 'success'],
             ['label' => 'حلقة فردية جديدة', 'icon' => 'heroicon-o-user', 'url' => QuranIndividualCircleResource::getUrl('create'), 'color' => 'success'],
