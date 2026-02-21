@@ -243,13 +243,7 @@ trait HasSubscriptionActions
             ->modalHeading('إعادة تفعيل اشتراك ملغي')
             ->modalDescription('سيتم إعادة تفعيل الاشتراك الملغي وتأكيد الدفع. سيتم تحديث تواريخ البدء والانتهاء.')
             ->modalSubmitActionLabel('نعم، إعادة التفعيل')
-            ->schema([
-                TextInput::make('payment_reference')
-                    ->label('مرجع الدفع (اختياري)')
-                    ->placeholder('رقم الإيصال أو مرجع التحويل')
-                    ->maxLength(255),
-            ])
-            ->action(function (BaseSubscription $record, array $data) {
+            ->action(function (BaseSubscription $record) {
                 $updateData = [
                     'status' => SessionSubscriptionStatus::ACTIVE,
                     'payment_status' => SubscriptionPaymentStatus::PAID,
@@ -263,19 +257,6 @@ trait HasSubscriptionActions
                 if (! $record->starts_at || $record->ends_at?->isPast()) {
                     $updateData['starts_at'] = now();
                     $updateData['ends_at'] = $record->calculateEndDate(now());
-                }
-
-                // Store payment reference in admin notes if provided
-                if (! empty($data['payment_reference'])) {
-                    $note = sprintf(
-                        "[%s] إعادة تفعيل بواسطة %s - المرجع: %s",
-                        now()->format('Y-m-d H:i'),
-                        auth()->user()->name,
-                        $data['payment_reference']
-                    );
-                    $updateData['admin_notes'] = $record->admin_notes
-                        ? $record->admin_notes."\n\n".$note
-                        : $note;
                 }
 
                 $record->update($updateData);
