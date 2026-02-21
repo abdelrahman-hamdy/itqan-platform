@@ -69,6 +69,8 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     protected static function booted(): void
     {
+        parent::booted();
+
         // Bypass academy_web scope to replace it with a faster direct column filter
         // Remove parent's academy_web scope that filters by academy_id column
         static::withoutGlobalScope('academy_web');

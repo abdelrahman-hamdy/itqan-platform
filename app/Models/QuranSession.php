@@ -1253,8 +1253,9 @@ class QuranSession extends BaseSession
     }
 
     // Boot method to handle model events
-    protected static function booted()
+    protected static function booted(): void
     {
+        parent::booted();
         // Handle session deletion - update circle counts if needed
         static::deleted(function ($session) {
             // Update individual circle counts if needed
