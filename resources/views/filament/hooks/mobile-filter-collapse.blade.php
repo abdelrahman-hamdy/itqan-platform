@@ -22,10 +22,6 @@
         var filtersEl = container.querySelector('.fi-ta-filters');
         if (!filtersEl) return;
 
-        // Hide Filament's own filters heading inside the form (we provide our own)
-        var filamentHeader = filtersEl.querySelector('.fi-ta-filters-header');
-        if (filamentHeader) filamentHeader.style.display = 'none';
-
         var isOpen = false;
         var wrapper = buildToggle();
         var btn     = wrapper.querySelector('.fi-ta-filter-mobile-toggle-btn');

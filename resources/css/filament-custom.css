@@ -31,11 +31,14 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid rgb(229 231 235);
 }
 
-.dark .fi-ta-filter-mobile-toggle-wrapper {
-    border-color: rgba(255 255 255 / 0.1);
+/* Hide Filament's own filter header on mobile/tablet (our toggle replaces it).
+   CSS rule survives Livewire DOM morphing unlike inline styles. */
+@media (max-width: 1023px) {
+    .fi-ta-filters-above-content-ctn .fi-ta-filters-header {
+        display: none !important;
+    }
 }
 
 .fi-ta-filter-mobile-toggle-label {
