@@ -322,7 +322,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                     ->query(fn (Builder $query): Builder => $query->where('total_memorized_pages', '>', 0)
                         ->orWhere('total_reviewed_pages', '>', 0)),
             ])
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

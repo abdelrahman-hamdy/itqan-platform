@@ -234,7 +234,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

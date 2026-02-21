@@ -220,7 +220,7 @@ class StudentProgressResource extends BaseResource
                     ->trueLabel('حاصل على شهادة')
                     ->falseLabel('بدون شهادة'),
             ])
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
             ->deferFilters(false)
             ->deferColumnManager(false)

@@ -206,7 +206,7 @@ class CertificateResource extends BaseResource
                     }),
 
             ])
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

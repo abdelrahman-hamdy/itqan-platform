@@ -172,7 +172,7 @@ class MonitoredAcademicSessionsResource extends BaseSupervisorResource
                     )
                     ->columnSpan(2),
             ])
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

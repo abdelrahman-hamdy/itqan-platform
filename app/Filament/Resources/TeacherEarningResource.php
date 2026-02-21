@@ -211,7 +211,7 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     public static function table(Table $table): Table
     {
         return parent::table($table)
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
             ->deferFilters(false)
             ->deferColumnManager(false);

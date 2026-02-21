@@ -489,7 +489,7 @@ abstract class BaseSubscriptionResource extends Resource
                 static::getSharedFilters(),
                 static::getTypeSpecificFilters()
             ))
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

@@ -409,7 +409,7 @@ abstract class BaseRecordedCourseResource extends Resource
         return $table
             ->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
             ->deferFilters(false)
             ->deferColumnManager(false)

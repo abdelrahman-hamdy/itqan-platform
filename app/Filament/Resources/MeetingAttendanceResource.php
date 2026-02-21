@@ -400,7 +400,7 @@ class MeetingAttendanceResource extends BaseResource
 
                         return $indicators;
                     }),
-            ], layout: FiltersLayout::AboveContentCollapsible)
+            ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

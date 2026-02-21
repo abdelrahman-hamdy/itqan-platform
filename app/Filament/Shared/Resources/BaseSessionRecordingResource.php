@@ -111,7 +111,7 @@ abstract class BaseSessionRecordingResource extends BaseResource
             ->columns(static::getTableColumns())
             ->defaultSort('started_at', 'desc')
             ->filters(static::getTableFilters())
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

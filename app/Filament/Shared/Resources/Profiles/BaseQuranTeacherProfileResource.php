@@ -89,7 +89,7 @@ abstract class BaseQuranTeacherProfileResource extends Resource
     {
         return $table->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

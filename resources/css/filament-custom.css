@@ -21,32 +21,31 @@
 @source "../../app/Livewire";
 @source "../../resources/views";
 
-/* Mobile filter collapse toggle
+/* Mobile/tablet filter collapse toggle
  * Injected via JS (mobile-filter-collapse.blade.php).
- * Hidden by default (display:none); JS sets display:flex on mobile only.
+ * Hidden by default; JS sets display:flex on screens < 1024px.
+ * No background, flush with container borders.
  */
 .fi-ta-filter-mobile-toggle-wrapper {
     display: none;
     align-items: center;
     justify-content: space-between;
-    padding: 0.625rem 1rem;
-    border-bottom: 1px solid rgb(229 231 235); /* gray-200 */
-    background-color: rgb(249 250 251);        /* gray-50 */
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgb(229 231 235);
 }
 
 .dark .fi-ta-filter-mobile-toggle-wrapper {
     border-color: rgba(255 255 255 / 0.1);
-    background-color: rgba(255 255 255 / 0.05);
 }
 
 .fi-ta-filter-mobile-toggle-label {
     font-size: 0.875rem;
     font-weight: 600;
-    color: rgb(55 65 81); /* gray-700 */
+    color: rgb(55 65 81);
 }
 
 .dark .fi-ta-filter-mobile-toggle-label {
-    color: rgb(209 213 219); /* gray-300 */
+    color: rgb(209 213 219);
 }
 
 .fi-ta-filter-mobile-toggle-btn {
@@ -55,7 +54,7 @@
     gap: 0.25rem;
     font-size: 0.875rem;
     font-weight: 500;
-    color: rgb(180 83 9);  /* amber-700 – matches Filament primary */
+    color: rgb(180 83 9);
     background: none;
     border: none;
     cursor: pointer;
@@ -64,7 +63,7 @@
 }
 
 .dark .fi-ta-filter-mobile-toggle-btn {
-    color: rgb(251 191 36); /* amber-400 */
+    color: rgb(251 191 36);
 }
 
 .fi-ta-filter-mobile-toggle-btn:hover {

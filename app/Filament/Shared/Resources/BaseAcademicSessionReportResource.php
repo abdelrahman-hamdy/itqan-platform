@@ -187,7 +187,7 @@ abstract class BaseAcademicSessionReportResource extends BaseResource
         return $table
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
-            ->filters(static::getTableFilters(), layout: FiltersLayout::AboveContentCollapsible)
+            ->filters(static::getTableFilters(), layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

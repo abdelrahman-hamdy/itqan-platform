@@ -283,7 +283,7 @@ class MonitoredAcademicLessonsResource extends BaseSupervisorResource
                     ->preload()
                     ->placeholder('الكل'),
             ])
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

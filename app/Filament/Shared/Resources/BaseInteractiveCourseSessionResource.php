@@ -230,7 +230,7 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
             ->columns(static::getTableColumns())
             ->defaultSort('scheduled_at', 'desc')
             ->filters(static::getTableFilters())
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

@@ -243,7 +243,7 @@ abstract class BaseQuizAssignmentResource extends BaseResource
                     ->trueLabel('مرئي')
                     ->falseLabel('مخفي'),
             ])
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)
