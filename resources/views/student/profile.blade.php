@@ -1,6 +1,6 @@
 <x-layouts.student :title="__('student.profile.page_title')">
 
-  <x-slot:head>
+  @push('styles')
     <style>
       .islamic-pattern-bg {
         position: relative;
@@ -11,12 +11,12 @@
         inset: 0;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect x='25' y='25' width='50' height='50' transform='rotate(45 50 50)' fill='none' stroke='%239ca3b8' stroke-width='0.5'/%3E%3Crect x='25' y='25' width='50' height='50' fill='none' stroke='%239ca3b8' stroke-width='0.5'/%3E%3Ccircle cx='50' cy='50' r='12' fill='none' stroke='%239ca3b8' stroke-width='0.3'/%3E%3C/svg%3E");
         background-size: 100px 100px;
-        opacity: 0.06;
+        opacity: 0.08;
         pointer-events: none;
         z-index: 0;
       }
     </style>
-  </x-slot:head>
+  @endpush
 
   <div class="islamic-pattern-bg">
     <div class="relative z-10">
@@ -135,6 +135,7 @@
 
             <!-- Collapsible Content -->
             <div x-show="open"
+                 {!! $trialRequestsCount === 0 ? 'style="display:none"' : '' !!}
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
@@ -431,6 +432,7 @@
 
             <!-- Collapsible Content -->
             <div x-show="open"
+                 {!! $recordedCoursesCount === 0 ? 'style="display:none"' : '' !!}
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
