@@ -426,4 +426,6 @@ return [
     // Security messages
     'account_inactive' => 'حسابك غير نشط. يرجى التواصل مع الإدارة',
     'unauthorized_access' => 'غير مصرح لك بالوصول إلى هذه الصفحة',
+    'unauthorized_json' => 'غير مصرح لك بالوصول',
+    'supervisor_required' => 'غير مصرح لك بالوصول. يجب أن تكون مشرفاً للوصول إلى هذه اللوحة.',
 ];

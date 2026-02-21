@@ -118,10 +118,10 @@ class RenewalProcessor
                     // Mark payment as failed
                     $payment->update([
                         'status' => PaymentStatus::FAILED,
-                        'failure_reason' => $paymentResult['error'] ?? 'فشل الدفع',
+                        'failure_reason' => $paymentResult['error'] ?? __('payments.renewal.payment_failed'),
                     ]);
 
-                    $this->handleFailedRenewal($lockedSubscription, $paymentResult['error'] ?? 'فشل الدفع');
+                    $this->handleFailedRenewal($lockedSubscription, $paymentResult['error'] ?? __('payments.renewal.payment_failed'));
 
                     return false;
                 }
@@ -130,7 +130,7 @@ class RenewalProcessor
                     'subscription_id' => $lockedSubscription->id,
                     'error' => $e->getMessage(),
                 ]);
-                $this->handleFailedRenewal($lockedSubscription, 'خطأ في قاعدة البيانات');
+                $this->handleFailedRenewal($lockedSubscription, __('payments.renewal.database_error'));
 
                 return false;
             } catch (Throwable $e) {
@@ -140,7 +140,7 @@ class RenewalProcessor
                     'trace' => $e->getTraceAsString(),
                 ]);
                 report($e);
-                $this->handleFailedRenewal($lockedSubscription, 'خطأ غير متوقع');
+                $this->handleFailedRenewal($lockedSubscription, __('payments.renewal.unexpected_error'));
 
                 return false;
             }
@@ -188,6 +188,9 @@ class RenewalProcessor
             $metadata['last_renewal_failure_at'],
             $metadata['last_renewal_failure_reason'],
             $metadata['grace_period_ends_at'],
+            $metadata['grace_period_expires_at'],  // Legacy key cleanup
+            $metadata['grace_period_started_at'],
+            $metadata['grace_notification_last_sent_at'],
             $metadata['original_ends_at']
         );
 
@@ -252,7 +255,7 @@ class RenewalProcessor
 
         // Third failure: Enter grace period instead of immediate cancellation
         $gracePeriodDays = config('payments.renewal.grace_period_days', 3);
-        $metadata['grace_period_expires_at'] = now()->addDays($gracePeriodDays)->toIso8601String();
+        $metadata['grace_period_ends_at'] = now()->addDays($gracePeriodDays)->toIso8601String();
         $metadata['grace_period_started_at'] = now()->toIso8601String();
 
         $subscription->update([
@@ -268,7 +271,7 @@ class RenewalProcessor
         Log::warning("Subscription {$subscription->id} entered grace period after {$failedCount} failed attempts", [
             'reason' => $reason,
             'grace_period_days' => $gracePeriodDays,
-            'grace_period_expires_at' => now()->addDays($gracePeriodDays)->toDateString(),
+            'grace_period_ends_at' => now()->addDays($gracePeriodDays)->toDateString(),
         ]);
     }
 
@@ -367,7 +370,7 @@ class RenewalProcessor
             'net_amount' => $amount,
             'currency' => getCurrencyCode(null, $subscription->academy), // Always use academy's configured currency
             'status' => PaymentStatus::PENDING,
-            'notes' => 'تجديد تلقائي للاشتراك',
+            'notes' => __('payments.renewal.auto_renewal_note'),
             'payable_type' => $payableType,
             'payable_id' => $subscription->id,
         ]);

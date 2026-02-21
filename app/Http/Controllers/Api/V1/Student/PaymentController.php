@@ -48,14 +48,20 @@ class PaymentController extends Controller
                 'created_at' => $payment->created_at->toISOString(),
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($payments),
-            'summary' => [
-                'total_paid' => (float) Payment::where('user_id', $user->id)
-                    ->where('status', PaymentStatus::COMPLETED->value)
-                    ->sum('amount'),
-                'total_pending' => (float) Payment::where('user_id', $user->id)
-                    ->where('status', PaymentStatus::PENDING->value)
-                    ->sum('amount'),
-            ],
+            // API-002: Single aggregate query instead of two separate queries
+            'summary' => (function () use ($user) {
+                $summary = Payment::where('user_id', $user->id)
+                    ->selectRaw('
+                        SUM(CASE WHEN status = ? THEN amount ELSE 0 END) as total_paid,
+                        SUM(CASE WHEN status = ? THEN amount ELSE 0 END) as total_pending
+                    ', [PaymentStatus::COMPLETED->value, PaymentStatus::PENDING->value])
+                    ->first();
+
+                return [
+                    'total_paid' => (float) ($summary->total_paid ?? 0),
+                    'total_pending' => (float) ($summary->total_pending ?? 0),
+                ];
+            })(),
         ], __('Payments retrieved successfully'));
     }
 

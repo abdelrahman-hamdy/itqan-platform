@@ -433,4 +433,6 @@ return [
     // Security messages
     'account_inactive' => 'Your account is inactive. Please contact the administration.',
     'unauthorized_access' => 'You are not authorized to access this page.',
+    'unauthorized_json' => 'Unauthorized access',
+    'supervisor_required' => 'Unauthorized. You must be a supervisor to access this panel.',
 ];

@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Exception;
 use App\Enums\EducationalQualification;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicTeacherProfile;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -308,7 +308,6 @@ class AcademicTeacherController extends Controller
             // حذف العلاقات
             $teacher->subjects()->detach();
             $teacher->gradeLevels()->detach();
-            $teacher->students()->detach();
 
             // حذف المعلم
             $teacher->delete();

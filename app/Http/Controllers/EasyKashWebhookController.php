@@ -2,37 +2,35 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Database\QueryException;
-use InvalidArgumentException;
-use Throwable;
-use App\Models\QuranSubscription;
-use App\Enums\SubscriptionPaymentStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Services\Payment\InvoiceService;
-use App\Services\NotificationService;
+use App\Constants\DefaultAcademy;
 use App\Enums\NotificationType;
-use Exception;
-use App\Models\QuranTeacherProfile;
+use App\Enums\PaymentStatus;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
 use App\Models\InteractiveCourseEnrollment;
-use App\Services\Payment\AcademyPaymentGatewayFactory;
-use App\Constants\DefaultAcademy;
-use App\Enums\PaymentStatus;
-use App\Http\Traits\Api\ApiResponses;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
 use App\Models\PaymentWebhookEvent;
+use App\Models\QuranSubscription;
+use App\Models\QuranTeacherProfile;
+use App\Services\NotificationService;
+use App\Services\Payment\AcademyPaymentGatewayFactory;
 use App\Services\Payment\DTOs\WebhookPayload;
 use App\Services\Payment\EasyKashSignatureService;
 use App\Services\Payment\Exceptions\WebhookValidationException;
 use App\Services\Payment\Gateways\EasyKashGateway;
+use App\Services\Payment\InvoiceService;
 use App\Services\Payment\PaymentStateMachine;
+use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
+use Throwable;
 
 /**
  * Controller for handling EasyKash webhook callbacks.
@@ -395,14 +393,10 @@ class EasyKashWebhookController extends Controller
             ]);
 
             // Legacy fallback: direct subscription_id lookup (for Quran subscriptions)
+            // Use activateFromPayment() for consistent behavior (circle creation, metadata cleanup, notifications)
             $subscription = QuranSubscription::find($payment->subscription_id);
             if ($subscription && $subscription->payment_status->value !== 'paid') {
-                $subscription->update([
-                    'payment_status' => SubscriptionPaymentStatus::PAID,
-                    'status' => SessionSubscriptionStatus::ACTIVE,
-                    'last_payment_at' => now(),
-                    'last_payment_amount' => $payment->amount,
-                ]);
+                $subscription->activateFromPayment($payment);
 
                 Log::channel('payments')->info('EasyKash: Quran subscription activated from legacy subscription_id', [
                     'subscription_id' => $subscription->id,
@@ -492,6 +486,7 @@ class EasyKashWebhookController extends Controller
                     'payment_id' => $payment->id,
                     'sent_at' => $payment->payment_notification_sent_at,
                 ]);
+
                 return;
             }
 
@@ -593,7 +588,7 @@ class EasyKashWebhookController extends Controller
         }
 
         // Fallback: Try to find by exact gateway_intent_id
-        if (!$payment && $customerReference) {
+        if (! $payment && $customerReference) {
             // Bypass tenant scope - callback arrives on main domain without tenant context
             $payment = Payment::withoutGlobalScopes()->with('academy')
                 ->where('gateway_intent_id', $customerReference)
@@ -619,7 +614,7 @@ class EasyKashWebhookController extends Controller
                 $timestampFromPayment = $candidatePayment->created_at->format('ymdHis');
 
                 // Only use this payment if timestamps are close (within 1 hour)
-                if (abs((int)$timestampFromRef - (int)$timestampFromPayment) < 10000) {
+                if (abs((int) $timestampFromRef - (int) $timestampFromPayment) < 10000) {
                     $payment = $candidatePayment;
                     Log::channel('payments')->info('EasyKash callback: found payment by parsed ID with timestamp validation', [
                         'payment_id' => $payment->id,

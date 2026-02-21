@@ -374,10 +374,6 @@ class RecordedCourseController extends Controller
                 'data' => null,
             ];
 
-            if (app()->environment('local')) {
-                $errorData['debug'] = $e->getMessage();
-            }
-
             return $this->success($errorData, false, 500);
         }
     }

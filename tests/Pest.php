@@ -125,8 +125,9 @@ function createSupervisor(?\App\Models\Academy $academy = null): \App\Models\Use
         'active_status' => true,
     ]);
 
-    // Update to supervisor type
-    $user->update(['user_type' => 'supervisor']);
+    // Update to supervisor type (direct assignment required - user_type is not mass-assignable)
+    $user->user_type = 'supervisor';
+    $user->save();
 
     // Create supervisor profile directly with correct columns
     // Note: supervisor_profiles table has: email (required), first_name, last_name, phone, avatar, gender, supervisor_code (auto), performance_rating, notes, can_manage_teachers
@@ -174,8 +175,9 @@ function createQuranTeacher(?\App\Models\Academy $academy = null): \App\Models\U
         'active_status' => true,
     ]);
 
-    // Update to quran_teacher type
-    $user->update(['user_type' => 'quran_teacher']);
+    // Update to quran_teacher type (direct assignment required - user_type is not mass-assignable)
+    $user->user_type = 'quran_teacher';
+    $user->save();
 
     // Create profile directly with correct columns
     \App\Models\QuranTeacherProfile::create([
@@ -208,8 +210,9 @@ function createAcademicTeacher(?\App\Models\Academy $academy = null): \App\Model
         'active_status' => true,
     ]);
 
-    // Update to academic_teacher type
-    $user->update(['user_type' => 'academic_teacher']);
+    // Update to academic_teacher type (direct assignment required - user_type is not mass-assignable)
+    $user->user_type = 'academic_teacher';
+    $user->save();
 
     // Create profile directly with correct columns
     \App\Models\AcademicTeacherProfile::create([

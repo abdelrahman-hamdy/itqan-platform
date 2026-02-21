@@ -437,7 +437,7 @@ class PublicAcademicPackageController extends Controller
             ]);
 
             return redirect()->back()
-                ->with('error', __('payments.subscription.subscription_creation_error').': '.$e->getMessage())
+                ->with('error', __('payments.subscription.subscription_creation_error'))
                 ->withInput();
         }
     }

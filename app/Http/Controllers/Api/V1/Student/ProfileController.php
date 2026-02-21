@@ -217,8 +217,9 @@ class ProfileController extends Controller
             Storage::disk('public')->delete($profile->avatar);
         }
 
-        // Store new avatar
-        $path = $request->file('avatar')->store('avatars/students', 'public');
+        // Store new avatar (tenant-isolated path)
+        $academyId = $user->academy_id;
+        $path = $request->file('avatar')->store("tenants/{$academyId}/avatars/students", 'public');
 
         $profile->update(['avatar' => $path]);
 

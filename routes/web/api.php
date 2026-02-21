@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Route;
 
 // Session-type-specific status APIs (refactored to controller)
 // Use /web-api/ prefix to avoid conflict with /api/ routes that use Sanctum auth
-Route::middleware(['web'])->group(function () {
+Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/web-api/academic-sessions/{session}/status', [SessionStatusApiController::class, 'academicSessionStatus'])
         ->name('api.academic-sessions.status');
 

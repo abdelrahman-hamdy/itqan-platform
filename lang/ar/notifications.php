@@ -338,4 +338,9 @@ return [
         'view_all' => 'عرض كل الإشعارات',
         'loading' => 'جاري التحميل...',
     ],
+
+    // CQ-001: Default strings for notification data (replaces hardcoded Arabic)
+    'quran_session_default' => 'جلسة قرآنية',
+    'teacher_default' => 'المعلم',
+    'quran_homework' => 'واجب قرآني',
 ];

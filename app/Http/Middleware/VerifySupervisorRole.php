@@ -25,7 +25,7 @@ class VerifySupervisorRole
         // Check if user is authenticated
         if (! $user) {
             if ($request->expectsJson()) {
-                return response()->json(['message' => 'غير مصرح لك بالوصول'], 403);
+                return response()->json(['message' => __('auth.unauthorized_json')], 403);
             }
 
             return redirect()->route('login');
@@ -40,11 +40,11 @@ class VerifySupervisorRole
         if (! $user->hasRole(UserType::SUPERVISOR->value)) {
             if ($request->expectsJson()) {
                 return response()->json([
-                    'message' => 'غير مصرح لك بالوصول. يجب أن تكون مشرفاً للوصول إلى هذه اللوحة.',
+                    'message' => __('auth.supervisor_required'),
                 ], 403);
             }
 
-            abort(403, 'غير مصرح لك بالوصول. يجب أن تكون مشرفاً للوصول إلى هذه اللوحة.');
+            abort(403, __('auth.supervisor_required'));
         }
 
         return $next($request);

@@ -25,8 +25,24 @@ use Illuminate\Support\Facades\Route;
 // ============================================================================
 // AUTHENTICATED USER INFO
 // ============================================================================
+// API-001: Explicitly whitelist returned fields instead of exposing full user object
 Route::middleware(['api.locale', 'auth:sanctum'])->get('/user', function () {
-    return request()->user();
+    $user = request()->user();
+
+    return response()->json([
+        'id' => $user->id,
+        'first_name' => $user->first_name,
+        'last_name' => $user->last_name,
+        'name' => $user->name,
+        'email' => $user->email,
+        'phone' => $user->phone,
+        'user_type' => $user->user_type,
+        'academy_id' => $user->academy_id,
+        'avatar' => $user->avatar,
+        'email_verified_at' => $user->email_verified_at,
+        'active_status' => $user->active_status,
+        'created_at' => $user->created_at,
+    ]);
 })->name('api.user');
 
 // ============================================================================

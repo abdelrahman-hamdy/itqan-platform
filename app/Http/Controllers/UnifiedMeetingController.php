@@ -115,7 +115,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                __('meetings.api.meeting_create_error').(config('app.debug') ? ': '.$e->getMessage() : ''),
+                __('meetings.api.meeting_create_error'),
                 500
             );
         }
@@ -225,7 +225,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                __('meetings.api.token_create_error').(config('app.debug') ? ': '.$e->getMessage() : ''),
+                __('meetings.api.token_create_error'),
                 500
             );
         }
@@ -280,7 +280,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                __('meetings.api.meeting_info_error').(config('app.debug') ? ': '.$e->getMessage() : ''),
+                __('meetings.api.meeting_info_error'),
                 500
             );
         }
@@ -344,7 +344,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                __('meetings.api.meeting_end_error').(config('app.debug') ? ': '.$e->getMessage() : ''),
+                __('meetings.api.meeting_end_error'),
                 500
             );
         }
@@ -412,7 +412,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                __('meetings.api.logout_error').(config('app.debug') ? ': '.$e->getMessage() : ''),
+                __('meetings.api.logout_error'),
                 500
             );
         }

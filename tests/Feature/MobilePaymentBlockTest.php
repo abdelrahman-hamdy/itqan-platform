@@ -8,6 +8,7 @@ use App\Models\RecordedCourse;
 use App\Models\StudentProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
@@ -89,8 +90,8 @@ test('mobile API allows GET requests to payment history', function () {
     ]);
 
     // Attempt to view payment history from mobile API
-    $response = $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Platform', 'mobile')
+    Sanctum::actingAs($this->student, ['*']);
+    $response = $this->withHeader('X-Platform', 'mobile')
         ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson('/api/v1/student/payments');
 

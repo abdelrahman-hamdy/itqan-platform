@@ -115,7 +115,7 @@ class PaymobWebhookController extends Controller
 
             return response()->json([
                 'status' => 'error',
-                'message' => $e->getMessage(),
+                'message' => 'Webhook validation failed',
             ], 400);
         } catch (QueryException $e) {
             Log::channel('payments')->error('Database error during webhook processing', [

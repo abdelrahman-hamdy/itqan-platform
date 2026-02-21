@@ -99,6 +99,7 @@ describe('POST /api/v1/verify-reset-token', function () {
         DB::table('password_reset_tokens')->insert([
             'email' => 'verify@test.com',
             'token' => Hash::make($token),
+            'academy_id' => $this->academy->id,
             'created_at' => now(),
         ]);
 
@@ -126,6 +127,7 @@ describe('POST /api/v1/verify-reset-token', function () {
         DB::table('password_reset_tokens')->insert([
             'email' => 'invalid-token@test.com',
             'token' => Hash::make($token),
+            'academy_id' => $this->academy->id,
             'created_at' => now(),
         ]);
 
@@ -150,6 +152,7 @@ describe('POST /api/v1/verify-reset-token', function () {
         DB::table('password_reset_tokens')->insert([
             'email' => 'expired@test.com',
             'token' => Hash::make($token),
+            'academy_id' => $this->academy->id,
             'created_at' => now()->subHours(2),
         ]);
 
@@ -179,6 +182,7 @@ describe('POST /api/v1/reset-password', function () {
         DB::table('password_reset_tokens')->insert([
             'email' => 'reset@test.com',
             'token' => Hash::make($token),
+            'academy_id' => $this->academy->id,
             'created_at' => now(),
         ]);
 
@@ -244,6 +248,7 @@ describe('POST /api/v1/reset-password', function () {
         DB::table('password_reset_tokens')->insert([
             'email' => 'invalid-reset@test.com',
             'token' => Hash::make($token),
+            'academy_id' => $this->academy->id,
             'created_at' => now(),
         ]);
 

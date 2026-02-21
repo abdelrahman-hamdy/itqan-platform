@@ -47,7 +47,7 @@ Route::prefix('notifications')->group(function () {
 });
 
 // Meeting Tokens & Controls (LiveKit)
-Route::prefix('meetings')->group(function () {
+Route::prefix('meetings')->middleware('throttle:30,1')->group(function () {
     Route::get('/{sessionType}/{sessionId}/token', [MeetingTokenController::class, 'getToken'])
         ->where('sessionType', 'quran|academic|interactive')
         ->name('api.v1.meetings.token');
@@ -70,11 +70,12 @@ Route::prefix('meetings')->group(function () {
 
     Route::post('/{sessionType}/{sessionId}/kick', [MeetingTokenController::class, 'kickParticipant'])
         ->where('sessionType', 'quran|academic|interactive')
+        ->middleware('throttle:10,1')
         ->name('api.v1.meetings.kick');
 });
 
 // Chat (WireChat)
-Route::prefix('chat')->group(function () {
+Route::prefix('chat')->middleware('throttle:60,1')->group(function () {
     Route::get('/conversations', [ChatController::class, 'conversations'])
         ->name('api.v1.chat.conversations.index');
 
@@ -92,6 +93,7 @@ Route::prefix('chat')->group(function () {
         ->name('api.v1.chat.conversations.messages');
 
     Route::post('/conversations/{id}/messages', [ChatController::class, 'sendMessage'])
+        ->middleware('throttle:30,1')
         ->name('api.v1.chat.conversations.send');
 
     Route::put('/conversations/{id}/read', [ChatController::class, 'markAsRead'])
@@ -109,6 +111,7 @@ Route::prefix('chat')->group(function () {
 
     // Typing indicators
     Route::post('/conversations/{id}/typing', [ChatController::class, 'typing'])
+        ->middleware('throttle:20,1')
         ->name('api.v1.chat.conversations.typing');
 
     // Message editing and deletion

@@ -17,6 +17,7 @@ use App\Models\StudentProfile;
 use App\Models\SubscriptionAccessLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
@@ -58,6 +59,9 @@ beforeEach(function () {
         'user_id' => $this->academicTeacher->id,
         'academy_id' => $this->academy->id,
     ]);
+
+    // Authenticate as student with proper Sanctum token (abilities required by API middleware)
+    Sanctum::actingAs($this->student, ['*']);
 });
 
 test('unpaid quran subscription denies access to sessions', function () {
@@ -78,8 +82,7 @@ test('unpaid quran subscription denies access to sessions', function () {
     ]);
 
     // Attempt to access session
-    $response = $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $response = $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     // Should be denied
@@ -113,8 +116,7 @@ test('paused subscription denies access to sessions', function () {
         'quran_teacher_id' => $this->quranTeacher->id,
     ]);
 
-    $response = $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $response = $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     $response->assertStatus(403);
@@ -141,8 +143,7 @@ test('active paid subscription grants access to sessions', function () {
         'quran_teacher_id' => $this->quranTeacher->id,
     ]);
 
-    $response = $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $response = $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     // Should be allowed
@@ -175,8 +176,7 @@ test('academic subscription access control works correctly', function () {
         'academic_teacher_id' => $this->academicTeacherProfile->id,
     ]);
 
-    $response = $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $response = $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/sessions/academic/{$session->id}");
 
     $response->assertStatus(200);
@@ -202,8 +202,7 @@ test('recorded course subscription access control', function () {
         'payment_status' => SubscriptionPaymentStatus::PAID,
     ]);
 
-    $response = $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $response = $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/courses/recorded/{$course->id}");
 
     $response->assertStatus(200);
@@ -226,8 +225,7 @@ test('access logs are created for all access attempts', function () {
     ]);
 
     // First attempt - denied
-    $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     expect(SubscriptionAccessLog::count())->toBe(1);
@@ -239,8 +237,7 @@ test('access logs are created for all access attempts', function () {
     ]);
 
     // Second attempt - granted
-    $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     expect(SubscriptionAccessLog::count())->toBe(2);
@@ -267,8 +264,7 @@ test('platform detection works correctly', function () {
     ]);
 
     // Access from mobile
-    $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->withHeader('X-Platform', 'mobile')
         ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
@@ -276,8 +272,7 @@ test('platform detection works correctly', function () {
     expect($subscription->last_accessed_platform)->toBe('mobile');
 
     // Access from web (explicit web platform header)
-    $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->withHeader('X-Platform', 'web')
         ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
@@ -300,8 +295,7 @@ test('access denial includes correct web purchase URL', function () {
         'quran_teacher_id' => $this->quranTeacher->id,
     ]);
 
-    $response = $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $response = $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/sessions/quran/{$session->id}");
 
     $response->assertStatus(403);

@@ -2,7 +2,6 @@
 
 namespace App\Observers;
 
-use Exception;
 use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Enums\TrialRequestStatus;
@@ -10,6 +9,7 @@ use App\Models\QuranSession;
 use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
 use App\Services\TrialRequestSyncService;
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 class QuranSessionObserver
@@ -91,6 +91,7 @@ class QuranSessionObserver
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+            report($e);
         }
     }
 
@@ -103,7 +104,7 @@ class QuranSessionObserver
         $homeworkAssigned = false;
         $homeworkType = null;
 
-        if ($quranSession->isDirty('homework_assigned') && $quranSession->homework_assigned === true) {
+        if ($quranSession->wasChanged('homework_assigned') && $quranSession->homework_assigned === true) {
             $homeworkAssigned = true;
         }
 
@@ -117,12 +118,13 @@ class QuranSessionObserver
                 $student = $quranSession->student;
 
                 // Send notification to student
+                // CQ-001: Use localized strings instead of hardcoded Arabic
                 $this->notificationService->send(
                     $student,
                     NotificationType::HOMEWORK_ASSIGNED,
                     [
-                        'session_title' => $quranSession->title ?? 'جلسة قرآنية',
-                        'teacher_name' => $quranSession->quranTeacher?->user->name ?? 'المعلم',
+                        'session_title' => $quranSession->title ?? __('notifications.quran_session_default'),
+                        'teacher_name' => $quranSession->quranTeacher?->user->name ?? __('notifications.teacher_default'),
                         'due_date' => '',
                     ],
                     route('student.homework.view', ['id' => $quranSession->id, 'type' => 'quran']),
@@ -135,7 +137,7 @@ class QuranSessionObserver
                 $this->parentNotificationService->sendHomeworkAssigned(
                     (object) [
                         'student_id' => $student->id,
-                        'title' => 'واجب قرآني',
+                        'title' => __('notifications.quran_homework'),
                         'due_date' => null,
                     ]
                 );
@@ -150,6 +152,7 @@ class QuranSessionObserver
                 'session_id' => $quranSession->id,
                 'error' => $e->getMessage(),
             ]);
+            report($e);
         }
     }
 

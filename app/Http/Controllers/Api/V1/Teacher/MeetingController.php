@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
-use Exception;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
@@ -10,6 +9,7 @@ use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\LiveKitService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -56,20 +56,26 @@ class MeetingController extends Controller
             // Create LiveKit room
             $roomName = $this->generateRoomName($request->session_type, $session->id);
 
-            $room = $this->liveKitService->createRoom($roomName, [
-                'emptyTimeout' => 600, // 10 minutes
-                'maxParticipants' => $request->session_type === 'interactive' ? 50 : 10,
-            ]);
+            $meetingData = $this->liveKitService->createMeeting(
+                $session->academy,
+                $request->session_type,
+                $session->id,
+                $session->scheduled_at ?? now(),
+                [
+                    'empty_timeout' => 600,
+                    'max_participants' => $request->session_type === 'interactive' ? 50 : 10,
+                ]
+            );
 
             // Update session with meeting info
             $session->update([
-                'meeting_link' => $room['url'] ?? config('livekit.url').'/room/'.$roomName,
-                'meeting_room_name' => $roomName,
+                'meeting_link' => $meetingData['meeting_url'] ?? config('livekit.url').'/room/'.$roomName,
+                'meeting_room_name' => $meetingData['room_name'] ?? $roomName,
             ]);
 
             return $this->created([
                 'meeting_url' => $session->meeting_link,
-                'room_name' => $roomName,
+                'room_name' => $session->meeting_room_name,
             ], __('Meeting created successfully'));
         } catch (Exception $e) {
             return $this->error(__('Failed to create meeting.'), 500, 'MEETING_CREATE_FAILED');
@@ -108,10 +114,9 @@ class MeetingController extends Controller
 
         try {
             // Generate token with teacher permissions
-            $token = $this->liveKitService->generateToken(
+            $token = $this->liveKitService->generateParticipantToken(
                 $session->meeting_room_name,
-                $user->id,
-                $user->name,
+                $user,
                 [
                     'canPublish' => true,
                     'canSubscribe' => true,
@@ -141,6 +146,9 @@ class MeetingController extends Controller
      */
     protected function getSession($user, string $type, int $id)
     {
+        // API-003: Add explicit academy_id verification for defense in depth
+        $userAcademyId = $user->academy_id;
+
         if ($type === 'quran') {
             if (! $user->quranTeacherProfile) {
                 return null;
@@ -150,6 +158,7 @@ class MeetingController extends Controller
 
             return QuranSession::where('id', $id)
                 ->where('quran_teacher_id', $quranTeacherId)
+                ->where('academy_id', $userAcademyId)
                 ->first();
         }
 
@@ -162,6 +171,7 @@ class MeetingController extends Controller
 
             return AcademicSession::where('id', $id)
                 ->where('academic_teacher_id', $academicTeacherId)
+                ->where('academy_id', $userAcademyId)
                 ->first();
         }
 
@@ -185,6 +195,8 @@ class MeetingController extends Controller
 
     /**
      * Generate room name.
+     * API-004: Uses consistent prefix pattern matching LiveKitService convention
+     * so webhook controller can parse the prefix for optimized session lookup.
      */
     protected function generateRoomName(string $type, int $id): string
     {
@@ -195,6 +207,6 @@ class MeetingController extends Controller
             default => 'session',
         };
 
-        return "{$prefix}-{$id}-".time();
+        return "{$prefix}-session-{$id}-".time();
     }
 }

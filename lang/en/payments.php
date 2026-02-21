@@ -361,4 +361,19 @@ return [
     'exception' => [
         'gateway_not_configured' => "Payment gateway ':gateway' is not configured",
     ],
+
+    // Renewal messages
+    'renewal' => [
+        'payment_failed' => 'Payment failed',
+        'database_error' => 'Database error',
+        'unexpected_error' => 'Unexpected error',
+        'auto_renewal_note' => 'Automatic subscription renewal',
+        'manual_renewal_note' => 'Manual renewal during grace period',
+        'no_manual_payment_needed' => 'This subscription does not require manual payment.',
+        'grace_period_not_found' => 'No grace period found for this subscription.',
+        'grace_period_expired' => 'The grace period for this subscription has expired.',
+        'success' => 'Subscription renewed successfully!',
+        'payment_failed_retry' => 'Payment failed. Please try again.',
+        'processing_error' => 'An error occurred while processing payment. Please try again.',
+    ],
 ];

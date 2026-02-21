@@ -2,11 +2,11 @@
 
 namespace App\Services\Payment\DTOs;
 
+use App\Enums\PaymentResultStatus;
+use App\Models\Payment;
+use DateTime;
 use DateTimeInterface;
 use Log;
-use DateTime;
-use App\Models\Payment;
-use App\Enums\PaymentResultStatus;
 
 /**
  * Data Transfer Object for webhook payloads.
@@ -60,17 +60,17 @@ readonly class WebhookPayload
             default => PaymentResultStatus::FAILED,
         };
 
+        // Extract payment ID from merchant_order_id or metadata
+        $merchantOrderId = $obj['merchant_order_id'] ?? $obj['order']['merchant_order_id'] ?? null;
+
         // Handle refund flag gracefully (refunds not supported but gateway may send flag)
         $refundDetected = $obj['is_refunded'] ?? false;
         if ($refundDetected) {
             Log::channel('payments')->warning('Paymob refund detected but platform does not support refunds', [
                 'transaction_id' => $obj['id'] ?? null,
-                'merchant_order_id' => $merchantOrderId ?? null,
+                'merchant_order_id' => $merchantOrderId,
             ]);
         }
-
-        // Extract payment ID from merchant_order_id or metadata
-        $merchantOrderId = $obj['merchant_order_id'] ?? $obj['order']['merchant_order_id'] ?? null;
         $paymentId = null;
         $academyId = null;
 

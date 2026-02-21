@@ -414,6 +414,11 @@ abstract class BaseSubscription extends Model
      */
     public function canAccess(): bool
     {
+        // Allow access during active grace periods regardless of payment_status
+        if ($this->isInGracePeriod()) {
+            return true;
+        }
+
         return $this->status->canAccess() && $this->payment_status->allowsAccess();
     }
 
@@ -490,16 +495,21 @@ abstract class BaseSubscription extends Model
     }
 
     /**
-     * Check if subscription is currently in admin-granted grace period.
+     * Check if subscription is currently in grace period (admin-granted or auto-renewal failure).
      */
     public function isInGracePeriod(): bool
     {
         $metadata = $this->metadata ?? [];
-        if (! isset($metadata['grace_period_ends_at'])) {
+
+        // Check both keys: standardized key and legacy key (for existing records)
+        $key = isset($metadata['grace_period_ends_at']) ? 'grace_period_ends_at'
+            : (isset($metadata['grace_period_expires_at']) ? 'grace_period_expires_at' : null);
+
+        if (! $key) {
             return false;
         }
 
-        return Carbon::parse($metadata['grace_period_ends_at'])->isFuture();
+        return Carbon::parse($metadata[$key])->isFuture();
     }
 
     /**
@@ -508,15 +518,20 @@ abstract class BaseSubscription extends Model
     public function getGracePeriodEndsAt(): ?Carbon
     {
         $metadata = $this->metadata ?? [];
-        if (! isset($metadata['grace_period_ends_at'])) {
+
+        // Check both keys: standardized key and legacy key (for existing records)
+        $key = isset($metadata['grace_period_ends_at']) ? 'grace_period_ends_at'
+            : (isset($metadata['grace_period_expires_at']) ? 'grace_period_expires_at' : null);
+
+        if (! $key) {
             return null;
         }
 
-        return Carbon::parse($metadata['grace_period_ends_at']);
+        return Carbon::parse($metadata[$key]);
     }
 
     /**
-     * Check if subscription needs renewal (past ends_at but still active, e.g. in grace period).
+     * Check if subscription needs renewal (past ends_at but still active or suspended).
      */
     public function needsRenewal(): bool
     {
@@ -524,7 +539,7 @@ abstract class BaseSubscription extends Model
             return false;
         }
 
-        return $this->ends_at->isPast() && $this->isActive();
+        return $this->ends_at->isPast() && $this->status->canRenew();
     }
 
     // ========================================

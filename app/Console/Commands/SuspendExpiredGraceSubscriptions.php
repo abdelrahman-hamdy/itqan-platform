@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionPaymentStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
 use Carbon\Carbon;
@@ -27,86 +28,104 @@ class SuspendExpiredGraceSubscriptions extends Command
 
     protected $description = 'Suspend subscriptions whose grace period has expired without payment';
 
+    /**
+     * Handles admin-granted grace periods (payment_status != FAILED).
+     * Auto-renewal failure grace periods (payment_status=FAILED) are handled by
+     * ExpireGracePeriodSubscriptions job instead.
+     */
     public function handle(): int
     {
         $dryRun = $this->option('dry-run');
         $suspendedCount = 0;
 
-        // Find Quran subscriptions with expired grace period
-        $quranSubs = QuranSubscription::withoutGlobalScopes()
+        // Find Quran subscriptions with expired admin-granted grace period
+        QuranSubscription::withoutGlobalScopes()
             ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->where('payment_status', '!=', SubscriptionPaymentStatus::FAILED)
             ->whereNotNull('metadata')
-            ->get()
-            ->filter(function ($subscription) {
-                $metadata = $subscription->metadata ?? [];
-                if (! isset($metadata['grace_period_ends_at'])) {
-                    return false;
-                }
+            ->chunkById(100, function ($subscriptions) use ($dryRun, &$suspendedCount) {
+                foreach ($subscriptions as $sub) {
+                    if (! $this->hasExpiredGracePeriod($sub)) {
+                        continue;
+                    }
 
-                return Carbon::parse($metadata['grace_period_ends_at'])->isPast();
+                    if ($dryRun) {
+                        $this->info("[DRY RUN] Would suspend QuranSubscription #{$sub->id} ({$sub->subscription_code})");
+                    } else {
+                        $this->suspendSubscription($sub, 'quran');
+                        $this->info("Suspended QuranSubscription #{$sub->id} ({$sub->subscription_code})");
+                    }
+                    $suspendedCount++;
+                }
             });
 
-        foreach ($quranSubs as $sub) {
-            if ($dryRun) {
-                $this->info("[DRY RUN] Would suspend QuranSubscription #{$sub->id} ({$sub->subscription_code})");
-            } else {
-                $metadata = $sub->metadata ?? [];
-                unset($metadata['grace_period_ends_at']);
-
-                $sub->update([
-                    'status' => SessionSubscriptionStatus::SUSPENDED,
-                    'metadata' => $metadata ?: null,
-                ]);
-                Log::info('Grace period expired — subscription suspended', [
-                    'subscription_id' => $sub->id,
-                    'subscription_code' => $sub->subscription_code,
-                    'type' => 'quran',
-                    'ends_at' => $sub->ends_at?->toDateTimeString(),
-                ]);
-                $this->info("Suspended QuranSubscription #{$sub->id} ({$sub->subscription_code})");
-            }
-            $suspendedCount++;
-        }
-
-        // Find Academic subscriptions with expired grace period
-        $academicSubs = AcademicSubscription::withoutGlobalScopes()
+        // Find Academic subscriptions with expired admin-granted grace period
+        AcademicSubscription::withoutGlobalScopes()
             ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->where('payment_status', '!=', SubscriptionPaymentStatus::FAILED)
             ->whereNotNull('metadata')
-            ->get()
-            ->filter(function ($subscription) {
-                $metadata = $subscription->metadata ?? [];
-                if (! isset($metadata['grace_period_ends_at'])) {
-                    return false;
+            ->chunkById(100, function ($subscriptions) use ($dryRun, &$suspendedCount) {
+                foreach ($subscriptions as $sub) {
+                    if (! $this->hasExpiredGracePeriod($sub)) {
+                        continue;
+                    }
+
+                    if ($dryRun) {
+                        $this->info("[DRY RUN] Would suspend AcademicSubscription #{$sub->id} ({$sub->subscription_code})");
+                    } else {
+                        $this->suspendSubscription($sub, 'academic');
+                        $this->info("Suspended AcademicSubscription #{$sub->id} ({$sub->subscription_code})");
+                    }
+                    $suspendedCount++;
                 }
-
-                return Carbon::parse($metadata['grace_period_ends_at'])->isPast();
             });
-
-        foreach ($academicSubs as $sub) {
-            if ($dryRun) {
-                $this->info("[DRY RUN] Would suspend AcademicSubscription #{$sub->id} ({$sub->subscription_code})");
-            } else {
-                $metadata = $sub->metadata ?? [];
-                unset($metadata['grace_period_ends_at']);
-
-                $sub->update([
-                    'status' => SessionSubscriptionStatus::SUSPENDED,
-                    'metadata' => $metadata ?: null,
-                ]);
-                Log::info('Grace period expired — subscription suspended', [
-                    'subscription_id' => $sub->id,
-                    'subscription_code' => $sub->subscription_code,
-                    'type' => 'academic',
-                    'ends_at' => $sub->ends_at?->toDateTimeString(),
-                ]);
-                $this->info("Suspended AcademicSubscription #{$sub->id} ({$sub->subscription_code})");
-            }
-            $suspendedCount++;
-        }
 
         $prefix = $dryRun ? '[DRY RUN] ' : '';
         $this->info("{$prefix}Done. {$suspendedCount} subscription(s) ".($dryRun ? 'would be' : '').' suspended.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Check if a subscription has an expired grace period (checks both keys).
+     */
+    private function hasExpiredGracePeriod($subscription): bool
+    {
+        $metadata = $subscription->metadata ?? [];
+
+        $key = isset($metadata['grace_period_ends_at']) ? 'grace_period_ends_at'
+            : (isset($metadata['grace_period_expires_at']) ? 'grace_period_expires_at' : null);
+
+        if (! $key) {
+            return false;
+        }
+
+        return Carbon::parse($metadata[$key])->isPast();
+    }
+
+    /**
+     * Suspend a subscription and clean up grace metadata.
+     */
+    private function suspendSubscription($sub, string $type): void
+    {
+        $metadata = $sub->metadata ?? [];
+        unset(
+            $metadata['grace_period_ends_at'],
+            $metadata['grace_period_expires_at'],
+            $metadata['grace_period_started_at'],
+            $metadata['grace_notification_last_sent_at']
+        );
+
+        $sub->update([
+            'status' => SessionSubscriptionStatus::SUSPENDED,
+            'metadata' => $metadata ?: null,
+        ]);
+
+        Log::info('Grace period expired — subscription suspended', [
+            'subscription_id' => $sub->id,
+            'subscription_code' => $sub->subscription_code,
+            'type' => $type,
+            'ends_at' => $sub->ends_at?->toDateTimeString(),
+        ]);
     }
 }

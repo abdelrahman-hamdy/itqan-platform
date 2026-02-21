@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\AssignAcademicHomeworkRequest;
-use App\Models\AcademicSessionReport;
-use App\Http\Requests\SubmitAcademicHomeworkRequest;
-use App\Http\Requests\GradeAcademicHomeworkRequest;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Http\Requests\AddStudentFeedbackRequest;
+use App\Http\Requests\AssignAcademicHomeworkRequest;
 use App\Http\Requests\CancelAcademicSessionRequest;
+use App\Http\Requests\GradeAcademicHomeworkRequest;
 use App\Http\Requests\RescheduleAcademicSessionRequest;
+use App\Http\Requests\SubmitAcademicHomeworkRequest;
 use App\Http\Requests\UpdateAcademicHomeworkRequest;
 use App\Http\Requests\UpdateAcademicSessionEvaluationRequest;
 use App\Http\Requests\UpdateAcademicSessionStatusRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
+use App\Models\AcademicSessionReport;
 use App\Models\AcademicSubscription;
 use App\Services\Attendance\AcademicReportService;
 use Illuminate\Http\JsonResponse;
@@ -274,8 +274,10 @@ class AcademicSessionController extends Controller
             ]
         );
 
-        // Submit homework
-        $studentReport->submitHomework($homeworkFilePath);
+        // Save homework file path on report notes
+        if ($homeworkFilePath) {
+            $studentReport->update(['notes' => $homeworkFilePath]);
+        }
 
         return redirect()->back()->with('success', 'تم تسليم الواجب بنجاح');
     }
@@ -301,9 +303,9 @@ class AcademicSessionController extends Controller
         }
 
         // Grade the homework
-        $report->recordHomeworkFeedback(
+        $report->recordHomeworkGrade(
             grade: (float) $request->homework_grade,
-            feedback: $request->homework_feedback
+            notes: $request->homework_feedback
         );
 
         return redirect()->back()->with('success', 'تم تقييم الواجب بنجاح');

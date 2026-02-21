@@ -9,11 +9,20 @@
     'cyan' => ['bg' => 'bg-cyan-600', 'hover' => 'hover:bg-cyan-700', 'text' => 'text-cyan-600', 'textHover' => 'hover:text-cyan-700'],
   ];
   $colors = $colorMap[$primaryColor ?? 'blue'] ?? $colorMap['blue'];
+  $isCollapsible = $collapsible ?? false;
+  $isCollapsed = $startCollapsed ?? false;
 @endphp
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col h-full w-full">
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col h-full w-full"
+     @if($isCollapsible) x-data="{ open: {{ $isCollapsed ? 'false' : 'true' }} }" @endif>
   <!-- Card Header -->
-  <div class="p-6 border-b border-gray-100">
+  <div class="p-6 {{ $isCollapsible ? '' : 'border-b border-gray-100' }}"
+       @if($isCollapsible)
+         :class="open ? 'border-b border-gray-100' : ''"
+         @click="open = !open"
+         role="button"
+         style="cursor: pointer;"
+       @endif>
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-12 h-12 rounded-lg flex items-center justify-center {{ $iconBgColor ?? 'bg-primary' }}">
@@ -25,6 +34,9 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
+        @if($isCollapsible)
+          <i class="ri-arrow-down-s-line text-gray-400 transition-transform duration-200 text-lg" :class="{ '-rotate-90': !open }"></i>
+        @endif
         @if(!isset($hideDots) || !$hideDots)
           <button class="text-gray-400 hover:text-gray-600 transition-colors" aria-label="{{ __('components.cards.learning_section.additional_options') }}">
             <i class="ri-more-2-fill"></i>
@@ -33,6 +45,16 @@
       </div>
     </div>
   </div>
+
+  @if($isCollapsible)
+  <div x-show="open"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0">
+  @endif
 
   <!-- Card Content -->
   <div class="p-4 md:p-6">
@@ -211,5 +233,9 @@
         </a>
       </div>
     </div>
+  @endif
+
+  @if($isCollapsible)
+  </div>
   @endif
 </div>

@@ -2,16 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
-use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
-use App\Models\AcademicGradeLevel;
-use Illuminate\Database\QueryException;
-use Exception;
 use App\Constants\DefaultAcademy;
 use App\Enums\UserType;
 use App\Helpers\CountryList;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\AcademicGradeLevel;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use App\Models\QuranTeacherProfile;
@@ -21,6 +17,9 @@ use App\Models\UserSession;
 use App\Notifications\ResetPasswordNotification;
 use App\Rules\PasswordRules;
 use Carbon\Carbon;
+use Exception;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +27,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class AuthController extends Controller
 {
@@ -179,7 +179,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => ['required', 'email', \Illuminate\Validation\Rule::unique('users', 'email')->where('academy_id', $academy->id)],
             'phone' => 'required|string|max:20',
             'password' => PasswordRules::create(),
             'parent_phone' => 'nullable|string|max:20',
@@ -212,35 +212,18 @@ class AuthController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        // Create or get existing user
-        $user = User::where('email', $request->email)->first();
-
-        if ($user) {
-            // Update existing user if found
-            $user->update([
-                'academy_id' => $academy->id,
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'phone' => $request->phone,
-                'password' => Hash::make($request->password),
-                'active_status' => true,
-            ]);
-            $user->user_type = UserType::STUDENT->value;
-            $user->save();
-        } else {
-            // Create new user
-            $user = new User([
-                'academy_id' => $academy->id,
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'password' => Hash::make($request->password),
-                'active_status' => true,
-            ]);
-            $user->user_type = UserType::STUDENT->value;
-            $user->save();
-        }
+        // Create new user (SEC-001 fix: never update existing users via registration)
+        $user = new User([
+            'academy_id' => $academy->id,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'password' => Hash::make($request->password),
+            'active_status' => true,
+        ]);
+        $user->user_type = UserType::STUDENT->value;
+        $user->save();
 
         // Create or update student profile
         $existingProfile = StudentProfile::withoutGlobalScopes()
@@ -969,7 +952,7 @@ class AuthController extends Controller
      * Validate redirect URL to prevent open redirect attacks
      *
      * @param  string  $url  The URL to validate
-     * @param Request $request The current request
+     * @param  Request  $request  The current request
      * @return bool True if the URL is safe to redirect to
      */
     protected function isValidRedirectUrl(string $url, $request): bool

@@ -23,8 +23,12 @@ trait ScopedToAcademyForWeb
     protected static function bootScopedToAcademyForWeb(): void
     {
         static::addGlobalScope('academy_web', function (Builder $builder) {
-            // Skip in console context (jobs, commands) - they manage their own filtering
+            // MT-003: Skip in console context (jobs, commands) - they manage their own filtering
             if (app()->runningInConsole() && ! app()->runningUnitTests()) {
+                \Illuminate\Support\Facades\Log::debug('ScopedToAcademyForWeb: Scope skipped in console context', [
+                    'model' => static::class,
+                ]);
+
                 return;
             }
 

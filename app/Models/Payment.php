@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
-use App\Services\Payment\DTOs\InvoiceData;
-use App\Services\Payment\InvoiceService;
-use Illuminate\Support\Str;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Traits\ScopedToAcademy;
+use App\Services\Payment\DTOs\InvoiceData;
+use App\Services\Payment\InvoiceService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Payment extends Model
 {
@@ -63,9 +63,8 @@ class Payment extends Model
         'paid_at',
         'payment_notification_sent_at',
         'subscription_notification_sent_at',
-        // Polymorphic payable relationship
-        'payable_type',
-        'payable_id',
+        // Note: payable_type and payable_id are NOT fillable for security (SEC-003)
+        // Set polymorphic relationship explicitly in service layer
     ];
 
     protected $casts = [
@@ -255,6 +254,7 @@ class Payment extends Model
     {
         return $this->status === PaymentStatus::FAILED;
     }
+
     // Methods
     public function markAsPending(): self
     {

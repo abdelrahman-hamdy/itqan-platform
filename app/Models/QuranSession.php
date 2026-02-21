@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
-use DB;
-use Exception;
-use Carbon\Carbon;
-use App\Services\LiveKitService;
-use App\Services\NotificationService;
-use Illuminate\Database\Eloquent\Collection;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Models\Traits\CountsTowardsSubscription;
 use App\Services\AcademyContextService;
+use App\Services\LiveKitService;
+use App\Services\NotificationService;
+use Carbon\Carbon;
+use DB;
+use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -1168,7 +1168,30 @@ class QuranSession extends BaseSession
             9 => 'التوبة', 10 => 'يونس', 11 => 'هود', 12 => 'يوسف',
             13 => 'الرعد', 14 => 'إبراهيم', 15 => 'الحجر', 16 => 'النحل',
             17 => 'الإسراء', 18 => 'الكهف', 19 => 'مريم', 20 => 'طه',
-            // Add all 114 surahs as needed
+            21 => 'الأنبياء', 22 => 'الحج', 23 => 'المؤمنون', 24 => 'النور',
+            25 => 'الفرقان', 26 => 'الشعراء', 27 => 'النمل', 28 => 'القصص',
+            29 => 'العنكبوت', 30 => 'الروم', 31 => 'لقمان', 32 => 'السجدة',
+            33 => 'الأحزاب', 34 => 'سبأ', 35 => 'فاطر', 36 => 'يس',
+            37 => 'الصافات', 38 => 'ص', 39 => 'الزمر', 40 => 'غافر',
+            41 => 'فصلت', 42 => 'الشورى', 43 => 'الزخرف', 44 => 'الدخان',
+            45 => 'الجاثية', 46 => 'الأحقاف', 47 => 'محمد', 48 => 'الفتح',
+            49 => 'الحجرات', 50 => 'ق', 51 => 'الذاريات', 52 => 'الطور',
+            53 => 'النجم', 54 => 'القمر', 55 => 'الرحمن', 56 => 'الواقعة',
+            57 => 'الحديد', 58 => 'المجادلة', 59 => 'الحشر', 60 => 'الممتحنة',
+            61 => 'الصف', 62 => 'الجمعة', 63 => 'المنافقون', 64 => 'التغابن',
+            65 => 'الطلاق', 66 => 'التحريم', 67 => 'الملك', 68 => 'القلم',
+            69 => 'الحاقة', 70 => 'المعارج', 71 => 'نوح', 72 => 'الجن',
+            73 => 'المزمل', 74 => 'المدثر', 75 => 'القيامة', 76 => 'الإنسان',
+            77 => 'المرسلات', 78 => 'النبأ', 79 => 'النازعات', 80 => 'عبس',
+            81 => 'التكوير', 82 => 'الانفطار', 83 => 'المطففين', 84 => 'الانشقاق',
+            85 => 'البروج', 86 => 'الطارق', 87 => 'الأعلى', 88 => 'الغاشية',
+            89 => 'الفجر', 90 => 'البلد', 91 => 'الشمس', 92 => 'الليل',
+            93 => 'الضحى', 94 => 'الشرح', 95 => 'التين', 96 => 'العلق',
+            97 => 'القدر', 98 => 'البينة', 99 => 'الزلزلة', 100 => 'العاديات',
+            101 => 'القارعة', 102 => 'التكاثر', 103 => 'العصر', 104 => 'الهمزة',
+            105 => 'الفيل', 106 => 'قريش', 107 => 'الماعون', 108 => 'الكوثر',
+            109 => 'الكافرون', 110 => 'النصر', 111 => 'المسد', 112 => 'الإخلاص',
+            113 => 'الفلق', 114 => 'الناس',
         ];
 
         return $surahNames[$surahNumber] ?? "سورة رقم {$surahNumber}";
@@ -1266,8 +1289,8 @@ class QuranSession extends BaseSession
 
         // Handle homework assignment notifications
         static::updated(function ($session) {
-            // Check if homework_assigned was just set to true
-            if ($session->isDirty('homework_assigned') && $session->homework_assigned) {
+            // Check if homework_assigned was just set to true (use wasChanged in updated context)
+            if ($session->wasChanged('homework_assigned') && $session->homework_assigned) {
                 $session->notifyHomeworkAssigned();
             }
         });
@@ -1372,16 +1395,19 @@ class QuranSession extends BaseSession
         if ($this->session_type === 'group' && $this->circle) {
             return $this->circle->students;
         } elseif ($this->session_type === 'individual' && $this->student_id) {
-            return collect([User::find($this->student_id)]);
+            // Use relationship instead of User::find() to leverage eager loading (PERF-002 fix)
+            $student = $this->student;
+
+            return $student ? collect([$student]) : collect();
         } elseif ($this->session_type === 'trial') {
             // For trial sessions, get student from direct relationship or trial request
             if ($this->student_id) {
-                $student = User::find($this->student_id);
+                $student = $this->student;
 
                 return $student ? collect([$student]) : collect();
             }
             if ($this->trial_request_id && $this->trialRequest?->student_id) {
-                $student = User::find($this->trialRequest->student_id);
+                $student = $this->trialRequest->student;
 
                 return $student ? collect([$student]) : collect();
             }
@@ -1456,15 +1482,11 @@ class QuranSession extends BaseSession
     }
 
     /**
-     * Get the student for individual sessions
+     * Get the student for individual sessions via the relationship (PERF-001 fix)
      */
     public function getStudentAttribute()
     {
-        if ($this->student_id) {
-            return User::find($this->student_id);
-        }
-
-        return null;
+        return $this->getRelationValue('student');
     }
 
     /**

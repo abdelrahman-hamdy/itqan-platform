@@ -109,9 +109,8 @@ class SubscriptionResource extends JsonResource
                 : null,
             'paid_until' => $this->ends_at?->toISOString(),
 
-            // Notes and metadata
+            // Notes
             'notes' => $this->notes,
-            'metadata' => $this->metadata,
 
             // Timestamps
             'created_at' => $this->created_at->toISOString(),

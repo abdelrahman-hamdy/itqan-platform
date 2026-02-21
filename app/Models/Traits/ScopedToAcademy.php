@@ -13,10 +13,12 @@ trait ScopedToAcademy
             $academyContextService = app(AcademyContextService::class);
             $currentAcademyId = $academyContextService->getCurrentAcademyId();
 
-            // Only apply academy scoping if a specific academy is selected
-            // If "All Academies" is selected (null), don't apply scoping
             if ($currentAcademyId) {
                 $builder->where('academy_id', $currentAcademyId);
+            } elseif (! $academyContextService->isSuperAdmin() || ! $academyContextService->isGlobalViewMode()) {
+                // No academy context and not super admin in global view → return empty results
+                // Prevents accidental cross-tenant data exposure (MT-001)
+                $builder->whereRaw('0 = 1');
             }
         });
     }

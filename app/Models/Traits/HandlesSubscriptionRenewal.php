@@ -127,7 +127,7 @@ trait HandlesSubscriptionRenewal
                     return true;
                 } else {
                     // Failure: Track attempt and cancel after MAX_RENEWAL_ATTEMPTS
-                    $subscription->processRenewalFailure($paymentResult['error'] ?? 'فشل الدفع');
+                    $subscription->processRenewalFailure($paymentResult['error'] ?? __('payments.renewal.payment_failed'));
 
                     Log::warning("Auto-renewal failed for subscription {$subscription->id}", [
                         'error' => $paymentResult['error'] ?? 'Unknown error',
@@ -199,6 +199,9 @@ trait HandlesSubscriptionRenewal
             $metadata['last_renewal_failure_at'],
             $metadata['last_renewal_failure_reason'],
             $metadata['grace_period_ends_at'],
+            $metadata['grace_period_expires_at'],  // Legacy key cleanup
+            $metadata['grace_period_started_at'],
+            $metadata['grace_notification_last_sent_at'],
             $metadata['original_ends_at']
         );
 
@@ -274,7 +277,7 @@ trait HandlesSubscriptionRenewal
 
         // Enter grace period instead of immediate cancellation
         $gracePeriodDays = config('payments.renewal.grace_period_days', 3);
-        $metadata['grace_period_expires_at'] = now()->addDays($gracePeriodDays)->toIso8601String();
+        $metadata['grace_period_ends_at'] = now()->addDays($gracePeriodDays)->toIso8601String();
         $metadata['grace_period_started_at'] = now()->toIso8601String();
 
         $this->update([
@@ -286,7 +289,7 @@ trait HandlesSubscriptionRenewal
         Log::warning("Subscription {$this->id} entered grace period after {$failedCount} failed renewal attempts", [
             'reason' => $reason,
             'grace_period_days' => $gracePeriodDays,
-            'grace_period_expires_at' => now()->addDays($gracePeriodDays)->toDateString(),
+            'grace_period_ends_at' => now()->addDays($gracePeriodDays)->toDateString(),
         ]);
 
         // Send failure notification

@@ -38,8 +38,8 @@ Route::prefix('health')->middleware(['throttle:30,1'])->group(function () {
     Route::get('/ready', [HealthCheckController::class, 'ready']);
 });
 
-// Detailed health checks — restricted to authenticated users
-Route::prefix('health')->middleware(['auth:web', 'throttle:10,1'])->group(function () {
+// Detailed health checks — restricted to admin users
+Route::prefix('health')->middleware(['auth:web', 'throttle:10,1', 'role:super_admin,admin'])->group(function () {
     Route::get('/', [HealthCheckController::class, 'health']);
     Route::get('/db', [HealthCheckController::class, 'database']);
     Route::get('/redis', [HealthCheckController::class, 'redis']);

@@ -2,36 +2,36 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Database\QueryException;
-use InvalidArgumentException;
-use Throwable;
-use Exception;
-use App\Models\BaseSession;
-use App\Contracts\RecordingCapable;
-use App\Models\Academy;
-use Carbon\Carbon;
-use App\Models\MeetingAttendanceEvent;
-use Cache;
-use App\Jobs\ProcessDelayedLeaveEvent;
-use App\Models\AcademicSession;
-use App\Jobs\RetryAttendanceOperation;
 use Agence104\LiveKit\RoomServiceClient;
-use App\Models\InteractiveCourseSession;
+use App\Contracts\RecordingCapable;
+use App\Contracts\SessionMeetingServiceInterface;
 use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
 use App\Exceptions\WebhookValidationException;
 use App\Http\Traits\Api\ApiResponses;
+use App\Jobs\ProcessDelayedLeaveEvent;
+use App\Jobs\RetryAttendanceOperation;
+use App\Models\AcademicSession;
+use App\Models\Academy;
+use App\Models\BaseSession;
+use App\Models\InteractiveCourseSession;
+use App\Models\MeetingAttendanceEvent;
 use App\Models\QuranSession;
 use App\Models\User;
-use App\Contracts\SessionMeetingServiceInterface;
 use App\Services\AttendanceEventService;
 use App\Services\RecordingService;
 use App\Services\RoomPermissionService;
 use App\Services\UnifiedSessionStatusService;
+use Cache;
+use Carbon\Carbon;
+use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
+use Throwable;
 
 class LiveKitWebhookController extends Controller
 {
@@ -893,27 +893,35 @@ class LiveKitWebhookController extends Controller
      */
     private function findSessionByRoomName(string $roomName): ?BaseSession
     {
-        // Search QuranSession first (most common)
-        $session = QuranSession::where('meeting_room_name', $roomName)->first();
-        if ($session) {
-            return $session;
+        // PERF-004: Parse room name prefix to query only the relevant table
+        // Room names follow pattern: {type}-{academyId}-{sessionType}-{sessionId}-{timestamp}
+        if (str_starts_with($roomName, 'quran-')) {
+            $session = QuranSession::where('meeting_room_name', $roomName)->first();
+            if ($session) {
+                return $session;
+            }
+        } elseif (str_starts_with($roomName, 'academic-')) {
+            $session = AcademicSession::where('meeting_room_name', $roomName)->first();
+            if ($session) {
+                return $session;
+            }
+        } elseif (str_starts_with($roomName, 'interactive-')) {
+            $session = InteractiveCourseSession::where('meeting_room_name', $roomName)->first();
+            if ($session) {
+                return $session;
+            }
         }
 
-        // Search InteractiveCourseSession
-        $session = InteractiveCourseSession::where('meeting_room_name', $roomName)->first();
-        if ($session) {
-            return $session;
+        // Fallback: search all tables if prefix doesn't match (legacy room names)
+        $session = QuranSession::where('meeting_room_name', $roomName)->first()
+            ?? InteractiveCourseSession::where('meeting_room_name', $roomName)->first()
+            ?? AcademicSession::where('meeting_room_name', $roomName)->first();
+
+        if (! $session) {
+            Log::warning('Session not found for room name', ['room_name' => $roomName]);
         }
 
-        // Search AcademicSession
-        $session = AcademicSession::where('meeting_room_name', $roomName)->first();
-        if ($session) {
-            return $session;
-        }
-
-        Log::warning('Session not found for room name', ['room_name' => $roomName]);
-
-        return null;
+        return $session;
     }
 
     /**
@@ -939,9 +947,9 @@ class LiveKitWebhookController extends Controller
      */
     private function validateWebhookSignature(Request $request): void
     {
-        // Allow webhooks in development mode without strict validation
-        if (app()->environment('local', 'development')) {
-            Log::debug('Development mode - skipping webhook validation');
+        // Validate in all environments except when explicitly disabled via config (SEC-005 fix)
+        if (config('livekit.skip_webhook_validation', false)) {
+            Log::warning('LiveKit webhook validation is DISABLED via config');
 
             return;
         }

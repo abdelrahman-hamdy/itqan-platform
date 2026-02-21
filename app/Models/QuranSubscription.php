@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
-use Exception;
-use App\Services\CircleEnrollmentService;
-use App\Services\NotificationService;
-use App\Enums\NotificationType;
-use Carbon\Carbon;
 use App\Constants\DefaultAcademy;
 use App\Enums\BillingCycle;
+use App\Enums\NotificationType;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\UserType;
 use App\Models\Traits\HandlesSubscriptionRenewal;
 use App\Models\Traits\PreventsDuplicatePendingSubscriptions;
+use App\Services\CircleEnrollmentService;
+use App\Services\NotificationService;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -968,13 +968,26 @@ class QuranSubscription extends BaseSubscription
     public function activateFromPayment(Payment $payment): void
     {
         DB::transaction(function () {
+            // Clear grace period metadata on successful payment
+            $metadata = $this->metadata ?? [];
+            unset(
+                $metadata['grace_period_ends_at'],
+                $metadata['grace_period_expires_at'],
+                $metadata['grace_period_started_at'],
+                $metadata['grace_notification_last_sent_at'],
+                $metadata['renewal_failed_count'],
+                $metadata['last_renewal_failure_at'],
+                $metadata['last_renewal_failure_reason']
+            );
+
             // Update subscription status
             $this->update([
                 'status' => SessionSubscriptionStatus::ACTIVE,
                 'payment_status' => SubscriptionPaymentStatus::PAID,
                 'starts_at' => $this->starts_at ?? now(),
-                'next_payment_at' => now()->addMonth(),
-                'last_payment_at' => now(),
+                'next_billing_date' => now()->addMonth(),
+                'last_payment_date' => now(),
+                'metadata' => $metadata ?: null,
             ]);
 
             // For group subscriptions, enroll student in the circle using CircleEnrollmentService

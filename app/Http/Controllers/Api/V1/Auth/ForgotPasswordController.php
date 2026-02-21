@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
-use App\Notifications\ResetPasswordNotification;
-use Exception;
-use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\User;
 use App\Notifications\PasswordChangedNotification;
+use App\Notifications\ResetPasswordNotification;
 use App\Rules\PasswordRules;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -53,11 +53,12 @@ class ForgotPasswordController extends Controller
         // Generate reset token
         $token = Str::random(64);
 
-        // Store token in password_reset_tokens table
+        // MT-004: Store token scoped to academy to prevent cross-academy resets
         DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $request->email],
+            ['email' => $request->email, 'academy_id' => $academy->id],
             [
                 'email' => $request->email,
+                'academy_id' => $academy->id,
                 'token' => Hash::make($token),
                 'created_at' => now(),
             ]
@@ -91,6 +92,8 @@ class ForgotPasswordController extends Controller
      */
     public function verifyToken(Request $request): JsonResponse
     {
+        $academy = $request->attributes->get('academy') ?? current_academy();
+
         $validator = Validator::make($request->all(), [
             'email' => ['required', 'email', 'max:255'],
             'token' => ['required', 'string'],
@@ -100,9 +103,10 @@ class ForgotPasswordController extends Controller
             return $this->validationError($validator->errors()->toArray());
         }
 
-        // Find reset record
+        // MT-004: Find reset record scoped to academy
         $record = DB::table('password_reset_tokens')
             ->where('email', $request->email)
+            ->where('academy_id', $academy->id)
             ->first();
 
         if (! $record) {
@@ -155,9 +159,10 @@ class ForgotPasswordController extends Controller
             return $this->validationError($validator->errors()->toArray());
         }
 
-        // Find reset record
+        // MT-004: Find reset record scoped to academy
         $record = DB::table('password_reset_tokens')
             ->where('email', $request->email)
+            ->where('academy_id', $academy->id)
             ->first();
 
         if (! $record) {
@@ -226,9 +231,10 @@ class ForgotPasswordController extends Controller
             // Don't fail the password reset if notification fails
         }
 
-        // Delete reset token
+        // Delete reset token (scoped to academy)
         DB::table('password_reset_tokens')
             ->where('email', $request->email)
+            ->where('academy_id', $academy->id)
             ->delete();
 
         // Revoke all existing tokens for security

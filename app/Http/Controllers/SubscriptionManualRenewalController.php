@@ -2,16 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use App\Enums\PaymentStatus;
-use Exception;
-use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\AcademicSubscription;
 use App\Models\Payment;
 use App\Models\QuranSubscription;
 use App\Services\PaymentService;
 use App\Services\Subscription\RenewalProcessor;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -30,7 +28,7 @@ class SubscriptionManualRenewalController extends Controller
     {
         $subscription = $this->findSubscription($type, $id);
 
-        if (!$subscription) {
+        if (! $subscription) {
             abort(404, 'Subscription not found');
         }
 
@@ -42,18 +40,15 @@ class SubscriptionManualRenewalController extends Controller
         // Check if subscription is in failed state
         if ($subscription->payment_status !== SubscriptionPaymentStatus::FAILED) {
             return redirect()->route('student.subscriptions')
-                ->with('info', 'هذا الاشتراك لا يحتاج إلى دفع يدوي.');
+                ->with('info', __('payments.renewal.no_manual_payment_needed'));
         }
 
-        // Check grace period
-        $metadata = $subscription->metadata ?? [];
-        $gracePeriodExpiresAt = isset($metadata['grace_period_expires_at'])
-            ? Carbon::parse($metadata['grace_period_expires_at'])
-            : null;
+        // Check grace period (check both standardized and legacy key)
+        $gracePeriodExpiresAt = $subscription->getGracePeriodEndsAt();
 
-        if (!$gracePeriodExpiresAt) {
+        if (! $gracePeriodExpiresAt) {
             return redirect()->route('student.subscriptions')
-                ->with('warning', 'لم يتم العثور على فترة سماح لهذا الاشتراك.');
+                ->with('warning', __('payments.renewal.grace_period_not_found'));
         }
 
         if ($gracePeriodExpiresAt->isPast()) {
@@ -85,7 +80,7 @@ class SubscriptionManualRenewalController extends Controller
 
         $subscription = $this->findSubscription($type, $id);
 
-        if (!$subscription) {
+        if (! $subscription) {
             abort(404, 'Subscription not found');
         }
 
@@ -94,15 +89,12 @@ class SubscriptionManualRenewalController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        // Verify grace period not expired
-        $metadata = $subscription->metadata ?? [];
-        $gracePeriodExpiresAt = isset($metadata['grace_period_expires_at'])
-            ? Carbon::parse($metadata['grace_period_expires_at'])
-            : null;
+        // Verify grace period not expired (check both standardized and legacy key)
+        $gracePeriodExpiresAt = $subscription->getGracePeriodEndsAt();
 
-        if (!$gracePeriodExpiresAt || $gracePeriodExpiresAt->isPast()) {
+        if (! $gracePeriodExpiresAt || $gracePeriodExpiresAt->isPast()) {
             return redirect()->route('student.subscriptions')
-                ->with('error', 'انتهت فترة السماح لهذا الاشتراك.');
+                ->with('error', __('payments.renewal.grace_period_expired'));
         }
 
         try {
@@ -113,15 +105,15 @@ class SubscriptionManualRenewalController extends Controller
                 'academy_id' => $subscription->academy_id,
                 'user_id' => Auth::id(),
                 'subscription_id' => $subscription->id,
-                'payment_code' => 'MRN-' . $subscription->id . '-' . now()->timestamp,
+                'payment_code' => 'MRN-'.$subscription->id.'-'.now()->timestamp,
                 'payment_method' => 'manual_renewal',
                 'payment_gateway' => $request->payment_gateway,
-                'payment_type' => ($type === 'quran' ? 'quran' : 'academic') . '_subscription_renewal',
+                'payment_type' => ($type === 'quran' ? 'quran' : 'academic').'_subscription_renewal',
                 'amount' => $renewalAmount,
                 'net_amount' => $renewalAmount,
                 'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
                 'status' => PaymentStatus::PENDING,
-                'notes' => 'تجديد يدوي خلال فترة السماح',
+                'notes' => __('payments.renewal.manual_renewal_note'),
                 'payable_type' => get_class($subscription),
                 'payable_id' => $subscription->id,
             ]);
@@ -131,10 +123,14 @@ class SubscriptionManualRenewalController extends Controller
 
             if ($result['success'] ?? false) {
                 // Clear grace period and failure metadata
+                // Note: manualRenewal() → handleSuccessfulRenewal() already clears these,
+                // but we clear here for safety in case the flow changes
                 $metadata = $subscription->metadata ?? [];
                 unset(
+                    $metadata['grace_period_ends_at'],
                     $metadata['grace_period_expires_at'],
                     $metadata['grace_period_started_at'],
+                    $metadata['grace_notification_last_sent_at'],
                     $metadata['renewal_failed_count'],
                     $metadata['last_renewal_failure_at'],
                     $metadata['last_renewal_failure_reason']
@@ -149,14 +145,14 @@ class SubscriptionManualRenewalController extends Controller
                 ]);
 
                 return redirect()->route('student.subscriptions')
-                    ->with('success', 'تم تجديد الاشتراك بنجاح!');
+                    ->with('success', __('payments.renewal.success'));
             } else {
                 // Redirect to payment page if needed
                 if (isset($result['data']['payment_url'])) {
                     return redirect($result['data']['payment_url']);
                 }
 
-                return back()->with('error', $result['error'] ?? 'فشل الدفع. يرجى المحاولة مرة أخرى.');
+                return back()->with('error', $result['error'] ?? __('payments.renewal.payment_failed_retry'));
             }
         } catch (Exception $e) {
             Log::error('Manual renewal failed', [
@@ -164,7 +160,7 @@ class SubscriptionManualRenewalController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->with('error', 'حدث خطأ أثناء معالجة الدفع. يرجى المحاولة مرة أخرى.');
+            return back()->with('error', __('payments.renewal.processing_error'));
         }
     }
 

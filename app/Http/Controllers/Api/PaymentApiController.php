@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
-use Exception;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Payment;
 use App\Models\SavedPaymentMethod;
 use App\Services\Payment\PaymentMethodService;
 use App\Services\PaymentService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -86,20 +86,20 @@ class PaymentApiController extends Controller
             if ($result->isSuccessful()) {
                 // Update payment with gateway info
                 $payment->update([
-                    'gateway_payment_id' => $result->getPaymentId(),
+                    'gateway_payment_id' => $result->transactionId,
                 ]);
 
                 return $this->success([
                     'success' => true,
-                    'iframe_url' => $result->getRedirectUrl(),
+                    'iframe_url' => $result->redirectUrl,
                     'payment_id' => $payment->id,
                 ]);
             }
 
             // Mark payment as failed
-            $payment->markAsFailed($result->getErrorMessage());
+            $payment->markAsFailed($result->errorMessage);
 
-            return $this->error($result->getErrorMessage() ?? 'فشل إنشاء عملية الدفع', 400);
+            return $this->error($result->errorMessage ?? 'فشل إنشاء عملية الدفع', 400);
 
         } catch (Exception $e) {
             Log::error('Payment intent creation failed', [
@@ -160,13 +160,13 @@ class PaymentApiController extends Controller
                 return $this->success([
                     'success' => true,
                     'message' => 'تم الدفع بنجاح',
-                    'payment_id' => $result->getPaymentId(),
-                    'transaction_id' => $result->getTransactionId(),
+                    'payment_id' => $result->gatewayOrderId,
+                    'transaction_id' => $result->transactionId,
                 ]);
             }
 
-            return $this->error($result->getErrorMessage() ?? 'فشلت عملية الدفع', 400, [
-                'error_code' => $result->getErrorCode(),
+            return $this->error($result->errorMessage ?? 'فشلت عملية الدفع', 400, [
+                'error_code' => $result->errorCode,
             ]);
 
         } catch (Exception $e) {

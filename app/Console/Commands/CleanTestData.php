@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use Exception;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
@@ -12,12 +11,13 @@ use App\Models\ParentProfile;
 use App\Models\Payment;
 use App\Models\QuizAttempt;
 use App\Models\QuranCircle;
-use App\Models\QuranCircleStudent;
+use App\Models\QuranCircleEnrollment;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\QuranTrialRequest;
 use App\Models\StudentProfile;
 use App\Models\User;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -31,7 +31,9 @@ class CleanTestData extends Command
     protected $description = 'Clean test data from production (itqan-academy tenant)';
 
     protected bool $dryRun = false;
+
     protected bool $preserveE2E = false;
+
     protected array $deletionLog = [];
 
     public function handle()
@@ -45,9 +47,10 @@ class CleanTestData extends Command
         $testUserIds = $this->getTestUserIds();
 
         // Step 2: Get confirmation if not forced
-        if (!$this->option('force') && !$this->dryRun) {
-            if (!$this->confirm('This will permanently delete test data. Continue?')) {
+        if (! $this->option('force') && ! $this->dryRun) {
+            if (! $this->confirm('This will permanently delete test data. Continue?')) {
                 $this->error('Operation cancelled.');
+
                 return self::FAILURE;
             }
         }
@@ -57,9 +60,9 @@ class CleanTestData extends Command
         $testStudentIds = StudentProfile::whereIn('user_id', $testUserIds)->pluck('id')->toArray();
         $testParentIds = ParentProfile::whereIn('user_id', $testUserIds)->pluck('id')->toArray();
 
-        $this->line('✓ Found ' . count($testUserIds) . ' test users');
-        $this->line('✓ Found ' . count($testStudentIds) . ' test students');
-        $this->line('✓ Found ' . count($testParentIds) . ' test parents');
+        $this->line('✓ Found '.count($testUserIds).' test users');
+        $this->line('✓ Found '.count($testStudentIds).' test students');
+        $this->line('✓ Found '.count($testParentIds).' test parents');
 
         if ($this->preserveE2E) {
             $this->warn('✓ Preserving User 31 (E2E Test hamdy) and all associated data');
@@ -75,6 +78,7 @@ class CleanTestData extends Command
             $this->newLine();
             $this->info('DRY RUN COMPLETE - No data was deleted');
             $this->comment('Run without --dry-run to execute actual deletion');
+
             return self::SUCCESS;
         }
 
@@ -112,8 +116,9 @@ class CleanTestData extends Command
 
             return self::SUCCESS;
         } catch (Exception $e) {
-            $this->error('❌ Deletion failed: ' . $e->getMessage());
+            $this->error('❌ Deletion failed: '.$e->getMessage());
             $this->error('Transaction rolled back - no data was deleted');
+
             return self::FAILURE;
         }
     }
@@ -121,7 +126,7 @@ class CleanTestData extends Command
     protected function showHeader(): void
     {
         $this->info('═══════════════════════════════════════════════════════════════');
-        $this->info('  Test Data Cleanup ' . ($this->dryRun ? '(DRY RUN)' : ''));
+        $this->info('  Test Data Cleanup '.($this->dryRun ? '(DRY RUN)' : ''));
         $this->info('═══════════════════════════════════════════════════════════════');
         $this->newLine();
 
@@ -165,7 +170,7 @@ class CleanTestData extends Command
         ];
 
         foreach ($counts as $label => $count) {
-            $this->line('  ' . $label . ': ' . $count . ' records');
+            $this->line('  '.$label.': '.$count.' records');
         }
 
         // Check Circle 2
@@ -184,7 +189,7 @@ class CleanTestData extends Command
 
     protected function checkCircle2(array $testStudentIds): void
     {
-        $circle2Members = QuranCircleStudent::where('quran_circle_id', 2)->get();
+        $circle2Members = QuranCircleEnrollment::where('quran_circle_id', 2)->get();
 
         if ($circle2Members->isEmpty()) {
             return;
@@ -209,7 +214,7 @@ class CleanTestData extends Command
         $academicCount = AcademicHomeworkSubmission::whereIn('student_id', $testStudentIds)->count();
         $courseCount = InteractiveCourseHomeworkSubmission::whereIn('student_id', $testStudentIds)->count();
 
-        if (!$this->dryRun) {
+        if (! $this->dryRun) {
             AcademicHomeworkSubmission::whereIn('student_id', $testStudentIds)->delete();
             InteractiveCourseHomeworkSubmission::whereIn('student_id', $testStudentIds)->delete();
         }
@@ -221,7 +226,7 @@ class CleanTestData extends Command
     {
         $count = QuizAttempt::whereIn('student_id', $testStudentIds)->count();
 
-        if (!$this->dryRun) {
+        if (! $this->dryRun) {
             QuizAttempt::whereIn('student_id', $testStudentIds)->delete();
         }
 
@@ -245,7 +250,7 @@ class CleanTestData extends Command
                 });
             })->count();
 
-        if (!$this->dryRun) {
+        if (! $this->dryRun) {
             DB::table('attendances')
                 ->where(function ($q) use ($quranSessions, $academicSessions) {
                     $q->where(function ($sub) use ($quranSessions) {
@@ -277,7 +282,7 @@ class CleanTestData extends Command
                 });
             })->count();
 
-        if (!$this->dryRun) {
+        if (! $this->dryRun) {
             DB::table('base_session_meetings')
                 ->where(function ($q) use ($quranSessions, $academicSessions) {
                     $q->where(function ($sub) use ($quranSessions) {
@@ -298,7 +303,7 @@ class CleanTestData extends Command
         $quranCount = QuranSession::whereIn('student_id', $testStudentIds)->count();
         $academicCount = AcademicSession::whereIn('student_id', $testStudentIds)->count();
 
-        if (!$this->dryRun) {
+        if (! $this->dryRun) {
             QuranSession::whereIn('student_id', $testStudentIds)->delete();
             AcademicSession::whereIn('student_id', $testStudentIds)->delete();
         }
@@ -312,7 +317,7 @@ class CleanTestData extends Command
         $quranCount = QuranSubscription::whereIn('student_id', $testStudentIds)->count();
         $academicCount = AcademicSubscription::whereIn('student_id', $testStudentIds)->count();
 
-        if (!$this->dryRun) {
+        if (! $this->dryRun) {
             QuranSubscription::whereIn('student_id', $testStudentIds)->delete();
             AcademicSubscription::whereIn('student_id', $testStudentIds)->delete();
         }
@@ -327,7 +332,7 @@ class CleanTestData extends Command
             $q->whereIn('student_id', $testStudentIds);
         })->count();
 
-        if (!$this->dryRun) {
+        if (! $this->dryRun) {
             AcademicIndividualLesson::whereHas('subscription', function ($q) use ($testStudentIds) {
                 $q->whereIn('student_id', $testStudentIds);
             })->delete();
@@ -338,7 +343,7 @@ class CleanTestData extends Command
 
     protected function handleGroupCircles(array $testStudentIds): void
     {
-        $circlesWithTestStudents = QuranCircleStudent::whereIn('student_id', $testStudentIds)
+        $circlesWithTestStudents = QuranCircleEnrollment::whereIn('student_id', $testStudentIds)
             ->get()
             ->groupBy('quran_circle_id');
 
@@ -346,19 +351,19 @@ class CleanTestData extends Command
         $studentsRemoved = 0;
 
         foreach ($circlesWithTestStudents as $circleId => $members) {
-            $allMembers = QuranCircleStudent::where('quran_circle_id', $circleId)->get();
+            $allMembers = QuranCircleEnrollment::where('quran_circle_id', $circleId)->get();
             $productionMembers = $allMembers->whereNotIn('student_id', $testStudentIds);
 
             if ($productionMembers->isEmpty()) {
                 // Circle contains ONLY test students - safe to delete
-                if (!$this->dryRun) {
+                if (! $this->dryRun) {
                     QuranCircle::find($circleId)?->delete();
                 }
                 $circlesDeleted++;
             } else {
                 // Circle contains production students - only remove test students
-                if (!$this->dryRun) {
-                    QuranCircleStudent::whereIn('student_id', $testStudentIds)
+                if (! $this->dryRun) {
+                    QuranCircleEnrollment::whereIn('student_id', $testStudentIds)
                         ->where('quran_circle_id', $circleId)
                         ->delete();
                 }
@@ -379,7 +384,7 @@ class CleanTestData extends Command
         $testStudentIds = StudentProfile::whereIn('user_id', $testUserIds)->pluck('id');
         $count = QuranTrialRequest::whereIn('student_id', $testStudentIds)->count();
 
-        if (!$this->dryRun) {
+        if (! $this->dryRun) {
             QuranTrialRequest::whereIn('student_id', $testStudentIds)->delete();
         }
 
@@ -390,7 +395,7 @@ class CleanTestData extends Command
     {
         $count = Payment::whereIn('user_id', $testUserIds)->count();
 
-        if (!$this->dryRun) {
+        if (! $this->dryRun) {
             Payment::whereIn('user_id', $testUserIds)->delete();
         }
 
@@ -401,7 +406,7 @@ class CleanTestData extends Command
     {
         $count = DB::table('notifications')->whereIn('notifiable_id', $testUserIds)->count();
 
-        if (!$this->dryRun) {
+        if (! $this->dryRun) {
             DB::table('notifications')->whereIn('notifiable_id', $testUserIds)->delete();
         }
 
@@ -416,7 +421,7 @@ class CleanTestData extends Command
             ->orWhereIn('receiver_id', $testUserIds)
             ->count();
 
-        if (!$this->dryRun) {
+        if (! $this->dryRun) {
             DB::table('conversations')
                 ->whereIn('user_id', $testUserIds)
                 ->orWhereIn('receiver_id', $testUserIds)
@@ -428,7 +433,7 @@ class CleanTestData extends Command
 
     protected function deleteProfiles(array $testStudentIds, array $testParentIds): void
     {
-        if (!$this->dryRun) {
+        if (! $this->dryRun) {
             StudentProfile::whereIn('id', $testStudentIds)->delete();
             ParentProfile::whereIn('id', $testParentIds)->delete();
         }
@@ -439,7 +444,7 @@ class CleanTestData extends Command
 
     protected function deleteUsers(array $testUserIds): void
     {
-        if (!$this->dryRun) {
+        if (! $this->dryRun) {
             User::whereIn('id', $testUserIds)->delete();
         }
 
@@ -450,7 +455,7 @@ class CleanTestData extends Command
     {
         if ($count > 0) {
             $this->deletionLog[] = ['label' => $label, 'count' => $count];
-            $this->line('  ✓ ' . $label . ': ' . $count . ' deleted');
+            $this->line('  ✓ '.$label.': '.$count.' deleted');
         }
     }
 
@@ -461,12 +466,12 @@ class CleanTestData extends Command
 
         $total = 0;
         foreach ($this->deletionLog as $entry) {
-            $this->line('  ' . $entry['label'] . ': ' . $entry['count'] . ' records');
+            $this->line('  '.$entry['label'].': '.$entry['count'].' records');
             $total += $entry['count'];
         }
 
         $this->newLine();
-        $this->info('Total records deleted: ' . $total);
+        $this->info('Total records deleted: '.$total);
     }
 
     protected function performPostDeletionVerification(array $testUserIds, array $testStudentIds): void
@@ -517,11 +522,11 @@ class CleanTestData extends Command
             $failures[] = "Orphaned subscriptions: {$orphanedSubs}";
         }
 
-        if (!empty($failures)) {
+        if (! empty($failures)) {
             $this->newLine();
             $this->error('⚠️  Verification issues found:');
             foreach ($failures as $failure) {
-                $this->error('  - ' . $failure);
+                $this->error('  - '.$failure);
             }
         } else {
             $this->newLine();

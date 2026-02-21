@@ -47,9 +47,12 @@ beforeEach(function () {
         'user_id' => $this->teacher->id,
         'academy_id' => $this->academy->id,
     ]);
+
 });
 
 test('purchase URL generation returns valid token and URL', function () {
+    Sanctum::actingAs($this->student, ['*']);
+
     // Create Quran subscription pending payment
     $subscription = QuranSubscription::factory()->create([
         'academy_id' => $this->academy->id,
@@ -60,8 +63,7 @@ test('purchase URL generation returns valid token and URL', function () {
     ]);
 
     // Request purchase URL
-    $response = $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $response = $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/purchase-url/quran_teacher/{$this->teacher->id}");
 
     $response->assertStatus(200);
@@ -82,8 +84,9 @@ test('purchase URL generation returns valid token and URL', function () {
 });
 
 test('purchase URL token expires after 1 hour', function () {
-    $response = $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    Sanctum::actingAs($this->student, ['*']);
+
+    $response = $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/purchase-url/quran_teacher/{$this->teacher->id}");
 
     $response->assertStatus(200);
@@ -98,6 +101,8 @@ test('purchase URL token expires after 1 hour', function () {
 });
 
 test('existing active subscription prevents duplicate purchase URL', function () {
+    Sanctum::actingAs($this->student, ['*']);
+
     // Create active paid subscription
     QuranSubscription::factory()->create([
         'academy_id' => $this->academy->id,
@@ -108,8 +113,7 @@ test('existing active subscription prevents duplicate purchase URL', function ()
     ]);
 
     // Attempt to get purchase URL again
-    $response = $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $response = $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/purchase-url/quran_teacher/{$this->teacher->id}");
 
     $response->assertStatus(200);
@@ -192,6 +196,8 @@ test('payment success page detects mobile purchases', function () {
 });
 
 test('payment completion confirms subscription', function () {
+    Sanctum::actingAs($this->student, ['*']);
+
     // Create subscription
     $subscription = QuranSubscription::factory()->create([
         'academy_id' => $this->academy->id,
@@ -203,8 +209,7 @@ test('payment completion confirms subscription', function () {
     ]);
 
     // Call purchase completed endpoint
-    $response = $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $response = $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->postJson('/api/v1/student/purchase-completed', [
             'subscription_id' => $subscription->id,
         ]);
@@ -278,14 +283,15 @@ test('complete purchase flow updates subscription purchase_source', function () 
 });
 
 test('recorded course purchase flow', function () {
+    Sanctum::actingAs($this->student, ['*']);
+
     $course = RecordedCourse::factory()->create([
         'academy_id' => $this->academy->id,
         'price' => 200,
     ]);
 
     // Get purchase URL
-    $response = $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $response = $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/purchase-url/course/{$course->id}");
 
     $response->assertStatus(200);
@@ -295,6 +301,8 @@ test('recorded course purchase flow', function () {
 });
 
 test('academic teacher subscription purchase flow', function () {
+    Sanctum::actingAs($this->student, ['*']);
+
     $academicTeacher = User::factory()->create([
         'academy_id' => $this->academy->id,
         'user_type' => 'academic_teacher',
@@ -306,8 +314,7 @@ test('academic teacher subscription purchase flow', function () {
     ]);
 
     // Get purchase URL
-    $response = $this->actingAs($this->student, 'sanctum')
-        ->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
+    $response = $this->withHeader('X-Academy-Subdomain', $this->academy->subdomain)
         ->getJson("/api/v1/student/purchase-url/academic_teacher/{$academicTeacher->id}");
 
     $response->assertStatus(200);

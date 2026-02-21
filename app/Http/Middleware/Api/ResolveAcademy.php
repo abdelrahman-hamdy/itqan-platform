@@ -48,7 +48,13 @@ class ResolveAcademy
         // Set API context using the service (replaces direct container binding)
         AcademyContextService::setApiContext($academy);
 
-        return $next($request);
+        $response = $next($request);
+
+        // PERF-005: Clear static API context after request to prevent leaking between requests
+        // Critical for long-running processes (Octane, queue workers)
+        AcademyContextService::clearApiContext();
+
+        return $response;
     }
 
     /**

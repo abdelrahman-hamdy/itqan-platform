@@ -73,7 +73,7 @@ class StudentInteractiveCourseController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            abort(401, 'User not authenticated');
+            return redirect()->route('login');
         }
 
         // Get academy from subdomain parameter
@@ -176,7 +176,7 @@ class StudentInteractiveCourseController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            abort(401, 'User not authenticated');
+            return redirect()->route('login');
         }
 
         // Get academy from subdomain parameter
@@ -239,7 +239,7 @@ class StudentInteractiveCourseController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            abort(401, 'User not authenticated');
+            return redirect()->route('login');
         }
 
         // Verify user is an academic teacher
@@ -287,7 +287,7 @@ class StudentInteractiveCourseController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            abort(401, 'User not authenticated');
+            return redirect()->route('login');
         }
 
         // Verify user is an academic teacher
@@ -372,7 +372,7 @@ class StudentInteractiveCourseController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            abort(401, 'User not authenticated');
+            return redirect()->route('login');
         }
 
         // Verify user is a student

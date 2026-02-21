@@ -2,27 +2,27 @@
 
 namespace App\Jobs;
 
-use Exception;
-use App\Models\StudentSessionReport;
-use App\Models\AcademicSessionReport;
-use App\Models\InteractiveSessionReport;
-use Throwable;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Jobs\Traits\TenantAwareJob;
 use App\Models\AcademicSession;
+use App\Models\AcademicSessionReport;
 use App\Models\Academy;
 use App\Models\InteractiveCourseSession;
+use App\Models\InteractiveSessionReport;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
+use App\Models\StudentSessionReport;
 use App\Services\Traits\AttendanceCalculatorTrait;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Calculate Session Attendance Job
@@ -63,7 +63,7 @@ class CalculateSessionAttendance implements ShouldQueue
      */
     public function handle(): void
     {
-        Log::info('🧮 Starting post-meeting attendance calculation (multi-tenant)');
+        Log::info('Starting post-meeting attendance calculation (multi-tenant)');
 
         $totalProcessed = 0;
         $totalSkipped = 0;
@@ -362,7 +362,18 @@ class CalculateSessionAttendance implements ShouldQueue
             ]);
 
             $teacherId = $session->teacher_id ?? $session->quran_teacher_id ?? null;
-            $academyId = $session->academy_id ?? $session->quran_circle->academy_id ?? 1; // Default to academy 1
+            $academyId = $session->academy_id
+                ?? $session->course?->academy_id
+                ?? $session->quran_circle?->academy_id;
+
+            if (! $academyId) {
+                Log::error('Cannot determine academy_id for session report', [
+                    'session_id' => $session->id,
+                    'session_type' => get_class($session),
+                ]);
+
+                return;
+            }
 
             // Update report with calculated attendance
             $report->fill([
@@ -374,7 +385,9 @@ class CalculateSessionAttendance implements ShouldQueue
                 'attendance_status' => $attendance->attendance_status,
                 'attendance_percentage' => $attendance->attendance_percentage,
                 'is_late' => $attendance->first_join_time && $attendance->first_join_time->gt($session->scheduled_at->copy()->addMinutes(15)),
-                'late_minutes' => $attendance->first_join_time ? max(0, $attendance->first_join_time->diffInMinutes($session->scheduled_at)) : 0,
+                'late_minutes' => $attendance->first_join_time && $attendance->first_join_time->gt($session->scheduled_at)
+                    ? (int) $session->scheduled_at->diffInMinutes($attendance->first_join_time)
+                    : 0,
                 'is_calculated' => true,
                 'evaluated_at' => now(),
             ]);

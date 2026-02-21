@@ -48,10 +48,10 @@ class HealthCheckController extends Controller
 
         $allHealthy = collect($checks)->every(fn ($check) => $check['healthy']);
 
+        // Public endpoint: only expose status, no infrastructure details (SEC-006 fix)
         return response()->json([
-            'status' => $allHealthy ? 'ok' : 'degraded',
+            'status' => $allHealthy ? 'ok' : 'error',
             'timestamp' => now()->toIso8601String(),
-            'checks' => $checks,
         ], $allHealthy ? 200 : 503);
     }
 

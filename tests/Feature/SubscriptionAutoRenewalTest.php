@@ -192,7 +192,7 @@ class SubscriptionAutoRenewalTest extends TestCase
         $this->subscription->refresh();
         $this->assertEquals(SessionSubscriptionStatus::ACTIVE, $this->subscription->status);
         $this->assertEquals(SubscriptionPaymentStatus::FAILED, $this->subscription->payment_status);
-        $this->assertArrayHasKey('grace_period_expires_at', $this->subscription->metadata ?? []);
+        $this->assertArrayHasKey('grace_period_ends_at', $this->subscription->metadata ?? []);
         $this->assertArrayHasKey('grace_period_started_at', $this->subscription->metadata ?? []);
     }
 

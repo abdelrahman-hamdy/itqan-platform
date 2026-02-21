@@ -338,4 +338,9 @@ return [
         'view_all' => 'View All Notifications',
         'loading' => 'Loading...',
     ],
+
+    // CQ-001: Default strings for notification data
+    'quran_session_default' => 'Quran Session',
+    'teacher_default' => 'Teacher',
+    'quran_homework' => 'Quran Homework',
 ];

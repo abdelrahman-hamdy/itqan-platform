@@ -403,4 +403,19 @@ return [
         'apple_pay' => 'Apple Pay',
         'stc_pay' => 'STC Pay',
     ],
+
+    // Renewal messages
+    'renewal' => [
+        'payment_failed' => 'فشل الدفع',
+        'database_error' => 'خطأ في قاعدة البيانات',
+        'unexpected_error' => 'خطأ غير متوقع',
+        'auto_renewal_note' => 'تجديد تلقائي للاشتراك',
+        'manual_renewal_note' => 'تجديد يدوي خلال فترة السماح',
+        'no_manual_payment_needed' => 'هذا الاشتراك لا يحتاج إلى دفع يدوي.',
+        'grace_period_not_found' => 'لم يتم العثور على فترة سماح لهذا الاشتراك.',
+        'grace_period_expired' => 'انتهت فترة السماح لهذا الاشتراك.',
+        'success' => 'تم تجديد الاشتراك بنجاح!',
+        'payment_failed_retry' => 'فشل الدفع. يرجى المحاولة مرة أخرى.',
+        'processing_error' => 'حدث خطأ أثناء معالجة الدفع. يرجى المحاولة مرة أخرى.',
+    ],
 ];

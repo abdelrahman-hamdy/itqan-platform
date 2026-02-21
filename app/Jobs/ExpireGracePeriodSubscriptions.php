@@ -2,13 +2,13 @@
 
 namespace App\Jobs;
 
-use Carbon\Carbon;
-use Exception;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
-use App\Notifications\SubscriptionCancelledNotification;
+use App\Notifications\GenericEmailNotification;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -35,6 +35,11 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
 
     /**
      * Execute the job.
+     *
+     * Handles auto-renewal failure grace periods (payment_status=FAILED).
+     * Only processes subscriptions that entered grace period due to payment failure.
+     * Admin-granted grace periods (payment_status=PAID) are handled by
+     * SuspendExpiredGraceSubscriptions command instead.
      */
     public function handle(): void
     {
@@ -42,55 +47,56 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
 
         $expiredCount = 0;
 
-        // Process Quran subscriptions (withoutGlobalScopes: runs without tenant context)
-        $quranSubscriptions = QuranSubscription::withoutGlobalScopes()
+        // Process Quran subscriptions with chunkById for memory efficiency
+        QuranSubscription::withoutGlobalScopes()
             ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->where('payment_status', SubscriptionPaymentStatus::FAILED)
             ->whereNotNull('metadata')
-            ->get()
-            ->filter(function ($subscription) {
-                $metadata = $subscription->metadata ?? [];
-                if (! isset($metadata['grace_period_expires_at'])) {
-                    return false;
+            ->chunkById(100, function ($subscriptions) use (&$expiredCount) {
+                foreach ($subscriptions as $subscription) {
+                    if ($this->hasExpiredGracePeriod($subscription)) {
+                        $this->cancelSubscription($subscription, 'quran');
+                        $expiredCount++;
+                    }
                 }
-
-                $expiresAt = Carbon::parse($metadata['grace_period_expires_at']);
-
-                return $expiresAt->isPast();
             });
 
-        foreach ($quranSubscriptions as $subscription) {
-            $this->cancelSubscription($subscription, 'quran');
-            $expiredCount++;
-        }
-
-        // Process Academic subscriptions (withoutGlobalScopes: runs without tenant context)
-        $academicSubscriptions = AcademicSubscription::withoutGlobalScopes()
+        // Process Academic subscriptions with chunkById for memory efficiency
+        AcademicSubscription::withoutGlobalScopes()
             ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->where('payment_status', SubscriptionPaymentStatus::FAILED)
             ->whereNotNull('metadata')
-            ->get()
-            ->filter(function ($subscription) {
-                $metadata = $subscription->metadata ?? [];
-                if (! isset($metadata['grace_period_expires_at'])) {
-                    return false;
+            ->chunkById(100, function ($subscriptions) use (&$expiredCount) {
+                foreach ($subscriptions as $subscription) {
+                    if ($this->hasExpiredGracePeriod($subscription)) {
+                        $this->cancelSubscription($subscription, 'academic');
+                        $expiredCount++;
+                    }
                 }
-
-                $expiresAt = Carbon::parse($metadata['grace_period_expires_at']);
-
-                return $expiresAt->isPast();
             });
-
-        foreach ($academicSubscriptions as $subscription) {
-            $this->cancelSubscription($subscription, 'academic');
-            $expiredCount++;
-        }
 
         Log::info('Grace period expiry job completed', [
             'expired_count' => $expiredCount,
-            'quran_count' => $quranSubscriptions->count(),
-            'academic_count' => $academicSubscriptions->count(),
         ]);
+    }
+
+    /**
+     * Check if a subscription has an expired grace period.
+     * Checks both standardized and legacy metadata keys.
+     */
+    private function hasExpiredGracePeriod($subscription): bool
+    {
+        $metadata = $subscription->metadata ?? [];
+
+        // Check standardized key first, then legacy key
+        $key = isset($metadata['grace_period_ends_at']) ? 'grace_period_ends_at'
+            : (isset($metadata['grace_period_expires_at']) ? 'grace_period_expires_at' : null);
+
+        if (! $key) {
+            return false;
+        }
+
+        return Carbon::parse($metadata[$key])->isPast();
     }
 
     /**
@@ -99,9 +105,7 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
     private function cancelSubscription($subscription, string $type): void
     {
         $metadata = $subscription->metadata ?? [];
-        $gracePeriodExpiresAt = isset($metadata['grace_period_expires_at'])
-            ? Carbon::parse($metadata['grace_period_expires_at'])
-            : null;
+        $graceEndDate = $this->getGraceEndDate($metadata);
 
         // Update subscription status
         $subscription->update([
@@ -113,10 +117,11 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
 
         // Send notification to student
         try {
-            $subscription->student->notify(new SubscriptionCancelledNotification(
-                $subscription,
-                'انتهت فترة السماح بعد فشل التجديد التلقائي. يرجى الاشتراك مرة أخرى لاستئناف الخدمة.',
-                $gracePeriodExpiresAt
+            $subscription->student->notify(new GenericEmailNotification(
+                title: 'إلغاء الاشتراك',
+                message: 'انتهت فترة السماح بعد فشل التجديد التلقائي. يرجى الاشتراك مرة أخرى لاستئناف الخدمة.',
+                actionUrl: null,
+                academy: $subscription->academy,
             ));
         } catch (Exception $e) {
             Log::error('Failed to send subscription cancelled notification', [
@@ -131,7 +136,22 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
             'subscription_type' => $type,
             'subscription_code' => $subscription->subscription_code,
             'student_id' => $subscription->student_id,
-            'grace_period_expired_at' => $gracePeriodExpiresAt?->toDateTimeString(),
+            'grace_period_expired_at' => $graceEndDate?->toDateTimeString(),
         ]);
+    }
+
+    /**
+     * Get grace period end date from metadata (checks both keys).
+     */
+    private function getGraceEndDate(array $metadata): ?Carbon
+    {
+        if (isset($metadata['grace_period_ends_at'])) {
+            return Carbon::parse($metadata['grace_period_ends_at']);
+        }
+        if (isset($metadata['grace_period_expires_at'])) {
+            return Carbon::parse($metadata['grace_period_expires_at']);
+        }
+
+        return null;
     }
 }

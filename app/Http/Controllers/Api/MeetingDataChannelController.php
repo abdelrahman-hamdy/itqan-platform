@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use Exception;
 use App\Events\MeetingCommandEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AcknowledgeMeetingMessageRequest;
@@ -11,11 +10,12 @@ use App\Http\Requests\SendTeacherCommandRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
 use App\Services\MeetingDataChannelService;
+use Exception;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MeetingDataChannelController extends Controller
 {
@@ -161,14 +161,9 @@ class MeetingDataChannelController extends Controller
     /**
      * Server-Sent Events endpoint for real-time updates
      */
-    public function streamEvents(QuranSession $session): Response
+    public function streamEvents(QuranSession $session): StreamedResponse
     {
         $this->authorize('participate', $session);
-
-        $response = new Response;
-        $response->headers->set('Content-Type', 'text/event-stream');
-        $response->headers->set('Cache-Control', 'no-cache');
-        $response->headers->set('Connection', 'keep-alive');
 
         // Set up the SSE stream
         $callback = function () use ($session) {
@@ -203,7 +198,7 @@ class MeetingDataChannelController extends Controller
 
             // Keep connection alive
             $start = time();
-            while (time() - $start < 55) { // 55 seconds max
+            while (time() - $start < 25) { // 25 seconds max to limit PHP-FPM worker hold time
                 sleep(1);
 
                 // Check for new events
@@ -237,7 +232,10 @@ class MeetingDataChannelController extends Controller
             }
         };
 
-        $response->setCallback($callback);
+        $response = new StreamedResponse($callback);
+        $response->headers->set('Content-Type', 'text/event-stream');
+        $response->headers->set('Cache-Control', 'no-cache');
+        $response->headers->set('Connection', 'keep-alive');
 
         return $response;
     }
@@ -355,7 +353,7 @@ class MeetingDataChannelController extends Controller
     public function testConnectivity(QuranSession $session): JsonResponse
     {
         $user = auth()->user();
-        if (!$user || !$user->isSuperAdmin()) {
+        if (! $user || ! $user->isSuperAdmin()) {
             abort(403, 'Only super administrators can use the connectivity test endpoint.');
         }
 

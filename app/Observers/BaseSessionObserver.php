@@ -2,16 +2,16 @@
 
 namespace App\Observers;
 
-use Exception;
-use App\Services\Notification\NotificationUrlBuilder;
-use Carbon\Carbon;
-use App\Models\User;
-use App\Enums\UserType;
 use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Jobs\CalculateSessionEarningsJob;
 use App\Models\BaseSession;
+use App\Models\User;
+use App\Services\Notification\NotificationUrlBuilder;
 use App\Services\NotificationService;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -63,6 +63,7 @@ class BaseSessionObserver
                             'session_id' => $session->id,
                             'error' => $e->getMessage(),
                         ]);
+                        report($e); // BP-003: Report to error tracker
 
                         // Don't throw - let the status update proceed
                         // The cron job will retry meeting creation later
@@ -120,6 +121,7 @@ class BaseSessionObserver
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),
                     ]);
+                    report($e);
                 }
             }
 
@@ -154,6 +156,7 @@ class BaseSessionObserver
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),
                     ]);
+                    report($e);
                 }
             }
 
@@ -264,23 +267,34 @@ class BaseSessionObserver
         if (in_array($status, [SessionStatus::READY, SessionStatus::ONGOING])) {
             if (empty($session->meeting_room_name)) {
                 try {
-                    Log::info('Auto-creating meeting for newly created ready/ongoing session', [
-                        'session_id' => $session->id,
-                        'status' => $status->value,
-                    ]);
+                    // CONC-001: Use transaction with lock to prevent duplicate meeting creation
+                    \Illuminate\Support\Facades\DB::transaction(function () use ($session) {
+                        $freshSession = $session->fresh();
+                        if ($freshSession && empty($freshSession->meeting_room_name)) {
+                            Log::info('Auto-creating meeting for newly created ready/ongoing session', [
+                                'session_id' => $freshSession->id,
+                                'status' => $freshSession->status instanceof SessionStatus ? $freshSession->status->value : $freshSession->status,
+                            ]);
 
-                    $session->generateMeetingLink();
-                    $session->save();
+                            $freshSession->generateMeetingLink();
+                            $freshSession->save();
 
-                    Log::info('Meeting created for new session', [
-                        'session_id' => $session->id,
-                        'room_name' => $session->meeting_room_name,
-                    ]);
+                            // Sync back to original model
+                            $session->meeting_room_name = $freshSession->meeting_room_name;
+                            $session->meeting_link = $freshSession->meeting_link;
+
+                            Log::info('Meeting created for new session', [
+                                'session_id' => $freshSession->id,
+                                'room_name' => $freshSession->meeting_room_name,
+                            ]);
+                        }
+                    });
                 } catch (Exception $e) {
                     Log::error('Failed to create meeting for new session', [
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),
                     ]);
+                    report($e);
                 }
             }
         }

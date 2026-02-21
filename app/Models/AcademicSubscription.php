@@ -2,24 +2,24 @@
 
 namespace App\Models;
 
-use Exception;
-use Log;
-use App\Enums\SessionStatus;
-use App\Services\NotificationService;
-use App\Enums\NotificationType;
-use App\Enums\LessonStatus;
-use Carbon\Carbon;
 use App\Constants\DefaultAcademy;
 use App\Enums\BillingCycle;
+use App\Enums\LessonStatus;
+use App\Enums\NotificationType;
+use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\Traits\HandlesSubscriptionRenewal;
 use App\Models\Traits\PreventsDuplicatePendingSubscriptions;
+use App\Services\NotificationService;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
+use Log;
 
 /**
  * AcademicSubscription Model
@@ -1098,6 +1098,18 @@ class AcademicSubscription extends BaseSubscription
             $startsAt = $this->starts_at ?? now();
             $endsAt = $this->ends_at ?? $this->calculateEndDate($startsAt);
 
+            // Clear grace period metadata on successful payment
+            $metadata = $this->metadata ?? [];
+            unset(
+                $metadata['grace_period_ends_at'],
+                $metadata['grace_period_expires_at'],
+                $metadata['grace_period_started_at'],
+                $metadata['grace_notification_last_sent_at'],
+                $metadata['renewal_failed_count'],
+                $metadata['last_renewal_failure_at'],
+                $metadata['last_renewal_failure_reason']
+            );
+
             // Update subscription status
             $this->update([
                 'status' => SessionSubscriptionStatus::ACTIVE,
@@ -1108,6 +1120,7 @@ class AcademicSubscription extends BaseSubscription
                 'end_date' => $this->end_date ?? $endsAt,
                 'next_billing_date' => $endsAt,
                 'last_payment_date' => now(),
+                'metadata' => $metadata ?: null,
             ]);
 
             Log::info('[AcademicSubscription] Activated from payment', [

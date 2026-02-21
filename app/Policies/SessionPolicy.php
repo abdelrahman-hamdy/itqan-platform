@@ -2,13 +2,13 @@
 
 namespace App\Policies;
 
-use App\Services\AcademyContextService;
 use App\Contracts\MeetingCapable;
 use App\Enums\UserType;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\User;
+use App\Services\AcademyContextService;
 
 /**
  * Session Policy
@@ -214,8 +214,10 @@ class SessionPolicy
             return false;
         }
 
-        // Get all student IDs for this parent
-        $studentIds = $parent->students()->pluck('student_profiles.id')->toArray();
+        // Cache parent's student data to avoid repeated queries (PERF-003 fix)
+        $studentsWithUsers = $parent->students()->with('user')->get();
+        $studentIds = $studentsWithUsers->pluck('id')->toArray();
+        $studentUserIds = $studentsWithUsers->pluck('user.id')->filter()->toArray();
 
         if ($session instanceof QuranSession) {
             if ($session->session_type === 'individual') {
@@ -223,14 +225,10 @@ class SessionPolicy
             }
             // For trial sessions, check through trial request
             if ($session->session_type === 'trial' && $session->trialRequest) {
-                // Get the student's user IDs for this parent
-                $studentUserIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
-
                 return in_array($session->trialRequest->student_id, $studentUserIds);
             }
             // For group sessions, check circle membership
             $circle = $session->circle;
-            $studentUserIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
 
             return $circle && $circle->students()->whereIn('users.id', $studentUserIds)->exists();
         }
@@ -244,9 +242,8 @@ class SessionPolicy
             if (! $course) {
                 return false;
             }
-            $userIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
 
-            return $course->enrollments()->whereIn('user_id', $userIds)->exists();
+            return $course->enrollments()->whereIn('user_id', $studentUserIds)->exists();
         }
 
         return false;

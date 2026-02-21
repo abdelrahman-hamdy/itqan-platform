@@ -2,11 +2,11 @@
 
 namespace App\Policies;
 
-use App\Services\AcademyContextService;
 use App\Enums\PaymentStatus;
 use App\Enums\UserType;
 use App\Models\Payment;
 use App\Models\User;
+use App\Services\AcademyContextService;
 
 /**
  * Payment Policy
@@ -83,7 +83,8 @@ class PaymentPolicy
      */
     public function delete(User $user, Payment $payment): bool
     {
-        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])
+            && $this->sameAcademy($user, $payment);
     }
 
     /**

@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers\Api\V1\Common;
 
-use InvalidArgumentException;
-use RuntimeException;
-use Throwable;
-use App\Models\StudentProfile;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
+use App\Models\StudentProfile;
 use App\Services\LiveKitService;
 use App\Services\MeetingAttendanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
 
 class MeetingTokenController extends Controller
 {
@@ -70,18 +70,16 @@ class MeetingTokenController extends Controller
 
         try {
             // Generate LiveKit token
-            $token = $this->liveKitService->createToken(
+            $token = $this->liveKitService->generateParticipantToken(
                 $meeting->room_name,
-                $user->id,
-                $user->name,
+                $user,
                 [
                     'canPublish' => true,
                     'canSubscribe' => true,
                     'canPublishData' => true,
                     'hidden' => false,
                     'recorder' => false,
-                ],
-                7200 // 2 hours TTL
+                ]
             );
 
             return $this->success([

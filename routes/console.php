@@ -268,9 +268,12 @@ Schedule::command('data:validate-integrity')
 // Note: This affects all academies regardless of their timezone setting
 // Uses withoutGlobalScopes() since this runs without tenant context
 Schedule::call(function () {
+    // CONC-002: Only expire payments that were never attempted via gateway
+    // Prevents race condition where webhook marks payment completed while this bulk update runs
     Payment::withoutGlobalScopes()
         ->where('status', PaymentStatus::PENDING)
         ->where('created_at', '<', now()->subHours(24))
+        ->whereNull('gateway_transaction_id')
         ->update(['status' => PaymentStatus::EXPIRED]);
 })->daily()->at('01:00')->name('expire-pending-payments')
     ->description('Expire pending payments older than 24 hours');
@@ -309,7 +312,7 @@ Schedule::command(\Spatie\Health\Commands\ScheduleCheckHeartbeatCommand::class)
     ->description('Send heartbeat for health check scheduler monitoring');
 
 // Run health checks and store results in database
-// Runs every minute for real-time monitoring in admin dashboard
+// CFG-002: Reduced from everyMinute to everyFiveMinutes to decrease DB/Redis/disk load
 Schedule::command(\Spatie\Health\Commands\RunHealthChecksCommand::class)
-    ->everyMinute()
+    ->everyFiveMinutes()
     ->description('Run all health checks and store results');

@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class SubscriptionAccessLog extends Model
 {
     protected $fillable = [
-        'tenant_id',
+        'academy_id',
         'subscription_type',
         'subscription_id',
         'user_id',
@@ -48,6 +48,6 @@ class SubscriptionAccessLog extends Model
      */
     public function tenant(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Academy::class, 'academy_id');
     }
 }
