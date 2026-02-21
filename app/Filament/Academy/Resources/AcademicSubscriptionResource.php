@@ -14,6 +14,7 @@ use App\Models\AcademicGradeLevel;
 use App\Models\AcademicPackage;
 use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
+use App\Services\AcademyContextService;
 use App\Models\AcademicTeacherProfile;
 use App\Models\User;
 use Filament\Actions\ActionGroup;
@@ -354,9 +355,9 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
 
     protected static function scopeEloquentQuery(Builder $query): Builder
     {
-        $academyId = auth()->user()->academy_id;
+        $academyId = AcademyContextService::getCurrentAcademyId();
 
-        return $query->where('academy_id', $academyId)
+        return $query->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
             ->with(['student', 'teacher.user', 'subject', 'gradeLevel', 'academy']);
     }
 

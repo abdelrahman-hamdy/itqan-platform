@@ -13,6 +13,7 @@ use App\Filament\Shared\Resources\BaseSubscriptionResource;
 use App\Models\QuranCircle;
 use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
+use App\Services\AcademyContextService;
 use App\Models\QuranTeacherProfile;
 use App\Models\User;
 use Filament\Actions\ActionGroup;
@@ -341,9 +342,9 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
 
     protected static function scopeEloquentQuery(Builder $query): Builder
     {
-        $academyId = auth()->user()->academy_id;
+        $academyId = AcademyContextService::getCurrentAcademyId();
 
-        return $query->where('academy_id', $academyId)
+        return $query->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
             ->with(['student', 'quranTeacher', 'package', 'individualCircle', 'quranCircle']);
     }
 
