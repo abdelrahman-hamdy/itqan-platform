@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicIndividualLesson;
+use App\Models\AcademicPackage;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranIndividualCircle;
+use App\Models\QuranPackage;
 use App\Models\QuranTeacherProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -107,6 +109,13 @@ class TeacherController extends Controller
             ->where('is_active', true)
             ->first(['id']) : null;
 
+        // Load packages for the academy
+        $packages = QuranPackage::where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('monthly_price')
+            ->get();
+
         return $this->success([
             'teacher' => [
                 'id' => $teacher->id,
@@ -135,6 +144,19 @@ class TeacherController extends Controller
                 'available_time_end' => $teacher->available_time_end?->format('H:i'),
                 'is_subscribed' => $circle !== null,
                 'subscription_id' => $circle?->id,
+                'packages' => $packages->map(fn ($pkg) => [
+                    'id' => $pkg->id,
+                    'name' => $pkg->name,
+                    'description' => $pkg->description,
+                    'sessions_per_month' => $pkg->sessions_per_month,
+                    'session_duration_minutes' => $pkg->session_duration_minutes,
+                    'monthly_price' => $pkg->monthly_price,
+                    'quarterly_price' => $pkg->quarterly_price,
+                    'yearly_price' => $pkg->yearly_price,
+                    'currency' => $pkg->currency ?? 'SAR',
+                    'features' => $pkg->features ?? [],
+                    'is_popular' => $pkg->sort_order === 0,
+                ])->toArray(),
             ],
         ], __('Teacher retrieved successfully'));
     }
@@ -239,6 +261,13 @@ class TeacherController extends Controller
             ->where('status', 'active')
             ->first(['id']) : null;
 
+        // Load packages for the academy
+        $packages = AcademicPackage::where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('monthly_price')
+            ->get();
+
         return $this->success([
             'teacher' => [
                 'id' => $teacher->id,
@@ -271,7 +300,19 @@ class TeacherController extends Controller
                 'available_time_end' => $teacher->available_time_end?->format('H:i'),
                 'is_subscribed' => $lesson !== null,
                 'subscription_id' => $lesson?->id,
-                'available_packages' => [], // TODO: academic_teacher_packages pivot table not yet created
+                'packages' => $packages->map(fn ($pkg) => [
+                    'id' => $pkg->id,
+                    'name' => $pkg->name,
+                    'description' => $pkg->description,
+                    'sessions_per_month' => $pkg->sessions_per_month,
+                    'session_duration_minutes' => $pkg->session_duration_minutes,
+                    'monthly_price' => $pkg->monthly_price,
+                    'quarterly_price' => $pkg->quarterly_price,
+                    'yearly_price' => $pkg->yearly_price,
+                    'currency' => $pkg->currency ?? 'SAR',
+                    'features' => $pkg->features ?? [],
+                    'is_popular' => $pkg->sort_order === 0,
+                ])->toArray(),
             ],
         ], __('Teacher retrieved successfully'));
     }
