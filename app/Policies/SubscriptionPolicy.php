@@ -203,15 +203,9 @@ class SubscriptionPolicy
      */
     private function sameAcademy(User $user, $subscription): bool
     {
-        // For super_admin, use the selected academy context
+        // Super admins can access all subscriptions regardless of academy context
         if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
-            $userAcademyId = AcademyContextService::getCurrentAcademyId();
-            // If super admin is in global view (no specific academy selected), allow access
-            if (! $userAcademyId) {
-                return true;
-            }
-
-            return $subscription->academy_id === $userAcademyId;
+            return true;
         }
 
         // For other users, use their assigned academy
