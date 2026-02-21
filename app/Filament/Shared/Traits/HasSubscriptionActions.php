@@ -6,7 +6,6 @@ use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
-use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\BaseSubscription;
 use App\Models\CourseSubscription;
@@ -280,12 +279,10 @@ trait HasSubscriptionActions
 
                 // Log extension in metadata
                 $metadata['extensions'] = $metadata['extensions'] ?? [];
-                $sessionsToAdd = (int) ceil(($record->sessions_per_month ?? 8) * $graceDays / 30);
 
                 $metadata['extensions'][] = [
                     'type' => 'grace_period',
                     'grace_days' => $graceDays,
-                    'sessions_added' => $sessionsToAdd,
                     'reason' => $data['extension_reason'],
                     'extended_by' => auth()->id(),
                     'extended_by_name' => auth()->user()->name,
@@ -307,18 +304,10 @@ trait HasSubscriptionActions
 
                 $record->update($updateData);
 
-                // Add proportional sessions
-                $record->addSessions($sessionsToAdd);
-
-                // For Academic: also create unscheduled session records
-                if ($record instanceof AcademicSubscription) {
-                    static::createBonusAcademicSessions($record, $sessionsToAdd);
-                }
-
                 Notification::make()
                     ->success()
                     ->title('تم تمديد فترة السماح')
-                    ->body("تم تمديد الاشتراك {$graceDays} يوم وإضافة {$sessionsToAdd} جلسة. تاريخ الانتهاء الجديد: {$newEndDate->format('Y-m-d')}")
+                    ->body("تم تمديد الاشتراك {$graceDays} يوم. تاريخ الانتهاء الجديد: {$newEndDate->format('Y-m-d')}")
                     ->send();
             })
             ->visible(fn (BaseSubscription $record) => in_array($record->status, [
@@ -575,7 +564,7 @@ trait HasSubscriptionActions
     /**
      * Get all subscription-related actions for view page headers.
      */
-    protected static function getSubscriptionViewActions(): array
+    public static function getSubscriptionViewActions(): array
     {
         $actions = [
             static::getConfirmPaymentAction(),
@@ -684,35 +673,5 @@ trait HasSubscriptionActions
         return [
             static::getCancelExpiredPendingAction(),
         ];
-    }
-
-    // ========================================
-    // HELPERS
-    // ========================================
-
-    /**
-     * Create unscheduled AcademicSession records for bonus sessions.
-     */
-    protected static function createBonusAcademicSessions(AcademicSubscription $record, int $count): void
-    {
-        $lastSessionNumber = AcademicSession::where('academic_subscription_id', $record->id)->count();
-
-        for ($i = 1; $i <= $count; $i++) {
-            $sessionNumber = $lastSessionNumber + $i;
-
-            AcademicSession::create([
-                'academy_id' => $record->academy_id,
-                'academic_teacher_id' => $record->teacher_id,
-                'academic_subscription_id' => $record->id,
-                'student_id' => $record->student_id,
-                'session_code' => 'AS-'.$record->id.'-'.str_pad($sessionNumber, 3, '0', STR_PAD_LEFT),
-                'session_type' => 'individual',
-                'status' => SessionStatus::UNSCHEDULED,
-                'title' => "جلسة إضافية {$sessionNumber} - {$record->subject_name}",
-                'description' => "جلسة إضافية في مادة {$record->subject_name} - {$record->grade_level_name}",
-                'duration_minutes' => $record->session_duration_minutes ?? 60,
-                'created_by' => $record->student_id,
-            ]);
-        }
     }
 }

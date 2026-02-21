@@ -301,11 +301,9 @@ abstract class BaseSubscriptionResource extends Resource
                             ->label('عدد الأيام')
                             ->suffix(' يوم')
                             ->weight(FontWeight::Bold),
-                        TextEntry::make('sessions_added')
-                            ->label('جلسات مضافة'),
                         TextEntry::make('reason')
                             ->label('سبب التمديد')
-                            ->columnSpan(2),
+                            ->columnSpan(3),
                         TextEntry::make('extended_by_name')
                             ->label('تم بواسطة'),
                         TextEntry::make('extended_at')
