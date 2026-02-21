@@ -115,7 +115,6 @@ class SubscriptionMaintenanceService
                             ->where('status', 'pending')
                             ->update([
                                 'status' => 'cancelled',
-                                'cancelled_at' => now(),
                             ]);
 
                         $result['by_type'][$type]++;
