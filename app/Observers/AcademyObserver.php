@@ -5,9 +5,37 @@ namespace App\Observers;
 use App\Models\Academy;
 use App\Services\AcademyAdminSyncService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class AcademyObserver
 {
+    /**
+     * Subdirectories created under each tenant's public storage.
+     */
+    private const TENANT_PUBLIC_DIRS = [
+        'avatars/students',
+        'avatars/quran-teachers',
+        'avatars/academic-teachers',
+        'avatars/supervisors',
+        'videos/quran-teachers',
+        'videos/academic-teachers',
+        'course-thumbnails',
+        'course-materials',
+        'chat-attachments',
+        'academy-logos',
+        'academy-favicons',
+    ];
+
+    /**
+     * Subdirectories created under each tenant's private storage.
+     */
+    private const TENANT_PRIVATE_DIRS = [
+        'invoices',
+        'exports',
+        'homework',
+    ];
+
     public function __construct(
         protected AcademyAdminSyncService $syncService
     ) {}
@@ -40,12 +68,14 @@ class AcademyObserver
 
     /**
      * Handle the Academy "created" event.
-     * Sync admin relationship for newly created academies with admin_id set.
+     * Provision tenant storage directories and sync admin relationship.
      */
     public function created(Academy $academy): void
     {
         Cache::forget('academy:default');
         Cache::forget('academies:all');
+
+        $this->provisionTenantStorage($academy);
 
         if ($academy->admin_id && ! AcademyAdminSyncService::isSyncing()) {
             $this->syncService->syncFromAcademy(
@@ -65,5 +95,34 @@ class AcademyObserver
         Cache::forget("academy:{$academy->id}");
         Cache::forget('academy:default');
         Cache::forget('academies:all');
+    }
+
+    /**
+     * Create the tenant-isolated storage directories for a new academy.
+     */
+    private function provisionTenantStorage(Academy $academy): void
+    {
+        $tenantId = $academy->id;
+
+        try {
+            $publicDisk = Storage::disk('public');
+
+            foreach (self::TENANT_PUBLIC_DIRS as $dir) {
+                $publicDisk->makeDirectory("tenants/{$tenantId}/{$dir}");
+            }
+
+            $localDisk = Storage::disk('local');
+
+            foreach (self::TENANT_PRIVATE_DIRS as $dir) {
+                $localDisk->makeDirectory("tenants/{$tenantId}/{$dir}");
+            }
+
+            Log::info("Tenant storage provisioned for academy {$tenantId}");
+        } catch (\Throwable $e) {
+            Log::error("Failed to provision tenant storage for academy {$tenantId}", [
+                'error' => $e->getMessage(),
+            ]);
+            report($e);
+        }
     }
 }
