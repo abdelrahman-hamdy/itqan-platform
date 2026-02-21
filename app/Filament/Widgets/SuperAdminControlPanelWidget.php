@@ -371,13 +371,21 @@ class SuperAdminControlPanelWidget extends Widget
         ];
     }
 
-    private function getSessionTypeData($query, ?array $period, string $label, string $icon, string $color, string $url): array
+    private function getSessionTypeData($query, ?array $period, string $label, string $icon, string $color, string $baseUrl): array
     {
         $baseQuery = clone $query;
 
         if ($period !== null) {
             $baseQuery = $baseQuery->whereBetween('scheduled_at', $period);
         }
+
+        // Build URL with date_range filters matching the selected period
+        $filterParams = [];
+        if ($period !== null) {
+            $filterParams['filters']['date_range']['from'] = $period[0]->format('Y-m-d');
+            $filterParams['filters']['date_range']['until'] = $period[1]->format('Y-m-d');
+        }
+        $url = $baseUrl . ($filterParams ? '?' . http_build_query($filterParams) : '');
 
         return [
             'total' => (clone $baseQuery)->count(),
