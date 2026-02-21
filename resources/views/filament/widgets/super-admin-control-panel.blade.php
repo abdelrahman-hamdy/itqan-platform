@@ -75,44 +75,53 @@
                     @endforeach
                 </div>
 
-                {{-- Sessions Summary --}}
-                <div>
-                    @if($quran['sessions']['total'] > 0)
-                        @include('filament.widgets.partials.control-panel-session-card', ['session' => $quran['sessions']])
-                    @else
-                        <div class="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
-                            <x-heroicon-o-calendar-days class="w-4 h-4 text-gray-400" />
-                            <span class="text-sm text-gray-500 dark:text-gray-400">لا توجد جلسات قرآن {{ $periodLabels[$quranPeriod] }}</span>
-                        </div>
-                    @endif
-                </div>
-
-                {{-- Pending Items --}}
-                @php $quranPending = collect($quran['pending'])->filter(fn($item) => $item['count'] > 0); @endphp
-                @if($quranPending->isNotEmpty())
-                    <div>
-                        <div class="flex items-center gap-1.5 mb-2.5">
-                            <x-heroicon-s-exclamation-triangle class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-                            <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">بنود معلقة</h3>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                            @foreach($quranPending as $item)
-                                @include('filament.widgets.partials.control-panel-card', ['item' => $item])
-                            @endforeach
-                        </div>
+                {{-- Content with loading overlay --}}
+                <div class="relative">
+                    <div wire:loading wire:target="quranPeriod" class="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-gray-900/70 rounded-lg">
+                        <x-filament::loading-indicator class="w-6 h-6 text-emerald-500" />
                     </div>
-                @endif
 
-                {{-- Quick Actions --}}
-                <div>
-                    <div class="flex items-center gap-1.5 mb-2.5">
-                        <x-heroicon-s-plus-circle class="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                        <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">إنشاء جديد</h3>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        @foreach($actions['quran'] as $action)
-                            @include('filament.widgets.partials.control-panel-action', ['action' => $action])
-                        @endforeach
+                    <div class="space-y-4">
+                        {{-- Sessions Summary --}}
+                        <div>
+                            @if($quran['sessions']['total'] > 0)
+                                @include('filament.widgets.partials.control-panel-session-card', ['session' => $quran['sessions']])
+                            @else
+                                <div class="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                    <x-heroicon-o-calendar-days class="w-4 h-4 text-gray-400" />
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">لا توجد جلسات قرآن {{ $periodLabels[$quranPeriod] }}</span>
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- Pending Items --}}
+                        @php $quranPending = collect($quran['pending'])->filter(fn($item) => $item['count'] > 0); @endphp
+                        @if($quranPending->isNotEmpty())
+                            <div>
+                                <div class="flex items-center gap-1.5 mb-2.5">
+                                    <x-heroicon-s-exclamation-triangle class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                                    <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">بنود معلقة</h3>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                                    @foreach($quranPending as $item)
+                                        @include('filament.widgets.partials.control-panel-card', ['item' => $item])
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- Quick Actions --}}
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-2.5">
+                                <x-heroicon-s-plus-circle class="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                                <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">إنشاء جديد</h3>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                @foreach($actions['quran'] as $action)
+                                    @include('filament.widgets.partials.control-panel-action', ['action' => $action])
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -135,49 +144,58 @@
                     @endforeach
                 </div>
 
-                {{-- Sessions Summary --}}
-                <div>
-                    @php $hasAcademicSessions = ($academic['sessions']['academic']['total'] ?? 0) + ($academic['sessions']['interactive']['total'] ?? 0) > 0; @endphp
-                    @if($hasAcademicSessions)
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            @foreach($academic['sessions'] as $sessionType)
-                                @include('filament.widgets.partials.control-panel-session-card', ['session' => $sessionType])
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
-                            <x-heroicon-o-calendar-days class="w-4 h-4 text-gray-400" />
-                            <span class="text-sm text-gray-500 dark:text-gray-400">لا توجد جلسات أكاديمية {{ $periodLabels[$academicPeriod] }}</span>
-                        </div>
-                    @endif
-                </div>
-
-                {{-- Pending Items --}}
-                @php $academicPending = collect($academic['pending'])->filter(fn($item) => $item['count'] > 0); @endphp
-                @if($academicPending->isNotEmpty())
-                    <div>
-                        <div class="flex items-center gap-1.5 mb-2.5">
-                            <x-heroicon-s-exclamation-triangle class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-                            <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">بنود معلقة</h3>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                            @foreach($academicPending as $item)
-                                @include('filament.widgets.partials.control-panel-card', ['item' => $item])
-                            @endforeach
-                        </div>
+                {{-- Content with loading overlay --}}
+                <div class="relative">
+                    <div wire:loading wire:target="academicPeriod" class="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-gray-900/70 rounded-lg">
+                        <x-filament::loading-indicator class="w-6 h-6 text-blue-500" />
                     </div>
-                @endif
 
-                {{-- Quick Actions --}}
-                <div>
-                    <div class="flex items-center gap-1.5 mb-2.5">
-                        <x-heroicon-s-plus-circle class="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-                        <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">إنشاء جديد</h3>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        @foreach($actions['academic'] as $action)
-                            @include('filament.widgets.partials.control-panel-action', ['action' => $action])
-                        @endforeach
+                    <div class="space-y-4">
+                        {{-- Sessions Summary --}}
+                        <div>
+                            @php $hasAcademicSessions = ($academic['sessions']['academic']['total'] ?? 0) + ($academic['sessions']['interactive']['total'] ?? 0) > 0; @endphp
+                            @if($hasAcademicSessions)
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    @foreach($academic['sessions'] as $sessionType)
+                                        @include('filament.widgets.partials.control-panel-session-card', ['session' => $sessionType])
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                    <x-heroicon-o-calendar-days class="w-4 h-4 text-gray-400" />
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">لا توجد جلسات أكاديمية {{ $periodLabels[$academicPeriod] }}</span>
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- Pending Items --}}
+                        @php $academicPending = collect($academic['pending'])->filter(fn($item) => $item['count'] > 0); @endphp
+                        @if($academicPending->isNotEmpty())
+                            <div>
+                                <div class="flex items-center gap-1.5 mb-2.5">
+                                    <x-heroicon-s-exclamation-triangle class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                                    <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">بنود معلقة</h3>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                                    @foreach($academicPending as $item)
+                                        @include('filament.widgets.partials.control-panel-card', ['item' => $item])
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- Quick Actions --}}
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-2.5">
+                                <x-heroicon-s-plus-circle class="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                                <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">إنشاء جديد</h3>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                @foreach($actions['academic'] as $action)
+                                    @include('filament.widgets.partials.control-panel-action', ['action' => $action])
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
