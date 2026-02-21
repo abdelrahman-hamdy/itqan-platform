@@ -301,9 +301,6 @@ abstract class BaseSubscriptionResource extends Resource
                             ->label('عدد الأيام')
                             ->suffix(' يوم')
                             ->weight(FontWeight::Bold),
-                        TextEntry::make('reason')
-                            ->label('سبب التمديد')
-                            ->columnSpan(3),
                         TextEntry::make('extended_by_name')
                             ->label('تم بواسطة'),
                         TextEntry::make('extended_at')
@@ -383,10 +380,6 @@ abstract class BaseSubscriptionResource extends Resource
             ->deferColumnManager(false)
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
-            ->headerActions([
-                // Header action to cancel all expired pending (from HasSubscriptionActions trait)
-                static::getCancelExpiredPendingAction(),
-            ])
             ->defaultSort('created_at', 'desc');
     }
 }

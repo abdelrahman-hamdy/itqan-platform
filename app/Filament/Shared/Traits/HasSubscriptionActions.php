@@ -11,12 +11,10 @@ use App\Models\BaseSubscription;
 use App\Models\CourseSubscription;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSubscription;
-use App\Services\SubscriptionService;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Tables\Filters\Filter;
@@ -168,17 +166,11 @@ trait HasSubscriptionActions
             ->color('warning')
             ->requiresConfirmation()
             ->modalHeading('إيقاف الاشتراك مؤقتاً')
-            ->schema([
-                Textarea::make('pause_reason')
-                    ->label('سبب الإيقاف')
-                    ->required()
-                    ->placeholder('مثال: طلب الطالب، إجازة، ظروف خاصة'),
-            ])
-            ->action(function (BaseSubscription $record, array $data) {
+            ->modalDescription('سيتم إيقاف الاشتراك مؤقتاً ويمكن استئنافه لاحقاً.')
+            ->action(function (BaseSubscription $record) {
                 $record->update([
                     'status' => SessionSubscriptionStatus::PAUSED,
                     'paused_at' => now(),
-                    'pause_reason' => $data['pause_reason'],
                 ]);
 
                 Notification::make()
@@ -243,13 +235,6 @@ trait HasSubscriptionActions
                     ->default(14)
                     ->suffix('يوم')
                     ->helperText('عدد الأيام الإضافية من تاريخ الانتهاء الحالي'),
-
-                Textarea::make('extension_reason')
-                    ->label('سبب التمديد')
-                    ->required()
-                    ->maxLength(500)
-                    ->placeholder('مثال: اتفاق شخصي، ظروف خاصة، انتظار تحويل بنكي')
-                    ->helperText('السبب مطلوب للتوثيق'),
             ])
             ->action(function (BaseSubscription $record, array $data) {
                 $graceDays = (int) $data['grace_days'];
@@ -268,7 +253,6 @@ trait HasSubscriptionActions
                 $metadata['extensions'][] = [
                     'type' => 'grace_period',
                     'grace_days' => $graceDays,
-                    'reason' => $data['extension_reason'],
                     'extended_by' => auth()->id(),
                     'extended_by_name' => auth()->user()->name,
                     'original_ends_at' => $metadata['original_ends_at'],
@@ -315,17 +299,10 @@ trait HasSubscriptionActions
             ->modalHeading('إلغاء الاشتراك')
             ->modalDescription('سيتم إلغاء الاشتراك وإلغاء جميع الجلسات المجدولة القادمة.')
             ->modalSubmitActionLabel('نعم، إلغاء الاشتراك')
-            ->schema([
-                Textarea::make('cancellation_reason')
-                    ->label('سبب الإلغاء')
-                    ->required()
-                    ->placeholder('سبب إلغاء الاشتراك'),
-            ])
-            ->action(function (BaseSubscription $record, array $data) {
+            ->action(function (BaseSubscription $record) {
                 $record->update([
                     'status' => SessionSubscriptionStatus::CANCELLED,
                     'cancelled_at' => now(),
-                    'cancellation_reason' => $data['cancellation_reason'],
                     'auto_renew' => false,
                 ]);
 
@@ -428,14 +405,8 @@ trait HasSubscriptionActions
             ->modalHeading('إلغاء طلب الاشتراك المعلق')
             ->modalDescription('هل أنت متأكد من إلغاء طلب الاشتراك هذا؟ هذا الإجراء لا يمكن التراجع عنه.')
             ->modalSubmitActionLabel('نعم، إلغاء الطلب')
-            ->schema([
-                Textarea::make('cancellation_reason')
-                    ->label('سبب الإلغاء (اختياري)')
-                    ->placeholder('مثال: لم يتم الدفع خلال المهلة المحددة')
-                    ->maxLength(500),
-            ])
-            ->action(function (BaseSubscription $record, array $data) {
-                $reason = $data['cancellation_reason'] ?? config('subscriptions.cancellation_reasons.admin');
+            ->action(function (BaseSubscription $record) {
+                $reason = config('subscriptions.cancellation_reasons.admin');
 
                 $record->cancelAsDuplicateOrExpired($reason);
 
@@ -467,20 +438,14 @@ trait HasSubscriptionActions
             ->modalHeading('إلغاء طلبات الاشتراك المعلقة')
             ->modalDescription('سيتم إلغاء جميع طلبات الاشتراك المعلقة المحددة. هذا الإجراء لا يمكن التراجع عنه.')
             ->modalSubmitActionLabel('نعم، إلغاء الطلبات')
-            ->form([
-                Textarea::make('cancellation_reason')
-                    ->label('سبب الإلغاء')
-                    ->default(config('subscriptions.cancellation_reasons.admin'))
-                    ->required(),
-            ])
-            ->action(function (Collection $records, array $data) {
+            ->action(function (Collection $records) {
                 $cancelledCount = 0;
                 $pendingStatus = static::getPendingStatus();
 
                 foreach ($records as $record) {
                     if ($record->status === $pendingStatus
                         && $record->payment_status === SubscriptionPaymentStatus::PENDING) {
-                        $record->cancelAsDuplicateOrExpired($data['cancellation_reason']);
+                        $record->cancelAsDuplicateOrExpired(config('subscriptions.cancellation_reasons.admin'));
 
                         $record->payments()
                             ->where('status', 'pending')
@@ -497,37 +462,6 @@ trait HasSubscriptionActions
                     ->send();
             })
             ->deselectRecordsAfterCompletion();
-    }
-
-    /**
-     * Get action to cancel all expired pending subscriptions.
-     */
-    protected static function getCancelExpiredPendingAction(): Action
-    {
-        return Action::make('cancelAllExpiredPending')
-            ->label('إلغاء الطلبات المنتهية')
-            ->icon('heroicon-o-clock')
-            ->color('warning')
-            ->requiresConfirmation()
-            ->modalHeading('إلغاء جميع طلبات الاشتراك المنتهية')
-            ->modalDescription(function () {
-                $hours = config('subscriptions.pending.expires_after_hours', 48);
-
-                return "سيتم إلغاء جميع طلبات الاشتراك المعلقة التي مر عليها أكثر من {$hours} ساعة بدون دفع.";
-            })
-            ->modalSubmitActionLabel('نعم، إلغاء الطلبات المنتهية')
-            ->action(function () {
-                $subscriptionService = app(SubscriptionService::class);
-                $hours = config('subscriptions.pending.expires_after_hours', 48);
-
-                $result = $subscriptionService->cleanupExpiredPending($hours, false);
-
-                Notification::make()
-                    ->success()
-                    ->title('تم إلغاء الطلبات المنتهية')
-                    ->body("تم إلغاء {$result['cancelled']} طلب اشتراك منتهي.")
-                    ->send();
-            });
     }
 
     // ========================================
@@ -653,13 +587,4 @@ trait HasSubscriptionActions
         ];
     }
 
-    /**
-     * Get all subscription-related header actions.
-     */
-    protected static function getSubscriptionHeaderActions(): array
-    {
-        return [
-            static::getCancelExpiredPendingAction(),
-        ];
-    }
 }
