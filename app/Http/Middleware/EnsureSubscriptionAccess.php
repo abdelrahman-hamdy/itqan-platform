@@ -203,7 +203,7 @@ class EnsureSubscriptionAccess
         ?string $reason = null
     ): void {
         SubscriptionAccessLog::create([
-            'academy_id' => $request->attributes->get('academy')?->id ?? AcademyContextService::getApiContextAcademyId(),
+            'tenant_id' => $request->attributes->get('academy')?->id ?? AcademyContextService::getApiContextAcademyId(),
             'subscription_type' => $subscription ? get_class($subscription) : null,
             'subscription_id' => $subscription?->id,
             'user_id' => $user->id,
