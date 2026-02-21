@@ -99,22 +99,27 @@ class AcademyObserver
 
     /**
      * Create the tenant-isolated storage directories for a new academy.
+     * Sets 2775 (SGID + group-writable) so www-data group can write files.
      */
     private function provisionTenantStorage(Academy $academy): void
     {
         $tenantId = $academy->id;
 
         try {
-            $publicDisk = Storage::disk('public');
-
+            $publicRoot = Storage::disk('public')->path('');
             foreach (self::TENANT_PUBLIC_DIRS as $dir) {
-                $publicDisk->makeDirectory("tenants/{$tenantId}/{$dir}");
+                $path = $publicRoot . "tenants/{$tenantId}/{$dir}";
+                if (! is_dir($path)) {
+                    mkdir($path, 02775, true);
+                }
             }
 
-            $localDisk = Storage::disk('local');
-
+            $localRoot = Storage::disk('local')->path('');
             foreach (self::TENANT_PRIVATE_DIRS as $dir) {
-                $localDisk->makeDirectory("tenants/{$tenantId}/{$dir}");
+                $path = $localRoot . "tenants/{$tenantId}/{$dir}";
+                if (! is_dir($path)) {
+                    mkdir($path, 02775, true);
+                }
             }
 
             Log::info("Tenant storage provisioned for academy {$tenantId}");

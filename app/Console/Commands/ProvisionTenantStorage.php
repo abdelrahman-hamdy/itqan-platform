@@ -52,25 +52,25 @@ class ProvisionTenantStorage extends Command
             return self::FAILURE;
         }
 
-        $publicDisk = Storage::disk('public');
-        $localDisk = Storage::disk('local');
+        $publicRoot = Storage::disk('public')->path('');
+        $localRoot = Storage::disk('local')->path('');
 
         foreach ($academies as $academy) {
             $tenantId = $academy->id;
             $created = 0;
 
             foreach (self::TENANT_PUBLIC_DIRS as $dir) {
-                $path = "tenants/{$tenantId}/{$dir}";
-                if (! $publicDisk->exists($path)) {
-                    $publicDisk->makeDirectory($path);
+                $path = $publicRoot . "tenants/{$tenantId}/{$dir}";
+                if (! is_dir($path)) {
+                    mkdir($path, 02775, true);
                     $created++;
                 }
             }
 
             foreach (self::TENANT_PRIVATE_DIRS as $dir) {
-                $path = "tenants/{$tenantId}/{$dir}";
-                if (! $localDisk->exists($path)) {
-                    $localDisk->makeDirectory($path);
+                $path = $localRoot . "tenants/{$tenantId}/{$dir}";
+                if (! is_dir($path)) {
+                    mkdir($path, 02775, true);
                     $created++;
                 }
             }
