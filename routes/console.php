@@ -164,6 +164,16 @@ Schedule::job(new \App\Jobs\ExpireGracePeriodSubscriptions())
     ->withoutOverlapping()
     ->description('Cancel subscriptions after grace period expires following failed renewals');
 
+// Suspend subscriptions whose admin-granted grace period has expired
+// Runs hourly to check for ACTIVE subscriptions with PENDING payment where ends_at < now()
+// Sets status to SUSPENDED, cascades to education units via model observers
+Schedule::command('subscriptions:suspend-expired-grace')
+    ->name('suspend-expired-grace-subscriptions')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Suspend subscriptions whose grace period has expired without payment');
+
 // Cancel expired pending subscriptions
 // Runs every 6 hours to clean up pending subscriptions not paid within 48 hours
 // Prevents users from accumulating stale pending subscriptions

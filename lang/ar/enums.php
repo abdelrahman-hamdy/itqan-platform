@@ -40,6 +40,7 @@ return [
         'pending' => 'قيد الانتظار',
         'active' => 'نشط',
         'paused' => 'متوقف مؤقتاً',
+        'suspended' => 'معلق',
         'cancelled' => 'ملغي',
     ],
     'session_duration' => [

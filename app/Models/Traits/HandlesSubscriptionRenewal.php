@@ -187,11 +187,21 @@ trait HandlesSubscriptionRenewal
             throw new RuntimeException('Cannot process renewal: billing cycle is not set for subscription #'.$this->id);
         }
 
-        $newEndDate = $this->billing_cycle->calculateEndDate($this->ends_at ?? now());
-
-        // Reset renewal failure tracking on successful renewal
+        // Use original_ends_at if stored (grace period extension absorbed into renewal)
         $metadata = $this->metadata ?? [];
-        unset($metadata['renewal_failed_count'], $metadata['last_renewal_failure_at'], $metadata['last_renewal_failure_reason']);
+        $baseDate = isset($metadata['original_ends_at'])
+            ? \Carbon\Carbon::parse($metadata['original_ends_at'])
+            : ($this->ends_at ?? now());
+
+        $newEndDate = $this->billing_cycle->calculateEndDate($baseDate);
+
+        // Reset renewal failure tracking and clear grace period data on successful renewal
+        unset(
+            $metadata['renewal_failed_count'],
+            $metadata['last_renewal_failure_at'],
+            $metadata['last_renewal_failure_reason'],
+            $metadata['original_ends_at']
+        );
 
         $this->update([
             'status' => SessionSubscriptionStatus::ACTIVE,

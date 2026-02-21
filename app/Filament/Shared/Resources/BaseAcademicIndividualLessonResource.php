@@ -2,6 +2,8 @@
 
 namespace App\Filament\Shared\Resources;
 
+use App\Enums\SessionSubscriptionStatus;
+use Filament\Forms\Components\Placeholder;
 use Filament\Schemas\Components\Section;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Schemas\Schema;
@@ -85,17 +87,27 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
     {
         $schema = [];
 
+        // Add subscription warning section (visible only when subscription is suspended)
+        $schema[] = static::getSubscriptionWarningSection();
+
         // Add lesson info section (panel-specific)
-        $schema[] = static::getLessonInfoFormSection();
+        $schema[] = static::getLessonInfoFormSection()
+            ->hidden(fn ($record) => $record && static::isSubscriptionSuspended($record));
 
         // Add session settings section
-        $schema[] = static::getSessionSettingsFormSection();
+        $schema[] = static::getSessionSettingsFormSection()
+            ->hidden(fn ($record) => $record && static::isSubscriptionSuspended($record));
 
         // Add learning objectives section
-        $schema[] = static::getLearningObjectivesFormSection();
+        $schema[] = static::getLearningObjectivesFormSection()
+            ->hidden(fn ($record) => $record && static::isSubscriptionSuspended($record));
 
         // Add additional sections from child classes
-        $schema = array_merge($schema, static::getAdditionalFormSections());
+        foreach (static::getAdditionalFormSections() as $section) {
+            $schema[] = $section instanceof Section
+                ? $section->hidden(fn ($record) => $record && static::isSubscriptionSuspended($record))
+                : $section;
+        }
 
         return $form->components($schema);
     }
@@ -152,6 +164,44 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
     protected static function getAdditionalFormSections(): array
     {
         return [];
+    }
+
+    // ========================================
+    // Subscription Suspension Warning
+    // ========================================
+
+    /**
+     * Check if the linked subscription is suspended.
+     */
+    protected static function isSubscriptionSuspended($record): bool
+    {
+        if (! $record) {
+            return false;
+        }
+
+        $subscription = $record->academicSubscription;
+        if (! $subscription) {
+            return false;
+        }
+
+        return $subscription->status === SessionSubscriptionStatus::SUSPENDED;
+    }
+
+    /**
+     * Warning section shown when the linked subscription is suspended.
+     */
+    protected static function getSubscriptionWarningSection(): Section
+    {
+        return Section::make('تنبيه - الاشتراك معلق')
+            ->schema([
+                Placeholder::make('subscription_warning')
+                    ->label('')
+                    ->content('تم تعليق الاشتراك المرتبط بهذا الدرس بسبب عدم الدفع. يرجى تجديد الاشتراك للاستمرار في الخدمة.')
+                    ->extraAttributes(['class' => 'text-danger-600 dark:text-danger-400 font-bold text-lg']),
+            ])
+            ->icon('heroicon-o-exclamation-triangle')
+            ->iconColor('danger')
+            ->visible(fn ($record) => static::isSubscriptionSuspended($record));
     }
 
     // ========================================
@@ -298,6 +348,7 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
                 'academicGradeLevel',
                 'academy',
                 'academicTeacher.user',
+                'academicSubscription',
             ]);
 
         return static::scopeEloquentQuery($query);

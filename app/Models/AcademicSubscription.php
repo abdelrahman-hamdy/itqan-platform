@@ -154,7 +154,7 @@ class AcademicSubscription extends BaseSubscription
         'end_date',
 
         // Additional fields
-        'auto_renewal',
+        'auto_renew',
         'renewal_reminder_days',
         'pause_days_remaining',
         'completion_rate',
@@ -871,6 +871,11 @@ class AcademicSubscription extends BaseSubscription
                 $subscription->updateProgress();
             }
 
+            // Cascade status to lesson
+            if ($subscription->isDirty('status')) {
+                $subscription->syncLessonStatus();
+            }
+
             // Send notification when subscription is paused
             if ($subscription->isDirty('status') && $subscription->status === SessionSubscriptionStatus::PAUSED) {
                 $subscription->notifySubscriptionPaused();
@@ -1185,6 +1190,26 @@ class AcademicSubscription extends BaseSubscription
             'lesson_id' => $lesson->id,
             'total_sessions' => $totalSessions,
         ]);
+    }
+
+    /**
+     * Sync lesson status when subscription status changes.
+     * Called from the updated observer.
+     */
+    public function syncLessonStatus(): void
+    {
+        $lesson = $this->lesson;
+        if (! $lesson) {
+            return;
+        }
+
+        $newStatus = match ($this->status) {
+            SessionSubscriptionStatus::ACTIVE => LessonStatus::ACTIVE,
+            SessionSubscriptionStatus::CANCELLED, SessionSubscriptionStatus::SUSPENDED => LessonStatus::CANCELLED,
+            default => LessonStatus::PENDING,
+        };
+
+        $lesson->update(['status' => $newStatus]);
     }
 
     // ========================================

@@ -2,7 +2,9 @@
 
 namespace App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages;
 
+use App\Enums\SessionSubscriptionStatus;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Placeholder;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Grid;
@@ -31,8 +33,21 @@ class ViewAcademicIndividualLesson extends ViewRecord
 
     public function infolist(Schema $schema): Schema
     {
+        $isSuspended = $this->isSubscriptionSuspended();
+
         return $schema
             ->schema([
+                Section::make('تنبيه - الاشتراك معلق')
+                    ->schema([
+                        Placeholder::make('subscription_warning')
+                            ->label('')
+                            ->content('تم تعليق الاشتراك المرتبط بهذا الدرس بسبب عدم الدفع. يرجى تجديد الاشتراك للاستمرار في الخدمة.')
+                            ->extraAttributes(['class' => 'text-danger-600 dark:text-danger-400 font-bold text-lg']),
+                    ])
+                    ->icon('heroicon-o-exclamation-triangle')
+                    ->iconColor('danger')
+                    ->visible($isSuspended),
+
                 Section::make('معلومات الدرس')
                     ->schema([
                         Grid::make(3)
@@ -56,7 +71,8 @@ class ViewAcademicIndividualLesson extends ViewRecord
                                     ->badge()
                                     ->color('success'),
                             ]),
-                    ]),
+                    ])
+                    ->hidden($isSuspended),
 
                 Section::make('تقدم الجلسات')
                     ->schema([
@@ -79,7 +95,8 @@ class ViewAcademicIndividualLesson extends ViewRecord
                                         default => 'danger',
                                     }),
                             ]),
-                    ]),
+                    ])
+                    ->hidden($isSuspended),
 
                 Section::make('الوصف والملاحظات')
                     ->schema([
@@ -92,7 +109,20 @@ class ViewAcademicIndividualLesson extends ViewRecord
                             ->columnSpanFull()
                             ->placeholder('لا توجد ملاحظات'),
                     ])
-                    ->collapsed(),
+                    ->collapsed()
+                    ->hidden($isSuspended),
             ]);
+    }
+
+    protected function isSubscriptionSuspended(): bool
+    {
+        $record = $this->getRecord();
+        $subscription = $record->academicSubscription;
+
+        if (! $subscription) {
+            return false;
+        }
+
+        return $subscription->status === SessionSubscriptionStatus::SUSPENDED;
     }
 }

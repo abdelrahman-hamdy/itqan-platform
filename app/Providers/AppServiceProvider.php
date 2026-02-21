@@ -232,6 +232,8 @@ class AppServiceProvider extends ServiceProvider
             'quran_subscription' => QuranSubscription::class,
             'academic_subscription' => AcademicSubscription::class,
             'course_subscription' => CourseSubscription::class,
+            'individual_circle' => QuranIndividualCircle::class,
+            'quran_circle' => \App\Models\QuranCircle::class,
         ]);
 
         // Register Media Observer to handle UTF-8 filename sanitization

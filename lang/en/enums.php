@@ -52,6 +52,7 @@ return [
         'pending' => 'Pending',
         'active' => 'Active',
         'paused' => 'Paused',
+        'suspended' => 'Suspended',
         'cancelled' => 'Cancelled',
     ],
     'session_duration' => [

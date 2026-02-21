@@ -677,14 +677,9 @@ class QuranSubscription extends BaseSubscription
     {
         $updateData = [];
 
-        // Map subscription status to unit status
+        // QuranIndividualCircle uses is_active boolean, not status column
         if ($this->isDirty('status')) {
-            $updateData['status'] = match ($this->status) {
-                SessionSubscriptionStatus::ACTIVE => SessionSubscriptionStatus::ACTIVE->value,
-                SessionSubscriptionStatus::CANCELLED => SessionSubscriptionStatus::CANCELLED->value,
-                SessionSubscriptionStatus::PAUSED => SessionSubscriptionStatus::PAUSED->value,
-                default => SessionSubscriptionStatus::PENDING->value,
-            };
+            $updateData['is_active'] = $this->status === SessionSubscriptionStatus::ACTIVE;
         }
 
         // Sync session counts for individual circles
@@ -758,7 +753,7 @@ class QuranSubscription extends BaseSubscription
             'total_sessions' => $this->total_sessions,
             'sessions_remaining' => $this->sessions_remaining,
             'default_duration_minutes' => $this->session_duration_minutes ?? 45,
-            'status' => $this->isActive() ? SessionSubscriptionStatus::ACTIVE->value : SessionSubscriptionStatus::PENDING->value,
+            'is_active' => $this->isActive(),
             'created_by' => $this->created_by,
         ]);
     }
@@ -775,17 +770,10 @@ class QuranSubscription extends BaseSubscription
             return;
         }
 
-        $circleStatus = match ($this->status) {
-            SessionSubscriptionStatus::ACTIVE => SessionSubscriptionStatus::ACTIVE->value,
-            SessionSubscriptionStatus::CANCELLED => SessionSubscriptionStatus::CANCELLED->value,
-            SessionSubscriptionStatus::PAUSED => SessionSubscriptionStatus::PAUSED->value,
-            default => SessionSubscriptionStatus::PENDING->value,
-        };
-
         $this->individualCircle->update([
             'total_sessions' => $this->total_sessions,
             'sessions_remaining' => $this->sessions_remaining,
-            'status' => $circleStatus,
+            'is_active' => $this->isActive(),
         ]);
     }
 

@@ -386,10 +386,12 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
             ActionGroup::make([
                 ViewAction::make()->label('عرض'),
                 EditAction::make()->label('تعديل'),
-                static::getCancelPendingAction(),
+                static::getConfirmPaymentAction(),
                 static::getPauseAction(),
                 static::getResumeAction(),
                 static::getExtendSubscriptionAction(),
+                static::getCancelAction(),
+                static::getCancelPendingAction(),
                 DeleteAction::make()->label('حذف'),
                 RestoreAction::make()->label(__('filament.actions.restore')),
                 ForceDeleteAction::make()->label(__('filament.actions.force_delete')),

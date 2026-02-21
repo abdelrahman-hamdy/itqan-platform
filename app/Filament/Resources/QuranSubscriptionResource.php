@@ -14,7 +14,6 @@ use Filament\Schemas\Schema;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\ForceDeleteAction;
@@ -39,7 +38,6 @@ use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists;
 use Filament\Support\Enums\FontWeight;
@@ -386,40 +384,13 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
             ActionGroup::make([
                 ViewAction::make()->label('عرض'),
                 EditAction::make()->label('تعديل'),
-                Action::make('activate')
-                    ->label('تفعيل')
-                    ->icon('heroicon-o-play-circle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->action(fn (QuranSubscription $record) => $record->update([
-                        'status' => SessionSubscriptionStatus::ACTIVE,
-                        'payment_status' => SubscriptionPaymentStatus::PAID,
-                        'last_payment_at' => now(),
-                    ]))
-                    ->visible(fn (QuranSubscription $record) => $record->status === SessionSubscriptionStatus::PENDING),
+                static::getConfirmPaymentAction(),
                 static::getPauseAction(),
                 static::getResumeAction(),
-                Action::make('cancel')
-                    ->label('إلغاء')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->schema([
-                        Textarea::make('cancellation_reason')
-                            ->label('سبب الإلغاء')
-                            ->required(),
-                    ])
-                    ->action(function (QuranSubscription $record, array $data) {
-                        $record->update([
-                            'status' => SessionSubscriptionStatus::CANCELLED,
-                            'cancelled_at' => now(),
-                            'cancellation_reason' => $data['cancellation_reason'],
-                            'auto_renew' => false,
-                        ]);
-                    })
-                    ->visible(fn (QuranSubscription $record) => $record->status !== SessionSubscriptionStatus::CANCELLED),
                 static::getExtendSubscriptionAction(),
+                static::getCancelAction(),
                 static::getCancelPendingAction(),
+                static::getCreateCircleAction(),
                 DeleteAction::make()->label('حذف'),
                 RestoreAction::make()->label(__('filament.actions.restore')),
                 ForceDeleteAction::make()->label(__('filament.actions.force_delete')),

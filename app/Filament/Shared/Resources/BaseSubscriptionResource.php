@@ -8,8 +8,6 @@ use Filament\Forms\Components\CheckboxList;
 use Filament\Schemas\Components\Grid;
 use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Enums\FiltersLayout;
@@ -291,102 +289,6 @@ abstract class BaseSubscriptionResource extends Resource
         ];
     }
 
-    // Shared pause action
-    protected static function getPauseAction(): Action
-    {
-        return Action::make('pause')
-            ->label('إيقاف مؤقت')
-            ->icon('heroicon-o-pause-circle')
-            ->color('warning')
-            ->schema([
-                Textarea::make('pause_reason')
-                    ->label('سبب الإيقاف')
-                    ->required(),
-            ])
-            ->action(function ($record, array $data) {
-                $record->update([
-                    'status' => SessionSubscriptionStatus::PAUSED,
-                    'paused_at' => now(),
-                    'pause_reason' => $data['pause_reason'],
-                ]);
-            })
-            ->visible(fn ($record) => $record->status === SessionSubscriptionStatus::ACTIVE);
-    }
-
-    // Shared resume action
-    protected static function getResumeAction(): Action
-    {
-        return Action::make('resume')
-            ->label('استئناف')
-            ->icon('heroicon-o-play-circle')
-            ->color('success')
-            ->requiresConfirmation()
-            ->action(function ($record) {
-                $record->update([
-                    'status' => SessionSubscriptionStatus::ACTIVE,
-                    'paused_at' => null,
-                    'pause_reason' => null,
-                ]);
-            })
-            ->visible(fn ($record) => $record->status === SessionSubscriptionStatus::PAUSED);
-    }
-
-    // Shared extend subscription action
-    protected static function getExtendSubscriptionAction(): Action
-    {
-        return Action::make('extend_subscription')
-            ->label('تمديد الاشتراك')
-            ->icon('heroicon-o-calendar-days')
-            ->color('success')
-            ->schema([
-                TextInput::make('extension_days')
-                    ->label('عدد أيام التمديد')
-                    ->numeric()
-                    ->required()
-                    ->minValue(1)
-                    ->maxValue(365)
-                    ->default(7)
-                    ->helperText('سيتم إضافة هذه الأيام إلى تاريخ انتهاء الاشتراك الحالي'),
-                Textarea::make('extension_reason')
-                    ->label('سبب التمديد')
-                    ->required()
-                    ->placeholder('مثال: تعويض عن خلل تقني، اتفاق تجاري، إلخ')
-                    ->rows(3),
-            ])
-            ->action(function (array $data, $record) {
-                $currentEndsAt = $record->ends_at ?? now();
-                $newEndsAt = $currentEndsAt->copy()->addDays($data['extension_days']);
-
-                $metadata = $record->metadata ?? [];
-                $metadata['extensions'] = $metadata['extensions'] ?? [];
-                $metadata['extensions'][] = [
-                    'extended_by' => auth()->id(),
-                    'extended_by_name' => auth()->user()->name,
-                    'extension_days' => $data['extension_days'],
-                    'extension_reason' => $data['extension_reason'],
-                    'old_ends_at' => $currentEndsAt->toDateTimeString(),
-                    'new_ends_at' => $newEndsAt->toDateTimeString(),
-                    'extended_at' => now()->toDateTimeString(),
-                ];
-
-                $record->update([
-                    'ends_at' => $newEndsAt,
-                    'next_billing_date' => $newEndsAt,
-                    'metadata' => $metadata,
-                ]);
-
-                Notification::make()
-                    ->success()
-                    ->title('تم تمديد الاشتراك بنجاح')
-                    ->body("تم إضافة {$data['extension_days']} يوم. تاريخ الانتهاء الجديد: {$newEndsAt->format('Y-m-d')}")
-                    ->send();
-            })
-            ->requiresConfirmation()
-            ->modalHeading('تمديد الاشتراك')
-            ->modalDescription('سيتم إضافة الأيام المحددة إلى تاريخ انتهاء الاشتراك الحالي')
-            ->visible(fn ($record) => auth()->user()->hasRole(['super_admin', 'admin']));
-    }
-
     // Shared extension history infolist section
     protected static function getExtensionHistoryInfolistSection(): Section
     {
@@ -395,11 +297,13 @@ abstract class BaseSubscriptionResource extends Resource
                 RepeatableEntry::make('metadata.extensions')
                     ->label('')
                     ->schema([
-                        TextEntry::make('extension_days')
+                        TextEntry::make('grace_days')
                             ->label('عدد الأيام')
                             ->suffix(' يوم')
                             ->weight(FontWeight::Bold),
-                        TextEntry::make('extension_reason')
+                        TextEntry::make('sessions_added')
+                            ->label('جلسات مضافة'),
+                        TextEntry::make('reason')
                             ->label('سبب التمديد')
                             ->columnSpan(2),
                         TextEntry::make('extended_by_name')
@@ -407,7 +311,7 @@ abstract class BaseSubscriptionResource extends Resource
                         TextEntry::make('extended_at')
                             ->label('تاريخ التمديد')
                             ->dateTime('Y-m-d H:i'),
-                        TextEntry::make('old_ends_at')
+                        TextEntry::make('original_ends_at')
                             ->label('تاريخ الانتهاء السابق')
                             ->dateTime('Y-m-d H:i'),
                         TextEntry::make('new_ends_at')

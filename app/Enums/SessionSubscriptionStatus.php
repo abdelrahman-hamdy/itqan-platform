@@ -12,7 +12,9 @@ namespace App\Enums;
  * - PENDING → ACTIVE (payment received)
  * - ACTIVE → PAUSED (user/admin pauses)
  * - PAUSED → ACTIVE (resume)
- * - ACTIVE/PAUSED → CANCELLED (termination)
+ * - ACTIVE → SUSPENDED (grace period expired without payment)
+ * - SUSPENDED → ACTIVE (payment received)
+ * - ACTIVE/PAUSED/SUSPENDED → CANCELLED (termination)
  *
  * @see \App\Models\QuranSubscription
  * @see \App\Models\AcademicSubscription
@@ -22,6 +24,7 @@ enum SessionSubscriptionStatus: string
     case PENDING = 'pending';       // Awaiting payment
     case ACTIVE = 'active';         // Paid and active
     case PAUSED = 'paused';         // Temporarily stopped by user/admin
+    case SUSPENDED = 'suspended';   // Grace period expired, awaiting payment
     case CANCELLED = 'cancelled';   // Terminated
 
     /**
@@ -41,6 +44,7 @@ enum SessionSubscriptionStatus: string
             self::PENDING => 'Pending',
             self::ACTIVE => 'Active',
             self::PAUSED => 'Paused',
+            self::SUSPENDED => 'Suspended',
             self::CANCELLED => 'Cancelled',
         };
     }
@@ -54,6 +58,7 @@ enum SessionSubscriptionStatus: string
             self::PENDING => 'warning',
             self::ACTIVE => 'success',
             self::PAUSED => 'info',
+            self::SUSPENDED => 'danger',
             self::CANCELLED => 'danger',
         };
     }
@@ -67,6 +72,7 @@ enum SessionSubscriptionStatus: string
             self::PENDING => 'heroicon-o-clock',
             self::ACTIVE => 'heroicon-o-check-circle',
             self::PAUSED => 'heroicon-o-pause-circle',
+            self::SUSPENDED => 'heroicon-o-no-symbol',
             self::CANCELLED => 'heroicon-o-x-circle',
         };
     }
@@ -80,6 +86,7 @@ enum SessionSubscriptionStatus: string
             self::PENDING => 'bg-yellow-100 text-yellow-800',
             self::ACTIVE => 'bg-green-100 text-green-800',
             self::PAUSED => 'bg-blue-100 text-blue-800',
+            self::SUSPENDED => 'bg-red-100 text-red-800',
             self::CANCELLED => 'bg-red-100 text-red-800',
         };
     }
@@ -113,7 +120,7 @@ enum SessionSubscriptionStatus: string
      */
     public function canCancel(): bool
     {
-        return in_array($this, [self::PENDING, self::ACTIVE, self::PAUSED]);
+        return in_array($this, [self::PENDING, self::ACTIVE, self::PAUSED, self::SUSPENDED]);
     }
 
     /**
@@ -121,7 +128,7 @@ enum SessionSubscriptionStatus: string
      */
     public function canRenew(): bool
     {
-        return in_array($this, [self::ACTIVE, self::PAUSED]);
+        return in_array($this, [self::ACTIVE, self::PAUSED, self::SUSPENDED]);
     }
 
     /**
@@ -147,8 +154,9 @@ enum SessionSubscriptionStatus: string
     {
         return match ($this) {
             self::PENDING => [self::ACTIVE, self::CANCELLED],
-            self::ACTIVE => [self::PAUSED, self::CANCELLED],
+            self::ACTIVE => [self::PAUSED, self::SUSPENDED, self::CANCELLED],
             self::PAUSED => [self::ACTIVE, self::CANCELLED],
+            self::SUSPENDED => [self::ACTIVE, self::CANCELLED],
             self::CANCELLED => [], // Terminal
         };
     }
