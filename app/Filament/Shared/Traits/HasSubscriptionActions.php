@@ -356,7 +356,10 @@ trait HasSubscriptionActions
                     ->body("تم إلغاء الاشتراك و {$cancelledSessions} جلسة مجدولة.")
                     ->send();
             })
-            ->visible(fn (BaseSubscription $record) => $record->status !== SessionSubscriptionStatus::CANCELLED);
+            ->visible(fn (BaseSubscription $record) => ! in_array($record->status, [
+                SessionSubscriptionStatus::CANCELLED,
+                SessionSubscriptionStatus::PENDING,
+            ]));
     }
 
     /**
