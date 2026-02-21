@@ -190,7 +190,7 @@ class AcademicGradeLevelResource extends BaseResource
                     ->query(fn (Builder $query) => $query->whereHas('interactiveCourses'))
                     ->toggle(),
             ])
-            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(3)
             ->deferFilters(false)
             ->deferColumnManager(false)

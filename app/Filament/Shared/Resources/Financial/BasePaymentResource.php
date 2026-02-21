@@ -54,8 +54,8 @@ abstract class BasePaymentResource extends BaseResource
                 ->relationship(
                     'user',
                     'first_name',
-                    // Admin panel access — user selector must span all academies, not global scope
-                    modifyQueryUsing: fn (Builder $query) => $query->withoutGlobalScopes(),
+                    // Admin panel access — only remove soft delete scope, keep tenant scope
+                    modifyQueryUsing: fn (Builder $query) => $query->withoutGlobalScopes([\Illuminate\Database\Eloquent\SoftDeletingScope::class]),
                 )
                 ->getOptionLabelFromRecordUsing(fn ($record) => $record->name)
                 ->searchable(['first_name', 'last_name', 'email'])
@@ -417,7 +417,7 @@ abstract class BasePaymentResource extends BaseResource
         return $table
             ->columns(static::getSharedTableColumns())
             ->filters(static::getSharedFilters())
-            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

@@ -195,7 +195,7 @@ abstract class BaseQuranTrialRequestResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
-            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

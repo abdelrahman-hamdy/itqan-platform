@@ -175,7 +175,7 @@ class MonitoredQuranSessionsResource extends BaseSupervisorResource
                     )
                     ->columnSpan(2),
             ])
-            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

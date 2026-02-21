@@ -347,7 +347,7 @@ abstract class BaseSavedPaymentMethodResource extends BaseResource
         return $table
             ->columns(static::getSharedTableColumns())
             ->filters(static::getSharedFilters())
-            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

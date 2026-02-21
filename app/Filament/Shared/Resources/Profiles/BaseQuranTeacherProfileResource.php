@@ -2,48 +2,53 @@
 
 namespace App\Filament\Shared\Resources\Profiles;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\FileUpload;
-use App\Rules\PasswordRules;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
 use App\Enums\EducationalQualification;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Schemas\Components\Component;
-use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use App\Enums\Gender;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Models\QuranTeacherProfile;
+use App\Rules\PasswordRules;
 use App\Services\AcademyContextService;
 use Filament\Facades\Filament;
-use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 abstract class BaseQuranTeacherProfileResource extends Resource
 {
     use TenantAwareFileUpload;
 
     protected static ?string $model = QuranTeacherProfile::class;
+
     protected static ?string $tenantOwnershipRelationshipName = 'academy';
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-book-open';
+
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-book-open';
+
     protected static ?string $navigationLabel = 'معلمو القرآن';
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المستخدمين';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة المستخدمين';
+
     protected static ?string $modelLabel = 'معلم قرآن';
+
     protected static ?string $pluralModelLabel = 'معلمو القرآن';
 
     abstract protected static function scopeEloquentQuery(Builder $query): Builder;
+
     abstract protected static function getTableActions(): array;
+
     abstract protected static function getTableBulkActions(): array;
 
     public static function form(Schema $schema): Schema
@@ -71,7 +76,9 @@ abstract class BaseQuranTeacherProfileResource extends Resource
                 ]),
                 Toggle::make('user_active_status')->label('الحساب مفعل')->default(true)
                     ->afterStateHydrated(function ($component, $record) {
-                        if ($record && $record->user) $component->state($record->user->active_status);
+                        if ($record && $record->user) {
+                            $component->state($record->user->active_status);
+                        }
                     })->dehydrated(false),
                 Textarea::make('bio')->label('نبذة مختصرة')->rows(3)->maxLength(500),
             ]),
@@ -82,7 +89,7 @@ abstract class BaseQuranTeacherProfileResource extends Resource
     {
         return $table->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
-            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)
@@ -134,6 +141,7 @@ abstract class BaseQuranTeacherProfileResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->with(['academy', 'user']);
+
         return static::scopeEloquentQuery($query);
     }
 
@@ -169,7 +177,7 @@ abstract class BaseQuranTeacherProfileResource extends Resource
             ->placeholder('غير محدد');
     }
 
-    protected static function getPhoneInput(string $name = 'phone', string $label = 'رقم الهاتف'): Component
+    protected static function getPhoneInput(string $name = 'phone', string $label = 'رقم الهاتف'): PhoneInput
     {
         return PhoneInput::make($name)->label($label)->defaultCountry('SA')->initialCountry('sa')
             ->excludeCountries(['il'])->separateDialCode(true)->formatAsYouType(true)->showFlags(true)

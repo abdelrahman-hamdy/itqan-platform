@@ -220,7 +220,7 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
     {
         return parent::table($table)
             ->columns(static::getTableColumns())
-            ->filters(static::getTableFilters(), layout: FiltersLayout::AboveContent)
+            ->filters(static::getTableFilters(), layout: FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

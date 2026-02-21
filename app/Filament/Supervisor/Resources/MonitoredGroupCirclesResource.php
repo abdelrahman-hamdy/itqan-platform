@@ -458,7 +458,7 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                     ->preload()
                     ->placeholder('الكل'),
             ])
-            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

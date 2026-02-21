@@ -2,35 +2,31 @@
 
 namespace App\Filament\Shared\Resources\Profiles;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Closure;
-use Filament\Facades\Filament;
-use App\Models\User;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Actions\Action;
-use Filament\Actions\BulkAction;
-use Filament\Schemas\Components\Component;
-use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use App\Enums\UserType;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Models\ParentProfile;
+use App\Models\User;
 use App\Services\AcademyContextService;
-use Filament\Forms;
+use Closure;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Facades\Filament;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 /**
  * Base Parent Profile Resource
@@ -46,11 +42,11 @@ abstract class BaseParentProfileResource extends Resource
 
     protected static ?string $tenantOwnershipRelationshipName = 'user';
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user-group';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
 
     protected static ?string $navigationLabel = 'أولياء الأمور';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المستخدمين';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة المستخدمين';
 
     protected static ?string $modelLabel = 'ولي أمر';
 
@@ -229,7 +225,7 @@ abstract class BaseParentProfileResource extends Resource
         return $table
             ->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
-            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)
@@ -404,7 +400,7 @@ abstract class BaseParentProfileResource extends Resource
     // Helper Methods
     // ========================================
 
-    protected static function getPhoneInput(string $name = 'phone', string $label = 'رقم الهاتف'): Component
+    protected static function getPhoneInput(string $name = 'phone', string $label = 'رقم الهاتف'): PhoneInput
     {
         return PhoneInput::make($name)
             ->label($label)

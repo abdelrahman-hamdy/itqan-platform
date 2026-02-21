@@ -158,7 +158,7 @@ abstract class BaseTeacherReviewResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
-            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(2)
             ->deferFilters(false)
             ->deferColumnManager(false)

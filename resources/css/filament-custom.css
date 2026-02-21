@@ -21,6 +21,19 @@
 @source "../../app/Livewire";
 @source "../../resources/views";
 
+/* Mobile-only collapsible filters
+ * On tablet and desktop (md+), always show filters expanded and hide the toggle trigger.
+ * On mobile (<768px), the default Alpine.js collapse behavior applies (collapsed by default).
+ */
+@media (min-width: 768px) {
+  .fi-ta-filters-above-content-ctn .fi-ta-filters {
+    display: block !important;
+  }
+  .fi-ta-filters-above-content-ctn .fi-ta-filters-trigger-action-ctn {
+    display: none !important;
+  }
+}
+
 /* Custom utilities from app.css that Filament panels may need */
 @utility scrollbar-hide {
   -ms-overflow-style: none;

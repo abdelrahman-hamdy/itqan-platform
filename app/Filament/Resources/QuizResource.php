@@ -213,7 +213,7 @@ class QuizResource extends BaseResource
                     ->trueLabel('نشط')
                     ->falseLabel('غير نشط'),
             ])
-            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

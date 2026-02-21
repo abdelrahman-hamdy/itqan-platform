@@ -475,7 +475,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                         ->where('end_date', '>=', now()))
                     ->toggle(),
             ])
-            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)

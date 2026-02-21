@@ -232,7 +232,7 @@ class PortfolioItemResource extends Resource
                     ->trueLabel('نشط')
                     ->falseLabel('غير نشط'),
             ])
-            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)
