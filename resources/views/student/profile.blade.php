@@ -1,14 +1,5 @@
 <x-layouts.student :title="__('student.profile.page_title')">
 
-  <style>
-    body.islamic-pattern-page {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpolygon points='40,8 47,23 63,17 57,33 72,40 57,47 63,63 47,57 40,72 33,57 17,63 23,47 8,40 23,33 17,17 33,23' fill='none' stroke='%2394a3b8' stroke-width='0.8' stroke-opacity='0.18'/%3E%3Cline x1='40' y1='8' x2='40' y2='0' stroke='%2394a3b8' stroke-width='0.6' stroke-opacity='0.15'/%3E%3Cline x1='72' y1='40' x2='80' y2='40' stroke='%2394a3b8' stroke-width='0.6' stroke-opacity='0.15'/%3E%3Cline x1='40' y1='72' x2='40' y2='80' stroke='%2394a3b8' stroke-width='0.6' stroke-opacity='0.15'/%3E%3Cline x1='8' y1='40' x2='0' y2='40' stroke='%2394a3b8' stroke-width='0.6' stroke-opacity='0.15'/%3E%3Cline x1='63' y1='17' x2='80' y2='0' stroke='%2394a3b8' stroke-width='0.6' stroke-opacity='0.15'/%3E%3Cline x1='63' y1='63' x2='80' y2='80' stroke='%2394a3b8' stroke-width='0.6' stroke-opacity='0.15'/%3E%3Cline x1='17' y1='63' x2='0' y2='80' stroke='%2394a3b8' stroke-width='0.6' stroke-opacity='0.15'/%3E%3Cline x1='17' y1='17' x2='0' y2='0' stroke='%2394a3b8' stroke-width='0.6' stroke-opacity='0.15'/%3E%3Ccircle cx='40' cy='40' r='6' fill='none' stroke='%2394a3b8' stroke-width='0.5' stroke-opacity='0.12'/%3E%3C/svg%3E");
-      background-size: 80px 80px;
-      background-repeat: repeat;
-    }
-  </style>
-  <script>document.body.classList.add('islamic-pattern-page');</script>
-
   <div>
     <div>
 
