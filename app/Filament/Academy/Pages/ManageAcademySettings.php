@@ -2,8 +2,6 @@
 
 namespace App\Filament\Academy\Pages;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
 use App\Enums\UserType;
 use App\Models\Academy;
 use Filament\Actions\Action;
@@ -16,8 +14,13 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 
+/**
+ * @property \Filament\Schemas\Components\Form $form
+ */
 class ManageAcademySettings extends Page implements HasForms
 {
     use InteractsWithForms;
@@ -27,11 +30,11 @@ class ManageAcademySettings extends Page implements HasForms
         return Width::Full;
     }
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
     protected string $view = 'filament.academy.pages.manage-academy-settings';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'الإعدادات';
+    protected static string|\UnitEnum|null $navigationGroup = 'الإعدادات';
 
     protected static ?string $navigationLabel = 'إعدادات الأكاديمية';
 

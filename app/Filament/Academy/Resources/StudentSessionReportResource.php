@@ -31,7 +31,13 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
      */
     protected static function scopeEloquentQuery(Builder $query): Builder
     {
-        return $query->where('academy_id', auth()->user()->academy_id);
+        // BP-004: Null check to prevent errors in queue/testing context
+        $academyId = auth()->user()?->academy_id;
+        if (! $academyId) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query->where('academy_id', $academyId);
     }
 
     /**

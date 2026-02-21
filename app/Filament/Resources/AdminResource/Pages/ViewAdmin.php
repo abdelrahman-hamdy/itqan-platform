@@ -8,6 +8,7 @@ use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 
+/** @property \App\Models\User $record */
 class ViewAdmin extends ViewRecord
 {
     protected static string $resource = AdminResource::class;

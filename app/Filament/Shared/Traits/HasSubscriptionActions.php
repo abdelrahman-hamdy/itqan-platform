@@ -207,7 +207,8 @@ trait HasSubscriptionActions
                     ->title('تم إيقاف الاشتراك مؤقتاً')
                     ->send();
             })
-            ->visible(fn (BaseSubscription $record) => $record->status === SessionSubscriptionStatus::ACTIVE);
+            ->visible(fn (BaseSubscription $record) => $record->status === SessionSubscriptionStatus::ACTIVE
+                && ! $record->isInGracePeriod());
     }
 
     /**
@@ -253,6 +254,18 @@ trait HasSubscriptionActions
             ->modalDescription('سيتم إعادة تفعيل الاشتراك الملغي وتأكيد الدفع. سيتم تحديث تواريخ البدء والانتهاء.')
             ->modalSubmitActionLabel('نعم، إعادة التفعيل')
             ->action(function (BaseSubscription $record) {
+                // Clear grace period metadata on reactivation
+                $metadata = $record->metadata ?? [];
+                unset(
+                    $metadata['grace_period_ends_at'],
+                    $metadata['grace_period_expires_at'],
+                    $metadata['grace_period_started_at'],
+                    $metadata['grace_notification_last_sent_at'],
+                    $metadata['renewal_failed_count'],
+                    $metadata['last_renewal_failure_at'],
+                    $metadata['last_renewal_failure_reason']
+                );
+
                 $updateData = [
                     'status' => SessionSubscriptionStatus::ACTIVE,
                     'payment_status' => SubscriptionPaymentStatus::PAID,
@@ -260,6 +273,7 @@ trait HasSubscriptionActions
                     'cancelled_at' => null,
                     'cancellation_reason' => null,
                     'auto_renew' => true,
+                    'metadata' => $metadata ?: null,
                 ];
 
                 // Reset dates if subscription has no valid dates

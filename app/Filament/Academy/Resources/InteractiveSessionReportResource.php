@@ -32,7 +32,11 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
      */
     protected static function scopeEloquentQuery(Builder $query): Builder
     {
-        $academyId = auth()->user()->academy_id;
+        // BP-004: Null check to prevent errors in queue/testing context
+        $academyId = auth()->user()?->academy_id;
+        if (! $academyId) {
+            return $query->whereRaw('0 = 1');
+        }
 
         return $query->whereHas('session.course', function ($q) use ($academyId) {
             $q->where('academy_id', $academyId);

@@ -21,17 +21,61 @@
 @source "../../app/Livewire";
 @source "../../resources/views";
 
-/* Mobile-only collapsible filters
- * On tablet and desktop (md+), always show filters expanded and hide the toggle trigger.
- * On mobile (<768px), the default Alpine.js collapse behavior applies (collapsed by default).
+/* Mobile filter collapse toggle
+ * Injected via JS (mobile-filter-collapse.blade.php).
+ * Hidden by default (display:none); JS sets display:flex on mobile only.
  */
-@media (min-width: 768px) {
-  .fi-ta-filters-above-content-ctn .fi-ta-filters {
-    display: block !important;
-  }
-  .fi-ta-filters-above-content-ctn .fi-ta-filters-trigger-action-ctn {
-    display: none !important;
-  }
+.fi-ta-filter-mobile-toggle-wrapper {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 1rem;
+    border-bottom: 1px solid rgb(229 231 235); /* gray-200 */
+    background-color: rgb(249 250 251);        /* gray-50 */
+}
+
+.dark .fi-ta-filter-mobile-toggle-wrapper {
+    border-color: rgba(255 255 255 / 0.1);
+    background-color: rgba(255 255 255 / 0.05);
+}
+
+.fi-ta-filter-mobile-toggle-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgb(55 65 81); /* gray-700 */
+}
+
+.dark .fi-ta-filter-mobile-toggle-label {
+    color: rgb(209 213 219); /* gray-300 */
+}
+
+.fi-ta-filter-mobile-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgb(180 83 9);  /* amber-700 – matches Filament primary */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1.5;
+}
+
+.dark .fi-ta-filter-mobile-toggle-btn {
+    color: rgb(251 191 36); /* amber-400 */
+}
+
+.fi-ta-filter-mobile-toggle-btn:hover {
+    opacity: 0.8;
+}
+
+.fi-ta-filter-toggle-chevron {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
 }
 
 /* Custom utilities from app.css that Filament panels may need */

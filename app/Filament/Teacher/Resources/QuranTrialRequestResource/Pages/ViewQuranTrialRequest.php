@@ -8,6 +8,7 @@ use App\Filament\Teacher\Resources\QuranTrialRequestResource;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 
+/** @property \App\Models\QuranTrialRequest $record */
 class ViewQuranTrialRequest extends ViewRecord
 {
     protected static string $resource = QuranTrialRequestResource::class;

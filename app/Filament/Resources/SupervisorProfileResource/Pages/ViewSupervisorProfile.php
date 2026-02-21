@@ -9,6 +9,7 @@ use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 
+/** @property \App\Models\SupervisorProfile $record */
 class ViewSupervisorProfile extends ViewRecord
 {
     protected static string $resource = SupervisorProfileResource::class;

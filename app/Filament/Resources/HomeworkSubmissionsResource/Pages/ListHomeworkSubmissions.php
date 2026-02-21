@@ -2,21 +2,20 @@
 
 namespace App\Filament\Resources\HomeworkSubmissionsResource\Pages;
 
-use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Actions\Action;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use App\Enums\HomeworkSubmissionStatus;
 use App\Filament\Resources\HomeworkSubmissionsResource;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Services\AcademyContextService;
-use Filament\Forms;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -66,11 +65,13 @@ class ListHomeworkSubmissions extends ListRecords
         }
 
         // 'all' tab - use a subquery approach to combine both tables
-        // This avoids MySQL's limitation with ORDER BY on UNION queries
-        $academyId = (int) (AcademyContextService::getCurrentAcademyId() ?? 1);
+        // Guard: ensure academy context exists (MT-002 fix)
+        $academyId = AcademyContextService::getCurrentAcademyId();
+        if (! $academyId) {
+            return AcademicHomeworkSubmission::query()->whereRaw('0 = 1');
+        }
 
-        // Build raw SQL with embedded academy_id to avoid binding issues with filters
-        // Shows ALL submissions (submitted, late, graded) - badge handles pending count separately
+        // Build parameterized SQL to prevent injection (SEC-004 fix)
         $unionSql = "
             SELECT id, academy_id, student_id, submission_status, submitted_at,
                    score, max_score, is_late, teacher_feedback, created_at, updated_at,
@@ -78,7 +79,7 @@ class ListHomeworkSubmissions extends ListRecords
             FROM academic_homework_submissions
             WHERE submission_status IN ('submitted', 'late', 'graded')
               AND deleted_at IS NULL
-              AND academy_id = {$academyId}
+              AND academy_id = ?
             UNION ALL
             SELECT id, academy_id, student_id, submission_status, submitted_at,
                    score, max_score, is_late, teacher_feedback, created_at, updated_at,
@@ -86,14 +87,14 @@ class ListHomeworkSubmissions extends ListRecords
             FROM interactive_course_homework_submissions
             WHERE submission_status IN ('submitted', 'late', 'graded')
               AND deleted_at IS NULL
-              AND academy_id = {$academyId}
+              AND academy_id = ?
         ";
 
-        // Use from with raw subquery - filters will apply to the outer query
-        // Admin panel access — scoped by panel authorization, not global scope; union query requires unscoped base
+        // Use from with raw subquery and proper bindings
         return AcademicHomeworkSubmission::query()
             ->withoutGlobalScopes()
-            ->from(DB::raw("({$unionSql}) as submissions"));
+            ->from(DB::raw("({$unionSql}) as submissions"))
+            ->setBindings([$academyId, $academyId]);
     }
 
     public function table(Table $table): Table

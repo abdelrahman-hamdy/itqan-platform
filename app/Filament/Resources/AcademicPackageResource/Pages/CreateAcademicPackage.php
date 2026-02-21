@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\AcademicPackageResource\Pages;
 
-use App\Filament\Resources\AcademicPackageResource;
 use App\Filament\Pages\BaseCreateRecord as CreateRecord;
+use App\Filament\Resources\AcademicPackageResource;
 
 class CreateAcademicPackage extends CreateRecord
 {
@@ -21,7 +21,7 @@ class CreateAcademicPackage extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['academy_id'] = auth()->user()->academy_id ?? 1;
+        $data['academy_id'] = auth()->user()?->academy_id ?? \App\Services\AcademyContextService::getCurrentAcademyId();
         $data['created_by'] = auth()->id();
 
         return $data;

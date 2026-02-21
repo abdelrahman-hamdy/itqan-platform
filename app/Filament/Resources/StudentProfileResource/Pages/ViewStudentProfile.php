@@ -8,6 +8,7 @@ use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 
+/** @property \App\Models\StudentProfile $record */
 class ViewStudentProfile extends ViewRecord
 {
     protected static string $resource = StudentProfileResource::class;

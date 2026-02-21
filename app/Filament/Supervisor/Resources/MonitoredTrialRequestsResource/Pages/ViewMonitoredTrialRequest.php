@@ -8,6 +8,7 @@ use App\Filament\Supervisor\Resources\MonitoredTrialRequestsResource;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 
+/** @property \App\Models\QuranTrialRequest $record */
 class ViewMonitoredTrialRequest extends ViewRecord
 {
     protected static string $resource = MonitoredTrialRequestsResource::class;

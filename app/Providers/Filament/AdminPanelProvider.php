@@ -165,6 +165,10 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::user-menu.before',
                 fn (): string => view('filament.hooks.topbar-buttons')->render()
+            )
+            ->renderHook(
+                PanelsRenderHook::SCRIPTS_AFTER,
+                fn (): string => view('filament.hooks.mobile-filter-collapse')->render()
             );
     }
 
