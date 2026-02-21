@@ -1,28 +1,37 @@
 <script>
 (function () {
     var COLLAPSE_BP = 1024;
+    var openStates = {};
+
+    function getStateKey(container) {
+        var c = container.closest('[wire\\:id]');
+        return c ? c.getAttribute('wire:id') : 'default';
+    }
 
     function buildToggle() {
-        var wrapper = document.createElement('div');
-        wrapper.className = 'fi-ta-filter-mobile-toggle-wrapper';
-        wrapper.innerHTML =
-            '<span class="fi-ta-filter-mobile-toggle-label">الفلاتر</span>' +
+        var w = document.createElement('div');
+        w.className = 'fi-ta-filter-mobile-toggle-wrapper';
+        w.innerHTML =
+            '<span class="fi-ta-filter-mobile-toggle-label">\u0627\u0644\u0641\u0644\u0627\u062a\u0631</span>' +
             '<button type="button" class="fi-ta-filter-mobile-toggle-btn">' +
                 '<span class="fi-ta-filter-toggle-text">\u0625\u0638\u0647\u0627\u0631</span>' +
                 '<svg class="fi-ta-filter-toggle-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">' +
                     '<path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/>' +
                 '</svg>' +
             '</button>';
-        return wrapper;
+        return w;
     }
 
     function initContainer(container) {
-        if (container.querySelector('.fi-ta-filter-mobile-toggle-wrapper')) return;
+        var existing = container.querySelector('.fi-ta-filter-mobile-toggle-wrapper');
+        if (existing) return;
 
         var filtersEl = container.querySelector('.fi-ta-filters');
         if (!filtersEl) return;
 
-        var isOpen = false;
+        var key = getStateKey(container);
+        var isOpen = key in openStates ? openStates[key] : false;
+
         var wrapper = buildToggle();
         var btn     = wrapper.querySelector('.fi-ta-filter-mobile-toggle-btn');
         var text    = wrapper.querySelector('.fi-ta-filter-toggle-text');
@@ -32,21 +41,20 @@
 
         function applyState() {
             if (window.innerWidth < COLLAPSE_BP) {
-                wrapper.style.display    = 'flex';
-                filtersEl.style.display  = isOpen ? '' : 'none';
-                text.textContent         = isOpen ? '\u0625\u062e\u0641\u0627\u0621' : '\u0625\u0638\u0647\u0627\u0631';
-                chevron.style.transform  = isOpen ? 'rotate(180deg)' : '';
+                wrapper.style.display   = 'flex';
+                filtersEl.style.display = isOpen ? '' : 'none';
+                text.textContent        = isOpen ? '\u0625\u062e\u0641\u0627\u0621' : '\u0625\u0638\u0647\u0627\u0631';
+                chevron.style.transform = isOpen ? 'rotate(180deg)' : '';
                 btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
             } else {
                 wrapper.style.display   = 'none';
                 filtersEl.style.display = '';
-                chevron.style.transform = '';
-                btn.setAttribute('aria-expanded', 'true');
             }
         }
 
         btn.addEventListener('click', function () {
             isOpen = !isOpen;
+            openStates[key] = isOpen;
             applyState();
         });
 
@@ -65,12 +73,16 @@
         setTimeout(initAll, 0);
     }
 
-    // After Livewire full-page navigations
+    // After Livewire SPA navigations
     document.addEventListener('livewire:navigated', initAll);
 
-    // After Livewire component DOM morphing updates
-    document.addEventListener('livewire:update', function () {
-        setTimeout(initAll, 50);
+    // After every Livewire 3 commit (fires after DOM morphing is complete)
+    document.addEventListener('livewire:init', function () {
+        Livewire.hook('commit', function ({ succeed }) {
+            succeed(function () {
+                queueMicrotask(initAll);
+            });
+        });
     });
 }());
 </script>
