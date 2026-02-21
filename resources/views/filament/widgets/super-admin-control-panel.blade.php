@@ -9,7 +9,7 @@
             <x-slot name="heading">
                 <div class="flex items-center justify-between w-full">
                     <div class="flex items-center gap-2">
-                        <x-heroicon-o-command-line class="w-5 h-5 text-primary-500" />
+                        <x-heroicon-o-command-line class="w-5 h-5 text-amber-500" />
                         <span>لوحة التحكم - {{ $academyName }}</span>
                     </div>
                     @if($totalPending > 0)
@@ -66,8 +66,8 @@
                             wire:click="$set('quranPeriod', '{{ $key }}')"
                             @class([
                                 'px-3 py-1 text-xs font-bold rounded-full transition-all',
-                                'bg-success-500 text-white shadow-sm' => $quranPeriod === $key,
-                                'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 ring-1 ring-gray-950/5 dark:ring-white/10' => $quranPeriod !== $key,
+                                'bg-emerald-500 text-white shadow-sm' => $quranPeriod === $key,
+                                'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 ring-1 ring-gray-200 dark:ring-gray-600' => $quranPeriod !== $key,
                             ])
                         >
                             {{ $label }}
@@ -80,7 +80,7 @@
                     @if($quran['sessions']['total'] > 0)
                         @include('filament.widgets.partials.control-panel-session-card', ['session' => $quran['sessions']])
                     @else
-                        <div class="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-white/5">
+                        <div class="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
                             <x-heroicon-o-calendar-days class="w-4 h-4 text-gray-400" />
                             <span class="text-sm text-gray-500 dark:text-gray-400">لا توجد جلسات قرآن {{ $periodLabels[$quranPeriod] }}</span>
                         </div>
@@ -92,7 +92,7 @@
                 @if($quranPending->isNotEmpty())
                     <div>
                         <div class="flex items-center gap-1.5 mb-2.5">
-                            <x-heroicon-s-exclamation-triangle class="w-3.5 h-3.5 text-warning-500 flex-shrink-0" />
+                            <x-heroicon-s-exclamation-triangle class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                             <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">بنود معلقة</h3>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
@@ -106,7 +106,7 @@
                 {{-- Quick Actions --}}
                 <div>
                     <div class="flex items-center gap-1.5 mb-2.5">
-                        <x-heroicon-s-plus-circle class="w-3.5 h-3.5 text-success-500 flex-shrink-0" />
+                        <x-heroicon-s-plus-circle class="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                         <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">إنشاء جديد</h3>
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -126,8 +126,8 @@
                             wire:click="$set('academicPeriod', '{{ $key }}')"
                             @class([
                                 'px-3 py-1 text-xs font-bold rounded-full transition-all',
-                                'bg-info-500 text-white shadow-sm' => $academicPeriod === $key,
-                                'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 ring-1 ring-gray-950/5 dark:ring-white/10' => $academicPeriod !== $key,
+                                'bg-blue-500 text-white shadow-sm' => $academicPeriod === $key,
+                                'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 ring-1 ring-gray-200 dark:ring-gray-600' => $academicPeriod !== $key,
                             ])
                         >
                             {{ $label }}
@@ -145,7 +145,7 @@
                             @endforeach
                         </div>
                     @else
-                        <div class="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-white/5">
+                        <div class="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
                             <x-heroicon-o-calendar-days class="w-4 h-4 text-gray-400" />
                             <span class="text-sm text-gray-500 dark:text-gray-400">لا توجد جلسات أكاديمية {{ $periodLabels[$academicPeriod] }}</span>
                         </div>
@@ -157,7 +157,7 @@
                 @if($academicPending->isNotEmpty())
                     <div>
                         <div class="flex items-center gap-1.5 mb-2.5">
-                            <x-heroicon-s-exclamation-triangle class="w-3.5 h-3.5 text-warning-500 flex-shrink-0" />
+                            <x-heroicon-s-exclamation-triangle class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                             <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">بنود معلقة</h3>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
@@ -171,7 +171,7 @@
                 {{-- Quick Actions --}}
                 <div>
                     <div class="flex items-center gap-1.5 mb-2.5">
-                        <x-heroicon-s-plus-circle class="w-3.5 h-3.5 text-info-500 flex-shrink-0" />
+                        <x-heroicon-s-plus-circle class="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
                         <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">إنشاء جديد</h3>
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -189,7 +189,7 @@
                 @if($generalPending->isNotEmpty())
                     <div>
                         <div class="flex items-center gap-1.5 mb-2.5">
-                            <x-heroicon-s-exclamation-triangle class="w-3.5 h-3.5 text-danger-500 flex-shrink-0" />
+                            <x-heroicon-s-exclamation-triangle class="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
                             <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">بنود معلقة</h3>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -219,7 +219,7 @@
                 {{-- Quick Actions --}}
                 <div>
                     <div class="flex items-center gap-1.5 mb-2.5">
-                        <x-heroicon-s-plus-circle class="w-3.5 h-3.5 text-primary-500 flex-shrink-0" />
+                        <x-heroicon-s-plus-circle class="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
                         <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">إنشاء جديد</h3>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
