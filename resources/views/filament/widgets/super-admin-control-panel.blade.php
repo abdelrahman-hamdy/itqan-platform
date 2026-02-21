@@ -110,18 +110,6 @@
                             </div>
                         @endif
 
-                        {{-- Quick Actions --}}
-                        <div>
-                            <div class="flex items-center gap-1.5 mb-2.5">
-                                <x-heroicon-s-plus-circle class="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                                <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">إنشاء جديد</h3>
-                            </div>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                @foreach($actions['quran'] as $action)
-                                    @include('filament.widgets.partials.control-panel-action', ['action' => $action])
-                                @endforeach
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -184,18 +172,6 @@
                             </div>
                         @endif
 
-                        {{-- Quick Actions --}}
-                        <div>
-                            <div class="flex items-center gap-1.5 mb-2.5">
-                                <x-heroicon-s-plus-circle class="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-                                <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">إنشاء جديد</h3>
-                            </div>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                @foreach($actions['academic'] as $action)
-                                    @include('filament.widgets.partials.control-panel-action', ['action' => $action])
-                                @endforeach
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
