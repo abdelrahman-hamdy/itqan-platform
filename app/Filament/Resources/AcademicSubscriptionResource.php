@@ -387,6 +387,7 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                 ViewAction::make()->label('عرض'),
                 EditAction::make()->label('تعديل'),
                 static::getConfirmPaymentAction(),
+                static::getReactivateAction(),
                 static::getPauseAction(),
                 static::getResumeAction(),
                 static::getExtendSubscriptionAction(),

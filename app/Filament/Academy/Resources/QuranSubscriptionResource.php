@@ -355,9 +355,14 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
+                static::getConfirmPaymentAction(),
+                static::getReactivateAction(),
                 static::getPauseAction(),
                 static::getResumeAction(),
+                static::getExtendSubscriptionAction(),
+                static::getCancelAction(),
                 static::getCancelPendingAction(),
+                static::getCreateCircleAction(),
                 DeleteAction::make()
                     ->label('حذف'),
             ]),

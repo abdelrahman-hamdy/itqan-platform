@@ -15,6 +15,7 @@ namespace App\Enums;
  * - ACTIVE → SUSPENDED (grace period expired without payment)
  * - SUSPENDED → ACTIVE (payment received)
  * - ACTIVE/PAUSED/SUSPENDED → CANCELLED (termination)
+ * - CANCELLED → ACTIVE (admin reactivation)
  *
  * @see \App\Models\QuranSubscription
  * @see \App\Models\AcademicSubscription
@@ -132,9 +133,18 @@ enum SessionSubscriptionStatus: string
     }
 
     /**
-     * Check if subscription is terminal (no further changes)
+     * Check if subscription is terminal (no automated changes)
+     * Note: Admin can still reactivate cancelled subscriptions manually
      */
     public function isTerminal(): bool
+    {
+        return $this === self::CANCELLED;
+    }
+
+    /**
+     * Check if subscription can be reactivated by admin
+     */
+    public function canReactivate(): bool
     {
         return $this === self::CANCELLED;
     }
@@ -157,7 +167,7 @@ enum SessionSubscriptionStatus: string
             self::ACTIVE => [self::PAUSED, self::SUSPENDED, self::CANCELLED],
             self::PAUSED => [self::ACTIVE, self::CANCELLED],
             self::SUSPENDED => [self::ACTIVE, self::CANCELLED],
-            self::CANCELLED => [], // Terminal
+            self::CANCELLED => [self::ACTIVE], // Admin reactivation
         };
     }
 

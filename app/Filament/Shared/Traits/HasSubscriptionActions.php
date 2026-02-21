@@ -15,6 +15,8 @@ use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Tables\Filters\Filter;
@@ -28,8 +30,8 @@ use Illuminate\Database\Eloquent\Collection;
  * Provides ALL reusable Filament actions for subscription management.
  * Consolidated from previously duplicated actions across resources/pages.
  *
- * Actions: Confirm Payment, Pause, Resume, Extend (grace period), Cancel,
- *          Cancel Pending, Create Circle (Quran-only)
+ * Actions: Confirm Payment, Reactivate, Pause, Resume, Extend (grace period),
+ *          Cancel, Cancel Pending, Create Circle (Quran-only)
  *
  * Also provides: bulk actions, filters, header actions
  */
@@ -73,7 +75,7 @@ trait HasSubscriptionActions
     /**
      * Confirm Payment action (replaces Activate).
      *
-     * Sets payment as PAID. If subscription was PENDING or SUSPENDED,
+     * Sets payment as PAID. If subscription was PENDING, SUSPENDED, or CANCELLED,
      * activates it. If grace period was active (original_ends_at stored),
      * recalculates ends_at from original date.
      */
@@ -85,7 +87,7 @@ trait HasSubscriptionActions
             ->color('success')
             ->requiresConfirmation()
             ->modalHeading('تأكيد دفع الاشتراك')
-            ->modalDescription('سيتم تأكيد الدفع وتفعيل الاشتراك إذا كان معلقاً.')
+            ->modalDescription('سيتم تأكيد الدفع وتفعيل الاشتراك إذا كان معلقاً أو ملغياً.')
             ->modalSubmitActionLabel('تأكيد الدفع')
             ->schema([
                 TextInput::make('payment_reference')
@@ -99,12 +101,23 @@ trait HasSubscriptionActions
                     'last_payment_date' => now(),
                 ];
 
-                // If PENDING or SUSPENDED, activate the subscription
-                if (in_array($record->status, [SessionSubscriptionStatus::PENDING, SessionSubscriptionStatus::SUSPENDED])) {
+                // If PENDING, SUSPENDED, or CANCELLED, activate the subscription
+                if (in_array($record->status, [
+                    SessionSubscriptionStatus::PENDING,
+                    SessionSubscriptionStatus::SUSPENDED,
+                    SessionSubscriptionStatus::CANCELLED,
+                ])) {
                     $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
 
-                    // If first activation and no start date, set it
-                    if (! $record->starts_at) {
+                    // Clear cancellation fields if reactivating from CANCELLED
+                    if ($record->status === SessionSubscriptionStatus::CANCELLED) {
+                        $updateData['cancelled_at'] = null;
+                        $updateData['cancellation_reason'] = null;
+                        $updateData['auto_renew'] = true;
+                    }
+
+                    // If no start date or dates expired, reset them
+                    if (! $record->starts_at || $record->ends_at?->isPast()) {
                         $updateData['starts_at'] = now();
                         $updateData['ends_at'] = $record->calculateEndDate(now());
                     }
@@ -126,6 +139,13 @@ trait HasSubscriptionActions
                         unset($metadata['original_ends_at']);
                         $updateData['metadata'] = $metadata ?: null;
                     }
+                }
+
+                // Activate linked circle if reactivating
+                if (($updateData['status'] ?? null) === SessionSubscriptionStatus::ACTIVE
+                    && $record instanceof QuranSubscription
+                    && $record->education_unit_id) {
+                    $record->educationUnit?->update(['is_active' => true]);
                 }
 
                 // Store payment reference in admin notes if provided
@@ -207,6 +227,71 @@ trait HasSubscriptionActions
                     ->send();
             })
             ->visible(fn (BaseSubscription $record) => $record->status === SessionSubscriptionStatus::PAUSED);
+    }
+
+    /**
+     * Reactivate action — brings a cancelled subscription back to active.
+     * Resets cancellation fields, updates dates, and activates linked circles.
+     */
+    protected static function getReactivateAction(): Action
+    {
+        return Action::make('reactivate')
+            ->label('إعادة تفعيل الاشتراك')
+            ->icon('heroicon-o-arrow-path')
+            ->color('success')
+            ->requiresConfirmation()
+            ->modalHeading('إعادة تفعيل اشتراك ملغي')
+            ->modalDescription('سيتم إعادة تفعيل الاشتراك الملغي وتأكيد الدفع. سيتم تحديث تواريخ البدء والانتهاء.')
+            ->modalSubmitActionLabel('نعم، إعادة التفعيل')
+            ->schema([
+                TextInput::make('payment_reference')
+                    ->label('مرجع الدفع (اختياري)')
+                    ->placeholder('رقم الإيصال أو مرجع التحويل')
+                    ->maxLength(255),
+            ])
+            ->action(function (BaseSubscription $record, array $data) {
+                $updateData = [
+                    'status' => SessionSubscriptionStatus::ACTIVE,
+                    'payment_status' => SubscriptionPaymentStatus::PAID,
+                    'last_payment_date' => now(),
+                    'cancelled_at' => null,
+                    'cancellation_reason' => null,
+                    'auto_renew' => true,
+                ];
+
+                // Reset dates if subscription has no valid dates
+                if (! $record->starts_at || $record->ends_at?->isPast()) {
+                    $updateData['starts_at'] = now();
+                    $updateData['ends_at'] = $record->calculateEndDate(now());
+                }
+
+                // Store payment reference in admin notes if provided
+                if (! empty($data['payment_reference'])) {
+                    $note = sprintf(
+                        "[%s] إعادة تفعيل بواسطة %s - المرجع: %s",
+                        now()->format('Y-m-d H:i'),
+                        auth()->user()->name,
+                        $data['payment_reference']
+                    );
+                    $updateData['admin_notes'] = $record->admin_notes
+                        ? $record->admin_notes."\n\n".$note
+                        : $note;
+                }
+
+                $record->update($updateData);
+
+                // Activate linked circle if exists
+                if ($record instanceof QuranSubscription && $record->education_unit_id) {
+                    $record->educationUnit?->update(['is_active' => true]);
+                }
+
+                Notification::make()
+                    ->success()
+                    ->title('تم إعادة تفعيل الاشتراك')
+                    ->body('تم إعادة تفعيل الاشتراك الملغي بنجاح.')
+                    ->send();
+            })
+            ->visible(fn (BaseSubscription $record) => $record->status === SessionSubscriptionStatus::CANCELLED);
     }
 
     /**
@@ -327,6 +412,7 @@ trait HasSubscriptionActions
     /**
      * Create Circle action — Quran-only.
      * Creates a QuranIndividualCircle for individual subscriptions that don't have one.
+     * If subscription is cancelled but paid, auto-activates the subscription.
      */
     protected static function getCreateCircleAction(): Action
     {
@@ -359,9 +445,34 @@ trait HasSubscriptionActions
                     ])
                     ->default('beginner')
                     ->required(),
+
+                TextInput::make('name')
+                    ->label('اسم الحلقة (اختياري)')
+                    ->placeholder('يتم إنشاؤه تلقائياً إذا تُرك فارغاً')
+                    ->maxLength(255),
+
+                Textarea::make('description')
+                    ->label('وصف الحلقة (اختياري)')
+                    ->rows(2)
+                    ->maxLength(500),
+
+                TagsInput::make('learning_objectives')
+                    ->label('أهداف التعلم (اختياري)')
+                    ->placeholder('أضف هدفاً تعليمياً')
+                    ->reorderable(),
+
+                Select::make('default_duration_minutes')
+                    ->label('مدة الجلسة الافتراضية')
+                    ->options([
+                        30 => '30 دقيقة',
+                        45 => '45 دقيقة',
+                        60 => '60 دقيقة',
+                        90 => '90 دقيقة',
+                    ])
+                    ->default(45),
             ])
             ->action(function (BaseSubscription $record, array $data) {
-                $circle = QuranIndividualCircle::create([
+                $circleData = [
                     'academy_id' => $record->academy_id,
                     'quran_teacher_id' => $record->quran_teacher_id,
                     'student_id' => $record->student_id,
@@ -370,12 +481,48 @@ trait HasSubscriptionActions
                     'memorization_level' => $data['memorization_level'],
                     'total_sessions' => $record->total_sessions,
                     'sessions_remaining' => $record->sessions_remaining,
-                    'default_duration_minutes' => $record->session_duration_minutes ?? 45,
-                    'is_active' => $record->isActive(),
-                ]);
+                    'default_duration_minutes' => $data['default_duration_minutes'] ?? $record->session_duration_minutes ?? 45,
+                    'is_active' => true,
+                ];
+
+                if (! empty($data['name'])) {
+                    $circleData['name'] = $data['name'];
+                }
+                if (! empty($data['description'])) {
+                    $circleData['description'] = $data['description'];
+                }
+                if (! empty($data['learning_objectives'])) {
+                    $circleData['learning_objectives'] = $data['learning_objectives'];
+                }
+
+                $circle = QuranIndividualCircle::create($circleData);
 
                 // Link via polymorphic relationship
                 $record->linkToEducationUnit($circle);
+
+                // If subscription is cancelled but payment confirmed, auto-activate
+                if ($record->status === SessionSubscriptionStatus::CANCELLED
+                    && $record->payment_status === SubscriptionPaymentStatus::PAID) {
+                    $activateData = [
+                        'status' => SessionSubscriptionStatus::ACTIVE,
+                        'cancelled_at' => null,
+                        'cancellation_reason' => null,
+                        'auto_renew' => true,
+                    ];
+
+                    if (! $record->starts_at || $record->ends_at?->isPast()) {
+                        $activateData['starts_at'] = now();
+                        $activateData['ends_at'] = $record->calculateEndDate(now());
+                    }
+
+                    $record->update($activateData);
+
+                    Notification::make()
+                        ->info()
+                        ->title('تم تفعيل الاشتراك تلقائياً')
+                        ->body('تم تفعيل الاشتراك لأن الدفع مؤكد والحلقة تم إنشاؤها.')
+                        ->send();
+                }
 
                 Notification::make()
                     ->success()
@@ -475,6 +622,7 @@ trait HasSubscriptionActions
     {
         return [
             static::getConfirmPaymentAction(),
+            static::getReactivateAction(),
             static::getPauseAction(),
             static::getResumeAction(),
             static::getExtendSubscriptionAction(),
@@ -490,6 +638,7 @@ trait HasSubscriptionActions
     {
         $actions = [
             static::getConfirmPaymentAction(),
+            static::getReactivateAction(),
             static::getPauseAction(),
             static::getResumeAction(),
             static::getExtendSubscriptionAction(),
