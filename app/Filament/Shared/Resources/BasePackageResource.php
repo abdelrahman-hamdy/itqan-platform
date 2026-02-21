@@ -12,7 +12,6 @@ use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use App\Enums\SessionDuration;
 use Filament\Facades\Filament;
 use Filament\Forms;
@@ -114,7 +113,6 @@ abstract class BasePackageResource extends Resource
     {
         return [
             TernaryFilter::make('is_active')->label('الحالة')->placeholder('جميع الباقات')->trueLabel('المفعلة')->falseLabel('غير المفعلة'),
-            TrashedFilter::make(),
         ];
     }
 

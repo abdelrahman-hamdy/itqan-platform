@@ -28,7 +28,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -206,8 +205,6 @@ class CourseReviewResource extends BaseResource
                         'App\\Models\\InteractiveCourse' => 'دورة تفاعلية',
                     ]),
 
-                TrashedFilter::make()
-                    ->label(__('filament.filters.trashed')),
             ])
             ->deferFilters(false)
             ->deferColumnManager(false)
