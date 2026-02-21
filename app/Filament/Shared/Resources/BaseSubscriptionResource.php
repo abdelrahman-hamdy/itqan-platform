@@ -206,34 +206,54 @@ abstract class BaseSubscriptionResource extends Resource
             TextColumn::make('status')
                 ->badge()
                 ->label('حالة الاشتراك')
-                ->formatStateUsing(fn ($state): string => match ($state instanceof SessionSubscriptionStatus ? $state->value : $state) {
-                    SessionSubscriptionStatus::PENDING->value => 'قيد الانتظار',
-                    SessionSubscriptionStatus::ACTIVE->value => 'نشط',
-                    SessionSubscriptionStatus::PAUSED->value => 'متوقف مؤقتاً',
-                    SessionSubscriptionStatus::CANCELLED->value => 'ملغي',
-                    default => $state instanceof SessionSubscriptionStatus ? $state->value : (string) $state,
-                })
-                ->colors([
-                    'success' => SessionSubscriptionStatus::ACTIVE->value,
-                    'warning' => SessionSubscriptionStatus::PENDING->value,
-                    'info' => SessionSubscriptionStatus::PAUSED->value,
-                    'danger' => SessionSubscriptionStatus::CANCELLED->value,
-                ]),
+                ->formatStateUsing(fn (mixed $state): string => $state instanceof SessionSubscriptionStatus
+                    ? $state->label()
+                    : (SessionSubscriptionStatus::tryFrom($state)?->label() ?? (string) $state))
+                ->color(fn (mixed $state): string => $state instanceof SessionSubscriptionStatus
+                    ? $state->color()
+                    : (SessionSubscriptionStatus::tryFrom($state)?->color() ?? 'gray'))
+                ->icon(fn (mixed $state): string => $state instanceof SessionSubscriptionStatus
+                    ? $state->icon()
+                    : (SessionSubscriptionStatus::tryFrom($state)?->icon() ?? 'heroicon-o-question-mark-circle')),
 
             TextColumn::make('payment_status')
                 ->badge()
                 ->label('حالة الدفع')
-                ->formatStateUsing(fn ($state): string => match ($state instanceof SubscriptionPaymentStatus ? $state->value : $state) {
-                    SubscriptionPaymentStatus::PENDING->value => 'في الانتظار',
-                    SubscriptionPaymentStatus::PAID->value => 'مدفوع',
-                    SubscriptionPaymentStatus::FAILED->value => 'فشل',
-                    default => $state instanceof SubscriptionPaymentStatus ? $state->value : (string) $state,
+                ->formatStateUsing(fn (mixed $state): string => $state instanceof SubscriptionPaymentStatus
+                    ? $state->label()
+                    : (SubscriptionPaymentStatus::tryFrom($state)?->label() ?? (string) $state))
+                ->color(fn (mixed $state): string => $state instanceof SubscriptionPaymentStatus
+                    ? $state->color()
+                    : (SubscriptionPaymentStatus::tryFrom($state)?->color() ?? 'gray'))
+                ->icon(fn (mixed $state): string => $state instanceof SubscriptionPaymentStatus
+                    ? $state->icon()
+                    : (SubscriptionPaymentStatus::tryFrom($state)?->icon() ?? 'heroicon-o-question-mark-circle'))
+                ->toggleable(),
+
+            TextColumn::make('grace_period_status')
+                ->label('فترة السماح')
+                ->badge()
+                ->getStateUsing(function ($record): ?string {
+                    $metadata = $record->metadata ?? [];
+                    if (! isset($metadata['grace_period_ends_at'])) {
+                        return null;
+                    }
+                    $endsAt = \Carbon\Carbon::parse($metadata['grace_period_ends_at']);
+                    if ($endsAt->isPast()) {
+                        return 'منتهية';
+                    }
+                    $daysLeft = (int) now()->diffInDays($endsAt, false);
+
+                    return "متبقي {$daysLeft} يوم";
                 })
-                ->colors([
-                    'warning' => SubscriptionPaymentStatus::PENDING->value,
-                    'success' => SubscriptionPaymentStatus::PAID->value,
-                    'danger' => SubscriptionPaymentStatus::FAILED->value,
-                ])
+                ->color(fn (?string $state): string => match (true) {
+                    $state === null => 'gray',
+                    str_contains($state, 'منتهية') => 'danger',
+                    (int) filter_var($state, FILTER_SANITIZE_NUMBER_INT) <= 3 => 'danger',
+                    default => 'warning',
+                })
+                ->icon(fn (?string $state): ?string => $state !== null ? 'heroicon-o-clock' : null)
+                ->placeholder('-')
                 ->toggleable(),
 
             TextColumn::make('created_at')
