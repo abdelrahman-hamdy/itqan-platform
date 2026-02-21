@@ -14,9 +14,9 @@ use App\Models\AcademicGradeLevel;
 use App\Models\AcademicPackage;
 use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
-use App\Services\AcademyContextService;
 use App\Models\AcademicTeacherProfile;
 use App\Models\User;
+use App\Services\AcademyContextService;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -400,6 +400,8 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     protected static function getTypeSpecificInfolistSections(): array
     {
         return [
+            static::getSubscriptionStatusAndDatesSection(),
+
             Section::make('معلومات الاشتراك')
                 ->schema([
                     Grid::make(2)
@@ -408,80 +410,8 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                             TextEntry::make('package.name')->label('اسم الباقة'),
                             TextEntry::make('student.name')->label('الطالب'),
                             TextEntry::make('teacher.user.name')->label('المعلم'),
-                            TextEntry::make('status')
-                                ->label('حالة الاشتراك')
-                                ->badge()
-                                ->formatStateUsing(function (mixed $state): string {
-                                    if ($state instanceof SessionSubscriptionStatus) {
-                                        return match ($state) {
-                                            SessionSubscriptionStatus::PENDING => 'قيد الانتظار',
-                                            SessionSubscriptionStatus::ACTIVE => 'نشط',
-                                            SessionSubscriptionStatus::PAUSED => 'متوقف مؤقتاً',
-                                            SessionSubscriptionStatus::CANCELLED => 'ملغي',
-                                        };
-                                    }
-
-                                    return match ($state) {
-                                        'pending' => 'قيد الانتظار',
-                                        'active' => 'نشط',
-                                        'paused' => 'متوقف مؤقتاً',
-                                        'cancelled' => 'ملغي',
-                                        default => (string) $state,
-                                    };
-                                })
-                                ->color(function (mixed $state): string {
-                                    if ($state instanceof SessionSubscriptionStatus) {
-                                        return match ($state) {
-                                            SessionSubscriptionStatus::ACTIVE => 'success',
-                                            SessionSubscriptionStatus::PENDING => 'warning',
-                                            SessionSubscriptionStatus::PAUSED => 'info',
-                                            SessionSubscriptionStatus::CANCELLED => 'danger',
-                                        };
-                                    }
-
-                                    return match ($state) {
-                                        'active' => 'success',
-                                        'pending' => 'warning',
-                                        'paused' => 'info',
-                                        'cancelled' => 'danger',
-                                        default => 'gray',
-                                    };
-                                }),
-                            TextEntry::make('payment_status')
-                                ->label('حالة الدفع')
-                                ->badge()
-                                ->formatStateUsing(function (mixed $state): string {
-                                    if ($state instanceof SubscriptionPaymentStatus) {
-                                        return match ($state) {
-                                            SubscriptionPaymentStatus::PENDING => 'في الانتظار',
-                                            SubscriptionPaymentStatus::PAID => 'مدفوع',
-                                            SubscriptionPaymentStatus::FAILED => 'فشل',
-                                        };
-                                    }
-
-                                    return match ($state) {
-                                        'pending' => 'في الانتظار',
-                                        'paid' => 'مدفوع',
-                                        'failed' => 'فشل',
-                                        default => (string) $state,
-                                    };
-                                })
-                                ->color(function (mixed $state): string {
-                                    if ($state instanceof SubscriptionPaymentStatus) {
-                                        return match ($state) {
-                                            SubscriptionPaymentStatus::PAID => 'success',
-                                            SubscriptionPaymentStatus::PENDING => 'warning',
-                                            SubscriptionPaymentStatus::FAILED => 'danger',
-                                        };
-                                    }
-
-                                    return match ($state) {
-                                        'paid' => 'success',
-                                        'pending' => 'warning',
-                                        'failed' => 'danger',
-                                        default => 'gray',
-                                    };
-                                }),
+                            TextEntry::make('subject.name')->label('المادة'),
+                            TextEntry::make('gradeLevel.name')->label('المستوى الدراسي'),
                         ]),
                 ]),
         ];
@@ -490,7 +420,10 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     public static function infolist(Schema $schema): Schema
     {
         return $schema
-            ->components(static::getTypeSpecificInfolistSections());
+            ->components(array_merge(
+                static::getTypeSpecificInfolistSections(),
+                [static::getExtensionHistoryInfolistSection()]
+            ));
     }
 
     public static function getRelations(): array

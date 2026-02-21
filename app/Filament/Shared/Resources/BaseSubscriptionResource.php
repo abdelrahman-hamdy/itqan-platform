@@ -2,15 +2,6 @@
 
 namespace App\Filament\Shared\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\CheckboxList;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\DatePicker;
-use Filament\Tables\Filters\TrashedFilter;
-use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Tables\Enums\FiltersLayout;
 use App\Enums\SessionDuration;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -18,20 +9,26 @@ use App\Enums\TimeSlot;
 use App\Enums\WeekDays;
 use App\Filament\Shared\Traits\HasSubscriptionActions;
 use App\Models\SavedPaymentMethod;
+use App\Services\AcademyContextService;
 use Filament\Facades\Filament;
-use Filament\Forms;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Infolists;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
-use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Builder;
 
 abstract class BaseSubscriptionResource extends Resource
@@ -40,12 +37,19 @@ abstract class BaseSubscriptionResource extends Resource
 
     // Abstract methods for child classes to implement
     abstract protected static function getBasicInfoFormSection(): Section;
+
     abstract protected static function getPricingFormSection(): Section;
+
     abstract protected static function getTypeSpecificTableColumns(): array;
+
     abstract protected static function getTypeSpecificFilters(): array;
+
     abstract protected static function getTypeSpecificInfolistSections(): array;
+
     abstract protected static function scopeEloquentQuery(Builder $query): Builder;
+
     abstract protected static function getTableActions(): array;
+
     abstract protected static function getTableBulkActions(): array;
 
     // Shared session settings section
@@ -320,6 +324,72 @@ abstract class BaseSubscriptionResource extends Resource
             ])
             ->collapsed()
             ->visible(fn ($record) => ! empty($record->metadata['extensions']));
+    }
+
+    // Shared subscription status and dates infolist section
+    protected static function getSubscriptionStatusAndDatesSection(): Section
+    {
+        return Section::make('حالة الاشتراك والمواعيد')
+            ->schema([
+                Grid::make(3)
+                    ->schema([
+                        TextEntry::make('status')
+                            ->label('حالة الاشتراك')
+                            ->badge()
+                            ->weight(FontWeight::Bold)
+                            ->formatStateUsing(fn (mixed $state): string => match ($state instanceof SessionSubscriptionStatus ? $state->value : $state) {
+                                SessionSubscriptionStatus::PENDING->value => 'قيد الانتظار',
+                                SessionSubscriptionStatus::ACTIVE->value => 'نشط',
+                                SessionSubscriptionStatus::PAUSED->value => 'متوقف مؤقتاً',
+                                SessionSubscriptionStatus::CANCELLED->value => 'ملغي',
+                                default => (string) $state,
+                            })
+                            ->color(fn (mixed $state): string => match ($state instanceof SessionSubscriptionStatus ? $state->value : $state) {
+                                SessionSubscriptionStatus::ACTIVE->value => 'success',
+                                SessionSubscriptionStatus::PENDING->value => 'warning',
+                                SessionSubscriptionStatus::PAUSED->value => 'info',
+                                SessionSubscriptionStatus::CANCELLED->value => 'danger',
+                                default => 'gray',
+                            }),
+                        TextEntry::make('payment_status')
+                            ->label('حالة الدفع')
+                            ->badge()
+                            ->formatStateUsing(fn (mixed $state): string => match ($state instanceof SubscriptionPaymentStatus ? $state->value : $state) {
+                                SubscriptionPaymentStatus::PENDING->value => 'في الانتظار',
+                                SubscriptionPaymentStatus::PAID->value => 'مدفوع',
+                                SubscriptionPaymentStatus::FAILED->value => 'فشل',
+                                default => (string) $state,
+                            })
+                            ->color(fn (mixed $state): string => match ($state instanceof SubscriptionPaymentStatus ? $state->value : $state) {
+                                SubscriptionPaymentStatus::PAID->value => 'success',
+                                SubscriptionPaymentStatus::PENDING->value => 'warning',
+                                SubscriptionPaymentStatus::FAILED->value => 'danger',
+                                default => 'gray',
+                            }),
+                        TextEntry::make('auto_renew')
+                            ->label('التجديد التلقائي')
+                            ->badge()
+                            ->formatStateUsing(fn ($state): string => $state ? 'مفعّل' : 'معطّل')
+                            ->color(fn ($state): string => $state ? 'success' : 'gray'),
+                    ]),
+                Grid::make(3)
+                    ->schema([
+                        TextEntry::make('starts_at')
+                            ->label('تاريخ البدء')
+                            ->dateTime('Y-m-d')
+                            ->placeholder('لم يتم التحديد'),
+                        TextEntry::make('ends_at')
+                            ->label('تاريخ الانتهاء')
+                            ->dateTime('Y-m-d')
+                            ->placeholder('لم يتم التحديد')
+                            ->color(fn ($record) => $record?->ends_at && $record->ends_at->isPast() ? 'danger' : null)
+                            ->weight(fn ($record) => $record?->ends_at && $record->ends_at->isPast() ? FontWeight::Bold : null)
+                            ->helperText(fn ($record) => $record?->ends_at && $record->ends_at->isPast() ? 'منتهي الصلاحية' : null),
+                        TextEntry::make('created_at')
+                            ->label('تاريخ الإنشاء')
+                            ->dateTime('Y-m-d H:i'),
+                    ]),
+            ]);
     }
 
     // ========================================

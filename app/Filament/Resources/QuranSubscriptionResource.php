@@ -2,60 +2,61 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use App\Models\QuranCircle;
-use App\Models\User;
-use App\Models\QuranTeacherProfile;
-use Exception;
-use Log;
-use App\Models\QuranPackage;
-use Filament\Schemas\Schema;
-use Filament\Actions\ActionGroup;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Infolists\Components\TextEntry;
-use App\Enums\WeekDays;
-use App\Enums\TimeSlot;
-use App\Filament\Resources\QuranSubscriptionResource\Pages\ListQuranSubscriptions;
-use App\Filament\Resources\QuranSubscriptionResource\Pages\CreateQuranSubscription;
-use App\Filament\Resources\QuranSubscriptionResource\Pages\ViewQuranSubscription;
-use App\Filament\Resources\QuranSubscriptionResource\Pages\EditQuranSubscription;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Enums\TimeSlot;
 use App\Enums\UserType;
-use App\Filament\Resources\QuranSubscriptionResource\Pages;
+use App\Enums\WeekDays;
+use App\Filament\Resources\QuranSubscriptionResource\Pages\CreateQuranSubscription;
+use App\Filament\Resources\QuranSubscriptionResource\Pages\EditQuranSubscription;
+use App\Filament\Resources\QuranSubscriptionResource\Pages\ListQuranSubscriptions;
+use App\Filament\Resources\QuranSubscriptionResource\Pages\ViewQuranSubscription;
 use App\Filament\Shared\Resources\BaseSubscriptionResource;
+use App\Models\QuranCircle;
+use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
+use App\Models\QuranTeacherProfile;
+use App\Models\User;
 use App\Services\AcademyContextService;
-use Filament\Forms;
+use Exception;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Infolists;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Log;
 
 class QuranSubscriptionResource extends BaseSubscriptionResource
 {
     protected static ?string $model = QuranSubscription::class;
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-text';
+
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
+
     protected static ?string $navigationLabel = 'اشتراكات القرآن';
+
     protected static ?string $modelLabel = 'اشتراك قرآن';
+
     protected static ?string $pluralModelLabel = 'اشتراكات القرآن';
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة القرآن';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة القرآن';
+
     protected static ?int $navigationSort = 6;
 
     protected static function getBasicInfoFormSection(): Section
@@ -414,6 +415,8 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
     protected static function getTypeSpecificInfolistSections(): array
     {
         return [
+            static::getSubscriptionStatusAndDatesSection(),
+
             Section::make('معلومات الاشتراك')
                 ->schema([
                     Grid::make(2)

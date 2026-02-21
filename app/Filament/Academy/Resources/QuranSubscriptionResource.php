@@ -13,9 +13,9 @@ use App\Filament\Shared\Resources\BaseSubscriptionResource;
 use App\Models\QuranCircle;
 use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
-use App\Services\AcademyContextService;
 use App\Models\QuranTeacherProfile;
 use App\Models\User;
+use App\Services\AcademyContextService;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -388,6 +388,8 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
     protected static function getTypeSpecificInfolistSections(): array
     {
         return [
+            static::getSubscriptionStatusAndDatesSection(),
+
             Section::make('معلومات الاشتراك')
                 ->schema([
                     Grid::make(2)
@@ -415,6 +417,7 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                             TextEntry::make('total_sessions')->label('إجمالي الجلسات'),
                             TextEntry::make('total_sessions_scheduled')->label('المجدولة'),
                             TextEntry::make('total_sessions_completed')->label('المكتملة'),
+                            TextEntry::make('total_sessions_missed')->label('الفائتة'),
                             TextEntry::make('sessions_remaining')
                                 ->label('المتبقية')
                                 ->badge()
@@ -447,7 +450,10 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
     public static function infolist(Schema $schema): Schema
     {
         return $schema
-            ->components(static::getTypeSpecificInfolistSections());
+            ->components(array_merge(
+                static::getTypeSpecificInfolistSections(),
+                [static::getExtensionHistoryInfolistSection()]
+            ));
     }
 
     public static function getRelations(): array
