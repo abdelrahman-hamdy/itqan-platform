@@ -96,7 +96,6 @@ trait HasSubscriptionActions
                     ->where('status', 'pending')
                     ->update([
                         'status' => 'cancelled',
-                        'cancelled_at' => now(),
                     ]);
 
                 Notification::make()
@@ -145,7 +144,6 @@ trait HasSubscriptionActions
                             ->where('status', 'pending')
                             ->update([
                                 'status' => 'cancelled',
-                                'cancelled_at' => now(),
                             ]);
 
                         $cancelledCount++;

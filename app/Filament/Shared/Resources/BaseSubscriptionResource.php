@@ -285,6 +285,8 @@ abstract class BaseSubscriptionResource extends Resource
                     );
                 }),
 
+            static::getExpiredPendingFilter(),
+
             TrashedFilter::make()->label(__('filament.filters.trashed')),
         ];
     }

@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\SessionRequestStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\TrialRequestStatus;
 use App\Enums\UserType;
 use App\Filament\Resources\AcademicPackageResource;
@@ -194,6 +195,20 @@ class SuperAdminControlPanelWidget extends Widget
                         'filters[status][value]' => 'active',
                     ]),
                 ],
+                [
+                    'count' => QuranSubscription::where('academy_id', $academyId)
+                        ->where('status', SessionSubscriptionStatus::PENDING->value)
+                        ->where('payment_status', SubscriptionPaymentStatus::PENDING->value)
+                        ->where('created_at', '<', now()->subHours(
+                            config('subscriptions.pending.expires_after_hours', 48)
+                        ))->count(),
+                    'label' => 'اشتراكات في فترة السماح',
+                    'icon' => 'heroicon-o-exclamation-triangle',
+                    'color' => 'danger',
+                    'url' => route('filament.admin.resources.quran-subscriptions.index', [
+                        'filters[expired_pending][isActive]' => '1',
+                    ]),
+                ],
             ],
             'sessions' => $this->getSessionTypeData(
                 QuranSession::where('academy_id', $academyId),
@@ -233,6 +248,20 @@ class SuperAdminControlPanelWidget extends Widget
                     'color' => 'danger',
                     'url' => route('filament.admin.resources.academic-subscriptions.index', [
                         'filters[status][value]' => 'active',
+                    ]),
+                ],
+                [
+                    'count' => AcademicSubscription::where('academy_id', $academyId)
+                        ->where('status', SessionSubscriptionStatus::PENDING->value)
+                        ->where('payment_status', SubscriptionPaymentStatus::PENDING->value)
+                        ->where('created_at', '<', now()->subHours(
+                            config('subscriptions.pending.expires_after_hours', 48)
+                        ))->count(),
+                    'label' => 'اشتراكات في فترة السماح',
+                    'icon' => 'heroicon-o-exclamation-triangle',
+                    'color' => 'danger',
+                    'url' => route('filament.admin.resources.academic-subscriptions.index', [
+                        'filters[expired_pending][isActive]' => '1',
                     ]),
                 ],
                 [
