@@ -63,58 +63,42 @@ class SuperAdminControlPanelWidget extends Widget
 
     public string $activeTab = 'quran';
 
+    public string $quranPeriod = 'today';
+
+    public string $academicPeriod = 'today';
+
     public function getViewData(): array
     {
         $academy = AcademyContextService::getCurrentAcademy();
 
         if (! $academy) {
             return [
-                'quran' => ['pending' => [], 'sessions' => ['total' => 0, 'ongoing' => 0, 'completed' => 0, 'scheduled' => 0, 'cancelled' => 0]],
+                'quran' => ['pending' => [], 'sessions' => $this->emptySessionData()],
                 'academic' => ['pending' => [], 'sessions' => []],
                 'general' => ['pending' => [], 'inactiveUsers' => []],
-                'quickStats' => ['total_pending' => 0, 'today_sessions' => 0, 'ongoing_sessions' => 0, 'completed_today' => 0, 'active_subscriptions' => 0],
+                'totalPending' => 0,
                 'actions' => ['quran' => [], 'academic' => [], 'general' => []],
                 'academyName' => '',
+                'periodLabels' => $this->getPeriodLabels(),
             ];
         }
 
-        $cacheKey = 'sa_cp_' . $academy->id;
+        $cacheKey = 'sa_cp_' . $academy->id . '_q' . $this->quranPeriod . '_a' . $this->academicPeriod;
 
         $data = Cache::remember($cacheKey, 30, function () use ($academy) {
             $quran = $this->getQuranSectionData($academy);
             $academic = $this->getAcademicSectionData($academy);
             $general = $this->getGeneralSectionData($academy);
 
-            $allPendingCount = collect($quran['pending'])->sum('count')
+            $totalPending = collect($quran['pending'])->sum('count')
                 + collect($academic['pending'])->sum('count')
                 + collect($general['pending'])->sum('count');
-
-            $todaySessions = $quran['sessions']['total'];
-            $ongoingSessions = $quran['sessions']['ongoing'];
-            $completedToday = $quran['sessions']['completed'];
-
-            foreach ($academic['sessions'] as $sessionType) {
-                $todaySessions += $sessionType['total'];
-                $ongoingSessions += $sessionType['ongoing'];
-                $completedToday += $sessionType['completed'];
-            }
-
-            $activeSubscriptions = QuranSubscription::where('academy_id', $academy->id)
-                    ->where('status', SessionSubscriptionStatus::ACTIVE->value)->count()
-                + AcademicSubscription::where('academy_id', $academy->id)
-                    ->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
 
             return [
                 'quran' => $quran,
                 'academic' => $academic,
                 'general' => $general,
-                'quickStats' => [
-                    'total_pending' => $allPendingCount,
-                    'today_sessions' => $todaySessions,
-                    'ongoing_sessions' => $ongoingSessions,
-                    'completed_today' => $completedToday,
-                    'active_subscriptions' => $activeSubscriptions,
-                ],
+                'totalPending' => $totalPending,
                 'academyName' => $academy->name,
             ];
         });
@@ -124,30 +108,58 @@ class SuperAdminControlPanelWidget extends Widget
             'academic' => $this->getAcademicActions(),
             'general' => $this->getGeneralActions(),
         ];
+        $data['periodLabels'] = $this->getPeriodLabels();
 
         return $data;
+    }
+
+    private function getPeriodLabels(): array
+    {
+        return [
+            'today' => 'اليوم',
+            'week' => 'الأسبوع',
+            'month' => 'الشهر',
+            'all' => 'الكل',
+        ];
+    }
+
+    private function getPeriodRange(string $period): ?array
+    {
+        return match ($period) {
+            'today' => [now()->startOfDay(), now()->endOfDay()],
+            'week' => [now()->startOfWeek(), now()->endOfDay()],
+            'month' => [now()->startOfMonth(), now()->endOfDay()],
+            default => null,
+        };
+    }
+
+    private function emptySessionData(): array
+    {
+        return [
+            'total' => 0, 'scheduled' => 0, 'ongoing' => 0,
+            'completed' => 0, 'cancelled' => 0,
+            'label' => '', 'icon' => '', 'color' => '', 'url' => '',
+        ];
     }
 
     private function getQuranSectionData(Academy $academy): array
     {
         $academyId = $academy->id;
-        $todayStart = now()->startOfDay();
-        $todayEnd = now()->endOfDay();
+        $period = $this->getPeriodRange($this->quranPeriod);
 
         return [
             'pending' => [
-                'subscriptions' => [
+                [
                     'count' => QuranSubscription::where('academy_id', $academyId)
                         ->where('status', SessionSubscriptionStatus::PENDING->value)->count(),
-                    'label' => 'اشتراكات قرآن معلقة',
+                    'label' => 'اشتراكات معلقة',
                     'icon' => 'heroicon-o-credit-card',
                     'color' => 'warning',
                     'url' => route('filament.admin.resources.quran-subscriptions.index', [
                         'filters[status][value]' => 'pending',
                     ]),
-                    'urgent' => true,
                 ],
-                'trial_requests' => [
+                [
                     'count' => QuranTrialRequest::where('academy_id', $academyId)
                         ->where('status', TrialRequestStatus::PENDING->value)->count(),
                     'label' => 'طلبات تجربة',
@@ -156,9 +168,8 @@ class SuperAdminControlPanelWidget extends Widget
                     'url' => route('filament.admin.resources.quran-trial-requests.index', [
                         'filters[status][value]' => 'pending',
                     ]),
-                    'urgent' => true,
                 ],
-                'session_requests' => [
+                [
                     'count' => Schema::hasTable('session_requests')
                         ? SessionRequest::where('academy_id', $academyId)
                             ->whereIn('status', [
@@ -170,26 +181,23 @@ class SuperAdminControlPanelWidget extends Widget
                     'icon' => 'heroicon-o-calendar',
                     'color' => 'warning',
                     'url' => null,
-                    'urgent' => true,
                 ],
-                'expiring_subs' => [
+                [
                     'count' => QuranSubscription::where('academy_id', $academyId)
                         ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                         ->where('ends_at', '<=', now()->addDays(7))
                         ->where('ends_at', '>', now())->count(),
                     'label' => 'اشتراكات تنتهي قريباً',
-                    'icon' => 'heroicon-o-exclamation-triangle',
+                    'icon' => 'heroicon-o-clock',
                     'color' => 'danger',
                     'url' => route('filament.admin.resources.quran-subscriptions.index', [
                         'filters[status][value]' => 'active',
                     ]),
-                    'urgent' => true,
                 ],
             ],
             'sessions' => $this->getSessionTypeData(
                 QuranSession::where('academy_id', $academyId),
-                $todayStart,
-                $todayEnd,
+                $period,
                 'جلسات القرآن',
                 'heroicon-o-book-open',
                 'success',
@@ -201,36 +209,33 @@ class SuperAdminControlPanelWidget extends Widget
     private function getAcademicSectionData(Academy $academy): array
     {
         $academyId = $academy->id;
-        $todayStart = now()->startOfDay();
-        $todayEnd = now()->endOfDay();
+        $period = $this->getPeriodRange($this->academicPeriod);
 
         return [
             'pending' => [
-                'subscriptions' => [
+                [
                     'count' => AcademicSubscription::where('academy_id', $academyId)
                         ->where('status', SessionSubscriptionStatus::PENDING->value)->count(),
-                    'label' => 'اشتراكات أكاديمية معلقة',
+                    'label' => 'اشتراكات معلقة',
                     'icon' => 'heroicon-o-credit-card',
                     'color' => 'warning',
                     'url' => route('filament.admin.resources.academic-subscriptions.index', [
                         'filters[status][value]' => 'pending',
                     ]),
-                    'urgent' => true,
                 ],
-                'expiring_subs' => [
+                [
                     'count' => AcademicSubscription::where('academy_id', $academyId)
                         ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                         ->where('ends_at', '<=', now()->addDays(7))
                         ->where('ends_at', '>', now())->count(),
                     'label' => 'اشتراكات تنتهي قريباً',
-                    'icon' => 'heroicon-o-exclamation-triangle',
+                    'icon' => 'heroicon-o-clock',
                     'color' => 'danger',
                     'url' => route('filament.admin.resources.academic-subscriptions.index', [
                         'filters[status][value]' => 'active',
                     ]),
-                    'urgent' => true,
                 ],
-                'homework' => [
+                [
                     'count' => AcademicHomeworkSubmission::where('academy_id', $academyId)
                             ->whereIn('submission_status', [
                                 HomeworkSubmissionStatus::SUBMITTED->value,
@@ -249,9 +254,8 @@ class SuperAdminControlPanelWidget extends Widget
                     'url' => route('filament.admin.resources.homework-submissions.index', [
                         'filters[submission_status][value]' => 'submitted',
                     ]),
-                    'urgent' => false,
                 ],
-                'reviews' => [
+                [
                     'count' => CourseReview::where('academy_id', $academyId)
                             ->where('is_approved', false)->count()
                         + TeacherReview::where('academy_id', $academyId)
@@ -262,23 +266,20 @@ class SuperAdminControlPanelWidget extends Widget
                     'url' => route('filament.admin.resources.teacher-reviews.index', [
                         'filters[is_approved][value]' => '0',
                     ]),
-                    'urgent' => false,
                 ],
             ],
             'sessions' => [
                 'academic' => $this->getSessionTypeData(
                     AcademicSession::where('academy_id', $academyId),
-                    $todayStart,
-                    $todayEnd,
-                    'الجلسات الأكاديمية',
+                    $period,
+                    'جلسات أكاديمية',
                     'heroicon-o-academic-cap',
                     'info',
                     AcademicSessionResource::getUrl('index'),
                 ),
                 'interactive' => $this->getSessionTypeData(
                     InteractiveCourseSession::where('academy_id', $academyId),
-                    $todayStart,
-                    $todayEnd,
+                    $period,
                     'جلسات تفاعلية',
                     'heroicon-o-video-camera',
                     'primary',
@@ -294,7 +295,7 @@ class SuperAdminControlPanelWidget extends Widget
 
         return [
             'pending' => [
-                'pending_payments' => [
+                [
                     'count' => Payment::where('academy_id', $academyId)
                         ->where('status', PaymentStatus::PENDING->value)->count(),
                     'label' => 'مدفوعات معلقة',
@@ -303,21 +304,19 @@ class SuperAdminControlPanelWidget extends Widget
                     'url' => route('filament.admin.resources.payments.index', [
                         'filters[status][values][0]' => 'pending',
                     ]),
-                    'urgent' => true,
                 ],
-                'failed_payments' => [
+                [
                     'count' => Payment::where('academy_id', $academyId)
                         ->where('status', PaymentStatus::FAILED->value)
                         ->whereDate('created_at', today())->count(),
                     'label' => 'مدفوعات فاشلة اليوم',
-                    'icon' => 'heroicon-o-exclamation-circle',
+                    'icon' => 'heroicon-o-x-circle',
                     'color' => 'danger',
                     'url' => route('filament.admin.resources.payments.index', [
                         'filters[status][values][0]' => 'failed',
                     ]),
-                    'urgent' => true,
                 ],
-                'business_requests' => [
+                [
                     'count' => BusinessServiceRequest::where('status', BusinessRequestStatus::PENDING->value)->count(),
                     'label' => 'طلبات خدمات',
                     'icon' => 'heroicon-o-briefcase',
@@ -325,7 +324,6 @@ class SuperAdminControlPanelWidget extends Widget
                     'url' => route('filament.admin.resources.business-service-requests.index', [
                         'filters[status][value]' => 'pending',
                     ]),
-                    'urgent' => false,
                 ],
             ],
             'inactiveUsers' => [
@@ -333,49 +331,53 @@ class SuperAdminControlPanelWidget extends Widget
                     'count' => User::where('academy_id', $academyId)
                         ->where('active_status', false)
                         ->where('user_type', UserType::STUDENT->value)->count(),
-                    'label' => 'طلاب غير نشطين',
+                    'label' => 'طلاب',
                     'icon' => 'heroicon-o-user',
                     'color' => 'gray',
                     'url' => StudentProfileResource::getUrl('index'),
-                    'urgent' => false,
                 ],
                 [
                     'count' => User::where('academy_id', $academyId)
                         ->where('active_status', false)
                         ->where('user_type', UserType::QURAN_TEACHER->value)->count(),
-                    'label' => 'معلمو قرآن غير نشطين',
+                    'label' => 'معلمو قرآن',
                     'icon' => 'heroicon-o-book-open',
                     'color' => 'gray',
-                    'url' => QuranTeacherProfileResource::getUrl('index'),
-                    'urgent' => false,
+                    'url' => QuranTeacherProfileResource::getUrl('index') . '?' . http_build_query([
+                        'filters' => ['active_status' => ['value' => '0']],
+                    ]),
                 ],
                 [
                     'count' => User::where('academy_id', $academyId)
                         ->where('active_status', false)
                         ->where('user_type', UserType::ACADEMIC_TEACHER->value)->count(),
-                    'label' => 'معلمون أكاديميون غير نشطين',
+                    'label' => 'معلمون أكاديميون',
                     'icon' => 'heroicon-o-academic-cap',
                     'color' => 'gray',
-                    'url' => AcademicTeacherProfileResource::getUrl('index'),
-                    'urgent' => false,
+                    'url' => AcademicTeacherProfileResource::getUrl('index') . '?' . http_build_query([
+                        'filters' => ['active_status' => ['value' => '0']],
+                    ]),
                 ],
                 [
                     'count' => User::where('academy_id', $academyId)
                         ->where('active_status', false)
                         ->where('user_type', UserType::PARENT->value)->count(),
-                    'label' => 'أولياء أمور غير نشطين',
+                    'label' => 'أولياء أمور',
                     'icon' => 'heroicon-o-users',
                     'color' => 'gray',
                     'url' => ParentProfileResource::getUrl('index'),
-                    'urgent' => false,
                 ],
             ],
         ];
     }
 
-    private function getSessionTypeData($query, $todayStart, $todayEnd, string $label, string $icon, string $color, string $url): array
+    private function getSessionTypeData($query, ?array $period, string $label, string $icon, string $color, string $url): array
     {
-        $baseQuery = (clone $query)->whereBetween('scheduled_at', [$todayStart, $todayEnd]);
+        $baseQuery = clone $query;
+
+        if ($period !== null) {
+            $baseQuery = $baseQuery->whereBetween('scheduled_at', $period);
+        }
 
         return [
             'total' => (clone $baseQuery)->count(),
