@@ -378,6 +378,7 @@ abstract class BaseSubscriptionResource extends Resource
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)
+            ->recordUrl(fn ($record) => static::getUrl('view', ['record' => $record]))
             ->recordActions(static::getTableActions())
             ->toolbarActions(static::getTableBulkActions())
             ->defaultSort('created_at', 'desc');
