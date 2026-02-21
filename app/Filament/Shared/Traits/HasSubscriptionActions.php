@@ -201,45 +201,13 @@ trait HasSubscriptionActions
             ->color('success')
             ->requiresConfirmation()
             ->modalHeading('استئناف الاشتراك')
-            ->modalDescription(function (BaseSubscription $record) {
-                if (! $record->paused_at) {
-                    return 'سيتم استئناف الاشتراك';
-                }
-
-                $days = (int) $record->paused_at->diffInDays(now(), absolute: true);
-                $hours = (int) $record->paused_at->copy()->addDays($days)->diffInHours(now(), absolute: true);
-
-                if ($days > 0 && $hours > 0) {
-                    $duration = "{$days} يوم و {$hours} ساعة";
-                } elseif ($days > 0) {
-                    $duration = "{$days} يوم";
-                } elseif ($hours > 0) {
-                    $duration = "{$hours} ساعة";
-                } else {
-                    $duration = 'أقل من ساعة';
-                }
-
-                return "سيتم تمديد تاريخ الانتهاء بمدة التوقف ({$duration})";
-            })
+            ->modalDescription('سيتم استئناف الاشتراك وإعادة تفعيله')
             ->action(function (BaseSubscription $record) {
-                $updateData = [
+                $record->update([
                     'status' => SessionSubscriptionStatus::ACTIVE,
                     'paused_at' => null,
                     'pause_reason' => null,
-                ];
-
-                // Extend ends_at by exact paused duration
-                if ($record->paused_at && $record->ends_at) {
-                    $pausedSeconds = (int) $record->paused_at->diffInSeconds(now(), absolute: true);
-                    $updateData['ends_at'] = $record->ends_at->copy()->addSeconds($pausedSeconds);
-
-                    // For Academic: also update end_date
-                    if ($record instanceof AcademicSubscription) {
-                        $updateData['end_date'] = $updateData['ends_at'];
-                    }
-                }
-
-                $record->update($updateData);
+                ]);
 
                 Notification::make()
                     ->success()
