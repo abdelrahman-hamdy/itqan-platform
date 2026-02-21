@@ -202,21 +202,29 @@ class EnsureSubscriptionAccess
         Request $request,
         ?string $reason = null
     ): void {
-        SubscriptionAccessLog::create([
-            'tenant_id' => $request->attributes->get('academy')?->id ?? AcademyContextService::getApiContextAcademyId(),
-            'subscription_type' => $subscription ? get_class($subscription) : null,
-            'subscription_id' => $subscription?->id,
-            'user_id' => $user->id,
-            'platform' => $this->detectPlatform($request),
-            'action' => $action,
-            'resource_type' => $resourceType,
-            'resource_id' => $resourceId,
-            'metadata' => json_encode([
-                'user_agent' => $request->userAgent(),
-                'ip' => $request->ip(),
-                'reason' => $reason,
-            ]),
-        ]);
+        try {
+            SubscriptionAccessLog::create([
+                'tenant_id' => $request->attributes->get('academy')?->id ?? AcademyContextService::getApiContextAcademyId(),
+                'subscription_type' => $subscription ? get_class($subscription) : 'none',
+                'subscription_id' => $subscription?->id,
+                'user_id' => $user->id,
+                'platform' => $this->detectPlatform($request),
+                'action' => $action,
+                'resource_type' => $resourceType,
+                'resource_id' => $resourceId,
+                'metadata' => json_encode([
+                    'user_agent' => $request->userAgent(),
+                    'ip' => $request->ip(),
+                    'reason' => $reason,
+                ]),
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to log subscription access', [
+                'error' => $e->getMessage(),
+                'user_id' => $user->id,
+                'action' => $action,
+            ]);
+        }
     }
 
     /**
