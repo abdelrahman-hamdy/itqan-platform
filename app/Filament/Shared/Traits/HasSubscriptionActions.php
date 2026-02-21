@@ -201,9 +201,26 @@ trait HasSubscriptionActions
             ->color('success')
             ->requiresConfirmation()
             ->modalHeading('استئناف الاشتراك')
-            ->modalDescription(fn (BaseSubscription $record) => $record->paused_at
-                ? 'سيتم تمديد تاريخ الانتهاء بمدة التوقف ('.now()->diffInDays($record->paused_at).' يوم)'
-                : 'سيتم استئناف الاشتراك')
+            ->modalDescription(function (BaseSubscription $record) {
+                if (! $record->paused_at) {
+                    return 'سيتم استئناف الاشتراك';
+                }
+
+                $days = (int) $record->paused_at->diffInDays(now(), absolute: true);
+                $hours = (int) $record->paused_at->copy()->addDays($days)->diffInHours(now(), absolute: true);
+
+                if ($days > 0 && $hours > 0) {
+                    $duration = "{$days} يوم و {$hours} ساعة";
+                } elseif ($days > 0) {
+                    $duration = "{$days} يوم";
+                } elseif ($hours > 0) {
+                    $duration = "{$hours} ساعة";
+                } else {
+                    $duration = 'أقل من ساعة';
+                }
+
+                return "سيتم تمديد تاريخ الانتهاء بمدة التوقف ({$duration})";
+            })
             ->action(function (BaseSubscription $record) {
                 $updateData = [
                     'status' => SessionSubscriptionStatus::ACTIVE,
@@ -211,10 +228,10 @@ trait HasSubscriptionActions
                     'pause_reason' => null,
                 ];
 
-                // Extend ends_at by paused duration
+                // Extend ends_at by exact paused duration
                 if ($record->paused_at && $record->ends_at) {
-                    $pausedDays = now()->diffInDays($record->paused_at);
-                    $updateData['ends_at'] = $record->ends_at->copy()->addDays($pausedDays);
+                    $pausedSeconds = (int) $record->paused_at->diffInSeconds(now(), absolute: true);
+                    $updateData['ends_at'] = $record->ends_at->copy()->addSeconds($pausedSeconds);
 
                     // For Academic: also update end_date
                     if ($record instanceof AcademicSubscription) {
