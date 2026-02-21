@@ -33,10 +33,10 @@
     padding: 0.75rem 1rem;
 }
 
-/* Hide Filament's own filter header on mobile/tablet (our toggle replaces it).
-   CSS rule survives Livewire DOM morphing unlike inline styles. */
+/* Hide only Filament's filter heading text on mobile/tablet (our toggle provides it).
+   Keep the reset link visible. CSS survives Livewire DOM morphing. */
 @media (max-width: 1023px) {
-    .fi-ta-filters-above-content-ctn .fi-ta-filters-header {
+    .fi-ta-filters-above-content-ctn .fi-ta-filters-heading {
         display: none !important;
     }
 }
