@@ -290,7 +290,7 @@ abstract class BaseSubscriptionResource extends Resource
                 ->query(function (Builder $query, array $data): Builder {
                     return $query->when(
                         $data['date'],
-                        fn (Builder $query, $date): Builder => $query->whereDate('end_date', '>=', $date)
+                        fn (Builder $query, $date): Builder => $query->whereDate('ends_at', '>=', $date)
                     );
                 }),
 
@@ -303,7 +303,7 @@ abstract class BaseSubscriptionResource extends Resource
                 ->query(function (Builder $query, array $data): Builder {
                     return $query->when(
                         $data['date'],
-                        fn (Builder $query, $date): Builder => $query->whereDate('end_date', '<=', $date)
+                        fn (Builder $query, $date): Builder => $query->whereDate('ends_at', '<=', $date)
                     );
                 }),
 
