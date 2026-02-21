@@ -30,8 +30,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Verify user is a student
-Route::middleware('api.is.student')->group(function () {
+// Verify user is a student + enforce Sanctum token abilities
+Route::middleware(['api.is.student', 'ability:student:*'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])

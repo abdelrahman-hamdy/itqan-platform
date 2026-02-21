@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Verify user is a teacher
-Route::middleware('api.is.teacher')->group(function () {
+Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])

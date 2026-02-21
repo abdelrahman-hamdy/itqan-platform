@@ -422,4 +422,8 @@ return [
 
     // Circle enrollment
     'login_required_to_join' => 'يجب تسجيل الدخول أولاً للانضمام إلى الحلقة',
+
+    // Security messages
+    'account_inactive' => 'حسابك غير نشط. يرجى التواصل مع الإدارة',
+    'unauthorized_access' => 'غير مصرح لك بالوصول إلى هذه الصفحة',
 ];

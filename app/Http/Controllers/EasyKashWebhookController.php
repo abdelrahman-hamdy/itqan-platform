@@ -577,22 +577,17 @@ class EasyKashWebhookController extends Controller
         $providerRefNum = $request->input('providerRefNum');
 
         // CRITICAL: Try providerRefNum FIRST (most reliable with EasyKash)
-        // EasyKash has a bug where customerReference is often wrong, but providerRefNum is unique per transaction
+        // Match by gateway_transaction_id to ensure we find the exact payment, not just any recent one
         if ($providerRefNum) {
-            // Find the most recent pending payment (within last 10 minutes)
             $payment = Payment::withoutGlobalScopes()->with('academy')
                 ->where('payment_method', 'easykash')
-                ->where('status', PaymentStatus::PENDING)
-                ->where('created_at', '>=', now()->subMinutes(10))
-                ->orderBy('created_at', 'desc')
+                ->where('gateway_transaction_id', $providerRefNum)
                 ->first();
 
             if ($payment) {
-                Log::channel('payments')->info('EasyKash callback: found payment by recent pending lookup', [
+                Log::channel('payments')->info('EasyKash callback: found payment by gateway_transaction_id', [
                     'payment_id' => $payment->id,
                     'provider_ref_num' => $providerRefNum,
-                    'customer_reference_received' => $customerReference,
-                    'gateway_intent_id_in_db' => $payment->gateway_intent_id,
                 ]);
             }
         }
@@ -695,34 +690,36 @@ class EasyKashWebhookController extends Controller
                 ]);
 
                 if ($result->isSuccessful()) {
-                    // Update payment if webhook hasn't done it yet
-                    if ($payment->status !== PaymentStatus::COMPLETED) {
+                    // Use DB transaction with lock to prevent race condition with webhook
+                    $activated = \Illuminate\Support\Facades\DB::transaction(function () use ($payment, $result) {
+                        $lockedPayment = Payment::withoutGlobalScopes()->lockForUpdate()->find($payment->id);
+                        if (! $lockedPayment || $lockedPayment->status === PaymentStatus::COMPLETED) {
+                            return false;
+                        }
+
                         Log::channel('payments')->info('EasyKash callback: updating payment to completed', [
-                            'payment_id' => $payment->id,
-                            'old_status' => $payment->status->value,
+                            'payment_id' => $lockedPayment->id,
+                            'old_status' => $lockedPayment->status->value,
                         ]);
 
-                        $payment->update([
+                        $lockedPayment->update([
                             'status' => PaymentStatus::COMPLETED,
                             'payment_date' => now(),
                             'paid_at' => now(),
-                            'receipt_number' => $payment->receipt_number ?? ('REC-'.$payment->academy_id.'-'.$payment->id.'-'.time()),
-                            'gateway_transaction_id' => $result->transactionId ?? $payment->gateway_transaction_id,
+                            'receipt_number' => $lockedPayment->receipt_number ?? ('REC-'.$lockedPayment->academy_id.'-'.$lockedPayment->id.'-'.time()),
+                            'gateway_transaction_id' => $result->transactionId ?? $lockedPayment->gateway_transaction_id,
                         ]);
 
-                        // Activate subscription
-                        Log::channel('payments')->info('EasyKash callback: calling handleSuccessfulPayment', [
-                            'payment_id' => $payment->id,
-                            'payable_type' => $payment->payable_type,
-                            'payable_id' => $payment->payable_id,
-                        ]);
-
-                        $this->handleSuccessfulPayment($payment);
+                        $this->handleSuccessfulPayment($lockedPayment);
 
                         Log::channel('payments')->info('EasyKash callback: subscription activation completed', [
-                            'payment_id' => $payment->id,
+                            'payment_id' => $lockedPayment->id,
                         ]);
-                    } else {
+
+                        return true;
+                    });
+
+                    if (! $activated) {
                         Log::channel('payments')->info('EasyKash callback: payment already completed (webhook processed it first)', [
                             'payment_id' => $payment->id,
                         ]);

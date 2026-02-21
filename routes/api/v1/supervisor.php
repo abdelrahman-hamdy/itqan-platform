@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('api.is.supervisor')->group(function () {
+Route::middleware(['api.is.supervisor', 'ability:supervisor:*'])->group(function () {
 
     // Supervised Chat Groups
     Route::prefix('chat')->group(function () {

@@ -70,16 +70,17 @@ class RegisterController extends Controller
 
         return DB::transaction(function () use ($request, $academy) {
             // Create user - User model's boot() hook will auto-create a StudentProfile
-            $user = User::create([
+            $user = new User([
                 'academy_id' => $academy->id,
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'user_type' => UserType::STUDENT->value,
                 'active_status' => true,
             ]);
+            $user->user_type = UserType::STUDENT->value;
+            $user->save();
 
             // Refresh to load the auto-created student profile
             $user->refresh();
@@ -222,16 +223,17 @@ class RegisterController extends Controller
 
         return DB::transaction(function () use ($request, $academy, $studentProfile) {
             // Create user - User model's boot() hook will auto-create a ParentProfile
-            $user = User::create([
+            $user = new User([
                 'academy_id' => $academy->id,
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'user_type' => UserType::PARENT->value,
                 'active_status' => true,
             ]);
+            $user->user_type = UserType::PARENT->value;
+            $user->save();
 
             // Refresh to load the auto-created parent profile
             $user->refresh();
@@ -406,16 +408,17 @@ class RegisterController extends Controller
 
         return DB::transaction(function () use ($request, $academy, $teacherType) {
             // Create user (inactive until approved)
-            $user = User::create([
+            $user = new User([
                 'academy_id' => $academy->id,
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'user_type' => $teacherType,
                 'active_status' => false, // Requires admin approval
             ]);
+            $user->user_type = $teacherType;
+            $user->save();
 
             // Create teacher profile based on type
             // Note: User.active_status = false is the single source of truth for activation

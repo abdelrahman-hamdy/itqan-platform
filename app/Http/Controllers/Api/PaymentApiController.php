@@ -108,7 +108,7 @@ class PaymentApiController extends Controller
                 'data' => $validated,
             ]);
 
-            return $this->error('فشل إنشاء عملية الدفع: '.$e->getMessage(), 500);
+            return $this->error(__('payments.service.unexpected_processing_error'), 500);
         }
     }
 
@@ -176,7 +176,7 @@ class PaymentApiController extends Controller
                 'saved_method_id' => $validated['saved_payment_method_id'],
             ]);
 
-            return $this->error('فشلت عملية الدفع: '.$e->getMessage(), 500);
+            return $this->error(__('payments.service.unexpected_processing_error'), 500);
         }
     }
 

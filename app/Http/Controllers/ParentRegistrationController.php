@@ -267,17 +267,18 @@ class ParentRegistrationController extends Controller
 
             // Create user account FIRST
             // The User model boot() hook will automatically create the ParentProfile
-            $user = User::create([
+            $user = new User([
                 'academy_id' => $academyId,
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'email' => $request->email,
                 'phone' => $request->parent_phone, // Use parent_phone from verification step
                 'password' => Hash::make($request->password),
-                'user_type' => UserType::PARENT->value,
                 // Note: Email verification is now required - removed auto-verification
                 'active_status' => true, // Parents are automatically active upon registration
             ]);
+            $user->user_type = UserType::PARENT->value;
+            $user->save();
 
             // Refresh user to load relationships created by boot() hook
             $user->refresh();

@@ -133,16 +133,14 @@ class ContentSecurityPolicy
         // Font sources
         $fontSrc = "'self' data: ".implode(' ', self::TRUSTED_FONT_SOURCES);
 
-        // Image sources - allow https: for user content but log specific CDNs
+        // Image sources - whitelisted storage providers + CDNs
         $imgSrc = "'self' data: blob: ".implode(' ', self::TRUSTED_IMAGE_SOURCES);
-        // Allow https: for user-uploaded content from various providers
-        $imgSrc .= ' https:';
+        $imgSrc .= " {$subdomains} https://*.digitaloceanspaces.com https://*.s3.amazonaws.com https://*.cloudinary.com";
 
-        // Connect sources - WebSocket for Reverb/Pusher, HTTPS for APIs
+        // Connect sources - WebSocket for Reverb/Pusher, whitelisted API endpoints
         $connectSrc = "'self' ws: wss: blob: {$viteServer} {$subdomains} "
             .implode(' ', self::TRUSTED_CONNECT_SOURCES);
-        // Allow https: for API calls (payment gateways, LiveKit, etc.)
-        $connectSrc .= ' https:';
+        $connectSrc .= ' https://accept.paymob.com https://ksa.paymob.com https://api.easykash.com https://*.livekit.cloud';
 
         // Frame ancestors - allow same-origin for log-viewer iframe
         $frameAncestors = $allowIframe ? "'self'" : "'none'";
@@ -161,7 +159,7 @@ class ContentSecurityPolicy
             "frame-src {$frameSrc}",
             "object-src 'none'",
             "base-uri 'self'",
-            "form-action 'self' https:",
+            "form-action 'self' https://accept.paymob.com https://ksa.paymob.com https://pakistan.paymob.com https://uae.paymob.com https://api.easykash.com",
             "frame-ancestors {$frameAncestors}",
         ];
 

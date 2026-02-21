@@ -82,14 +82,15 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
     {
         parent::boot();
 
-        // Auto-generate admin_code for admin users
+        // Auto-generate admin_code for admin users (with lock to prevent duplicates)
         static::creating(function ($user) {
             if ($user->user_type === UserType::ADMIN->value && empty($user->admin_code)) {
                 $academyId = $user->academy_id ?: 1;
                 $prefix = 'ADM-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
 
-                // Find the highest existing sequence number for this academy
+                // Use lockForUpdate to prevent duplicate codes under concurrent creation
                 $maxCode = static::where('admin_code', 'like', $prefix.'%')
+                    ->lockForUpdate()
                     ->orderByRaw('CAST(SUBSTRING(admin_code, -4) AS UNSIGNED) DESC')
                     ->value('admin_code');
 
@@ -201,7 +202,8 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
         'phone',
         'gender', // Used for teacher profiles via API
         'password',
-        'user_type',
+        // SECURITY: user_type removed from fillable to prevent mass-assignment privilege escalation
+        // Set explicitly: $user->user_type = UserType::STUDENT->value;
         'admin_code',
         // 'status', // ← REMOVED - using active_status only
         // 'role' field removed - using user_type instead

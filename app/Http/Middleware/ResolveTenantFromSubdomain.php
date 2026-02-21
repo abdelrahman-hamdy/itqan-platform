@@ -45,10 +45,7 @@ class ResolveTenantFromSubdomain
             $request->is('livewire-uploads/*') ||
             str_contains($path, 'temp') ||
             str_contains($path, 'upload') ||
-            str_contains($path, 'tmp') ||
-            // Additional safety checks
-            $method === 'POST' && str_contains($request->getContent(), 'livewire') ||
-            $request->ajax() && str_contains($uri, 'livewire')) {
+            str_contains($path, 'tmp')) {
             return $next($request);
         }
 

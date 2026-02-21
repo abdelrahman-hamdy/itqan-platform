@@ -223,21 +223,23 @@ class AuthController extends Controller
                 'last_name' => $request->last_name,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'user_type' => UserType::STUDENT->value,
                 'active_status' => true,
             ]);
+            $user->user_type = UserType::STUDENT->value;
+            $user->save();
         } else {
             // Create new user
-            $user = User::create([
+            $user = new User([
                 'academy_id' => $academy->id,
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'user_type' => UserType::STUDENT->value,
                 'active_status' => true,
             ]);
+            $user->user_type = UserType::STUDENT->value;
+            $user->save();
         }
 
         // Create or update student profile
@@ -413,19 +415,20 @@ class AuthController extends Controller
         }
 
         // Create user
-        $user = User::create([
+        $user = new User([
             'academy_id' => $academy->id,
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
-            'user_type' => $teacherType,
             'active_status' => false, // Will be activated after approval
             'education_level' => $request->education_level,
             'university' => $request->university,
             'years_experience' => $request->years_experience,
         ]);
+        $user->user_type = $teacherType;
+        $user->save();
 
         // Create teacher profile manually (automatic creation is disabled for teachers)
         // Personal info (first_name, last_name, email, phone) is stored ONLY in users table

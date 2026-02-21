@@ -101,17 +101,19 @@ class EnsureSubscriptionAccess
      */
     protected function findQuranSubscriptionForSession($user, $sessionId)
     {
-        // Get the session first
-        $session = QuranSession::find($sessionId);
+        // Get the session first (academy_id enforced by global scope + explicit check)
+        $session = QuranSession::where('id', $sessionId)
+            ->where('academy_id', $user->academy_id)
+            ->first();
 
         if (!$session) {
             return null;
         }
 
-        // Find subscription that matches this student and session's teacher
-        // No status filter — canAccess() will determine if access is allowed
+        // Find subscription that matches this student, teacher, and academy
         return QuranSubscription::where('student_id', $user->id)
             ->where('quran_teacher_id', $session->quran_teacher_id)
+            ->where('academy_id', $user->academy_id)
             ->orderByDesc('created_at')
             ->first();
     }
@@ -121,17 +123,19 @@ class EnsureSubscriptionAccess
      */
     protected function findAcademicSubscriptionForSession($user, $sessionId)
     {
-        // Get the session first
-        $session = AcademicSession::find($sessionId);
+        // Get the session first (academy_id enforced by global scope + explicit check)
+        $session = AcademicSession::where('id', $sessionId)
+            ->where('academy_id', $user->academy_id)
+            ->first();
 
         if (!$session) {
             return null;
         }
 
-        // Find subscription that matches this student and session's teacher
-        // No status filter — canAccess() will determine if access is allowed
+        // Find subscription that matches this student, teacher, and academy
         return AcademicSubscription::where('student_id', $user->id)
             ->where('teacher_id', $session->academic_teacher_id)
+            ->where('academy_id', $user->academy_id)
             ->orderByDesc('created_at')
             ->first();
     }

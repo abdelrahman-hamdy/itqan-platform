@@ -110,6 +110,24 @@ abstract class BaseSession extends Model implements MeetingCapable
     use SoftDeletes;
 
     /**
+     * Auto-populate created_by and updated_by audit fields from authenticated user.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $session) {
+            if (auth()->check() && ! $session->created_by) {
+                $session->created_by = auth()->id();
+            }
+        });
+
+        static::updating(function (self $session) {
+            if (auth()->check()) {
+                $session->updated_by = auth()->id();
+            }
+        });
+    }
+
+    /**
      * Common fillable fields across all session types
      * Child classes should merge their specific fields with this static property
      * IMPORTANT: Made static to allow child classes to access via parent::$baseFillable
@@ -395,14 +413,12 @@ abstract class BaseSession extends Model implements MeetingCapable
      */
     protected function getPreparationMinutes(): int
     {
-        // Try to get academy settings
-        $academy = $this->academy ?? Academy::find($this->academy_id);
+        $academy = $this->getAcademyForSettings();
 
         if ($academy && isset($academy->academic_settings['meeting_settings']['default_preparation_minutes'])) {
             return (int) $academy->academic_settings['meeting_settings']['default_preparation_minutes'];
         }
 
-        // Fallback to default
         return 10;
     }
 
@@ -412,14 +428,12 @@ abstract class BaseSession extends Model implements MeetingCapable
      */
     protected function getEndingBufferMinutes(): int
     {
-        // Try to get academy settings
-        $academy = $this->academy ?? Academy::find($this->academy_id);
+        $academy = $this->getAcademyForSettings();
 
         if ($academy && isset($academy->academic_settings['meeting_settings']['default_buffer_minutes'])) {
             return (int) $academy->academic_settings['meeting_settings']['default_buffer_minutes'];
         }
 
-        // Fallback to default
         return 5;
     }
 
@@ -429,15 +443,25 @@ abstract class BaseSession extends Model implements MeetingCapable
      */
     protected function getGracePeriodMinutes(): int
     {
-        // Try to get academy settings through proper relationship
-        $academy = $this->academy ?? Academy::find($this->academy_id);
+        $academy = $this->getAcademyForSettings();
 
         if ($academy && $academy->settings) {
             return $academy->settings->default_late_tolerance_minutes ?? 15;
         }
 
-        // Fallback to default
         return 15;
+    }
+
+    /**
+     * Get academy with eager loading to prevent N+1 queries across helper methods.
+     */
+    protected function getAcademyForSettings(): ?Academy
+    {
+        if (! $this->relationLoaded('academy')) {
+            $this->load('academy');
+        }
+
+        return $this->academy;
     }
 
     // ========================================

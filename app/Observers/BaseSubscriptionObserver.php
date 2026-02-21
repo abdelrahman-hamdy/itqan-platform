@@ -38,10 +38,7 @@ use Illuminate\Support\Str;
  */
 class BaseSubscriptionObserver
 {
-    /**
-     * Temporary storage for previous status (not persisted to database)
-     */
-    protected array $previousStatuses = [];
+    // Previous status is tracked via $model->getOriginal('status') for thread safety
 
     /**
      * Handle the "creating" event
@@ -141,10 +138,7 @@ class BaseSubscriptionObserver
      */
     public function updating(BaseSubscription $subscription): void
     {
-        // Track status change for broadcasting (store in observer property, not on model)
-        if ($subscription->isDirty('status')) {
-            $this->previousStatuses[$subscription->id] = $subscription->getOriginal('status');
-        }
+        // Status change is tracked via getOriginal('status') in the updated() hook
 
         // Update ended_at when status becomes cancelled
         if ($subscription->isDirty('status')) {
@@ -169,15 +163,11 @@ class BaseSubscriptionObserver
      */
     public function updated(BaseSubscription $subscription): void
     {
-        // Get tracked previous status from observer property
-        $previousStatus = $this->previousStatuses[$subscription->id] ?? null;
-
-        if ($previousStatus !== null && $previousStatus !== $subscription->status) {
+        // Use getOriginal() for thread-safe previous status tracking
+        if ($subscription->wasChanged('status')) {
+            $previousStatus = $subscription->getOriginal('status');
             $this->handleStatusChange($subscription, $previousStatus, $subscription->status);
         }
-
-        // Clean up tracked status
-        unset($this->previousStatuses[$subscription->id]);
 
         // Log significant changes
         $changes = $subscription->getChanges();

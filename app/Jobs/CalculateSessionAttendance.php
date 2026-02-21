@@ -52,6 +52,11 @@ class CalculateSessionAttendance implements ShouldQueue
     public array $backoff = [30, 60, 120];
 
     /**
+     * The number of seconds the job can run before timing out.
+     */
+    public int $timeout = 120;
+
+    /**
      * Execute the job.
      *
      * MULTI-TENANCY: Processes sessions grouped by academy for proper tenant isolation.

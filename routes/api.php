@@ -84,7 +84,7 @@ if (app()->environment('local', 'development')) {
 // PAYMENT API ROUTES (Web Auth - Checkout Pages)
 // These endpoints support Paymob integration and saved payment methods.
 // ============================================================================
-Route::middleware(['web', 'auth'])
+Route::middleware(['web', 'auth', 'throttle:10,1'])
     ->prefix('v1/payments')
     ->group(function () {
         Route::post('/create-intent', [\App\Http\Controllers\Api\PaymentApiController::class, 'createIntent'])

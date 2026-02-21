@@ -42,6 +42,11 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
     public array $backoff = [30, 60, 120];
 
     /**
+     * The number of seconds the job can run before timing out.
+     */
+    public int $timeout = 120;
+
+    /**
      * Create a new job instance.
      */
     public function __construct() {}

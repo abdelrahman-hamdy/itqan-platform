@@ -429,4 +429,8 @@ return [
 
     // Circle enrollment
     'login_required_to_join' => 'You must log in first to join the circle',
+
+    // Security messages
+    'account_inactive' => 'Your account is inactive. Please contact the administration.',
+    'unauthorized_access' => 'You are not authorized to access this page.',
 ];

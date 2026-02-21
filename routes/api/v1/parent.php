@@ -31,7 +31,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Verify user is a parent
-Route::middleware('api.is.parent')->group(function () {
+Route::middleware(['api.is.parent', 'ability:parent:*'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])

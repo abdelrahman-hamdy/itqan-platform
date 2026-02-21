@@ -950,7 +950,14 @@ class LiveKitWebhookController extends Controller
         $apiSecret = config('livekit.api_secret');
 
         if (! $apiKey || ! $apiSecret) {
-            Log::warning('LiveKit API credentials not configured - allowing webhook anyway');
+            if (app()->environment('production')) {
+                throw WebhookValidationException::invalidSignature(
+                    'livekit',
+                    'LiveKit API credentials not configured in production',
+                    $request->all()
+                );
+            }
+            Log::warning('LiveKit API credentials not configured - allowing webhook in dev');
 
             return;
         }

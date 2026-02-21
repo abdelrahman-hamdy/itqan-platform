@@ -32,7 +32,7 @@ class RoleMiddleware
             // Get subdomain from request or use default
             $subdomain = $request->route('subdomain') ?? DefaultAcademy::subdomain();
 
-            return redirect()->route('login', ['subdomain' => $subdomain])->withErrors(['email' => 'حسابك غير نشط. يرجى التواصل مع الإدارة']);
+            return redirect()->route('login', ['subdomain' => $subdomain])->withErrors(['email' => __('auth.account_inactive')]);
         }
 
         // Super admins can access all routes
@@ -76,11 +76,11 @@ class RoleMiddleware
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'غير مصرح لك بالوصول إلى هذه الصفحة',
+                    'message' => __('auth.unauthorized_access'),
                 ], 403);
             }
 
-            abort(403, 'غير مصرح لك بالوصول إلى هذه الصفحة');
+            abort(403, __('auth.unauthorized_access'));
         }
 
         return $next($request);

@@ -93,13 +93,13 @@ Schedule::command('academic-sessions:manage-meetings --force')
     ->runInBackground()
     ->description('Academic session management maintenance during off-hours');
 
-// 🔥 NEW: Reconcile orphaned attendance events (missed webhooks)
+// Reconcile orphaned attendance events (missed webhooks)
 Schedule::job(new \App\Jobs\ReconcileOrphanedAttendanceEvents)
     ->hourly()
     ->withoutOverlapping()
     ->description('Close attendance events orphaned by missed webhooks');
 
-// 🎯 NEW: Calculate attendance for completed sessions (post-meeting)
+// Calculate attendance for completed sessions (post-meeting)
 $calculateAttendanceJob = Schedule::job(new \App\Jobs\CalculateSessionAttendance)
     ->withoutOverlapping()
     ->description('Calculate final attendance from webhook events after sessions end');
@@ -111,7 +111,7 @@ if ($isLocal) {
     $calculateAttendanceJob->everyFiveMinutes(); // Every 5 minutes for production
 }
 
-// 🎥 RECORDING: Stop recordings when session scheduled end time is reached
+// RECORDING: Stop recordings when session scheduled end time is reached
 // Runs every minute to check for sessions with active recordings that have passed their scheduled end time
 Schedule::command('recordings:stop-expired')
     ->name('stop-expired-recordings')
