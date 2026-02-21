@@ -50,7 +50,7 @@ class ChatController extends Controller
         }
 
         $conversations = $query
-            ->with(['participants.participantable', 'lastMessage.sendable'])
+            ->with(['participants.participantable', 'lastMessage.participant.participantable'])
             ->orderBy('updated_at', 'desc')
             ->paginate($request->get('per_page', 20));
 
@@ -437,26 +437,36 @@ class ChatController extends Controller
         }
 
         $messages = Message::where('conversation_id', $id)
-            ->with(['sendable'])
+            ->with(['participant.participantable', 'attachment'])
             ->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 50));
 
         return $this->success([
-            'messages' => collect($messages->items())->map(fn ($message) => [
-                'id' => $message->id,
-                'body' => $message->body,
-                'type' => $message->type,
-                'attachments' => $message->attachments ?? [],
-                'is_mine' => $message->sendable?->id === $user->id,
-                'sender' => [
-                    'id' => $message->sendable?->id,
-                    'name' => $message->sendable?->name,
-                    'avatar' => $message->sendable?->avatar
-                        ? asset('storage/'.$message->sendable->avatar)
-                        : null,
-                ],
-                'created_at' => $message->created_at->toISOString(),
-            ])->toArray(),
+            'messages' => collect($messages->items())->map(function ($message) use ($user) {
+                $sender = $message->sendable;
+                $attachment = $message->attachment;
+
+                return [
+                    'id' => $message->id,
+                    'body' => $message->body,
+                    'type' => $message->type,
+                    'attachments' => $attachment ? [[
+                        'name' => $attachment->original_name ?? $attachment->file_name ?? 'file',
+                        'path' => $attachment->file_path ? asset('storage/'.$attachment->file_path) : null,
+                        'size' => null,
+                        'mime' => $attachment->mime_type ?? null,
+                    ]] : [],
+                    'is_mine' => $sender?->id === $user->id,
+                    'sender' => [
+                        'id' => $sender?->id,
+                        'name' => $sender?->name,
+                        'avatar' => $sender?->avatar
+                            ? asset('storage/'.$sender->avatar)
+                            : null,
+                    ],
+                    'created_at' => $message->created_at->toISOString(),
+                ];
+            })->toArray(),
             'pagination' => PaginationHelper::fromPaginator($messages),
         ], __('Messages retrieved successfully'));
     }
@@ -515,29 +525,44 @@ class ChatController extends Controller
         }
 
         // Handle attachment
+        $attachmentData = null;
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
             $path = $file->store('chat-attachments/'.$user->id, 'public');
 
-            $messageData['attachments'] = [[
-                'name' => $file->getClientOriginalName(),
-                'path' => $path,
-                'size' => $file->getSize(),
-                'mime' => $file->getMimeType(),
-            ]];
+            $attachmentData = [
+                'file_path' => $path,
+                'file_name' => $file->hashName(),
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'url' => asset('storage/'.$path),
+            ];
             $messageData['type'] = $this->getMessageType($file->getMimeType());
             $messageData['body'] = $messageData['body'] ?? $file->getClientOriginalName();
         }
 
         $message = Message::create($messageData);
+
+        // Create attachment via WireChat's morphOne relationship
+        if ($attachmentData) {
+            $message->attachment()->create($attachmentData);
+        }
+
         $conversation->touch();
+
+        $attachment = $message->attachment;
 
         return $this->created([
             'message' => [
                 'id' => $message->id,
                 'body' => $message->body,
                 'type' => $message->type,
-                'attachments' => $message->attachments ?? [],
+                'attachments' => $attachment ? [[
+                    'name' => $attachment->original_name ?? $attachment->file_name,
+                    'path' => asset('storage/'.$attachment->file_path),
+                    'size' => null,
+                    'mime' => $attachment->mime_type,
+                ]] : [],
                 'is_mine' => true,
                 'created_at' => $message->created_at->toISOString(),
             ],
@@ -775,7 +800,7 @@ class ChatController extends Controller
         });
 
         $conversations = $query
-            ->with(['participants.participantable', 'lastMessage.sendable'])
+            ->with(['participants.participantable', 'lastMessage.participant.participantable'])
             ->orderBy('updated_at', 'desc')
             ->paginate($request->get('per_page', 20));
 
@@ -939,8 +964,29 @@ class ChatController extends Controller
         ])->toArray();
 
         // Check if this is a supervised chat by querying ChatGroup directly
-        $chatGroup = ChatGroup::where('conversation_id', $id)->first();
+        $chatGroup = ChatGroup::where('conversation_id', $id)
+            ->with(['quranIndividualCircle', 'academicIndividualLesson'])
+            ->first();
         $isSupervisedChat = $chatGroup !== null;
+
+        // Extract teacher/student IDs from relationships (ChatGroup has no teacher_id/student_id columns)
+        $supervisedInfo = null;
+        if ($isSupervisedChat) {
+            $teacherId = null;
+            $studentId = null;
+            if ($chatGroup->quranIndividualCircle) {
+                $teacherId = $chatGroup->quranIndividualCircle->quran_teacher_id;
+                $studentId = $chatGroup->quranIndividualCircle->student_id;
+            } elseif ($chatGroup->academicIndividualLesson) {
+                $teacherId = $chatGroup->academicIndividualLesson->academic_teacher_id;
+                $studentId = $chatGroup->academicIndividualLesson->student_id;
+            }
+            $supervisedInfo = [
+                'supervisor_id' => $chatGroup->supervisor_id ? (string) $chatGroup->supervisor_id : null,
+                'teacher_id' => $teacherId ? (string) $teacherId : null,
+                'student_id' => $studentId ? (string) $studentId : null,
+            ];
+        }
 
         return $this->success([
             'conversation' => [
@@ -954,11 +1000,7 @@ class ChatController extends Controller
                 'is_supervised' => $isSupervisedChat,
             ],
             'participants' => $participants,
-            'supervised_info' => $isSupervisedChat ? [
-                'supervisor_id' => $chatGroup->supervisor_id,
-                'teacher_id' => $chatGroup->teacher_id,
-                'student_id' => $chatGroup->student_id,
-            ] : null,
+            'supervised_info' => $supervisedInfo,
         ], __('Conversation details retrieved successfully'));
     }
 
@@ -985,7 +1027,7 @@ class ChatController extends Controller
 
         $query = Message::where('conversation_id', $id)
             ->whereHas('attachment') // WireChat uses singular attachment relationship
-            ->with(['sendable', 'attachment']);
+            ->with(['participant.participantable', 'attachment']);
 
         // Filter by media type if specified
         if ($mediaType) {
@@ -1002,16 +1044,18 @@ class ChatController extends Controller
                 ->map(function ($message) {
                     $attachment = $message->attachment;
 
+                    $sender = $message->sendable;
+
                     return [
                         'message_id' => $message->id,
                         'type' => $this->getMessageType($attachment->mime_type ?? 'application/octet-stream'),
-                        'name' => $attachment->name ?? 'file',
-                        'url' => $attachment->path ? asset('storage/'.$attachment->path) : null,
-                        'size' => $attachment->size ?? null,
+                        'name' => $attachment->original_name ?? $attachment->file_name ?? 'file',
+                        'url' => $attachment->file_path ? asset('storage/'.$attachment->file_path) : null,
+                        'size' => null,
                         'mime' => $attachment->mime_type ?? null,
                         'sent_by' => [
-                            'id' => $message->sendable?->id,
-                            'name' => $message->sendable?->name,
+                            'id' => $sender?->id,
+                            'name' => $sender?->name,
                         ],
                         'sent_at' => $message->created_at->toISOString(),
                     ];
