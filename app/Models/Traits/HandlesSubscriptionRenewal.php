@@ -2,14 +2,14 @@
 
 namespace App\Models\Traits;
 
-use Exception;
-use RuntimeException;
-use App\Services\NotificationService;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Services\NotificationService;
 use App\Services\PaymentService;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 /**
  * HandlesSubscriptionRenewal Trait
@@ -187,11 +187,9 @@ trait HandlesSubscriptionRenewal
             throw new RuntimeException('Cannot process renewal: billing cycle is not set for subscription #'.$this->id);
         }
 
-        // Use original_ends_at if stored (grace period extension absorbed into renewal)
+        // Use ends_at directly — it always represents the paid-for period end (never modified by grace extensions)
         $metadata = $this->metadata ?? [];
-        $baseDate = isset($metadata['original_ends_at'])
-            ? \Carbon\Carbon::parse($metadata['original_ends_at'])
-            : ($this->ends_at ?? now());
+        $baseDate = $this->ends_at ?? now();
 
         $newEndDate = $this->billing_cycle->calculateEndDate($baseDate);
 
@@ -200,6 +198,7 @@ trait HandlesSubscriptionRenewal
             $metadata['renewal_failed_count'],
             $metadata['last_renewal_failure_at'],
             $metadata['last_renewal_failure_reason'],
+            $metadata['grace_period_ends_at'],
             $metadata['original_ends_at']
         );
 

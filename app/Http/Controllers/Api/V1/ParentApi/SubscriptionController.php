@@ -66,6 +66,10 @@ class SubscriptionController extends Controller
                     'start_date' => $sub->start_date?->toDateString(),
                     'end_date' => $sub->end_date?->toDateString(),
                     'auto_renew' => $sub->auto_renew ?? false,
+                    'in_grace_period' => $sub->isInGracePeriod(),
+                    'needs_renewal' => $sub->needsRenewal(),
+                    'grace_period_ends_at' => $sub->getGracePeriodEndsAt()?->toDateString(),
+                    'paid_until' => ($sub->ends_at ?? $sub->end_date)?->toDateString(),
                     'created_at' => $sub->created_at->toISOString(),
                 ];
             }
@@ -93,6 +97,10 @@ class SubscriptionController extends Controller
                     'start_date' => $sub->start_date?->toDateString(),
                     'end_date' => $sub->end_date?->toDateString(),
                     'auto_renew' => $sub->auto_renew ?? false,
+                    'in_grace_period' => $sub->isInGracePeriod(),
+                    'needs_renewal' => $sub->needsRenewal(),
+                    'grace_period_ends_at' => $sub->getGracePeriodEndsAt()?->toDateString(),
+                    'paid_until' => ($sub->ends_at ?? $sub->end_date)?->toDateString(),
                     'created_at' => $sub->created_at->toISOString(),
                 ];
             }

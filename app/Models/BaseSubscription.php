@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use Exception;
 use App\Enums\BillingCycle;
 use App\Enums\PurchaseSource;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -66,6 +66,11 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
+ *
+ * @method \Illuminate\Database\Eloquent\Relations\HasMany sessions()
+ * @method self linkToEducationUnit($unit)
+ * @method void cancelAsDuplicateOrExpired(?string $reason = null)
+ * @method void cancelDueToPaymentFailure()
  */
 abstract class BaseSubscription extends Model
 {
@@ -484,6 +489,44 @@ abstract class BaseSubscription extends Model
         return $this->isActive() && $this->days_remaining <= $days;
     }
 
+    /**
+     * Check if subscription is currently in admin-granted grace period.
+     */
+    public function isInGracePeriod(): bool
+    {
+        $metadata = $this->metadata ?? [];
+        if (! isset($metadata['grace_period_ends_at'])) {
+            return false;
+        }
+
+        return Carbon::parse($metadata['grace_period_ends_at'])->isFuture();
+    }
+
+    /**
+     * Get grace period end date if set, null otherwise.
+     */
+    public function getGracePeriodEndsAt(): ?Carbon
+    {
+        $metadata = $this->metadata ?? [];
+        if (! isset($metadata['grace_period_ends_at'])) {
+            return null;
+        }
+
+        return Carbon::parse($metadata['grace_period_ends_at']);
+    }
+
+    /**
+     * Check if subscription needs renewal (past ends_at but still active, e.g. in grace period).
+     */
+    public function needsRenewal(): bool
+    {
+        if (! $this->ends_at) {
+            return false;
+        }
+
+        return $this->ends_at->isPast() && $this->isActive();
+    }
+
     // ========================================
     // SUBSCRIPTION LIFECYCLE METHODS
     // ========================================
@@ -669,18 +712,25 @@ abstract class BaseSubscription extends Model
      */
     public function getStatusDisplayData(): array
     {
+        $inGracePeriod = $this->isInGracePeriod();
+        $needsRenewal = $this->needsRenewal();
+
         return [
             'status' => $this->status->value,
-            'label' => $this->status->label(),
-            'label_en' => $this->status->labelEn(),
-            'icon' => $this->status->icon(),
-            'color' => $this->status->color(),
-            'badge_classes' => $this->status->badgeClasses(),
+            'label' => $inGracePeriod ? 'فترة سماح' : $this->status->label(),
+            'label_en' => $inGracePeriod ? 'Grace Period' : $this->status->labelEn(),
+            'icon' => $inGracePeriod ? 'heroicon-o-exclamation-triangle' : $this->status->icon(),
+            'color' => $inGracePeriod ? 'warning' : $this->status->color(),
+            'badge_classes' => $inGracePeriod ? 'bg-orange-100 text-orange-800' : $this->status->badgeClasses(),
             'can_access' => $this->canAccess(),
             'can_renew' => $this->canRenew(),
             'can_cancel' => $this->canCancel(),
             'is_expiring_soon' => $this->isExpiringSoon(),
             'days_remaining' => $this->days_remaining,
+            'in_grace_period' => $inGracePeriod,
+            'needs_renewal' => $needsRenewal,
+            'grace_period_ends_at' => $this->getGracePeriodEndsAt()?->format('Y-m-d'),
+            'paid_until' => $this->ends_at?->format('Y-m-d'),
         ];
     }
 
@@ -705,6 +755,9 @@ abstract class BaseSubscription extends Model
             'auto_renew' => $this->auto_renew,
             'teacher' => $this->getTeacher()?->name ?? null,
             'created_at' => $this->created_at?->format('Y-m-d'),
+            'in_grace_period' => $this->isInGracePeriod(),
+            'needs_renewal' => $this->needsRenewal(),
+            'grace_period_ends_at' => $this->getGracePeriodEndsAt()?->format('Y-m-d'),
         ];
     }
 

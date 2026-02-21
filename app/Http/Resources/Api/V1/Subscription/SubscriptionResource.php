@@ -101,6 +101,14 @@ class SubscriptionResource extends JsonResource
                 'subdomain' => $this->academy?->subdomain,
             ]),
 
+            // Grace period
+            'in_grace_period' => method_exists($this->resource, 'isInGracePeriod') ? $this->isInGracePeriod() : false,
+            'needs_renewal' => method_exists($this->resource, 'needsRenewal') ? $this->needsRenewal() : false,
+            'grace_period_ends_at' => method_exists($this->resource, 'getGracePeriodEndsAt')
+                ? $this->getGracePeriodEndsAt()?->toISOString()
+                : null,
+            'paid_until' => $this->ends_at?->toISOString(),
+
             // Notes and metadata
             'notes' => $this->notes,
             'metadata' => $this->metadata,

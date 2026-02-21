@@ -87,7 +87,16 @@ trait HasSubscriptionActions
             ->color('success')
             ->requiresConfirmation()
             ->modalHeading('تأكيد دفع الاشتراك')
-            ->modalDescription('سيتم تأكيد الدفع وتفعيل الاشتراك إذا كان معلقاً أو ملغياً.')
+            ->modalDescription(function (BaseSubscription $record) {
+                $metadata = $record->metadata ?? [];
+                if (isset($metadata['grace_period_ends_at'])) {
+                    $gracePeriodEnd = Carbon::parse($metadata['grace_period_ends_at'])->format('Y-m-d');
+
+                    return "الاشتراك في فترة سماح حتى {$gracePeriodEnd}. تأكيد الدفع سيبدأ فترة اشتراك جديدة من تاريخ الانتهاء الأصلي ({$record->ends_at?->format('Y-m-d')}).";
+                }
+
+                return 'سيتم تأكيد الدفع وتفعيل الاشتراك إذا كان معلقاً أو ملغياً.';
+            })
             ->modalSubmitActionLabel('تأكيد الدفع')
             ->schema([
                 TextInput::make('payment_reference')
@@ -122,21 +131,21 @@ trait HasSubscriptionActions
                         $updateData['ends_at'] = $record->calculateEndDate(now());
                     }
 
-                    // If grace period was active, recalculate ends_at from original
+                    // If grace period was active, calculate new period from ends_at (which was never modified)
                     $metadata = $record->metadata ?? [];
-                    if (isset($metadata['original_ends_at'])) {
-                        $originalEndsAt = Carbon::parse($metadata['original_ends_at']);
+                    if (isset($metadata['grace_period_ends_at'])) {
+                        $updateData['starts_at'] = $record->ends_at;
                         $updateData['ends_at'] = $record->billing_cycle
-                            ? $record->billing_cycle->calculateEndDate($originalEndsAt)
-                            : $originalEndsAt->addMonth();
+                            ? $record->billing_cycle->calculateEndDate($record->ends_at)
+                            : ($record->ends_at ?? now())->copy()->addMonth();
 
                         // For Academic: sync end_date
                         if ($record instanceof AcademicSubscription) {
                             $updateData['end_date'] = $updateData['ends_at'];
                         }
 
-                        // Clear original_ends_at (grace period absorbed)
-                        unset($metadata['original_ends_at']);
+                        // Clear grace period metadata
+                        unset($metadata['grace_period_ends_at']);
                         $updateData['metadata'] = $metadata ?: null;
                     }
                 }
@@ -151,7 +160,7 @@ trait HasSubscriptionActions
                 // Store payment reference in admin notes if provided
                 if (! empty($data['payment_reference'])) {
                     $note = sprintf(
-                        "[%s] تأكيد دفع بواسطة %s - المرجع: %s",
+                        '[%s] تأكيد دفع بواسطة %s - المرجع: %s',
                         now()->format('Y-m-d H:i'),
                         auth()->user()->name,
                         $data['payment_reference']
@@ -278,19 +287,21 @@ trait HasSubscriptionActions
     /**
      * Extend Subscription action — grants a grace period.
      *
-     * Pushes ends_at forward by N days but stores original_ends_at in metadata
-     * so renewal calculates from the original date. Sets payment_status to PENDING
-     * to show the subscription is unpaid. Adds proportional sessions.
+     * Does NOT modify ends_at. Instead stores grace_period_ends_at in metadata.
+     * ends_at always represents the paid-for subscription period end.
+     * The student keeps access during the grace period (status stays ACTIVE, payment stays PAID).
      */
     protected static function getExtendSubscriptionAction(): Action
     {
         return Action::make('extendSubscription')
-            ->label('تمديد الاشتراك')
+            ->label('تمديد فترة السماح')
             ->icon('heroicon-o-calendar-days')
             ->color('warning')
             ->requiresConfirmation()
             ->modalHeading('تمديد فترة السماح')
-            ->modalDescription('منح الطالب فترة سماح إضافية مع تعليق الدفع. يمكن للمعلم الاستمرار في جدولة الجلسات.')
+            ->modalDescription(fn (BaseSubscription $record) => 'منح الطالب فترة سماح إضافية. تاريخ انتهاء الاشتراك الأصلي ('
+                .($record->ends_at?->format('Y-m-d') ?? 'غير محدد')
+                .') لن يتغير.')
             ->schema([
                 TextInput::make('grace_days')
                     ->label('عدد أيام فترة السماح')
@@ -300,49 +311,44 @@ trait HasSubscriptionActions
                     ->maxValue(365)
                     ->default(14)
                     ->suffix('يوم')
-                    ->helperText('عدد الأيام الإضافية من تاريخ الانتهاء الحالي'),
+                    ->helperText(fn (BaseSubscription $record) => $record->ends_at
+                        ? 'سيتم حساب فترة السماح من '
+                            .(isset($record->metadata['grace_period_ends_at'])
+                                ? 'نهاية فترة السماح الحالية: '.Carbon::parse($record->metadata['grace_period_ends_at'])->format('Y-m-d')
+                                : 'تاريخ انتهاء الاشتراك: '.$record->ends_at->format('Y-m-d'))
+                        : 'عدد الأيام الإضافية'),
             ])
             ->action(function (BaseSubscription $record, array $data) {
                 $graceDays = (int) $data['grace_days'];
-                $currentEndDate = $record->ends_at ?? now();
-                $newEndDate = $currentEndDate->copy()->addDays($graceDays);
-
-                // Store original_ends_at only on first extension
                 $metadata = $record->metadata ?? [];
-                if (! isset($metadata['original_ends_at'])) {
-                    $metadata['original_ends_at'] = $currentEndDate->toDateTimeString();
-                }
+
+                // Calculate grace_period_ends_at: stack on existing grace period or start from ends_at
+                $baseDate = isset($metadata['grace_period_ends_at'])
+                    ? Carbon::parse($metadata['grace_period_ends_at'])
+                    : ($record->ends_at ?? now());
+
+                $gracePeriodEndsAt = $baseDate->copy()->addDays($graceDays);
+                $metadata['grace_period_ends_at'] = $gracePeriodEndsAt->toDateTimeString();
 
                 // Log extension in metadata
                 $metadata['extensions'] = $metadata['extensions'] ?? [];
-
                 $metadata['extensions'][] = [
                     'type' => 'grace_period',
                     'grace_days' => $graceDays,
                     'extended_by' => auth()->id(),
                     'extended_by_name' => auth()->user()->name,
-                    'original_ends_at' => $metadata['original_ends_at'],
-                    'new_ends_at' => $newEndDate->toDateTimeString(),
+                    'ends_at_at_time' => ($record->ends_at ?? now())->toDateTimeString(),
+                    'grace_period_ends_at' => $gracePeriodEndsAt->toDateTimeString(),
                     'extended_at' => now()->toDateTimeString(),
                 ];
 
-                $updateData = [
-                    'ends_at' => $newEndDate,
-                    'payment_status' => SubscriptionPaymentStatus::PENDING,
-                    'metadata' => $metadata,
-                ];
-
-                // For Academic: also update end_date
-                if ($record instanceof AcademicSubscription) {
-                    $updateData['end_date'] = $newEndDate;
-                }
-
-                $record->update($updateData);
+                // Only update metadata — do NOT change ends_at or payment_status
+                $record->update(['metadata' => $metadata]);
 
                 Notification::make()
                     ->success()
                     ->title('تم تمديد فترة السماح')
-                    ->body("تم تمديد الاشتراك {$graceDays} يوم. تاريخ الانتهاء الجديد: {$newEndDate->format('Y-m-d')}")
+                    ->body("تم منح فترة سماح {$graceDays} يوم حتى {$gracePeriodEndsAt->format('Y-m-d')}")
                     ->send();
             })
             ->visible(fn (BaseSubscription $record) => in_array($record->status, [
@@ -716,5 +722,4 @@ trait HasSubscriptionActions
             static::getExpiredPendingFilter(),
         ];
     }
-
 }

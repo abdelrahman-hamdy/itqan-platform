@@ -94,6 +94,10 @@ return [
             'title' => 'Subscription Expiring Soon',
             'message' => 'Your subscription to :subscription_name will expire on :expiry_date',
         ],
+        'grace_period_expiring' => [
+            'title' => 'Grace Period Ending Soon',
+            'message' => 'The grace period for your :subscription_name subscription will end in :days_left days. Please renew before :grace_end_date to avoid service suspension.',
+        ],
         'subscription_expired' => [
             'title' => 'Subscription Expired',
             'message' => 'Your subscription to :subscription_name has expired',

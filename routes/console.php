@@ -155,18 +155,27 @@ Schedule::command('subscriptions:check-expiring')
     ->runInBackground()
     ->description('Send notifications for subscriptions expiring soon (7, 3, 1 days)');
 
+// Send daily warning notifications for admin-granted grace periods about to expire
+// Runs daily at 9:00 AM — notifies students (and parents) with days remaining
+Schedule::command('subscriptions:notify-grace-expiring')
+    ->name('notify-grace-period-expiring')
+    ->dailyAt('09:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Send daily warning notifications for expiring grace periods');
+
 // Cancel subscriptions after grace period expires
 // Runs hourly to check for subscriptions whose grace period has passed
 // Grace period is given after 3 failed auto-renewal attempts
-Schedule::job(new \App\Jobs\ExpireGracePeriodSubscriptions())
+Schedule::job(new \App\Jobs\ExpireGracePeriodSubscriptions)
     ->name('expire-grace-period-subscriptions')
     ->hourly()
     ->withoutOverlapping()
     ->description('Cancel subscriptions after grace period expires following failed renewals');
 
 // Suspend subscriptions whose admin-granted grace period has expired
-// Runs hourly to check for ACTIVE subscriptions with PENDING payment where ends_at < now()
-// Sets status to SUSPENDED, cascades to education units via model observers
+// Runs hourly to check for ACTIVE subscriptions where metadata['grace_period_ends_at'] is past
+// Sets status to SUSPENDED, clears grace metadata, cascades via model observers
 Schedule::command('subscriptions:suspend-expired-grace')
     ->name('suspend-expired-grace-subscriptions')
     ->hourly()

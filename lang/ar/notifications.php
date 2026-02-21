@@ -94,6 +94,10 @@ return [
             'title' => 'اشتراكك سينتهي قريباً',
             'message' => 'اشتراكك في :subscription_name سينتهي بتاريخ :expiry_date',
         ],
+        'grace_period_expiring' => [
+            'title' => 'فترة السماح ستنتهي قريباً',
+            'message' => 'فترة السماح لاشتراكك في :subscription_name ستنتهي خلال :days_left يوم. يرجى تجديد الاشتراك قبل :grace_end_date لتجنب تعليق الخدمة.',
+        ],
         'subscription_expired' => [
             'title' => 'انتهى الاشتراك',
             'message' => 'انتهى اشتراكك في :subscription_name',

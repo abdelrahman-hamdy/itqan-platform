@@ -2,9 +2,6 @@
 
 namespace App\Services\Subscription;
 
-use Exception;
-use Illuminate\Database\QueryException;
-use Throwable;
 use App\Enums\PaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -14,10 +11,13 @@ use App\Models\BaseSubscription;
 use App\Models\Payment;
 use App\Models\QuranSubscription;
 use App\Services\PaymentService;
+use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * RenewalProcessor
@@ -181,9 +181,15 @@ class RenewalProcessor
         $newBillingDate = $subscription->calculateNextBillingDate();
         $newEndDate = $subscription->billing_cycle->calculateEndDate($subscription->ends_at ?? now());
 
-        // Reset renewal failure tracking on successful renewal
+        // Reset renewal failure tracking and clear grace period data on successful renewal
         $metadata = $subscription->metadata ?? [];
-        unset($metadata['renewal_failed_count'], $metadata['last_renewal_failure_at'], $metadata['last_renewal_failure_reason']);
+        unset(
+            $metadata['renewal_failed_count'],
+            $metadata['last_renewal_failure_at'],
+            $metadata['last_renewal_failure_reason'],
+            $metadata['grace_period_ends_at'],
+            $metadata['original_ends_at']
+        );
 
         $subscription->update([
             'status' => SessionSubscriptionStatus::ACTIVE,
@@ -235,7 +241,7 @@ class RenewalProcessor
 
             $this->notificationService->sendPaymentFailedNotification($subscription, $reason);
 
-            Log::warning("Subscription {$subscription->id} renewal attempt {$failedCount}/".self::MAX_RENEWAL_ATTEMPTS." failed - will retry", [
+            Log::warning("Subscription {$subscription->id} renewal attempt {$failedCount}/".self::MAX_RENEWAL_ATTEMPTS.' failed - will retry', [
                 'reason' => $reason,
                 'ends_at' => $subscription->ends_at->toDateString(),
                 'failed_count' => $failedCount,

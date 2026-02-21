@@ -255,6 +255,7 @@ return [
         'homework_assigned' => 'Homework Assigned',
         'homework_graded' => 'Homework Graded',
         'subscription_expiring' => 'Subscription Expiring Soon',
+        'grace_period_expiring' => 'Grace Period Ending Soon',
         'subscription_renewed' => 'Subscription Renewed',
     ],
     'notification_category' => [

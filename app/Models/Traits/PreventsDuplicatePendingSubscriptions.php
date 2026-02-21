@@ -79,10 +79,10 @@ trait PreventsDuplicatePendingSubscriptions
                     ->orWhere('payment_status', 'pending');
             })
             ->where('created_at', '<', now()->subHours($hours))
-            // Exclude subscriptions with extended grace period (original_ends_at in metadata)
+            // Exclude subscriptions in admin-granted grace period
             ->where(function ($q) {
                 $q->whereNull('metadata')
-                    ->orWhereRaw("JSON_EXTRACT(metadata, '$.original_ends_at') IS NULL");
+                    ->orWhereRaw("JSON_EXTRACT(metadata, '$.grace_period_ends_at') IS NULL");
             });
     }
 

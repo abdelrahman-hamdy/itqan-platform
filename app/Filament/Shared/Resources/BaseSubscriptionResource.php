@@ -310,13 +310,10 @@ abstract class BaseSubscriptionResource extends Resource
                         TextEntry::make('extended_at')
                             ->label('تاريخ التمديد')
                             ->dateTime('Y-m-d H:i'),
-                        TextEntry::make('original_ends_at')
-                            ->label('تاريخ الانتهاء السابق')
-                            ->dateTime('Y-m-d H:i'),
-                        TextEntry::make('new_ends_at')
-                            ->label('تاريخ الانتهاء الجديد')
+                        TextEntry::make('grace_period_ends_at')
+                            ->label('نهاية فترة السماح')
                             ->dateTime('Y-m-d H:i')
-                            ->color('success')
+                            ->color('warning')
                             ->weight(FontWeight::Bold),
                     ])
                     ->columns(4)
@@ -331,7 +328,7 @@ abstract class BaseSubscriptionResource extends Resource
     {
         return Section::make('حالة الاشتراك والمواعيد')
             ->schema([
-                Grid::make(3)
+                Grid::make(4)
                     ->schema([
                         TextEntry::make('status')
                             ->label('حالة الاشتراك')
@@ -371,6 +368,30 @@ abstract class BaseSubscriptionResource extends Resource
                             ->badge()
                             ->formatStateUsing(fn ($state): string => $state ? 'مفعّل' : 'معطّل')
                             ->color(fn ($state): string => $state ? 'success' : 'gray'),
+                        TextEntry::make('grace_period_status')
+                            ->label('فترة السماح')
+                            ->badge()
+                            ->getStateUsing(function ($record) {
+                                if (! $record) {
+                                    return null;
+                                }
+                                $metadata = $record->metadata ?? [];
+                                if (! isset($metadata['grace_period_ends_at'])) {
+                                    return null;
+                                }
+                                $gracePeriodEndsAt = \Carbon\Carbon::parse($metadata['grace_period_ends_at']);
+                                if ($gracePeriodEndsAt->isPast()) {
+                                    return 'منتهية';
+                                }
+
+                                return 'نشطة حتى '.$gracePeriodEndsAt->format('Y-m-d');
+                            })
+                            ->color(fn ($state) => match (true) {
+                                $state === null => 'gray',
+                                str_contains($state ?? '', 'نشطة') => 'warning',
+                                default => 'danger',
+                            })
+                            ->visible(fn ($record) => isset($record?->metadata['grace_period_ends_at'])),
                     ]),
                 Grid::make(3)
                     ->schema([
@@ -379,12 +400,16 @@ abstract class BaseSubscriptionResource extends Resource
                             ->dateTime('Y-m-d')
                             ->placeholder('لم يتم التحديد'),
                         TextEntry::make('ends_at')
-                            ->label('تاريخ الانتهاء')
+                            ->label('تاريخ انتهاء الاشتراك (المدفوع)')
                             ->dateTime('Y-m-d')
                             ->placeholder('لم يتم التحديد')
                             ->color(fn ($record) => $record?->ends_at && $record->ends_at->isPast() ? 'danger' : null)
                             ->weight(fn ($record) => $record?->ends_at && $record->ends_at->isPast() ? FontWeight::Bold : null)
-                            ->helperText(fn ($record) => $record?->ends_at && $record->ends_at->isPast() ? 'منتهي الصلاحية' : null),
+                            ->helperText(fn ($record) => match (true) {
+                                $record?->isInGracePeriod() => 'منتهي - في فترة السماح حتى '.$record->getGracePeriodEndsAt()->format('Y-m-d'),
+                                $record?->ends_at?->isPast() ?? false => 'منتهي الصلاحية',
+                                default => null,
+                            }),
                         TextEntry::make('created_at')
                             ->label('تاريخ الإنشاء')
                             ->dateTime('Y-m-d H:i'),

@@ -380,6 +380,12 @@ class SubscriptionController extends Controller
                 'avatar' => $teacher->user->avatar ? asset('storage/'.$teacher->user->avatar) : null,
             ] : null,
             'sessions' => $this->getSessionStats($subscription, $type),
+            'in_grace_period' => method_exists($subscription, 'isInGracePeriod') ? $subscription->isInGracePeriod() : false,
+            'needs_renewal' => method_exists($subscription, 'needsRenewal') ? $subscription->needsRenewal() : false,
+            'grace_period_ends_at' => method_exists($subscription, 'getGracePeriodEndsAt')
+                ? $subscription->getGracePeriodEndsAt()?->toDateString()
+                : null,
+            'paid_until' => ($subscription->ends_at ?? $subscription->end_date)?->toDateString(),
             'created_at' => $subscription->created_at->toISOString(),
         ];
 

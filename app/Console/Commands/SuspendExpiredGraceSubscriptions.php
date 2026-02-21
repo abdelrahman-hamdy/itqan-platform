@@ -3,16 +3,16 @@
 namespace App\Console\Commands;
 
 use App\Enums\SessionSubscriptionStatus;
-use App\Enums\SubscriptionPaymentStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Suspend subscriptions whose grace period has expired without payment.
+ * Suspend subscriptions whose admin-granted grace period has expired without payment.
  *
- * Finds ACTIVE subscriptions with PENDING payment where ends_at has passed,
+ * Finds ACTIVE subscriptions with metadata['grace_period_ends_at'] in the past,
  * indicating the grace period given by admin has expired without the student paying.
  * Sets their status to SUSPENDED, which cascades to education units via model observers.
  *
@@ -32,18 +32,31 @@ class SuspendExpiredGraceSubscriptions extends Command
         $dryRun = $this->option('dry-run');
         $suspendedCount = 0;
 
-        // Find Quran subscriptions in grace period that have expired
+        // Find Quran subscriptions with expired grace period
         $quranSubs = QuranSubscription::withoutGlobalScopes()
             ->where('status', SessionSubscriptionStatus::ACTIVE)
-            ->where('payment_status', SubscriptionPaymentStatus::PENDING)
-            ->where('ends_at', '<', now())
-            ->get();
+            ->whereNotNull('metadata')
+            ->get()
+            ->filter(function ($subscription) {
+                $metadata = $subscription->metadata ?? [];
+                if (! isset($metadata['grace_period_ends_at'])) {
+                    return false;
+                }
+
+                return Carbon::parse($metadata['grace_period_ends_at'])->isPast();
+            });
 
         foreach ($quranSubs as $sub) {
             if ($dryRun) {
                 $this->info("[DRY RUN] Would suspend QuranSubscription #{$sub->id} ({$sub->subscription_code})");
             } else {
-                $sub->update(['status' => SessionSubscriptionStatus::SUSPENDED]);
+                $metadata = $sub->metadata ?? [];
+                unset($metadata['grace_period_ends_at']);
+
+                $sub->update([
+                    'status' => SessionSubscriptionStatus::SUSPENDED,
+                    'metadata' => $metadata ?: null,
+                ]);
                 Log::info('Grace period expired — subscription suspended', [
                     'subscription_id' => $sub->id,
                     'subscription_code' => $sub->subscription_code,
@@ -55,18 +68,31 @@ class SuspendExpiredGraceSubscriptions extends Command
             $suspendedCount++;
         }
 
-        // Find Academic subscriptions in grace period that have expired
+        // Find Academic subscriptions with expired grace period
         $academicSubs = AcademicSubscription::withoutGlobalScopes()
             ->where('status', SessionSubscriptionStatus::ACTIVE)
-            ->where('payment_status', SubscriptionPaymentStatus::PENDING)
-            ->where('ends_at', '<', now())
-            ->get();
+            ->whereNotNull('metadata')
+            ->get()
+            ->filter(function ($subscription) {
+                $metadata = $subscription->metadata ?? [];
+                if (! isset($metadata['grace_period_ends_at'])) {
+                    return false;
+                }
+
+                return Carbon::parse($metadata['grace_period_ends_at'])->isPast();
+            });
 
         foreach ($academicSubs as $sub) {
             if ($dryRun) {
                 $this->info("[DRY RUN] Would suspend AcademicSubscription #{$sub->id} ({$sub->subscription_code})");
             } else {
-                $sub->update(['status' => SessionSubscriptionStatus::SUSPENDED]);
+                $metadata = $sub->metadata ?? [];
+                unset($metadata['grace_period_ends_at']);
+
+                $sub->update([
+                    'status' => SessionSubscriptionStatus::SUSPENDED,
+                    'metadata' => $metadata ?: null,
+                ]);
                 Log::info('Grace period expired — subscription suspended', [
                     'subscription_id' => $sub->id,
                     'subscription_code' => $sub->subscription_code,

@@ -255,6 +255,7 @@ return [
         'homework_assigned' => 'تكليف واجب',
         'homework_graded' => 'تقييم الواجب',
         'subscription_expiring' => 'انتهاء الاشتراك قريباً',
+        'grace_period_expiring' => 'انتهاء فترة السماح قريباً',
         'subscription_renewed' => 'تجديد الاشتراك',
     ],
     'notification_category' => [

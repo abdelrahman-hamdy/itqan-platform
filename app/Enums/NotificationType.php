@@ -66,6 +66,7 @@ enum NotificationType: string
     case PAYMENT_SUCCESS = 'payment_success';
     case PAYMENT_FAILED = 'payment_failed';
     case SUBSCRIPTION_EXPIRING = 'subscription_expiring';
+    case GRACE_PERIOD_EXPIRING = 'grace_period_expiring';
     case SUBSCRIPTION_EXPIRED = 'subscription_expired';
     case SUBSCRIPTION_ACTIVATED = 'subscription_activated';
     case SUBSCRIPTION_RENEWED = 'subscription_renewed';
@@ -175,6 +176,7 @@ enum NotificationType: string
             // Alert notifications - red for urgent/negative
             self::PAYMENT_FAILED,
             self::SUBSCRIPTION_EXPIRING,
+            self::GRACE_PERIOD_EXPIRING,
             self::SUBSCRIPTION_EXPIRED,
             self::QUIZ_FAILED,
             self::QUIZ_DEADLINE_1H,
@@ -237,6 +239,7 @@ enum NotificationType: string
             self::SUBSCRIPTION_RENEWED => 'heroicon-o-arrow-path',
             self::SUBSCRIPTION_ACTIVATED => 'heroicon-o-check-badge',
             self::SUBSCRIPTION_EXPIRING => 'heroicon-o-clock',
+            self::GRACE_PERIOD_EXPIRING => 'heroicon-o-exclamation-triangle',
             self::SUBSCRIPTION_EXPIRED => 'heroicon-o-x-circle',
 
             // Admin-specific icons
