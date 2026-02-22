@@ -134,8 +134,12 @@ class ContentSecurityPolicy
         $fontSrc = "'self' data: ".implode(' ', self::TRUSTED_FONT_SOURCES);
 
         // Image sources - whitelisted storage providers + CDNs
+        // Include both root domain and subdomains (logo_url uses APP_URL = root domain)
+        $rootDomain = $isLocal
+            ? "https://{$appDomain} http://{$appDomain}"
+            : "https://{$appDomain}";
         $imgSrc = "'self' data: blob: ".implode(' ', self::TRUSTED_IMAGE_SOURCES);
-        $imgSrc .= " {$subdomains} https://*.digitaloceanspaces.com https://*.s3.amazonaws.com https://*.cloudinary.com";
+        $imgSrc .= " {$rootDomain} {$subdomains} https://*.digitaloceanspaces.com https://*.s3.amazonaws.com https://*.cloudinary.com";
 
         // Connect sources - WebSocket for Reverb/Pusher, whitelisted API endpoints
         $connectSrc = "'self' ws: wss: blob: {$viteServer} {$subdomains} "
