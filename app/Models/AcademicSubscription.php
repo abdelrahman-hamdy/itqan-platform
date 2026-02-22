@@ -1033,10 +1033,13 @@ class AcademicSubscription extends BaseSubscription
                 'subscriptionId' => $this->id,
             ]);
 
+            $subscriptionName = $this->subject_name ?? 'الاشتراك الأكاديمي';
+
             $notificationService->send(
                 $this->student,
                 NotificationType::SUBSCRIPTION_EXPIRED,
                 [
+                    'subscription_name' => $subscriptionName,
                     'subscription_type' => 'أكاديمي',
                     'subject_name' => $this->subject_name ?? 'الموضوع',
                     'end_date' => $this->ends_at?->format('Y-m-d'),
@@ -1057,6 +1060,7 @@ class AcademicSubscription extends BaseSubscription
                     $this->student->studentProfile->parent->user,
                     NotificationType::SUBSCRIPTION_EXPIRED,
                     [
+                        'subscription_name' => $subscriptionName,
                         'student_name' => $this->student->full_name,
                         'subscription_type' => 'أكاديمي',
                         'subject_name' => $this->subject_name ?? 'الموضوع',

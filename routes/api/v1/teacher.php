@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\Teacher\HomeworkController;
 use App\Http\Controllers\Api\V1\Teacher\MeetingController;
 use App\Http\Controllers\Api\V1\Teacher\ProfileController;
 use App\Http\Controllers\Api\V1\Teacher\Quran\CircleController as QuranCircleController;
+use App\Http\Controllers\Api\V1\Teacher\ReportController;
 use App\Http\Controllers\Api\V1\Teacher\Quran\SessionController as QuranSessionController;
 use App\Http\Controllers\Api\V1\Teacher\ScheduleController;
 use App\Http\Controllers\Api\V1\Teacher\StudentController;
@@ -243,6 +244,21 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
 
         Route::delete('/', [ProfileController::class, 'deleteAccount'])
             ->name('api.v1.teacher.profile.delete');
+    });
+
+    // Reports (circle report data for teacher view)
+    Route::prefix('reports')->group(function () {
+        Route::get('/quran/individual/{id}', [ReportController::class, 'quranIndividualReport'])
+            ->name('api.v1.teacher.reports.quran.individual');
+
+        Route::get('/quran/individual/{id}/sessions', [ReportController::class, 'quranIndividualSessions'])
+            ->name('api.v1.teacher.reports.quran.individual.sessions');
+
+        Route::get('/quran/group/{id}', [ReportController::class, 'quranGroupReport'])
+            ->name('api.v1.teacher.reports.quran.group');
+
+        Route::get('/quran/group/{id}/sessions', [ReportController::class, 'quranGroupSessions'])
+            ->name('api.v1.teacher.reports.quran.group.sessions');
     });
 
     // Certificates (common for both teacher types)

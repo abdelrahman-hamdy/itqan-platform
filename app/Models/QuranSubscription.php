@@ -1195,10 +1195,13 @@ class QuranSubscription extends BaseSubscription
                 ]);
             }
 
+            $subscriptionName = 'حلقة ' . ($this->individualCircle?->name ?? $this->quranCircle?->name ?? 'القرآن');
+
             $notificationService->send(
                 $this->student,
                 NotificationType::SUBSCRIPTION_EXPIRED,
                 [
+                    'subscription_name' => $subscriptionName,
                     'subscription_type' => $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL ? 'فردي' : 'جماعي',
                     'end_date' => $this->ends_at?->format('Y-m-d'),
                     'sessions_used' => $this->sessions_used,
@@ -1218,6 +1221,7 @@ class QuranSubscription extends BaseSubscription
                     $this->student->studentProfile->parent->user,
                     NotificationType::SUBSCRIPTION_EXPIRED,
                     [
+                        'subscription_name' => $subscriptionName,
                         'student_name' => $this->student->full_name,
                         'subscription_type' => $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL ? 'فردي' : 'جماعي',
                         'end_date' => $this->ends_at?->format('Y-m-d'),
