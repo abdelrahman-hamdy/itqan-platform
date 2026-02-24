@@ -369,6 +369,36 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
             SelectFilter::make('package_id')
                 ->label('الباقة')
                 ->relationship('package', 'name'),
+
+            SelectFilter::make('quran_teacher_id')
+                ->label('المعلم')
+                ->options(function () {
+                    $academyId = AcademyContextService::getCurrentAcademyId();
+
+                    $query = QuranTeacherProfile::query();
+                    if ($academyId) {
+                        $query->where('academy_id', $academyId);
+                    }
+
+                    return $query->get()->mapWithKeys(fn ($teacher) => [
+                        $teacher->user_id => $teacher->display_name ?? $teacher->full_name ?? 'معلم غير محدد',
+                    ]);
+                })
+                ->searchable()
+                ->native(false),
+
+            SelectFilter::make('student_id')
+                ->label('الطالب')
+                ->options(function () {
+                    return User::where('user_type', UserType::STUDENT->value)
+                        ->with('studentProfile')
+                        ->get()
+                        ->mapWithKeys(fn ($user) => [
+                            $user->id => $user->studentProfile?->full_name ?? $user->name,
+                        ]);
+                })
+                ->searchable()
+                ->native(false),
         ];
     }
 
