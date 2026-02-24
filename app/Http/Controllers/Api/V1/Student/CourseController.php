@@ -415,16 +415,15 @@ class CourseController extends Controller
             'reviews' => $reviews->map(fn ($review) => [
                 'id' => $review->id,
                 'rating' => $review->rating,
-                'review' => $review->review,
+                'comment' => $review->review,
                 'created_at' => $review->created_at->toISOString(),
-                'reviewer' => $review->user ? [
-                    'id' => $review->user->id,
-                    'name' => $review->user->name,
-                    'avatar' => $review->user->avatar
-                        ? asset('storage/'.$review->user->avatar)
-                        : null,
-                    'gender' => $review->user->gender ?? 'male',
-                ] : null,
+                'is_verified' => true,
+                'reviewer_id' => $review->user?->id,
+                'reviewer_name' => $review->user?->name ?? '',
+                'reviewer_avatar_url' => $review->user?->avatar
+                    ? asset('storage/'.$review->user->avatar)
+                    : null,
+                'reviewer_gender' => $review->user?->gender ?? 'male',
             ])->toArray(),
             'summary' => [
                 'average_rating' => $averageRating,
