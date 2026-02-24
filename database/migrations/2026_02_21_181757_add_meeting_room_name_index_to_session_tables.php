@@ -19,13 +19,13 @@ return new class extends Migration
     public function up(): void
     {
         foreach (['quran_sessions', 'academic_sessions', 'interactive_course_sessions'] as $table) {
-            Schema::table($table, function (Blueprint $blueprint) use ($table) {
-                $indexName = $table.'_meeting_room_name_index';
-                $indexes = collect(\DB::select("SHOW INDEX FROM `{$table}` WHERE Key_name = '{$indexName}'"));
-                if ($indexes->isEmpty()) {
+            try {
+                Schema::table($table, function (Blueprint $blueprint) {
                     $blueprint->index('meeting_room_name');
-                }
-            });
+                });
+            } catch (\Exception $e) {
+                // Index already exists — safe to ignore
+            }
         }
     }
 
