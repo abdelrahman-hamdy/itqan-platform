@@ -93,6 +93,9 @@ Route::middleware(['api.is.student', 'ability:student:*'])->group(function () {
         Route::get('/', [SubscriptionController::class, 'index'])
             ->name('api.v1.student.subscriptions.index');
 
+        Route::get('/counts', [SubscriptionController::class, 'counts'])
+            ->name('api.v1.student.subscriptions.counts');
+
         Route::get('/{type}/{id}', [SubscriptionController::class, 'show'])
             ->where('type', 'quran|academic|course')
             ->name('api.v1.student.subscriptions.show');
@@ -254,6 +257,18 @@ Route::middleware(['api.is.student', 'ability:student:*'])->group(function () {
 
         Route::get('/{id}', [CourseController::class, 'show'])
             ->name('api.v1.student.courses.interactive.show');
+
+        Route::get('/{id}/quizzes', [CourseController::class, 'quizzes'])
+            ->name('api.v1.student.courses.interactive.quizzes');
+
+        Route::get('/{id}/materials', [CourseController::class, 'materials'])
+            ->name('api.v1.student.courses.interactive.materials');
+
+        Route::get('/{id}/progress', [CourseController::class, 'progress'])
+            ->name('api.v1.student.courses.interactive.progress');
+
+        Route::get('/{id}/reviews', [CourseController::class, 'reviews'])
+            ->name('api.v1.student.courses.interactive.reviews');
     });
 
     // Recorded Courses

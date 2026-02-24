@@ -18,6 +18,42 @@ class SubscriptionController extends Controller
     use ApiResponses;
 
     /**
+     * Get active subscription counts by type for the student.
+     */
+    public function counts(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $quranCount = QuranSubscription::where('student_id', $user->id)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+            ->where('subscription_type', 'individual')
+            ->count();
+
+        $quranGroupCount = QuranSubscription::where('student_id', $user->id)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+            ->whereIn('subscription_type', ['group', 'circle'])
+            ->count();
+
+        $academicCount = AcademicSubscription::where('student_id', $user->id)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+            ->count();
+
+        $courseCount = CourseSubscription::where('student_id', $user->id)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+            ->count();
+
+        return $this->success([
+            'counts' => [
+                'quran' => $quranCount,
+                'quran_group' => $quranGroupCount,
+                'academic' => $academicCount,
+                'course' => $courseCount,
+                'total' => $quranCount + $quranGroupCount + $academicCount + $courseCount,
+            ],
+        ], __('Subscription counts retrieved successfully'));
+    }
+
+    /**
      * Get all subscriptions for the student.
      */
     public function index(Request $request): JsonResponse
@@ -63,7 +99,7 @@ class SubscriptionController extends Controller
 
         if (! $type || $type === 'academic') {
             $query = AcademicSubscription::where('student_id', $user->id)
-                ->with(['teacher', 'subject', 'gradeLevel']);
+                ->with(['teacher', 'subject', 'gradeLevel', 'lesson']);
 
             if ($status && $status !== 'all') {
                 $query->where('status', $status);
@@ -137,7 +173,7 @@ class SubscriptionController extends Controller
             case 'academic':
                 $subscription = AcademicSubscription::where('id', $id)
                     ->where('student_id', $user->id)
-                    ->with(['teacher', 'subject', 'gradeLevel', 'sessions', 'payments'])
+                    ->with(['teacher', 'subject', 'gradeLevel', 'lesson', 'sessions', 'payments'])
                     ->first();
                 break;
 
@@ -399,6 +435,31 @@ class SubscriptionController extends Controller
                 'max_students' => $circle->max_students,
             ];
         }
+
+        // Add entity info for supervised chat (teacher-student-supervisor triple chat)
+        $entityId = match ($type) {
+            'quran' => $subscription->individualCircle?->id,
+            'quran_group' => $subscription->quran_circle_id,
+            'academic' => $subscription->lesson?->id,
+            'course' => $subscription->interactive_course_id ?? $subscription->recorded_course_id,
+            default => null,
+        };
+        $entityType = match ($type) {
+            'quran' => 'quran_individual',
+            'quran_group' => 'quran_circle',
+            'academic' => 'academic_lesson',
+            'course' => 'interactive_course',
+            default => null,
+        };
+        $data['entity_id'] = $entityId;
+        $data['entity_type'] = $entityType;
+
+        // Add supervisor info for direct messaging (student → supervisor)
+        $supervisor = $teacher?->user ? $teacher->user->getPrimarySupervisor() : null;
+        $data['supervisor'] = $supervisor ? [
+            'id' => $supervisor->id,
+            'name' => $supervisor->name,
+        ] : null;
 
         return $data;
     }
