@@ -18,17 +18,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('quran_sessions', function (Blueprint $table) {
-            $table->index('meeting_room_name');
-        });
-
-        Schema::table('academic_sessions', function (Blueprint $table) {
-            $table->index('meeting_room_name');
-        });
-
-        Schema::table('interactive_course_sessions', function (Blueprint $table) {
-            $table->index('meeting_room_name');
-        });
+        foreach (['quran_sessions', 'academic_sessions', 'interactive_course_sessions'] as $table) {
+            Schema::table($table, function (Blueprint $blueprint) use ($table) {
+                $indexName = $table.'_meeting_room_name_index';
+                $indexes = collect(\DB::select("SHOW INDEX FROM `{$table}` WHERE Key_name = '{$indexName}'"));
+                if ($indexes->isEmpty()) {
+                    $blueprint->index('meeting_room_name');
+                }
+            });
+        }
     }
 
     /**
