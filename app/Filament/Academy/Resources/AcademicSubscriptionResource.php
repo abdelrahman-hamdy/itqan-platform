@@ -346,10 +346,19 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                 ->preload(),
 
             SelectFilter::make('teacher_id')
-                ->label(__('filament.teacher'))
-                ->relationship('teacher.user', 'name')
+                ->label('المعلم')
+                ->options(function () {
+                    $academyId = auth()->user()->academy_id;
+
+                    return AcademicTeacherProfile::where('academy_id', $academyId)
+                        ->with('user')
+                        ->get()
+                        ->mapWithKeys(fn ($teacher) => [
+                            $teacher->id => $teacher->display_name,
+                        ]);
+                })
                 ->searchable()
-                ->preload(),
+                ->native(false),
 
             SelectFilter::make('student_id')
                 ->label('الطالب')
