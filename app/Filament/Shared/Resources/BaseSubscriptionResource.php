@@ -306,7 +306,6 @@ abstract class BaseSubscriptionResource extends Resource
                     );
                 }),
 
-            static::getExpiredPendingFilter(),
         ];
     }
 
@@ -484,7 +483,8 @@ abstract class BaseSubscriptionResource extends Resource
             ))
             ->filters(array_merge(
                 static::getSharedFilters(),
-                static::getTypeSpecificFilters()
+                static::getTypeSpecificFilters(),
+                [static::getExpiredPendingFilter()]
             ))
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)

@@ -370,6 +370,12 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                 ->relationship('teacher.user', 'name')
                 ->searchable()
                 ->preload(),
+
+            SelectFilter::make('student_id')
+                ->label('الطالب')
+                ->relationship('student', 'name')
+                ->searchable()
+                ->preload(),
         ];
     }
 

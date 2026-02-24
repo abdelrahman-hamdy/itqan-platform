@@ -350,6 +350,22 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                 ->relationship('teacher.user', 'name')
                 ->searchable()
                 ->preload(),
+
+            SelectFilter::make('student_id')
+                ->label('الطالب')
+                ->options(function () {
+                    $academyId = auth()->user()->academy_id;
+
+                    return User::where('user_type', UserType::STUDENT->value)
+                        ->with('studentProfile')
+                        ->whereHas('studentProfile.gradeLevel', fn ($q) => $q->where('academy_id', $academyId))
+                        ->get()
+                        ->mapWithKeys(fn ($user) => [
+                            $user->id => $user->studentProfile?->full_name ?? $user->name,
+                        ]);
+                })
+                ->searchable()
+                ->native(false),
         ];
     }
 
