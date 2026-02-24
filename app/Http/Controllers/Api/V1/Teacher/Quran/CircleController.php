@@ -32,9 +32,13 @@ class CircleController extends Controller
         $query = QuranIndividualCircle::where('quran_teacher_id', $quranTeacherId)
             ->with(['student', 'subscription']);
 
-        // Filter by status
+        // Filter by status (is_active replaces the old status column)
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'active') {
+                $query->where('is_active', true);
+            } elseif (in_array($request->status, ['suspended', 'cancelled', 'completed'])) {
+                $query->where('is_active', false);
+            }
         }
 
         $circles = $query->orderBy('created_at', 'desc')
@@ -51,7 +55,7 @@ class CircleController extends Controller
                         ? asset('storage/'.$circle->student->avatar)
                         : null,
                 ] : null,
-                'status' => $circle->status,
+                'status' => $circle->is_active ? 'active' : 'suspended',
                 'sessions_count' => $circle->subscription?->sessions_count ?? 0,
                 'completed_sessions' => $circle->subscription?->completed_sessions_count ?? 0,
                 'remaining_sessions' => $circle->subscription?->remaining_sessions ?? 0,
@@ -127,7 +131,7 @@ class CircleController extends Controller
                         : null,
                     'phone' => $circle->student->phone,
                 ] : null,
-                'status' => $circle->status,
+                'status' => $circle->is_active ? 'active' : 'suspended',
                 'subscription' => $circle->subscription ? [
                     'id' => $circle->subscription->id,
                     'status' => $circle->subscription->status,
@@ -194,7 +198,7 @@ class CircleController extends Controller
                 'id' => $circle->id,
                 'name' => $circle->name,
                 'description' => $circle->description,
-                'status' => $circle->status,
+                'status' => $circle->status ? 'active' : 'suspended',
                 'students_count' => $circle->students_count,
                 'max_students' => $circle->max_students,
                 'level' => $circle->level,
@@ -255,7 +259,7 @@ class CircleController extends Controller
                 'id' => $circle->id,
                 'name' => $circle->name,
                 'description' => $circle->description,
-                'status' => $circle->status,
+                'status' => $circle->status ? 'active' : 'suspended',
                 'level' => $circle->level,
                 'students_count' => $circle->students->count(),
                 'max_students' => $circle->max_students,
