@@ -1,6 +1,7 @@
 @php
     // Group articles by their 'section' key for display
     $sectionLabels = [
+        'overview' => __('help.sections.overview'),
         'quran'    => __('help.sections.quran'),
         'academic' => __('help.sections.academic'),
         'courses'  => __('help.sections.courses'),
