@@ -110,7 +110,7 @@ return [
     |
     */
 
-    'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+    'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 3600),
 
     /*
     |--------------------------------------------------------------------------
@@ -122,6 +122,6 @@ return [
     |
     */
 
-    'remember_lifetime' => (int) env('AUTH_REMEMBER_LIFETIME', 43200),
+    'remember_lifetime' => (int) env('AUTH_REMEMBER_LIFETIME', 10080),
 
 ];

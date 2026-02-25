@@ -1,6 +1,12 @@
 <?php
 
 return [
+    'course_types' => [
+        'interactive' => 'Interactive Course',
+        'recorded' => 'Recorded Course',
+        'training' => 'Training Course',
+    ],
+
     'course' => [
         'one_time_purchase' => 'One-time purchase',
         'access_expired' => 'Course access has expired. Please renew your subscription to continue.',

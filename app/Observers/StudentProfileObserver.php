@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\ParentProfile;
 use App\Models\StudentProfile;
+use Illuminate\Support\Facades\DB;
 
 class StudentProfileObserver
 {
@@ -25,23 +26,26 @@ class StudentProfileObserver
             $oldParentId = $studentProfile->getOriginal('parent_id');
             $newParentId = $studentProfile->parent_id;
 
-            // Remove from old parent's students relationship
-            if ($oldParentId) {
-                $oldParent = ParentProfile::find($oldParentId);
-                if ($oldParent) {
-                    $oldParent->students()->detach($studentProfile->id);
+            // Wrap both detach and attach in a transaction to prevent partial updates
+            DB::transaction(function () use ($studentProfile, $oldParentId, $newParentId) {
+                // Remove from old parent's students relationship
+                if ($oldParentId) {
+                    $oldParent = ParentProfile::find($oldParentId);
+                    if ($oldParent) {
+                        $oldParent->students()->detach($studentProfile->id);
+                    }
                 }
-            }
 
-            // Add to new parent's students relationship
-            if ($newParentId) {
-                $newParent = ParentProfile::find($newParentId);
-                if ($newParent && ! $newParent->students()->where('student_profiles.id', $studentProfile->id)->exists()) {
-                    $newParent->students()->attach($studentProfile->id, [
-                        'relationship_type' => 'other', // Default relationship type
-                    ]);
+                // Add to new parent's students relationship
+                if ($newParentId) {
+                    $newParent = ParentProfile::find($newParentId);
+                    if ($newParent && ! $newParent->students()->where('student_profiles.id', $studentProfile->id)->exists()) {
+                        $newParent->students()->attach($studentProfile->id, [
+                            'relationship_type' => 'other', // Default relationship type
+                        ]);
+                    }
                 }
-            }
+            });
         }
     }
 

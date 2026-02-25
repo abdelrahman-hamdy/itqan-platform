@@ -139,10 +139,17 @@ if (! function_exists('can_test_meetings')) {
 
         $user = Auth::user();
 
-        // Allow super admins and admins to test meetings
-        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]) ||
-               request()->has('test_mode') &&
-               ($user->hasRole([UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::SUPERVISOR->value, UserType::STUDENT->value]) || app()->environment('local'));
+        // Super admins and admins can always access meeting test mode
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
+            return true;
+        }
+
+        // test_mode bypass restricted to local/development environment only
+        if (app()->environment('local', 'development') && request()->has('test_mode')) {
+            return $user->hasRole([UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::SUPERVISOR->value, UserType::STUDENT->value]);
+        }
+
+        return false;
     }
 }
 

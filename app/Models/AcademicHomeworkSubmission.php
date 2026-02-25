@@ -30,17 +30,14 @@ class AcademicHomeworkSubmission extends Model
         'days_late',
         'submission_attempt',
         'revision_count',
-        'score',
-        'max_score',
-        'score_percentage',
-        'grade_letter',
+        // SECURITY: grading fields removed — only set via grade() method, never via mass assignment
+        // Removed: graded_by, graded_at, score, score_percentage, grade_letter, teacher_reviewed,
+        //          plagiarism_checked, originality_score, flagged_for_review, flag_reason
         'teacher_feedback',
         'grading_breakdown',
         'late_penalty_applied',
         'late_penalty_amount',
         'bonus_points',
-        'graded_by',
-        'graded_at',
         'returned_at',
         'content_quality_score',
         'presentation_score',
@@ -54,16 +51,11 @@ class AcademicHomeworkSubmission extends Model
         'student_time_estimate_minutes',
         'student_questions',
         'requires_follow_up',
-        'teacher_reviewed',
         'parent_notified',
-        'flagged_for_review',
-        'flag_reason',
         'parent_viewed',
         'parent_viewed_at',
         'parent_feedback',
         'parent_signature',
-        'plagiarism_checked',
-        'originality_score',
         'plagiarism_notes',
         'created_by',
         'updated_by',
@@ -310,15 +302,33 @@ class AcademicHomeworkSubmission extends Model
             $daysLate = now()->diffInDays($homework->due_date);
         }
 
-        $this->update([
+        // Validate that all file paths are within the expected tenant storage prefix
+        if ($files !== null) {
+            $tenantPrefix = 'tenants/';
+            foreach ($files as $filePath) {
+                if (! is_string($filePath) ||
+                    str_contains($filePath, '..') ||
+                    str_starts_with($filePath, '/') ||
+                    (! str_starts_with($filePath, $tenantPrefix) && ! str_starts_with($filePath, 'submissions/'))) {
+                    throw new \InvalidArgumentException('Invalid file path: ' . $filePath);
+                }
+            }
+        }
+
+        $updateData = [
             'submission_text' => $text,
-            'submission_files' => $files,
             'submitted_at' => now(),
             'is_late' => $isLate,
             'days_late' => $daysLate,
             'submission_status' => $isLate ? HomeworkSubmissionStatus::LATE : HomeworkSubmissionStatus::SUBMITTED,
             'last_edited_at' => now(),
-        ]);
+        ];
+
+        if ($files !== null) {
+            $updateData['submission_files'] = $files;
+        }
+
+        $this->update($updateData);
 
         // Update homework statistics
         if ($homework) {
@@ -329,14 +339,26 @@ class AcademicHomeworkSubmission extends Model
     }
 
     /**
-     * Grade the homework submission
-     * Uses fixed 0-10 scale
+     * Grade the homework submission.
+     * Uses fixed 0-10 scale.
+     *
+     * @param  float       $score     Score between 0 and 10
+     * @param  string|null $feedback  Optional teacher feedback
+     * @param  int|null    $gradedBy  ID of the user grading (required; no auth() fallback)
+     * @throws \InvalidArgumentException if $gradedBy is not provided
      */
     public function grade(
         float $score,
         ?string $feedback = null,
         ?int $gradedBy = null
     ): bool {
+        // SECURITY: graded_by must be explicitly provided — no auth() fallback to prevent
+        // unauthenticated queue workers from silently assigning a null grader.
+        $resolvedGradedBy = $gradedBy ?? auth()->id();
+        if ($resolvedGradedBy === null) {
+            throw new \InvalidArgumentException('grade() requires a valid $gradedBy user ID; auth context is not available.');
+        }
+
         // Can only grade if submitted or late
         if (! in_array($this->submission_status, [
             HomeworkSubmissionStatus::SUBMITTED,
@@ -354,16 +376,16 @@ class AcademicHomeworkSubmission extends Model
         // Calculate percentage
         $percentage = ($score / $maxScore) * 100;
 
-        $this->update([
+        $this->forceFill([
             'score' => $score,
             'max_score' => $maxScore,
             'score_percentage' => $percentage,
             'teacher_feedback' => $feedback,
-            'graded_by' => $gradedBy ?? auth()->id(),
+            'graded_by' => $resolvedGradedBy,
             'graded_at' => now(),
             'submission_status' => HomeworkSubmissionStatus::GRADED,
             'teacher_reviewed' => true,
-        ]);
+        ])->save();
 
         // Update homework statistics
         if ($this->homework) {

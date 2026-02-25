@@ -523,6 +523,9 @@ class QuranSubscription extends BaseSubscription
                 'last_session_at' => now(),
             ]);
 
+            // Refresh to get the actual persisted value after update (avoids stale in-memory value)
+            $subscription->refresh();
+
             // When sessions run out, pause the subscription (awaiting renewal)
             if ($subscription->sessions_remaining <= 0) {
                 $subscription->update([

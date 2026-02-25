@@ -46,7 +46,11 @@ class FaviconHelper
         $url = static::get($academy);
         $type = str_ends_with($url, '.svg') ? 'image/svg+xml' : 'image/png';
 
-        return sprintf('<link rel="icon" type="%s" href="%s">', $type, $url);
+        return sprintf(
+            '<link rel="icon" type="%s" href="%s">',
+            htmlspecialchars($type, ENT_QUOTES, 'UTF-8'),
+            htmlspecialchars($url, ENT_QUOTES, 'UTF-8')
+        );
     }
 
     /**

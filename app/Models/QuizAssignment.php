@@ -89,6 +89,15 @@ class QuizAssignment extends Model
     // Scopes
     // ========================================
 
+    /**
+     * Scope to a specific academy by filtering through the quiz relationship.
+     * Used for tenant isolation since quiz_assignments has no direct academy_id column.
+     */
+    public function scopeForAcademy($query, int|string $academyId)
+    {
+        return $query->whereHas('quiz', fn ($q) => $q->where('academy_id', $academyId));
+    }
+
     public function scopeVisible($query)
     {
         return $query->where('is_visible', true);
@@ -142,8 +151,7 @@ class QuizAssignment extends Model
 
         $attemptCount = $this->attempts()
             ->where('student_id', $studentId)
-            ->whereNotNull('submitted_at')
-            ->count();
+            ->count();  // Count all attempts, not just submitted ones
 
         return $attemptCount < $this->max_attempts;
     }
@@ -186,7 +194,12 @@ class QuizAssignment extends Model
      */
     public function getReturnUrl(?string $subdomain = null): string
     {
-        $subdomain = $subdomain ?? request()->route('subdomain') ?? DefaultAcademy::subdomain();
+        // Resolve subdomain from provided value, then academy relationship (safe in queue context),
+        // then request route parameter, then fall back to default academy subdomain.
+        $subdomain = $subdomain
+            ?? $this->quiz?->academy?->subdomain
+            ?? request()->route('subdomain')
+            ?? DefaultAcademy::subdomain();
         $assignable = $this->assignable;
 
         if (! $assignable) {
@@ -227,9 +240,9 @@ class QuizAssignment extends Model
     {
         parent::boot();
 
-        // Notify students when quiz is assigned
+        // Notify students when quiz is assigned (dispatched as a queued job)
         static::created(function ($assignment) {
-            $assignment->notifyQuizAssigned();
+            \App\Jobs\NotifyQuizAssignedJob::dispatch($assignment->id);
         });
     }
 

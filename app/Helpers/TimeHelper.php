@@ -387,6 +387,11 @@ if (! function_exists('parseSaudiTime')) {
             // Parse the string assuming Saudi timezone
             return Carbon::parse($timeString, 'Asia/Riyadh');
         } catch (Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('parseSaudiTime: failed to parse time string', [
+                'input' => $timeString,
+                'error' => $e->getMessage(),
+            ]);
+
             return null;
         }
     }

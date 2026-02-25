@@ -623,34 +623,45 @@ class QuranCircle extends Model
     // Methods
     public function enrollStudent(User $student, array $additionalData = []): self
     {
-        if ($this->is_full) {
-            throw new Exception('الحلقة مكتملة العدد');
-        }
+        return DB::transaction(function () use ($student, $additionalData) {
+            // Lock the circle row to prevent concurrent enrollment race conditions
+            $lockedCircle = static::lockForUpdate()->find($this->id);
 
-        if (! $this->canEnrollStudent($student)) {
-            throw new Exception('لا يمكن تسجيل هذا الطالب في الحلقة');
-        }
+            if (! $lockedCircle) {
+                throw new Exception('الحلقة غير موجودة');
+            }
 
-        $pivotData = array_merge([
-            'enrolled_at' => now(),
-            'status' => 'enrolled',
-            'attendance_count' => 0,
-            'missed_sessions' => 0,
-            'makeup_sessions_used' => 0,
-            'current_level' => $this->memorization_level,
-        ], $additionalData);
+            if ($lockedCircle->is_full) {
+                throw new Exception('الحلقة مكتملة العدد');
+            }
 
-        $this->students()->attach($student->id, $pivotData);
+            if (! $lockedCircle->canEnrollStudent($student)) {
+                throw new Exception('لا يمكن تسجيل هذا الطالب في الحلقة');
+            }
 
-        // Update enrollment status if full
-        if ($this->students()->count() >= $this->max_students) {
-            $this->update(['enrollment_status' => CircleEnrollmentStatus::FULL]);
-        } elseif ($this->enrollment_status === CircleEnrollmentStatus::CLOSED && $this->status === true) {
-            // If there's space and circle is active, set to open for better UX
-            $this->update(['enrollment_status' => CircleEnrollmentStatus::OPEN]);
-        }
+            $pivotData = array_merge([
+                'enrolled_at' => now(),
+                'status' => 'enrolled',
+                'attendance_count' => 0,
+                'missed_sessions' => 0,
+                'makeup_sessions_used' => 0,
+                'current_level' => $lockedCircle->memorization_level,
+            ], $additionalData);
 
-        return $this;
+            $lockedCircle->students()->attach($student->id, $pivotData);
+
+            // Update enrollment status if full
+            if ($lockedCircle->students()->count() >= $lockedCircle->max_students) {
+                $lockedCircle->update(['enrollment_status' => CircleEnrollmentStatus::FULL]);
+            } elseif ($lockedCircle->enrollment_status === CircleEnrollmentStatus::CLOSED && $lockedCircle->status === true) {
+                // If there's space and circle is active, set to open for better UX
+                $lockedCircle->update(['enrollment_status' => CircleEnrollmentStatus::OPEN]);
+            }
+
+            $this->refresh();
+
+            return $this;
+        });
     }
 
     public function unenrollStudent(User $student, ?string $reason = null): self
@@ -667,6 +678,11 @@ class QuranCircle extends Model
 
     public function canEnrollStudent(User $student): bool
     {
+        // Check that the student belongs to the same academy as the circle
+        if ($student->academy_id !== $this->academy_id) {
+            return false;
+        }
+
         // Check if already enrolled
         if ($this->students()->where('quran_circle_students.student_id', $student->id)->exists()) {
             return false;
@@ -849,7 +865,7 @@ class QuranCircle extends Model
         ]);
 
         // Update teacher's rating
-        $this->quranTeacher->updateRating();
+        $this->quranTeacher?->updateRating();
 
         return $this;
     }
@@ -925,7 +941,7 @@ class QuranCircle extends Model
             $certificateData = [
                 'student_name' => $student->name,
                 'circle_name' => $this->name,
-                'teacher_name' => $this->quranTeacher->user->name,
+                'teacher_name' => $this->quranTeacher?->user?->name ?? __('common.unknown'),
                 'academy_name' => $this->academy->name,
                 'completion_date' => now(),
                 'specialization' => $this->specialization_text,
@@ -960,38 +976,42 @@ class QuranCircle extends Model
 
     public static function generateCircleCode(int $academyId): string
     {
-        $prefix = 'QC';
-        $academyPart = $academyId;
+        return DB::transaction(function () use ($academyId) {
+            $prefix = 'QC';
+            $academyPart = $academyId;
 
-        // Get all existing circle codes for this academy
-        $existingCodes = self::withTrashed()
-            ->where('academy_id', $academyId)
-            ->pluck('circle_code')
-            ->toArray();
+            // Lock to prevent concurrent generation of duplicate codes
+            $existingCodes = self::withoutGlobalScopes()
+                ->withTrashed()
+                ->where('academy_id', $academyId)
+                ->lockForUpdate()
+                ->pluck('circle_code')
+                ->toArray();
 
-        $maxSequence = 0;
+            $maxSequence = 0;
 
-        // Parse existing codes to find the highest sequence number
-        foreach ($existingCodes as $code) {
-            // Only process codes that match the standard format: QC-{academy}-{sequence}
-            if (preg_match("/^{$prefix}-{$academyPart}-(\d+)$/", $code, $matches)) {
-                $sequence = (int) $matches[1];
-                $maxSequence = max($maxSequence, $sequence);
+            // Parse existing codes to find the highest sequence number
+            foreach ($existingCodes as $code) {
+                // Only process codes that match the standard format: QC-{academy}-{sequence}
+                if (preg_match("/^{$prefix}-{$academyPart}-(\d+)$/", $code, $matches)) {
+                    $sequence = (int) $matches[1];
+                    $maxSequence = max($maxSequence, $sequence);
+                }
             }
-        }
 
-        $nextSequence = $maxSequence + 1;
-        $code = "{$prefix}-{$academyPart}-".str_pad($nextSequence, 6, '0', STR_PAD_LEFT);
-
-        // Double-check for uniqueness (fallback safety)
-        $attempt = 0;
-        while (in_array($code, $existingCodes) && $attempt < 100) {
-            $nextSequence++;
+            $nextSequence = $maxSequence + 1;
             $code = "{$prefix}-{$academyPart}-".str_pad($nextSequence, 6, '0', STR_PAD_LEFT);
-            $attempt++;
-        }
 
-        return $code;
+            // Double-check for uniqueness (fallback safety)
+            $attempt = 0;
+            while (in_array($code, $existingCodes) && $attempt < 100) {
+                $nextSequence++;
+                $code = "{$prefix}-{$academyPart}-".str_pad($nextSequence, 6, '0', STR_PAD_LEFT);
+                $attempt++;
+            }
+
+            return $code;
+        });
     }
 
     // Boot method to handle model events

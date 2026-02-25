@@ -86,13 +86,13 @@
 
             if (seconds <= 0) {
                 clearInterval(interval);
-                window.location.href = '{{ $deeplink_url }}';
+                window.location.href = {!! json_encode($deeplink_url ?? '') !!};
             }
         }, 1000);
 
         // Immediate redirect on page load (some browsers need this)
         setTimeout(() => {
-            window.location.href = '{{ $deeplink_url }}';
+            window.location.href = {!! json_encode($deeplink_url ?? '') !!};
         }, {{ $auto_redirect_seconds * 1000 }});
     </script>
     @endpush

@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    'allowed_origins' => [
+    'allowed_origins' => array_filter([
         env('APP_URL', 'https://itqan-platform.test'),
         // Mobile app origins - add your mobile app URLs here
         'capacitor://localhost',
@@ -28,13 +28,13 @@ return [
         'http://localhost:8080',
         'http://localhost:8100',
         // Production mobile app URLs (configure in .env)
-        env('MOBILE_APP_URL', ''),
-    ],
+        env('MOBILE_APP_URL') ?: null,
+    ], fn ($v) => ! empty($v)),
 
     'allowed_origins_patterns' => [
         // Allow all subdomains of the main domain for multi-tenancy
         '#^https?://.*\.itqan-platform\.test$#',
-        '#^https?://.*\.itqanway\.com$#',
+        '#^https://.*\.itqanway\.com$#',
     ],
 
     'allowed_headers' => [

@@ -157,8 +157,12 @@ class PaymentController extends Controller
             $payment = Payment::withoutGlobalScopes()->findOrFail($payment);
         }
 
-        // Don't authorize - success page should be accessible to anyone with the URL
-        // (EasyKash callbacks may not have user session)
+        // If the user is authenticated, enforce ownership (prevents viewing others' receipts).
+        // We intentionally skip auth for unauthenticated visits because payment-gateway
+        // redirect callbacks (e.g. EasyKash) may arrive without a user session.
+        if (auth()->check() && auth()->id() !== (int) $payment->user_id) {
+            abort(403);
+        }
 
         $payment->load(['subscription', 'user']);
 

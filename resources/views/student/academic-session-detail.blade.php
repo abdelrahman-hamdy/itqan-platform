@@ -133,18 +133,22 @@ document.getElementById('feedbackForm')?.addEventListener('submit', function(e) 
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Replace form with submitted feedback
-            document.querySelector('#feedbackForm').parentElement.innerHTML = `
-                <div class="mb-4">
-                    <div class="text-gray-700 bg-gray-50 rounded-lg p-4">
-                        ${feedback}
-                    </div>
-                </div>
-                <div class="text-sm text-green-600">
-                    <i class="ri-check-line ms-1"></i>
-                    {{ __('student.session_detail.rating_success') }}
-                </div>
-            `;
+            // Replace form with submitted feedback using safe DOM creation (no innerHTML with user data)
+            const container = document.querySelector('#feedbackForm').parentElement;
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'mb-4';
+            const innerDiv = document.createElement('div');
+            innerDiv.className = 'text-gray-700 bg-gray-50 rounded-lg p-4';
+            innerDiv.textContent = feedback;
+            feedbackDiv.appendChild(innerDiv);
+            const successDiv = document.createElement('div');
+            successDiv.className = 'text-sm text-green-600';
+            const icon = document.createElement('i');
+            icon.className = 'ri-check-line ms-1';
+            const successText = document.createTextNode(' {{ __('student.session_detail.rating_success') }}');
+            successDiv.appendChild(icon);
+            successDiv.appendChild(successText);
+            container.replaceChildren(feedbackDiv, successDiv);
         } else {
             window.toast?.error('{{ __('student.session_detail.rating_error') }}');
         }
@@ -183,30 +187,40 @@ document.getElementById('homeworkSubmissionForm')?.addEventListener('submit', fu
             const submission = formData.get('homework_submission');
             const file = formData.get('homework_file');
 
-            let fileLink = '';
+            // Build success UI using safe DOM creation (no innerHTML with user data)
+            const wrapper = document.createElement('div');
+            wrapper.className = 'bg-green-50 border border-green-200 rounded-lg p-4';
+
+            const headerRow = document.createElement('div');
+            headerRow.className = 'flex items-center mb-2';
+            const checkIcon = document.createElement('i');
+            checkIcon.className = 'ri-check-circle-line text-green-600 ms-2';
+            const headerSpan = document.createElement('span');
+            headerSpan.className = 'font-medium text-green-800';
+            headerSpan.textContent = '{{ __('student.session_detail.homework_submitted') }}';
+            headerRow.appendChild(checkIcon);
+            headerRow.appendChild(headerSpan);
+
+            const submissionDiv = document.createElement('div');
+            submissionDiv.className = 'text-sm text-green-700 mb-3';
+            submissionDiv.textContent = submission;
+
+            wrapper.appendChild(headerRow);
+            wrapper.appendChild(submissionDiv);
+
             if (file && file.size > 0 && data.data.file_path) {
-                fileLink = `
-                    <a href="/storage/${data.data.file_path}"
-                       target="_blank"
-                       class="inline-flex items-center text-green-600 hover:text-green-800 text-sm">
-                        <i class="ri-attachment-line ms-1"></i>
-                        {{ __('student.session_detail.attached_file') }}
-                    </a>
-                `;
+                const fileAnchor = document.createElement('a');
+                fileAnchor.href = '/storage/' + data.data.file_path;
+                fileAnchor.target = '_blank';
+                fileAnchor.className = 'inline-flex items-center text-green-600 hover:text-green-800 text-sm';
+                const attachIcon = document.createElement('i');
+                attachIcon.className = 'ri-attachment-line ms-1';
+                fileAnchor.appendChild(attachIcon);
+                fileAnchor.appendChild(document.createTextNode(' {{ __('student.session_detail.attached_file') }}'));
+                wrapper.appendChild(fileAnchor);
             }
 
-            this.parentElement.innerHTML = `
-                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div class="flex items-center mb-2">
-                        <i class="ri-check-circle-line text-green-600 ms-2"></i>
-                        <span class="font-medium text-green-800">{{ __('student.session_detail.homework_submitted') }}</span>
-                    </div>
-                    <div class="text-sm text-green-700 mb-3">
-                        ${submission}
-                    </div>
-                    ${fileLink}
-                </div>
-            `;
+            this.parentElement.replaceChildren(wrapper);
         } else {
             window.toast?.error(data.message || '{{ __('student.session_detail.homework_submit_error') }}');
             // Restore button state

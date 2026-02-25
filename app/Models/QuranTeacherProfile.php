@@ -20,7 +20,7 @@ class QuranTeacherProfile extends Model
     use HasFactory, HasReviews, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
-        'academy_id', // Direct academy relationship
+        'academy_id', // Required at creation; set by registration services and Filament panel
         'user_id', // Nullable - will be linked during registration
         'gender',
         'avatar',

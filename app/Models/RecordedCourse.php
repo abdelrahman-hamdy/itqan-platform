@@ -20,7 +20,7 @@ class RecordedCourse extends Model implements HasMedia
     use HasFactory, InteractsWithMedia, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
-        'academy_id',
+        // SECURITY: academy_id excluded — set explicitly by trusted services/boot hooks, not via mass assignment
         'subject_id',
         'grade_level_id',
         'title',
@@ -221,16 +221,36 @@ class RecordedCourse extends Model implements HasMedia
         return $this->lessons()->where('is_published', true)->count();
     }
 
+    /**
+     * Get progress percentage for the currently authenticated user.
+     * Returns 0.0 in queue/CLI contexts where no user is authenticated.
+     * Use getProgressPercentageForUser() when a specific user ID is needed.
+     */
     public function getProgressPercentageAttribute(): float
+    {
+        $userId = auth()->id();
+        if (! $userId) {
+            // Safe fallback for queue workers and CLI contexts
+            return 0.0;
+        }
+
+        return $this->getProgressPercentageForUser($userId);
+    }
+
+    /**
+     * Get the progress percentage for a specific user.
+     * Use this method in queue jobs and other contexts without an active auth session.
+     */
+    public function getProgressPercentageForUser(int $userId): float
     {
         $totalLessons = $this->total_lessons;
         if ($totalLessons == 0) {
-            return 0;
+            return 0.0;
         }
 
         $completedLessons = $this->lessons()
-            ->whereHas('progress', function ($query) {
-                $query->where('user_id', auth()->id())
+            ->whereHas('progress', function ($query) use ($userId) {
+                $query->where('user_id', $userId)
                     ->where('is_completed', true);
             })
             ->count();

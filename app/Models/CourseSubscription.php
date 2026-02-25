@@ -327,8 +327,8 @@ class CourseSubscription extends BaseSubscription
     public function getSubscriptionTypeLabel(): string
     {
         return $this->course_type === CourseType::INTERACTIVE
-            ? 'دورة تفاعلية'
-            : 'دورة مسجلة';
+            ? __('subscriptions.course_types.interactive')
+            : __('subscriptions.course_types.recorded');
     }
 
     /**
@@ -342,7 +342,7 @@ class CourseSubscription extends BaseSubscription
 
         $course = $this->course;
 
-        return $course?->name ?? $course?->title ?? 'دورة تدريبية';
+        return $course?->name ?? $course?->title ?? __('subscriptions.course_types.training');
     }
 
     /**

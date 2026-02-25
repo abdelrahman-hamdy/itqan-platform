@@ -236,7 +236,11 @@ function initPaymobFrame() {
     .then(response => response.json())
     .then(data => {
         if (data.iframe_url) {
-            container.innerHTML = `<iframe src="${data.iframe_url}" class="w-full min-h-[400px] border-0 rounded-lg"></iframe>`;
+            const iframe = document.createElement('iframe');
+            iframe.src = data.iframe_url;
+            iframe.className = 'w-full min-h-[400px] border-0 rounded-lg';
+            container.innerHTML = '';
+            container.appendChild(iframe);
         }
     })
     .catch(error => {

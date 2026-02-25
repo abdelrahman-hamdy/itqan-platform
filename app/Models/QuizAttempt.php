@@ -87,6 +87,15 @@ class QuizAttempt extends Model
     // Scopes
     // ========================================
 
+    /**
+     * Scope to a specific academy by filtering through the assignment → quiz relationship.
+     * Used for tenant isolation since quiz_attempts has no direct academy_id column.
+     */
+    public function scopeForAcademy($query, int|string $academyId)
+    {
+        return $query->whereHas('assignment.quiz', fn ($q) => $q->where('academy_id', $academyId));
+    }
+
     public function scopeCompleted($query)
     {
         return $query->whereNotNull('submitted_at');
@@ -165,6 +174,24 @@ class QuizAttempt extends Model
      */
     public function submit(array $answers): void
     {
+        // 1. Reject if time has expired
+        if ($this->hasTimeExpired()) {
+            throw new \InvalidArgumentException('Quiz time has expired.');
+        }
+
+        // 2. Reject if assignment is no longer available
+        if (! $this->assignment->isAvailable()) {
+            throw new \InvalidArgumentException('Quiz assignment is no longer available.');
+        }
+
+        // 3. Reject if max_attempts already reached (count all attempts, including in-progress)
+        $totalAttempts = $this->assignment->attempts()
+            ->where('student_id', $this->student_id)
+            ->count();
+        if ($totalAttempts > ($this->assignment->max_attempts ?? 1)) {
+            throw new \InvalidArgumentException('Maximum attempts reached.');
+        }
+
         $quiz = $this->assignment->quiz;
         $questions = $quiz->questions;
         $totalQuestions = $questions->count();

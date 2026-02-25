@@ -326,7 +326,7 @@ class BrowseController extends Controller
                 'avg_rating' => (float) ($course->avg_rating ?? 0),
                 'total_reviews' => $course->total_reviews ?? 0,
                 'price' => $course->price ?? 0,
-                'currency' => $course->currency ?? 'SAR',
+                'currency' => $course->currency ?? getCurrencyCode(null, $academy),
                 'is_free' => ($course->price ?? 0) == 0,
                 'subject' => $course->subject?->name,
                 'grade_level' => $course->gradeLevel?->name,

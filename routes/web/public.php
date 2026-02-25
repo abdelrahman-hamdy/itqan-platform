@@ -66,7 +66,8 @@ Route::domain(config('app.domain'))->group(function () {
 
     // Business Service Request API
     Route::post('/business-services/request', [\App\Http\Controllers\BusinessServiceController::class, 'storeRequest'])
-        ->name('platform.business-services.request');
+        ->name('platform.business-services.request')
+        ->middleware('throttle:10,1');
 
     // Business Service Categories API
     Route::get('/business-services/categories', [\App\Http\Controllers\BusinessServiceController::class, 'getCategories'])
@@ -79,37 +80,6 @@ Route::domain(config('app.domain'))->group(function () {
     // Admin Panel (Super Admin)
     Route::get('/admin', function () {
         return redirect('/admin/login');
-    });
-
-    // Keep the old-home route for reference (can be removed later)
-    Route::get('/old-home', function () {
-        // Check if there's a default academy
-        $defaultAcademy = \App\Models\Academy::where('subdomain', \App\Constants\DefaultAcademy::subdomain())->first();
-
-        if ($defaultAcademy) {
-            $output = "
-            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; border: 1px solid #ddd; border-radius: 8px;'>
-                <h1 style='color: #2563eb;'>🎓 Itqan Platform</h1>
-                <p><strong>Default Academy:</strong> {$defaultAcademy->name}</p>
-                <p><strong>Domain:</strong> ".request()->getHost().'</p>
-                <hr>
-                <h3>Available Academies:</h3>';
-
-            $academies = \App\Models\Academy::where('is_active', true)->where('maintenance_mode', false)->get();
-            foreach ($academies as $academy) {
-                $output .= "<p><a href='http://{$academy->full_domain}' style='color: #2563eb; text-decoration: none;'>{$academy->name} ({$academy->subdomain})</a></p>";
-            }
-
-            $output .= "
-                <hr>
-                <a href='/admin' style='display: inline-block; margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; text-decoration: none; border-radius: 4px;'>Admin Panel</a>
-            </div>
-            ";
-
-            return $output;
-        }
-
-        return view('welcome');
     });
 
     // Catch-all for other routes - redirect to appropriate academy

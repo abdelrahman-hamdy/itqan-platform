@@ -1655,8 +1655,8 @@ function completeSession(sessionId) {
             const meetingConfig = {
                 serverUrl: '{{ config("livekit.server_url") }}',
                 csrfToken: '{{ csrf_token() }}',
-                roomName: '{{ $session->meeting_room_name ?? "session-" . $session->id }}',
-                participantName: '{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}',
+                roomName: {!! json_encode($session->meeting_room_name ?? 'session-' . $session->id) !!},
+                participantName: {!! json_encode(trim(auth()->user()->first_name . ' ' . auth()->user()->last_name)) !!},
                 role: '{{ $userType === "quran_teacher" ? "teacher" : "student" }}',
                 // Avatar data for local participant
                 avatarUrl: {!! json_encode($currentUserAvatarUrl) !!},
@@ -1823,7 +1823,7 @@ document.addEventListener('DOMContentLoaded', function() {
     class AutoAttendanceTracker {
         constructor() {
             this.sessionId = {{ $session->id }};
-            this.roomName = '{{ $session->meeting_room_name ?? "session-" . $session->id }}';
+            this.roomName = {!! json_encode($session->meeting_room_name ?? 'session-' . $session->id) !!};
             this.csrfToken = '{{ csrf_token() }}';
             this.isTracking = false;
             this.attendanceStatus = null;

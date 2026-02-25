@@ -22,6 +22,8 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use App\Filament\Resources\BaseResource;
+use App\Models\AcademicIndividualLesson;
+use App\Models\InteractiveCourse;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
 use App\Models\QuranCircle;
@@ -317,6 +319,8 @@ abstract class BaseQuizResource extends BaseResource
                 $assignableId = (int) $data['assignable_id'];
 
                 // Verify the assignable belongs to the current teacher before creating assignment
+                $academicTeacherProfileId = auth()->user()->academicTeacherProfile?->id;
+
                 $ownershipVerified = match (true) {
                     $assignableType === QuranCircle::class,
                     $assignableType === \App\Enums\QuizAssignableType::QURAN_CIRCLE->value =>
@@ -327,6 +331,16 @@ abstract class BaseQuizResource extends BaseResource
                     $assignableType === \App\Enums\QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE->value =>
                         QuranIndividualCircle::where('id', $assignableId)
                             ->where('quran_teacher_id', $teacherId)
+                            ->exists(),
+                    $assignableType === AcademicIndividualLesson::class,
+                    $assignableType === \App\Enums\QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON->value =>
+                        $academicTeacherProfileId !== null && AcademicIndividualLesson::where('id', $assignableId)
+                            ->where('academic_teacher_id', $academicTeacherProfileId)
+                            ->exists(),
+                    $assignableType === InteractiveCourse::class,
+                    $assignableType === \App\Enums\QuizAssignableType::INTERACTIVE_COURSE->value =>
+                        $academicTeacherProfileId !== null && InteractiveCourse::where('id', $assignableId)
+                            ->where('assigned_teacher_id', $academicTeacherProfileId)
                             ->exists(),
                     default => false,
                 };

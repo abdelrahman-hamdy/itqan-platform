@@ -15,7 +15,7 @@ class StudentProfile extends Model
 
     protected $fillable = [
         'user_id', // Nullable - will be linked during registration
-        'academy_id',
+        // SECURITY: academy_id excluded — set by boot() hook from grade_level or user, never via mass assignment
         'email',
         'first_name',
         'last_name',

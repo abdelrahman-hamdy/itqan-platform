@@ -40,9 +40,11 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    // Payment Processing (ID-based)
-    Route::get('/courses/{courseId}/payment', [PaymentController::class, 'create'])->name('payments.create')->where('courseId', '[0-9]+');
-    Route::post('/courses/{courseId}/payment', [PaymentController::class, 'store'])->name('payments.store')->where('courseId', '[0-9]+');
+    // Payment Processing (ID-based) - requires authentication
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/courses/{courseId}/payment', [PaymentController::class, 'create'])->name('payments.create')->where('courseId', '[0-9]+');
+        Route::post('/courses/{courseId}/payment', [PaymentController::class, 'store'])->name('payments.store')->where('courseId', '[0-9]+');
+    });
 
     // Payment success/failed pages - use closure to bypass automatic model binding
     // This allows manual loading without global scopes in the controller
@@ -60,7 +62,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/payments/{payment}/receipt', [PaymentController::class, 'downloadReceipt'])->name('payments.receipt');
+    Route::get('/payments/{payment}/receipt', [PaymentController::class, 'downloadReceipt'])->name('payments.receipt')->middleware('auth');
 
     /*
     |--------------------------------------------------------------------------
@@ -78,7 +80,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::post('/payments/{payment}/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
+    Route::post('/payments/{payment}/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate')->middleware('auth');
 
     // Paymob payment callback
     // Note: Using closure wrapper because direct controller binding [PaymobWebhookController::class, 'callback']
@@ -99,7 +101,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/api/payment-methods/{academy}', [PaymentController::class, 'getPaymentMethods'])->name('api.payment-methods');
+    Route::get('/api/payment-methods/{academy}', [PaymentController::class, 'getPaymentMethods'])->name('api.payment-methods')->middleware('throttle:30,1');
 });
 
 /*

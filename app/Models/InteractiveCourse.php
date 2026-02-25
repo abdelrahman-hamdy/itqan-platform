@@ -20,7 +20,7 @@ class InteractiveCourse extends Model
     use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
-        'academy_id',
+        // SECURITY: academy_id excluded — set explicitly by trusted services/boot hooks, not via mass assignment
         'assigned_teacher_id',
         'title',
         'description',
@@ -93,8 +93,15 @@ class InteractiveCourse extends Model
         static::creating(function ($model) {
             if (empty($model->course_code)) {
                 $academyId = $model->academy_id ?? AcademyContextService::getCurrentAcademyId() ?? AcademyContextService::getDefaultAcademy()?->id ?? 2;
-                $count = static::where('academy_id', $academyId)->count() + 1;
-                $model->course_code = 'IC-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
+                $model->course_code = \Illuminate\Support\Facades\DB::transaction(function () use ($academyId) {
+                    // Lock to prevent concurrent generation of duplicate course codes
+                    $count = static::withoutGlobalScopes()
+                        ->where('academy_id', $academyId)
+                        ->lockForUpdate()
+                        ->count() + 1;
+
+                    return 'IC-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
+                });
             }
 
             // Calculate duration_weeks based on total_sessions and sessions_per_week
