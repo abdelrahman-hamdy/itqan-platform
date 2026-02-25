@@ -55,6 +55,12 @@ class NotificationCenter extends Component
 
     public function filterByCategory($category = null)
     {
+        if ($category !== null) {
+            $validValues = array_column(NotificationCategory::cases(), 'value');
+            if (! in_array($category, $validValues, true)) {
+                return;
+            }
+        }
         $this->selectedCategory = $category;
         $this->perPage = 15;
     }

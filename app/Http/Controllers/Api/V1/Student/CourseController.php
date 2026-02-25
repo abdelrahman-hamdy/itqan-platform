@@ -70,7 +70,7 @@ class CourseController extends Controller
         }
 
         $courses = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 100));
 
         // Get enrollment status for each course
         $enrolledCourses = CourseSubscription::where('student_id', $user->id)

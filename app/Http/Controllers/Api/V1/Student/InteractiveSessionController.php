@@ -51,7 +51,7 @@ class InteractiveSessionController extends BaseStudentSessionController
             ->toArray();
 
         $page = (int) $request->get('page', 1);
-        $perPage = (int) $request->get('per_page', 15);
+        $perPage = min((int) $request->get('per_page', 15), 100);
 
         return $this->success(
             $this->manualPaginateSessions($sessions, $page, $perPage),

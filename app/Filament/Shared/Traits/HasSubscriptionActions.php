@@ -23,6 +23,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * HasSubscriptionActions Trait
@@ -105,6 +106,7 @@ trait HasSubscriptionActions
                     ->maxLength(255),
             ])
             ->action(function (BaseSubscription $record, array $data) {
+                DB::transaction(function () use ($record, $data) {
                 $updateData = [
                     'payment_status' => SubscriptionPaymentStatus::PAID,
                     'last_payment_date' => now(),
@@ -171,6 +173,7 @@ trait HasSubscriptionActions
                 }
 
                 $record->update($updateData);
+                }); // end DB::transaction
 
                 Notification::make()
                     ->success()
@@ -386,17 +389,19 @@ trait HasSubscriptionActions
             ->modalDescription('سيتم إلغاء الاشتراك وإلغاء جميع الجلسات المجدولة القادمة.')
             ->modalSubmitActionLabel('نعم، إلغاء الاشتراك')
             ->action(function (BaseSubscription $record) {
-                $record->update([
-                    'status' => SessionSubscriptionStatus::CANCELLED,
-                    'cancelled_at' => now(),
-                    'auto_renew' => false,
-                ]);
+                $cancelledSessions = DB::transaction(function () use ($record) {
+                    $record->update([
+                        'status' => SessionSubscriptionStatus::CANCELLED,
+                        'cancelled_at' => now(),
+                        'auto_renew' => false,
+                    ]);
 
-                // Cancel future scheduled sessions
-                $cancelledSessions = $record->sessions()
-                    ->where('scheduled_at', '>', now())
-                    ->where('status', SessionStatus::SCHEDULED)
-                    ->update(['status' => SessionStatus::CANCELLED]);
+                    // Cancel future scheduled sessions
+                    return $record->sessions()
+                        ->where('scheduled_at', '>', now())
+                        ->where('status', SessionStatus::SCHEDULED)
+                        ->update(['status' => SessionStatus::CANCELLED]);
+                });
 
                 Notification::make()
                     ->success()

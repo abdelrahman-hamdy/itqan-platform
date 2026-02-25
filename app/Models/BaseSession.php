@@ -386,6 +386,12 @@ abstract class BaseSession extends Model implements MeetingCapable
     abstract public function getParticipants(): array;
 
     /**
+     * Mark session as absent (student did not attend)
+     * Must be implemented by each child class
+     */
+    abstract public function markAsAbsent(?string $reason = null): bool;
+
+    /**
      * Get meeting-specific configuration
      * Must be implemented by each child class
      */

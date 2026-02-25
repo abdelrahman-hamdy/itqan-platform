@@ -17,9 +17,30 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
+// Session attendance channel — user must belong to the same academy as the session
+// Covers QuranSession and AcademicSession (both use integer primary keys in same academy)
+Broadcast::channel('session.{sessionId}', function ($user, $sessionId) {
+    if (! $user || ! $user->academy_id) {
+        return false;
+    }
+    $academyId = $user->academy_id;
+
+    return \App\Models\QuranSession::where('id', $sessionId)->where('academy_id', $academyId)->exists()
+        || \App\Models\AcademicSession::where('id', $sessionId)->where('academy_id', $academyId)->exists();
+});
+
 // Notification channel for real-time notifications
 Broadcast::channel('user.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
+});
+
+// Academy meetings control channel — admins and teachers of the same academy
+Broadcast::channel('academy.{academyId}.meetings', function ($user, $academyId) {
+    if (! $user || ! $user->academy_id) {
+        return false;
+    }
+
+    return (int) $user->academy_id === (int) $academyId;
 });
 
 /*

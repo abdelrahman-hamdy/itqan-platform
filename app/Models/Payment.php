@@ -57,7 +57,7 @@ class Payment extends Model
         'transaction_id',
         'gateway_intent_id',
         'gateway_order_id',
-        'client_secret',
+        // SECURITY: client_secret excluded — gateway credential, set only by PaymentService
         'redirect_url',
         'iframe_url',
         'paid_at',

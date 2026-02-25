@@ -24,7 +24,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     // Unified login page for all roles
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post')->middleware('throttle:5,1');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     /*
@@ -71,7 +71,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     // Student registration (public access)
     Route::get('/register', [AuthController::class, 'showStudentRegistration'])->name('student.register');
-    Route::post('/register', [AuthController::class, 'registerStudent'])->name('student.register.post');
+    Route::post('/register', [AuthController::class, 'registerStudent'])->name('student.register.post')->middleware('throttle:5,1');
 
     /*
     |--------------------------------------------------------------------------
@@ -81,7 +81,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     // Teacher registration (public access)
     Route::get('/teacher/register', [AuthController::class, 'showTeacherRegistration'])->name('teacher.register');
-    Route::post('/teacher/register/step1', [AuthController::class, 'registerTeacherStep1'])->name('teacher.register.step1');
+    Route::post('/teacher/register/step1', [AuthController::class, 'registerTeacherStep1'])->name('teacher.register.step1')->middleware('throttle:5,1');
     Route::get('/teacher/register/step2', [AuthController::class, 'showTeacherRegistrationStep2'])->name('teacher.register.step2');
     Route::post('/teacher/register/step2', [AuthController::class, 'registerTeacherStep2'])->name('teacher.register.step2.post');
     Route::get('/teacher/register/success', [AuthController::class, 'showTeacherRegistrationSuccess'])->name('teacher.register.success');
@@ -94,7 +94,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     // Parent registration with student code verification (public access)
     Route::get('/parent/register', [ParentRegistrationController::class, 'showRegistrationForm'])->name('parent.register');
-    Route::post('/parent/register', [ParentRegistrationController::class, 'register'])->name('parent.register.post');
+    Route::post('/parent/register', [ParentRegistrationController::class, 'register'])->name('parent.register.post')->middleware('throttle:5,1');
     Route::post('/parent/verify-students', [ParentRegistrationController::class, 'verifyStudentCodes'])->name('parent.verify.students');
 
     /*

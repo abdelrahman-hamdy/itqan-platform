@@ -30,7 +30,7 @@ class PaymentController extends Controller
         }
 
         $payments = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 100));
 
         return $this->success([
             'payments' => collect($payments->items())->map(fn ($payment) => [
@@ -101,7 +101,6 @@ class PaymentController extends Controller
                 ] : null,
                 'transaction_id' => $payment->transaction_id,
                 'gateway' => $payment->gateway,
-                'gateway_response' => $payment->gateway_response,
                 'paid_at' => $payment->paid_at?->toISOString(),
                 'created_at' => $payment->created_at->toISOString(),
                 'receipt_url' => $payment->status === PaymentStatus::COMPLETED

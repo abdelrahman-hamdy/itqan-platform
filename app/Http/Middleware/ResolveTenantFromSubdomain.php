@@ -42,10 +42,7 @@ class ResolveTenantFromSubdomain
             $request->routeIs('livewire.*') ||
             $request->is('livewire/*') ||
             $request->is('storage/*') ||
-            $request->is('livewire-uploads/*') ||
-            str_contains($path, 'temp') ||
-            str_contains($path, 'upload') ||
-            str_contains($path, 'tmp')) {
+            $request->is('livewire-uploads/*')) {
             return $next($request);
         }
 

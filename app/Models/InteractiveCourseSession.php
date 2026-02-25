@@ -119,7 +119,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
 
             // Get the last sequence number for this month
             $lastSession = static::withTrashed()
-                ->where('session_code', 'LIKE', $codePrefix.'%')
+                ->where('session_code', 'LIKE', DB::escapeLikeString($codePrefix).'%')
                 ->lockForUpdate()
                 ->orderByRaw('CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC')
                 ->first(['session_code']);
@@ -443,7 +443,20 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     public function getAttendanceRateAttribute(): float
     {
-        $totalEnrolled = $this->course->enrollments()->where('enrollment_status', EnrollmentStatus::ENROLLED)->count();
+        if (! $this->course) {
+            return 0;
+        }
+
+        // Use cached enrollments count if relation is already loaded, otherwise query
+        if ($this->course->relationLoaded('enrollments')) {
+            $totalEnrolled = $this->course->enrollments
+                ->where('enrollment_status', EnrollmentStatus::ENROLLED->value)
+                ->count();
+        } else {
+            $totalEnrolled = $this->course->enrollments()
+                ->where('enrollment_status', EnrollmentStatus::ENROLLED)
+                ->count();
+        }
 
         if ($totalEnrolled === 0) {
             return 0;
@@ -638,9 +651,12 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
         }
 
         // Add all enrolled students (get User objects from StudentProfile)
+        // Limit to 500 to prevent memory exhaustion on large courses
         if ($this->course) {
             $enrolledUsers = $this->course->enrollments()
                 ->with('student.user')
+                ->where('enrollment_status', \App\Enums\EnrollmentStatus::ENROLLED)
+                ->limit(500)
                 ->get()
                 ->map(fn ($enrollment) => $enrollment->student?->user)
                 ->filter();
@@ -728,5 +744,14 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
         }
 
         return $metadata;
+    }
+
+    /**
+     * Interactive course sessions do not support individual absent marking
+     * (absence is tracked per-enrollment at the course level)
+     */
+    public function markAsAbsent(?string $reason = null): bool
+    {
+        return false;
     }
 }

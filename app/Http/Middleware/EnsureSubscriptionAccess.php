@@ -151,6 +151,7 @@ class EnsureSubscriptionAccess
         // No status filter — canAccess() will determine if access is allowed
         return CourseSubscription::where('student_id', $user->id)
             ->where($column, $courseId)
+            ->where('academy_id', $user->academy_id)
             ->orderByDesc('created_at')
             ->first();
     }

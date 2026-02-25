@@ -21,6 +21,11 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
+     * The number of times the job may be attempted.
+     */
+    public int $tries = 3;
+
+    /**
      * The number of seconds the job can run before timing out.
      */
     public int $timeout = 120;

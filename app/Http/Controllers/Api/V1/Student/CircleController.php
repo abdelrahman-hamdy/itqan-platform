@@ -61,7 +61,7 @@ class CircleController extends Controller
         }
 
         $circles = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 100));
 
         // Check which circles the student is enrolled in
         $studentId = $request->user()?->id;

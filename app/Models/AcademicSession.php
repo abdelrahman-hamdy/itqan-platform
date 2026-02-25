@@ -246,7 +246,7 @@ class AcademicSession extends BaseSession
                     // Lock the sessions for update to prevent concurrent reads
                     // This ensures only one transaction can generate a code at a time
                     $lastSession = static::withTrashed()
-                        ->where('session_code', 'LIKE', $codePrefix.'%')
+                        ->where('session_code', 'LIKE', DB::escapeLikeString($codePrefix).'%')
                         ->lockForUpdate()
                         ->orderByRaw('CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC')
                         ->first(['session_code']);
@@ -829,17 +829,25 @@ class AcademicSession extends BaseSession
             return false;
         }
 
-        $this->update([
-            'status' => SessionStatus::ABSENT,
-            'ended_at' => now(),
-            'attendance_status' => AttendanceStatus::ABSENT->value,
-            'cancellation_reason' => $reason, // Store absence reason in cancellation_reason field
-        ]);
+        return DB::transaction(function () use ($reason) {
+            // Lock the row to prevent concurrent modifications
+            $session = static::lockForUpdate()->find($this->id);
+            if (! $session || ! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY, SessionStatus::SCHEDULED])) {
+                return false;
+            }
 
-        // Absent sessions still count towards subscription
-        $this->updateSubscriptionUsage();
+            $session->update([
+                'status' => SessionStatus::ABSENT,
+                'ended_at' => now(),
+                'attendance_status' => AttendanceStatus::ABSENT->value,
+                'cancellation_reason' => $reason, // Store absence reason in cancellation_reason field
+            ]);
 
-        return true;
+            // Absent sessions still count towards subscription
+            $session->updateSubscriptionUsage();
+
+            return true;
+        });
     }
 
     // ========================================

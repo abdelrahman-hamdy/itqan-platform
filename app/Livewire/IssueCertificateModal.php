@@ -129,7 +129,16 @@ class IssueCertificateModal extends Component
 
     protected function loadCircle()
     {
-        $this->circle = QuranCircle::with(['academy'])->findOrFail($this->circleId);
+        // Authorization check BEFORE loading data
+        $user = Auth::user();
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::QURAN_TEACHER->value])) {
+            abort(403, __('components.certificate.modal.messages.unauthorized'));
+        }
+
+        // Scope to current user's academy to prevent cross-tenant access
+        $this->circle = QuranCircle::where('academy_id', $user->academy_id)
+            ->with(['academy'])
+            ->findOrFail($this->circleId);
 
         // Get all students with their certificate count for this circle
         $this->students = $this->circle->students()
@@ -149,17 +158,20 @@ class IssueCertificateModal extends Component
                     'certificate_count' => $certificateCount,
                 ];
             })->values()->toArray();
-
-        // Check authorization
-        $user = Auth::user();
-        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::QURAN_TEACHER->value])) {
-            abort(403, __('components.certificate.modal.messages.unauthorized'));
-        }
     }
 
     protected function loadInteractiveCourse()
     {
-        $this->course = InteractiveCourse::with(['academy', 'enrollments.student'])->findOrFail($this->circleId);
+        // Authorization check BEFORE loading data
+        $user = Auth::user();
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::ACADEMIC_TEACHER->value])) {
+            abort(403, __('components.certificate.modal.messages.unauthorized'));
+        }
+
+        // Scope to current user's academy to prevent cross-tenant access
+        $this->course = InteractiveCourse::where('academy_id', $user->academy_id)
+            ->with(['academy', 'enrollments.student'])
+            ->findOrFail($this->circleId);
 
         // Get all enrolled students with their certificate count for this course
         $this->students = $this->course->enrollments()
@@ -181,31 +193,29 @@ class IssueCertificateModal extends Component
                     'certificate_count' => $certificateCount,
                 ];
             })->values()->toArray();
-
-        // Check authorization
-        $user = Auth::user();
-        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::ACADEMIC_TEACHER->value])) {
-            abort(403, __('components.certificate.modal.messages.unauthorized'));
-        }
     }
 
     protected function loadSubscription()
     {
-        if ($this->subscriptionType === 'quran') {
-            $this->subscription = QuranSubscription::with(['student', 'quranTeacher.user', 'academy'])
-                ->findOrFail($this->subscriptionId);
-        } elseif ($this->subscriptionType === 'academic') {
-            $this->subscription = AcademicSubscription::with(['student', 'academicTeacher.user', 'academy'])
-                ->findOrFail($this->subscriptionId);
-        } elseif ($this->subscriptionType === 'interactive') {
-            $this->subscription = InteractiveCourseEnrollment::with(['student.user', 'course.academy', 'course.assignedTeacher'])
-                ->findOrFail($this->subscriptionId);
-        }
-
-        // Check authorization
+        // Authorization check BEFORE loading data
         $user = Auth::user();
         if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             abort(403, __('components.certificate.modal.messages.unauthorized'));
+        }
+
+        if ($this->subscriptionType === 'quran') {
+            // Scope to current user's academy to prevent cross-tenant access
+            $this->subscription = QuranSubscription::where('academy_id', $user->academy_id)
+                ->with(['student', 'quranTeacher.user', 'academy'])
+                ->findOrFail($this->subscriptionId);
+        } elseif ($this->subscriptionType === 'academic') {
+            $this->subscription = AcademicSubscription::where('academy_id', $user->academy_id)
+                ->with(['student', 'academicTeacher.user', 'academy'])
+                ->findOrFail($this->subscriptionId);
+        } elseif ($this->subscriptionType === 'interactive') {
+            $this->subscription = InteractiveCourseEnrollment::whereHas('course', fn ($q) => $q->where('academy_id', $user->academy_id))
+                ->with(['student.user', 'course.academy', 'course.assignedTeacher'])
+                ->findOrFail($this->subscriptionId);
         }
 
         // Check if already has certificate

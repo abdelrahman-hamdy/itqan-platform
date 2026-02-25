@@ -40,7 +40,7 @@ class HomeworkPolicy
         // Teachers can view homework for their courses
         if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
             $course = $homework->session?->course;
-            if ($course && $course->assigned_teacher_id === $user->id) {
+            if ($course && $course->assigned_teacher_id === $user->academicTeacherProfile?->id) {
                 return true;
             }
         }
@@ -69,7 +69,7 @@ class HomeworkPolicy
         }
 
         // Teacher can view homework for their sessions
-        if ($user->hasRole('teacher') && $session->teacher_id === $user->id) {
+        if ($user->hasRole('teacher') && $session->quran_teacher_id === $user->id) {
             return true;
         }
 
@@ -97,7 +97,8 @@ class HomeworkPolicy
         }
 
         // Teacher can view homework for their sessions
-        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value) && $session->teacher_id === $user->id) {
+        // academic_teacher_id references AcademicTeacherProfile.id, not User.id
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value) && $session->academic_teacher_id === $user->academicTeacherProfile?->id) {
             return true;
         }
 
@@ -139,9 +140,10 @@ class HomeworkPolicy
         }
 
         // Must be the course teacher
+        // assigned_teacher_id references AcademicTeacherProfile.id, not User.id
         $course = $homework->session?->course;
 
-        return $course && $course->assigned_teacher_id === $user->id;
+        return $course && $course->assigned_teacher_id === $user->academicTeacherProfile?->id;
     }
 
     /**

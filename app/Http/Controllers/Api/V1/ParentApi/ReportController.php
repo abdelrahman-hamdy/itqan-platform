@@ -389,7 +389,7 @@ class ReportController extends Controller
                 $status = $status->value;
             }
 
-            return $status === SessionStatus::ABSENT;
+            return $status === AttendanceStatus::ABSENT->value;
         })->count();
 
         return [
@@ -511,7 +511,7 @@ class ReportController extends Controller
                 $status = $status->value;
             }
 
-            return $status === SessionStatus::ABSENT;
+            return $status === AttendanceStatus::ABSENT->value;
         })->count();
 
         return [

@@ -52,7 +52,7 @@ class ChatController extends Controller
         $conversations = $query
             ->with(['participants.participantable', 'lastMessage.participant.participantable'])
             ->orderBy('updated_at', 'desc')
-            ->paginate($request->get('per_page', 20));
+            ->paginate(min((int) $request->get('per_page', 20), 100));
 
         return $this->success([
             'conversations' => collect($conversations->items())->map(function ($conversation) use ($user) {
@@ -439,7 +439,7 @@ class ChatController extends Controller
         $messages = Message::where('conversation_id', $id)
             ->with(['participant.participantable', 'attachment'])
             ->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 50));
+            ->paginate(min((int) $request->get('per_page', 50), 100));
 
         return $this->success([
             'messages' => collect($messages->items())->map(function ($message) use ($user) {
@@ -802,7 +802,7 @@ class ChatController extends Controller
         $conversations = $query
             ->with(['participants.participantable', 'lastMessage.participant.participantable'])
             ->orderBy('updated_at', 'desc')
-            ->paginate($request->get('per_page', 20));
+            ->paginate(min((int) $request->get('per_page', 20), 100));
 
         return $this->success([
             'conversations' => collect($conversations->items())->map(function ($conversation) use ($user) {
@@ -1036,7 +1036,7 @@ class ChatController extends Controller
 
         $messages = $query
             ->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 30));
+            ->paginate(min((int) $request->get('per_page', 30), 100));
 
         return $this->success([
             'media' => collect($messages->items())

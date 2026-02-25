@@ -220,18 +220,23 @@ class SubscriptionMaintenanceService
      */
     public function toggleAutoRenewal(BaseSubscription $subscription, bool $enabled): BaseSubscription
     {
-        if ($enabled && ! $subscription->billing_cycle->supportsAutoRenewal()) {
-            throw new Exception('This billing cycle does not support auto-renewal');
-        }
+        return DB::transaction(function () use ($subscription, $enabled) {
+            // Lock the row to prevent concurrent renewal jobs from racing with this toggle
+            $subscription = $subscription::lockForUpdate()->find($subscription->id);
 
-        $subscription->update(['auto_renew' => $enabled]);
+            if ($enabled && ! $subscription->billing_cycle->supportsAutoRenewal()) {
+                throw new Exception('This billing cycle does not support auto-renewal');
+            }
 
-        Log::info('Subscription auto-renewal toggled', [
-            'id' => $subscription->id,
-            'auto_renew' => $enabled,
-        ]);
+            $subscription->update(['auto_renew' => $enabled]);
 
-        return $subscription->fresh();
+            Log::info('Subscription auto-renewal toggled', [
+                'id' => $subscription->id,
+                'auto_renew' => $enabled,
+            ]);
+
+            return $subscription->fresh();
+        });
     }
 
     /**

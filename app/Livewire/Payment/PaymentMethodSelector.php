@@ -89,6 +89,18 @@ class PaymentMethodSelector extends Component
      */
     public function selectMethod(int $methodId): void
     {
+        // Verify the method belongs to the authenticated user before accepting it
+        $user = Auth::user();
+        $method = SavedPaymentMethod::where('id', $methodId)
+            ->where('user_id', $user->id)
+            ->active()
+            ->notExpired()
+            ->first();
+
+        if (! $method) {
+            return;
+        }
+
         $this->selectedMethodId = $methodId;
         $this->paymentType = 'saved';
 

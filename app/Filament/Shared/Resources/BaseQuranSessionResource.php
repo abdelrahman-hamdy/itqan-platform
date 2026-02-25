@@ -72,12 +72,12 @@ abstract class BaseQuranSessionResource extends BaseResource
 
     public static function canCreate(): bool
     {
-        return true;
+        return false; // Deny by default — child panel resources must explicitly enable creation
     }
 
     public static function canEdit(Model $record): bool
     {
-        return true;
+        return false; // Deny by default — child panel resources must explicitly enable editing
     }
 
     public static function canDelete(Model $record): bool

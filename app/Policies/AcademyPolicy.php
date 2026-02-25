@@ -21,8 +21,12 @@ class AcademyPolicy
     public function viewAny(User $user): bool
     {
         // Super admins can view all academies
-        // Other users can view their own academy
-        return true;
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
+            return true;
+        }
+
+        // Admins can view their own academy (the index is further scoped by global scope)
+        return $user->hasRole(UserType::ADMIN->value);
     }
 
     /**

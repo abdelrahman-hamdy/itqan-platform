@@ -494,25 +494,35 @@ class QuranSession extends BaseSession
             return false;
         }
 
-        $this->update([
-            'status' => SessionStatus::ABSENT,
-            'ended_at' => now(),
-            'attendance_status' => AttendanceStatus::ABSENT->value,
-            'attendance_notes' => $reason,
-        ]);
+        return DB::transaction(function () use ($reason) {
+            // Lock the row to prevent concurrent modifications
+            $session = static::lockForUpdate()->find($this->id);
+            if (! $session || $session->session_type !== 'individual' ||
+                ! $session->status->canComplete() ||
+                ($session->scheduled_at && $session->scheduled_at->isFuture())) {
+                return false;
+            }
 
-        // Record attendance as absent (counts towards subscription)
-        $this->recordSessionAttendance(AttendanceStatus::ABSENT->value);
+            $session->update([
+                'status' => SessionStatus::ABSENT,
+                'ended_at' => now(),
+                'attendance_status' => AttendanceStatus::ABSENT->value,
+                'attendance_notes' => $reason,
+            ]);
 
-        // Update circle progress
-        if ($this->individualCircle) {
-            $this->individualCircle->updateProgress();
-        }
+            // Record attendance as absent (counts towards subscription)
+            $session->recordSessionAttendance(AttendanceStatus::ABSENT->value);
 
-        // Update subscription usage (absent sessions count towards subscription)
-        $this->updateSubscriptionUsage();
+            // Update circle progress
+            if ($session->individualCircle) {
+                $session->individualCircle->updateProgress();
+            }
 
-        return true;
+            // Update subscription usage (absent sessions count towards subscription)
+            $session->updateSubscriptionUsage();
+
+            return true;
+        });
     }
 
     /**
@@ -1229,7 +1239,7 @@ class QuranSession extends BaseSession
 
             // Get the maximum sequence number for this type and month (including soft deleted)
             $lastSession = static::withTrashed()
-                ->where('session_code', 'LIKE', $codePrefix.'%')
+                ->where('session_code', 'LIKE', DB::escapeLikeString($codePrefix).'%')
                 ->lockForUpdate()
                 ->orderByRaw('CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC')
                 ->first(['session_code']);

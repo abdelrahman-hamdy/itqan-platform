@@ -40,6 +40,16 @@ class Chat extends WireChatChat
     #[On('archiveChatByConversation')]
     public function archiveChatByConversation(int $conversationId): void
     {
+        // Verify the current user is a participant in this conversation BEFORE creating/touching records
+        $user = auth()->user();
+        $isParticipant = \Namu\WireChat\Models\Conversation::where('id', $conversationId)
+            ->whereHas('participants', fn ($q) => $q->where('participantable_id', $user->id)->where('participantable_type', get_class($user)))
+            ->exists();
+
+        if (! $isParticipant) {
+            return;
+        }
+
         // Find or create ChatGroup for this conversation
         $chatGroup = ChatGroup::firstOrCreate(
             ['conversation_id' => $conversationId],
@@ -50,7 +60,7 @@ class Chat extends WireChatChat
             ]
         );
 
-        if ($chatGroup && $chatGroup->canBeArchivedBy(auth()->user())) {
+        if ($chatGroup && $chatGroup->canBeArchivedBy($user)) {
             $chatGroup->archive();
             $this->dispatch('notify', [
                 'type' => 'success',

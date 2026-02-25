@@ -243,6 +243,8 @@ class CalendarService implements CalendarServiceInterface
     {
         $filterHash = md5(serialize($filters));
 
-        return "calendar:user:{$user->id}:{$startDate->format('Y-m-d')}:{$endDate->format('Y-m-d')}:{$filterHash}";
+        // Include academy_id to prevent cross-tenant cache collisions for super-admins
+        // who may switch between academies while keeping the same user ID
+        return "calendar:academy:{$user->academy_id}:user:{$user->id}:{$startDate->format('Y-m-d')}:{$endDate->format('Y-m-d')}:{$filterHash}";
     }
 }

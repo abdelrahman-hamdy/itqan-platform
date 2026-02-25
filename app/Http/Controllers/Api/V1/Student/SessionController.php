@@ -211,7 +211,14 @@ class SessionController extends Controller
                     'quranTeacher',
                     'individualCircle',
                     'circle',
-                    'meeting',
+                    'attendances' => fn ($q) => $q->where('user_id', $studentId),
+                ])
+                ->first(),
+            'quran_group' => QuranSession::where('id', $sessionId)
+                ->whereHas('circle.enrollments', fn ($q) => $q->where('student_id', $studentId))
+                ->with([
+                    'quranTeacher',
+                    'circle',
                     'attendances' => fn ($q) => $q->where('user_id', $studentId),
                 ])
                 ->first(),
@@ -220,7 +227,6 @@ class SessionController extends Controller
                 ->with([
                     'academicTeacher.user',
                     'academicSubscription',
-                    'meeting',
                     'attendances' => fn ($q) => $q->where('user_id', $studentId),
                 ])
                 ->first(),
@@ -228,7 +234,6 @@ class SessionController extends Controller
                 ->whereHas('course.enrollments', fn ($q) => $q->where('user_id', $studentId))
                 ->with([
                     'course.assignedTeacher.user',
-                    'meeting',
                 ])
                 ->first(),
             default => null,
@@ -250,10 +255,10 @@ class SessionController extends Controller
         };
 
         $title = match ($type) {
-            'quran' => $session->title ?? 'جلسة قرآنية',
-            'academic' => $session->title ?? $session->academicSubscription?->subject_name ?? 'جلسة أكاديمية',
-            'interactive' => $session->title ?? $session->course?->title ?? 'جلسة تفاعلية',
-            default => 'جلسة',
+            'quran', 'quran_group' => $session->title ?? __('sessions.default_title_quran'),
+            'academic' => $session->title ?? $session->academicSubscription?->subject_name ?? __('sessions.default_title_academic'),
+            'interactive' => $session->title ?? $session->course?->title ?? __('sessions.default_title_interactive'),
+            default => __('sessions.default_title_generic'),
         };
 
         $base = [
@@ -356,12 +361,19 @@ class SessionController extends Controller
             return false;
         }
 
-        $session->update([
-            'student_rating' => $rating,
-            'student_feedback' => $feedback,
-        ]);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($session, $rating, $feedback) {
+            $fresh = $session::lockForUpdate()->find($session->id);
+            if (! $fresh || $fresh->student_rating) {
+                return false;
+            }
 
-        return true;
+            $fresh->update([
+                'student_rating' => $rating,
+                'student_feedback' => $feedback,
+            ]);
+
+            return true;
+        });
     }
 
     /**
@@ -377,7 +389,7 @@ class SessionController extends Controller
         }
 
         $joinStart = $sessionTime->copy()->subMinutes(10);
-        $duration = $session->duration_minutes ?? 45;
+        $duration = $session->duration_minutes ?? 60;
         $joinEnd = $sessionTime->copy()->addMinutes($duration);
 
         $status = $session->status->value ?? $session->status;

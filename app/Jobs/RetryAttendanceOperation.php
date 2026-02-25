@@ -62,10 +62,11 @@ class RetryAttendanceOperation implements ShouldQueue
             'attempt' => $this->attempts(),
         ]);
 
-        // Get session polymorphically
-        $session = $this->sessionType === 'academic'
-            ? AcademicSession::find($this->sessionId)
-            : QuranSession::find($this->sessionId);
+        // Get session polymorphically — handle both legacy string keys and full class names
+        $session = match (true) {
+            $this->sessionType === 'academic' || $this->sessionType === AcademicSession::class => AcademicSession::find($this->sessionId),
+            default => QuranSession::find($this->sessionId),
+        };
 
         $user = User::find($this->userId);
 

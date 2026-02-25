@@ -71,6 +71,12 @@ return [
         'reports' => 'التقارير',
     ],
 
+    // Default session title fallbacks (used in API responses when no title is set)
+    'default_title_quran' => 'جلسة قرآنية',
+    'default_title_academic' => 'جلسة أكاديمية',
+    'default_title_interactive' => 'جلسة تفاعلية',
+    'default_title_generic' => 'جلسة',
+
     // Role labels
     'roles' => [
         'guest' => 'ضيف',

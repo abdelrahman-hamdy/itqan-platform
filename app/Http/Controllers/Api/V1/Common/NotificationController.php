@@ -49,7 +49,7 @@ class NotificationController extends Controller
         }
 
         $notifications = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 20));
+            ->paginate(min((int) $request->get('per_page', 20), 100));
 
         return $this->success([
             'notifications' => collect($notifications->items())->map(function ($notification) {

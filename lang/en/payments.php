@@ -174,6 +174,8 @@ return [
         'individual' => 'Individual',
         'group' => 'Group',
         'academic' => 'Academic',
+        'course' => 'Course Subscription',
+        'generic' => 'Subscription',
     ],
     'academic' => [
         'subject' => 'Subject',

@@ -47,8 +47,7 @@ class InteractiveCourse extends Model
         'prerequisites',
         'course_outline',
         'status',
-        'avg_rating',
-        'total_reviews',
+        // SECURITY: avg_rating, total_reviews excluded from fillable — system-calculated
         'is_published',
         'publication_date',
         'certificate_enabled',

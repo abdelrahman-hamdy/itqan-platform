@@ -36,7 +36,7 @@ class TrialRequestController extends Controller
         }
 
         $requests = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 100));
 
         return $this->success([
             'data' => collect($requests->items())->map(fn ($req) => $this->formatTrialRequest($req))->toArray(),

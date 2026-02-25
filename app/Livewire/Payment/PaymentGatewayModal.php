@@ -4,6 +4,7 @@ namespace App\Livewire\Payment;
 
 use App\Models\Academy;
 use App\Services\Payment\AcademyPaymentGatewayFactory;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -21,6 +22,7 @@ class PaymentGatewayModal extends Component
 
     public ?string $selectedGateway = null;
 
+    #[Locked]
     public int $academyId;
 
     /**

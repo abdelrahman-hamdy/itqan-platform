@@ -57,6 +57,12 @@ return [
         'reports' => 'Reports',
     ],
 
+    // Default session title fallbacks (used in API responses when no title is set)
+    'default_title_quran' => 'Quran Session',
+    'default_title_academic' => 'Academic Session',
+    'default_title_interactive' => 'Interactive Session',
+    'default_title_generic' => 'Session',
+
     'roles' => [
         'guest' => 'Guest',
         'student' => 'Student',

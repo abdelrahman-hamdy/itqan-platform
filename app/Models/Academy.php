@@ -39,16 +39,14 @@ class Academy extends Model
         'academic_settings',
         'quran_settings',
         'notification_settings',
-        'payment_settings',
+        // SECURITY: payment_settings intentionally excluded — contains gateway API keys.
+        // Use AcademySettingsService to write payment credentials.
         'is_active',
         'allow_registration',
         'maintenance_mode',
         'admin_id',
-        'total_revenue',
-        'monthly_revenue',
-        'pending_payments',
-        'active_subscriptions',
-        'growth_rate',
+        // SECURITY: financial counter columns excluded — updated only by system recalculation.
+        // 'total_revenue', 'monthly_revenue', 'pending_payments', 'active_subscriptions', 'growth_rate'
         // Design Settings
         'sections_order',
         'hero_visible', 'hero_template', 'hero_heading', 'hero_subheading', 'hero_image', 'hero_show_in_nav', 'hero_show_boxes',

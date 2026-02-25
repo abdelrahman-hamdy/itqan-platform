@@ -49,7 +49,7 @@ class QuranAcademyOverviewWidget extends BaseWidget
 
         $activeSubscriptions = QuranSubscription::where('academy_id', $academy->id)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
-            ->where('payment_status', 'current')
+            ->where('payment_status', \App\Enums\SubscriptionPaymentStatus::PAID->value)
             ->count();
 
         $totalSessions = QuranSession::where('academy_id', $academy->id)->count();

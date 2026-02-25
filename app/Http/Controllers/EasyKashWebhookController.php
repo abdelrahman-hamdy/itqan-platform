@@ -95,12 +95,15 @@ class EasyKashWebhookController extends Controller
                 ]);
             }
 
-            // Step 4: Store webhook event
+            // Step 4: Store webhook event (sanitize payload — exclude any card-sensitive fields)
+            $safePayload = collect($request->all())
+                ->except(['signatureHash', 'cardNumber', 'cvv', 'pan', 'source_data'])
+                ->toArray();
             $webhookEvent = PaymentWebhookEvent::createFromPayload(
                 gateway: 'easykash',
                 eventType: $payload->eventType,
                 eventId: $eventId,
-                payload: $request->all(),
+                payload: $safePayload,
                 paymentId: $payload->paymentId,
                 academyId: $payload->academyId,
             );

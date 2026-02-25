@@ -75,12 +75,12 @@ abstract class BaseAcademicSessionResource extends BaseResource
 
     public static function canCreate(): bool
     {
-        return true;
+        return false; // Deny by default — child panel resources must explicitly enable creation
     }
 
     public static function canEdit(Model $record): bool
     {
-        return true;
+        return false; // Deny by default — child panel resources must explicitly enable editing
     }
 
     public static function canDelete(Model $record): bool
@@ -200,7 +200,13 @@ abstract class BaseAcademicSessionResource extends BaseResource
                 FileUpload::make('homework_file')
                     ->label('ملف الواجب')
                     ->directory('academic-homework')
-                    ->acceptedFileTypes(['pdf', 'doc', 'docx', 'jpg', 'png'])
+                    ->acceptedFileTypes([
+                        'application/pdf',
+                        'application/msword',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'image/jpeg',
+                        'image/png',
+                    ])
                     ->visible(fn ($get) => $get('homework_assigned')),
             ]);
     }

@@ -75,6 +75,16 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
             }
 
             return DB::transaction(function () use ($session, $amount, $teacherData) {
+                // Re-check inside the transaction with a lock to prevent race conditions.
+                // Two concurrent calls may both pass the early isAlreadyCalculated() check;
+                // this lockForUpdate() ensures only one proceeds to create the record.
+                $existing = TeacherEarning::forSession(get_class($session), $session->id)
+                    ->lockForUpdate()
+                    ->first();
+                if ($existing) {
+                    return $existing;
+                }
+
                 $earning = TeacherEarning::create([
                     'academy_id' => $session->academy_id ?? $this->getAcademyId($session),
                     'teacher_type' => $teacherData['type'],

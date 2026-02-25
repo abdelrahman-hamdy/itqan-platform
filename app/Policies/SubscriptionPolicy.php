@@ -88,7 +88,11 @@ class SubscriptionPolicy
      */
     public function delete(User $user, $subscription): bool
     {
-        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
+            return true;
+        }
+
+        return $user->hasRole(UserType::ADMIN->value) && $this->sameAcademy($user, $subscription);
     }
 
     /**

@@ -30,7 +30,7 @@ class HomeworkSubmissionObserver
      */
     public function updated(Model $submission): void
     {
-        if (! $submission->isDirty('submission_status')) {
+        if (! $submission->wasChanged('submission_status')) {
             return;
         }
 

@@ -15,7 +15,9 @@ class EasyKashSignatureService
 {
     public function __construct(
         private ?string $secretKey = null
-    ) {}
+    ) {
+        $this->secretKey ??= config('payments.gateways.easykash.secret_key');
+    }
 
     /**
      * Verify the webhook signature from EasyKash.

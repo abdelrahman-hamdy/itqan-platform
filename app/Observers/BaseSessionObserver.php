@@ -6,6 +6,7 @@ use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Jobs\CalculateSessionEarningsJob;
+use App\Jobs\CreateSessionMeetingJob;
 use App\Models\BaseSession;
 use App\Models\User;
 use App\Services\Notification\NotificationUrlBuilder;
@@ -43,31 +44,17 @@ class BaseSessionObserver
 
             // If status is changing to ready or ongoing, ensure meeting exists
             if (in_array($newStatus, [SessionStatus::READY, SessionStatus::ONGOING])) {
-                // Check if meeting room doesn't exist yet
+                // Dispatch a job to create the meeting room asynchronously.
+                // This avoids blocking the HTTP request with a synchronous LiveKit API call.
+                // The 'meetings' queue worker handles this with retries; the cron job also
+                // creates meetings proactively so the room should usually already exist.
                 if (empty($session->meeting_room_name)) {
-                    try {
-                        Log::info('Auto-creating meeting room for session', [
-                            'session_id' => $session->id,
-                            'session_type' => $session->getMeetingType(),
-                        ]);
+                    dispatch(new CreateSessionMeetingJob(get_class($session), $session->id));
 
-                        // Generate meeting link (this creates the LiveKit room)
-                        $session->generateMeetingLink();
-
-                        Log::info('Meeting room created successfully', [
-                            'session_id' => $session->id,
-                            'room_name' => $session->meeting_room_name,
-                        ]);
-                    } catch (Exception $e) {
-                        Log::error('Failed to auto-create meeting room', [
-                            'session_id' => $session->id,
-                            'error' => $e->getMessage(),
-                        ]);
-                        report($e); // BP-003: Report to error tracker
-
-                        // Don't throw - let the status update proceed
-                        // The cron job will retry meeting creation later
-                    }
+                    Log::info('Dispatched CreateSessionMeetingJob for session', [
+                        'session_id' => $session->id,
+                        'session_type' => $session->getMeetingType(),
+                    ]);
                 } else {
                     Log::debug('Meeting room already exists for session', [
                         'session_id' => $session->id,
@@ -96,33 +83,14 @@ class BaseSessionObserver
                 'has_meeting' => ! empty($session->meeting_room_name),
             ]);
 
-            // If meeting exists, regenerate it with new time
+            // If meeting exists, dispatch a job to regenerate it with the new time.
+            // Using a job avoids blocking the HTTP request with a synchronous LiveKit call.
             if (! empty($session->meeting_room_name)) {
-                try {
-                    // Clear old meeting data first
-                    $session->meeting_room_name = null;
-                    $session->meeting_link = null;
-                    $session->meeting_id = null;
-                    $session->meeting_data = null;
-                    $session->meeting_expires_at = null;
+                dispatch(new CreateSessionMeetingJob(get_class($session), $session->id, regenerate: true));
 
-                    // Generate new meeting with updated time
-                    $session->generateMeetingLink();
-
-                    // Save without triggering observer again
-                    $session->saveQuietly();
-
-                    Log::info('Meeting regenerated successfully for rescheduled session', [
-                        'session_id' => $session->id,
-                        'new_room' => $session->meeting_room_name,
-                    ]);
-                } catch (Exception $e) {
-                    Log::error('Failed to regenerate meeting for rescheduled session', [
-                        'session_id' => $session->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                    report($e);
-                }
+                Log::info('Dispatched CreateSessionMeetingJob (regenerate) for rescheduled session', [
+                    'session_id' => $session->id,
+                ]);
             }
 
             // Send rescheduled notification to participants

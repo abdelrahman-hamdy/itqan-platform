@@ -135,7 +135,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     'line' => $e->getLine(),
                     'path' => $request->path(),
                     'method' => $request->method(),
-                    'data' => $request->all(),
+                    // SECURITY: exclude sensitive fields (card details, passwords, tokens) from logs
+                    'data' => $request->except(['password', 'password_confirmation', 'card_number', 'cvv', 'token', 'client_secret', 'payment_token']),
                     'trace' => $e->getTraceAsString(),
                 ]);
             }

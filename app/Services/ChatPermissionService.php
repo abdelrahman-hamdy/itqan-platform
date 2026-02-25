@@ -298,9 +298,28 @@ class ChatPermissionService implements ChatPermissionServiceInterface
      */
     public function clearUserCache(int $userId): void
     {
-        $pattern = $this->cachePrefix.'*:'.$userId.':*';
-        // Note: This assumes Redis cache driver. For other drivers, implement accordingly.
-        Cache::flush(); // Simple approach - flush all cache
+        // Delete all directional cache keys involving this user.
+        // Cache keys are sorted pairs: chat:permission:{min}:{max}
+        // We delete by scanning matching patterns rather than flushing all cache.
+        $store = Cache::getStore();
+
+        if ($store instanceof \Illuminate\Cache\RedisStore) {
+            $redis = $store->connection();
+            $prefix = config('cache.prefix', '')
+                ? config('cache.prefix').':'.$this->cachePrefix
+                : $this->cachePrefix;
+            // Scan and delete keys matching this user on either side of the pair
+            foreach (["$prefix*:$userId", "$prefix$userId:*"] as $pattern) {
+                $keys = $redis->keys($pattern);
+                if (! empty($keys)) {
+                    $redis->del($keys);
+                }
+            }
+        } else {
+            // For non-Redis stores, flush only the known direct keys we can reconstruct.
+            // We cannot enumerate all pairs, so this is best-effort for other drivers.
+            Log::warning('ChatPermissionService::clearUserCache called on non-Redis store — cache not fully cleared for user '.$userId);
+        }
     }
 
     /**

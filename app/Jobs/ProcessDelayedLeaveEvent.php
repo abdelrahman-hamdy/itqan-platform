@@ -30,7 +30,12 @@ class ProcessDelayedLeaveEvent implements ShouldQueue
 
     public int $tries = 3;
 
-    public int $backoff = 5;
+    /**
+     * Exponential backoff — gives time for the join webhook to arrive before retrying.
+     *
+     * @var array<int>
+     */
+    public array $backoff = [30, 60, 120];
 
     /**
      * The number of seconds the job can run before timing out.

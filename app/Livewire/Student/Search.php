@@ -26,6 +26,10 @@ class Search extends Component
 
     public function updatedQuery()
     {
+        // Enforce max length to prevent expensive search queries with huge strings
+        if (strlen($this->query) > 200) {
+            $this->query = substr($this->query, 0, 200);
+        }
         // Debounce is handled in the view with wire:model.live.debounce
     }
 

@@ -8,6 +8,7 @@ use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -27,13 +28,12 @@ class AcademicSessionObserver
             $this->handleCancellation($session);
         }
 
-        // Check if homework was just assigned (homework_description changed from null/empty to filled)
-        if ($session->isDirty('homework_description') && ! empty($session->homework_description)) {
-            $this->sendHomeworkAssignedNotifications($session);
-        }
+        // Use wasChanged() (not isDirty) in the 'updated' observer: after save, isDirty() is always false.
+        // Deduplicate: send one notification if ANY homework field changed to a truthy value.
+        $homeworkDescriptionSet = $session->wasChanged('homework_description') && ! empty($session->homework_description);
+        $homeworkFlagSet = $session->wasChanged('homework_assigned') && $session->homework_assigned === true;
 
-        // Also check if homework_assigned flag was set to true
-        if ($session->isDirty('homework_assigned') && $session->homework_assigned === true) {
+        if ($homeworkDescriptionSet || $homeworkFlagSet) {
             $this->sendHomeworkAssignedNotifications($session);
         }
     }
@@ -44,15 +44,19 @@ class AcademicSessionObserver
     private function handleCancellation(AcademicSession $session): void
     {
         try {
-            // 1. Reverse subscription usage if was counted
-            if (method_exists($session, 'isSubscriptionCounted') && $session->isSubscriptionCounted()) {
-                $session->reverseSubscriptionUsage();
-            }
+            // Wrap both writes in a transaction so that a partial failure (e.g. reversal succeeds
+            // but handleSessionCancelled fails) doesn't leave subscription counts inconsistent.
+            DB::transaction(function () use ($session) {
+                // 1. Reverse subscription usage if was counted
+                if (method_exists($session, 'isSubscriptionCounted') && $session->isSubscriptionCounted()) {
+                    $session->reverseSubscriptionUsage();
+                }
 
-            // 2. Update lesson remaining sessions (for individual sessions)
-            if ($session->session_type === 'individual' && $session->academicIndividualLesson) {
-                $session->academicIndividualLesson->handleSessionCancelled();
-            }
+                // 2. Update lesson remaining sessions (for individual sessions)
+                if ($session->session_type === 'individual' && $session->academicIndividualLesson) {
+                    $session->academicIndividualLesson->handleSessionCancelled();
+                }
+            });
 
             Log::info('Academic session cancellation handled', [
                 'session_id' => $session->id,

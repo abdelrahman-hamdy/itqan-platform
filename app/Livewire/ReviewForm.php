@@ -9,6 +9,7 @@ use App\Models\QuranTeacherProfile;
 use App\Models\RecordedCourse;
 use App\Services\ReviewService;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -17,12 +18,15 @@ class ReviewForm extends Component
     public $showModal = false;
 
     // Review type: 'teacher' or 'course'
+    #[Locked]
     public $reviewType;
 
     // The model class being reviewed
+    #[Locked]
     public $reviewableType;
 
     // The ID of the model being reviewed
+    #[Locked]
     public $reviewableId;
 
     // Form fields

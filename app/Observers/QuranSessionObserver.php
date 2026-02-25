@@ -10,6 +10,7 @@ use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
 use App\Services\TrialRequestSyncService;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class QuranSessionObserver
@@ -66,20 +67,24 @@ class QuranSessionObserver
     private function handleCancellation(QuranSession $session): void
     {
         try {
-            // 1. Reverse subscription usage if was counted
-            if (method_exists($session, 'isSubscriptionCounted') && $session->isSubscriptionCounted()) {
-                $session->reverseSubscriptionUsage();
-            }
+            // Wrap all writes in a transaction so a partial failure (e.g. reversal succeeds
+            // but handleSessionCancelled fails) doesn't leave subscription counts inconsistent.
+            DB::transaction(function () use ($session) {
+                // 1. Reverse subscription usage if was counted
+                if (method_exists($session, 'isSubscriptionCounted') && $session->isSubscriptionCounted()) {
+                    $session->reverseSubscriptionUsage();
+                }
 
-            // 2. Update circle remaining sessions (for individual sessions)
-            if ($session->session_type === 'individual' && $session->individualCircle) {
-                $session->individualCircle->handleSessionCancelled();
-            }
+                // 2. Update circle remaining sessions (for individual sessions)
+                if ($session->session_type === 'individual' && $session->individualCircle) {
+                    $session->individualCircle->handleSessionCancelled();
+                }
 
-            // 3. For group circles, update the circle session counts
-            if ($session->session_type === 'circle' && $session->circle) {
-                $session->circle->updateSessionCounts();
-            }
+                // 3. For group circles, update the circle session counts
+                if ($session->session_type === 'circle' && $session->circle) {
+                    $session->circle->updateSessionCounts();
+                }
+            });
 
             Log::info('Quran session cancellation handled', [
                 'session_id' => $session->id,

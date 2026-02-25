@@ -42,8 +42,8 @@ class AcademicTeacherProfile extends Model
         'notes',
         'bio_arabic',
         'bio_english',
-        'rating',             // Review statistics
-        'total_reviews',      // Review statistics
+        // SECURITY: rating, total_reviews excluded from fillable
+        // These are system-calculated via HasReviews trait, never user-supplied
     ];
 
     protected $casts = [

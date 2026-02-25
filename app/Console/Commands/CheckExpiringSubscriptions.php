@@ -35,7 +35,8 @@ class CheckExpiringSubscriptions extends Command
 
             // Quran Subscriptions - Process in chunks
             // Note: Column renamed from 'end_date' to 'ends_at' in schema consolidation
-            QuranSubscription::whereBetween('ends_at', [$targetDate, $endDate])
+            QuranSubscription::withoutGlobalScopes()
+                ->whereBetween('ends_at', [$targetDate, $endDate])
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->with(['student', 'quranCircle'])
                 ->chunkById(100, function ($quranSubs) use ($notificationService, $parentNotificationService, $days, &$count) {
@@ -77,7 +78,8 @@ class CheckExpiringSubscriptions extends Command
 
             // Academic Subscriptions - Process in chunks
             // Note: Use 'ends_at' for consistency with standardized schema
-            AcademicSubscription::whereBetween('ends_at', [$targetDate, $endDate])
+            AcademicSubscription::withoutGlobalScopes()
+                ->whereBetween('ends_at', [$targetDate, $endDate])
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->with(['student'])
                 ->chunkById(100, function ($academicSubs) use ($notificationService, $parentNotificationService, $days, &$count) {

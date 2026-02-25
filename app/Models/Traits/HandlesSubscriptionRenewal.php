@@ -88,65 +88,66 @@ trait HandlesSubscriptionRenewal
             return false;
         }
 
-        return DB::transaction(function () {
-            // Lock subscription row to prevent concurrent renewal attempts
+        // Phase 1: Acquire lock and validate eligibility — short transaction, no HTTP calls.
+        $eligibilityResult = DB::transaction(function () {
             $subscription = static::lockForUpdate()->find($this->id);
 
             if (! $subscription) {
                 throw new Exception("Subscription {$this->id} not found");
             }
 
-            // Double-check eligibility after lock (another process might have renewed)
+            // Double-check eligibility after acquiring the lock
             if (! $subscription->canAttemptRenewal()) {
-                return false;
+                return ['eligible' => false, 'subscription' => null, 'price' => null];
             }
 
-            try {
-                // Calculate renewal price from child class
-                $renewalPrice = $subscription->calculateRenewalPrice();
+            $renewalPrice = $subscription->calculateRenewalPrice();
 
-                Log::info("Attempting auto-renewal for subscription {$subscription->id}", [
-                    'subscription_code' => $subscription->subscription_code,
-                    'renewal_price' => $renewalPrice,
-                    'billing_cycle' => $subscription->billing_cycle?->value,
-                ]);
-
-                // Process payment via PaymentService
-                $paymentService = app(PaymentService::class);
-                $paymentResult = $paymentService->processSubscriptionRenewal(
-                    $subscription,
-                    $renewalPrice
-                );
-
-                if ($paymentResult['success'] ?? false) {
-                    // Success: Extend subscription
-                    $subscription->processSuccessfulRenewal($renewalPrice);
-
-                    Log::info("Auto-renewal successful for subscription {$subscription->id}");
-
-                    return true;
-                } else {
-                    // Failure: Track attempt and cancel after MAX_RENEWAL_ATTEMPTS
-                    $subscription->processRenewalFailure($paymentResult['error'] ?? __('payments.renewal.payment_failed'));
-
-                    Log::warning("Auto-renewal failed for subscription {$subscription->id}", [
-                        'error' => $paymentResult['error'] ?? 'Unknown error',
-                    ]);
-
-                    return false;
-                }
-            } catch (Exception $e) {
-                // Exception during payment: Track as failed attempt
-                $subscription->processRenewalFailure($e->getMessage());
-
-                Log::error("Exception during auto-renewal for subscription {$subscription->id}", [
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
-                ]);
-
-                return false;
-            }
+            return ['eligible' => true, 'subscription' => $subscription, 'price' => $renewalPrice];
         });
+
+        if (! $eligibilityResult['eligible']) {
+            return false;
+        }
+
+        $subscription = $eligibilityResult['subscription'];
+        $renewalPrice = $eligibilityResult['price'];
+
+        Log::info("Attempting auto-renewal for subscription {$subscription->id}", [
+            'subscription_code' => $subscription->subscription_code,
+            'renewal_price' => $renewalPrice,
+            'billing_cycle' => $subscription->billing_cycle?->value,
+        ]);
+
+        // Phase 2: Call payment gateway OUTSIDE any transaction (HTTP requests must never hold DB locks).
+        try {
+            $paymentService = app(PaymentService::class);
+            $paymentResult = $paymentService->processSubscriptionRenewal($subscription, $renewalPrice);
+        } catch (Exception $e) {
+            Log::error("Exception during auto-renewal payment for subscription {$subscription->id}", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            // Phase 3 (failure): Persist failure state in a new short transaction.
+            DB::transaction(fn () => $subscription->processRenewalFailure($e->getMessage()));
+
+            return false;
+        }
+
+        // Phase 3: Persist outcome in a new short transaction.
+        if ($paymentResult['success'] ?? false) {
+            DB::transaction(fn () => $subscription->processSuccessfulRenewal($renewalPrice));
+            Log::info("Auto-renewal successful for subscription {$subscription->id}");
+
+            return true;
+        } else {
+            DB::transaction(fn () => $subscription->processRenewalFailure($paymentResult['error'] ?? __('payments.renewal.payment_failed')));
+            Log::warning("Auto-renewal failed for subscription {$subscription->id}", [
+                'error' => $paymentResult['error'] ?? 'Unknown error',
+            ]);
+
+            return false;
+        }
     }
 
     /**

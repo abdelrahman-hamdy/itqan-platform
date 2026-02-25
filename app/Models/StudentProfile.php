@@ -66,7 +66,7 @@ class StudentProfile extends Model
             if (empty($model->student_code)) {
                 // Generate unique code with timestamp
                 $timestamp = now()->format('His'); // HHMMSS
-                $random = rand(100, 999);
+                $random = random_int(100, 999);
                 $model->student_code = 'ST-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.$timestamp.$random;
             }
 

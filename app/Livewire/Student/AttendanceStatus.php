@@ -11,15 +11,19 @@ use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 class AttendanceStatus extends Component
 {
+    #[Locked]
     public $sessionId;
 
+    #[Locked]
     public $sessionType;
 
+    #[Locked]
     public $userId;
 
     // Attendance data

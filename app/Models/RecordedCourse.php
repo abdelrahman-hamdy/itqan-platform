@@ -39,9 +39,7 @@ class RecordedCourse extends Model implements HasMedia
         'materials',
         'total_sections',
         'total_duration_minutes',
-        'avg_rating',
-        'total_reviews',
-        'total_enrollments',
+        // SECURITY: avg_rating, total_reviews, total_enrollments excluded from fillable — system-calculated
         'difficulty_level',
         'tags',
         'published_at',

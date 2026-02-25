@@ -34,11 +34,13 @@ class ParentInvitationNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $academy = $this->parentProfile->academy;
-        $resetUrl = url(route('password.reset', [
+        // Generate absolute URL including the academy subdomain — do NOT wrap with url()
+        // since route() already generates an absolute URL for subdomain routes
+        $resetUrl = route('password.reset', [
             'subdomain' => $academy->subdomain,
             'token' => $this->passwordResetToken,
             'email' => $notifiable->email,
-        ], false));
+        ]);
 
         $studentsCount = $this->parentProfile->students()->count();
         $studentNames = $this->parentProfile->students()

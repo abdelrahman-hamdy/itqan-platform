@@ -114,6 +114,14 @@ class TrialConversionModal extends Component
             return;
         }
 
+        // Ensure the trial request belongs to the authenticated user
+        if ($this->trialRequest->student_id !== Auth::id()) {
+            $this->errorMessage = 'لم يتم العثور على الطلب التجريبي';
+            $this->trialRequest = null;
+
+            return;
+        }
+
         // Check eligibility
         $conversionService = app(TrialConversionService::class);
         if (! $conversionService->isEligibleForConversion($this->trialRequest)) {

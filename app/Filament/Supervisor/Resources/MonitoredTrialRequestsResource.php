@@ -442,12 +442,15 @@ class MonitoredTrialRequestsResource extends BaseQuranTrialRequestResource
     }
 
     /**
-     * Supervisors can edit any trial request shown in their filtered list.
-     * The query already filters to only show requests for assigned teachers.
+     * Supervisors can only edit trial requests belonging to their assigned teachers.
+     * Using the same ownership check as canView() — table query filtering alone is
+     * insufficient because Filament resolves records directly by URL ID.
      */
     public static function canEdit(Model $record): bool
     {
-        return true;
+        $teacherProfileIds = static::getAssignedQuranTeacherProfileIds();
+
+        return in_array($record->teacher_id, $teacherProfileIds);
     }
 
     public static function canDelete(Model $record): bool

@@ -47,7 +47,7 @@ class TeacherController extends Controller
         }
 
         $teachers = $query->orderBy('rating', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 100));
 
         // Check which teachers the student is subscribed to
         $studentId = $request->user()?->id;
@@ -201,7 +201,7 @@ class TeacherController extends Controller
         }
 
         $teachers = $query->orderBy('rating', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 100));
 
         // Check which teachers the student is subscribed to
         $studentId = $request->user()?->id;

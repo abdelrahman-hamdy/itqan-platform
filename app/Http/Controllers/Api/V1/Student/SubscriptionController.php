@@ -367,9 +367,9 @@ class SubscriptionController extends Controller
         }
 
         $subscription->update([
-            'status' => SessionSubscriptionStatus::CANCELLED,
+            'status' => SessionSubscriptionStatus::CANCELLED->value,
             'cancelled_at' => now(),
-            'cancellation_reason' => $request->get('reason'),
+            'cancellation_reason' => $request->get('reason') ? substr($request->get('reason'), 0, 1000) : null,
         ]);
 
         return $this->success([
@@ -385,9 +385,9 @@ class SubscriptionController extends Controller
         $title = match ($type) {
             'quran' => $subscription->package_name_ar ?? __('payments.subscription_types.individual'),
             'quran_group' => $subscription->quranCircle?->name ?? $subscription->package_name_ar ?? __('payments.subscription_types.group'),
-            'academic' => $subscription->subject_name ?? $subscription->subject?->name ?? 'اشتراك أكاديمي',
-            'course' => $subscription->course?->title ?? 'اشتراك دورة',
-            default => 'اشتراك',
+            'academic' => $subscription->subject_name ?? $subscription->subject?->name ?? __('payments.subscription_types.academic'),
+            'course' => $subscription->course?->title ?? __('payments.subscription_types.course'),
+            default => __('payments.subscription_types.generic'),
         };
 
         $teacher = match ($type) {
@@ -513,12 +513,11 @@ class SubscriptionController extends Controller
             ];
         }
 
-        // Recent payments
-        if ($subscription->payments) {
-            $base['recent_payments'] = $subscription->payments()
-                ->orderBy('created_at', 'desc')
-                ->limit(5)
-                ->get()
+        // Recent payments (use already-loaded relation to avoid redundant query)
+        if ($subscription->relationLoaded('payments') && $subscription->payments->isNotEmpty()) {
+            $base['recent_payments'] = $subscription->payments
+                ->sortByDesc('created_at')
+                ->take(5)
                 ->map(fn ($p) => [
                     'id' => $p->id,
                     'amount' => $p->amount,
@@ -526,6 +525,7 @@ class SubscriptionController extends Controller
                     'status' => $p->status,
                     'paid_at' => $p->paid_at?->toISOString(),
                 ])
+                ->values()
                 ->toArray();
         }
 

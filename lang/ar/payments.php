@@ -174,6 +174,8 @@ return [
         'individual' => 'فردي',
         'group' => 'جماعي',
         'academic' => 'أكاديمي',
+        'course' => 'اشتراك دورة',
+        'generic' => 'اشتراك',
     ],
     'academic' => [
         'subject' => 'الموضوع',

@@ -60,6 +60,9 @@ class FinalizeAttendanceListener implements ShouldQueue
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
+            // Re-throw so the queue driver can retry the job
+            throw $e;
         }
     }
 

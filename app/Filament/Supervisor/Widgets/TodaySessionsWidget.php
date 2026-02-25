@@ -126,7 +126,10 @@ class TodaySessionsWidget extends BaseWidget
         // Build union query for all session types using raw SQL
         $unionParts = [];
         $bindings = [];
-        $academyId = AcademyContextService::getCurrentAcademyId() ?? 1;
+        $academyId = AcademyContextService::getCurrentAcademyId();
+        if (! $academyId) {
+            return QuranSession::query()->whereRaw('1 = 0');
+        }
         $today = today()->toDateString();
 
         // Quran sessions

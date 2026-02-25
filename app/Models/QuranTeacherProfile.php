@@ -38,10 +38,8 @@ class QuranTeacherProfile extends Model
         'package_ids',
         // Activation fields removed - use User.active_status instead
         'offers_trial_sessions',
-        'rating',
-        'total_reviews',
-        'total_students',
-        'total_sessions',
+        // SECURITY: rating, total_reviews, total_students, total_sessions excluded from fillable
+        // These are system-calculated via HasReviews trait, never user-supplied
         'session_price_individual',
         'session_price_group',
     ];

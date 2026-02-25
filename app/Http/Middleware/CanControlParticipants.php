@@ -17,16 +17,10 @@ class CanControlParticipants
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Enhanced debugging - log request details
         Log::info('CanControlParticipants middleware - Request details', [
             'url' => $request->url(),
             'method' => $request->method(),
-            'has_session' => $request->hasSession(),
-            'session_id' => $request->session()->getId() ?? 'no-session',
-            'auth_guard' => config('auth.defaults.guard'),
             'auth_check' => auth()->check(),
-            'auth_guard_check' => auth('web')->check(),
-            'headers' => $request->headers->all(),
         ]);
 
         // Check if user is authenticated
@@ -62,8 +56,6 @@ class CanControlParticipants
 
             return response()->json([
                 'error' => 'Unauthorized. Teacher permissions required.',
-                'user_type' => $user->user_type,
-                'required_types' => $allowedUserTypes,
             ], 403);
         }
 

@@ -645,7 +645,6 @@ class PaymobWebhookController extends Controller
                             'amount_cents' => $request->input('amount_cents'),
                             'currency' => $request->input('currency'),
                             'source_type' => $request->input('source_data.type'),
-                            'source_pan' => $request->input('source_data.pan'),
                             'callback_success' => true,  // Track that callback reported success
                         ],
                     ]);

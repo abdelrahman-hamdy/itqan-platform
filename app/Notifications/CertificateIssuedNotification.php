@@ -12,6 +12,11 @@ class CertificateIssuedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    /**
+     * The number of times the job may be attempted.
+     */
+    public int $tries = 3;
+
     public Certificate $certificate;
 
     /**
@@ -20,6 +25,7 @@ class CertificateIssuedNotification extends Notification implements ShouldQueue
     public function __construct(Certificate $certificate)
     {
         $this->certificate = $certificate;
+        $this->onQueue('notifications');
     }
 
     /**

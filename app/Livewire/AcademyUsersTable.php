@@ -2,7 +2,10 @@
 
 namespace App\Livewire;
 
+use App\Enums\UserType;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -10,12 +13,20 @@ class AcademyUsersTable extends Component
 {
     use WithPagination;
 
+    #[Locked]
     public $academyId;
 
     public $search = '';
 
     public function mount($academyId)
     {
+        $user = Auth::user();
+
+        // Only super admins can view any academy; other roles can only view their own academy
+        if (! $user->hasRole(UserType::SUPER_ADMIN->value) && (int) $user->academy_id !== (int) $academyId) {
+            abort(403);
+        }
+
         $this->academyId = $academyId;
     }
 

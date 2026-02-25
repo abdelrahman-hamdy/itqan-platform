@@ -312,6 +312,17 @@ class LiveKitWebhookController extends Controller
             $participantCount = $data['room']['num_participants'] ?? 0;
             $duration = $data['room']['duration_seconds'] ?? 0;
 
+            // Guard: never overwrite cancelled sessions, and only update if session is active
+            $currentStatus = $session->status;
+            if ($currentStatus === SessionStatus::CANCELLED) {
+                Log::info('Room finished event ignored: session is already cancelled', [
+                    'session_id' => $session->id,
+                    'room_name' => $roomName,
+                ]);
+
+                return;
+            }
+
             // Only mark as completed if the session was actually used
             if ($duration > 60) { // At least 1 minute of activity
                 $session->update([
@@ -319,8 +330,8 @@ class LiveKitWebhookController extends Controller
                     'ended_at' => now(),
                     'actual_duration_minutes' => round($duration / 60),
                 ]);
-            } else {
-                // Very short session, just mark as ended
+            } elseif (! in_array($currentStatus, [SessionStatus::COMPLETED])) {
+                // Very short session, just mark as ended (don't overwrite already-completed)
                 $session->update([
                     'ended_at' => now(),
                 ]);
@@ -424,7 +435,7 @@ class LiveKitWebhookController extends Controller
                 ? Carbon::createFromTimestamp($participantData['joinedAt'], 'UTC')
                 : now('UTC');
 
-            // Create immutable event log entry
+            // Create immutable event log entry (raw_webhook_data excludes PII — only structural metadata)
             $event = MeetingAttendanceEvent::create([
                 'event_id' => $data['id'],
                 'event_type' => MeetingEventType::JOINED,
@@ -436,7 +447,14 @@ class LiveKitWebhookController extends Controller
                 'participant_sid' => $participantData['sid'] ?? null,
                 'participant_identity' => $participantIdentity,
                 'participant_name' => $participantData['name'] ?? $user->full_name,
-                'raw_webhook_data' => $data,
+                'raw_webhook_data' => [
+                    'event_id' => $data['id'] ?? null,
+                    'event_type' => $data['event'] ?? null,
+                    'room_name' => $data['room']['name'] ?? null,
+                    'room_sid' => $data['room']['sid'] ?? null,
+                    'participant_sid' => $participantData['sid'] ?? null,
+                    'num_participants' => $data['room']['num_participants'] ?? null,
+                ],
             ]);
 
             // Update MeetingAttendance record (aggregated state)
@@ -810,9 +828,16 @@ class LiveKitWebhookController extends Controller
         $metadata = json_decode($data['participant']['metadata'] ?? '{}', true);
         $role = $metadata['role'] ?? '';
 
-        // Only enforce permissions on students
-        $isStudent = ($role === 'student') ||
-                     (! str_contains($participantIdentity, 'teacher') && ! str_contains($participantIdentity, 'admin'));
+        // Only enforce permissions on students — rely solely on signed JWT metadata role
+        // Never use identity string matching (names can contain 'teacher'/'admin')
+        if (empty($role)) {
+            // No role in metadata — look up from DB as fallback
+            $fallbackUserId = $this->extractUserIdFromIdentity($participantIdentity);
+            $fallbackUser = $fallbackUserId ? \App\Models\User::find($fallbackUserId) : null;
+            $isStudent = $fallbackUser ? $fallbackUser->hasRole('student') : false;
+        } else {
+            $isStudent = ($role === 'student');
+        }
 
         if (! $isStudent) {
             Log::debug('Track published by non-student, skipping permission check', [
@@ -947,9 +972,16 @@ class LiveKitWebhookController extends Controller
      */
     private function validateWebhookSignature(Request $request): void
     {
-        // Validate in all environments except when explicitly disabled via config (SEC-005 fix)
+        // Validate in all environments except when explicitly disabled via config (for local dev only)
         if (config('livekit.skip_webhook_validation', false)) {
-            Log::warning('LiveKit webhook validation is DISABLED via config');
+            if (app()->isProduction()) {
+                throw WebhookValidationException::invalidSignature(
+                    'livekit',
+                    'Webhook validation cannot be disabled in production',
+                    $request->all()
+                );
+            }
+            Log::warning('LiveKit webhook validation is DISABLED via config — only allowed in local/dev');
 
             return;
         }

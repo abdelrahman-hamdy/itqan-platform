@@ -123,7 +123,7 @@ class PaymentService implements PaymentServiceInterface
             return [
                 'success' => false,
                 'error' => __('payments.service.database_error'),
-                'error_code' => 'DATABASE_ERROR',
+                'error_code' => 'PAYMENT_FAILED',
             ];
         } catch (InvalidArgumentException $e) {
             Log::error('Invalid payment data', [
@@ -134,7 +134,7 @@ class PaymentService implements PaymentServiceInterface
             return [
                 'success' => false,
                 'error' => __('payments.service.invalid_data'),
-                'error_code' => 'INVALID_DATA',
+                'error_code' => 'PAYMENT_FAILED',
             ];
         } catch (Throwable $e) {
             Log::critical('Unexpected payment processing error', [
@@ -148,7 +148,7 @@ class PaymentService implements PaymentServiceInterface
             return [
                 'success' => false,
                 'error' => __('payments.service.unexpected_processing_error'),
-                'error_code' => 'UNEXPECTED_ERROR',
+                'error_code' => 'PAYMENT_FAILED',
             ];
         }
     }

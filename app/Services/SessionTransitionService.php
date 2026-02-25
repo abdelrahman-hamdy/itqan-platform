@@ -609,9 +609,12 @@ class SessionTransitionService
                 'session_type' => $this->settingsService->getSessionType($session),
                 'student_id' => $session->student_id,
             ]);
+
+            // Session is ABSENT — do not count towards subscription (consistent with StudentSessionReport path above).
+            return;
         }
 
-        // Update subscription usage for completed sessions
+        // Update subscription usage for genuinely completed sessions only
         if (method_exists($session, 'updateSubscriptionUsage')) {
             $session->updateSubscriptionUsage();
         }

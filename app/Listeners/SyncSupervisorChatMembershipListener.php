@@ -19,6 +19,18 @@ class SyncSupervisorChatMembershipListener implements ShouldQueue
     public string $queue = 'default';
 
     /**
+     * The number of times the job may be attempted.
+     */
+    public int $tries = 3;
+
+    /**
+     * The number of seconds to wait before retrying (exponential backoff).
+     *
+     * @var array<int>
+     */
+    public array $backoff = [30, 60, 120];
+
+    /**
      * Create the event listener.
      */
     public function __construct(
