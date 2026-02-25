@@ -14,6 +14,10 @@
 
 <h2>الوصول إلى قسم القرآن في لوحة التحكم</h2>
 
+<img src="/images/help/admin/quran-programs-overview.png"
+     alt="لوحة تحكم الأكاديمية — القائمة الجانبية تُظهر قسم إدارة القرآن"
+     class="help-screenshot">
+
 <div class="help-step">
     <div class="help-step-number">1</div>
     <div class="help-step-content">

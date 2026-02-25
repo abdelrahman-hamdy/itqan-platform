@@ -5,6 +5,10 @@
 
 @section('content')
 
+<img src="/images/help/admin/quran-circles-list.png"
+     alt="قائمة الحلقات الفردية — عرض الطلاب والمعلمين ونوع التخصص"
+     class="help-screenshot">
+
 <h2>ما هي الحلقة الفردية؟</h2>
 
 <p>

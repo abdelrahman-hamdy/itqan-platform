@@ -22,6 +22,10 @@
     </div>
 </div>
 
+<img src="/images/help/admin/quran-packages-list.png"
+     alt="قائمة باقات القرآن — عرض الباقات المتاحة مع عدد الجلسات والأسعار"
+     class="help-screenshot">
+
 <div class="help-step">
     <div class="help-step-number">2</div>
     <div class="help-step-content">
@@ -29,6 +33,10 @@
         <p>ستفتح نموذج إنشاء الباقة الذي يضم الأقسام التالية.</p>
     </div>
 </div>
+
+<img src="/images/help/admin/quran-packages-create.png"
+     alt="نموذج إنشاء باقة قرآن — حقول الاسم وإعدادات الجلسات والأسعار"
+     class="help-screenshot">
 
 <div class="help-step">
     <div class="help-step-number">3</div>

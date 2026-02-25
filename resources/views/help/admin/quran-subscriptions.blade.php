@@ -5,6 +5,10 @@
 
 @section('content')
 
+<img src="/images/help/admin/quran-subscriptions-list.png"
+     alt="قائمة اشتراكات القرآن — عرض الطلاب والباقات وحالة الاشتراك"
+     class="help-screenshot">
+
 <h2>ما هو اشتراك القرآن؟</h2>
 
 <p>
