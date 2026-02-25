@@ -15,7 +15,11 @@ class HelpCenterController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->hasRole('super_admin') || $user->hasRole('admin')) {
+        if ($user->hasRole('super_admin')) {
+            return 'developer'; // super_admin sees the developer technical docs as primary
+        }
+
+        if ($user->hasRole('admin')) {
             return 'admin';
         }
 
@@ -46,8 +50,8 @@ class HelpCenterController extends Controller
     {
         $userRole = $this->getUserRole();
 
-        if ($userRole === 'admin') {
-            return true;
+        if (in_array($userRole, ['admin', 'developer'])) {
+            return true; // admin and super_admin (developer) can read any role's docs
         }
 
         return $userRole === $role;
@@ -118,7 +122,7 @@ class HelpCenterController extends Controller
     {
         $userRole    = $this->getUserRole();
         $config      = config('help');
-        $canSeeAll   = ($userRole === 'admin');
+        $canSeeAll   = in_array($userRole, ['admin', 'developer']);
 
         return view('help.search', compact('userRole', 'config', 'canSeeAll'));
     }

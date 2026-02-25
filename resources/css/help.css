@@ -3,6 +3,124 @@
    RTL-compatible utility classes for help articles and layout.
    ========================================================================== */
 
+/* ── Developer docs: dark code blocks ────────────────────────────────────── */
+
+.help-content pre {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    direction: ltr;
+    text-align: left;
+    margin: 1rem 0 1.5rem;
+    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+}
+
+.help-content pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+}
+
+/* ── Developer docs: Mermaid diagram container ───────────────────────────── */
+
+.help-mermaid {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    overflow-x: auto;
+    margin: 1.25rem 0;
+    direction: ltr;
+    text-align: center;
+}
+
+/* ── Developer docs: data tables ─────────────────────────────────────────── */
+
+.help-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    margin: 1rem 0 1.5rem;
+    direction: ltr;
+    text-align: left;
+}
+
+.help-table th {
+    background-color: #f1f5f9;
+    padding: 0.625rem 0.875rem;
+    font-weight: 600;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.help-table td {
+    padding: 0.5rem 0.875rem;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    vertical-align: top;
+}
+
+.help-table tr:nth-child(even) td {
+    background-color: #fafafa;
+}
+
+.help-table tr:hover td {
+    background-color: #f0f9ff;
+}
+
+/* ── Developer docs: badge pills ─────────────────────────────────────────── */
+
+.help-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.1875rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: monospace;
+    white-space: nowrap;
+}
+
+.help-badge-red    { background: #fee2e2; color: #991b1b; }
+.help-badge-green  { background: #dcfce7; color: #166534; }
+.help-badge-blue   { background: #dbeafe; color: #1e40af; }
+.help-badge-amber  { background: #fef3c7; color: #92400e; }
+.help-badge-slate  { background: #f1f5f9; color: #475569; }
+.help-badge-purple { background: #ede9fe; color: #5b21b6; }
+.help-badge-cyan   { background: #cffafe; color: #155e75; }
+
+/* ── Developer docs: critical / danger callout ───────────────────────────── */
+
+.help-danger {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.875rem 1rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    background-color: #fff1f2;
+    border: 1px solid #fecdd3;
+    color: #9f1239;
+}
+
+.help-danger .help-callout-icon {
+    color: #e11d48;
+    font-size: 1.125rem;
+    margin-top: 0.0625rem;
+    flex-shrink: 0;
+}
+
 /* ── Step-by-step guides ─────────────────────────────────────────────────── */
 
 .help-step {

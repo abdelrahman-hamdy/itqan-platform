@@ -123,6 +123,119 @@ return [
             'articles' => [],
         ],
 
+        // ── Developer Technical Documentation (super_admin only) ──────────────
+        'developer' => [
+            'label' => 'Developer Technical Documentation',
+            'icon'  => 'ri-code-s-slash-line',
+            'color' => 'slate',
+            'articles' => [
+
+                // ── Architecture ──────────────────────────────────────────────
+                'platform-architecture' => [
+                    'title'       => 'Platform Architecture Overview',
+                    'description' => 'Tech stack, multi-tenancy design, application layers, and the 4 Filament panels',
+                    'icon'        => 'ri-layout-masonry-line',
+                    'section'     => 'architecture',
+                    'keywords'    => ['architecture', 'stack', 'laravel', 'filament', 'livewire', 'multi-tenancy', 'panels', 'layers'],
+                ],
+                'database-schema' => [
+                    'title'       => 'Database Schema & ERD',
+                    'description' => '~90 tables across 8 domains, naming conventions, key relationships, multi-tenancy scoping',
+                    'icon'        => 'ri-database-2-line',
+                    'section'     => 'architecture',
+                    'keywords'    => ['database', 'schema', 'tables', 'erd', 'migrations', 'relations', 'mysql'],
+                ],
+
+                // ── Models ────────────────────────────────────────────────────
+                'model-architecture' => [
+                    'title'       => 'Model Architecture & Patterns',
+                    'description' => 'Polymorphic inheritance, constructor merge pattern, getCasts() override, 22 traits, 20 policies',
+                    'icon'        => 'ri-stack-line',
+                    'section'     => 'models',
+                    'keywords'    => ['models', 'traits', 'policies', 'patterns', 'eloquent', 'inheritance', 'casts'],
+                ],
+                'session-system' => [
+                    'title'       => 'Session System Deep Dive',
+                    'description' => 'BaseSession → 3 types, status lifecycle, attendance auto-tracking, CountsTowardsSubscription trait',
+                    'icon'        => 'ri-vidicon-line',
+                    'section'     => 'models',
+                    'keywords'    => ['sessions', 'quran', 'academic', 'interactive', 'attendance', 'status', 'livekit', 'subscription'],
+                ],
+                'subscription-system' => [
+                    'title'       => 'Subscription System',
+                    'description' => 'BaseSubscription → 3 types, billing cycles, auto-renewal, payment integration',
+                    'icon'        => 'ri-calendar-check-line',
+                    'section'     => 'models',
+                    'keywords'    => ['subscriptions', 'renewal', 'billing', 'payment', 'quran', 'academic', 'course', 'lifecycle'],
+                ],
+
+                // ── Services ──────────────────────────────────────────────────
+                'service-layer' => [
+                    'title'       => 'Service Layer Architecture',
+                    'description' => '100+ services organized by domain — when to use which service and how to add new ones',
+                    'icon'        => 'ri-settings-5-line',
+                    'section'     => 'services',
+                    'keywords'    => ['services', 'business logic', 'architecture', 'patterns', 'domain'],
+                ],
+                'real-time-system' => [
+                    'title'       => 'Real-time & Video Architecture',
+                    'description' => 'Laravel Reverb WebSocket, LiveKit video conferencing, WireChat supervised messaging',
+                    'icon'        => 'ri-broadcast-line',
+                    'section'     => 'services',
+                    'keywords'    => ['reverb', 'websocket', 'livekit', 'wirechat', 'broadcasting', 'real-time', 'video'],
+                ],
+                'payment-system' => [
+                    'title'       => 'Payment Architecture',
+                    'description' => '5 gateways (Paymob, EasyKash, Tapay, Moyasar, STC Pay), payment state machine, webhook handling, auto-renewal',
+                    'icon'        => 'ri-secure-payment-line',
+                    'section'     => 'services',
+                    'keywords'    => ['payment', 'paymob', 'easykash', 'webhook', 'renewal', 'gateway', 'state machine'],
+                ],
+                'api-architecture' => [
+                    'title'       => 'API Architecture',
+                    'description' => 'REST API at /api/v1/, Sanctum authentication, mobile endpoint conventions, response format',
+                    'icon'        => 'ri-api-line',
+                    'section'     => 'services',
+                    'keywords'    => ['api', 'rest', 'sanctum', 'mobile', 'endpoints', 'authentication', 'response'],
+                ],
+
+                // ── Admin Panels ──────────────────────────────────────────────
+                'filament-panels' => [
+                    'title'       => 'Filament Admin Panels',
+                    'description' => '4 panels (Academy/Teacher/AcademicTeacher/Supervisor), resource conventions, widgets, common pitfalls',
+                    'icon'        => 'ri-layout-masonry-fill',
+                    'section'     => 'admin',
+                    'keywords'    => ['filament', 'panels', 'resources', 'widgets', 'pages', 'admin', 'pitfalls'],
+                ],
+
+                // ── Conventions ───────────────────────────────────────────────
+                'code-conventions' => [
+                    'title'       => 'Code Conventions & Patterns',
+                    'description' => 'Service layer, multi-tenancy scoping, timezone handling, RTL Arabic, observer pattern, localization',
+                    'icon'        => 'ri-code-s-slash-line',
+                    'section'     => 'conventions',
+                    'keywords'    => ['conventions', 'patterns', 'timezone', 'rtl', 'multi-tenancy', 'observer', 'localization'],
+                ],
+
+                // ── Infrastructure ────────────────────────────────────────────
+                'deployment-guide' => [
+                    'title'       => 'Deployment & Infrastructure',
+                    'description' => 'Production server, Supervisor workers, Horizon queues, Redis DB separation, full deployment checklist',
+                    'icon'        => 'ri-server-line',
+                    'section'     => 'infrastructure',
+                    'keywords'    => ['deployment', 'server', 'supervisor', 'horizon', 'redis', 'production', 'checklist'],
+                ],
+                'development-setup' => [
+                    'title'       => 'Local Development Setup',
+                    'description' => 'Environment prerequisites, composer dev, database seeding, multi-tenancy local config, E2E testing',
+                    'icon'        => 'ri-computer-line',
+                    'section'     => 'infrastructure',
+                    'keywords'    => ['development', 'local', 'setup', 'vite', 'playwright', 'seeding', 'env'],
+                ],
+
+            ],
+        ],
+
     ],
 
     'common' => [
