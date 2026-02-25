@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Models\UserSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
@@ -69,14 +70,17 @@ class LoginController extends Controller
             now()->addDays(30)
         );
 
-        // Update last login timestamp (non-critical — don't block login on lock contention)
+        // Update last login timestamp (non-critical — fail fast on lock contention)
         try {
-            $user->update(['last_login_at' => now()]);
+            DB::statement('SET SESSION innodb_lock_wait_timeout=1');
+            DB::table('users')->where('id', $user->id)->update(['last_login_at' => now()]);
         } catch (Throwable $e) {
             Log::warning('Failed to update last_login_at during login', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
+        } finally {
+            DB::statement('SET SESSION innodb_lock_wait_timeout=50');
         }
 
         // Create user session record for tracking
