@@ -69,8 +69,15 @@ class LoginController extends Controller
             now()->addDays(30)
         );
 
-        // Update last login timestamp
-        $user->update(['last_login_at' => now()]);
+        // Update last login timestamp (non-critical — don't block login on lock contention)
+        try {
+            $user->update(['last_login_at' => now()]);
+        } catch (Throwable $e) {
+            Log::warning('Failed to update last_login_at during login', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         // Create user session record for tracking
         $this->createUserSession($user, $request);
