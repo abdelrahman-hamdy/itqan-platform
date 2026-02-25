@@ -34,7 +34,7 @@ class ResolveAcademy
                 'meta' => [
                     'timestamp' => now()->toISOString(),
                     'api_version' => 'v1',
-                    'requested_subdomain' => $subdomain,
+                    // Do not reflect the raw subdomain value back in the response (XSS prevention)
                 ],
             ], 404);
         }

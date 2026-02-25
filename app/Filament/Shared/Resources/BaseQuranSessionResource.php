@@ -442,6 +442,10 @@ abstract class BaseQuranSessionResource extends BaseResource
 
     public static function getEloquentQuery(): Builder
     {
+        if (! auth()->check()) {
+            return parent::getEloquentQuery()->whereRaw('1 = 0');
+        }
+
         $query = parent::getEloquentQuery()
             ->with([
                 'quranTeacher',

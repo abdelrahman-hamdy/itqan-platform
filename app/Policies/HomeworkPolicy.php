@@ -63,9 +63,14 @@ class HomeworkPolicy
      */
     public function viewQuranHomework(User $user, QuranSession $session): bool
     {
-        // Admins can view any homework
-        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
+        // SuperAdmins can view any homework across all academies
+        if ($user->isSuperAdmin()) {
             return true;
+        }
+
+        // Admins and supervisors can only view homework in their own academy
+        if ($user->hasRole([UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
+            return $session->academy_id === $user->academy_id;
         }
 
         // Teacher can view homework for their sessions
@@ -91,9 +96,14 @@ class HomeworkPolicy
      */
     public function viewAcademicHomework(User $user, AcademicSession $session): bool
     {
-        // Admins can view any homework
-        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
+        // SuperAdmins can view any homework across all academies
+        if ($user->isSuperAdmin()) {
             return true;
+        }
+
+        // Admins and supervisors can only view homework in their own academy
+        if ($user->hasRole([UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
+            return $session->academy_id === $user->academy_id;
         }
 
         // Teacher can view homework for their sessions
@@ -103,13 +113,14 @@ class HomeworkPolicy
         }
 
         // Student can view their own homework
+        // AcademicSession.student_id references users.id directly
         if ($user->hasRole(UserType::STUDENT->value) && $session->student_id === $user->id) {
             return true;
         }
 
         // Parent can view their child's homework
         if ($user->isParent()) {
-            return $this->isParentOfStudent($user, $session->student_id);
+            return $this->isParentOfStudentForAcademic($user, $session);
         }
 
         return false;
@@ -187,6 +198,7 @@ class HomeworkPolicy
 
     /**
      * Check if user is parent of the student.
+     * For QuranSession: studentId is a User.id (users table).
      */
     private function isParentOfStudent(User $user, ?string $studentId): bool
     {
@@ -199,8 +211,35 @@ class HomeworkPolicy
             return false;
         }
 
-        // Get the student user's profile
+        // For QuranSession: student_id references users.id directly
         $studentUser = User::find($studentId);
+        if (! $studentUser) {
+            return false;
+        }
+
+        $studentProfile = $studentUser->studentProfileUnscoped;
+        if (! $studentProfile) {
+            return false;
+        }
+
+        return $parent->students()
+            ->where('student_profiles.id', $studentProfile->id)
+            ->exists();
+    }
+
+    /**
+     * Check if user is parent of the student in an AcademicSession.
+     * For AcademicSession: student_id references users.id directly.
+     */
+    private function isParentOfStudentForAcademic(User $user, AcademicSession $session): bool
+    {
+        $parent = $user->parentProfile;
+        if (! $parent) {
+            return false;
+        }
+
+        // AcademicSession.student_id references users.id directly
+        $studentUser = User::find($session->student_id);
         if (! $studentUser) {
             return false;
         }

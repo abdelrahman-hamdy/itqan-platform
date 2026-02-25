@@ -159,7 +159,8 @@ class ContentSecurityPolicy
             "font-src {$fontSrc}",
             "img-src {$imgSrc}",
             "connect-src {$connectSrc}",
-            "media-src 'self' blob: data: https:",
+            // Restrict media sources to 'self', blobs (LiveKit), data URIs, and trusted LiveKit server
+            "media-src 'self' blob: data: https://*.livekit.cloud ".config('livekit.server_url', ''),
             "frame-src {$frameSrc}",
             "object-src 'none'",
             "base-uri 'self'",

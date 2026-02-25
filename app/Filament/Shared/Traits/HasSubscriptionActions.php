@@ -175,13 +175,15 @@ trait HasSubscriptionActions
                 }
 
                 $record->update($updateData);
-                }); // end DB::transaction
 
-                Notification::make()
-                    ->success()
-                    ->title('تم تأكيد الدفع')
-                    ->body('تم تأكيد الدفع وتفعيل الاشتراك بنجاح.')
-                    ->send();
+                DB::afterCommit(function () {
+                    Notification::make()
+                        ->success()
+                        ->title('تم تأكيد الدفع')
+                        ->body('تم تأكيد الدفع وتفعيل الاشتراك بنجاح.')
+                        ->send();
+                });
+                }); // end DB::transaction
             })
             ->visible(fn (BaseSubscription $record) => in_array($record->payment_status, [
                 SubscriptionPaymentStatus::PENDING,
@@ -397,7 +399,7 @@ trait HasSubscriptionActions
             ->modalDescription('سيتم إلغاء الاشتراك وإلغاء جميع الجلسات المجدولة القادمة.')
             ->modalSubmitActionLabel('نعم، إلغاء الاشتراك')
             ->action(function (BaseSubscription $record) {
-                $cancelledSessions = DB::transaction(function () use ($record) {
+                DB::transaction(function () use ($record) {
                     $record->update([
                         'status' => SessionSubscriptionStatus::CANCELLED,
                         'cancelled_at' => now(),
@@ -405,17 +407,19 @@ trait HasSubscriptionActions
                     ]);
 
                     // Cancel future scheduled sessions
-                    return $record->sessions()
+                    $cancelledSessions = $record->sessions()
                         ->where('scheduled_at', '>', now())
                         ->where('status', SessionStatus::SCHEDULED)
                         ->update(['status' => SessionStatus::CANCELLED]);
-                });
 
-                Notification::make()
-                    ->success()
-                    ->title('تم إلغاء الاشتراك')
-                    ->body("تم إلغاء الاشتراك و {$cancelledSessions} جلسة مجدولة.")
-                    ->send();
+                    DB::afterCommit(function () use ($cancelledSessions) {
+                        Notification::make()
+                            ->success()
+                            ->title('تم إلغاء الاشتراك')
+                            ->body("تم إلغاء الاشتراك و {$cancelledSessions} جلسة مجدولة.")
+                            ->send();
+                    });
+                });
             })
             ->visible(fn (BaseSubscription $record) => ! in_array($record->status, [
                 SessionSubscriptionStatus::CANCELLED,

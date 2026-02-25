@@ -248,16 +248,26 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                 ->multiple()
                 ->query(function (Builder $query, array $data): Builder {
                     if (! empty($data['values'])) {
-                        // Parse composite keys and build query
+                        // Parse composite keys and build query.
+                        // Validate: IDs must be numeric to prevent injection via filter values.
                         $quranIds = [];
                         $academicIds = [];
 
                         foreach ($data['values'] as $value) {
-                            [$type, $id] = explode('_', $value);
+                            $parts = explode('_', $value, 2);
+                            if (count($parts) !== 2) {
+                                continue;
+                            }
+                            [$type, $id] = $parts;
+                            // Whitelist: only allow numeric IDs
+                            if (! ctype_digit((string) $id)) {
+                                continue;
+                            }
+                            $numericId = (int) $id;
                             if ($type === 'quran') {
-                                $quranIds[] = $id;
+                                $quranIds[] = $numericId;
                             } elseif ($type === 'academic') {
-                                $academicIds[] = $id;
+                                $academicIds[] = $numericId;
                             }
                         }
 
@@ -291,8 +301,8 @@ class TeacherEarningResource extends BaseTeacherEarningResource
             SelectFilter::make('earning_month')
                 ->label('الشهر')
                 ->options(function () {
-                    // Get last 24 months of earnings using GROUP BY
-                    $months = DB::table('teacher_earnings')
+                    // Get last 24 months of earnings using the Eloquent model to respect tenant scoping
+                    $months = \App\Models\TeacherEarning::query()
                         ->selectRaw('DATE_FORMAT(earning_month, "%Y-%m") as month_key, DATE_FORMAT(earning_month, "%M %Y") as month_label, MAX(earning_month) as sort_date')
                         ->groupBy('month_key', 'month_label')
                         ->orderBy('sort_date', 'desc')

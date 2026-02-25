@@ -136,26 +136,34 @@ class MonitoredAcademicSessionsResource extends BaseSupervisorResource
 
                 SelectFilter::make('student_id')
                     ->label('الطالب')
-                    ->options(fn () => User::query()
-                        ->where('user_type', 'student')
-                        ->get()
-                        ->mapWithKeys(fn ($u) => [
-                            $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
-                        ])
-                    )
+                    ->options(function () {
+                        $academy = static::getCurrentSupervisorAcademy();
+
+                        return User::query()
+                            ->where('user_type', 'student')
+                            ->when($academy, fn ($q) => $q->where('academy_id', $academy->id))
+                            ->get()
+                            ->mapWithKeys(fn ($u) => [
+                                $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
+                            ]);
+                    })
                     ->searchable()
                     ->placeholder('الكل'),
 
                 SelectFilter::make('academic_individual_lesson_id')
                     ->label('الدرس الفردي')
-                    ->options(fn () => AcademicIndividualLesson::query()
-                        ->with(['student', 'academicTeacher.user'])
-                        ->get()
-                        ->mapWithKeys(fn ($lesson) => [
-                            $lesson->id => ($lesson->name ?? 'درس #'.$lesson->id)
-                                .' - '.trim(($lesson->student?->first_name ?? '').' '.($lesson->student?->last_name ?? '')),
-                        ])
-                    )
+                    ->options(function () {
+                        $profileIds = static::getAssignedAcademicTeacherProfileIds();
+
+                        return AcademicIndividualLesson::query()
+                            ->when(! empty($profileIds), fn ($q) => $q->whereIn('academic_teacher_id', $profileIds))
+                            ->with(['student', 'academicTeacher.user'])
+                            ->get()
+                            ->mapWithKeys(fn ($lesson) => [
+                                $lesson->id => ($lesson->name ?? 'درس #'.$lesson->id)
+                                    .' - '.trim(($lesson->student?->first_name ?? '').' '.($lesson->student?->last_name ?? '')),
+                            ]);
+                    })
                     ->searchable()
                     ->placeholder('الكل'),
 

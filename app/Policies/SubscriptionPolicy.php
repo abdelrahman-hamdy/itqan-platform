@@ -124,18 +124,27 @@ class SubscriptionPolicy
      */
     public function renew(User $user, $subscription): bool
     {
-        // Owners can renew their own subscriptions
-        if ($this->isSubscriptionOwner($user, $subscription)) {
+        // Owners can renew their own subscriptions (scoped to same academy)
+        if ($this->isSubscriptionOwner($user, $subscription) && $this->sameAcademy($user, $subscription)) {
             return true;
         }
 
-        // Parents can renew their children's subscriptions
-        if ($this->isParentOfSubscriptionOwner($user, $subscription)) {
+        // Parents can renew their children's subscriptions (scoped to same academy)
+        if ($this->isParentOfSubscriptionOwner($user, $subscription) && $this->sameAcademy($user, $subscription)) {
             return true;
         }
 
-        // Admins can renew any subscription
-        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
+        // SuperAdmins can renew any subscription regardless of academy
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
+            return true;
+        }
+
+        // Admins can only renew subscriptions in their own academy
+        if ($user->hasRole(UserType::ADMIN->value)) {
+            return $this->sameAcademy($user, $subscription);
+        }
+
+        return false;
     }
 
     /**
@@ -179,6 +188,7 @@ class SubscriptionPolicy
 
     /**
      * Check if user is a parent of the subscription owner.
+     * Uses exists() queries to avoid loading full collections (N+1 prevention).
      */
     private function isParentOfSubscriptionOwner(User $user, $subscription): bool
     {
@@ -187,16 +197,18 @@ class SubscriptionPolicy
             return false;
         }
 
-        // Get student user IDs through the parent-student relationship
-        $studentUserIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
-
         if ($subscription instanceof QuranSubscription || $subscription instanceof AcademicSubscription) {
             // These subscriptions use student_id (user ID)
-            return in_array($subscription->student_id, $studentUserIds);
+            // Check using exists() to avoid loading all children
+            return $parent->students()
+                ->whereHas('user', fn ($q) => $q->where('users.id', $subscription->student_id))
+                ->exists();
         }
 
         if ($subscription instanceof CourseSubscription) {
-            return in_array($subscription->user_id, $studentUserIds);
+            return $parent->students()
+                ->whereHas('user', fn ($q) => $q->where('users.id', $subscription->user_id))
+                ->exists();
         }
 
         return false;

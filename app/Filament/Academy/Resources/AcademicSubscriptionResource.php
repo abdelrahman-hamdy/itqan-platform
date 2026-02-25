@@ -382,7 +382,11 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
     {
         $academyId = AcademyContextService::getCurrentAcademyId();
 
-        return $query->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+        if (! $academyId) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where('academy_id', $academyId)
             ->with(['student', 'teacher.user', 'subject', 'gradeLevel', 'academy']);
     }
 
@@ -419,7 +423,10 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
 
     public static function canDelete($record): bool
     {
-        return true;
+        return in_array($record->status, [
+            SessionSubscriptionStatus::PENDING,
+            SessionSubscriptionStatus::CANCELLED,
+        ]);
     }
 
     protected static function getTypeSpecificInfolistSections(): array

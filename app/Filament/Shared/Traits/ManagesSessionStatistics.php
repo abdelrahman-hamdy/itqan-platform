@@ -45,21 +45,26 @@ trait ManagesSessionStatistics
      */
     protected function getQuranSessionStatistics(): array
     {
-        $userId = Auth::id();
+        $user = Auth::user();
+        $userId = $user?->id;
+        $academyId = $user?->academy_id;
 
         // Get today's sessions
         $todaySessions = QuranSession::where('quran_teacher_id', $userId)
+            ->where('academy_id', $academyId)
             ->whereDate('scheduled_at', today())
             ->count();
 
         // Get upcoming sessions (next 7 days)
         $upcomingSessions = QuranSession::where('quran_teacher_id', $userId)
+            ->where('academy_id', $academyId)
             ->where('scheduled_at', '>', now())
             ->where('scheduled_at', '<=', now()->addDays(7))
             ->count();
 
         // Get completed sessions this month
         $completedThisMonth = QuranSession::where('quran_teacher_id', $userId)
+            ->where('academy_id', $academyId)
             ->whereMonth('scheduled_at', now()->month)
             ->whereYear('scheduled_at', now()->year)
             ->where('status', SessionStatus::COMPLETED->value)
@@ -67,6 +72,7 @@ trait ManagesSessionStatistics
 
         // Get pending/unscheduled sessions
         $pendingSessions = QuranSession::where('quran_teacher_id', $userId)
+            ->where('academy_id', $academyId)
             ->where('status', SessionStatus::UNSCHEDULED->value)
             ->count();
 
@@ -79,25 +85,30 @@ trait ManagesSessionStatistics
     protected function getAcademicSessionStatistics(): array
     {
         $user = Auth::user();
-        $teacherProfile = $user->academicTeacherProfile;
+        $teacherProfile = $user?->academicTeacherProfile;
 
         if (! $teacherProfile) {
             return $this->getEmptyStatistics();
         }
 
+        $academyId = $teacherProfile->academy_id ?? $user?->academy_id;
+
         // Get today's sessions
         $todaySessions = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academyId)
             ->whereDate('scheduled_at', today())
             ->count();
 
         // Get upcoming sessions (next 7 days)
         $upcomingSessions = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academyId)
             ->where('scheduled_at', '>', now())
             ->where('scheduled_at', '<=', now()->addDays(7))
             ->count();
 
         // Get completed sessions this month
         $completedThisMonth = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academyId)
             ->whereMonth('scheduled_at', now()->month)
             ->whereYear('scheduled_at', now()->year)
             ->where('status', SessionStatus::COMPLETED->value)
@@ -105,6 +116,7 @@ trait ManagesSessionStatistics
 
         // Get pending/unscheduled sessions
         $pendingSessions = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academyId)
             ->where('status', SessionStatus::UNSCHEDULED->value)
             ->count();
 

@@ -19,8 +19,8 @@ class EnsureAdminOrSupervisor
     {
         $user = $request->user();
 
-        // Allow admin, super_admin, or supervisor
-        if ($user && ($user->isAdmin() || $user->isSupervisor())) {
+        // Allow super_admin, admin, or supervisor
+        if ($user && ($user->isSuperAdmin() || $user->isAdmin() || $user->isSupervisor())) {
             return $next($request);
         }
 

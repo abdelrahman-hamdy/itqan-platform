@@ -192,7 +192,8 @@ class SessionPolicy
         }
 
         if ($session instanceof AcademicSession) {
-            return $session->student_profile_id === $studentProfile->id;
+            // AcademicSession.student_id references student_profiles.id (Profile ID)
+            return $session->student_id === $studentProfile->id;
         }
 
         if ($session instanceof InteractiveCourseSession) {
@@ -221,7 +222,8 @@ class SessionPolicy
 
         if ($session instanceof QuranSession) {
             if ($session->session_type === 'individual') {
-                return in_array($session->student_profile_id, $studentIds);
+                // QuranSession.student_id references users.id, so check against user IDs
+                return in_array($session->student_id, $studentUserIds);
             }
             // For trial sessions, check through trial request
             if ($session->session_type === 'trial' && $session->trialRequest) {
@@ -234,7 +236,8 @@ class SessionPolicy
         }
 
         if ($session instanceof AcademicSession) {
-            return in_array($session->student_profile_id, $studentIds);
+            // AcademicSession.student_id references student_profiles.id (Profile ID)
+            return in_array($session->student_id, $studentIds);
         }
 
         if ($session instanceof InteractiveCourseSession) {

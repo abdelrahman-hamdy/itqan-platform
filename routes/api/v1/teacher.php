@@ -197,18 +197,18 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
             ->name('api.v1.teacher.homework.index');
 
         Route::get('/{type}/{id}', [HomeworkController::class, 'show'])
-            ->where('type', 'academic|interactive')
+            ->where('type', 'academic|interactive|quran')
             ->name('api.v1.teacher.homework.show');
 
         Route::post('/assign', [HomeworkController::class, 'assign'])
             ->name('api.v1.teacher.homework.assign');
 
         Route::put('/{type}/{id}', [HomeworkController::class, 'update'])
-            ->where('type', 'academic|interactive')
+            ->where('type', 'academic|interactive|quran')
             ->name('api.v1.teacher.homework.update');
 
         Route::get('/{type}/{id}/submissions', [HomeworkController::class, 'submissions'])
-            ->where('type', 'academic|interactive')
+            ->where('type', 'academic|interactive|quran')
             ->name('api.v1.teacher.homework.submissions');
 
         Route::post('/submissions/{submissionId}/grade', [HomeworkController::class, 'grade'])

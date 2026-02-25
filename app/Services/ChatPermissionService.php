@@ -63,13 +63,15 @@ class ChatPermissionService implements ChatPermissionServiceInterface
         $academyId = $currentUser->academy_id;
 
         // Academy admin can message all users in their academy
+        // Explicitly verify academy scope to prevent cross-tenant access
         if ($currentUser->hasRole(User::ROLE_ACADEMY_ADMIN)) {
-            return true;
+            return $currentUser->academy_id === $targetUser->academy_id;
         }
 
         // Supervisor can message all users in their academy
+        // Explicitly verify academy scope to prevent cross-tenant access
         if ($currentUser->hasRole(User::ROLE_SUPERVISOR)) {
-            return true;
+            return $currentUser->academy_id === $targetUser->academy_id;
         }
 
         // Student permissions
@@ -308,9 +310,15 @@ class ChatPermissionService implements ChatPermissionServiceInterface
             $prefix = config('cache.prefix', '')
                 ? config('cache.prefix').':'.$this->cachePrefix
                 : $this->cachePrefix;
-            // Scan and delete keys matching this user on either side of the pair
+            // Use SCAN instead of KEYS to avoid O(N) blocking on large key sets
             foreach (["$prefix*:$userId", "$prefix$userId:*"] as $pattern) {
-                $keys = $redis->keys($pattern);
+                $keys = [];
+                $cursor = '0';
+                do {
+                    [$cursor, $found] = $redis->scan($cursor, ['match' => $pattern, 'count' => 100]);
+                    $keys = array_merge($keys, $found);
+                } while ($cursor !== '0');
+
                 if (! empty($keys)) {
                     $redis->del($keys);
                 }

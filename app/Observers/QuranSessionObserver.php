@@ -107,7 +107,6 @@ class QuranSessionObserver
     {
         // Check if any homework field was just assigned
         $homeworkAssigned = false;
-        $homeworkType = null;
 
         if ($quranSession->wasChanged('homework_assigned') && $quranSession->homework_assigned === true) {
             $homeworkAssigned = true;

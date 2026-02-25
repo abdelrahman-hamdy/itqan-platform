@@ -236,27 +236,37 @@ class SessionStatusService
     }
 
     /**
-     * Resolve session from ID across all session types
+     * Resolve session from ID across all session types.
+     *
+     * @param  string|null  $sessionType  'quran'|'academic'|'interactive' — avoids cross-type ID collision
      */
-    public function resolveSession(int $sessionId, $user)
+    public function resolveSession(int $sessionId, $user, ?string $sessionType = null)
     {
-        $academicSession = AcademicSession::find($sessionId);
-        $quranSession = QuranSession::find($sessionId);
-        $interactiveSession = InteractiveCourseSession::find($sessionId);
+        if ($sessionType === 'interactive') {
+            return InteractiveCourseSession::find($sessionId);
+        }
 
+        if ($sessionType === 'academic') {
+            return AcademicSession::find($sessionId);
+        }
+
+        if ($sessionType === 'quran') {
+            return QuranSession::find($sessionId);
+        }
+
+        // Fallback without type hint — query each model separately to avoid
+        // returning the wrong session when integer IDs collide across tables.
+        $interactiveSession = InteractiveCourseSession::find($sessionId);
         if ($interactiveSession) {
             return $interactiveSession;
         }
 
-        if ($academicSession && $quranSession) {
-            if ($user->hasRole(UserType::ACADEMIC_TEACHER->value) || $academicSession->student_id === $user->id) {
-                return $academicSession;
-            }
-
-            return $quranSession;
+        $academicSession = AcademicSession::find($sessionId);
+        if ($academicSession) {
+            return $academicSession;
         }
 
-        return $academicSession ?: $quranSession;
+        return QuranSession::find($sessionId);
     }
 
     /**

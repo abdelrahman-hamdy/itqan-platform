@@ -235,27 +235,32 @@ class BaseSessionObserver
         if (in_array($status, [SessionStatus::READY, SessionStatus::ONGOING])) {
             if (empty($session->meeting_room_name)) {
                 try {
-                    // CONC-001: Use transaction with lock to prevent duplicate meeting creation
+                    // CONC-001: Use transaction with lockForUpdate to prevent duplicate meeting creation
+                    // Two concurrent requests may both see meeting_room_name as empty; the lock ensures
+                    // only one proceeds to create the meeting room.
                     \Illuminate\Support\Facades\DB::transaction(function () use ($session) {
-                        $freshSession = $session->fresh();
-                        if ($freshSession && empty($freshSession->meeting_room_name)) {
-                            Log::info('Auto-creating meeting for newly created ready/ongoing session', [
-                                'session_id' => $freshSession->id,
-                                'status' => $freshSession->status instanceof SessionStatus ? $freshSession->status->value : $freshSession->status,
-                            ]);
-
-                            $freshSession->generateMeetingLink();
-                            $freshSession->save();
-
-                            // Sync back to original model
-                            $session->meeting_room_name = $freshSession->meeting_room_name;
-                            $session->meeting_link = $freshSession->meeting_link;
-
-                            Log::info('Meeting created for new session', [
-                                'session_id' => $freshSession->id,
-                                'room_name' => $freshSession->meeting_room_name,
-                            ]);
+                        $freshSession = $session->newQuery()->lockForUpdate()->find($session->id);
+                        if (! $freshSession || ! empty($freshSession->meeting_room_name)) {
+                            // Already created by a concurrent request
+                            return;
                         }
+
+                        Log::info('Auto-creating meeting for newly created ready/ongoing session', [
+                            'session_id' => $freshSession->id,
+                            'status' => $freshSession->status instanceof SessionStatus ? $freshSession->status->value : $freshSession->status,
+                        ]);
+
+                        $freshSession->generateMeetingLink();
+                        $freshSession->save();
+
+                        // Sync back to original model
+                        $session->meeting_room_name = $freshSession->meeting_room_name;
+                        $session->meeting_link = $freshSession->meeting_link;
+
+                        Log::info('Meeting created for new session', [
+                            'session_id' => $freshSession->id,
+                            'room_name' => $freshSession->meeting_room_name,
+                        ]);
                     });
                 } catch (Exception $e) {
                     Log::error('Failed to create meeting for new session', [

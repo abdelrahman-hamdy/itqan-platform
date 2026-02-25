@@ -86,6 +86,8 @@ class BlockMobilePaymentInitiation
             'api/v1/student/subscriptions/*/purchase',
             'api/v1/student/courses/*/purchase',
             'api/v1/student/courses/*/enroll',
+            'api/v1/parent/payments/initiate',
+            'api/v1/parent/payments',
         ];
 
         foreach ($paymentPatterns as $pattern) {

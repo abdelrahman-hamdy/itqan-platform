@@ -409,11 +409,12 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
     }
 
     /**
-     * Supervisors can edit any circle shown in their filtered list.
-     * The query already filters to only show circles for assigned teachers.
+     * Supervisors can only edit circles belonging to their assigned teachers.
+     * Delegates to BaseSupervisorResource::canManageRecord() which checks
+     * that the circle's quran_teacher_id is in the supervisor's assigned teacher list.
      */
     public static function canEdit(Model $record): bool
     {
-        return true;
+        return static::canManageRecord($record);
     }
 }

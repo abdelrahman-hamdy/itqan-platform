@@ -5,6 +5,7 @@ namespace App\Filament\Shared\Traits;
 use Exception;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
+use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
@@ -129,12 +130,12 @@ trait ValidatesConflicts
      */
     protected function checkAcademicSessionConflicts(int $teacherId, Carbon $scheduledAt, Carbon $endTime, ?int $excludeId = null): ?AcademicSession
     {
-        // For academic sessions, we need to use the teacher profile ID
-        $user = Auth::user();
-        $academicTeacherId = $user?->academicTeacherProfile?->id;
+        // For academic sessions, we need to use the teacher profile ID.
+        // Resolve the profile from the passed $teacherId (user ID), not from Auth::user().
+        $academicTeacherId = AcademicTeacherProfile::where('user_id', $teacherId)->value('id');
 
         if (! $academicTeacherId) {
-            return null; // No academic teacher profile, no conflict possible
+            return null; // No academic teacher profile for this user, no conflict possible
         }
 
         return AcademicSession::where('academic_teacher_id', $academicTeacherId)
@@ -167,12 +168,12 @@ trait ValidatesConflicts
      */
     protected function checkInteractiveCourseSessionConflicts(int $teacherId, Carbon $scheduledAt, Carbon $endTime, ?int $excludeId = null): ?InteractiveCourseSession
     {
-        // For interactive courses, we need to find sessions where the teacher is assigned
-        $user = Auth::user();
-        $academicTeacherId = $user?->academicTeacherProfile?->id;
+        // For interactive courses, we need to find sessions where the teacher is assigned.
+        // Resolve the academic teacher profile ID from the passed $teacherId (user ID), not from Auth::user().
+        $academicTeacherId = AcademicTeacherProfile::where('user_id', $teacherId)->value('id');
 
         if (! $academicTeacherId) {
-            return null; // No academic teacher profile, no conflict possible
+            return null; // No academic teacher profile for this user, no conflict possible
         }
 
         return InteractiveCourseSession::whereHas('course', function ($query) use ($academicTeacherId) {

@@ -5,7 +5,10 @@ namespace App\Services;
 use Exception;
 use App\Contracts\MeetingCapable;
 use App\Enums\AttendanceStatus;
+use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
 use App\Models\MeetingAttendance;
+use App\Models\QuranSession;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -149,11 +152,12 @@ class AttendanceCalculationService
     public function handleUserLeavePolymorphic($session, User $user, string $sessionType): ?MeetingAttendance
     {
         try {
-            // Map the polymorphic session type to the database enum values
-            $dbSessionType = match ($sessionType) {
-                'academic' => 'academic',
-                'quran' => $session->session_type ?? 'group',
-                default => $session->session_type ?? 'group',
+            // Use instanceof for type-safe session type determination (no string-based get_class checks)
+            $dbSessionType = match (true) {
+                $session instanceof AcademicSession => 'academic',
+                $session instanceof QuranSession => $session->session_type ?? 'group',
+                $session instanceof InteractiveCourseSession => $session->session_type ?? 'interactive',
+                default => $session->session_type ?? $sessionType,
             };
 
             // Find existing attendance record

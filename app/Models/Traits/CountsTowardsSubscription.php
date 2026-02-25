@@ -123,8 +123,15 @@ trait CountsTowardsSubscription
 
             if (! $alreadyCounted) {
                 try {
+                    // Lock the subscription row to prevent double-spending
+                    // Two concurrent processes could both read the same balance before either decrements
+                    $lockedSub = $subscription::lockForUpdate()->find($subscription->id);
+                    if (! $lockedSub) {
+                        throw new Exception("Subscription {$subscription->id} not found during counting");
+                    }
+
                     // Deduct one session from subscription
-                    $subscription->useSession();
+                    $lockedSub->useSession();
 
                     // Mark this session as counted to prevent double-counting
                     $session->update(['subscription_counted' => true]);

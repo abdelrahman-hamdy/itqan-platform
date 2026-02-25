@@ -53,8 +53,13 @@ class AcademicSessionResource extends BaseAcademicSessionResource
      */
     protected static function scopeEloquentQuery(Builder $query): Builder
     {
+        $user = auth()->user();
+        if (! $user) {
+            return $query->whereRaw('1 = 0');
+        }
+
         return $query
-            ->where('academy_id', auth()->user()->academy_id)
+            ->where('academy_id', $user->academy_id)
             // Include soft-deleted records for admin management
             ->withoutGlobalScopes([SoftDeletingScope::class]);
     }

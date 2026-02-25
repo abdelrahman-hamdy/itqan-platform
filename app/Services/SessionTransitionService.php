@@ -322,7 +322,11 @@ class SessionTransitionService
      */
     public function transitionToCancelled(BaseSession $session, ?string $reason = null, ?int $cancelledBy = null, bool $throwOnError = false): bool
     {
-        return DB::transaction(function () use ($session, $reason, $cancelledBy, $throwOnError) {
+        // Resolve the cancellation type BEFORE entering the transaction to avoid
+        // User::find() inside a DB lock (which can cause deadlocks with the users table)
+        $cancellationType = $this->determineCancellationType($cancelledBy);
+
+        return DB::transaction(function () use ($session, $reason, $cancelledBy, $throwOnError, $cancellationType) {
             // Lock the session row to prevent concurrent updates
             $lockedSession = $session::lockForUpdate()->find($session->id);
 
@@ -370,9 +374,7 @@ class SessionTransitionService
                 return false;
             }
 
-            // Determine cancellation type based on who cancelled
-            $cancellationType = $this->determineCancellationType($cancelledBy);
-
+            // cancellationType was resolved outside the transaction to avoid User::find() inside a lock
             $lockedSession->update([
                 'status' => SessionStatus::CANCELLED,
                 'cancelled_at' => now(),

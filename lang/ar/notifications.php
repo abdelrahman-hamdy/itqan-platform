@@ -341,6 +341,8 @@ return [
 
     // CQ-001: Default strings for notification data (replaces hardcoded Arabic)
     'quran_session_default' => 'جلسة قرآنية',
+    'academic_session_default' => 'جلسة أكاديمية',
     'teacher_default' => 'المعلم',
     'quran_homework' => 'واجب قرآني',
+    'new_homework' => 'واجب جديد',
 ];

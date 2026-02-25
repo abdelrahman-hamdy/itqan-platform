@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Constants\DefaultAcademy;
+use App\Services\AcademyContextService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +34,25 @@ class InteractiveCourseMiddleware
 
             return redirect()->route('login', ['subdomain' => $subdomain])
                 ->withErrors(['email' => __('auth.account_inactive')]);
+        }
+
+        // Determine the current academy from context
+        $currentAcademyId = AcademyContextService::getApiContextAcademyId()
+            ?? app('current_academy')?->id;
+
+        // Bypass for admin/supervisor roles: allow access to any course in the current academy
+        if ($user->isAdmin() || $user->isSupervisor() || $user->isSuperAdmin()) {
+            return $next($request);
+        }
+
+        // Cross-tenant check: verify the requested course belongs to the current academy
+        // This prevents a student or teacher from academy A from accessing academy B's courses
+        $courseId = $request->route('course') ?? $request->route('id');
+        if ($courseId && $currentAcademyId) {
+            $course = \App\Models\InteractiveCourse::find($courseId);
+            if ($course && $course->academy_id !== $currentAcademyId) {
+                abort(403, __('auth.unauthorized_access'));
+            }
         }
 
         // Check user role and route accordingly

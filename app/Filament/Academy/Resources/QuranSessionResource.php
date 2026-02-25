@@ -52,8 +52,13 @@ class QuranSessionResource extends BaseQuranSessionResource
      */
     protected static function scopeEloquentQuery(Builder $query): Builder
     {
+        $user = auth()->user();
+        if (! $user) {
+            return $query->whereRaw('1 = 0');
+        }
+
         return $query
-            ->where('academy_id', auth()->user()->academy_id)
+            ->where('academy_id', $user->academy_id)
             // Include soft-deleted records for admin management
             ->withoutGlobalScopes([SoftDeletingScope::class]);
     }
@@ -365,7 +370,11 @@ class QuranSessionResource extends BaseQuranSessionResource
 
     public static function canDelete(Model $record): bool
     {
-        return true;
+        $status = $record->status instanceof SessionStatus
+            ? $record->status
+            : SessionStatus::tryFrom($record->status);
+
+        return $status === SessionStatus::SCHEDULED;
     }
 
     public static function getPages(): array

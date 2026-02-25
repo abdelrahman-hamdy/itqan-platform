@@ -27,7 +27,6 @@ class CanControlParticipants
         if (! auth()->check()) {
             Log::warning('CanControlParticipants - User not authenticated', [
                 'session_exists' => $request->hasSession(),
-                'session_data' => $request->hasSession() ? $request->session()->all() : [],
             ]);
 
             return response()->json(['error' => 'Authentication required'], 401);
@@ -37,13 +36,10 @@ class CanControlParticipants
         $user = auth()->user();
         $allowedUserTypes = [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::ADMIN->value, UserType::SUPER_ADMIN->value];
 
-        // Log for debugging
+        // Log for debugging (no PII — only IDs and types)
         Log::info('CanControlParticipants middleware - User authenticated', [
             'user_id' => $user->id,
-            'user_email' => $user->email,
             'user_type' => $user->user_type,
-            'user_name' => $user->name,
-            'allowed_types' => $allowedUserTypes,
             'can_control' => in_array($user->user_type, $allowedUserTypes),
         ]);
 
@@ -51,7 +47,6 @@ class CanControlParticipants
             Log::warning('CanControlParticipants - User not authorized', [
                 'user_id' => $user->id,
                 'user_type' => $user->user_type,
-                'required_types' => $allowedUserTypes,
             ]);
 
             return response()->json([

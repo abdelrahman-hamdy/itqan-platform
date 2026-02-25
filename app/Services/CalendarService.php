@@ -154,7 +154,8 @@ class CalendarService implements CalendarServiceInterface
             $slots = $this->getAvailableSlots($teacher, $date);
 
             // Get existing sessions
-            $sessions = $this->getUserCalendar($teacher, $date->startOfDay(), $date->endOfDay())
+            // Use copy() to avoid mutating the $date instance from the CarbonPeriod iterator
+            $sessions = $this->getUserCalendar($teacher, $date->copy()->startOfDay(), $date->copy()->endOfDay())
                 ->filter(fn ($event) => $event['type'] === 'session');
 
             $availability[$dayName] = [

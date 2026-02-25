@@ -53,6 +53,13 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
                 return TeacherEarning::forSession(get_class($session), $session->id)->first();
             }
 
+            // Bust teacher profile cache to ensure we use current rates, not stale cached rates
+            if ($session instanceof QuranSession && $session->quranTeacher) {
+                $this->clearTeacherCache('quran', $session->quranTeacher->id);
+            } elseif ($session instanceof AcademicSession) {
+                $this->clearTeacherCache('academic', $session->academic_teacher_id);
+            }
+
             $amount = $this->calculateForSession($session);
 
             if ($amount === null || $amount <= 0) {
@@ -323,9 +330,11 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
             return null;
         }
 
+        $sessionEndedAt = $session->ended_at ?? $session->scheduled_at;
+
         return match ($course->payment_type) {
             'fixed_amount' => $this->calculateFixedAmount($course),
-            'per_student' => $this->calculatePerStudent($course),
+            'per_student' => $this->calculatePerStudent($course, $sessionEndedAt),
             'per_session' => $this->calculatePerSession($course),
             default => null,
         };
@@ -385,12 +394,19 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
     }
 
     /**
-     * Calculate per-student payment (amount x enrolled students)
+     * Calculate per-student payment (amount x enrolled students at session end time)
      */
-    protected function calculatePerStudent($course): ?float
+    protected function calculatePerStudent($course, $sessionEndedAt = null): ?float
     {
         $amountPerStudent = $course->amount_per_student;
-        $enrolledCount = $course->enrollments()->count();
+        // Scope enrollment count to students who enrolled at or before the session ended
+        // to avoid counting students who enrolled after the session
+        $enrolledCount = $course->enrollments()
+            ->when(
+                $sessionEndedAt,
+                fn ($q) => $q->where('created_at', '<=', $sessionEndedAt)
+            )
+            ->count();
 
         if ($amountPerStudent === null || $amountPerStudent <= 0) {
             report(new InvalidArgumentException(
@@ -461,7 +477,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
     // ──────────────────────────────────────────────────────────────
 
     /**
-     * Get teacher ID from session
+     * Get teacher User.id from session (used for attendance lookups against users table)
      */
     protected function getTeacherId(BaseSession $session): ?int
     {
@@ -470,11 +486,13 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
         }
 
         if ($session instanceof AcademicSession) {
-            return $session->academicTeacher?->id;
+            // academicTeacher is an AcademicTeacherProfile; return user_id (User.id) not profile id
+            return $session->academicTeacher?->user_id;
         }
 
         if ($session instanceof InteractiveCourseSession) {
-            return $session->course?->assignedTeacher?->id;
+            // assignedTeacher is an AcademicTeacherProfile; return user_id (User.id)
+            return $session->course?->assignedTeacher?->user_id;
         }
 
         return null;
@@ -663,7 +681,15 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
         if ($session instanceof InteractiveCourseSession) {
             $course = $session->course;
             $metadata['payment_type'] = $course->payment_type;
-            $metadata['enrolled_students'] = $course->enrollments()->count();
+            // Use already-loaded enrollment count from the course relationship to avoid N+1
+            // Count only enrollments that existed at session end time (historical scope)
+            $sessionEndedAt = $session->ended_at ?? $session->scheduled_at;
+            $metadata['enrolled_students'] = $course->enrollments()
+                ->when(
+                    $sessionEndedAt,
+                    fn ($q) => $q->where('created_at', '<=', $sessionEndedAt)
+                )
+                ->count();
             $metadata['total_sessions'] = $course->total_sessions;
         }
 

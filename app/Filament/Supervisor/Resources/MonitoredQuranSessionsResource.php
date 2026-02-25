@@ -122,20 +122,30 @@ class MonitoredQuranSessionsResource extends BaseSupervisorResource
 
                 SelectFilter::make('individual_circle_id')
                     ->label('الحلقة الفردية')
-                    ->options(fn () => QuranIndividualCircle::query()
-                        ->with(['student', 'quranTeacher'])
-                        ->get()
-                        ->mapWithKeys(fn ($ic) => [
-                            $ic->id => trim(($ic->student?->first_name ?? '').' '.($ic->student?->last_name ?? ''))
-                                .' - '.trim(($ic->quranTeacher?->first_name ?? '').' '.($ic->quranTeacher?->last_name ?? '')),
-                        ])
-                    )
+                    ->options(function () {
+                        $teacherIds = static::getAssignedQuranTeacherIds();
+
+                        return QuranIndividualCircle::query()
+                            ->when(! empty($teacherIds), fn ($q) => $q->whereIn('quran_teacher_id', $teacherIds))
+                            ->with(['student', 'quranTeacher'])
+                            ->get()
+                            ->mapWithKeys(fn ($ic) => [
+                                $ic->id => trim(($ic->student?->first_name ?? '').' '.($ic->student?->last_name ?? ''))
+                                    .' - '.trim(($ic->quranTeacher?->first_name ?? '').' '.($ic->quranTeacher?->last_name ?? '')),
+                            ]);
+                    })
                     ->searchable()
                     ->placeholder('الكل'),
 
                 SelectFilter::make('circle_id')
                     ->label('الحلقة الجماعية')
-                    ->options(fn () => QuranCircle::query()->pluck('name', 'id'))
+                    ->options(function () {
+                        $academy = static::getCurrentSupervisorAcademy();
+
+                        return QuranCircle::query()
+                            ->when($academy, fn ($q) => $q->where('academy_id', $academy->id))
+                            ->pluck('name', 'id');
+                    })
                     ->searchable()
                     ->placeholder('الكل'),
 
@@ -152,13 +162,17 @@ class MonitoredQuranSessionsResource extends BaseSupervisorResource
 
                 SelectFilter::make('student_id')
                     ->label('الطالب')
-                    ->options(fn () => User::query()
-                        ->where('user_type', 'student')
-                        ->get()
-                        ->mapWithKeys(fn ($u) => [
-                            $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
-                        ])
-                    )
+                    ->options(function () {
+                        $academy = static::getCurrentSupervisorAcademy();
+
+                        return User::query()
+                            ->where('user_type', 'student')
+                            ->when($academy, fn ($q) => $q->where('academy_id', $academy->id))
+                            ->get()
+                            ->mapWithKeys(fn ($u) => [
+                                $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
+                            ]);
+                    })
                     ->searchable()
                     ->placeholder('الكل'),
 

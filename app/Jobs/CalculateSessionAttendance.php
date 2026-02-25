@@ -108,10 +108,17 @@ class CalculateSessionAttendance implements ShouldQueue
         $chunkSize = 100;
 
         // Process Quran sessions with chunking - filtered by academy
+        // ONGOING sessions are included regardless of the 7-day lookback window to handle
+        // sessions that started before midnight and are still ongoing at job run time
         QuranSession::where('academy_id', $academy->id)
             ->whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
-            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
-            ->where('scheduled_at', '>=', now()->subDays(7))
+            ->where(function ($q) {
+                $q->where('status', SessionStatus::ONGOING->value)
+                    ->orWhere(function ($q2) {
+                        $q2->where('status', SessionStatus::COMPLETED->value)
+                            ->where('scheduled_at', '>=', now()->subDays(7));
+                    });
+            })
             ->chunk($chunkSize, function ($sessions) use (&$processed, &$skipped, &$failed) {
                 $this->processSessionBatch($sessions, $processed, $skipped, $failed);
             });
@@ -119,8 +126,13 @@ class CalculateSessionAttendance implements ShouldQueue
         // Process Academic sessions with chunking - filtered by academy
         AcademicSession::where('academy_id', $academy->id)
             ->whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
-            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
-            ->where('scheduled_at', '>=', now()->subDays(7))
+            ->where(function ($q) {
+                $q->where('status', SessionStatus::ONGOING->value)
+                    ->orWhere(function ($q2) {
+                        $q2->where('status', SessionStatus::COMPLETED->value)
+                            ->where('scheduled_at', '>=', now()->subDays(7));
+                    });
+            })
             ->chunk($chunkSize, function ($sessions) use (&$processed, &$skipped, &$failed) {
                 $this->processSessionBatch($sessions, $processed, $skipped, $failed);
             });
@@ -131,8 +143,13 @@ class CalculateSessionAttendance implements ShouldQueue
                 $query->where('academy_id', $academy->id);
             })
                 ->whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
-                ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
-                ->where('scheduled_at', '>=', now()->subDays(7))
+                ->where(function ($q) {
+                    $q->where('status', SessionStatus::ONGOING->value)
+                        ->orWhere(function ($q2) {
+                            $q2->where('status', SessionStatus::COMPLETED->value)
+                                ->where('scheduled_at', '>=', now()->subDays(7));
+                        });
+                })
                 ->chunk($chunkSize, function ($sessions) use (&$processed, &$skipped, &$failed) {
                     $this->processSessionBatch($sessions, $processed, $skipped, $failed);
                 });
@@ -340,10 +357,23 @@ class CalculateSessionAttendance implements ShouldQueue
 
     /**
      * Sync calculated attendance to session report
+     * Note: Only student attendance records are synced to reports.
+     * Teacher attendance records are skipped to prevent phantom student report creation.
      */
     private function syncToReport($session, MeetingAttendance $attendance): void
     {
         try {
+            // Skip teacher participants — their attendance should not create student report records
+            if (in_array($attendance->user_type, ['teacher', 'quran_teacher', 'academic_teacher'])) {
+                Log::debug('Skipping report sync for teacher attendance record', [
+                    'session_id' => $session->id,
+                    'user_id' => $attendance->user_id,
+                    'user_type' => $attendance->user_type,
+                ]);
+
+                return;
+            }
+
             // Find the appropriate report model based on session type
             $reportClass = $this->getReportClass($session);
 
@@ -384,7 +414,7 @@ class CalculateSessionAttendance implements ShouldQueue
                 'actual_attendance_minutes' => $attendance->total_duration_minutes,
                 'attendance_status' => $attendance->attendance_status,
                 'attendance_percentage' => $attendance->attendance_percentage,
-                'is_late' => $attendance->first_join_time && $attendance->first_join_time->gt($session->scheduled_at->copy()->addMinutes(15)),
+                'is_late' => $attendance->first_join_time && $attendance->first_join_time->gt($session->scheduled_at->copy()->addMinutes(config('business.attendance.late_threshold_minutes', 15))),
                 'late_minutes' => $attendance->first_join_time && $attendance->first_join_time->gt($session->scheduled_at)
                     ? (int) $session->scheduled_at->diffInMinutes($attendance->first_join_time)
                     : 0,

@@ -25,10 +25,16 @@ class AcademyContext
         $academyId = $request->query('academy');
 
         if ($academyId) {
-            // Set academy context using the service
-            AcademyContextService::setAcademyContext($academyId);
+            // Validate that the academy exists before setting context
+            // This prevents an attacker from setting arbitrary academy IDs in session
+            $academy = Academy::find($academyId);
 
-            // Redirect to clean URL without academy parameter
+            if ($academy) {
+                // Set academy context using the service
+                AcademyContextService::setAcademyContext($academyId);
+            }
+
+            // Redirect to clean URL without academy parameter (regardless of validity)
             return redirect($request->url());
         }
 

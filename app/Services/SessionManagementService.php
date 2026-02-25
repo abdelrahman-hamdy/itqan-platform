@@ -17,6 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class SessionManagementService
 {
@@ -106,51 +107,52 @@ class SessionManagementService
         ?string $title = null,
         ?string $description = null
     ): QuranSession {
+        return DB::transaction(function () use ($circle, $scheduledAt, &$durationMinutes, &$title, &$description) {
+            // CRITICAL FIX: Get duration from circle settings, not hardcoded 60 minutes
+            // Group circles should use their configured session_duration_minutes
+            if ($durationMinutes === null) {
+                $durationMinutes = $circle->session_duration_minutes ?? 60;
+            }
 
-        // CRITICAL FIX: Get duration from circle settings, not hardcoded 60 minutes
-        // Group circles should use their configured session_duration_minutes
-        if ($durationMinutes === null) {
-            $durationMinutes = $circle->session_duration_minutes ?? 60;
-        }
+            // Check for conflicts
+            $this->validateTimeSlotAvailable($circle->quran_teacher_id, $scheduledAt, $durationMinutes);
 
-        // Check for conflicts
-        $this->validateTimeSlotAvailable($circle->quran_teacher_id, $scheduledAt, $durationMinutes);
+            // Calculate session month and number (for legacy compatibility)
+            $sessionMonth = $scheduledAt->format('Y-m-01');
+            $monthlySessionNumber = $this->getNextSessionNumberForMonth($circle, $sessionMonth);
 
-        // Calculate session month and number (for legacy compatibility)
-        $sessionMonth = $scheduledAt->format('Y-m-01');
-        $monthlySessionNumber = $this->getNextSessionNumberForMonth($circle, $sessionMonth);
+            // Allow flexible scheduling - teachers can schedule additional sessions as needed
+            // Remove the hard monthly limit to support cases where teachers need extra sessions
+            // The circle's monthly_sessions_count serves as a guideline/recommendation, not a strict limit
 
-        // Allow flexible scheduling - teachers can schedule additional sessions as needed
-        // Remove the hard monthly limit to support cases where teachers need extra sessions
-        // The circle's monthly_sessions_count serves as a guideline/recommendation, not a strict limit
+            // Use the naming service for consistent sequential session naming
+            if (! $title) {
+                $title = $this->namingService->generateGroupSessionTitle($circle);
+            }
 
-        // Use the naming service for consistent sequential session naming
-        if (! $title) {
-            $title = $this->namingService->generateGroupSessionTitle($circle);
-        }
+            if (! $description) {
+                $description = $this->namingService->generateGroupSessionDescription($circle, $scheduledAt);
+            }
 
-        if (! $description) {
-            $description = $this->namingService->generateGroupSessionDescription($circle, $scheduledAt);
-        }
+            // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
+            $scheduledAtUtc = AcademyContextService::toUtcForStorage($scheduledAt);
 
-        // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
-        $scheduledAtUtc = AcademyContextService::toUtcForStorage($scheduledAt);
-
-        return QuranSession::create([
-            'academy_id' => $circle->academy_id,
-            'quran_teacher_id' => $circle->quran_teacher_id,
-            'circle_id' => $circle->id,
-            'session_code' => $this->generateSessionCode('GRP', $circle->id, $scheduledAt),
-            'session_type' => 'group',
-            'status' => SessionStatus::SCHEDULED,
-            'title' => $title,
-            'description' => $description,
-            'scheduled_at' => $scheduledAtUtc,
-            'duration_minutes' => $durationMinutes,
-            'session_month' => $sessionMonth,
-            'monthly_session_number' => $monthlySessionNumber,
-            'created_by' => Auth::id(),
-        ]);
+            return QuranSession::create([
+                'academy_id' => $circle->academy_id,
+                'quran_teacher_id' => $circle->quran_teacher_id,
+                'circle_id' => $circle->id,
+                'session_code' => $this->generateSessionCode('GRP', $circle->id, $scheduledAt),
+                'session_type' => 'group',
+                'status' => SessionStatus::SCHEDULED,
+                'title' => $title,
+                'description' => $description,
+                'scheduled_at' => $scheduledAtUtc,
+                'duration_minutes' => $durationMinutes,
+                'session_month' => $sessionMonth,
+                'monthly_session_number' => $monthlySessionNumber,
+                'created_by' => Auth::id(),
+            ]);
+        });
     }
 
     /**
@@ -395,12 +397,13 @@ class SessionManagementService
 
     private function generateSessionCode(string $type, int $circleId, Carbon $scheduledAt): string
     {
+        // Use Str::uuid() for high-entropy unique suffix to prevent collisions under concurrent requests
         return sprintf(
             '%s-%d-%s-%s',
             $type,
             $circleId,
             $scheduledAt->format('Ymd'),
-            substr(uniqid(), -4)
+            substr(str_replace('-', '', Str::uuid()->toString()), -8)
         );
     }
 

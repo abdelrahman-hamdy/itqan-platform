@@ -50,16 +50,18 @@ class TenantMiddleware
                 // SECURITY: Verify authenticated user belongs to this academy
                 // This prevents unauthorized tenant access via subdomain manipulation
                 $user = $request->user();
-                if ($user && $user->academy_id !== null && $user->academy_id !== $academy->id) {
+                if ($user && ! $user->isSuperAdmin() && $user->academy_id !== $academy->id) {
                     // User is authenticated but belongs to a different academy
-                    // Super admins (academy_id = null) can access any academy
+                    // Only SuperAdmins (isSuperAdmin()) can access any academy
                     abort(403, 'You do not have access to this academy');
                 }
 
                 // Set the tenant in Filament context only for tenant-aware panels
                 if ($request->is('panel') || $request->is('panel/*') ||
                     $request->is('teacher-panel') || $request->is('teacher-panel/*') ||
-                    $request->is('supervisor-panel') || $request->is('supervisor-panel/*')) {
+                    $request->is('supervisor-panel') || $request->is('supervisor-panel/*') ||
+                    $request->is('academic-teacher') || $request->is('academic-teacher/*') ||
+                    $request->is('academic-teacher-panel') || $request->is('academic-teacher-panel/*')) {
                     Filament::setTenant($academy);
                 }
 
@@ -73,7 +75,9 @@ class TenantMiddleware
                     // Only set tenant for tenant-aware panels, not for Super-Admin
                     if ($request->is('panel') || $request->is('panel/*') ||
                         $request->is('teacher-panel') || $request->is('teacher-panel/*') ||
-                        $request->is('supervisor-panel') || $request->is('supervisor-panel/*')) {
+                        $request->is('supervisor-panel') || $request->is('supervisor-panel/*') ||
+                        $request->is('academic-teacher') || $request->is('academic-teacher/*') ||
+                        $request->is('academic-teacher-panel') || $request->is('academic-teacher-panel/*')) {
                         Filament::setTenant($defaultAcademy);
                     }
                     app()->instance('current_academy', $defaultAcademy);

@@ -341,6 +341,8 @@ return [
 
     // CQ-001: Default strings for notification data
     'quran_session_default' => 'Quran Session',
+    'academic_session_default' => 'Academic Session',
     'teacher_default' => 'Teacher',
     'quran_homework' => 'Quran Homework',
+    'new_homework' => 'New Homework',
 ];

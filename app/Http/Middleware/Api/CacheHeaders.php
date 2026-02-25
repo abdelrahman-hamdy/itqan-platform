@@ -41,9 +41,10 @@ class CacheHeaders
         $etag = '"'.md5($content).'"';
 
         // Check If-None-Match header for 304 response
+        // Per HTTP spec, 304 Not Modified responses MUST NOT contain a message body
         $ifNoneMatch = $request->header('If-None-Match');
         if ($ifNoneMatch && $ifNoneMatch === $etag) {
-            return response()->json(null, 304);
+            return response('', 304)->header('ETag', $etag);
         }
 
         // Set ETag header

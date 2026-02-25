@@ -63,6 +63,7 @@ class AcademicSessionObserver
                 'session_type' => $session->session_type ?? 'individual',
             ]);
         } catch (Exception $e) {
+            report($e);
             Log::error('Failed to handle Academic session cancellation', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -90,8 +91,8 @@ class AcademicSessionObserver
                 $student,
                 NotificationType::HOMEWORK_ASSIGNED,
                 [
-                    'session_title' => $session->title ?? 'جلسة أكاديمية',
-                    'teacher_name' => $session->academicTeacher?->user->name ?? 'المعلم',
+                    'session_title' => $session->title ?? __('notifications.academic_session_default'),
+                    'teacher_name' => $session->academicTeacher?->user->name ?? __('notifications.teacher_default'),
                     'due_date' => $session->homework_due_date?->format('Y-m-d') ?? '',
                 ],
                 route('student.homework.view', ['id' => $session->id, 'type' => 'academic']),
@@ -104,7 +105,7 @@ class AcademicSessionObserver
             $parentNotificationService->sendHomeworkAssigned(
                 (object) [
                     'student_id' => $student->id,
-                    'title' => $session->title ?? 'واجب جديد',
+                    'title' => $session->title ?? __('notifications.new_homework'),
                     'due_date' => $session->homework_due_date,
                 ]
             );

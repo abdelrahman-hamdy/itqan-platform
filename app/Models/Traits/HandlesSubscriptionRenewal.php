@@ -2,6 +2,7 @@
 
 namespace App\Models\Traits;
 
+use App\Enums\BillingCycle;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Services\NotificationService;
@@ -286,7 +287,11 @@ trait HandlesSubscriptionRenewal
             return;
         }
 
-        // Enter grace period instead of immediate cancellation
+        // Enter grace period instead of immediate cancellation.
+        // Grace period expiry is enforced by the scheduled command
+        // `subscriptions:suspend-expired-grace` (runs hourly via routes/console.php).
+        // That command finds ACTIVE subscriptions where metadata['grace_period_ends_at'] is
+        // in the past and sets their status to SUSPENDED, preventing indefinite grace periods.
         $gracePeriodDays = config('payments.renewal.grace_period_days', 3);
         $metadata['grace_period_ends_at'] = now()->addDays($gracePeriodDays)->toIso8601String();
         $metadata['grace_period_started_at'] = now()->toIso8601String();
@@ -326,9 +331,11 @@ trait HandlesSubscriptionRenewal
         DB::transaction(function () use ($amount, $newBillingCycle) {
             $subscription = static::lockForUpdate()->find($this->id);
 
-            // Update billing cycle if provided
+            // Update billing cycle if provided — use enum constant, not raw string
             if ($newBillingCycle) {
-                $subscription->billing_cycle = $newBillingCycle;
+                $subscription->billing_cycle = $newBillingCycle instanceof BillingCycle
+                    ? $newBillingCycle
+                    : BillingCycle::from($newBillingCycle);
             }
 
             $subscription->processSuccessfulRenewalWithoutNotification($amount);
