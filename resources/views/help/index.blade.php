@@ -10,7 +10,7 @@
     ];
 @endphp
 
-<x-layouts.help :title="__('help.title')" :role="$userRole">
+<x-layouts.help :title="__('help.title')">
 
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 

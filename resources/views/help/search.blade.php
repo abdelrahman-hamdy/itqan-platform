@@ -33,7 +33,7 @@
     }
 @endphp
 
-<x-layouts.help :title="__('help.search.title')" :role="$userRole">
+<x-layouts.help :title="__('help.search.title')">
 
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 

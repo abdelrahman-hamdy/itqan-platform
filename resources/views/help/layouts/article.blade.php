@@ -11,7 +11,7 @@
       $nextArticle – next article metadata or null
       $userRole    – current authenticated user's role
 --}}
-<x-layouts.help :title="$article['title'] ?? __('help.title')" :role="$userRole">
+<x-layouts.help :title="$article['title'] ?? __('help.title')">
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
