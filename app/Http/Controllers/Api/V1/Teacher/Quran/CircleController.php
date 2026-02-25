@@ -224,7 +224,7 @@ class CircleController extends Controller
 
         $circle = QuranCircle::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
-            ->with(['students.user', 'sessions' => function ($q) {
+            ->with(['students', 'sessions' => function ($q) {
                 $q->orderBy('scheduled_at', 'desc')->limit(10);
             }])
             ->first();
@@ -243,7 +243,7 @@ class CircleController extends Controller
         ];
 
         // Count certificates issued for students in this circle
-        $studentIds = $circle->students->pluck('user_id')->filter()->toArray();
+        $studentIds = $circle->students->pluck('id')->filter()->toArray();
         $certificatesIssued = Certificate::where('certificateable_type', QuranCircle::class)
             ->where('certificateable_id', $circle->id)
             ->whereIn('student_id', $studentIds)
@@ -294,7 +294,7 @@ class CircleController extends Controller
 
         $circle = QuranCircle::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
-            ->with(['students.user', 'students.subscriptions' => function ($q) use ($id) {
+            ->with(['students', 'students.quranSubscriptions' => function ($q) use ($id) {
                 $q->where('quran_circle_id', $id);
             }])
             ->first();
@@ -307,7 +307,7 @@ class CircleController extends Controller
         $canChat = $user->hasSupervisor();
 
         // Get all certificates for this circle
-        $studentIds = $circle->students->pluck('user_id')->filter()->toArray();
+        $studentIds = $circle->students->pluck('id')->filter()->toArray();
         $certificates = Certificate::where('certificateable_type', QuranCircle::class)
             ->where('certificateable_id', $circle->id)
             ->whereIn('student_id', $studentIds)
@@ -315,8 +315,8 @@ class CircleController extends Controller
             ->keyBy('student_id');
 
         $students = $circle->students->map(function ($student) use ($certificates, $canChat) {
-            $subscription = $student->subscriptions->first();
-            $certificate = $certificates->get($student->user?->id);
+            $subscription = $student->quranSubscriptions->first();
+            $certificate = $certificates->get($student->id);
 
             $certificateData = $certificate ? [
                 'issued' => true,
@@ -329,13 +329,13 @@ class CircleController extends Controller
 
             return [
                 'id' => $student->id,
-                'user_id' => $student->user?->id,
-                'name' => $student->user?->name ?? $student->full_name,
-                'email' => $student->user?->email,
-                'avatar' => $student->user?->avatar
-                    ? asset('storage/'.$student->user->avatar)
+                'user_id' => $student->id,
+                'name' => $student->name,
+                'email' => $student->email,
+                'avatar' => $student->avatar
+                    ? asset('storage/'.$student->avatar)
                     : null,
-                'phone' => $student->phone ?? $student->user?->phone,
+                'phone' => $student->phone,
                 'subscription_status' => $subscription?->status ?? 'unknown',
                 'joined_at' => $subscription?->created_at?->toISOString(),
                 'certificate' => $certificateData,
