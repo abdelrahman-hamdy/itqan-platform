@@ -65,10 +65,13 @@ class PaymobApiClient
         $allHeaders = array_merge($defaultHeaders, $headers);
 
         try {
-            $response = Http::withHeaders($allHeaders)
-                ->timeout(30)
-                ->retry(2, 100)
-                ->{strtolower($method)}($url, $data);
+            // Only retry idempotent GET requests. Retrying POST/PUT can cause duplicate
+            // charges if the first request was processed but the response timed out.
+            $http = Http::withHeaders($allHeaders)->timeout(30);
+            if (strtoupper($method) === 'GET') {
+                $http = $http->retry(2, 100);
+            }
+            $response = $http->{strtolower($method)}($url, $data);
 
             $responseData = $response->json() ?? [];
 

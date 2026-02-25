@@ -292,10 +292,11 @@ class SessionTransitionService
             // Close the LiveKit meeting room to prevent new joins
             $this->closeMeetingRoom($session);
 
-            // Handle subscription counting for individual sessions
-            if ($this->settingsService->isIndividualSession($session)) {
-                $this->handleIndividualSessionCompletion($session);
-            }
+            // NOTE: Subscription counting for individual sessions is intentionally NOT done here.
+            // It is deferred to FinalizeAttendanceListener, which runs after the queued
+            // attendance calculation finishes and StudentSessionReport/MeetingAttendance
+            // attendance_status fields are populated. Calling it here would always count
+            // the subscription immediately because those fields are null at this point.
 
             // Send notifications when session completes
             $this->notificationService->sendCompletedNotifications($session);
@@ -573,9 +574,11 @@ class SessionTransitionService
     }
 
     /**
-     * Handle individual session completion logic
+     * Handle individual session completion logic.
+     * Called from FinalizeAttendanceListener after attendance is finalized so that
+     * StudentSessionReport.attendance_status / MeetingAttendance.attendance_status are populated.
      */
-    protected function handleIndividualSessionCompletion(BaseSession $session): void
+    public function handleIndividualSessionCompletion(BaseSession $session): void
     {
         // Check StudentSessionReport first (most reliable source)
         $studentReport = StudentSessionReport::where('session_id', $session->id)

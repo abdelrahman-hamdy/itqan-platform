@@ -379,10 +379,16 @@ class PaymobTokenizationService
 
     /**
      * Delete a saved token from Paymob.
+     *
+     * NOTE: Paymob's legacy Tokenization API does not expose a token revocation/deletion
+     * endpoint. Tokens automatically expire server-side; there is no API call we can make.
+     * The caller (PaymentMethodService::deletePaymentMethod) soft-deletes the local
+     * SavedPaymentMethod record so the token is never reused from our side. Returning true
+     * here is correct and intentional — this is not an oversight.
      */
     public function deleteToken(string $token): bool
     {
-        Log::channel('payments')->info('Paymob token marked for deletion', [
+        Log::channel('payments')->info('Paymob token marked for deletion (local-only; Paymob API has no revocation endpoint)', [
             'token_prefix' => substr($token, 0, 10).'...',
         ]);
 
@@ -391,6 +397,10 @@ class PaymobTokenizationService
 
     /**
      * Get details about a tokenized card.
+     *
+     * NOTE: Paymob's legacy Tokenization API does not expose a token query endpoint.
+     * All card metadata (last4, brand, expiry) is captured at tokenization time and stored
+     * on the SavedPaymentMethod model. Returning null is correct and intentional.
      */
     public function getTokenDetails(string $token): ?array
     {

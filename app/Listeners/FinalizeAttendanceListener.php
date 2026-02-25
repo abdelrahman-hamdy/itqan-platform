@@ -5,8 +5,10 @@ namespace App\Listeners;
 use Exception;
 use Throwable;
 use App\Events\SessionCompletedEvent;
+use App\Models\BaseSession;
 use App\Services\Attendance\QuranReportService;
 use App\Services\MeetingAttendanceService;
+use App\Services\SessionTransitionService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 
@@ -18,7 +20,8 @@ class FinalizeAttendanceListener implements ShouldQueue
 {
     public function __construct(
         private MeetingAttendanceService $meetingAttendanceService,
-        private QuranReportService $quranReportService
+        private QuranReportService $quranReportService,
+        private SessionTransitionService $sessionTransitionService
     ) {}
 
     /**
@@ -51,6 +54,23 @@ class FinalizeAttendanceListener implements ShouldQueue
                 Log::info('FinalizeAttendanceListener: Synced Quran group attendance reports', [
                     'session_id' => $session->id,
                     'reports_count' => $reportsCreated,
+                ]);
+            }
+
+            // For individual sessions (quran/academic 1-on-1), finalize absence detection and
+            // subscription counting. This runs AFTER calculateFinalAttendance so that
+            // MeetingAttendance.attendance_status is populated and the logic is accurate.
+            $isIndividual = $session instanceof BaseSession
+                && ! $this->isGroupSession($session)
+                && $event->getSessionType() !== 'interactive';
+
+            if ($isIndividual) {
+                /** @var BaseSession $session */
+                $this->sessionTransitionService->handleIndividualSessionCompletion($session);
+
+                Log::info('FinalizeAttendanceListener: Individual session completion handled', [
+                    'session_id' => $session->id,
+                    'session_type' => $event->getSessionType(),
                 ]);
             }
 

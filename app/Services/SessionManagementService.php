@@ -39,56 +39,61 @@ class SessionManagementService
         ?string $title = null,
         ?string $description = null
     ): QuranSession {
+        return DB::transaction(function () use ($circle, $scheduledAt, &$durationMinutes, &$title, &$description) {
+            // Lock the circle row to prevent a TOCTOU race condition where two concurrent
+            // requests both see remaining > 0 and both create a session.
+            $lockedCircle = QuranIndividualCircle::lockForUpdate()->findOrFail($circle->id);
 
-        // Validate subscription has remaining sessions
-        $remainingSessions = $this->getRemainingIndividualSessions($circle);
-        if ($remainingSessions <= 0) {
-            throw new Exception('لا توجد جلسات متبقية في الاشتراك');
-        }
+            // Re-check remaining sessions inside the lock
+            $remainingSessions = $this->getRemainingIndividualSessions($lockedCircle);
+            if ($remainingSessions <= 0) {
+                throw new Exception('لا توجد جلسات متبقية في الاشتراك');
+            }
 
-        // Get duration from subscription -> package if not provided
-        if ($durationMinutes === null) {
-            $durationMinutes = $circle->subscription?->session_duration_minutes
-                ?? $circle->subscription?->package?->session_duration_minutes
-                ?? 45; // fallback
-        }
+            // Get duration from subscription -> package if not provided
+            if ($durationMinutes === null) {
+                $durationMinutes = $lockedCircle->subscription?->session_duration_minutes
+                    ?? $lockedCircle->subscription?->package?->session_duration_minutes
+                    ?? 45; // fallback
+            }
 
-        // Check for conflicts
-        $this->validateTimeSlotAvailable($circle->quran_teacher_id, $scheduledAt, $durationMinutes);
+            // Check for conflicts
+            $this->validateTimeSlotAvailable($lockedCircle->quran_teacher_id, $scheduledAt, $durationMinutes);
 
-        // Calculate session month and number (for legacy compatibility)
-        $sessionMonth = $scheduledAt->format('Y-m-01');
-        $monthlySessionNumber = $this->getNextSessionNumberForMonth($circle, $sessionMonth);
+            // Calculate session month and number (for legacy compatibility)
+            $sessionMonth = $scheduledAt->format('Y-m-01');
+            $monthlySessionNumber = $this->getNextSessionNumberForMonth($lockedCircle, $sessionMonth);
 
-        // Use the naming service for consistent sequential session naming
-        if (! $title) {
-            $title = $this->namingService->generateIndividualSessionTitle($circle);
-        }
+            // Use the naming service for consistent sequential session naming
+            if (! $title) {
+                $title = $this->namingService->generateIndividualSessionTitle($lockedCircle);
+            }
 
-        if (! $description) {
-            $description = $this->namingService->generateIndividualSessionDescription($circle, $scheduledAt);
-        }
+            if (! $description) {
+                $description = $this->namingService->generateIndividualSessionDescription($lockedCircle, $scheduledAt);
+            }
 
-        // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
-        $scheduledAtUtc = AcademyContextService::toUtcForStorage($scheduledAt);
+            // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
+            $scheduledAtUtc = AcademyContextService::toUtcForStorage($scheduledAt);
 
-        return QuranSession::create([
-            'academy_id' => $circle->academy_id,
-            'quran_teacher_id' => $circle->quran_teacher_id,
-            'individual_circle_id' => $circle->id,
-            'student_id' => $circle->student_id,
-            'quran_subscription_id' => $circle->subscription_id,
-            'session_code' => $this->generateSessionCode('IND', $circle->id, $scheduledAt),
-            'session_type' => 'individual',
-            'status' => SessionStatus::SCHEDULED,
-            'title' => $title,
-            'description' => $description,
-            'scheduled_at' => $scheduledAtUtc,
-            'duration_minutes' => $durationMinutes,
-            'session_month' => $sessionMonth,
-            'monthly_session_number' => $monthlySessionNumber,
-            'created_by' => Auth::id(),
-        ]);
+            return QuranSession::create([
+                'academy_id' => $lockedCircle->academy_id,
+                'quran_teacher_id' => $lockedCircle->quran_teacher_id,
+                'individual_circle_id' => $lockedCircle->id,
+                'student_id' => $lockedCircle->student_id,
+                'quran_subscription_id' => $lockedCircle->subscription_id,
+                'session_code' => $this->generateSessionCode('IND', $lockedCircle->id, $scheduledAt),
+                'session_type' => 'individual',
+                'status' => SessionStatus::SCHEDULED,
+                'title' => $title,
+                'description' => $description,
+                'scheduled_at' => $scheduledAtUtc,
+                'duration_minutes' => $durationMinutes,
+                'session_month' => $sessionMonth,
+                'monthly_session_number' => $monthlySessionNumber,
+                'created_by' => Auth::id(),
+            ]);
+        });
     }
 
     /**
