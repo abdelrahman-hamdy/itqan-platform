@@ -266,14 +266,8 @@ stateDiagram-v2
     <h2 id="interactive-course-special">Critical: InteractiveCourseSession Special Cases</h2>
 
     <div class="help-danger">
-        <strong>Three critical differences from other session types:</strong>
+        <strong>Two critical differences from other session types:</strong>
         <ol class="mt-2 space-y-1">
-            <li>
-                <strong>No <code>academy_id</code> column in the database.</strong>
-                The model gets its academy through the <code>course</code> relationship.
-                A virtual <code>academy_id</code> accessor provides BaseSession compatibility, but
-                you <em>cannot</em> use <code>WHERE academy_id = ?</code> in raw queries on this table.
-            </li>
             <li>
                 <strong>Uses <code>scheduled_date</code> (date) + <code>scheduled_time</code> (time) separately,</strong>
                 not a single <code>scheduled_at</code> datetime. Always combine them when you need a full datetime:
@@ -429,7 +423,7 @@ sequenceDiagram
                     <td><code>attendance_status</code></td>
                     <td>enum</td>
                     <td>
-                        <code>present</code>, <code>absent</code>, <code>late</code>, <code>leaved</code>
+                        <code>present</code>, <code>absent</code>, <code>late</code>, <code>left</code>
                     </td>
                 </tr>
                 <tr>
@@ -446,14 +440,6 @@ sequenceDiagram
         </table>
     </div>
 
-    <div class="help-danger">
-        <strong>DB enum mismatch:</strong>
-        The database <code>attendance_status</code> enum stores <code>'leaved'</code> for the "left early" state,
-        but the PHP <code>AttendanceStatus</code> enum has <code>LEFT = 'left'</code>.
-        When writing raw queries or seeders, use <code>'leaved'</code> (the DB value).
-        When using the PHP enum in application code, use <code>AttendanceStatus::LEFT</code>.
-        The model cast bridges the mismatch automatically for Eloquent operations.
-    </div>
 
 </div>
 

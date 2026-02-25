@@ -346,15 +346,6 @@ erDiagram
 
 <h2 id="gotchas">Schema Notes</h2>
 
-<div class="help-info">
-    <i class="ri-information-line help-callout-icon"></i>
-    <div>
-        <strong>attendance_status values:</strong>
-        The <code>attendance_status</code> DB enum was previously <code>'leaved'</code> (typo).
-        This was fixed by migration <code>2026_02_15_141614_fix_attendance_enum_values</code> — all values
-        are now <code>'left'</code>, matching the PHP <code>AttendanceStatus::LEFT</code> enum case.
-    </div>
-</div>
 
 <div class="help-info">
     <i class="ri-information-line help-callout-icon"></i>

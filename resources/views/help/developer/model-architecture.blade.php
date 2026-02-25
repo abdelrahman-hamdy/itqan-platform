@@ -242,7 +242,7 @@ sequenceDiagram
 
 <pre><code class="language-php">// Session & Attendance
 SessionStatus::SCHEDULED | LIVE | COMPLETED | CANCELLED | PAUSED
-AttendanceStatus::PRESENT | ABSENT | LATE | LEFT  // DB stores 'leaved' for LEFT!
+AttendanceStatus::PRESENT | ABSENT | LATE | LEFT
 SessionSubscriptionStatus::PENDING | ACTIVE | COMPLETED | CANCELLED | EXPIRED
 
 // Payments
