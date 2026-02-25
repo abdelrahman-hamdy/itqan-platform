@@ -106,26 +106,24 @@ Route::prefix('v1')->middleware(['api.locale'])->group(function () {
         // Common routes (notifications, meetings, chat)
         require __DIR__.'/v1/common.php';
 
-        // Debug routes (only available when APP_DEBUG=true)
-        if (config('app.debug')) {
-            Route::prefix('debug')->group(function () {
-                Route::get('/livekit-token', function () {
-                    $generator = app(\App\Services\LiveKit\LiveKitTokenGenerator::class);
-                    $roomName = 'test-room-'.now()->timestamp;
-                    $identity = 'test-user-'.auth()->id();
-                    $token = $generator->generateRoomToken($roomName, $identity, 3600);
+        // Debug routes (auth-protected; used by mobile dev debug screen)
+        Route::prefix('debug')->group(function () {
+            Route::get('/livekit-token', function () {
+                $generator = app(\App\Services\LiveKit\LiveKitTokenGenerator::class);
+                $roomName = 'test-room-'.now()->timestamp;
+                $identity = 'test-user-'.auth()->id();
+                $token = $generator->generateRoomToken($roomName, $identity, 3600);
 
-                    return response()->json([
-                        'success' => true,
-                        'data' => [
-                            'token' => $token,
-                            'room_name' => $roomName,
-                            'server_url' => config('livekit.server_url'),
-                            'expires_in' => 3600,
-                        ],
-                    ]);
-                })->name('api.v1.debug.livekit-token');
-            });
-        }
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'token' => $token,
+                        'room_name' => $roomName,
+                        'server_url' => config('livekit.server_url'),
+                        'expires_in' => 3600,
+                    ],
+                ]);
+            })->name('api.v1.debug.livekit-token');
+        });
     });
 });
