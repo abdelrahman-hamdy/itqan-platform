@@ -14,7 +14,8 @@ class HomeworkController extends Controller
     use ApiResponses;
 
     /**
-     * Get linked children IDs for the parent.
+     * Get linked children StudentProfile IDs for the parent.
+     * These are StudentProfile.id values (NOT User.id values).
      */
     private function getLinkedChildIds(Request $request): array
     {
@@ -31,6 +32,21 @@ class HomeworkController extends Controller
     }
 
     /**
+     * Get linked children User IDs for the parent.
+     * These are users.id values, required for AcademicSession.student_id and QuranSession.student_id queries.
+     */
+    private function getLinkedChildUserIds(int $parentProfileId): array
+    {
+        return ParentStudentRelationship::where('parent_id', $parentProfileId)
+            ->with('student.user')
+            ->get()
+            ->map(fn ($r) => $r->student->user?->id)
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    /**
      * Get all homework assignments for the parent's children.
      */
     public function index(Request $request): JsonResponse
@@ -43,6 +59,8 @@ class HomeworkController extends Controller
         }
 
         $childIds = $this->getLinkedChildIds($request);
+        // Resolve User IDs from StudentProfile IDs (AcademicSession.student_id = users.id)
+        $childUserIds = $this->getLinkedChildUserIds($parentProfile->id);
         $selectedChildId = $request->get('child_id');
         $status = $request->get('status'); // pending, submitted, graded
         $perPage = min(
@@ -52,10 +70,18 @@ class HomeworkController extends Controller
 
         // Filter by specific child if provided
         if ($selectedChildId && in_array($selectedChildId, $childIds)) {
+            // Resolve user_id for the selected child
+            $selectedProfile = ParentStudentRelationship::where('parent_id', $parentProfile->id)
+                ->where('student_id', $selectedChildId)
+                ->with('student.user')
+                ->first();
+            $childUserIds = $selectedProfile?->student?->user?->id
+                ? [$selectedProfile->student->user->id]
+                : [];
             $childIds = [$selectedChildId];
         }
 
-        if (empty($childIds)) {
+        if (empty($childIds) || empty($childUserIds)) {
             return $this->success([
                 'homework' => [],
                 'pagination' => [
@@ -74,7 +100,8 @@ class HomeworkController extends Controller
         }
 
         // Get academic sessions with homework for children
-        $query = AcademicSession::whereIn('student_id', $childIds)
+        // AcademicSession.student_id = users.id, so use $childUserIds
+        $query = AcademicSession::whereIn('student_id', $childUserIds)
             ->whereNotNull('homework_description')
             ->where('homework_description', '!=', '')
             ->with([
@@ -140,7 +167,8 @@ class HomeworkController extends Controller
         })->filter()->values()->toArray();
 
         // Calculate stats from all homework (not just current page)
-        $allHomeworkQuery = AcademicSession::whereIn('student_id', $childIds)
+        // AcademicSession.student_id = users.id, so use $childUserIds
+        $allHomeworkQuery = AcademicSession::whereIn('student_id', $childUserIds)
             ->whereNotNull('homework_description')
             ->where('homework_description', '!=', '')
             ->with('homeworkSubmissions')
@@ -200,9 +228,11 @@ class HomeworkController extends Controller
         }
 
         $childIds = $this->getLinkedChildIds($request);
+        // AcademicSession.student_id = users.id, resolve User IDs
+        $childUserIds = $this->getLinkedChildUserIds($parentProfile->id);
 
         $session = AcademicSession::where('id', $id)
-            ->whereIn('student_id', $childIds)
+            ->whereIn('student_id', $childUserIds)
             ->whereNotNull('homework_description')
             ->with([
                 'academicTeacher.user',
@@ -283,13 +313,25 @@ class HomeworkController extends Controller
             return $this->error(__('Child not found.'), 404, 'CHILD_NOT_FOUND');
         }
 
+        // Resolve the User ID for this specific child (AcademicSession.student_id = users.id)
+        $childRelationship = ParentStudentRelationship::where('parent_id', $parentProfile->id)
+            ->where('student_id', $childId)
+            ->with('student.user')
+            ->first();
+        $childUserId = $childRelationship?->student?->user?->id;
+
+        if (! $childUserId) {
+            return $this->error(__('Child not found.'), 404, 'CHILD_NOT_FOUND');
+        }
+
         $status = $request->get('status');
         $perPage = min(
             (int) $request->get('per_page', config('api.pagination.default_per_page', 15)),
             config('api.pagination.max_per_page', 50)
         );
 
-        $query = AcademicSession::where('student_id', $childId)
+        // AcademicSession.student_id = users.id, so use $childUserId
+        $query = AcademicSession::where('student_id', $childUserId)
             ->whereNotNull('homework_description')
             ->where('homework_description', '!=', '')
             ->with([

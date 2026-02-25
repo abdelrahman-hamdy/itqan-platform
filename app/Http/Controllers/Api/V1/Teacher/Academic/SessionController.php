@@ -51,8 +51,9 @@ class SessionController extends Controller
             $academicQuery->whereDate('scheduled_at', '<=', $request->to_date);
         }
 
+        // TODO: Replace with cursor-based pagination for teachers with many sessions
         $academicSessions = $academicQuery->orderBy('scheduled_at', 'desc')
-            ->limit(50)
+            ->limit(500)
             ->get();
 
         foreach ($academicSessions as $session) {
@@ -90,8 +91,9 @@ class SessionController extends Controller
             $interactiveQuery->whereDate('scheduled_at', '<=', $request->to_date);
         }
 
+        // TODO: Replace with cursor-based pagination for teachers with many sessions
         $interactiveSessions = $interactiveQuery->orderBy('scheduled_at', 'desc')
-            ->limit(50)
+            ->limit(500)
             ->get();
 
         foreach ($interactiveSessions as $session) {
@@ -111,7 +113,7 @@ class SessionController extends Controller
         // Sort and paginate
         usort($sessions, fn ($a, $b) => strtotime($b['scheduled_at']) <=> strtotime($a['scheduled_at']));
 
-        $perPage = $request->get('per_page', 15);
+        $perPage = min((int) $request->get('per_page', 15), 50);
         $page = $request->get('page', 1);
         $total = count($sessions);
         $sessions = array_slice($sessions, ($page - 1) * $perPage, $perPage);
@@ -561,6 +563,7 @@ class SessionController extends Controller
         $records = DB::table('meeting_attendances')
             ->join('users', 'meeting_attendances.user_id', '=', 'users.id')
             ->where('meeting_attendances.session_id', $session->id)
+            ->where('meeting_attendances.academy_id', $session->academy_id)
             ->where('meeting_attendances.session_type', $sessionType)
             ->where('meeting_attendances.user_type', 'student')
             ->select([
@@ -639,6 +642,7 @@ class SessionController extends Controller
         $record = DB::table('meeting_attendances')
             ->where('id', $attendanceId)
             ->where('session_id', $session->id)
+            ->where('academy_id', $session->academy_id)
             ->where('session_type', $sessionType)
             ->first();
 
@@ -653,6 +657,7 @@ class SessionController extends Controller
 
         DB::table('meeting_attendances')
             ->where('id', $attendanceId)
+            ->where('academy_id', $session->academy_id)
             ->update([
                 'attendance_status' => $validated['status'],
                 'updated_at'        => now(),

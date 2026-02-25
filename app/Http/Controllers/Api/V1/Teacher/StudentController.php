@@ -11,6 +11,7 @@ use App\Models\AcademicSession;
 use App\Models\QuranSession;
 use App\Models\StudentProfile;
 use App\Models\StudentSessionReport;
+use App\Services\AcademyContextService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -101,7 +102,7 @@ class StudentController extends Controller
         }
 
         // Paginate
-        $perPage = $request->get('per_page', 20);
+        $perPage = min((int) $request->get('per_page', 20), 100);
         $page = $request->get('page', 1);
         $total = $students->count();
         $students = $students->slice(($page - 1) * $perPage, $perPage)->values();
@@ -119,8 +120,10 @@ class StudentController extends Controller
     {
         $user = $request->user();
 
-        $student = StudentProfile::where('id', $id)
-            ->orWhere('user_id', $id)
+        $student = StudentProfile::where(function ($q) use ($id) {
+                $q->where('id', $id)->orWhere('user_id', $id);
+            })
+            ->whereHas('user', fn ($q) => $q->where('academy_id', AcademyContextService::getCurrentAcademyId()))
             ->with(['user', 'gradeLevel'])
             ->first();
 

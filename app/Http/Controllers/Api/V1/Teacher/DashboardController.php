@@ -8,6 +8,7 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
+use App\Services\AcademyContextService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -62,7 +63,8 @@ class DashboardController extends Controller
      */
     protected function getStats($user): array
     {
-        $cacheKey = "teacher_dashboard_stats_{$user->id}";
+        $academyId = AcademyContextService::getCurrentAcademyId() ?? 'default';
+        $cacheKey = "teacher_dashboard_stats_{$user->id}_{$academyId}";
 
         return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user) {
             $stats = [

@@ -58,7 +58,7 @@ class SessionController extends Controller
         }
 
         $sessions = $query->orderBy('scheduled_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 50));
 
         return $this->success([
             'sessions' => collect($sessions->items())->map(fn ($session) => [
@@ -521,6 +521,7 @@ class SessionController extends Controller
         $records = DB::table('meeting_attendances')
             ->join('users', 'meeting_attendances.user_id', '=', 'users.id')
             ->where('meeting_attendances.session_id', $session->id)
+            ->where('meeting_attendances.academy_id', $session->academy_id)
             ->whereIn('meeting_attendances.session_type', ['individual', 'group'])
             ->where('meeting_attendances.user_type', 'student')
             ->select([
@@ -587,6 +588,7 @@ class SessionController extends Controller
         $record = DB::table('meeting_attendances')
             ->where('id', $attendanceId)
             ->where('session_id', $session->id)
+            ->where('academy_id', $session->academy_id)
             ->whereIn('session_type', ['individual', 'group'])
             ->first();
 
@@ -601,6 +603,7 @@ class SessionController extends Controller
 
         DB::table('meeting_attendances')
             ->where('id', $attendanceId)
+            ->where('academy_id', $session->academy_id)
             ->update([
                 'attendance_status' => $validated['status'],
                 'updated_at'        => now(),

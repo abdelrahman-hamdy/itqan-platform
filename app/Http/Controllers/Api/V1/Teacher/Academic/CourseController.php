@@ -37,7 +37,7 @@ class CourseController extends Controller
         }
 
         $courses = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 50));
 
         return $this->success([
             'courses' => collect($courses->items())->map(fn ($course) => [
@@ -183,7 +183,7 @@ class CourseController extends Controller
         }
 
         $enrollments = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 20));
+            ->paginate(min((int) $request->get('per_page', 20), 50));
 
         // Get all certificates for this course
         $studentIds = collect($enrollments->items())->pluck('user_id')->filter()->toArray();

@@ -43,7 +43,7 @@ class SessionController extends Controller
             $studentUserId = $student->user?->id ?? $student->id;
 
             // Filter by specific child if requested
-            if ($request->filled('child_id') && $student->id != $request->child_id) {
+            if ($request->filled('child_id') && $student->id !== (int) $request->child_id) {
                 continue;
             }
 
@@ -64,8 +64,9 @@ class SessionController extends Controller
                     $quranQuery->whereDate('scheduled_at', '<=', $request->to_date);
                 }
 
+                // TODO: Replace with cursor-based pagination for parents with many children/sessions
                 $quranSessions = $quranQuery->orderBy('scheduled_at', 'desc')
-                    ->limit(50)
+                    ->limit(200)
                     ->get();
 
                 foreach ($quranSessions as $session) {
@@ -90,8 +91,9 @@ class SessionController extends Controller
                     $academicQuery->whereDate('scheduled_at', '<=', $request->to_date);
                 }
 
+                // TODO: Replace with cursor-based pagination for parents with many children/sessions
                 $academicSessions = $academicQuery->orderBy('scheduled_at', 'desc')
-                    ->limit(50)
+                    ->limit(200)
                     ->get();
 
                 foreach ($academicSessions as $session) {
@@ -119,8 +121,9 @@ class SessionController extends Controller
                     $interactiveQuery->whereDate('scheduled_at', '<=', $request->to_date);
                 }
 
+                // TODO: Replace with cursor-based pagination for parents with many children/sessions
                 $interactiveSessions = $interactiveQuery->orderBy('scheduled_at', 'desc')
-                    ->limit(50)
+                    ->limit(200)
                     ->get();
 
                 foreach ($interactiveSessions as $session) {

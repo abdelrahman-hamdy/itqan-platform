@@ -231,11 +231,21 @@ class SupervisedChatController extends Controller
 
             'quran_circle' => QuranCircle::where('id', $entityId)
                 ->where('quran_teacher_id', $teacher->id)
+                ->whereHas('students', fn ($q) => $q->where('users.id', $student->id))
                 ->exists(),
 
-            'interactive_course' => InteractiveCourse::where('id', $entityId)
-                ->where('assigned_teacher_id', $teacher->academicTeacherProfile?->id ?? 0)
-                ->exists(),
+            'interactive_course' => (function () use ($entityId, $teacher, $student) {
+                $studentProfileId = $student->studentProfileUnscoped?->id;
+
+                if (! $studentProfileId) {
+                    return false;
+                }
+
+                return InteractiveCourse::where('id', $entityId)
+                    ->where('assigned_teacher_id', $teacher->academicTeacherProfile?->id ?? 0)
+                    ->whereHas('enrollments', fn ($q) => $q->where('student_id', $studentProfileId))
+                    ->exists();
+            })(),
 
             default => false,
         };

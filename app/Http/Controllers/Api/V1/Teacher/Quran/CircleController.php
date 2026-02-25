@@ -42,7 +42,7 @@ class CircleController extends Controller
         }
 
         $circles = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 50));
 
         return $this->success([
             'circles' => collect($circles->items())->map(fn ($circle) => [
@@ -191,7 +191,7 @@ class CircleController extends Controller
         }
 
         $circles = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 50));
 
         return $this->success([
             'circles' => collect($circles->items())->map(fn ($circle) => [

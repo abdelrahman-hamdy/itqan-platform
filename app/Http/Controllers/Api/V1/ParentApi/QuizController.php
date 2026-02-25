@@ -36,7 +36,6 @@ class QuizController extends Controller
 
         foreach ($children as $relationship) {
             $student = $relationship->student;
-            $studentUserId = $student->user?->id ?? $student->id;
 
             // Filter by specific child if requested
             if ($request->filled('child_id') && $student->id != $request->child_id) {

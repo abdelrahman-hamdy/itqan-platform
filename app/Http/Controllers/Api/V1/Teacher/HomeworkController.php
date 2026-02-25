@@ -26,62 +26,64 @@ class HomeworkController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        if (! $user->isAcademicTeacher()) {
+            return response()->json(['message' => __('auth.unauthorized')], 403);
+        }
+
         $homework = [];
+        $academicTeacherId = $user->academicTeacherProfile?->id;
 
-        if ($user->isAcademicTeacher()) {
-            $academicTeacherId = $user->academicTeacherProfile?->id;
+        if ($academicTeacherId) {
+            // Academic sessions with homework
+            $academicSessions = AcademicSession::where('academic_teacher_id', $academicTeacherId)
+                ->whereNotNull('homework_description')
+                ->where('homework_description', '!=', '')
+                ->with(['student', 'academicSubscription', 'homeworkSubmissions'])
+                ->orderBy('scheduled_at', 'desc')
+                ->limit(50)
+                ->get();
 
-            if ($academicTeacherId) {
-                // Academic sessions with homework
-                $academicSessions = AcademicSession::where('academic_teacher_id', $academicTeacherId)
-                    ->whereNotNull('homework_description')
-                    ->where('homework_description', '!=', '')
-                    ->with(['student', 'academicSubscription', 'homeworkSubmissions'])
-                    ->orderBy('scheduled_at', 'desc')
-                    ->limit(50)
-                    ->get();
+            foreach ($academicSessions as $session) {
+                $homework[] = [
+                    'id' => $session->id,
+                    'type' => 'academic',
+                    'title' => $session->academicSubscription?->subject_name ?? 'واجب أكاديمي',
+                    'description' => $session->homework_description,
+                    'student_name' => $session->student?->name ?? 'طالب',
+                    'session_date' => $session->scheduled_at?->toDateString(),
+                    'due_date' => null,
+                    'submissions_count' => $session->homeworkSubmissions?->count() ?? 0,
+                    'pending_submissions' => $session->homeworkSubmissions?->where('submission_status', 'submitted')->count() ?? 0,
+                    'created_at' => $session->created_at?->toISOString(),
+                ];
+            }
 
-                foreach ($academicSessions as $session) {
-                    $homework[] = [
-                        'id' => $session->id,
-                        'type' => 'academic',
-                        'title' => $session->academicSubscription?->subject_name ?? 'واجب أكاديمي',
-                        'description' => $session->homework_description,
-                        'student_name' => $session->student?->name ?? 'طالب',
-                        'session_date' => $session->scheduled_at?->toDateString(),
-                        'due_date' => null,
-                        'submissions_count' => $session->homeworkSubmissions?->count() ?? 0,
-                        'pending_submissions' => $session->homeworkSubmissions?->where('submission_status', 'submitted')->count() ?? 0,
-                        'created_at' => $session->created_at?->toISOString(),
-                    ];
-                }
+            // Interactive course homework assignments
+            $courseIds = $user->academicTeacherProfile?->assignedCourses()
+                ?->pluck('id') ?? collect();
 
-                // Interactive course homework assignments
-                $courseIds = $user->academicTeacherProfile?->assignedCourses()
-                    ?->pluck('id') ?? collect();
+            $interactiveHomework = InteractiveCourseHomework::query()
+                ->whereHas('session', fn ($q) => $q->whereIn('course_id', $courseIds))
+                ->with(['session.course', 'submissions'])
+                ->orderBy('created_at', 'desc')
+                ->limit(50)
+                ->get();
 
-                $interactiveHomework = InteractiveCourseHomework::query()
-                    ->whereHas('session', fn ($q) => $q->whereIn('course_id', $courseIds))
-                    ->with(['session.course', 'submissions'])
-                    ->orderBy('created_at', 'desc')
-                    ->limit(50)
-                    ->get();
-
-                foreach ($interactiveHomework as $hw) {
-                    $homework[] = [
-                        'id' => $hw->id,
-                        'type' => 'interactive',
-                        'title' => $hw->title ?? $hw->session?->course?->title ?? 'واجب دورة',
-                        'description' => $hw->description,
-                        'course_name' => $hw->session?->course?->title,
-                        'session_number' => $hw->session?->session_number,
-                        'session_date' => $hw->session?->scheduled_at?->toDateString(),
-                        'due_date' => $hw->due_date?->toDateString(),
-                        'submissions_count' => $hw->submissions?->count() ?? 0,
-                        'pending_submissions' => $hw->submissions?->whereIn('submission_status', ['submitted', 'late'])->count() ?? 0,
-                        'created_at' => $hw->created_at->toISOString(),
-                    ];
-                }
+            foreach ($interactiveHomework as $hw) {
+                $homework[] = [
+                    'id' => $hw->id,
+                    'type' => 'interactive',
+                    'title' => $hw->title ?? $hw->session?->course?->title ?? 'واجب دورة',
+                    'description' => $hw->description,
+                    'course_name' => $hw->session?->course?->title,
+                    'session_number' => $hw->session?->session_number,
+                    'session_date' => $hw->session?->scheduled_at?->toDateString(),
+                    'due_date' => $hw->due_date?->toDateString(),
+                    'submissions_count' => $hw->submissions?->count() ?? 0,
+                    'pending_submissions' => $hw->submissions?->whereIn('submission_status', ['submitted', 'late'])->count() ?? 0,
+                    'created_at' => $hw->created_at->toISOString(),
+                ];
             }
         }
 

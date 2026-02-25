@@ -42,7 +42,7 @@ class LessonController extends Controller
         }
 
         $lessons = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 50));
 
         return $this->success([
             'lessons' => collect($lessons->items())->map(fn ($lesson) => [

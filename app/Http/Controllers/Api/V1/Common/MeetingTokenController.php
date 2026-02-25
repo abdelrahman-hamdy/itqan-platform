@@ -213,9 +213,14 @@ class MeetingTokenController extends Controller
         }
 
         try {
+            $validated = $request->validate([
+                'max_participants' => ['sometimes', 'integer', 'min:2', 'max:200'],
+                'recording_enabled' => ['sometimes', 'boolean'],
+            ]);
+
             $meetingUrl = $session->generateMeetingLink([
-                'max_participants' => $request->input('max_participants', 50),
-                'recording_enabled' => $request->input('recording_enabled', false),
+                'max_participants' => $validated['max_participants'] ?? 50,
+                'recording_enabled' => $validated['recording_enabled'] ?? false,
             ]);
 
             // Refresh model to get updated meeting fields
@@ -471,25 +476,33 @@ class MeetingTokenController extends Controller
 
             // interactive_course_enrollments.student_id references StudentProfile.id
             // We need to get user's studentProfile first for enrollment check
-            'interactive' => InteractiveCourseSession::where('id', $id)
-                ->where(function ($q) use ($userId) {
-                    // Get the student profile ID for this user
-                    $studentProfile = StudentProfile::where('user_id', $userId)->first();
-                    $studentProfileId = $studentProfile?->id;
+            'interactive' => (function () use ($id, $userId) {
+                // Check if user is a teacher (by checking the teacher relationship)
+                $isTeacher = InteractiveCourseSession::where('id', $id)
+                    ->whereHas('course.assignedTeacher', fn ($q) => $q->where('user_id', $userId))
+                    ->exists();
 
-                    if ($studentProfileId) {
-                        $q->whereHas('course.enrollments', function ($q) use ($studentProfileId) {
-                            $q->where('student_id', $studentProfileId);
-                        });
+                if (! $isTeacher) {
+                    // Non-teacher users must have a student profile to access the session
+                    $studentProfile = StudentProfile::where('user_id', $userId)->first();
+
+                    if (! $studentProfile) {
+                        return null; // Students must have a profile
                     }
 
-                    // Or check if user is the teacher
-                    $q->orWhereHas('course.assignedTeacher', function ($q) use ($userId) {
-                        $q->where('user_id', $userId);
-                    });
-                })
-                ->with(['meeting', 'course.assignedTeacher'])
-                ->first(),
+                    $studentProfileId = $studentProfile->id;
+
+                    return InteractiveCourseSession::where('id', $id)
+                        ->whereHas('course.enrollments', fn ($q) => $q->where('student_id', $studentProfileId))
+                        ->with(['meeting', 'course.assignedTeacher'])
+                        ->first();
+                }
+
+                return InteractiveCourseSession::where('id', $id)
+                    ->whereHas('course.assignedTeacher', fn ($q) => $q->where('user_id', $userId))
+                    ->with(['meeting', 'course.assignedTeacher'])
+                    ->first();
+            })(),
 
             default => null,
         };

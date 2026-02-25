@@ -148,7 +148,7 @@ class EarningsController extends Controller
             ? Carbon::parse($request->end_date)->endOfDay()
             : now()->endOfDay();
 
-        $perPage = $request->get('per_page', 20);
+        $perPage = min((int) $request->get('per_page', 20), 100);
 
         // Get earnings from TeacherEarning model with proper polymorphic query
         $earningsQuery = TeacherEarning::forTeacher($teacherType, $teacherId)

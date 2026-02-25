@@ -38,8 +38,11 @@ class BrowseController extends Controller
             $query->whereHas('user', fn ($q) => $q->where('gender', $request->gender));
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
+        $search = $request->get('search');
+        if ($search && mb_strlen($search) < 2) {
+            $search = null; // Ignore searches shorter than 2 characters
+        }
+        if ($search) {
             $query->whereHas('user', fn ($q) => $q
                 ->where('first_name', 'like', "%{$search}%")
                 ->orWhere('last_name', 'like', "%{$search}%")
@@ -110,8 +113,11 @@ class BrowseController extends Controller
             );
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
+        $search = $request->get('search');
+        if ($search && mb_strlen($search) < 2) {
+            $search = null; // Ignore searches shorter than 2 characters
+        }
+        if ($search) {
             $query->whereHas('user', fn ($q) => $q
                 ->where('first_name', 'like', "%{$search}%")
                 ->orWhere('last_name', 'like', "%{$search}%")
@@ -169,8 +175,11 @@ class BrowseController extends Controller
             $query->whereJsonContains('schedule_days', $request->day);
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
+        $search = $request->get('search');
+        if ($search && mb_strlen($search) < 2) {
+            $search = null; // Ignore searches shorter than 2 characters
+        }
+        if ($search) {
             $query->where(fn ($q) => $q
                 ->where('name', 'like', "%{$search}%")
                 ->orWhereHas('quranTeacher', fn ($u) => $u
@@ -225,8 +234,11 @@ class BrowseController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
+        $search = $request->get('search');
+        if ($search && mb_strlen($search) < 2) {
+            $search = null; // Ignore searches shorter than 2 characters
+        }
+        if ($search) {
             $query->where(fn ($q) => $q
                 ->where('title', 'like', "%{$search}%")
                 ->orWhere('description', 'like', "%{$search}%")
@@ -277,8 +289,11 @@ class BrowseController extends Controller
             ->where('is_published', true)
             ->with(['subject', 'gradeLevel']);
 
-        if ($request->filled('search')) {
-            $search = $request->search;
+        $search = $request->get('search');
+        if ($search && mb_strlen($search) < 2) {
+            $search = null; // Ignore searches shorter than 2 characters
+        }
+        if ($search) {
             $query->where(fn ($q) => $q
                 ->where('title', 'like', "%{$search}%")
                 ->orWhere('description', 'like', "%{$search}%")
