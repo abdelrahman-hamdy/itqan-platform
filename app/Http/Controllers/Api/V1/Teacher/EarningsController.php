@@ -11,16 +11,18 @@ use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\TeacherEarning;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
 class EarningsController extends Controller
 {
     use ApiResponses;
 
     /**
-     * Get earnings summary.
+     * Get earnings summary with month breakdown and source grouping.
+     *
+     * Accepts optional `month` query param in 'YYYY-MM' format (defaults to current month).
      */
     public function summary(Request $request): JsonResponse
     {
@@ -38,45 +40,69 @@ class EarningsController extends Controller
             $teacherId = $user->academicTeacherProfile->id;
         }
 
+        // Parse the requested month (defaults to current month)
+        $monthParam = $request->get('month');
+        try {
+            $date = $monthParam
+                ? Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth()
+                : Carbon::now()->startOfMonth();
+        } catch (\Exception) {
+            $date = Carbon::now()->startOfMonth();
+        }
+
+        $prevDate = (clone $date)->subMonth();
+
         // If no teacher profile found, return empty summary
         if (! $teacherType || ! $teacherId) {
             return $this->success([
-                'summary' => [
-                    'total_earnings' => 0,
-                    'current_month_earnings' => 0,
-                    'last_month_earnings' => 0,
-                    'pending_payout' => 0,
-                    'total_paid_out' => 0,
-                    'sessions_count' => 0,
-                ],
+                'month' => $date->format('Y-m'),
+                'month_label' => $date->locale('ar')->translatedFormat('F Y'),
+                'period_earnings' => 0,
+                'previous_period_earnings' => 0,
+                'all_time_earnings' => 0,
+                'pending_earnings' => 0,
+                'sessions_count' => 0,
+                'sources' => [],
                 'currency' => getCurrencyCode(),
             ], __('Earnings summary retrieved successfully'));
         }
 
-        $currentMonth = Carbon::now();
-        $lastMonth = Carbon::now()->subMonth();
-
-        // Build base query for this teacher
         $baseQuery = fn () => TeacherEarning::forTeacher($teacherType, $teacherId);
 
-        // Calculate summary using database aggregation
-        $summary = [
-            'total_earnings' => $baseQuery()->sum('amount'),
-            'current_month_earnings' => $baseQuery()
-                ->forMonth($currentMonth->year, $currentMonth->month)
-                ->sum('amount'),
-            'last_month_earnings' => $baseQuery()
-                ->forMonth($lastMonth->year, $lastMonth->month)
-                ->sum('amount'),
-            // Pending payout = not yet finalized and not disputed
-            'pending_payout' => $baseQuery()->unpaid()->sum('amount'),
-            // Total finalized = earnings that have been finalized
-            'total_paid_out' => $baseQuery()->finalized()->sum('amount'),
-            'sessions_count' => $baseQuery()->count(),
-        ];
+        // Period stats for selected month
+        $periodEarnings = $baseQuery()->forMonth($date->year, $date->month)->sum('amount');
+        $previousPeriodEarnings = $baseQuery()->forMonth($prevDate->year, $prevDate->month)->sum('amount');
+        $periodSessionsCount = $baseQuery()->forMonth($date->year, $date->month)->count();
+
+        // All-time stats
+        $allTimeEarnings = $baseQuery()->sum('amount');
+        $pendingEarnings = $baseQuery()->unpaid()->sum('amount');
+
+        // Earnings for selected month with related session data for source breakdown
+        $earningsForMonth = $baseQuery()
+            ->forMonth($date->year, $date->month)
+            ->with([
+                'session' => function ($morphTo) {
+                    $morphTo->morphWith([
+                        QuranSession::class => ['individualCircle', 'circle', 'student'],
+                        AcademicSession::class => ['academicIndividualLesson.subject', 'student'],
+                        InteractiveCourseSession::class => ['course'],
+                    ]);
+                },
+            ])
+            ->get();
+
+        $sources = $this->buildSourceBreakdown($earningsForMonth);
 
         return $this->success([
-            'summary' => $summary,
+            'month' => $date->format('Y-m'),
+            'month_label' => $date->locale('ar')->translatedFormat('F Y'),
+            'period_earnings' => (float) $periodEarnings,
+            'previous_period_earnings' => (float) $previousPeriodEarnings,
+            'all_time_earnings' => (float) $allTimeEarnings,
+            'pending_earnings' => (float) $pendingEarnings,
+            'sessions_count' => $periodSessionsCount,
+            'sources' => $sources,
             'currency' => getCurrencyCode(),
         ], __('Earnings summary retrieved successfully'));
     }
@@ -199,16 +225,137 @@ class EarningsController extends Controller
     }
 
     /**
-     * Get payouts.
+     * Build source breakdown array from a collection of TeacherEarning records.
      *
-     * @deprecated Payout system has been removed. Returns empty array for backward compatibility.
+     * Groups earnings by session source type (quran_individual, quran_group,
+     * academic_lesson, interactive_course), then by individual circle/lesson/course.
      */
-    public function payouts(Request $request): JsonResponse
+    private function buildSourceBreakdown($earnings): array
     {
-        // Payout system has been removed. Return empty array for backward compatibility with mobile app.
-        return $this->success([
-            'payouts' => [],
-            'pagination' => PaginationHelper::fromArray(0, 1, 15),
-        ], __('Payouts retrieved successfully'));
+        // Group type order for consistent display
+        $typeOrder = ['quran_individual', 'quran_group', 'academic_lesson', 'interactive_course'];
+
+        // grouped[sourceType][itemKey] = { id, name, sessions_count, amount, student_name }
+        $grouped = [];
+
+        foreach ($earnings as $earning) {
+            $session = $earning->session;
+            if (! $session) {
+                continue;
+            }
+
+            [$sourceType, $itemKey, $itemName, $studentName] = $this->resolveSourceInfo($session);
+
+            if (! isset($grouped[$sourceType])) {
+                $grouped[$sourceType] = [
+                    'type' => $sourceType,
+                    'sessions_count' => 0,
+                    'total_amount' => 0.0,
+                    'items_map' => [],
+                ];
+            }
+
+            $grouped[$sourceType]['sessions_count']++;
+            $grouped[$sourceType]['total_amount'] += $earning->amount;
+
+            if (! isset($grouped[$sourceType]['items_map'][$itemKey])) {
+                $grouped[$sourceType]['items_map'][$itemKey] = [
+                    'id' => $itemKey,
+                    'name' => $itemName,
+                    'sessions_count' => 0,
+                    'amount' => 0.0,
+                    'student_name' => $studentName,
+                ];
+            }
+
+            $grouped[$sourceType]['items_map'][$itemKey]['sessions_count']++;
+            $grouped[$sourceType]['items_map'][$itemKey]['amount'] += $earning->amount;
+        }
+
+        // Convert to final array format, ordered by type order then by total amount desc
+        $result = [];
+        foreach ($typeOrder as $type) {
+            if (! isset($grouped[$type])) {
+                continue;
+            }
+            $group = $grouped[$type];
+            $result[] = [
+                'type' => $group['type'],
+                'sessions_count' => $group['sessions_count'],
+                'total_amount' => (float) $group['total_amount'],
+                'items' => array_values($group['items_map']),
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Resolve source type, item key, item name, and student name for a session.
+     *
+     * @return array{string, string, string, string|null}
+     */
+    private function resolveSourceInfo($session): array
+    {
+        if ($session instanceof QuranSession) {
+            if ($session->individualCircle) {
+                return [
+                    'quran_individual',
+                    'individual_circle_'.$session->individualCircle->id,
+                    $session->individualCircle->name ?? ('حلقة فردية'),
+                    $session->student?->name,
+                ];
+            }
+
+            if ($session->circle) {
+                return [
+                    'quran_group',
+                    'group_circle_'.$session->circle->id,
+                    $session->circle->name ?? 'حلقة جماعية',
+                    null,
+                ];
+            }
+
+            // Fallback for quran session without circle relationship
+            return [
+                'quran_individual',
+                'quran_session_'.$session->id,
+                'جلسة قرآن',
+                $session->student?->name,
+            ];
+        }
+
+        if ($session instanceof AcademicSession) {
+            $lessonId = $session->academic_individual_lesson_id ?? $session->id;
+            $subjectName = $session->academicIndividualLesson?->subject?->name ?? 'درس أكاديمي';
+            $studentName = $session->student?->name;
+            $itemName = $studentName ? "{$subjectName} - {$studentName}" : $subjectName;
+
+            return [
+                'academic_lesson',
+                'lesson_'.$lessonId,
+                $itemName,
+                $studentName,
+            ];
+        }
+
+        if ($session instanceof InteractiveCourseSession) {
+            $courseId = $session->course?->id ?? $session->id;
+            $courseName = $session->course?->title ?? 'دورة تفاعلية';
+
+            return [
+                'interactive_course',
+                'course_'.$courseId,
+                $courseName,
+                null,
+            ];
+        }
+
+        return [
+            'quran_individual',
+            'other_'.$session->id,
+            'جلسة',
+            null,
+        ];
     }
 }

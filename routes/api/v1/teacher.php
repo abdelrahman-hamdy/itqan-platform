@@ -93,6 +93,12 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
 
             Route::put('/{id}/notes', [QuranSessionController::class, 'updateNotes'])
                 ->name('api.v1.teacher.quran.sessions.notes');
+
+            Route::get('/{id}/attendance', [QuranSessionController::class, 'attendance'])
+                ->name('api.v1.teacher.quran.sessions.attendance');
+
+            Route::put('/{id}/attendance/{attendanceId}', [QuranSessionController::class, 'overrideAttendance'])
+                ->name('api.v1.teacher.quran.sessions.attendance.override');
         });
 
     });
@@ -164,6 +170,12 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
 
             Route::put('/{id}/evaluation', [AcademicSessionController::class, 'updateEvaluation'])
                 ->name('api.v1.teacher.academic.sessions.evaluation');
+
+            Route::get('/{id}/attendance', [AcademicSessionController::class, 'attendance'])
+                ->name('api.v1.teacher.academic.sessions.attendance');
+
+            Route::put('/{id}/attendance/{attendanceId}', [AcademicSessionController::class, 'overrideAttendance'])
+                ->name('api.v1.teacher.academic.sessions.attendance.override');
         });
     });
 

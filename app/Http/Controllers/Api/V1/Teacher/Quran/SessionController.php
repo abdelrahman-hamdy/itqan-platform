@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class SessionController extends Controller
 {
@@ -494,6 +495,127 @@ class SessionController extends Controller
                 'teacher_notes' => $session->teacher_notes,
             ],
         ], __('Notes updated successfully'));
+    }
+
+    /**
+     * Get attendance records for a session (auto-tracked via LiveKit).
+     */
+    public function attendance(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user->quranTeacherProfile) {
+            return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
+        }
+
+        $session = QuranSession::where('id', $id)
+            ->where('quran_teacher_id', $user->id)
+            ->first();
+
+        if (! $session) {
+            return $this->notFound(__('Session not found.'));
+        }
+
+        // Query meeting_attendances using DB to avoid enum cast issues
+        // QuranSession records appear as session_type 'individual' or 'group'
+        $records = DB::table('meeting_attendances')
+            ->join('users', 'meeting_attendances.user_id', '=', 'users.id')
+            ->where('meeting_attendances.session_id', $session->id)
+            ->whereIn('meeting_attendances.session_type', ['individual', 'group'])
+            ->where('meeting_attendances.user_type', 'student')
+            ->select([
+                'meeting_attendances.id',
+                'meeting_attendances.user_id as student_id',
+                'meeting_attendances.attendance_status as status_raw',
+                'meeting_attendances.first_join_time as attended_at',
+                'meeting_attendances.last_leave_time as left_at',
+                'meeting_attendances.total_duration_minutes as duration_minutes',
+                DB::raw("CONCAT(COALESCE(users.first_name,''), ' ', COALESCE(users.last_name,'')) as student_name"),
+                'users.avatar as avatar_path',
+            ])
+            ->get();
+
+        $formatted = $records->map(function ($record) {
+            // Normalize 'leaved' → 'left' for mobile compatibility
+            $status = $record->status_raw ?? 'absent';
+            if ($status === 'leaved') {
+                $status = 'left';
+            }
+
+            return [
+                'id'               => $record->id,
+                'student_id'       => $record->student_id,
+                'student_name'     => trim($record->student_name),
+                'student_avatar'   => $record->avatar_path ? asset('storage/'.$record->avatar_path) : null,
+                'status'           => $status,
+                'attended_at'      => $record->attended_at,
+                'left_at'          => $record->left_at,
+                'duration_minutes' => $record->duration_minutes ?? 0,
+                'is_manually_set'  => false,
+                'override_reason'  => null,
+            ];
+        });
+
+        $summary = [
+            'total'    => $records->count(),
+            'attended' => $records->where('status_raw', 'attended')->count(),
+            'late'     => $records->where('status_raw', 'late')->count(),
+            'absent'   => $records->where('status_raw', 'absent')->count(),
+            'left'     => $records->whereIn('status_raw', ['left', 'leaved'])->count(),
+        ];
+
+        return $this->success([
+            'attendance' => $formatted->values()->toArray(),
+            'summary'    => $summary,
+        ], __('Attendance retrieved successfully'));
+    }
+
+    /**
+     * Override a student's attendance status (teacher correction).
+     */
+    public function overrideAttendance(Request $request, string $sessionId, string $attendanceId): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user->quranTeacherProfile) {
+            return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
+        }
+
+        $session = QuranSession::where('id', $sessionId)
+            ->where('quran_teacher_id', $user->id)
+            ->first();
+
+        if (! $session) {
+            return $this->notFound(__('Session not found.'));
+        }
+
+        // Verify attendance record belongs to this session
+        $record = DB::table('meeting_attendances')
+            ->where('id', $attendanceId)
+            ->where('session_id', $session->id)
+            ->whereIn('session_type', ['individual', 'group'])
+            ->first();
+
+        if (! $record) {
+            return $this->notFound(__('Attendance record not found.'));
+        }
+
+        $validated = $request->validate([
+            'status'          => ['required', Rule::in(['attended', 'absent', 'late', 'left'])],
+            'override_reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        // Map 'left' → 'leaved' for DB enum compatibility
+        $dbStatus = $validated['status'] === 'left' ? 'leaved' : $validated['status'];
+
+        DB::table('meeting_attendances')
+            ->where('id', $attendanceId)
+            ->update([
+                'attendance_status' => $dbStatus,
+                'updated_at'        => now(),
+            ]);
+
+        return $this->success([], __('Attendance updated successfully'));
     }
 
     /**
