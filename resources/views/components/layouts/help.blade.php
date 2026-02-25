@@ -45,32 +45,14 @@
     <header class="bg-white border-b border-gray-200 fixed top-0 inset-x-0 z-40 h-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-4">
 
-            {{-- Brand + page label --}}
+            {{-- Brand: Help Center for Itqan --}}
             <a href="{{ route('help.index') }}"
                class="flex items-center gap-2.5 min-w-0">
-                @if($academy?->logo_url)
-                    <img src="{{ $academy->logo_url }}"
-                         alt="{{ $academy->name }}"
-                         class="h-8 w-auto object-contain flex-shrink-0">
-                @else
-                    <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-                        <i class="ri-book-open-line text-white text-base"></i>
-                    </div>
-                @endif
-
-                <span class="hidden sm:flex items-center gap-2 min-w-0">
-                    <span class="font-bold text-gray-900 text-base truncate">
-                        {{ $academy?->name ?? config('app.name') }}
-                    </span>
-                    <span class="text-gray-300 text-lg leading-none select-none">|</span>
-                    <span class="text-primary font-semibold text-base whitespace-nowrap">
-                        {{ __('help.title') }}
-                    </span>
-                </span>
-
-                {{-- Mobile: icon only shows above; show help title on small screens --}}
-                <span class="sm:hidden font-semibold text-primary text-base">
-                    {{ __('help.title') }}
+                <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+                    <i class="ri-question-answer-line text-white text-base"></i>
+                </div>
+                <span class="font-bold text-gray-900 text-base whitespace-nowrap">
+                    {{ __('help.brand_title') }}
                 </span>
             </a>
 
@@ -94,7 +76,7 @@
                 <div class="h-5 w-px bg-gray-200 hidden md:block"></div>
 
                 {{-- User name + logout --}}
-                <div class="flex items-center gap-2"
+                <div class="relative flex items-center gap-2"
                      x-data="{ open: false }"
                      @click.outside="open = false">
                     <button @click="open = !open"
@@ -114,7 +96,7 @@
                          x-transition:leave="transition ease-in duration-75"
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-95"
-                         class="absolute top-14 left-4 rtl:left-auto rtl:right-4 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50"
+                         class="absolute top-full end-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50"
                          @click="open = false">
 
                         <div class="px-4 py-2.5 border-b border-gray-100">
@@ -133,7 +115,7 @@
                             <button type="submit"
                                     class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
                                 <i class="ri-logout-box-r-line"></i>
-                                {{ __('components.navigation.app.logout') }}
+                                {{ __('components.navigation.app.user_menu.logout') }}
                             </button>
                         </form>
                     </div>
@@ -144,7 +126,7 @@
     </header>
 
     {{-- ── Page content (top-padded for fixed header) ────────────────────── --}}
-    <main class="pt-16 min-h-screen" id="main-content">
+    <main class="pt-16 min-h-screen" id="help-main-content">
         {{ $slot }}
     </main>
 
