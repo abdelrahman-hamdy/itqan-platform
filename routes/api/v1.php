@@ -43,6 +43,24 @@ Route::prefix('v1')->middleware(['api.locale'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Public Browse Routes (Guest – No Authentication Required)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['api.resolve.academy'])->prefix('public')->group(function () {
+        Route::get('/teachers/quran', [\App\Http\Controllers\Api\V1\Public\BrowseController::class, 'quranTeachers'])
+            ->name('api.v1.public.teachers.quran');
+        Route::get('/teachers/academic', [\App\Http\Controllers\Api\V1\Public\BrowseController::class, 'academicTeachers'])
+            ->name('api.v1.public.teachers.academic');
+        Route::get('/circles/quran', [\App\Http\Controllers\Api\V1\Public\BrowseController::class, 'quranCircles'])
+            ->name('api.v1.public.circles.quran');
+        Route::get('/courses/interactive', [\App\Http\Controllers\Api\V1\Public\BrowseController::class, 'interactiveCourses'])
+            ->name('api.v1.public.courses.interactive');
+        Route::get('/courses/recorded', [\App\Http\Controllers\Api\V1\Public\BrowseController::class, 'recordedCourses'])
+            ->name('api.v1.public.courses.recorded');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
     | Authentication Routes
     |--------------------------------------------------------------------------
     */
