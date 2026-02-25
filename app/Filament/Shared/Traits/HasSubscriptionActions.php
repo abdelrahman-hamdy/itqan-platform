@@ -120,11 +120,13 @@ trait HasSubscriptionActions
                 ])) {
                     $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
 
-                    // Clear cancellation fields if reactivating from CANCELLED
+                    // Clear cancellation fields if reactivating from CANCELLED.
+                    // Do NOT re-enable auto_renew — the student cancelled deliberately
+                    // and should opt back in manually.
                     if ($record->status === SessionSubscriptionStatus::CANCELLED) {
                         $updateData['cancelled_at'] = null;
                         $updateData['cancellation_reason'] = null;
-                        $updateData['auto_renew'] = true;
+                        $updateData['auto_renew'] = false;
                     }
 
                     // If no start date or dates expired, reset them
@@ -275,7 +277,9 @@ trait HasSubscriptionActions
                     'last_payment_date' => now(),
                     'cancelled_at' => null,
                     'cancellation_reason' => null,
-                    'auto_renew' => true,
+                    // Do NOT force auto_renew=true — the student explicitly cancelled this
+                    // subscription and should opt back in to auto-renewal manually.
+                    'auto_renew' => false,
                     'metadata' => $metadata ?: null,
                 ];
 
@@ -285,12 +289,16 @@ trait HasSubscriptionActions
                     $updateData['ends_at'] = $record->calculateEndDate(now());
                 }
 
-                $record->update($updateData);
+                // Wrap both writes in a transaction so the subscription and its linked
+                // circle are always updated atomically.
+                DB::transaction(function () use ($record, $updateData) {
+                    $record->update($updateData);
 
-                // Activate linked circle if exists
-                if ($record instanceof QuranSubscription && $record->education_unit_id) {
-                    $record->educationUnit?->update(['is_active' => true]);
-                }
+                    // Activate linked circle if exists
+                    if ($record instanceof QuranSubscription && $record->education_unit_id) {
+                        $record->educationUnit?->update(['is_active' => true]);
+                    }
+                });
 
                 Notification::make()
                     ->success()

@@ -228,9 +228,15 @@ class BaseSubscriptionObserver
         };
 
         $academyId = $subscription->academy_id ?? 0;
-        $random = strtoupper(Str::random(6));
 
-        return "{$prefix}-{$academyId}-{$random}";
+        // Retry until we produce a code that does not already exist in the table.
+        // Collisions are astronomically rare (36^6 space) but a uniqueness constraint
+        // on subscription_code would throw without this loop.
+        do {
+            $code = "{$prefix}-{$academyId}-".strtoupper(Str::random(6));
+        } while ($subscription::withoutGlobalScopes()->where('subscription_code', $code)->exists());
+
+        return $code;
     }
 
     /**

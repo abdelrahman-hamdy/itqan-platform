@@ -478,7 +478,11 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
 
     public static function getNavigationBadgeColor(): string|array|null
     {
-        return static::getModel()::where('status', SessionSubscriptionStatus::PENDING->value)->count() > 0 ? 'warning' : null;
+        $academyId = auth()->user()->academy_id;
+
+        return static::getModel()::where('academy_id', $academyId)
+            ->where('status', SessionSubscriptionStatus::PENDING->value)
+            ->count() > 0 ? 'warning' : null;
     }
 
     public static function getNavigationBadgeTooltip(): ?string

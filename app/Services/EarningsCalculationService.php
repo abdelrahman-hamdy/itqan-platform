@@ -205,7 +205,10 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
             ->first();
 
         if (! $attendance) {
-            return true;
+            // No calculated attendance record — LiveKit tracking may not have fired
+            // (offline/manual session). Fall back to session-level signals: a session
+            // that completed with an ended_at timestamp is treated as teacher-present.
+            return $session->ended_at !== null || $session->actual_duration_minutes > 0;
         }
 
         return ($attendance->attendance_percentage ?? 0) >= 50;

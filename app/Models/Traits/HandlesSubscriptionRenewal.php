@@ -181,6 +181,19 @@ trait HandlesSubscriptionRenewal
      */
     protected function processSuccessfulRenewal(float $amount): void
     {
+        $this->processSuccessfulRenewalWithoutNotification($amount);
+
+        // Send success notification after all DB writes
+        $this->sendRenewalSuccessNotification($amount);
+    }
+
+    /**
+     * Apply all DB mutations for a successful renewal without sending notifications.
+     * Used by manualRenewal() so the notification can be dispatched after the
+     * transaction commits (avoiding I/O inside a DB lock).
+     */
+    protected function processSuccessfulRenewalWithoutNotification(float $amount): void
+    {
         $newBillingDate = $this->calculateNextBillingDate();
 
         // Ensure billing_cycle exists before calculating end date
@@ -218,9 +231,6 @@ trait HandlesSubscriptionRenewal
 
         // Extend sessions if applicable (for session-based subscriptions)
         $this->extendSessionsOnRenewal();
-
-        // Send success notification
-        $this->sendRenewalSuccessNotification($amount);
 
         // Refresh instance
         $this->refresh();
@@ -311,7 +321,9 @@ trait HandlesSubscriptionRenewal
             throw new Exception('Cannot renew subscription in current state');
         }
 
-        return DB::transaction(function () use ($amount, $newBillingCycle) {
+        // DB writes are inside the transaction; notification is dispatched AFTER commit
+        // so that I/O (email, push) does not hold the DB lock.
+        DB::transaction(function () use ($amount, $newBillingCycle) {
             $subscription = static::lockForUpdate()->find($this->id);
 
             // Update billing cycle if provided
@@ -319,10 +331,13 @@ trait HandlesSubscriptionRenewal
                 $subscription->billing_cycle = $newBillingCycle;
             }
 
-            $subscription->processSuccessfulRenewal($amount);
-
-            return true;
+            $subscription->processSuccessfulRenewalWithoutNotification($amount);
         });
+
+        // Send notification after the transaction has committed
+        $this->fresh()->sendRenewalSuccessNotification($amount);
+
+        return true;
     }
 
     /**
@@ -336,8 +351,8 @@ trait HandlesSubscriptionRenewal
         }
 
         // Fallback to package relationship
-        if ($this->package && method_exists($this->package, 'name')) {
-            return $this->package->name ?? 'اشتراك';
+        if ($this->package && ! empty($this->package->name)) {
+            return $this->package->name;
         }
 
         // Default based on type
