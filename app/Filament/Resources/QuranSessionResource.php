@@ -321,25 +321,35 @@ class QuranSessionResource extends BaseQuranSessionResource
 
             SelectFilter::make('quran_teacher_id')
                 ->label('المعلم')
-                ->options(fn () => User::query()
-                    ->where('user_type', 'quran_teacher')
-                    ->get()
-                    ->mapWithKeys(fn ($u) => [
-                        $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'معلم #'.$u->id,
-                    ])
-                )
-                ->searchable(),
+                ->searchable()
+                ->getSearchResultsUsing(function (string $search) {
+                    return User::query()
+                        ->where('user_type', 'quran_teacher')
+                        ->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%"))
+                        ->limit(50)
+                        ->get()
+                        ->mapWithKeys(fn ($u) => [
+                            $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'معلم #'.$u->id,
+                        ])
+                        ->toArray();
+                }),
 
             SelectFilter::make('student_id')
                 ->label('الطالب')
-                ->options(fn () => User::query()
-                    ->where('user_type', 'student')
-                    ->get()
-                    ->mapWithKeys(fn ($u) => [
-                        $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
-                    ])
-                )
-                ->searchable(),
+                ->searchable()
+                ->getSearchResultsUsing(function (string $search) {
+                    return User::query()
+                        ->where('user_type', 'student')
+                        ->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%"))
+                        ->limit(50)
+                        ->get()
+                        ->mapWithKeys(fn ($u) => [
+                            $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
+                        ])
+                        ->toArray();
+                }),
 
             Filter::make('date_range')
                 ->schema([
@@ -366,7 +376,11 @@ class QuranSessionResource extends BaseQuranSessionResource
 
     public static function canDelete(Model $record): bool
     {
-        return true;
+        $status = $record->status instanceof \App\Enums\SessionStatus
+            ? $record->status
+            : \App\Enums\SessionStatus::tryFrom($record->status);
+
+        return $status === \App\Enums\SessionStatus::SCHEDULED;
     }
 
     // ========================================

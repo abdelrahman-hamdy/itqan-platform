@@ -357,21 +357,27 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     // ========================================
 
     /**
-     * Get available subjects.
+     * Get available subjects scoped to current teacher's academy.
      */
     protected static function getAvailableSubjects(): array
     {
+        $academy = static::getCurrentTeacherAcademy();
+
         return AcademicSubject::query()
+            ->when($academy, fn ($q) => $q->where('academy_id', $academy->id))
             ->pluck('name', 'id')
             ->toArray();
     }
 
     /**
-     * Get available grade levels.
+     * Get available grade levels scoped to current teacher's academy.
      */
     protected static function getAvailableGradeLevels(): array
     {
+        $academy = static::getCurrentTeacherAcademy();
+
         return AcademicGradeLevel::query()
+            ->when($academy, fn ($q) => $q->where('academy_id', $academy->id))
             ->pluck('name', 'id')
             ->toArray();
     }

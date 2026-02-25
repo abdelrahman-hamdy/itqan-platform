@@ -24,8 +24,11 @@ use Filament\Forms\Components\DateTimePicker;
 use App\Filament\Resources\BaseResource;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
 use Filament\Facades\Filament;
 use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -309,10 +312,38 @@ abstract class BaseQuizResource extends BaseResource
                     ->after('available_from'),
             ])
             ->action(function (Quiz $record, array $data) {
+                $teacherId = auth()->id();
+                $assignableType = $data['assignable_type'];
+                $assignableId = (int) $data['assignable_id'];
+
+                // Verify the assignable belongs to the current teacher before creating assignment
+                $ownershipVerified = match (true) {
+                    $assignableType === QuranCircle::class,
+                    $assignableType === \App\Enums\QuizAssignableType::QURAN_CIRCLE->value =>
+                        QuranCircle::where('id', $assignableId)
+                            ->where('quran_teacher_id', $teacherId)
+                            ->exists(),
+                    $assignableType === QuranIndividualCircle::class,
+                    $assignableType === \App\Enums\QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE->value =>
+                        QuranIndividualCircle::where('id', $assignableId)
+                            ->where('quran_teacher_id', $teacherId)
+                            ->exists(),
+                    default => false,
+                };
+
+                if (! $ownershipVerified) {
+                    Notification::make()
+                        ->title(__('filament-panels::pages/auth/login.messages.failed'))
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
                 QuizAssignment::create([
                     'quiz_id' => $record->id,
-                    'assignable_type' => $data['assignable_type'],
-                    'assignable_id' => $data['assignable_id'],
+                    'assignable_type' => $assignableType,
+                    'assignable_id' => $assignableId,
                     'is_visible' => $data['is_visible'],
                     'max_attempts' => $data['max_attempts'],
                     'available_from' => $data['available_from'] ?? null,
@@ -329,8 +360,13 @@ abstract class BaseQuizResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         $tenant = Filament::getTenant();
+        $academyId = $tenant?->id ?? \App\Services\AcademyContextService::getCurrentAcademyId();
+
+        if (! $academyId) {
+            return parent::getEloquentQuery()->whereRaw('1 = 0');
+        }
 
         return parent::getEloquentQuery()
-            ->where('academy_id', $tenant?->id);
+            ->where('academy_id', $academyId);
     }
 }

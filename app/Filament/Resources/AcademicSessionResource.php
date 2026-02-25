@@ -220,27 +220,37 @@ class AcademicSessionResource extends BaseAcademicSessionResource
 
             SelectFilter::make('academic_teacher_id')
                 ->label('المعلم')
-                ->options(fn () => AcademicTeacherProfile::query()
-                    ->with('user')
-                    ->get()
-                    ->mapWithKeys(fn ($profile) => [
-                        $profile->id => $profile->user
-                            ? trim(($profile->user->first_name ?? '').' '.($profile->user->last_name ?? '')) ?: 'معلم #'.$profile->id
-                            : 'معلم #'.$profile->id,
-                    ])
-                )
-                ->searchable(),
+                ->searchable()
+                ->getSearchResultsUsing(function (string $search) {
+                    return AcademicTeacherProfile::query()
+                        ->with('user')
+                        ->whereHas('user', fn ($q) => $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%"))
+                        ->limit(50)
+                        ->get()
+                        ->mapWithKeys(fn ($profile) => [
+                            $profile->id => $profile->user
+                                ? trim(($profile->user->first_name ?? '').' '.($profile->user->last_name ?? '')) ?: 'معلم #'.$profile->id
+                                : 'معلم #'.$profile->id,
+                        ])
+                        ->toArray();
+                }),
 
             SelectFilter::make('student_id')
                 ->label('الطالب')
-                ->options(fn () => User::query()
-                    ->where('user_type', 'student')
-                    ->get()
-                    ->mapWithKeys(fn ($u) => [
-                        $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
-                    ])
-                )
-                ->searchable(),
+                ->searchable()
+                ->getSearchResultsUsing(function (string $search) {
+                    return User::query()
+                        ->where('user_type', 'student')
+                        ->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%"))
+                        ->limit(50)
+                        ->get()
+                        ->mapWithKeys(fn ($u) => [
+                            $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
+                        ])
+                        ->toArray();
+                }),
 
             SelectFilter::make('academic_individual_lesson_id')
                 ->label('الدرس الفردي')

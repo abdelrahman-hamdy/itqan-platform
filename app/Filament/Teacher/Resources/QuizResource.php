@@ -37,10 +37,12 @@ class QuizResource extends BaseQuizResource
 
     /**
      * Get options for the assignable_id based on type.
+     * Uses auth()->id() (User ID) because QuranCircle/QuranIndividualCircle
+     * store quran_teacher_id as users.id, NOT quran_teacher_profiles.id.
      */
     protected static function getAssignableOptions(?string $type): array
     {
-        $teacherId = auth()->user()->quranTeacherProfile?->id;
+        $teacherId = auth()->id();
 
         if (! $type || ! $teacherId) {
             return [];

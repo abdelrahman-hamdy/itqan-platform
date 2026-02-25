@@ -367,27 +367,37 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
 
             SelectFilter::make('teacher_id')
                 ->label('المعلم')
-                ->options(function () {
+                ->searchable()
+                ->getSearchResultsUsing(function (string $search) {
+                    $academyId = AcademyContextService::getCurrentAcademyId();
+
                     return AcademicTeacherProfile::with('user')
+                        ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+                        ->whereHas('user', fn ($q) => $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%"))
+                        ->limit(50)
                         ->get()
                         ->mapWithKeys(fn ($teacher) => [
-                            $teacher->id => $teacher->display_name,
-                        ]);
+                            $teacher->id => $teacher->display_name ?? $teacher->user?->name ?? 'معلم #'.$teacher->id,
+                        ])
+                        ->toArray();
                 })
-                ->searchable()
                 ->native(false),
 
             SelectFilter::make('student_id')
                 ->label('الطالب')
-                ->options(function () {
-                    return User::where('user_type', UserType::STUDENT->value)
-                        ->with('studentProfile')
-                        ->get()
-                        ->mapWithKeys(fn ($user) => [
-                            $user->id => $user->studentProfile?->full_name ?? $user->name,
-                        ]);
-                })
                 ->searchable()
+                ->getSearchResultsUsing(function (string $search) {
+                    $academyId = AcademyContextService::getCurrentAcademyId();
+
+                    return User::where('user_type', UserType::STUDENT->value)
+                        ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+                        ->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%"))
+                        ->limit(50)
+                        ->pluck('name', 'id')
+                        ->toArray();
+                })
                 ->native(false),
         ];
     }
@@ -485,14 +495,18 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = static::getModel()::where('status', SessionSubscriptionStatus::PENDING->value)->count();
+        $count = static::getEloquentQuery()
+            ->where('status', SessionSubscriptionStatus::PENDING->value)
+            ->count();
 
         return $count > 0 ? (string) $count : null;
     }
 
     public static function getNavigationBadgeColor(): string|array|null
     {
-        return static::getModel()::where('status', SessionSubscriptionStatus::PENDING->value)->count() > 0 ? 'warning' : null;
+        return static::getEloquentQuery()
+            ->where('status', SessionSubscriptionStatus::PENDING->value)
+            ->count() > 0 ? 'warning' : null;
     }
 
     public static function getNavigationBadgeTooltip(): ?string

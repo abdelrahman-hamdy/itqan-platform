@@ -20,6 +20,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Illuminate\Database\Eloquent\Collection;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -95,8 +96,11 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
                     ->label('الطالب')
                     ->searchable()
                     ->getSearchResultsUsing(function (string $search) {
+                        $academyId = \App\Services\AcademyContextService::getCurrentAcademyId();
+
                         return User::query()
                             ->where('user_type', UserType::STUDENT->value)
+                            ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
                             ->where(function ($q) use ($search) {
                                 $q->where('first_name', 'like', "%{$search}%")
                                     ->orWhere('last_name', 'like', "%{$search}%")
@@ -110,7 +114,10 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
                             ]);
                     })
                     ->getOptionLabelUsing(function ($value) {
-                        $user = User::find($value);
+                        $academyId = \App\Services\AcademyContextService::getCurrentAcademyId();
+                        $user = User::where('id', $value)
+                            ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+                            ->first();
                         if (! $user) {
                             return null;
                         }
@@ -163,15 +170,36 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
 
     /**
      * Bulk actions for teachers.
+     * Per-record ownership is verified before deletion.
      */
     protected static function getTableBulkActions(): array
     {
         return [
             BulkActionGroup::make([
                 DeleteBulkAction::make()
-                    ->label('حذف المحدد'),
+                    ->label('حذف المحدد')
+                    ->action(function (Collection $records) {
+                        $user = Auth::user();
+                        $teacherProfile = $user?->academicTeacherProfile;
+                        $records->each(function ($record) use ($teacherProfile) {
+                            if ($teacherProfile
+                                && $record->academic_teacher_id === $teacherProfile->id
+                                && $record->sessions_completed === 0) {
+                                $record->delete();
+                            }
+                        });
+                    }),
             ]),
         ];
+    }
+
+    /**
+     * Disable the default canDeleteAny() — per-record ownership is enforced
+     * via the custom DeleteBulkAction above and canDelete() below.
+     */
+    public static function canDeleteAny(): bool
+    {
+        return false;
     }
 
     // ========================================

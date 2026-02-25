@@ -69,13 +69,22 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
 
                 Select::make('student_id')
                     ->label('الطالب')
-                    ->options(fn () => User::query()
-                        ->where('user_type', UserType::STUDENT->value)
-                        ->whereNotNull('name')
-                        ->pluck('name', 'id')
-                    )
-                    ->required()
                     ->searchable()
+                    ->getSearchResultsUsing(function (string $search) {
+                        $academyId = Auth::user()?->academy_id;
+
+                        return User::query()
+                            ->where('user_type', UserType::STUDENT->value)
+                            ->whereNotNull('name')
+                            ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+                            ->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%"))
+                            ->limit(50)
+                            ->pluck('name', 'id')
+                            ->toArray();
+                    })
+                    ->getOptionLabelUsing(fn ($value) => User::where('id', $value)->value('name'))
+                    ->required()
                     ->disabled(fn (?AcademicSessionReport $record) => $record !== null),
             ])->columns(2);
     }

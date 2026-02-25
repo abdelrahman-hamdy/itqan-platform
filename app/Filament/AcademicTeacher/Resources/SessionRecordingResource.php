@@ -45,23 +45,26 @@ class SessionRecordingResource extends BaseSessionRecordingResource
         $teacherProfile = $user?->academicTeacherProfile;
         $academyId = $user?->academy_id;
 
-        if ($teacherProfile) {
-            // Filter recordings where teacher is assigned to the course
-            $query->whereHasMorph(
-                'recordable',
-                [InteractiveCourseSession::class],
-                function ($q) use ($teacherProfile, $academyId) {
-                    $q->whereHas('course', function ($courseQuery) use ($teacherProfile, $academyId) {
-                        $courseQuery->where('assigned_teacher_id', $teacherProfile->id);
-
-                        // Also filter by academy
-                        if ($academyId) {
-                            $courseQuery->where('academy_id', $academyId);
-                        }
-                    });
-                }
-            );
+        if (! $teacherProfile) {
+            // No teacher profile — return empty result set to prevent data leakage
+            return $query->whereRaw('1 = 0');
         }
+
+        // Filter recordings where teacher is assigned to the course
+        $query->whereHasMorph(
+            'recordable',
+            [InteractiveCourseSession::class],
+            function ($q) use ($teacherProfile, $academyId) {
+                $q->whereHas('course', function ($courseQuery) use ($teacherProfile, $academyId) {
+                    $courseQuery->where('assigned_teacher_id', $teacherProfile->id);
+
+                    // Also filter by academy
+                    if ($academyId) {
+                        $courseQuery->where('academy_id', $academyId);
+                    }
+                });
+            }
+        );
 
         return $query;
     }

@@ -101,9 +101,9 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
     }
 
     /**
-     * Check if record belongs to current teacher
-     * Default implementation checks academy_id
-     * Override in child classes for specific ownership logic
+     * Check if record belongs to current teacher.
+     * Subclasses MUST override this to grant specific access.
+     * Default is deny to prevent accidental broad access.
      */
     public static function canView(Model $record): bool
     {
@@ -111,19 +111,16 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
             return false;
         }
 
-        // Default: allow viewing if record belongs to teacher's academy
-        $teacherAcademy = static::getCurrentTeacherAcademy();
-        if ($teacherAcademy && isset($record->academy_id) && $record->academy_id === $teacherAcademy->id) {
-            return true;
-        }
-
-        return parent::canView($record);
+        // Default deny: subclasses must explicitly override to grant access.
+        // Checking only academy_id is too broad — any teacher could view any
+        // record in the same academy regardless of ownership.
+        return false;
     }
 
     /**
-     * Check if record can be edited by current teacher
-     * Default implementation checks academy_id
-     * Override in child classes for specific edit permissions
+     * Check if record can be edited by current teacher.
+     * Subclasses MUST override this to grant specific access.
+     * Default is deny to prevent accidental broad access.
      */
     public static function canEdit(Model $record): bool
     {
@@ -131,13 +128,8 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
             return false;
         }
 
-        // Default: allow editing if record belongs to teacher's academy
-        $teacherAcademy = static::getCurrentTeacherAcademy();
-        if ($teacherAcademy && isset($record->academy_id) && $record->academy_id === $teacherAcademy->id) {
-            return true;
-        }
-
-        return parent::canEdit($record);
+        // Default deny: subclasses must explicitly override to grant access.
+        return false;
     }
 
     /**

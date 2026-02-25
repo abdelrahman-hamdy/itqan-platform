@@ -185,6 +185,8 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                         ->label('تقرير للإدارة')
                         ->rows(4)
                         ->helperText('تقرير داخلي للإدارة والمشرفين فقط - لن يظهر للطالب')
+                        ->disabled()
+                        ->dehydrated(false)
                         ->columnSpanFull(),
                 ]),
         ];

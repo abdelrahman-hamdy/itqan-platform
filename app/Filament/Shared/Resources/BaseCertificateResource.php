@@ -60,13 +60,12 @@ abstract class BaseCertificateResource extends BaseResource
     {
         $user = Auth::user();
 
-        // Show only certificates issued by this teacher
+        // Show only certificates where this teacher is the assigned teacher.
+        // Certificates "issued_by" the teacher may include other teachers' students
+        // and should only be visible in admin-only views.
         return parent::getEloquentQuery()
             ->with(['student', 'academy'])
-            ->where(function ($q) use ($user) {
-                $q->where('teacher_id', $user->id)
-                    ->orWhere('issued_by', $user->id);
-            });
+            ->where('teacher_id', $user->id);
     }
 
     public static function form(Schema $schema): Schema

@@ -277,6 +277,11 @@ abstract class BaseQuizAssignmentResource extends BaseResource
         if ($teacherId) {
             $assignableIds = static::getTeacherAssignableIds();
 
+            // Guard: if teacher has no assignables, return empty result set
+            if (empty($assignableIds)) {
+                return $query->whereRaw('1 = 0');
+            }
+
             $query->where(function ($q) use ($assignableIds) {
                 $first = true;
                 foreach ($assignableIds as $type => $ids) {

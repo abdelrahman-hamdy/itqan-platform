@@ -99,19 +99,36 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
 
                         Select::make('student_id')
                             ->label('الطالب')
-                            ->options(function () {
+                            ->searchable()
+                            ->preload(false)
+                            ->getSearchResultsUsing(function (string $search) {
+                                $academyId = AcademyContextService::getCurrentAcademyId();
+
                                 return User::where('user_type', UserType::STUDENT->value)
                                     ->with('studentProfile')
+                                    ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+                                    ->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
+                                        ->orWhere('email', 'like', "%{$search}%"))
+                                    ->limit(50)
                                     ->get()
                                     ->mapWithKeys(function ($user) {
                                         $studentCode = $user->studentProfile?->student_code ?? 'N/A';
                                         $fullName = $user->studentProfile?->full_name ?? $user->name;
 
                                         return [$user->id => $fullName.' ('.$studentCode.')'];
-                                    });
+                                    })
+                                    ->toArray();
                             })
-                            ->searchable()
-                            ->preload()
+                            ->getOptionLabelUsing(function ($value) {
+                                $user = User::with('studentProfile')->find($value);
+                                if (! $user) {
+                                    return null;
+                                }
+                                $studentCode = $user->studentProfile?->student_code ?? 'N/A';
+                                $fullName = $user->studentProfile?->full_name ?? $user->name;
+
+                                return $fullName.' ('.$studentCode.')';
+                            })
                             ->required(),
 
                         Select::make('quran_teacher_id')
@@ -372,32 +389,37 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
 
             SelectFilter::make('quran_teacher_id')
                 ->label('المعلم')
-                ->options(function () {
+                ->searchable()
+                ->getSearchResultsUsing(function (string $search) {
                     $academyId = AcademyContextService::getCurrentAcademyId();
 
-                    $query = QuranTeacherProfile::query();
-                    if ($academyId) {
-                        $query->where('academy_id', $academyId);
-                    }
-
-                    return $query->get()->mapWithKeys(fn ($teacher) => [
-                        $teacher->user_id => $teacher->display_name ?? $teacher->full_name ?? 'معلم غير محدد',
-                    ]);
+                    return QuranTeacherProfile::query()
+                        ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+                        ->whereHas('user', fn ($q) => $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%"))
+                        ->limit(50)
+                        ->get()
+                        ->mapWithKeys(fn ($teacher) => [
+                            $teacher->user_id => $teacher->display_name ?? $teacher->full_name ?? 'معلم غير محدد',
+                        ])
+                        ->toArray();
                 })
-                ->searchable()
                 ->native(false),
 
             SelectFilter::make('student_id')
                 ->label('الطالب')
-                ->options(function () {
-                    return User::where('user_type', UserType::STUDENT->value)
-                        ->with('studentProfile')
-                        ->get()
-                        ->mapWithKeys(fn ($user) => [
-                            $user->id => $user->studentProfile?->full_name ?? $user->name,
-                        ]);
-                })
                 ->searchable()
+                ->getSearchResultsUsing(function (string $search) {
+                    $academyId = AcademyContextService::getCurrentAcademyId();
+
+                    return User::where('user_type', UserType::STUDENT->value)
+                        ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+                        ->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%"))
+                        ->limit(50)
+                        ->pluck('name', 'id')
+                        ->toArray();
+                })
                 ->native(false),
         ];
     }

@@ -21,6 +21,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Illuminate\Database\Eloquent\Collection;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
@@ -124,14 +125,35 @@ class AcademicSessionResource extends BaseAcademicSessionResource
 
     /**
      * Bulk actions for teachers.
+     * Per-record ownership is verified before deletion.
      */
     protected static function getTableBulkActions(): array
     {
         return [
             BulkActionGroup::make([
-                DeleteBulkAction::make(),
+                DeleteBulkAction::make()
+                    ->action(function (Collection $records) {
+                        $user = Auth::user();
+                        $teacherProfile = $user?->academicTeacherProfile;
+                        $records->each(function ($record) use ($teacherProfile) {
+                            if ($teacherProfile
+                                && $record->academic_teacher_id === $teacherProfile->id
+                                && $record->status === SessionStatus::SCHEDULED) {
+                                $record->delete();
+                            }
+                        });
+                    }),
             ]),
         ];
+    }
+
+    /**
+     * Disable the default canDeleteAny() — per-record ownership is enforced
+     * via the custom DeleteBulkAction above and canDelete() below.
+     */
+    public static function canDeleteAny(): bool
+    {
+        return false;
     }
 
     // ========================================
