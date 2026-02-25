@@ -344,41 +344,6 @@ erDiagram
 </table>
 </div>
 
-<h2 id="gotchas">Schema Notes</h2>
-
-
-<div class="help-info">
-    <i class="ri-information-line help-callout-icon"></i>
-    <div>
-        <strong>student_profiles.academy_id:</strong>
-        The <code>student_profiles</code> table has an <code>academy_id</code> column (added by migration
-        <code>2026_02_19_000002</code>) and uses a dual-mode scoping strategy: direct column for most queries,
-        plus <code>ScopedToAcademyViaRelationship</code> fallback through the <code>user → academy</code> path.
-    </div>
-</div>
-
-<div class="help-info">
-    <i class="ri-information-line help-callout-icon"></i>
-    <div>
-        <strong>interactive_course_sessions.academy_id:</strong>
-        The <code>interactive_course_sessions</code> table has an <code>academy_id</code> column
-        (backfilled by migration <code>2025_12_30_152227</code>, indexed). The global academy scope
-        uses this direct column for filtering.
-    </div>
-</div>
-
-<div class="help-info">
-    <i class="ri-information-line help-callout-icon"></i>
-    <div>
-        <strong>Session report tables use soft deletes:</strong>
-        All three report tables (<code>student_session_reports</code>, <code>academic_session_reports</code>,
-        <code>interactive_session_reports</code>) have a <code>deleted_at</code>
-        column (added by migration <code>2026_02_25_163930</code>). <code>BaseSessionReport</code> uses the
-        <code>SoftDeletes</code> trait, so deletions are always soft by default.
-        Note: Quran sessions use <code>student_session_reports</code> (there is no separate <code>quran_session_reports</code> table).
-    </div>
-</div>
-
 @endsection
 
 @push('scripts')
