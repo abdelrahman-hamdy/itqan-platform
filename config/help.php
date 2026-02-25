@@ -117,32 +117,7 @@ return [
     ],
 
     'common' => [
-        'articles' => [
-            'login' => [
-                'title'       => 'تسجيل الدخول وإنشاء الحساب',
-                'description' => 'كيفية تسجيل الدخول واستعادة كلمة المرور',
-                'icon'        => 'ri-login-box-line',
-                'keywords'    => ['تسجيل', 'دخول', 'حساب', 'كلمة مرور', 'استعادة'],
-            ],
-            'meetings' => [
-                'title'       => 'الاجتماعات المرئية',
-                'description' => 'كيفية الانضمام إلى الجلسات المرئية وإدارتها',
-                'icon'        => 'ri-video-chat-line',
-                'keywords'    => ['اجتماع', 'فيديو', 'مرئي', 'كاميرا', 'مايكروفون', 'انضمام'],
-            ],
-            'chat' => [
-                'title'       => 'المحادثات والرسائل',
-                'description' => 'كيفية استخدام نظام المحادثات والرسائل',
-                'icon'        => 'ri-chat-3-line',
-                'keywords'    => ['محادثة', 'رسالة', 'دردشة', 'تواصل'],
-            ],
-            'notifications' => [
-                'title'       => 'الإشعارات',
-                'description' => 'إدارة الإشعارات وتخصيص التنبيهات',
-                'icon'        => 'ri-notification-3-line',
-                'keywords'    => ['إشعار', 'تنبيه', 'إعدادات'],
-            ],
-        ],
+        'articles' => [],  // Populated in a future phase
     ],
 
 ];

@@ -85,59 +85,6 @@
                     </div>
                 @endforeach
             </section>
-        @else
-            <div class="mb-10 p-6 bg-white rounded-xl border border-dashed border-gray-300 text-center text-gray-400 text-sm">
-                <i class="ri-book-open-line text-3xl mb-2 block text-gray-300"></i>
-                {{ __('help.landing.empty_section') }}
-            </div>
-        @endif
-
-        {{-- Common articles ─────────────────────────────────────────────────── --}}
-        @if(!empty($commonArticles))
-            <section class="mb-10">
-                <div class="flex items-center gap-2 mb-5">
-                    <i class="ri-information-line text-xl text-gray-500"></i>
-                    <h2 class="text-xl font-bold text-gray-900">{{ __('help.landing.common_section_title') }}</h2>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    @foreach($commonArticles as $slug => $art)
-                        <a href="{{ route('help.common', ['slug' => $slug]) }}"
-                           class="group flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-primary/40 hover:shadow-md transition-all duration-200 card-hover">
-                            <i class="{{ $art['icon'] ?? 'ri-file-text-line' }} text-primary text-xl"></i>
-                            <span class="text-sm font-medium text-gray-700 group-hover:text-primary transition-colors">{{ $art['title'] }}</span>
-                        </a>
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
-        {{-- Admin-only: all role sections overview ─────────────────────────── --}}
-        @if($userRole === 'admin')
-            <section>
-                <div class="flex items-center gap-2 mb-5">
-                    <i class="ri-team-line text-xl text-gray-500"></i>
-                    <h2 class="text-xl font-bold text-gray-900">{{ __('help.landing.all_roles_title') }}</h2>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    @foreach($allRoles as $roleKey => $roleMeta)
-                        @if($roleKey !== 'admin')
-                            <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <i class="{{ $roleMeta['icon'] }} text-gray-500 text-lg"></i>
-                                    <h3 class="font-semibold text-gray-700 text-sm">{{ $roleMeta['label'] }}</h3>
-                                </div>
-                                @if(!empty($roleMeta['articles']))
-                                    <p class="text-xs text-gray-400">
-                                        {{ count($roleMeta['articles']) }} {{ __('مقالات') }}
-                                    </p>
-                                @else
-                                    <p class="text-xs text-gray-400 italic">{{ __('help.landing.empty_section') }}</p>
-                                @endif
-                            </div>
-                        @endif
-                    @endforeach
-                </div>
-            </section>
         @endif
 
     </div>
