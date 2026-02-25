@@ -15,6 +15,7 @@
 @import './chat.css' layer(base);
 @import './chat-enhanced.css' layer(base);
 @import './components/phone-input.css' layer(base);
+@import './help.css' layer(base);
 
 @import 'tailwindcss';
 

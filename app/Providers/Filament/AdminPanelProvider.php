@@ -58,6 +58,7 @@ use App\Http\Middleware\AcademyContext;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -169,7 +170,13 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::SCRIPTS_AFTER,
                 fn (): string => view('filament.hooks.mobile-filter-collapse')->render()
-            );
+            )
+            ->navigationItems([
+                NavigationItem::make(__('help.nav_label'))
+                    ->url('/help', shouldOpenInNewTab: true)
+                    ->icon('heroicon-o-question-mark-circle')
+                    ->sort(99),
+            ]);
     }
 
     protected function getResources(): array

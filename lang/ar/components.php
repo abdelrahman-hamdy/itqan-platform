@@ -899,6 +899,8 @@ return [
         'financial_management' => 'الإدارة المالية',
         'monthly_earnings' => 'الأرباح الشهرية',
         'email_not_specified' => 'غير محدد',
+        'help_support' => 'المساعدة والدعم',
+        'help_center' => 'مركز المساعدة',
     ],
     'homework' => [
         'grading' => [

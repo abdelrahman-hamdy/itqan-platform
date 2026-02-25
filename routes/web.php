@@ -129,6 +129,16 @@ require __DIR__.'/web/student.php';
 
 /*
 |--------------------------------------------------------------------------
+| Help Center Routes
+|--------------------------------------------------------------------------
+| In-app help center (مركز المساعدة) for all authenticated user roles.
+| Role-based article access is enforced in HelpCenterController.
+*/
+
+require __DIR__.'/web/help.php';
+
+/*
+|--------------------------------------------------------------------------
 | Teacher Routes
 |--------------------------------------------------------------------------
 | Teacher session management, homework grading, reports, student management.

@@ -31,6 +31,7 @@ use App\Filament\Resources\TeacherReviewResource;
 use App\Http\Middleware\AcademyContext;
 use App\Models\Academy;
 use Filament\Facades\Filament;
+use Filament\Navigation\NavigationItem;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -164,6 +165,12 @@ class AcademyPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::user-menu.before',
                 fn (): string => view('filament.hooks.topbar-buttons')->render()
-            );
+            )
+            ->navigationItems([
+                NavigationItem::make(__('help.nav_label'))
+                    ->url('/help', shouldOpenInNewTab: true)
+                    ->icon('heroicon-o-question-mark-circle')
+                    ->sort(99),
+            ]);
     }
 }
