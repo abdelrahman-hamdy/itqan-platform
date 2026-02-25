@@ -436,13 +436,14 @@ class HomeworkController extends Controller
     public function grade(Request $request, int $submissionId): JsonResponse
     {
         $user = $request->user();
-        $type = $request->get('type', 'academic');
 
         $validator = Validator::make($request->all(), [
             'grade' => ['required', 'numeric', 'min:0', 'max:10'],
             'feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'type' => ['sometimes', 'in:academic,interactive'],
+            'type' => ['required', 'in:academic,interactive'],
         ]);
+
+        $type = $request->input('type');
 
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
@@ -507,12 +508,13 @@ class HomeworkController extends Controller
     public function requestRevision(Request $request, int $submissionId): JsonResponse
     {
         $user = $request->user();
-        $type = $request->get('type', 'academic');
 
         $validator = Validator::make($request->all(), [
             'feedback' => ['required', 'string', 'max:2000'],
-            'type' => ['sometimes', 'in:academic,interactive'],
+            'type' => ['required', 'in:academic,interactive'],
         ]);
+
+        $type = $request->input('type');
 
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());

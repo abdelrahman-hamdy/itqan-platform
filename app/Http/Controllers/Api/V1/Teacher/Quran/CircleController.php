@@ -375,7 +375,8 @@ class CircleController extends Controller
         }
 
         // Get all certificates for this circle
-        $studentIds = $circle->students->pluck('user_id')->filter()->toArray();
+        // students() returns User models — use 'id', not 'user_id' (User has no user_id field)
+        $studentIds = $circle->students->pluck('id')->filter()->toArray();
         $certificates = Certificate::where('certificateable_type', QuranCircle::class)
             ->where('certificateable_id', $circle->id)
             ->whereIn('student_id', $studentIds)

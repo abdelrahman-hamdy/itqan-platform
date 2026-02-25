@@ -163,11 +163,19 @@ class SubscriptionController extends Controller
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
-        // Get all linked children's user IDs
-        $childUserIds = ParentStudentRelationship::where('parent_id', $parentProfile->id)
+        $relationships = ParentStudentRelationship::where('parent_id', $parentProfile->id)
             ->with('student.user')
-            ->get()
+            ->get();
+
+        // QuranSubscription / AcademicSubscription: student_id references User.id
+        $childUserIds = $relationships
             ->map(fn ($r) => $r->student->user?->id ?? $r->student->id)
+            ->filter()
+            ->toArray();
+
+        // CourseSubscription: student_id references StudentProfile.id (NOT User.id)
+        $childStudentProfileIds = $relationships
+            ->pluck('student_id')
             ->filter()
             ->toArray();
 
@@ -181,7 +189,7 @@ class SubscriptionController extends Controller
                 ->with(['academicTeacher.user', 'subject', 'student', 'sessions'])
                 ->first(),
             'course' => CourseSubscription::where('id', $id)
-                ->whereIn('student_id', $childUserIds)
+                ->whereIn('student_id', $childStudentProfileIds)
                 ->with(['interactiveCourse.assignedTeacher.user', 'recordedCourse'])
                 ->first(),
             default => null,
