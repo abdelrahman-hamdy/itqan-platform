@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Constants\ErrorMessages;
 use App\Models\Certificate;
 use App\Models\ParentProfile;
 use App\Models\Payment;
@@ -176,7 +177,7 @@ class ParentDataService
             ->first();
 
         if (! $child) {
-            abort(403, 'لا يمكنك الوصول إلى بيانات هذا الطالب');
+            abort(403, ErrorMessages::STUDENT_ACCESS_DENIED);
         }
 
         return $child;

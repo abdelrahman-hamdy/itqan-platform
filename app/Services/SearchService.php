@@ -49,14 +49,16 @@ class SearchService implements SearchServiceInterface
             ]);
         }
 
+        $subdomain = auth()->user()?->academy?->subdomain ?? DefaultAcademy::subdomain();
+
         $results = [
-            'quran_circles' => $this->searchQuranCircles($query, $student, $filters),
-            'individual_circles' => $this->searchIndividualCircles($query, $student, $filters),
-            'academic_sessions' => $this->searchAcademicSessions($query, $student, $filters),
-            'interactive_courses' => $this->searchInteractiveCourses($query, $student, $filters),
-            'recorded_courses' => $this->searchRecordedCourses($query, $student, $filters),
-            'quran_teachers' => $this->searchQuranTeachers($query, $filters),
-            'academic_teachers' => $this->searchAcademicTeachers($query, $filters),
+            'quran_circles' => $this->searchQuranCircles($query, $student, $filters, $subdomain),
+            'individual_circles' => $this->searchIndividualCircles($query, $student, $filters, $subdomain),
+            'academic_sessions' => $this->searchAcademicSessions($query, $student, $filters, $subdomain),
+            'interactive_courses' => $this->searchInteractiveCourses($query, $student, $filters, $subdomain),
+            'recorded_courses' => $this->searchRecordedCourses($query, $student, $filters, $subdomain),
+            'quran_teachers' => $this->searchQuranTeachers($query, $filters, $subdomain),
+            'academic_teachers' => $this->searchAcademicTeachers($query, $filters, $subdomain),
         ];
 
         return collect($results);
@@ -65,7 +67,7 @@ class SearchService implements SearchServiceInterface
     /**
      * Search Quran group circles
      */
-    protected function searchQuranCircles(string $query, ?StudentProfile $student, array $filters): Collection
+    protected function searchQuranCircles(string $query, ?StudentProfile $student, array $filters, string $subdomain): Collection
     {
         $queryBuilder = QuranCircle::query()
             ->with(['quranTeacher', 'students'])
@@ -118,7 +120,7 @@ class SearchService implements SearchServiceInterface
                     'status' => $circle->enrollment_status,
                     'is_enrolled' => $student ? $circle->students->contains('id', $student->user_id) : false,
                     'route' => $this->safeRoute('student.circles.show', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
+                        'subdomain' => $subdomain,
                         'circleId' => $circle->id,
                     ]),
                 ];
@@ -128,7 +130,7 @@ class SearchService implements SearchServiceInterface
     /**
      * Search individual Quran circles (1-to-1)
      */
-    protected function searchIndividualCircles(string $query, ?StudentProfile $student, array $filters): Collection
+    protected function searchIndividualCircles(string $query, ?StudentProfile $student, array $filters, string $subdomain): Collection
     {
         if (! $student) {
             return collect();
@@ -168,7 +170,7 @@ class SearchService implements SearchServiceInterface
                     'status' => 'active',
                     'is_enrolled' => true,
                     'route' => $this->safeRoute('individual-circles.show', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
+                        'subdomain' => $subdomain,
                         'circle' => $circle->id,
                     ]),
                 ];
@@ -178,7 +180,7 @@ class SearchService implements SearchServiceInterface
     /**
      * Search academic sessions (private lessons)
      */
-    protected function searchAcademicSessions(string $query, ?StudentProfile $student, array $filters): Collection
+    protected function searchAcademicSessions(string $query, ?StudentProfile $student, array $filters, string $subdomain): Collection
     {
         if (! $student) {
             return collect();
@@ -228,7 +230,7 @@ class SearchService implements SearchServiceInterface
                     'status' => $subscription->status ?? 'active',
                     'is_enrolled' => true,
                     'route' => $this->safeRoute('student.academic-teachers', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
+                        'subdomain' => $subdomain,
                     ]),
                 ];
             });
@@ -237,7 +239,7 @@ class SearchService implements SearchServiceInterface
     /**
      * Search interactive courses (live courses)
      */
-    protected function searchInteractiveCourses(string $query, ?StudentProfile $student, array $filters): Collection
+    protected function searchInteractiveCourses(string $query, ?StudentProfile $student, array $filters, string $subdomain): Collection
     {
         $queryBuilder = InteractiveCourse::query()
             ->with(['assignedTeacher', 'subject', 'gradeLevel', 'enrollments'])
@@ -297,7 +299,7 @@ class SearchService implements SearchServiceInterface
                     'status' => 'published',
                     'is_enrolled' => $enrollment !== null,
                     'route' => $this->safeRoute('my.interactive-course.show', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
+                        'subdomain' => $subdomain,
                         'course' => $course->id,
                     ]),
                 ];
@@ -307,7 +309,7 @@ class SearchService implements SearchServiceInterface
     /**
      * Search recorded courses (pre-recorded)
      */
-    protected function searchRecordedCourses(string $query, ?StudentProfile $student, array $filters): Collection
+    protected function searchRecordedCourses(string $query, ?StudentProfile $student, array $filters, string $subdomain): Collection
     {
         $queryBuilder = RecordedCourse::query()
             ->with(['subject', 'gradeLevel', 'enrollments'])
@@ -363,7 +365,7 @@ class SearchService implements SearchServiceInterface
                     'status' => 'published',
                     'is_enrolled' => $enrollment !== null,
                     'route' => $this->safeRoute('courses.show', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
+                        'subdomain' => $subdomain,
                         'courseId' => $course->id,
                     ]),
                 ];
@@ -374,7 +376,7 @@ class SearchService implements SearchServiceInterface
      * Search Quran teachers
      * Note: Personal info (first_name, last_name) is on User model, not profile
      */
-    protected function searchQuranTeachers(string $query, array $filters): Collection
+    protected function searchQuranTeachers(string $query, array $filters, string $subdomain): Collection
     {
         $queryBuilder = QuranTeacherProfile::query()
             ->with(['user', 'quranCircles'])
@@ -413,7 +415,7 @@ class SearchService implements SearchServiceInterface
                     'status' => 'active',
                     'is_enrolled' => false,
                     'route' => $this->safeRoute('student.quran-teachers', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
+                        'subdomain' => $subdomain,
                     ]).'#teacher-'.$teacher->id,
                 ];
             });
@@ -423,7 +425,7 @@ class SearchService implements SearchServiceInterface
      * Search academic teachers
      * Note: Personal info (first_name, last_name) is on User model, not profile
      */
-    protected function searchAcademicTeachers(string $query, array $filters): Collection
+    protected function searchAcademicTeachers(string $query, array $filters, string $subdomain): Collection
     {
         $queryBuilder = AcademicTeacherProfile::query()
             ->with(['user', 'subjects'])
@@ -463,7 +465,7 @@ class SearchService implements SearchServiceInterface
                     'status' => 'active',
                     'is_enrolled' => false,
                     'route' => $this->safeRoute('student.academic-teachers', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
+                        'subdomain' => $subdomain,
                     ]).'#teacher-'.$teacher->id,
                 ];
             });

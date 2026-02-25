@@ -302,7 +302,7 @@ class LessonController extends Controller
         $this->authorize('downloadMaterials', $lesson);
 
         if (! $lesson->is_downloadable || ! $lesson->attachments) {
-            abort(404, 'لا توجد مواد قابلة للتحميل');
+            abort(404, __('errors.no_downloadable_materials'));
         }
 
         // This would handle file downloads
@@ -348,7 +348,7 @@ class LessonController extends Controller
         }
 
         if (! $lesson->video_url) {
-            abort(404, 'لا يوجد رابط فيديو لهذا الدرس');
+            abort(404, __('errors.lesson_video_not_found'));
         }
 
         // Check both public and storage paths

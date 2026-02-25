@@ -242,14 +242,14 @@ class InteractiveCourseRecordingController extends Controller
         $recording = SessionRecording::find($recordingId);
 
         if (! $recording) {
-            abort(404, 'التسجيل غير موجود');
+            abort(404, __('errors.recording_not_found'));
         }
 
         // Get the session
         $courseSession = $recording->recordable;
 
         if (! $courseSession instanceof InteractiveCourseSession) {
-            abort(400, 'نوع التسجيل غير صحيح');
+            abort(400, __('errors.recording_type_invalid'));
         }
 
         // Authorize downloading the recording
@@ -257,7 +257,7 @@ class InteractiveCourseRecordingController extends Controller
 
         // Check recording is available
         if (! $recording->isAvailable()) {
-            abort(404, 'ملف التسجيل غير متوفر بعد');
+            abort(404, __('errors.recording_file_not_available'));
         }
 
         // Handle remote recordings (stored on LiveKit server)
@@ -265,7 +265,7 @@ class InteractiveCourseRecordingController extends Controller
             $remoteUrl = $recording->getRemoteUrl();
 
             if (! $remoteUrl) {
-                abort(404, 'رابط التسجيل غير متوفر');
+                abort(404, __('errors.recording_url_not_available'));
             }
 
             // Redirect to remote URL with download disposition
@@ -274,7 +274,7 @@ class InteractiveCourseRecordingController extends Controller
 
         // Handle local recordings (legacy/fallback)
         if (! Storage::exists($recording->file_path)) {
-            abort(404, 'ملف التسجيل غير موجود');
+            abort(404, __('errors.recording_file_not_found'));
         }
 
         return Storage::download($recording->file_path, $recording->file_name ?? 'recording.mp4');
@@ -291,14 +291,14 @@ class InteractiveCourseRecordingController extends Controller
         $recording = SessionRecording::find($recordingId);
 
         if (! $recording) {
-            abort(404, 'التسجيل غير موجود');
+            abort(404, __('errors.recording_not_found'));
         }
 
         // Get the session
         $courseSession = $recording->recordable;
 
         if (! $courseSession instanceof InteractiveCourseSession) {
-            abort(400, 'نوع التسجيل غير صحيح');
+            abort(400, __('errors.recording_type_invalid'));
         }
 
         // Authorize viewing the recording
@@ -306,7 +306,7 @@ class InteractiveCourseRecordingController extends Controller
 
         // Check recording is available
         if (! $recording->isAvailable()) {
-            abort(404, 'ملف التسجيل غير متوفر بعد');
+            abort(404, __('errors.recording_file_not_available'));
         }
 
         // Handle remote recordings (stored on LiveKit server)
@@ -314,7 +314,7 @@ class InteractiveCourseRecordingController extends Controller
             $remoteUrl = $recording->getRemoteUrl();
 
             if (! $remoteUrl) {
-                abort(404, 'رابط التسجيل غير متوفر');
+                abort(404, __('errors.recording_url_not_available'));
             }
 
             $accessMode = config('livekit.recordings.access_mode', 'redirect');
@@ -330,7 +330,7 @@ class InteractiveCourseRecordingController extends Controller
                 $response = Http::withOptions(['stream' => true])->get($remoteUrl);
 
                 if (! $response->successful()) {
-                    abort(404, 'فشل في تحميل ملف التسجيل من الخادم');
+                    abort(404, __('errors.recording_download_failed_server'));
                 }
 
                 return response()->stream(function () use ($response) {
@@ -346,13 +346,13 @@ class InteractiveCourseRecordingController extends Controller
                     'remote_url' => $remoteUrl,
                     'error' => $e->getMessage(),
                 ]);
-                abort(500, 'فشل في تحميل ملف التسجيل');
+                abort(500, __('errors.recording_stream_failed'));
             }
         }
 
         // Handle local recordings (legacy/fallback)
         if (! Storage::exists($recording->file_path)) {
-            abort(404, 'ملف التسجيل غير موجود');
+            abort(404, __('errors.recording_file_not_found'));
         }
 
         // Stream the file with proper headers for video playback

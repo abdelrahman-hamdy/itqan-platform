@@ -45,7 +45,7 @@ class AcademicSessionController extends Controller
         $teacherProfile = $user->academicTeacherProfile;
 
         if (! $teacherProfile) {
-            abort(404, 'ملف المعلم غير موجود');
+            abort(404, __('errors.teacher_profile_not_found'));
         }
 
         $sessions = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
@@ -299,7 +299,7 @@ class AcademicSessionController extends Controller
 
         // Verify report belongs to this session
         if ($report->session_id !== $session->id) {
-            abort(404, 'التقرير غير موجود');
+            abort(404, __('errors.report_not_found'));
         }
 
         // Grade the homework

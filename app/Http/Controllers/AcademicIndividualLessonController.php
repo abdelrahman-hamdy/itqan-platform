@@ -37,7 +37,7 @@ class AcademicIndividualLessonController extends Controller
         // Get teacher profile
         $teacherProfile = $user->academicTeacherProfile;
         if (! $teacherProfile) {
-            abort(404, 'ملف المعلم غير موجود');
+            abort(404, __('errors.teacher_profile_not_found'));
         }
 
         // Use AcademicSubscription for consistency with show view and profile page
@@ -193,7 +193,7 @@ class AcademicIndividualLessonController extends Controller
         // Get teacher profile
         $teacherProfile = $user->academicTeacherProfile;
         if (! $teacherProfile) {
-            abort(404, 'ملف المعلم غير موجود');
+            abort(404, __('errors.teacher_profile_not_found'));
         }
 
         // Get courses assigned to this teacher

@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\SessionSubscriptionStatus;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Constants\ErrorMessages;
-use App\Exceptions\AuthorizationException;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
@@ -197,7 +196,7 @@ class ParentChildVerificationService
      * @param  ParentProfile  $parent  The parent profile
      * @param  QuranSubscription|AcademicSubscription|CourseSubscription  $subscription  The subscription to verify
      *
-     * @throws AuthorizationException If subscription doesn't belong to a child
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException 403 if subscription doesn't belong to a child
      */
     public function verifySubscriptionBelongsToChild(
         ParentProfile $parent,
@@ -206,7 +205,7 @@ class ParentChildVerificationService
         $childUserIds = $this->getChildUserIds($parent);
 
         if (! in_array($subscription->student_id, $childUserIds)) {
-            throw new AuthorizationException('لا يمكنك الوصول إلى هذا الاشتراك');
+            abort(403, ErrorMessages::SUBSCRIPTION_ACCESS_DENIED);
         }
     }
 
@@ -220,7 +219,7 @@ class ParentChildVerificationService
      * @param  ParentProfile  $parent  The parent profile
      * @param  QuranSession|AcademicSession|InteractiveCourseSession  $session  The session to verify
      *
-     * @throws AuthorizationException If session doesn't belong to a child
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException 403 if session doesn't belong to a child
      */
     public function verifySessionBelongsToChild(
         ParentProfile $parent,
@@ -258,7 +257,7 @@ class ParentChildVerificationService
         }
 
         // No access granted
-        throw new AuthorizationException('لا يمكنك الوصول إلى هذه الجلسة');
+        abort(403, ErrorMessages::SESSION_ACCESS_DENIED);
     }
 
     /**
@@ -311,7 +310,7 @@ class ParentChildVerificationService
      * @param  int|string  $childId  The child's StudentProfile ID
      * @return int The child's User ID
      *
-     * @throws AuthorizationException If child doesn't belong to parent
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException 403 if child doesn't belong to parent
      */
     public function getVerifiedChildUserId(ParentProfile $parent, int|string $childId): int
     {

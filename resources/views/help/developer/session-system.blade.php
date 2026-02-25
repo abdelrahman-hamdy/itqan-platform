@@ -266,19 +266,12 @@ stateDiagram-v2
     <h2 id="interactive-course-special">Critical: InteractiveCourseSession Special Cases</h2>
 
     <div class="help-danger">
-        <strong>Two critical differences from other session types:</strong>
-        <ol class="mt-2 space-y-1">
-            <li>
-                <strong>Uses <code>scheduled_date</code> (date) + <code>scheduled_time</code> (time) separately,</strong>
-                not a single <code>scheduled_at</code> datetime. Always combine them when you need a full datetime:
-                <code>Carbon::parse("{$session->scheduled_date} {$session->scheduled_time}")</code>
-            </li>
-            <li>
-                <strong>Does NOT use the CountsTowardsSubscription trait.</strong>
-                Course sessions do not count against a session-based subscription quota —
-                access is controlled by CourseSubscription enrollment status.
-            </li>
-        </ol>
+        <strong>One critical difference from other session types:</strong>
+        <p class="mt-2">
+            <strong>Does NOT use the CountsTowardsSubscription trait.</strong>
+            Course sessions do not count against a session-based subscription quota —
+            access is controlled by CourseSubscription enrollment status.
+        </p>
     </div>
 
     {{-- =========================================================

@@ -30,7 +30,7 @@ class ReviewService
         if ($teacher->hasReviewFrom($student->id)) {
             return [
                 'can_review' => false,
-                'reason' => 'لقد قمت بتقييم هذا المعلم مسبقاً',
+                'reason' => __('reviews.already_reviewed_teacher'),
             ];
         }
 
@@ -43,7 +43,7 @@ class ReviewService
         if (! $hasSubscription) {
             return [
                 'can_review' => false,
-                'reason' => 'يجب أن يكون لديك اشتراك نشط مع هذا المعلم',
+                'reason' => __('reviews.active_subscription_required'),
             ];
         }
 
@@ -62,7 +62,7 @@ class ReviewService
         if ($teacher->hasReviewFrom($student->id)) {
             return [
                 'can_review' => false,
-                'reason' => 'لقد قمت بتقييم هذا المعلم مسبقاً',
+                'reason' => __('reviews.already_reviewed_teacher'),
             ];
         }
 
@@ -75,7 +75,7 @@ class ReviewService
         if (! $hasSubscription) {
             return [
                 'can_review' => false,
-                'reason' => 'يجب أن يكون لديك اشتراك نشط مع هذا المعلم',
+                'reason' => __('reviews.active_subscription_required'),
             ];
         }
 
@@ -100,7 +100,7 @@ class ReviewService
 
         return [
             'can_review' => false,
-            'reason' => 'نوع المعلم غير صالح',
+            'reason' => __('reviews.invalid_teacher_type'),
         ];
     }
 
@@ -113,7 +113,7 @@ class ReviewService
         if ($course->hasReviewFrom($student->id)) {
             return [
                 'can_review' => false,
-                'reason' => 'لقد قمت بتقييم هذه الدورة مسبقاً',
+                'reason' => __('reviews.already_reviewed_course'),
             ];
         }
 
@@ -126,7 +126,7 @@ class ReviewService
         if (! $hasSubscription) {
             return [
                 'can_review' => false,
-                'reason' => 'يجب أن تكون مشتركاً في هذه الدورة',
+                'reason' => __('reviews.must_be_subscribed'),
             ];
         }
 
@@ -145,7 +145,7 @@ class ReviewService
         if ($course->hasReviewFrom($student->id)) {
             return [
                 'can_review' => false,
-                'reason' => 'لقد قمت بتقييم هذه الدورة مسبقاً',
+                'reason' => __('reviews.already_reviewed_course'),
             ];
         }
 
@@ -166,7 +166,7 @@ class ReviewService
         if (! $hasSubscription) {
             return [
                 'can_review' => false,
-                'reason' => 'يجب أن تكون مسجلاً في هذه الدورة',
+                'reason' => __('reviews.must_be_enrolled'),
             ];
         }
 
@@ -191,7 +191,7 @@ class ReviewService
 
         return [
             'can_review' => false,
-            'reason' => 'نوع الدورة غير صالح',
+            'reason' => __('reviews.invalid_course_type'),
         ];
     }
 
@@ -206,7 +206,7 @@ class ReviewService
     ): TeacherReview {
         // Validate rating
         if ($rating < 1 || $rating > 5) {
-            throw new InvalidArgumentException('التقييم يجب أن يكون بين 1 و 5');
+            throw new InvalidArgumentException(__('reviews.rating_range_error'));
         }
 
         // Get academy ID
@@ -238,7 +238,7 @@ class ReviewService
     ): CourseReview {
         // Validate rating
         if ($rating < 1 || $rating > 5) {
-            throw new InvalidArgumentException('التقييم يجب أن يكون بين 1 و 5');
+            throw new InvalidArgumentException(__('reviews.rating_range_error'));
         }
 
         // Get academy ID

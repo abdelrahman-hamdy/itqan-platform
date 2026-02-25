@@ -198,8 +198,8 @@ sequenceDiagram
             <li><strong>Classic API</strong> — Legacy API for installments integration</li>
         </ul>
         <p>Keys use format <code>egy_sk_live_*</code> for live, <code>egy_sk_test_*</code> for sandbox.
-        Current config has <code>PAYMOB_SANDBOX=true</code> — update to <code>false</code> for production
-        card processing.</p>
+        Default is production mode (<code>false</code>). Set <code>PAYMOB_SANDBOX=true</code> in
+        <code>.env</code> for local sandbox testing.</p>
     </div>
 </div>
 
