@@ -536,18 +536,12 @@ class SessionController extends Controller
             ->get();
 
         $formatted = $records->map(function ($record) {
-            // Normalize 'leaved' → 'left' for mobile compatibility
-            $status = $record->status_raw ?? 'absent';
-            if ($status === 'leaved') {
-                $status = 'left';
-            }
-
             return [
                 'id'               => $record->id,
                 'student_id'       => $record->student_id,
                 'student_name'     => trim($record->student_name),
                 'student_avatar'   => $record->avatar_path ? asset('storage/'.$record->avatar_path) : null,
-                'status'           => $status,
+                'status'           => $record->status_raw ?? 'absent',
                 'attended_at'      => $record->attended_at,
                 'left_at'          => $record->left_at,
                 'duration_minutes' => $record->duration_minutes ?? 0,
@@ -561,7 +555,7 @@ class SessionController extends Controller
             'attended' => $records->where('status_raw', 'attended')->count(),
             'late'     => $records->where('status_raw', 'late')->count(),
             'absent'   => $records->where('status_raw', 'absent')->count(),
-            'left'     => $records->whereIn('status_raw', ['left', 'leaved'])->count(),
+            'left'     => $records->where('status_raw', 'left')->count(),
         ];
 
         return $this->success([
@@ -605,13 +599,10 @@ class SessionController extends Controller
             'override_reason' => ['nullable', 'string', 'max:500'],
         ]);
 
-        // Map 'left' → 'leaved' for DB enum compatibility
-        $dbStatus = $validated['status'] === 'left' ? 'leaved' : $validated['status'];
-
         DB::table('meeting_attendances')
             ->where('id', $attendanceId)
             ->update([
-                'attendance_status' => $dbStatus,
+                'attendance_status' => $validated['status'],
                 'updated_at'        => now(),
             ]);
 

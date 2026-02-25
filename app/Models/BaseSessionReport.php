@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Base Session Report Model
@@ -46,6 +47,7 @@ abstract class BaseSessionReport extends Model
     use AttendanceCalculatorTrait;
     use HasFactory;
     use ScopedToAcademy;
+    use SoftDeletes;
 
     /**
      * Shared fillable fields across all report types

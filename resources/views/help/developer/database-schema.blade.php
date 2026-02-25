@@ -7,7 +7,7 @@
 <p>
     The Itqan platform uses a <strong>single MySQL 8 database</strong> (<code>itqan_platform</code>) with
     <strong>~90 tables</strong> across 8 logical domains. All tenant-scoped tables carry an
-    <code>academy_id</code> foreign key. The database has 111 migration files.
+    <code>academy_id</code> foreign key. The database has 111+ migration files.
 </p>
 
 <div style="overflow-x: auto; direction: ltr;">
@@ -32,7 +32,7 @@
 </table>
 </div>
 
-<h2 id="core-erd">Core ERD — Users, Sessions & Subscriptions</h2>
+<h2 id="erd-users">ERD A — Users & Academy Structure</h2>
 
 <div class="help-mermaid">
 <pre class="mermaid">
@@ -68,10 +68,34 @@ erDiagram
     }
     student_profiles {
         uuid id PK
+        uuid academy_id FK
         uuid user_id FK
         string student_code
         string gender
     }
+    academic_grade_levels {
+        uuid id PK
+        uuid academy_id FK
+        string name
+        integer sort_order
+    }
+
+    academies ||--o{ users : "has many"
+    academies ||--o{ quran_teacher_profiles : "has many"
+    academies ||--o{ academic_teacher_profiles : "has many"
+    academies ||--o{ student_profiles : "has many"
+    academies ||--o{ academic_grade_levels : "has many"
+    users ||--o| quran_teacher_profiles : "has one"
+    users ||--o| academic_teacher_profiles : "has one"
+    users ||--o| student_profiles : "has one"
+</pre>
+</div>
+
+<h2 id="erd-sessions">ERD B — Session Inheritance & Attendance</h2>
+
+<div class="help-mermaid">
+<pre class="mermaid">
+erDiagram
     quran_sessions {
         uuid id PK
         uuid academy_id FK
@@ -92,12 +116,42 @@ erDiagram
     }
     interactive_course_sessions {
         uuid id PK
+        uuid academy_id FK
         uuid course_id FK
         integer session_number
-        date scheduled_date
-        time scheduled_time
+        datetime scheduled_at
         string status
     }
+    quran_session_attendances {
+        uuid id PK
+        uuid session_id FK
+        uuid student_id FK
+        string attendance_status
+    }
+    academic_session_attendances {
+        uuid id PK
+        uuid session_id FK
+        uuid student_id FK
+        string attendance_status
+    }
+    interactive_session_attendances {
+        uuid id PK
+        uuid session_id FK
+        uuid student_id FK
+        string attendance_status
+    }
+
+    quran_sessions ||--o{ quran_session_attendances : "tracks"
+    academic_sessions ||--o{ academic_session_attendances : "tracks"
+    interactive_course_sessions ||--o{ interactive_session_attendances : "tracks"
+</pre>
+</div>
+
+<h2 id="erd-subscriptions">ERD C — Subscriptions & Session Reports</h2>
+
+<div class="help-mermaid">
+<pre class="mermaid">
+erDiagram
     quran_subscriptions {
         uuid id PK
         uuid academy_id FK
@@ -115,19 +169,35 @@ erDiagram
         json weekly_schedule
         string status
     }
+    course_subscriptions {
+        uuid id PK
+        uuid student_id FK
+        uuid recorded_course_id FK
+        uuid interactive_course_id FK
+        string course_type
+        string billing_cycle
+    }
+    student_session_reports {
+        uuid id PK
+        uuid session_id FK
+        uuid student_id FK
+        uuid academy_id FK
+        string attendance_status
+        datetime evaluated_at
+        timestamp deleted_at
+    }
+    academic_session_reports {
+        uuid id PK
+        uuid academic_session_id FK
+        integer rating
+        string teacher_feedback
+        timestamp deleted_at
+    }
 
-    academies ||--o{ users : "has many"
-    academies ||--o{ quran_teacher_profiles : "has many"
-    academies ||--o{ academic_teacher_profiles : "has many"
-    users ||--o{ quran_teacher_profiles : "has one"
-    users ||--o{ academic_teacher_profiles : "has one"
-    users ||--|| student_profiles : "has one"
-    quran_teacher_profiles ||--o{ quran_sessions : "teaches"
-    academic_teacher_profiles ||--o{ academic_sessions : "teaches"
     quran_subscriptions ||--o{ quran_sessions : "counts toward"
     academic_subscriptions ||--o{ academic_sessions : "counts toward"
-    student_profiles ||--o{ quran_subscriptions : "enrolled in"
-    student_profiles ||--o{ academic_subscriptions : "enrolled in"
+    quran_sessions ||--o{ student_session_reports : "generates"
+    academic_sessions ||--o{ academic_session_reports : "generates"
 </pre>
 </div>
 
@@ -174,7 +244,7 @@ erDiagram
     quiz_attempts {
         uuid id PK
         uuid quiz_assignment_id FK
-        uuid student_id FK
+        bigint student_id FK
         integer score
         datetime submitted_at
     }
@@ -186,12 +256,15 @@ erDiagram
 </pre>
 </div>
 
-<div class="help-warning">
-    <i class="ri-alert-line help-callout-icon"></i>
+<div class="help-info">
+    <i class="ri-information-line help-callout-icon"></i>
     <div>
-        <strong>Key gotcha:</strong> <code>quiz_attempts.student_id</code> points to
-        <code>student_profiles.id</code> (NOT <code>users.id</code>). This differs from most
-        other tables where <code>student_id</code> → <code>users.id</code>.
+        <strong>Design Decision: <code>quiz_attempts.student_id</code></strong><br>
+        <code>quiz_attempts.student_id</code> references <code>student_profiles.id</code> (bigint),
+        not <code>users.id</code>. This is intentional — quiz attempts track a student's academic profile
+        (grade level, learning history), not a raw user account. The <code>course_subscriptions</code> table
+        uses <code>users.id</code> because subscriptions are a billing/access concern, not a learning-profile concern.
+        Do not refactor — 8+ API/service locations depend on <code>StudentProfile.id</code> being the FK.
     </div>
 </div>
 
@@ -260,7 +333,7 @@ erDiagram
     </thead>
     <tbody>
         <tr><td>Primary Keys</td><td>UUID v4 (most tables)</td><td><code>id uuid PK</code></td></tr>
-        <tr><td>Soft Deletes</td><td>40+ models have <code>deleted_at</code></td><td><code>deleted_at timestamp NULL</code></td></tr>
+        <tr><td>Soft Deletes</td><td>40+ models have <code>deleted_at</code>, including all session report tables</td><td><code>deleted_at timestamp NULL</code></td></tr>
         <tr><td>Tenant Scoping</td><td><code>academy_id</code> on all tenant-scoped tables</td><td><code>academy_id uuid FK → academies.id</code></td></tr>
         <tr><td>Polymorphic</td><td><code>{relation}_type</code> + <code>{relation}_id</code></td><td><code>payable_type, payable_id</code></td></tr>
         <tr><td>JSON Fields</td><td>Stored as JSON, cast in model</td><td><code>subject_ids json, weekly_schedule json</code></td></tr>
@@ -271,42 +344,47 @@ erDiagram
 </table>
 </div>
 
-<h2 id="gotchas">Known Schema Gotchas</h2>
+<h2 id="gotchas">Schema Notes</h2>
 
-<div class="help-danger">
-    <i class="ri-error-warning-line help-callout-icon"></i>
+<div class="help-info">
+    <i class="ri-information-line help-callout-icon"></i>
     <div>
-        <strong>attendance_status DB vs PHP mismatch:</strong>
-        The <code>attendance_status</code> DB enum value is <code>'leaved'</code> (typo),
-        but the PHP <code>AttendanceStatus</code> enum has <code>LEFT = 'left'</code>.
-        Always use the PHP enum — do NOT raw-query this column as a string.
+        <strong>attendance_status values:</strong>
+        The <code>attendance_status</code> DB enum was previously <code>'leaved'</code> (typo).
+        This was fixed by migration <code>2026_02_15_141614_fix_attendance_enum_values</code> — all values
+        are now <code>'left'</code>, matching the PHP <code>AttendanceStatus::LEFT</code> enum case.
     </div>
 </div>
 
-<div class="help-danger">
-    <i class="ri-error-warning-line help-callout-icon"></i>
+<div class="help-info">
+    <i class="ri-information-line help-callout-icon"></i>
     <div>
-        <strong>student_profiles has NO academy_id column.</strong>
-        It uses the <code>ScopedToAcademyViaRelationship</code> trait which scopes through
-        the <code>user → academy</code> relationship instead of a direct column.
-        Never try to query <code>student_profiles.academy_id</code> directly.
+        <strong>student_profiles.academy_id:</strong>
+        The <code>student_profiles</code> table has an <code>academy_id</code> column (added by migration
+        <code>2026_02_19_000002</code>) and uses a dual-mode scoping strategy: direct column for most queries,
+        plus <code>ScopedToAcademyViaRelationship</code> fallback through the <code>user → academy</code> path.
     </div>
 </div>
 
-<div class="help-warning">
-    <i class="ri-alert-line help-callout-icon"></i>
+<div class="help-info">
+    <i class="ri-information-line help-callout-icon"></i>
     <div>
-        <strong>InteractiveCourseSession has NO academy_id column.</strong>
-        It gets academy through <code>course → academy</code> relationship.
-        The model provides a virtual <code>academy_id</code> accessor for compatibility.
+        <strong>interactive_course_sessions.academy_id:</strong>
+        The <code>interactive_course_sessions</code> table has an <code>academy_id</code> column
+        (backfilled by migration <code>2025_12_30_152227</code>, indexed). The global academy scope
+        uses this direct column for filtering.
     </div>
 </div>
 
-<div class="help-warning">
-    <i class="ri-alert-line help-callout-icon"></i>
+<div class="help-info">
+    <i class="ri-information-line help-callout-icon"></i>
     <div>
-        <strong>student_session_reports does NOT use soft deletes.</strong>
-        Deleting a report is permanent. All other report tables follow normal patterns.
+        <strong>Session report tables use soft deletes:</strong>
+        All three report tables (<code>student_session_reports</code>, <code>academic_session_reports</code>,
+        <code>interactive_session_reports</code>) have a <code>deleted_at</code>
+        column (added by migration <code>2026_02_25_163930</code>). <code>BaseSessionReport</code> uses the
+        <code>SoftDeletes</code> trait, so deletions are always soft by default.
+        Note: Quran sessions use <code>student_session_reports</code> (there is no separate <code>quran_session_reports</code> table).
     </div>
 </div>
 

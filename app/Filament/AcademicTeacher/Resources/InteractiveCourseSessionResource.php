@@ -50,7 +50,6 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
 
     /**
      * Filter sessions to current teacher's courses only.
-     * InteractiveCourseSession doesn't have academy_id column - gets academy through course relationship.
      */
     protected static function scopeEloquentQuery(Builder $query): Builder
     {
@@ -229,12 +228,11 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     // ========================================
 
     /**
-     * Override to bypass parent's academy_id filter.
-     * InteractiveCourseSession doesn't have academy_id column.
+     * Override to apply teacher-scoped filtering instead of the default panel query.
      */
     public static function getEloquentQuery(): Builder
     {
-        // Get base model query directly to bypass parent's academy_id filter
+        // Get base model query directly to apply teacher/course-based filtering
         $query = static::getModel()::query()
             ->with([
                 'course',
