@@ -30,9 +30,10 @@
         {{-- Main grid: article nav sidebar + content ────────────────────── --}}
         <div class="flex gap-6 items-start">
 
-            {{-- Article navigation sidebar (right in RTL) ──────────────── --}}
+            {{-- Article navigation sidebar ────────────────────────────── --}}
             <aside class="hidden lg:block w-64 flex-shrink-0 sticky top-24 self-start">
-                <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4"
+                     @if($role === 'developer') dir="ltr" @endif>
                     <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-1">
                         {{ __('help.navigation.articles') }}
                     </h3>
@@ -53,7 +54,8 @@
                 <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
 
                     {{-- Article header --}}
-                    <div class="px-6 pt-6 pb-4 border-b border-gray-100">
+                    <div class="px-6 pt-6 pb-4 border-b border-gray-100"
+                         @if($role === 'developer') dir="ltr" @endif>
                         <div class="flex items-center gap-2 text-sm text-primary mb-2">
                             <i class="{{ $article['icon'] ?? 'ri-file-text-line' }}"></i>
                             <span>{{ $roleConfig['label'] ?? '' }}</span>
@@ -67,6 +69,7 @@
                     {{-- Article body --}}
                     <div class="px-6 py-6">
                         <div class="help-content"
+                             @if($role === 'developer') dir="ltr" @endif
                              x-data="helpArticleToc()"
                              x-init="buildToc()">
 

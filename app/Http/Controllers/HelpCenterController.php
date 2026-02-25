@@ -69,7 +69,10 @@ class HelpCenterController extends Controller
         $allRoles    = $config['roles'] ?? [];
         $commonArticles = $config['common']['articles'] ?? [];
 
-        return view('help.index', compact('userRole', 'roleConfig', 'allRoles', 'commonArticles'));
+        // For super_admin (developer role), also pass the admin guide so it shows alongside developer docs
+        $additionalSection = ($userRole === 'developer') ? ($config['roles']['admin'] ?? []) : [];
+
+        return view('help.index', compact('userRole', 'roleConfig', 'allRoles', 'commonArticles', 'additionalSection'));
     }
 
     /**

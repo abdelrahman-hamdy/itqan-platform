@@ -268,6 +268,13 @@
     padding-left: 0;
 }
 
+/* LTR override for developer (English) articles */
+.help-content[dir="ltr"] ul,
+.help-content[dir="ltr"] ol {
+    padding-right: 0;
+    padding-left: 1.5rem;
+}
+
 .help-content ul li,
 .help-content ol li {
     margin-bottom: 0.375rem;
@@ -345,4 +352,20 @@
     color: var(--color-primary-700, #1d4ed8);
     border-right-color: var(--color-primary-500, #3b82f6);
     font-weight: 500;
+}
+
+/* LTR override for developer (English) articles — flip TOC border to left side */
+[dir="ltr"] .help-toc-link {
+    border-right: none;
+    border-left: 2px solid transparent;
+    padding-right: 0;
+    padding-left: 0.75rem;
+}
+
+[dir="ltr"] .help-toc-link:hover {
+    border-left-color: #d1d5db;
+}
+
+[dir="ltr"] .help-toc-link.active {
+    border-left-color: var(--color-primary-500, #3b82f6);
 }

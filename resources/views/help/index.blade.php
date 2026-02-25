@@ -1,13 +1,21 @@
 @php
     // Group articles by their 'section' key for display
     $sectionLabels = [
-        'overview' => __('help.sections.overview'),
-        'quran'    => __('help.sections.quran'),
-        'academic' => __('help.sections.academic'),
-        'courses'  => __('help.sections.courses'),
-        'users'    => __('help.sections.users'),
-        'finance'  => __('help.sections.finance'),
-        'settings' => __('help.sections.settings'),
+        // Arabic sections
+        'overview'       => __('help.sections.overview'),
+        'quran'          => __('help.sections.quran'),
+        'academic'       => __('help.sections.academic'),
+        'courses'        => __('help.sections.courses'),
+        'users'          => __('help.sections.users'),
+        'finance'        => __('help.sections.finance'),
+        'settings'       => __('help.sections.settings'),
+        // Developer (English) sections
+        'architecture'   => 'Architecture',
+        'models'         => 'Models & Database',
+        'services'       => 'Services & Integrations',
+        'admin'          => 'Admin Panels',
+        'conventions'    => 'Code Conventions',
+        'infrastructure' => 'Deployment & Infrastructure',
     ];
 @endphp
 
@@ -66,6 +74,54 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         @foreach($sectionArticles as $item)
                             <a href="{{ route('help.article', ['role' => $userRole, 'slug' => $item['slug']]) }}"
+                               class="group flex items-start gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-primary/40 hover:shadow-md transition-all duration-200 card-hover">
+                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                                    <i class="{{ $item['article']['icon'] ?? 'ri-file-text-line' }} text-primary text-lg"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-semibold text-gray-900 text-sm leading-snug group-hover:text-primary transition-colors">
+                                        {{ $item['article']['title'] }}
+                                    </p>
+                                    @if(!empty($item['article']['description']))
+                                        <p class="text-gray-500 text-xs mt-0.5 line-clamp-2">
+                                            {{ $item['article']['description'] }}
+                                        </p>
+                                    @endif
+                                </div>
+                                <i class="ri-arrow-left-line text-gray-300 group-hover:text-primary text-sm flex-shrink-0 mt-0.5 transition-colors"></i>
+                            </a>
+                        @endforeach
+                    </div>
+                @endforeach
+            </section>
+        @endif
+
+        {{-- For super_admin: also show the Academy Admin guide alongside developer docs ── --}}
+        @if(!empty($additionalSection['articles']))
+            <section class="mb-10">
+                <div class="flex items-center gap-2 mb-5">
+                    <i class="{{ $additionalSection['icon'] ?? 'ri-book-line' }} text-xl text-primary"></i>
+                    <h2 class="text-xl font-bold text-gray-900">{{ $additionalSection['label'] ?? '' }}</h2>
+                </div>
+
+                @php
+                    $additionalGrouped = [];
+                    foreach ($additionalSection['articles'] as $slug => $art) {
+                        $section = $art['section'] ?? 'general';
+                        $additionalGrouped[$section][] = ['slug' => $slug, 'article' => $art];
+                    }
+                @endphp
+
+                @foreach($additionalGrouped as $sectionKey => $sectionArticles)
+                    @if(count($additionalGrouped) > 1)
+                        <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-5">
+                            {{ $sectionLabels[$sectionKey] ?? $sectionKey }}
+                        </h3>
+                    @endif
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        @foreach($sectionArticles as $item)
+                            <a href="{{ route('help.article', ['role' => 'admin', 'slug' => $item['slug']]) }}"
                                class="group flex items-start gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-primary/40 hover:shadow-md transition-all duration-200 card-hover">
                                 <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
                                     <i class="{{ $item['article']['icon'] ?? 'ri-file-text-line' }} text-primary text-lg"></i>
