@@ -56,7 +56,7 @@ class BrowseController extends Controller
         }
 
         $teachers = $query->orderBy('rating', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 50));
 
         return $this->success([
             'teachers' => collect($teachers->items())->map(fn ($teacher) => [
@@ -120,7 +120,7 @@ class BrowseController extends Controller
         }
 
         $teachers = $query->orderBy('rating', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 50));
 
         return $this->success([
             'teachers' => collect($teachers->items())->map(fn ($teacher) => [
@@ -182,7 +182,7 @@ class BrowseController extends Controller
         }
 
         $circles = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 50));
 
         return $this->success([
             'circles' => collect($circles->items())->map(fn ($circle) => [
@@ -234,7 +234,7 @@ class BrowseController extends Controller
         }
 
         $courses = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 50));
 
         return $this->success([
             'courses' => collect($courses->items())->map(fn ($course) => [
@@ -294,7 +294,7 @@ class BrowseController extends Controller
         }
 
         $courses = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min((int) $request->get('per_page', 15), 50));
 
         return $this->success([
             'courses' => collect($courses->items())->map(fn ($course) => [

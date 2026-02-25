@@ -522,14 +522,16 @@ class UnifiedHomeworkService implements UnifiedHomeworkServiceInterface
     // ========================================
 
     /**
-     * Get or create submission record for Academic homework
+     * Get submission record for Academic homework.
+     * Uses firstOrNew so the read path never writes to the database.
+     * The returned model is unsaved when no submission exists yet.
      */
     private function getOrCreateSubmission(
         AcademicHomework $homework,
         int $studentId,
         string $type
     ): AcademicHomeworkSubmission {
-        $submission = AcademicHomeworkSubmission::firstOrCreate(
+        return AcademicHomeworkSubmission::firstOrNew(
             [
                 'academic_homework_id' => $homework->id,
                 'student_id' => $studentId,
@@ -537,23 +539,20 @@ class UnifiedHomeworkService implements UnifiedHomeworkServiceInterface
             [
                 'academy_id' => $homework->academy_id,
                 'submission_status' => HomeworkSubmissionStatus::PENDING,
-                'max_score' => 10,  // Fixed grade scale
+                'max_score' => 10,
             ]
         );
-
-        return $submission;
     }
 
     /**
-     * Get or create submission record for Interactive homework
-     *
-     * Uses InteractiveCourseHomeworkSubmission model (2-model pattern)
+     * Get submission record for Interactive homework.
+     * Uses firstOrNew so the read path never writes to the database.
      */
     private function getOrCreateInteractiveSubmission(
         InteractiveCourseHomework $homework,
         int $studentId
     ): InteractiveCourseHomeworkSubmission {
-        $submission = InteractiveCourseHomeworkSubmission::firstOrCreate(
+        $submission = InteractiveCourseHomeworkSubmission::firstOrNew(
             [
                 'interactive_course_homework_id' => $homework->id,
                 'student_id' => $studentId,
@@ -562,7 +561,7 @@ class UnifiedHomeworkService implements UnifiedHomeworkServiceInterface
                 'academy_id' => $homework->academy_id,
                 'interactive_course_session_id' => $homework->interactive_course_session_id,
                 'submission_status' => HomeworkSubmissionStatus::PENDING,
-                'max_score' => 10,  // Fixed grade scale
+                'max_score' => 10,
             ]
         );
 

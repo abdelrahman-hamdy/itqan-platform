@@ -5,6 +5,10 @@ namespace App\Http\Controllers\Api\V1\Common;
 use App\Contracts\SupervisedChatGroupServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\AcademicIndividualLesson;
+use App\Models\InteractiveCourse;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -84,6 +88,15 @@ class SupervisedChatController extends Controller
                 __('Access denied. Only the teacher, student, or supervisor can create this chat.'),
                 403,
                 'FORBIDDEN'
+            );
+        }
+
+        // Validate entity ownership: ensure the entity actually links this teacher to this student
+        if (! $this->validateEntityOwnership($request->entity_type, (int) $request->entity_id, $teacher, $student)) {
+            return $this->error(
+                __('The specified entity does not belong to this teacher and student.'),
+                403,
+                'ENTITY_OWNERSHIP_MISMATCH'
             );
         }
 
@@ -198,5 +211,33 @@ class SupervisedChatController extends Controller
                 ['id' => $student->id, 'name' => $student->name],
             ],
         ], __('Supervisor-student conversation created successfully'));
+    }
+
+    /**
+     * Validate that the entity actually belongs to the given teacher and student.
+     */
+    private function validateEntityOwnership(string $entityType, int $entityId, User $teacher, User $student): bool
+    {
+        return match ($entityType) {
+            'quran_individual' => QuranIndividualCircle::where('id', $entityId)
+                ->where('quran_teacher_id', $teacher->id)
+                ->where('student_id', $student->id)
+                ->exists(),
+
+            'academic_lesson' => AcademicIndividualLesson::where('id', $entityId)
+                ->where('academic_teacher_id', $teacher->academicTeacherProfile?->id ?? 0)
+                ->where('student_id', $student->id)
+                ->exists(),
+
+            'quran_circle' => QuranCircle::where('id', $entityId)
+                ->where('quran_teacher_id', $teacher->id)
+                ->exists(),
+
+            'interactive_course' => InteractiveCourse::where('id', $entityId)
+                ->where('assigned_teacher_id', $teacher->academicTeacherProfile?->id ?? 0)
+                ->exists(),
+
+            default => false,
+        };
     }
 }

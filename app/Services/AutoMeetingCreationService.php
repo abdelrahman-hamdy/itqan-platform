@@ -6,6 +6,9 @@ use Exception;
 use App\Contracts\AutoMeetingCreationServiceInterface;
 use App\Enums\SessionStatus;
 use App\Models\Academy;
+use App\Models\AcademicSession;
+use App\Models\BaseSession;
+use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\VideoSettings;
 use Carbon\Carbon;
@@ -168,31 +171,45 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
         // 4. Are in 'scheduled' status
         // 5. Should have meetings created now based on the timing settings
 
-        $sessions = QuranSession::where('academy_id', $academy->id)
+        $sessionFilter = function (BaseSession $session) use ($videoSettings): bool {
+            $scheduledAt = Carbon::parse($session->scheduled_at);
+            $createAt = $videoSettings->getMeetingCreationTime($scheduledAt);
+
+            return now()->gte($createAt)
+                && $videoSettings->isTimeAllowed($scheduledAt)
+                && ! $videoSettings->isDayBlocked($scheduledAt);
+        };
+
+        $quranSessions = QuranSession::where('academy_id', $academy->id)
             ->where('status', SessionStatus::SCHEDULED)
-            ->whereNull('meeting_room_name') // No meeting room created yet
+            ->whereNull('meeting_room_name')
             ->whereNotNull('scheduled_at')
-            ->whereBetween('scheduled_at', [
-                $startTime,
-                $endTime,
-            ])
+            ->whereBetween('scheduled_at', [$startTime, $endTime])
             ->with(['academy', 'teacher', 'individualCircle', 'circle'])
             ->get()
-            ->filter(function ($session) use ($videoSettings) {
-                // Check if it's time to create the meeting
-                $scheduledAt = Carbon::parse($session->scheduled_at);
-                $createAt = $videoSettings->getMeetingCreationTime($scheduledAt);
+            ->filter($sessionFilter);
 
-                // Should create meeting if current time is past the creation time
-                return now()->gte($createAt);
-            })
-            ->filter(function ($session) use ($videoSettings) {
-                // Check time and day restrictions
-                $scheduledAt = Carbon::parse($session->scheduled_at);
+        $academicSessions = AcademicSession::where('academy_id', $academy->id)
+            ->where('status', SessionStatus::SCHEDULED)
+            ->whereNull('meeting_room_name')
+            ->whereNotNull('scheduled_at')
+            ->whereBetween('scheduled_at', [$startTime, $endTime])
+            ->with(['academy', 'academicTeacher'])
+            ->get()
+            ->filter($sessionFilter);
 
-                return $videoSettings->isTimeAllowed($scheduledAt)
-                    && ! $videoSettings->isDayBlocked($scheduledAt);
-            });
+        $interactiveSessions = InteractiveCourseSession::where('academy_id', $academy->id)
+            ->where('status', SessionStatus::SCHEDULED)
+            ->whereNull('meeting_room_name')
+            ->whereNotNull('scheduled_at')
+            ->whereBetween('scheduled_at', [$startTime, $endTime])
+            ->with(['course.academy', 'course.assignedTeacher'])
+            ->get()
+            ->filter($sessionFilter);
+
+        $sessions = $quranSessions
+            ->concat($academicSessions)
+            ->concat($interactiveSessions);
 
         return $sessions;
     }
@@ -200,7 +217,7 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
     /**
      * Create a meeting for a specific session
      */
-    private function createMeetingForSession(QuranSession $session, VideoSettings $videoSettings): void
+    private function createMeetingForSession(BaseSession $session, VideoSettings $videoSettings): void
     {
         DB::beginTransaction();
 
@@ -241,7 +258,7 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
     /**
      * Build meeting options from academy settings
      */
-    private function buildMeetingOptions(QuranSession $session, VideoSettings $videoSettings): array
+    private function buildMeetingOptions(BaseSession $session, VideoSettings $videoSettings): array
     {
         return [
             'max_participants' => $videoSettings->default_max_participants,
@@ -271,25 +288,45 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
         Log::info('Starting expired meetings cleanup');
 
         try {
-            // Find sessions that should have ended
-            $expiredSessions = QuranSession::whereNotNull('meeting_room_name')
+            $expiredFilter = function (BaseSession $session): bool {
+                $videoSettings = VideoSettings::forAcademy($session->academy);
+
+                if (! $videoSettings->auto_end_meetings) {
+                    return false;
+                }
+
+                $scheduledEndTime = Carbon::parse($session->scheduled_at)
+                    ->addMinutes($session->duration_minutes ?? 60);
+                $actualEndTime = $videoSettings->getMeetingEndTime($scheduledEndTime);
+
+                return now()->gte($actualEndTime);
+            };
+
+            // Find sessions that should have ended across all session types
+            $expiredQuran = QuranSession::whereNotNull('meeting_room_name')
                 ->active()
                 ->whereNotNull('scheduled_at')
                 ->with('academy')
                 ->get()
-                ->filter(function ($session) {
-                    $videoSettings = VideoSettings::forAcademy($session->academy);
+                ->filter($expiredFilter);
 
-                    if (! $videoSettings->auto_end_meetings) {
-                        return false;
-                    }
+            $expiredAcademic = AcademicSession::whereNotNull('meeting_room_name')
+                ->active()
+                ->whereNotNull('scheduled_at')
+                ->with('academy')
+                ->get()
+                ->filter($expiredFilter);
 
-                    $scheduledEndTime = Carbon::parse($session->scheduled_at)
-                        ->addMinutes($session->duration_minutes ?? 60);
-                    $actualEndTime = $videoSettings->getMeetingEndTime($scheduledEndTime);
+            $expiredInteractive = InteractiveCourseSession::whereNotNull('meeting_room_name')
+                ->active()
+                ->whereNotNull('scheduled_at')
+                ->with('course.academy')
+                ->get()
+                ->filter($expiredFilter);
 
-                    return now()->gte($actualEndTime);
-                });
+            $expiredSessions = $expiredQuran
+                ->concat($expiredAcademic)
+                ->concat($expiredInteractive);
 
             $results['sessions_checked'] = $expiredSessions->count();
 

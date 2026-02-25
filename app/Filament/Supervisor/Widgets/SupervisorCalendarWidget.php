@@ -664,6 +664,21 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                     return;
                 }
 
+                // Verify the session belongs to the supervisor's selected teacher
+                $sessionTeacherId = $record->quran_teacher_id
+                    ?? $record->academicTeacher?->user_id
+                    ?? $record->course?->assignedTeacher?->user_id;
+
+                if ($this->selectedTeacherId && $sessionTeacherId !== $this->selectedTeacherId) {
+                    Notification::make()
+                        ->title('خطأ')
+                        ->body('غير مصرح لك بتعديل هذه الجلسة')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
                 $timezone = AcademyContextService::getTimezone();
 
                 // Build the new scheduled_at datetime in the academy timezone

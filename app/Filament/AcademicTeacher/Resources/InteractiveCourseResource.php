@@ -300,7 +300,14 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
                         ->required(),
                 ])
                 ->action(function (array $data, $records) {
+                    $teacherProfileId = auth()->user()?->academicTeacherProfile?->id;
+
                     foreach ($records as $record) {
+                        // Verify ownership before updating to prevent cross-teacher mutations
+                        if ($record->assigned_teacher_id !== $teacherProfileId) {
+                            continue;
+                        }
+
                         $record->update([
                             'status' => $data['status'],
                         ]);

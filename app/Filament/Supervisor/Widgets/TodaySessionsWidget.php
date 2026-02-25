@@ -112,9 +112,9 @@ class TodaySessionsWidget extends BaseWidget
             return QuranSession::query()->whereRaw('1 = 0');
         }
 
-        $quranTeacherIds = $profile->getAssignedQuranTeacherIds();
-        $academicTeacherIds = $profile->getAssignedAcademicTeacherIds();
-        $interactiveCourseIds = $profile->getDerivedInteractiveCourseIds();
+        $quranTeacherIds = array_map('intval', $profile->getAssignedQuranTeacherIds());
+        $academicTeacherIds = array_map('intval', $profile->getAssignedAcademicTeacherIds());
+        $interactiveCourseIds = array_map('intval', $profile->getDerivedInteractiveCourseIds());
 
         // Get academic teacher profile IDs
         $academicProfileIds = [];

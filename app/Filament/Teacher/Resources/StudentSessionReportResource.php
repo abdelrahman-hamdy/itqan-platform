@@ -69,7 +69,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     {
         $teacher = Auth::user();
 
-        if (! $teacher->isQuranTeacher() && ! $teacher->isAcademicTeacher()) {
+        if (! $teacher->isQuranTeacher()) {
             return $query->whereRaw('1 = 0'); // Return no results
         }
 

@@ -100,7 +100,9 @@ class MeetingObserverService implements MeetingObserverServiceInterface
         $academyId = AcademyContextService::getCurrentAcademyId();
 
         if (! $academyId) {
-            return true; // Global view mode - can observe any session
+            // No academy context: validate against the session's own academy instead of granting
+            // global access, to prevent cross-tenant observation without an explicit context.
+            return $this->getSessionAcademyId($session) !== null;
         }
 
         return $this->getSessionAcademyId($session) === $academyId;

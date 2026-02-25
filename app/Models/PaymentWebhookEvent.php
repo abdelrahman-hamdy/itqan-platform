@@ -122,6 +122,41 @@ class PaymentWebhookEvent extends Model
     }
 
     /**
+     * Atomically find or create from webhook payload.
+     * Returns [$instance, $wasCreated] — use $wasCreated=false to detect duplicates.
+     *
+     * @return array{0: self, 1: bool}
+     */
+    public static function firstOrCreateFromPayload(
+        string $gateway,
+        string $eventType,
+        string $eventId,
+        array $payload,
+        ?int $paymentId = null,
+        ?int $academyId = null
+    ): array {
+        $obj = $payload['obj'] ?? $payload;
+
+        $instance = static::firstOrCreate(
+            ['event_id' => $eventId],
+            [
+                'gateway' => $gateway,
+                'event_type' => $eventType,
+                'payment_id' => $paymentId,
+                'academy_id' => $academyId,
+                'transaction_id' => (string) ($obj['id'] ?? ''),
+                'status' => ($obj['success'] ?? false) ? 'success' : 'failed',
+                'amount_cents' => (int) ($obj['amount_cents'] ?? 0),
+                'currency' => $obj['currency'] ?? config('currencies.default', 'SAR'),
+                'payload' => $payload,
+                'is_processed' => false,
+            ]
+        );
+
+        return [$instance, $instance->wasRecentlyCreated];
+    }
+
+    /**
      * Scope: Unprocessed events.
      */
     public function scopeUnprocessed($query)

@@ -178,6 +178,9 @@ class SessionMonitoringController extends Controller
             $academyId = AcademyContextService::getCurrentAcademyId();
             if ($academyId) {
                 $query->where('academy_id', $academyId);
+            } elseif (! $user->isSuperAdmin()) {
+                // Admin without academy context: deny all (SuperAdmin may have global view)
+                return $query->whereRaw('1 = 0');
             }
         } else {
             // Supervisor: scoped to assigned teachers
@@ -200,6 +203,8 @@ class SessionMonitoringController extends Controller
             $academyId = AcademyContextService::getCurrentAcademyId();
             if ($academyId) {
                 $query->where('academy_id', $academyId);
+            } elseif (! $user->isSuperAdmin()) {
+                return $query->whereRaw('1 = 0');
             }
         } else {
             $profileIds = $user->supervisorProfile?->getAssignedAcademicTeacherIds() ?? [];
@@ -221,6 +226,8 @@ class SessionMonitoringController extends Controller
             $academyId = AcademyContextService::getCurrentAcademyId();
             if ($academyId) {
                 $query->whereHas('course', fn ($q) => $q->where('academy_id', $academyId));
+            } elseif (! $user->isSuperAdmin()) {
+                return $query->whereRaw('1 = 0');
             }
         } else {
             $courseIds = $user->supervisorProfile?->getDerivedInteractiveCourseIds() ?? [];

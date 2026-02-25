@@ -66,11 +66,9 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
                     $query->where('academy_id', $teacherAcademy->id);
                 }
             });
-        } elseif ($teacherAcademy) {
-            // If no teacher profile but has academy, filter by academy only
-            $query->whereHas('course', function ($query) use ($teacherAcademy) {
-                $query->where('academy_id', $teacherAcademy->id);
-            });
+        } else {
+            // No teacher profile — deny all to prevent leaking other teachers' sessions
+            return $query->whereRaw('1 = 0');
         }
 
         return $query;

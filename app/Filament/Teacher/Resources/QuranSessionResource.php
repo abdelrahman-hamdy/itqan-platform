@@ -318,7 +318,8 @@ class QuranSessionResource extends BaseQuranSessionResource
     {
         $user = Auth::user();
 
-        return $record->quran_teacher_id === $user->id;
+        return $record->quran_teacher_id === $user->id
+            && $record->status === SessionStatus::SCHEDULED;
     }
 
     // ========================================

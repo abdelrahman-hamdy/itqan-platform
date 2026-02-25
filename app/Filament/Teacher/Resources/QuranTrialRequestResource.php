@@ -84,7 +84,11 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
 
                             Select::make('status')
                                 ->label('حالة الطلب')
-                                ->options(TrialRequestStatus::options())
+                                ->options([
+                                    TrialRequestStatus::PENDING->value => TrialRequestStatus::PENDING->label(),
+                                    TrialRequestStatus::SCHEDULED->value => TrialRequestStatus::SCHEDULED->label(),
+                                    TrialRequestStatus::CANCELLED->value => TrialRequestStatus::CANCELLED->label(),
+                                ])
                                 ->required()
                                 ->native(false)
                                 ->helperText('يمكن للمعلم تحديث حالة الطلب'),

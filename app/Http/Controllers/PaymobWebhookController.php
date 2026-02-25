@@ -80,9 +80,18 @@ class PaymobWebhookController extends Controller
             // Step 2: Parse payload
             $payload = WebhookPayload::fromPaymob($request->all());
 
-            // Step 3: Check for duplicate event (idempotency)
+            // Step 3+4: Atomically find-or-create the webhook event (idempotency)
             $eventId = $payload->getIdempotencyKey();
-            if (PaymentWebhookEvent::eventExists($eventId)) {
+            [$webhookEvent, $wasCreated] = PaymentWebhookEvent::firstOrCreateFromPayload(
+                gateway: 'paymob',
+                eventType: $payload->eventType,
+                eventId: $eventId,
+                payload: $request->all(),
+                paymentId: $payload->paymentId,
+                academyId: $payload->academyId,
+            );
+
+            if (! $wasCreated) {
                 Log::channel('payments')->info('Duplicate webhook event ignored', [
                     'event_id' => $eventId,
                 ]);
@@ -92,16 +101,6 @@ class PaymobWebhookController extends Controller
                     'message' => 'Duplicate event',
                 ]);
             }
-
-            // Step 4: Store webhook event
-            $webhookEvent = PaymentWebhookEvent::createFromPayload(
-                gateway: 'paymob',
-                eventType: $payload->eventType,
-                eventId: $eventId,
-                payload: $request->all(),
-                paymentId: $payload->paymentId,
-                academyId: $payload->academyId,
-            );
 
             // Step 5: Process the webhook
             $result = $this->processWebhook($payload, $webhookEvent);
