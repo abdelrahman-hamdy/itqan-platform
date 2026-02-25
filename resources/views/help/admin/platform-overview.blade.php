@@ -212,11 +212,11 @@
             </div>
             <div>
                 <p class="font-bold text-sm text-gray-900 leading-none">الموقع الأمامي</p>
-                <p class="text-xs text-gray-500 mt-0.5">للطلاب وأولياء الأمور</p>
+                <p class="text-xs text-gray-500 mt-0.5">للطلاب والمعلمين وأولياء الأمور</p>
             </div>
         </div>
         <p class="text-gray-600 text-xs leading-relaxed mb-3">
-            الموقع العادي للطلاب وأولياء الأمور لمتابعة الدراسة والجلسات والواجبات.
+            الموقع العادي للطلاب والمعلمين وأولياء الأمور لمتابعة الدراسة والجلسات والواجبات.
             تصميمه موجه للاستخدام اليومي وليس للإدارة.
         </p>
         <div class="space-y-1.5">
@@ -226,9 +226,8 @@
             <div class="flex items-center gap-1.5 text-xs text-gray-600">
                 <i class="ri-checkbox-circle-fill text-primary"></i> أولياء الأمور
             </div>
-            <div class="flex items-center gap-1.5 text-xs text-gray-500">
-                <i class="ri-checkbox-circle-fill text-gray-300"></i>
-                <span class="italic">المعلمون يستطيعون الدخول من هنا أيضًا</span>
+            <div class="flex items-center gap-1.5 text-xs text-gray-600">
+                <i class="ri-checkbox-circle-fill text-primary"></i> معلمو القرآن والمعلمون الأكاديميون
             </div>
         </div>
         <div class="mt-3 pt-3 border-t border-primary/20">
