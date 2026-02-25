@@ -22,6 +22,7 @@ class Info extends BaseInfo
                 });
             })
             ->latest()
+            ->limit(100)
             ->get()
             ->map(fn ($message) => $message->attachment)
             ->filter();
@@ -38,6 +39,7 @@ class Info extends BaseInfo
                 });
             })
             ->latest()
+            ->limit(100)
             ->get()
             ->map(fn ($message) => $message->attachment)
             ->filter();

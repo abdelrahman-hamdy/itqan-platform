@@ -9,10 +9,13 @@ class GradeHomeworkSubmissionRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     * Only teachers may grade homework submissions.
      */
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        return $user !== null && ($user->isQuranTeacher() || $user->isAcademicTeacher());
     }
 
     /**

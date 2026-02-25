@@ -18,6 +18,14 @@ use App\Rules\PasswordRules;
 class RegisterParentRequest extends BaseApiFormRequest
 {
     /**
+     * Allow unauthenticated access — registration endpoint is for guests.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
@@ -27,7 +35,7 @@ class RegisterParentRequest extends BaseApiFormRequest
         return [
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['required', 'string', 'max:20'],
             'password' => PasswordRules::create(),
             'student_code' => ['required', 'string'],

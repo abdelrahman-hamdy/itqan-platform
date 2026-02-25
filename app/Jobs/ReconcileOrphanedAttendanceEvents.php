@@ -97,15 +97,20 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
     {
         $chunkSize = 100;
 
-        // Find and process open join events older than 2 hours using chunking
-        // Filter by academy via session relationship
+        // Default orphan threshold: use the business config default session duration,
+        // converted to hours (rounded up), with a minimum of 2 hours as a safety floor.
+        $defaultDurationMinutes = config('business.sessions.default_duration_minutes', 60);
+        $orphanThresholdMinutes = max($defaultDurationMinutes, 120); // at least 2 hours
+
+        // Find and process open join events older than the orphan threshold using chunking.
+        // Filter by academy via session relationship.
         MeetingAttendanceEvent::where('event_type', MeetingEventType::JOINED)
             ->whereNull('left_at')
-            ->where('event_timestamp', '<', now()->subHours(2))
+            ->where('event_timestamp', '<', now()->subMinutes($orphanThresholdMinutes))
             ->whereHas('session', function ($query) use ($academy) {
                 $query->where('academy_id', $academy->id);
             })
-            ->chunk($chunkSize, function ($events) use (&$closedCount, &$skippedCount, &$totalFound, $livekitService, $academy) {
+            ->chunk($chunkSize, function ($events) use (&$closedCount, &$skippedCount, &$totalFound, $livekitService, $academy, $orphanThresholdMinutes) {
                 $totalFound += $events->count();
 
                 foreach ($events as $event) {
@@ -117,7 +122,7 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
                             Log::info('Participant still in room, skipping reconciliation', [
                                 'event_id' => $event->id,
                                 'participant_sid' => $event->participant_sid,
-                                'duration_hours' => $event->event_timestamp->diffInHours(now()),
+                                'duration_minutes' => $event->event_timestamp->diffInMinutes(now()),
                                 'academy_id' => $academy->id,
                             ]);
                             $skippedCount++;
@@ -125,8 +130,20 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
                             continue;
                         }
 
-                        // Close the event with estimated leave time (event timestamp + 2 hours as fallback)
-                        $estimatedLeaveTime = $event->event_timestamp->copy()->addHours(2);
+                        // Determine per-event threshold: prefer the actual session's
+                        // duration_minutes; fall back to the configured default.
+                        $session = $event->session;
+                        $sessionDurationMinutes = $session?->duration_minutes
+                            ?? config('business.sessions.default_duration_minutes', 60);
+
+                        // Estimated leave = join time + session duration (capped to now if in future)
+                        $estimatedLeaveTime = $event->event_timestamp->copy()
+                            ->addMinutes($sessionDurationMinutes);
+
+                        if ($estimatedLeaveTime->isAfter(now())) {
+                            $estimatedLeaveTime = now();
+                        }
+
                         $durationMinutes = $event->event_timestamp->diffInMinutes($estimatedLeaveTime);
 
                         $event->update([

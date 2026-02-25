@@ -34,13 +34,18 @@ class AutoRenewalAlert extends Component
             return;
         }
 
+        $user = Auth::user();
+        $academyId = $user?->academy_id;
+
         // Check if user has any active subscriptions with auto-renew enabled
         $quranSubscriptions = QuranSubscription::where('student_id', $userId)
+            ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
             ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->where('auto_renew', true)
             ->count();
 
         $academicSubscriptions = AcademicSubscription::where('student_id', $userId)
+            ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
             ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->where('auto_renew', true)
             ->count();

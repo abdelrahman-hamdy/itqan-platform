@@ -27,11 +27,11 @@ abstract class BaseApiFormRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
-     * Override in child classes if authorization is needed.
+     * Requires authentication at minimum; override in child classes for stricter checks.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user() !== null;
     }
 
     /**

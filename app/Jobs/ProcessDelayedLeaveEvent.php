@@ -59,6 +59,22 @@ class ProcessDelayedLeaveEvent implements ShouldQueue
      */
     public function handle(AttendanceEventServiceInterface $eventService): void
     {
+        // Validate sessionType against the known allowlist before any model lookup.
+        $allowedSessionTypes = [
+            QuranSession::class,
+            AcademicSession::class,
+            InteractiveCourseSession::class,
+        ];
+
+        if (! in_array($this->sessionType, $allowedSessionTypes, true)) {
+            Log::warning('[ProcessDelayedLeaveEvent] Invalid session type — aborting', [
+                'session_id' => $this->sessionId,
+                'session_type' => $this->sessionType,
+            ]);
+
+            return;
+        }
+
         Log::info('[ProcessDelayedLeaveEvent] Processing delayed leave event', [
             'session_id' => $this->sessionId,
             'session_type' => $this->sessionType,

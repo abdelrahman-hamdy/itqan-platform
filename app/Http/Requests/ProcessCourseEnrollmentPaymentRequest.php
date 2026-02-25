@@ -26,7 +26,7 @@ class ProcessCourseEnrollmentPaymentRequest extends FormRequest
             'payment_method' => 'required|in:credit_card,mada,stc_pay,bank_transfer',
             'card_number' => 'required_if:payment_method,credit_card,mada|string',
             'expiry_month' => 'required_if:payment_method,credit_card,mada|integer|min:1|max:12',
-            'expiry_year' => 'required_if:payment_method,credit_card,mada|integer|min:2024',
+            'expiry_year' => 'required_if:payment_method,credit_card,mada|integer|min:'.date('Y'),
             'cvv' => 'required_if:payment_method,credit_card,mada|string|size:3',
             'cardholder_name' => 'required_if:payment_method,credit_card,mada|string|max:255',
             'payment_gateway' => 'nullable|string',

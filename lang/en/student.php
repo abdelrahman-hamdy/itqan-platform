@@ -896,6 +896,11 @@ return [
         'add_card_info_message' => 'Make a new payment with the "Save card for future" option selected and your card will be saved automatically.',
         'understood' => 'OK, Got it',
         'tokenization_failed' => 'Failed to save card',
+        'method_not_found' => 'Payment method not found',
+        'delete_success' => 'Payment method deleted successfully',
+        'delete_error' => 'An error occurred while deleting the payment method',
+        'set_default_success' => 'Default payment method updated',
+        'set_default_error' => 'An error occurred while updating the payment method',
         'card_saved_success' => 'Card saved successfully',
         'card_already_saved' => 'This card is already saved',
         'redirecting_to_payment' => 'Redirecting to payment page...',
@@ -908,5 +913,29 @@ return [
         'mobile_wallet' => 'Mobile Wallet',
         'mobile_wallet_description' => 'Vodafone Cash, Orange Cash, Etisalat Cash',
         'security_note' => 'All payments are encrypted and protected',
+    ],
+    'trial_conversion' => [
+        'validation' => [
+            'package_required' => 'Please select a subscription package',
+            'package_invalid' => 'The selected package is invalid',
+            'billing_cycle_required' => 'Please select a billing period',
+            'billing_cycle_invalid' => 'The billing period is invalid',
+        ],
+        'errors' => [
+            'not_found' => 'The trial request was not found',
+            'already_converted' => 'This trial request has already been converted to a subscription',
+            'not_eligible' => 'This trial request is not eligible for conversion to a subscription',
+        ],
+        'success' => [
+            'created' => 'Subscription created successfully! Please complete payment to activate your subscription.',
+        ],
+        'billing_cycles' => [
+            'monthly_label' => 'Monthly',
+            'monthly_description' => 'Pay every month',
+            'quarterly_label' => 'Quarterly',
+            'quarterly_description' => 'Pay every 3 months (10% discount)',
+            'yearly_label' => 'Yearly',
+            'yearly_description' => 'Pay annually (20% discount)',
+        ],
     ],
 ];

@@ -11,9 +11,27 @@ class UpdateTeacherProfileRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     * Only the authenticated teacher may update their own profile.
      */
     public function authorize(): bool
     {
+        $user = $this->user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        // Must be a teacher type
+        if (! $user->isQuranTeacher() && ! $user->isAcademicTeacher()) {
+            return false;
+        }
+
+        // Must be updating their own profile (route {id} must match authenticated user's profile)
+        $profileId = $this->route('id') ?? $this->route('teacher');
+        if ($profileId !== null && (string) $profileId !== (string) $user->id) {
+            return false;
+        }
+
         return true;
     }
 

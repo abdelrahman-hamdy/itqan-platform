@@ -9,10 +9,13 @@ class SubmitInteractiveCourseHomeworkRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     * Only students may submit interactive course homework.
      */
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        return $user !== null && $user->isStudent();
     }
 
     /**

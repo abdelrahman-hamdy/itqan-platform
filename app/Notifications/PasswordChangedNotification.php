@@ -45,7 +45,7 @@ class PasswordChangedNotification extends Notification
             ->view('emails.password-changed', [
                 'user' => $notifiable,
                 'academy' => $this->academy,
-                'ipAddress' => $this->ipAddress,
+                'ipAddress' => htmlspecialchars($this->ipAddress ?? 'unknown', ENT_QUOTES, 'UTF-8'),
                 'subject' => 'تم تغيير كلمة المرور - '.$this->academy->name,
             ]);
     }
@@ -58,7 +58,7 @@ class PasswordChangedNotification extends Notification
         return [
             'type' => 'password_changed',
             'academy_id' => $this->academy->id,
-            'ip_address' => $this->ipAddress,
+            'ip_address' => htmlspecialchars($this->ipAddress ?? 'unknown', ENT_QUOTES, 'UTF-8'),
             'changed_at' => now()->toIso8601String(),
         ];
     }

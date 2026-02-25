@@ -9,6 +9,7 @@ use App\Models\QuranPackage;
 use App\Models\QuranTrialRequest;
 use App\Services\TrialConversionService;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -27,6 +28,7 @@ class TrialConversionModal extends Component
 {
     public bool $showModal = false;
 
+    #[Locked]
     public ?int $trialRequestId = null;
 
     public ?QuranTrialRequest $trialRequest = null;
@@ -59,10 +61,10 @@ class TrialConversionModal extends Component
     protected function messages(): array
     {
         return [
-            'selectedPackageId.required' => 'يرجى اختيار باقة الاشتراك',
-            'selectedPackageId.exists' => 'الباقة المختارة غير صالحة',
-            'selectedBillingCycle.required' => 'يرجى اختيار فترة الدفع',
-            'selectedBillingCycle.in' => 'فترة الدفع غير صالحة',
+            'selectedPackageId.required' => __('student.trial_conversion.validation.package_required'),
+            'selectedPackageId.exists' => __('student.trial_conversion.validation.package_invalid'),
+            'selectedBillingCycle.required' => __('student.trial_conversion.validation.billing_cycle_required'),
+            'selectedBillingCycle.in' => __('student.trial_conversion.validation.billing_cycle_invalid'),
         ];
     }
 
@@ -109,14 +111,14 @@ class TrialConversionModal extends Component
             ->find($trialRequestId);
 
         if (! $this->trialRequest) {
-            $this->errorMessage = 'لم يتم العثور على الطلب التجريبي';
+            $this->errorMessage = __('student.trial_conversion.errors.not_found');
 
             return;
         }
 
         // Ensure the trial request belongs to the authenticated user
         if ($this->trialRequest->student_id !== Auth::id()) {
-            $this->errorMessage = 'لم يتم العثور على الطلب التجريبي';
+            $this->errorMessage = __('student.trial_conversion.errors.not_found');
             $this->trialRequest = null;
 
             return;
@@ -126,9 +128,9 @@ class TrialConversionModal extends Component
         $conversionService = app(TrialConversionService::class);
         if (! $conversionService->isEligibleForConversion($this->trialRequest)) {
             if ($conversionService->wasConverted($this->trialRequest)) {
-                $this->errorMessage = 'تم تحويل هذا الطلب التجريبي إلى اشتراك بالفعل';
+                $this->errorMessage = __('student.trial_conversion.errors.already_converted');
             } else {
-                $this->errorMessage = 'هذا الطلب التجريبي غير مؤهل للتحويل إلى اشتراك';
+                $this->errorMessage = __('student.trial_conversion.errors.not_eligible');
             }
 
             return;
@@ -200,16 +202,16 @@ class TrialConversionModal extends Component
     {
         return [
             'monthly' => [
-                'label' => 'شهري',
-                'description' => 'دفع كل شهر',
+                'label' => __('student.trial_conversion.billing_cycles.monthly_label'),
+                'description' => __('student.trial_conversion.billing_cycles.monthly_description'),
             ],
             'quarterly' => [
-                'label' => 'ربع سنوي',
-                'description' => 'دفع كل 3 أشهر (خصم 10%)',
+                'label' => __('student.trial_conversion.billing_cycles.quarterly_label'),
+                'description' => __('student.trial_conversion.billing_cycles.quarterly_description'),
             ],
             'yearly' => [
-                'label' => 'سنوي',
-                'description' => 'دفع سنوي (خصم 20%)',
+                'label' => __('student.trial_conversion.billing_cycles.yearly_label'),
+                'description' => __('student.trial_conversion.billing_cycles.yearly_description'),
             ],
         ];
     }
@@ -219,11 +221,23 @@ class TrialConversionModal extends Component
         $this->validate();
 
         if (! $this->trialRequest) {
-            $this->errorMessage = 'لم يتم العثور على الطلب التجريبي';
+            $this->errorMessage = __('student.trial_conversion.errors.not_found');
 
             return;
         }
 
+        // Re-verify the trial request still belongs to the authenticated user before converting
+        $freshTrialRequest = QuranTrialRequest::where('id', $this->trialRequestId)
+            ->where('student_id', Auth::id())
+            ->first();
+
+        if (! $freshTrialRequest) {
+            $this->errorMessage = __('student.trial_conversion.errors.not_found');
+
+            return;
+        }
+
+        $this->trialRequest = $freshTrialRequest;
         $this->isProcessing = true;
         $this->errorMessage = null;
 
@@ -246,7 +260,7 @@ class TrialConversionModal extends Component
             // Dispatch success event
             $this->dispatch('trial-converted-success', [
                 'subscriptionId' => $subscription->id,
-                'message' => 'تم إنشاء الاشتراك بنجاح! يرجى إتمام عملية الدفع لتفعيل الاشتراك.',
+                'message' => __('student.trial_conversion.success.created'),
             ]);
 
         } catch (Exception $e) {

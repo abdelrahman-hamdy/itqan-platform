@@ -59,6 +59,10 @@ class CertificateIssuedNotification extends Notification implements ShouldQueue
     /**
      * Get the array representation of the notification (for database).
      *
+     * Stores only stable identifiers, not full URLs, to avoid stale/broken links
+     * stored in the notifications table. URLs should be generated at display time
+     * using the certificate_id (e.g. route('certificates.download', $data['certificate_id'])).
+     *
      * @return array<string, mixed>
      */
     public function toArray(object $notifiable): array
@@ -70,11 +74,8 @@ class CertificateIssuedNotification extends Notification implements ShouldQueue
             'certificate_type' => $this->certificate->certificate_type->value,
             'certificate_type_label' => $this->certificate->certificate_type->label(),
             'issued_at' => $this->certificate->issued_at->toDateTimeString(),
-            'download_url' => $this->certificate->download_url,
-            'view_url' => $this->certificate->view_url,
             'title' => 'تم إصدار شهادتك',
             'message' => 'تهانينا! تم إصدار شهادة '.$this->certificate->certificate_type->label().' لك.',
-            'action_url' => $this->certificate->download_url,
             'action_text' => 'عرض الشهادة',
         ];
     }

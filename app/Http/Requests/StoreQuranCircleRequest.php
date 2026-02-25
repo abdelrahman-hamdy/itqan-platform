@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\UserType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreQuranCircleRequest extends FormRequest
 {
@@ -25,7 +27,13 @@ class StoreQuranCircleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'quran_teacher_id' => 'required|exists:users,id',
+            'quran_teacher_id' => [
+                'required',
+                Rule::exists('users', 'id')->where(function ($query) {
+                    $query->where('user_type', UserType::QURAN_TEACHER->value)
+                          ->where('academy_id', $this->user()?->academy_id);
+                }),
+            ],
             'name' => 'required|string|max:100',
             'description' => 'nullable|string|max:500',
             'level' => 'required|in:beginner,elementary,intermediate,advanced,expert',

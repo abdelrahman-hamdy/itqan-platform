@@ -9,10 +9,17 @@ class AddLessonNoteRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     * Only teachers and students may add lesson notes.
      */
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        return $user !== null && (
+            $user->isQuranTeacher() ||
+            $user->isAcademicTeacher() ||
+            $user->isStudent()
+        );
     }
 
     /**

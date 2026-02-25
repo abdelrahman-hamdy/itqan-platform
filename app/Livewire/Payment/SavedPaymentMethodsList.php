@@ -12,6 +12,7 @@ use App\Services\Payment\PaymentMethodService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -27,6 +28,7 @@ class SavedPaymentMethodsList extends Component
 {
     public bool $showDeleteModal = false;
 
+    #[Locked]
     public ?int $deleteMethodId = null;
 
     public bool $isDeleting = false;
@@ -163,7 +165,7 @@ class SavedPaymentMethodsList extends Component
                 ->first();
 
             if (! $paymentMethod) {
-                $this->errorMessage = 'طريقة الدفع غير موجودة';
+                $this->errorMessage = __('student.saved_payment_methods.method_not_found');
                 $this->cancelDelete();
 
                 return;
@@ -172,7 +174,7 @@ class SavedPaymentMethodsList extends Component
             $paymentMethodService = app(PaymentMethodService::class);
             $paymentMethodService->deletePaymentMethod($paymentMethod);
 
-            $this->successMessage = 'تم حذف طريقة الدفع بنجاح';
+            $this->successMessage = __('student.saved_payment_methods.delete_success');
             $this->cancelDelete();
 
             // Refresh the list
@@ -187,7 +189,7 @@ class SavedPaymentMethodsList extends Component
                 'error' => $e->getMessage(),
             ]);
 
-            $this->errorMessage = 'حدث خطأ أثناء حذف طريقة الدفع';
+            $this->errorMessage = __('student.saved_payment_methods.delete_error');
         } finally {
             $this->isDeleting = false;
         }
@@ -207,7 +209,7 @@ class SavedPaymentMethodsList extends Component
                 ->first();
 
             if (! $paymentMethod) {
-                $this->errorMessage = 'طريقة الدفع غير موجودة';
+                $this->errorMessage = __('student.saved_payment_methods.method_not_found');
 
                 return;
             }
@@ -215,7 +217,7 @@ class SavedPaymentMethodsList extends Component
             $paymentMethodService = app(PaymentMethodService::class);
             $paymentMethodService->setDefaultPaymentMethod($user, $paymentMethod);
 
-            $this->successMessage = 'تم تعيين طريقة الدفع الافتراضية';
+            $this->successMessage = __('student.saved_payment_methods.set_default_success');
 
             // Refresh the list
             unset($this->paymentMethods);
@@ -229,7 +231,7 @@ class SavedPaymentMethodsList extends Component
                 'error' => $e->getMessage(),
             ]);
 
-            $this->errorMessage = 'حدث خطأ أثناء تحديث طريقة الدفع';
+            $this->errorMessage = __('student.saved_payment_methods.set_default_error');
         }
     }
 

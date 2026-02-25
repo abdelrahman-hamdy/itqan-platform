@@ -42,12 +42,10 @@ class ParentInvitationNotification extends Notification
             'email' => $notifiable->email,
         ]);
 
-        $studentsCount = $this->parentProfile->students()->count();
-        $studentNames = $this->parentProfile->students()
-            ->get()
-            ->pluck('full_name')
-            ->take(5)
-            ->join('، ');
+        // Load students once to avoid two separate DB queries
+        $students = $this->parentProfile->students()->get();
+        $studentsCount = $students->count();
+        $studentNames = $students->pluck('full_name')->take(5)->join('، ');
 
         return (new MailMessage)
             ->subject('مرحباً بك في '.$academy->name)

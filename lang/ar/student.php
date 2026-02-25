@@ -504,6 +504,11 @@ return [
         'add_card_info_message' => 'قم بإجراء عملية دفع جديدة مع تحديد خيار "حفظ البطاقة للمستقبل" وسيتم حفظ بطاقتك تلقائيًا.',
         'understood' => 'حسنًا، فهمت',
         'tokenization_failed' => 'فشل في حفظ البطاقة',
+        'method_not_found' => 'طريقة الدفع غير موجودة',
+        'delete_success' => 'تم حذف طريقة الدفع بنجاح',
+        'delete_error' => 'حدث خطأ أثناء حذف طريقة الدفع',
+        'set_default_success' => 'تم تعيين طريقة الدفع الافتراضية',
+        'set_default_error' => 'حدث خطأ أثناء تحديث طريقة الدفع',
         'card_saved_success' => 'تم حفظ البطاقة بنجاح',
         'card_already_saved' => 'هذه البطاقة محفوظة بالفعل',
         'redirecting_to_payment' => 'جاري التحويل إلى صفحة الدفع...',
@@ -914,5 +919,29 @@ return [
         'cancel_subscription_message' => 'هل أنت متأكد من إلغاء هذا الاشتراك؟ لن تتمكن من التراجع عن هذا الإجراء.',
         'delete_subscription_title' => 'حذف الاشتراك',
         'delete_subscription_message' => 'هل أنت متأكد من حذف هذا الاشتراك؟ سيتم حذفه نهائياً ولن تتمكن من استرجاعه.',
+    ],
+    'trial_conversion' => [
+        'validation' => [
+            'package_required' => 'يرجى اختيار باقة الاشتراك',
+            'package_invalid' => 'الباقة المختارة غير صالحة',
+            'billing_cycle_required' => 'يرجى اختيار فترة الدفع',
+            'billing_cycle_invalid' => 'فترة الدفع غير صالحة',
+        ],
+        'errors' => [
+            'not_found' => 'لم يتم العثور على الطلب التجريبي',
+            'already_converted' => 'تم تحويل هذا الطلب التجريبي إلى اشتراك بالفعل',
+            'not_eligible' => 'هذا الطلب التجريبي غير مؤهل للتحويل إلى اشتراك',
+        ],
+        'success' => [
+            'created' => 'تم إنشاء الاشتراك بنجاح! يرجى إتمام عملية الدفع لتفعيل الاشتراك.',
+        ],
+        'billing_cycles' => [
+            'monthly_label' => 'شهري',
+            'monthly_description' => 'دفع كل شهر',
+            'quarterly_label' => 'ربع سنوي',
+            'quarterly_description' => 'دفع كل 3 أشهر (خصم 10%)',
+            'yearly_label' => 'سنوي',
+            'yearly_description' => 'دفع سنوي (خصم 20%)',
+        ],
     ],
 ];

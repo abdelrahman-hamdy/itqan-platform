@@ -2,13 +2,21 @@
 
 namespace App\Http\Requests\QuranCircle;
 
+use App\Enums\UserType;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreGroupCircleScheduleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check();
+        $user = $this->user();
+
+        return $user !== null && in_array($user->user_type, [
+            UserType::QURAN_TEACHER->value,
+            UserType::ADMIN->value,
+            UserType::SUPER_ADMIN->value,
+            UserType::SUPERVISOR->value,
+        ]);
     }
 
     public function rules(): array

@@ -9,11 +9,16 @@ class SubmitHomeworkRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check();
+        $user = $this->user();
+
+        return $user && $user->isStudent();
     }
 
     public function rules(): array
     {
+        // Allowed MIME types for homework file submissions
+        $allowedMimes = 'pdf,doc,docx,xls,xlsx,ppt,pptx,txt,jpg,jpeg,png,gif,mp3,mp4,zip';
+
         // Dynamic validation based on homework submission requirements
         $rules = [];
 
@@ -29,8 +34,9 @@ class SubmitHomeworkRequest extends FormRequest
                     $rules['text'] = 'required|string|min:10';
                 }
                 if (in_array($homework->submission_type, ['file', 'both'])) {
+                    $maxKilobytes = isset($homework->max_file_size_mb) ? $homework->max_file_size_mb * 1024 : 10240;
                     $rules['files'] = 'required|array|min:1';
-                    $rules['files.*'] = 'file|max:'.($homework->max_file_size_mb * 1024 ?? 10240);
+                    $rules['files.*'] = 'file|mimes:'.$allowedMimes.'|max:'.$maxKilobytes;
                 }
             }
         }
@@ -40,7 +46,7 @@ class SubmitHomeworkRequest extends FormRequest
             $rules = [
                 'text' => 'required_without:files|string|min:10',
                 'files' => 'required_without:text|array',
-                'files.*' => 'file|max:10240',
+                'files.*' => 'file|mimes:'.$allowedMimes.'|max:10240',
             ];
         }
 

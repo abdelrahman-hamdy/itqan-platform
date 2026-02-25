@@ -9,10 +9,13 @@ class AssignInteractiveSessionHomeworkRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     * Only teachers may assign interactive session homework.
      */
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        return $user !== null && ($user->isQuranTeacher() || $user->isAcademicTeacher());
     }
 
     /**

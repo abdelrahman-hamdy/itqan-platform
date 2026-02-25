@@ -9,10 +9,13 @@ class RequestHomeworkRevisionRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     * Only students may request homework revisions.
      */
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        return $user !== null && $user->isStudent();
     }
 
     /**

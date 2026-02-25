@@ -15,6 +15,7 @@ use App\Models\QuranSubscription;
 use App\Models\User;
 use App\Services\CertificateService;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -29,18 +30,24 @@ class IssueCertificateModal extends Component
 {
     public $showModal = false;
 
+    #[Locked]
     public $subscriptionType; // 'quran', 'academic', 'interactive', 'group_quran'
 
+    #[Locked]
     public $subscriptionId;
 
+    #[Locked]
     public $subscription;
 
     // Group circle context
+    #[Locked]
     public $circleId;
 
+    #[Locked]
     public $circle;
 
     // Interactive course context
+    #[Locked]
     public $course;
 
     public $students = [];
@@ -263,6 +270,29 @@ class IssueCertificateModal extends Component
     public function issueCertificate()
     {
         $this->validate();
+
+        // Re-verify ownership before acting (defend against Livewire property tampering)
+        $user = Auth::user();
+        if ($this->subscriptionType === 'group_quran') {
+            if (! $this->circle || ($this->circle->academy_id !== $user->academy_id && ! $user->hasRole(UserType::SUPER_ADMIN->value))) {
+                abort(403, __('components.certificate.modal.messages.unauthorized'));
+            }
+        } elseif ($this->subscriptionType === 'interactive' && $this->subscriptionId === null) {
+            // Bulk interactive course mode — verify course
+            if (! $this->course || ($this->course->academy_id !== $user->academy_id && ! $user->hasRole(UserType::SUPER_ADMIN->value))) {
+                abort(403, __('components.certificate.modal.messages.unauthorized'));
+            }
+        } elseif ($this->subscription) {
+            // Single subscription — verify academy scope
+            $academyId = match ($this->subscriptionType) {
+                'quran', 'academic' => $this->subscription->academy_id ?? null,
+                'interactive' => $this->subscription->course->academy_id ?? null,
+                default => null,
+            };
+            if ($academyId && $academyId !== $user->academy_id && ! $user->hasRole(UserType::SUPER_ADMIN->value)) {
+                abort(403, __('components.certificate.modal.messages.unauthorized'));
+            }
+        }
 
         try {
             $certificateService = app(CertificateService::class);

@@ -4,7 +4,10 @@ namespace App\Jobs;
 
 use Exception;
 use Throwable;
+use App\Models\AcademicSession;
 use App\Models\BaseSession;
+use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
 use App\Services\EarningsCalculationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -76,8 +79,25 @@ class CalculateSessionEarningsJob implements ShouldQueue
     public function handle(EarningsCalculationService $earningsService): void
     {
         try {
-            // Re-fetch the session to ensure we have the latest data
+            // Validate the session class against the known allowlist before dynamic dispatch.
+            $allowedClasses = [
+                QuranSession::class,
+                AcademicSession::class,
+                InteractiveCourseSession::class,
+            ];
+
             $sessionClass = $this->sessionType;
+
+            if (! in_array($sessionClass, $allowedClasses, true)) {
+                Log::warning('CalculateSessionEarningsJob: invalid session type — aborting', [
+                    'session_type' => $sessionClass,
+                    'session_id' => $this->sessionId,
+                ]);
+
+                return;
+            }
+
+            // Re-fetch the session to ensure we have the latest data
             $session = $sessionClass::find($this->sessionId);
 
             if (! $session) {

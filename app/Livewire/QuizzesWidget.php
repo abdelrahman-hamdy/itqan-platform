@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Services\QuizService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
@@ -12,8 +13,10 @@ use Livewire\Component;
  */
 class QuizzesWidget extends Component
 {
+    #[Locked]
     public Model $assignable;
 
+    #[Locked]
     public ?int $studentId = null;
 
     public function mount(Model $assignable, ?int $studentId = null)

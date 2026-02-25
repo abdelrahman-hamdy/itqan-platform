@@ -148,6 +148,11 @@ class CleanupSoftDeletedDataCommand extends Command
         if (! $isDryRun && $count > 0) {
             $query->forceDelete();
             $this->info("  Deleted {$count} Quran subscriptions");
+            Log::info('Cleaned up soft-deleted records', [
+                'model' => QuranSubscription::class,
+                'count' => $count,
+                'older_than_days' => $days,
+            ]);
         }
 
         return $count;
@@ -172,6 +177,11 @@ class CleanupSoftDeletedDataCommand extends Command
         if (! $isDryRun && $count > 0) {
             $query->forceDelete();
             $this->info("  Deleted {$count} Academic subscriptions");
+            Log::info('Cleaned up soft-deleted records', [
+                'model' => AcademicSubscription::class,
+                'count' => $count,
+                'older_than_days' => $days,
+            ]);
         }
 
         return $count;
@@ -203,6 +213,11 @@ class CleanupSoftDeletedDataCommand extends Command
                     }
                 });
             $this->info("  Deleted {$count} Quran sessions");
+            Log::info('Cleaned up soft-deleted records', [
+                'model' => QuranSession::class,
+                'count' => $count,
+                'older_than_days' => $days,
+            ]);
         }
 
         return $count;
@@ -234,6 +249,11 @@ class CleanupSoftDeletedDataCommand extends Command
                     }
                 });
             $this->info("  Deleted {$count} Academic sessions");
+            Log::info('Cleaned up soft-deleted records', [
+                'model' => AcademicSession::class,
+                'count' => $count,
+                'older_than_days' => $days,
+            ]);
         }
 
         return $count;
@@ -274,6 +294,11 @@ class CleanupSoftDeletedDataCommand extends Command
                 }
             }
             $this->info("  Deleted {$deleted} attendance events");
+            Log::info('Cleaned up soft-deleted records', [
+                'model' => MeetingAttendanceEvent::class,
+                'count' => $deleted,
+                'older_than_days' => $days,
+            ]);
         }
 
         return $count;

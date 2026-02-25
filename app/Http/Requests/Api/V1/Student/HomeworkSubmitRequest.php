@@ -16,6 +16,17 @@ use App\Http\Requests\Api\BaseApiFormRequest;
 class HomeworkSubmitRequest extends BaseApiFormRequest
 {
     /**
+     * Determine if the user is authorized to make this request.
+     * Only students may submit homework.
+     */
+    public function authorize(): bool
+    {
+        $user = $this->user();
+
+        return $user !== null && $user->isStudent();
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>

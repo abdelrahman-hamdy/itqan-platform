@@ -3,10 +3,13 @@
 namespace App\Console\Commands;
 
 use Exception;
+use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\AttendanceCalculationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Collection;
 
 class CalculateAttendanceCommand extends Command
 {
@@ -71,11 +74,13 @@ class CalculateAttendanceCommand extends Command
     }
 
     /**
-     * Process a specific session
+     * Process a specific session by searching all session types.
      */
     private function processSpecificSession(int $sessionId, bool $isDryRun, bool $isForced): int
     {
-        $session = QuranSession::find($sessionId);
+        $session = QuranSession::find($sessionId)
+            ?? AcademicSession::find($sessionId)
+            ?? InteractiveCourseSession::find($sessionId);
 
         if (! $session) {
             $this->error("❌ Session {$sessionId} not found");
@@ -83,7 +88,19 @@ class CalculateAttendanceCommand extends Command
             return self::FAILURE;
         }
 
-        $this->info("📊 Processing session {$sessionId}...");
+        // For InteractiveCourseSession the academy comes through the course relationship;
+        // validate that a real academy exists for the resolved session.
+        if ($session->academy === null) {
+            $this->error("❌ Session {$sessionId} does not belong to a valid academy");
+            Log::warning('CalculateAttendanceCommand: session has no academy', [
+                'session_id' => $sessionId,
+                'session_type' => get_class($session),
+            ]);
+
+            return self::FAILURE;
+        }
+
+        $this->info("📊 Processing session {$sessionId} (".class_basename($session).')...');
 
         if ($isDryRun) {
             $this->simulateSessionCalculation($session);
@@ -101,25 +118,11 @@ class CalculateAttendanceCommand extends Command
     }
 
     /**
-     * Process all eligible sessions
+     * Process all eligible sessions across all session types.
      */
     private function processAllEligibleSessions(?int $academyId, bool $isDryRun, bool $isForced): int
     {
-        $query = QuranSession::countable()
-            ->with(['academy', 'meetingAttendances']);
-
-        if ($academyId) {
-            $query->where('academy_id', $academyId);
-        }
-
-        // Get sessions that need attendance calculation
-        if (! $isForced) {
-            $query->whereHas('meetingAttendances', function ($attendanceQuery) {
-                $attendanceQuery->where('is_calculated', false);
-            });
-        }
-
-        $sessions = $query->get();
+        $sessions = $this->collectEligibleSessions($academyId, $isForced);
 
         $this->info("📊 Found {$sessions->count()} sessions to process");
 
@@ -152,9 +155,35 @@ class CalculateAttendanceCommand extends Command
     }
 
     /**
+     * Collect eligible sessions from all session types (Quran, Academic, InteractiveCourse).
+     */
+    private function collectEligibleSessions(?int $academyId, bool $isForced): Collection
+    {
+        $buildQuery = function ($model) use ($academyId, $isForced) {
+            $query = $model::countable()->with(['academy', 'meetingAttendances']);
+
+            if ($academyId) {
+                $query->where('academy_id', $academyId);
+            }
+
+            if (! $isForced) {
+                $query->whereHas('meetingAttendances', function ($attendanceQuery) {
+                    $attendanceQuery->where('is_calculated', false);
+                });
+            }
+
+            return $query->get();
+        };
+
+        return $buildQuery(QuranSession::class)
+            ->merge($buildQuery(AcademicSession::class))
+            ->merge($buildQuery(InteractiveCourseSession::class));
+    }
+
+    /**
      * Simulate calculation for a single session
      */
-    private function simulateSessionCalculation(QuranSession $session): void
+    private function simulateSessionCalculation($session): void
     {
         $attendanceCount = $session->meetingAttendances()->count();
 
@@ -198,7 +227,7 @@ class CalculateAttendanceCommand extends Command
     /**
      * Display results for a single session
      */
-    private function displaySessionResults(QuranSession $session, array $results): void
+    private function displaySessionResults($session, array $results): void
     {
         $this->info("📈 Session {$session->id} Results:");
 

@@ -61,6 +61,16 @@ class AttendanceStatus extends Component
         $this->userId = $userId ?? Auth::id();
         $this->attendanceText = __('components.attendance.loading');
 
+        // Verify the session belongs to the current user's academy to prevent cross-tenant access
+        $session = $this->getSession();
+        if ($session) {
+            $sessionAcademyId = $session->academy_id ?? ($session->course->academy_id ?? null);
+            $user = Auth::user();
+            if ($sessionAcademyId && $user && ! $user->isSuperAdmin()) {
+                abort_if($sessionAcademyId !== $user->academy_id, 403);
+            }
+        }
+
         $this->loadSessionTiming();
         $this->updateAttendanceStatus();
     }

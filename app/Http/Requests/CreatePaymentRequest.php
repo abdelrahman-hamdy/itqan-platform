@@ -25,7 +25,7 @@ class CreatePaymentRequest extends FormRequest
         return [
             'subscription_type' => 'required|string|in:quran,academic,interactive,recorded',
             'subscription_id' => 'required|string',
-            'amount' => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min:1|max:999999',
             'currency' => 'nullable|string|in:SAR,USD,EGP',
             'payment_method' => 'nullable|string|in:card,wallet,bank_transfer',
         ];
@@ -44,7 +44,8 @@ class CreatePaymentRequest extends FormRequest
             'subscription_id.required' => 'معرف الاشتراك مطلوب',
             'amount.required' => 'المبلغ مطلوب',
             'amount.numeric' => 'المبلغ يجب أن يكون رقماً',
-            'amount.min' => 'المبلغ يجب أن يكون أكبر من صفر',
+            'amount.min' => 'المبلغ يجب أن يكون 1 على الأقل',
+            'amount.max' => 'المبلغ يتجاوز الحد الأقصى المسموح به',
             'currency.in' => 'العملة غير صالحة',
             'payment_method.in' => 'طريقة الدفع غير صالحة',
         ];

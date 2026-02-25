@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Exception;
+use App\Models\Academy;
 use App\Models\QuranSubscription;
 use App\Enums\SessionSubscriptionStatus;
 use Illuminate\Support\Facades\DB;
@@ -114,11 +115,15 @@ class SendRenewalRemindersCommand extends Command
         $sevenDayTarget = now()->addDays(7)->toDateString();
         $threeDayTarget = now()->addDays(3)->toDateString();
 
-        // Get subscriptions needing reminders by checking next_billing_date
+        // Get subscriptions needing reminders by checking next_billing_date.
+        // Always scope by academy_id (all known academies) to enforce tenant isolation
+        // even in dry-run mode.
+        $academyIds = Academy::pluck('id');
         $allActive = collect();
 
         // Query Quran subscriptions
-        $quranSubs = QuranSubscription::where('auto_renew', true)
+        $quranSubs = QuranSubscription::whereIn('academy_id', $academyIds)
+            ->where('auto_renew', true)
             ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->whereIn(DB::raw('DATE(next_billing_date)'), [$sevenDayTarget, $threeDayTarget])
             ->with('student.user')
@@ -126,7 +131,8 @@ class SendRenewalRemindersCommand extends Command
         $allActive = $allActive->merge($quranSubs);
 
         // Query Academic subscriptions
-        $academicSubs = AcademicSubscription::where('auto_renew', true)
+        $academicSubs = AcademicSubscription::whereIn('academy_id', $academyIds)
+            ->where('auto_renew', true)
             ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->whereIn(DB::raw('DATE(next_billing_date)'), [$sevenDayTarget, $threeDayTarget])
             ->with('student.user')

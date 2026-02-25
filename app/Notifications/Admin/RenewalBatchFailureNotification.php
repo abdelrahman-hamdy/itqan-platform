@@ -69,13 +69,24 @@ class RenewalBatchFailureNotification extends Notification
     /**
      * Get the array representation of the notification.
      *
+     * Stores only a compact summary to avoid huge payloads in the notifications table.
+     * The full results are logged separately for admin investigation.
+     *
      * @return array<string, mixed>
      */
     public function toArray(object $notifiable): array
     {
+        $processed = $this->results['processed'] ?? 0;
+        $successful = $this->results['successful'] ?? 0;
+        $failed = $this->results['failed'] ?? 0;
+        $failureRate = $processed > 0 ? round(($failed / $processed) * 100, 1) : 0;
+
         return [
             'type' => 'renewal_batch_failure',
-            'results' => $this->results,
+            'processed' => $processed,
+            'successful' => $successful,
+            'failed_count' => $failed,
+            'failure_rate' => $failureRate,
             'severity' => 'critical',
             'timestamp' => now()->toIso8601String(),
         ];

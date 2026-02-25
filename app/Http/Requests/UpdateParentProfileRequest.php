@@ -9,9 +9,22 @@ class UpdateParentProfileRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     * Only the authenticated parent may update their own profile.
      */
     public function authorize(): bool
     {
+        $user = $this->user();
+
+        if ($user === null || ! $user->isParent()) {
+            return false;
+        }
+
+        // Must be updating their own profile
+        $profileId = $this->route('id') ?? $this->route('parent');
+        if ($profileId !== null && (string) $profileId !== (string) $user->id) {
+            return false;
+        }
+
         return true;
     }
 

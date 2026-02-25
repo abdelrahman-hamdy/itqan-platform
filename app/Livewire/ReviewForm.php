@@ -189,7 +189,7 @@ class ReviewForm extends Component
             session()->flash('success', __('components.reviews.form.success.review_submitted'));
 
             // Refresh the page to show updated review
-            $this->redirect(request()->header('Referer'));
+            $this->redirect(back()->getTargetUrl());
 
         } catch (Exception $e) {
             session()->flash('error', __('components.reviews.form.errors.error_with_message', ['message' => $e->getMessage()]));

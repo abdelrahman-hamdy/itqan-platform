@@ -9,7 +9,9 @@ class StoreStudentReportRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check();
+        $user = $this->user();
+
+        return $user && ($user->isQuranTeacher() || $user->isAcademicTeacher() || $user->isAdmin() || $user->isSuperAdmin());
     }
 
     public function rules(): array

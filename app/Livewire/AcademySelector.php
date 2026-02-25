@@ -4,16 +4,19 @@ namespace App\Livewire;
 
 use App\Models\Academy;
 use App\Services\AcademyContextService;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class AcademySelector extends Component
 {
+    #[Locked]
     public $selectedAcademyId;
 
     public $academies = [];
 
     public $currentAcademy;
 
+    #[Locked]
     public $isGlobalView = false;
 
     public function mount()

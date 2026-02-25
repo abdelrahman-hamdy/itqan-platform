@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Exception;
+use App\Models\Academy;
 use App\Models\QuizAssignment;
 use App\Services\CronJobLogger;
 use Illuminate\Console\Command;
@@ -101,8 +102,14 @@ class SendQuizDeadlineRemindersCommand extends Command
             'assignments' => [],
         ];
 
-        // Get all quiz assignments with upcoming deadlines
+        // Get all quiz assignments with upcoming deadlines, scoped per-academy
+        // QuizAssignment has no direct academy_id column; scope via the quiz's academy_id
+        $academyIds = Academy::pluck('id');
+
         $assignments = QuizAssignment::with(['quiz', 'assignable'])
+            ->whereHas('quiz', function ($query) use ($academyIds) {
+                $query->whereIn('academy_id', $academyIds);
+            })
             ->whereNotNull('available_until')
             ->where('is_visible', true)
             ->where('available_until', '>', now())

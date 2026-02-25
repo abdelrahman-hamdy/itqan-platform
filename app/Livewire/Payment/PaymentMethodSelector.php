@@ -6,6 +6,7 @@ use Illuminate\Support\Collection;
 use App\Models\SavedPaymentMethod;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -20,6 +21,7 @@ use Livewire\Component;
  */
 class PaymentMethodSelector extends Component
 {
+    #[Locked]
     public ?int $selectedMethodId = null;
 
     public string $paymentType = 'saved'; // 'saved', 'new', 'wallet', 'apple_pay'

@@ -8,7 +8,9 @@ class RequestRevisionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check();
+        $user = $this->user();
+
+        return $user !== null && $user->isStudent();
     }
 
     public function rules(): array

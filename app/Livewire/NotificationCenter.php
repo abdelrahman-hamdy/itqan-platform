@@ -141,8 +141,15 @@ class NotificationCenter extends Component
             ->where('notifiable_type', get_class(auth()->user()))
             ->where('tenant_id', auth()->user()->academy_id);
 
-        if ($this->selectedCategory) {
-            $query->where('category', $this->selectedCategory);
+        // Validate selectedCategory against allowed enum values before using in query
+        $validCategory = null;
+        if ($this->selectedCategory !== null) {
+            $validValues = array_column(NotificationCategory::cases(), 'value');
+            $validCategory = in_array($this->selectedCategory, $validValues, true) ? $this->selectedCategory : null;
+        }
+
+        if ($validCategory) {
+            $query->where('category', $validCategory);
         }
 
         $notifications = $query->orderBy('created_at', 'desc')
@@ -154,7 +161,7 @@ class NotificationCenter extends Component
             ->where('notifiable_id', auth()->id())
             ->where('notifiable_type', get_class(auth()->user()))
             ->where('tenant_id', auth()->user()->academy_id)
-            ->when($this->selectedCategory, fn ($q) => $q->where('category', $this->selectedCategory))
+            ->when($validCategory, fn ($q) => $q->where('category', $validCategory))
             ->count();
 
         $this->hasMore = $notifications->count() < $totalCount;
