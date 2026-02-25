@@ -180,6 +180,10 @@ function openSessionDetail(sessionId) {
 let pendingEnrollCircleId = null;
 
 function showEnrollModal(circleId) {
+    @guest
+        window.location.href = "{{ route('login', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'redirect' => url()->current()]) }}";
+        return;
+    @endguest
     showConfirmModal({
         title: '{{ __('student.group_circle.modal_enroll_title') }}',
         message: '{{ __('student.group_circle.modal_enroll_message') }}',
