@@ -7,6 +7,7 @@ use App\Filament\Widgets\RecentActivitiesWidget;
 use App\Filament\Widgets\PlatformOverviewWidget;
 use App\Filament\Widgets\AcademyStatsWidget;
 use App\Services\AcademyContextService;
+use Filament\Actions\Action;
 use Filament\Pages\Dashboard as BaseDashboard;
 
 class Dashboard extends BaseDashboard
@@ -35,6 +36,18 @@ class Dashboard extends BaseDashboard
         }
 
         return 'مرحباً بك في لوحة تحكم منصة إتقان - إدارة جميع الأكاديميات';
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('help_center')
+                ->label(__('help.nav_label'))
+                ->icon('heroicon-o-question-mark-circle')
+                ->url('/help', shouldOpenInNewTab: true)
+                ->color('gray')
+                ->outlined(),
+        ];
     }
 
     protected function getHeaderWidgets(): array

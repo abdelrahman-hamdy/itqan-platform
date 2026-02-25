@@ -7,6 +7,7 @@ use App\Filament\Academy\Widgets\RenewalMetricsWidget;
 use App\Filament\Academy\Widgets\AcademyMonthlyStatsWidget;
 use App\Filament\Academy\Widgets\AcademyUserAnalyticsChartWidget;
 use App\Filament\Academy\Widgets\AcademySessionAnalyticsChartWidget;
+use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Pages\Dashboard as BaseDashboard;
 
@@ -36,6 +37,18 @@ class Dashboard extends BaseDashboard
         }
 
         return 'مرحباً بك في لوحة تحكم الأكاديمية';
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('help_center')
+                ->label(__('help.nav_label'))
+                ->icon('heroicon-o-question-mark-circle')
+                ->url('/help', shouldOpenInNewTab: true)
+                ->color('gray')
+                ->outlined(),
+        ];
     }
 
     public function getWidgets(): array
