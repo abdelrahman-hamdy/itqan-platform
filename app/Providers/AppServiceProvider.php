@@ -125,6 +125,7 @@ use App\Services\LiveKitService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -209,6 +210,13 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             URL::defaults(['subdomain' => config('multitenancy.default_tenant_subdomain', 'itqan-academy')]);
         }
+
+        // Fix AuthenticateSession redirect for subdomain routing.
+        // The default callback calls route('login') which requires a {subdomain} parameter
+        // from the domain group in routes/auth.php — causing a UrlGenerationException when
+        // the subdomain is not available (e.g. during session invalidation from Filament panels).
+        // Using url('/login') instead preserves the current request host (including subdomain).
+        AuthenticateSession::redirectUsing(fn () => url('/login'));
 
         // Register middleware aliases
         Route::aliasMiddleware('auth', CustomAuthenticate::class);
