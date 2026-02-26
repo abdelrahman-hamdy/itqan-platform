@@ -27,10 +27,6 @@ class HomeworkController extends Controller
     {
         $user = $request->user();
 
-        if (! $user->isAcademicTeacher()) {
-            return response()->json(['message' => __('auth.unauthorized')], 403);
-        }
-
         $homework = [];
         $academicTeacherId = $user->academicTeacherProfile?->id;
 

@@ -225,6 +225,62 @@ class EarningsController extends Controller
     }
 
     /**
+     * Get payouts list.
+     * Returns teacher payout requests with their approval status.
+     */
+    public function payouts(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Resolve teacher type for filtering
+        $teacherType = null;
+        $teacherId = null;
+
+        if ($user->isQuranTeacher() && $user->quranTeacherProfile) {
+            $teacherType = QuranTeacherProfile::class;
+            $teacherId = $user->quranTeacherProfile->id;
+        } elseif ($user->isAcademicTeacher() && $user->academicTeacherProfile) {
+            $teacherType = AcademicTeacherProfile::class;
+            $teacherId = $user->academicTeacherProfile->id;
+        }
+
+        if (! $teacherType || ! $teacherId) {
+            return $this->success([
+                'payouts' => [],
+                'total_finalized' => 0,
+                'total_pending' => 0,
+                'currency' => getCurrencyCode(),
+            ], __('Payouts retrieved successfully'));
+        }
+
+        $perPage = min((int) $request->get('per_page', 20), 100);
+
+        $finalizedEarnings = TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->finalized()
+            ->orderBy('session_completed_at', 'desc')
+            ->paginate($perPage);
+
+        $totalFinalized = TeacherEarning::forTeacher($teacherType, $teacherId)->finalized()->sum('amount');
+        $totalPending = TeacherEarning::forTeacher($teacherType, $teacherId)->unpaid()->sum('amount');
+
+        return $this->success([
+            'payouts' => collect($finalizedEarnings->items())->map(fn ($e) => [
+                'id' => $e->id,
+                'amount' => (float) $e->amount,
+                'formatted_amount' => $e->formatted_amount,
+                'calculation_method' => $e->calculation_method,
+                'session_completed_at' => $e->session_completed_at?->toDateString(),
+                'earning_month' => $e->earning_month?->format('Y-m'),
+                'created_at' => $e->created_at->toISOString(),
+            ])->toArray(),
+            'total_finalized' => (float) $totalFinalized,
+            'total_pending' => (float) $totalPending,
+            'currency' => getCurrencyCode(),
+            'pagination' => PaginationHelper::fromPaginator($finalizedEarnings),
+        ], __('Payouts retrieved successfully'));
+    }
+
+    /**
      * Build source breakdown array from a collection of TeacherEarning records.
      *
      * Groups earnings by session source type (quran_individual, quran_group,
