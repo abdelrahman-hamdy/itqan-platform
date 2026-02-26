@@ -29,7 +29,7 @@ class SubmitInteractiveCourseHomeworkRequest extends FormRequest
         return [
             'homework_id' => ['required', Rule::exists('interactive_course_homework', 'id')->where('academy_id', $this->user()?->academy_id)],
             'answer_text' => 'nullable|string',
-            'files.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png,gif,webp,mp3', // 10MB max
+            'files.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,jpg,jpeg,png,gif,webp,mp3,wav,mp4,webm,mov', // 10MB max
         ];
     }
 

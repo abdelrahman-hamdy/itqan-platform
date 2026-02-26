@@ -26,7 +26,13 @@ class EnrollStudentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'student_id' => ['required', Rule::exists('users', 'id')->where('academy_id', $this->user()?->academy_id)],
+            'student_id' => [
+                'required',
+                Rule::exists('users', 'id')->when(
+                    $this->user()?->academy_id,
+                    fn ($q) => $q->where('academy_id', $this->user()->academy_id)
+                ),
+            ],
         ];
     }
 

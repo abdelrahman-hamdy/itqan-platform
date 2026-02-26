@@ -37,6 +37,11 @@ class InteractiveCourseHomework extends Model
         'max_score',
         'status',
         'is_active',
+        'total_students',
+        'submitted_count',
+        'graded_count',
+        'late_count',
+        'average_score',
         'created_by',
         'updated_by',
     ];

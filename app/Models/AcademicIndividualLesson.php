@@ -79,11 +79,7 @@ class AcademicIndividualLesson extends Model
                     throw new \RuntimeException('academy_id is required to generate lesson_code');
                 }
                 $academyId = $model->academy_id;
-                $count = DB::transaction(function () use ($academyId) {
-                    static::withoutGlobalScopes()->where('academy_id', $academyId)->lockForUpdate()->count();
-
-                    return static::withoutGlobalScopes()->where('academy_id', $academyId)->count() + 1;
-                });
+                $count = static::withoutGlobalScopes()->where('academy_id', $academyId)->count() + 1;
                 $model->lesson_code = 'AL-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
             }
         });
