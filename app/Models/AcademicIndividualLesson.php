@@ -75,8 +75,15 @@ class AcademicIndividualLesson extends Model
 
         static::creating(function ($model) {
             if (empty($model->lesson_code)) {
-                $academyId = $model->academy_id ?? 2;
-                $count = static::where('academy_id', $academyId)->count() + 1;
+                if (! $model->academy_id) {
+                    throw new \RuntimeException('academy_id is required to generate lesson_code');
+                }
+                $academyId = $model->academy_id;
+                $count = DB::transaction(function () use ($academyId) {
+                    static::withoutGlobalScopes()->where('academy_id', $academyId)->lockForUpdate()->count();
+
+                    return static::withoutGlobalScopes()->where('academy_id', $academyId)->count() + 1;
+                });
                 $model->lesson_code = 'AL-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
             }
         });

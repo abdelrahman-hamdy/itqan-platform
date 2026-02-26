@@ -26,6 +26,13 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
     public int $tries = 3;
 
     /**
+     * Exponential backoff between retries (seconds).
+     *
+     * @var array<int>
+     */
+    public array $backoff = [30, 60, 120];
+
+    /**
      * The number of seconds the job can run before timing out.
      */
     public int $timeout = 120;
@@ -120,14 +127,17 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
             'cancelled_at' => now(),
         ]);
 
-        // Send notification to student
+        // Send notification to student (guard against null student relationship)
+        $student = $subscription->student;
         try {
-            $subscription->student->notify(new GenericEmailNotification(
-                title: 'إلغاء الاشتراك',
-                message: 'انتهت فترة السماح بعد فشل التجديد التلقائي. يرجى الاشتراك مرة أخرى لاستئناف الخدمة.',
-                actionUrl: null,
-                academy: $subscription->academy,
-            ));
+            if ($student) {
+                $student->notify(new GenericEmailNotification(
+                    title: 'إلغاء الاشتراك',
+                    message: 'انتهت فترة السماح بعد فشل التجديد التلقائي. يرجى الاشتراك مرة أخرى لاستئناف الخدمة.',
+                    actionUrl: null,
+                    academy: $subscription->academy,
+                ));
+            }
         } catch (Exception $e) {
             Log::error('Failed to send subscription cancelled notification', [
                 'subscription_id' => $subscription->id,

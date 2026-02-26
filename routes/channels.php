@@ -3,6 +3,7 @@
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
+use Namu\WireChat\Models\Conversation;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -63,6 +64,45 @@ Broadcast::channel('academy.{academyId}.meetings', function ($user, $academyId) 
     }
 
     return (int) $user->academy_id === (int) $academyId;
+});
+
+// Meeting presence channel — used by MeetingCommandEvent for real-time LiveKit commands.
+// Only authenticated users belonging to the same session's academy may join.
+Broadcast::channel('meeting.{sessionId}', function ($user, $sessionId) {
+    if (! $user || ! $user->academy_id) {
+        return false;
+    }
+    $academyId = $user->academy_id;
+
+    if (QuranSession::where('id', $sessionId)->where('academy_id', $academyId)->exists()) {
+        return ['id' => $user->id, 'name' => $user->name];
+    }
+
+    if (AcademicSession::where('id', $sessionId)->where('academy_id', $academyId)->exists()) {
+        return ['id' => $user->id, 'name' => $user->name];
+    }
+
+    if (InteractiveCourseSession::where('id', $sessionId)
+        ->whereHas('course', function ($query) use ($academyId) {
+            $query->where('academy_id', $academyId);
+        })
+        ->exists()) {
+        return ['id' => $user->id, 'name' => $user->name];
+    }
+
+    return false;
+});
+
+// Conversation channel — used by MessageReactionAdded and MessageEdited events.
+// Only authenticated users who are participants of the conversation may listen.
+Broadcast::channel('conversation.{conversationId}', function ($user, $conversationId) {
+    if (! $user) {
+        return false;
+    }
+
+    $conversation = Conversation::find($conversationId);
+
+    return $conversation && $user->belongsToConversation($conversation);
 });
 
 /*

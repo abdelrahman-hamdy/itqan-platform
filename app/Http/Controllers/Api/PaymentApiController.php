@@ -4,7 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\AcademicSubscription;
+use App\Models\InteractiveCourse;
 use App\Models\Payment;
+use App\Models\QuranSubscription;
+use App\Models\RecordedCourse;
 use App\Models\SavedPaymentMethod;
 use App\Services\Payment\PaymentMethodService;
 use App\Services\PaymentService;
@@ -30,7 +34,6 @@ class PaymentApiController extends Controller
     public function createIntent(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:1',
             'currency' => 'required|string|size:3',
             'payment_type' => 'required|string|in:course,subscription,session,service',
             'payment_method' => 'nullable|string|in:card,wallet,apple_pay',
@@ -49,11 +52,17 @@ class PaymentApiController extends Controller
             // Get current academy from context
             $academyId = $user->academy_id ?? request()->get('academy_id');
 
+            // SECURITY: Resolve canonical amount from DB — never trust client-supplied amount.
+            $canonicalAmountCents = $this->resolveCanonicalAmountCents($validated, $academyId);
+            if ($canonicalAmountCents === null) {
+                return $this->error('لم يتم العثور على السعر المطلوب', 404);
+            }
+
             // Create payment record first
             $payment = Payment::createPayment([
                 'academy_id' => $academyId,
                 'user_id' => $user->id,
-                'amount' => $validated['amount'] / 100, // Convert from cents
+                'amount' => $canonicalAmountCents / 100, // Convert from cents
                 'currency' => $validated['currency'],
                 'payment_type' => $validated['payment_type'],
                 'payment_method' => $validated['payment_method'] ?? 'card',
@@ -67,7 +76,7 @@ class PaymentApiController extends Controller
             $gateway = $this->paymentService->gateway('paymob');
 
             $result = $gateway->createPaymentIntent([
-                'amount' => $validated['amount'],
+                'amount' => $canonicalAmountCents,
                 'currency' => $validated['currency'],
                 'payment_method' => $validated['payment_method'] ?? 'card',
                 'customer' => [
@@ -113,13 +122,84 @@ class PaymentApiController extends Controller
     }
 
     /**
+     * Resolve the canonical price in cents from the database based on payment_type.
+     *
+     * Returns null if the payable entity cannot be found or has no valid price.
+     * This prevents clients from supplying a manipulated amount.
+     *
+     * @param  array       $validated  Validated request data
+     * @param  int|null    $academyId  Current tenant academy ID
+     * @return int|null    Price in cents, or null on failure
+     */
+    private function resolveCanonicalAmountCents(array $validated, ?int $academyId): ?int
+    {
+        $type = $validated['payment_type'];
+
+        if ($type === 'course') {
+            $courseId = $validated['course_id'] ?? null;
+            if (! $courseId) {
+                return null;
+            }
+
+            // Try InteractiveCourse first, then RecordedCourse, scoped to academy
+            $course = InteractiveCourse::when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+                ->find($courseId);
+            if ($course) {
+                $priceDecimal = $course->student_price ?? 0;
+
+                return (int) round($priceDecimal * 100);
+            }
+
+            $course = RecordedCourse::when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+                ->find($courseId);
+            if ($course) {
+                $priceDecimal = $course->price ?? 0;
+
+                return (int) round($priceDecimal * 100);
+            }
+
+            return null;
+        }
+
+        if ($type === 'subscription') {
+            $subscriptionId = $validated['subscription_id'] ?? null;
+            if (! $subscriptionId) {
+                return null;
+            }
+
+            // Try QuranSubscription
+            $sub = QuranSubscription::when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+                ->find($subscriptionId);
+            if ($sub) {
+                $price = $sub->getPriceForBillingCycle() ?? $sub->final_price ?? 0;
+
+                return (int) round($price * 100);
+            }
+
+            // Try AcademicSubscription
+            $sub = AcademicSubscription::when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+                ->find($subscriptionId);
+            if ($sub) {
+                $price = $sub->getPriceForBillingCycle() ?? $sub->final_price ?? 0;
+
+                return (int) round($price * 100);
+            }
+
+            return null;
+        }
+
+        // For 'session' and 'service' types there is no canonical price in DB yet —
+        // reject these until server-side pricing is implemented.
+        return null;
+    }
+
+    /**
      * Charge a saved payment method.
      */
     public function chargeSaved(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'saved_payment_method_id' => 'required|integer|exists:saved_payment_methods,id',
-            'amount' => 'required|numeric|min:1',
             'currency' => 'required|string|size:3',
             'payment_type' => 'required|string|in:course,subscription,session,service',
             'course_id' => 'nullable|integer|required_if:payment_type,course',
@@ -143,11 +223,18 @@ class PaymentApiController extends Controller
             return $this->notFound('طريقة الدفع غير موجودة أو منتهية الصلاحية');
         }
 
+        // SECURITY: Resolve canonical amount from DB — never trust client-supplied amount.
+        $academyId = $user->academy_id;
+        $canonicalAmountCents = $this->resolveCanonicalAmountCents($validated, $academyId);
+        if ($canonicalAmountCents === null) {
+            return $this->error('لم يتم العثور على السعر المطلوب', 404);
+        }
+
         try {
             // Charge using the saved payment method
             $result = $this->paymentMethodService->chargePaymentMethod(
                 $savedMethod,
-                $validated['amount'],
+                $canonicalAmountCents,
                 $validated['currency'],
                 [
                     'payment_type' => $validated['payment_type'],

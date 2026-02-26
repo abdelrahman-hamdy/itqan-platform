@@ -123,8 +123,8 @@ class ProcessDelayedLeaveEvent implements ShouldQueue
                 return;
             }
 
-            // Release back to queue for retry
-            $this->release($this->backoff);
+            // Release back to queue for retry with the appropriate backoff delay
+            $this->release($this->backoff[$this->attempts() - 1] ?? 120);
 
             return;
         }

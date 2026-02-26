@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class EnrollStudentRequest extends FormRequest
 {
@@ -25,7 +26,7 @@ class EnrollStudentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'student_id' => 'required|exists:users,id',
+            'student_id' => ['required', Rule::exists('users', 'id')->where('academy_id', $this->user()?->academy_id)],
         ];
     }
 

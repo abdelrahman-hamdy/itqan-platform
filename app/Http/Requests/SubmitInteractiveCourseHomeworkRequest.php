@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SubmitInteractiveCourseHomeworkRequest extends FormRequest
 {
@@ -26,9 +27,9 @@ class SubmitInteractiveCourseHomeworkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'homework_id' => 'required|exists:interactive_course_homework,id',
+            'homework_id' => ['required', Rule::exists('interactive_course_homework', 'id')->where('academy_id', $this->user()?->academy_id)],
             'answer_text' => 'nullable|string',
-            'files.*' => 'nullable|file|max:10240', // 10MB max
+            'files.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png,gif,webp,mp3', // 10MB max
         ];
     }
 

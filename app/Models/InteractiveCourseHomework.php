@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\HomeworkStatus;
+use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class InteractiveCourseHomework extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $table = 'interactive_course_homework';
 
@@ -36,11 +37,6 @@ class InteractiveCourseHomework extends Model
         'max_score',
         'status',
         'is_active',
-        'total_students',
-        'submitted_count',
-        'graded_count',
-        'late_count',
-        'average_score',
         'created_by',
         'updated_by',
     ];

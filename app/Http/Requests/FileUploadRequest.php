@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 class FileUploadRequest extends FormRequest
 {
     private const ALLOWED_MIMES = [
-        'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg',
+        'jpg', 'jpeg', 'png', 'gif', 'webp',
         'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
         'txt', 'csv',
         'mp3', 'wav', 'm4a',

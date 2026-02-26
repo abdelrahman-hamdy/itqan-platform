@@ -48,12 +48,20 @@ class MeetingCommandEvent implements ShouldBroadcastNow
 
     /**
      * Get the data to broadcast.
+     * Only known-safe keys from commandData are included to prevent accidental leakage
+     * if extra fields are added to the payload in future.
      */
     public function broadcastWith(): array
     {
+        $allowedKeys = [
+            'message_id', 'type', 'command', 'session_id', 'teacher_id',
+            'teacher_identity', 'timestamp', 'data', 'targets',
+            'requires_acknowledgment', 'priority', 'topic',
+        ];
+
         return [
             'session_id' => $this->session->id,
-            'command_data' => $this->commandData,
+            'command_data' => array_intersect_key($this->commandData, array_flip($allowedKeys)),
             'broadcast_at' => now()->toISOString(),
         ];
     }
