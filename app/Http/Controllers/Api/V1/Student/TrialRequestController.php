@@ -28,7 +28,7 @@ class TrialRequestController extends Controller
 
         // quran_trial_requests.student_id references StudentProfile.id
         $query = QuranTrialRequest::where('student_id', $student->id)
-            ->with(['quranTeacher.user']);
+            ->with(['quranTeacher.user', 'trialSession']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -58,7 +58,7 @@ class TrialRequestController extends Controller
 
         $trialRequest = QuranTrialRequest::where('id', $id)
             ->where('student_id', $student->id)
-            ->with(['quranTeacher.user'])
+            ->with(['quranTeacher.user', 'trialSession'])
             ->first();
 
         if (! $trialRequest) {
@@ -103,10 +103,10 @@ class TrialRequestController extends Controller
             return $this->notFound(__('Teacher not found or not available.'));
         }
 
-        // Check if student already has a pending/approved trial with this teacher
+        // Check if student already has a pending/scheduled trial with this teacher
         $existingRequest = QuranTrialRequest::where('student_id', $student->id)
             ->where('teacher_id', $validated['teacher_id'])
-            ->whereIn('status', ['pending', 'approved', 'scheduled'])
+            ->whereIn('status', ['pending', 'scheduled'])
             ->first();
 
         if ($existingRequest) {
@@ -118,15 +118,14 @@ class TrialRequestController extends Controller
             'academy_id' => $academy->id,
             'student_id' => $student->id,
             'teacher_id' => $validated['teacher_id'],
-            'student_notes' => $validated['student_notes'] ?? null,
+            'notes' => $validated['student_notes'] ?? null,
             'current_level' => $validated['current_level'] ?? null,
             'preferred_time' => $validated['preferred_time'] ?? null,
             'learning_goals' => $validated['learning_goals'] ?? null,
             'status' => 'pending',
-            'requested_at' => now(),
         ]);
 
-        $trialRequest->load(['quranTeacher.user']);
+        $trialRequest->load(['quranTeacher.user', 'trialSession']);
 
         return $this->success([
             'data' => $this->formatTrialRequest($trialRequest),
@@ -153,16 +152,13 @@ class TrialRequestController extends Controller
             return $this->notFound(__('Trial request not found.'));
         }
 
-        // Only allow cancellation of pending or approved requests
-        if (! in_array($trialRequest->status, ['pending', 'approved', 'scheduled'])) {
+        // Only allow cancellation of pending or scheduled requests
+        $statusValue = is_object($trialRequest->status) ? $trialRequest->status->value : $trialRequest->status;
+        if (! in_array($statusValue, ['pending', 'scheduled'])) {
             return $this->error(__('This trial request cannot be cancelled.'), 422);
         }
 
-        $trialRequest->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
-            'cancelled_by' => 'student',
-        ]);
+        $trialRequest->cancel();
 
         return $this->success(null, __('Trial request cancelled successfully'));
     }
@@ -179,18 +175,15 @@ class TrialRequestController extends Controller
             'teacher_avatar_url' => $request->quranTeacher?->user?->avatar
                 ? asset('storage/'.$request->quranTeacher->user->avatar)
                 : null,
-            'status' => $request->status,
-            'student_notes' => $request->student_notes,
-            'teacher_notes' => $request->teacher_notes,
+            'status' => is_object($request->status) ? $request->status->value : $request->status,
+            'student_notes' => $request->notes,
+            'rejection_reason' => $request->feedback,
             'current_level' => $request->current_level,
             'preferred_time' => $request->preferred_time,
             'learning_goals' => $request->learning_goals ?? [],
-            'rejection_reason' => $request->rejection_reason,
-            'scheduled_at' => $request->scheduled_at?->toIso8601String(),
-            'requested_at' => $request->requested_at?->toIso8601String() ?? $request->created_at->toIso8601String(),
-            'approved_at' => $request->approved_at?->toIso8601String(),
+            'scheduled_at' => $request->trialSession?->scheduled_at?->toIso8601String(),
+            'requested_at' => $request->created_at->toIso8601String(),
             'completed_at' => $request->completed_at?->toIso8601String(),
-            'cancelled_at' => $request->cancelled_at?->toIso8601String(),
             'created_at' => $request->created_at->toIso8601String(),
         ];
     }
