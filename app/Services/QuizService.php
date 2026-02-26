@@ -143,7 +143,7 @@ class QuizService implements QuizServiceInterface
 
         // Check if student can start a new attempt
         if (! $assignment->canStudentAttempt($studentId)) {
-            throw new Exception('لقد استنفدت جميع محاولاتك المتاحة');
+            throw new Exception(__('quiz.max_attempts_exceeded'));
         }
 
         return QuizAttempt::create([
@@ -159,7 +159,7 @@ class QuizService implements QuizServiceInterface
     public function submitAttempt(QuizAttempt $attempt, array $answers): QuizAttempt
     {
         if ($attempt->isCompleted()) {
-            throw new Exception('تم تقديم هذه المحاولة بالفعل');
+            throw new Exception(__('quiz.attempt_already_submitted'));
         }
 
         $attempt->submit($answers);
@@ -387,10 +387,11 @@ class QuizService implements QuizServiceInterface
                 ->where('student_id', $studentId)
                 ->where('enrollment_status', EnrollmentStatus::ENROLLED)
                 ->exists(),
-            RecordedCourse::class => $assignable->enrollments()
-                ->where('user_id', auth()->id())
-                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
-                ->exists(),
+            RecordedCourse::class => ($sp = \App\Models\StudentProfile::find($studentId)) !== null &&
+                $assignable->enrollments()
+                    ->where('student_id', $sp->user_id)
+                    ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+                    ->exists(),
             default => false,
         };
     }
@@ -403,13 +404,13 @@ class QuizService implements QuizServiceInterface
         $type = get_class($assignable);
 
         return match ($type) {
-            QuranCircle::class => $assignable->name ?? 'حلقة قرآن',
-            QuranIndividualCircle::class => $assignable->name ?? 'حلقة فردية',
-            AcademicIndividualLesson::class => $assignable->subscription?->teacher?->user?->name ?? 'درس أكاديمي',
-            AcademicSubscription::class => ($assignable->subject_name ?? 'درس خاص').' - '.($assignable->teacher?->user?->name ?? ''),
-            InteractiveCourse::class => $assignable->name ?? 'دورة تفاعلية',
-            RecordedCourse::class => $assignable->name ?? 'دورة مسجلة',
-            default => 'غير محدد',
+            QuranCircle::class => $assignable->name ?? __('quiz.assignable.quran_circle'),
+            QuranIndividualCircle::class => $assignable->name ?? __('quiz.assignable.individual_circle'),
+            AcademicIndividualLesson::class => $assignable->subscription?->teacher?->user?->name ?? __('quiz.assignable.academic_lesson'),
+            AcademicSubscription::class => ($assignable->subject_name ?? __('quiz.assignable.private_lesson')).' - '.($assignable->teacher?->user?->name ?? ''),
+            InteractiveCourse::class => $assignable->name ?? __('quiz.assignable.interactive_course'),
+            RecordedCourse::class => $assignable->name ?? __('quiz.assignable.recorded_course'),
+            default => __('quiz.assignable.unknown'),
         };
     }
 }

@@ -57,7 +57,12 @@ class CertificateService implements CertificateServiceInterface
     {
         // Check if certificate already issued
         if ($subscription->certificate_issued || $this->repository->existsForSubscription($subscription)) {
-            return $subscription->certificate;
+            $existing = $subscription->certificate;
+            if ($existing) {
+                return $existing;
+            }
+            // Certificate was revoked but flag not cleared — reset flag and re-issue
+            $this->repository->updateSubscriptionWithUrl($subscription, null);
         }
 
         // Verify completion
@@ -302,8 +307,13 @@ class CertificateService implements CertificateServiceInterface
             $this->repository->update($certificate, ['file_path' => $filePath]);
         }
 
+        $filePath = $certificate->file_path;
+        if (! str_starts_with($filePath, 'certificates/')) {
+            throw new \RuntimeException('Invalid certificate file path.');
+        }
+
         return Storage::download(
-            $certificate->file_path,
+            $filePath,
             "{$certificate->certificate_number}.pdf"
         );
     }

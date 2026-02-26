@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\Hash;
 
 class CreateSuperAdmin extends Command
 {
-    protected $signature = 'make:super-admin {email?}';
+    protected $signature = 'make:super-admin';
 
     protected $description = 'Create a super admin user';
 
     public function handle()
     {
-        $email = $this->argument('email') ?: $this->ask('Enter email for super admin');
+        $email = $this->ask('Enter email for super admin');
         $password = $this->secret('Enter password for super admin');
 
         // Super admin doesn't need an academy

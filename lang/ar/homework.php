@@ -35,4 +35,6 @@ return [
         'graded' => 'تم التقييم',
         'pending' => 'قيد الانتظار',
     ],
+
+    'invalid_file_type' => 'نوع الملف غير مسموح به. الأنواع المقبولة: PDF، صور، Word، Excel.',
 ];

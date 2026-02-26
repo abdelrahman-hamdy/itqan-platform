@@ -64,7 +64,19 @@ class HomeworkService implements HomeworkServiceInterface
         // Handle file uploads
         $files = [];
         if (isset($submissionData['files']) && is_array($submissionData['files'])) {
+            $allowedMimeTypes = [
+                'application/pdf',
+                'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'text/plain',
+            ];
             foreach ($submissionData['files'] as $file) {
+                if (! in_array($file->getMimeType(), $allowedMimeTypes)) {
+                    throw new \InvalidArgumentException(__('homework.invalid_file_type'));
+                }
                 $path = $file->store('homework/academic', 'public');
                 $files[] = [
                     'path' => $path,
@@ -104,7 +116,19 @@ class HomeworkService implements HomeworkServiceInterface
         // Handle file uploads for draft
         $files = [];
         if (isset($submissionData['files']) && is_array($submissionData['files'])) {
+            $allowedMimeTypes = [
+                'application/pdf',
+                'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'text/plain',
+            ];
             foreach ($submissionData['files'] as $file) {
+                if (! in_array($file->getMimeType(), $allowedMimeTypes)) {
+                    throw new \InvalidArgumentException(__('homework.invalid_file_type'));
+                }
                 $path = $file->store('homework/academic/drafts', 'public');
                 $files[] = [
                     'path' => $path,
@@ -160,7 +184,7 @@ class HomeworkService implements HomeworkServiceInterface
                     'type' => 'academic',
                     'id' => $submission->id,
                     'homework_id' => $submission->academic_homework_id,
-                    'title' => $submission->homework->title ?? 'واجب أكاديمي',
+                    'title' => $submission->homework->title ?? __('homework.types.academic_session'),
                     'description' => $submission->homework->description ?? '',
                     'due_date' => $submission->homework->due_date ?? null,
                     'status' => $submission->submission_status,
@@ -199,7 +223,7 @@ class HomeworkService implements HomeworkServiceInterface
                     'type' => 'interactive',
                     'id' => $submission->id,
                     'homework_id' => $hw?->id,
-                    'title' => $hw?->title ?? $hw?->session?->course?->title ?? 'واجب دورة تفاعلية',
+                    'title' => $hw?->title ?? $hw?->session?->course?->title ?? __('homework.types.interactive_course'),
                     'description' => $hw?->description ?? '',
                     'due_date' => $hw?->due_date,
                     'status' => $submission->submission_status,

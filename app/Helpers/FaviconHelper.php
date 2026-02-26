@@ -44,7 +44,12 @@ class FaviconHelper
     public static function linkTag(?Academy $academy = null): string
     {
         $url = static::get($academy);
-        $type = str_ends_with($url, '.svg') ? 'image/svg+xml' : 'image/png';
+        $type = match (true) {
+            str_ends_with($url, '.svg') => 'image/svg+xml',
+            str_ends_with($url, '.ico') => 'image/x-icon',
+            str_ends_with($url, '.jpg'), str_ends_with($url, '.jpeg') => 'image/jpeg',
+            default => 'image/png',
+        };
 
         return sprintf(
             '<link rel="icon" type="%s" href="%s">',
@@ -101,7 +106,6 @@ class FaviconHelper
             return filament()->getTenant();
         }
 
-        // Fallback to first academy
-        return Academy::first();
+        return null;
     }
 }

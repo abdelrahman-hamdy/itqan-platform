@@ -22,14 +22,13 @@ class LiveKitRoomManager
         $apiSecret = config('livekit.api_secret', '');
         $this->serverUrl = config('livekit.server_url');
 
-        // Use configured API URL for backend API calls
-        $apiUrl = config('livekit.api_url', str_replace('wss://', 'http://', $this->serverUrl));
+        // Use configured API URL for backend API calls (must be https://, not http://)
+        $apiUrl = config('livekit.api_url', str_replace('wss://', 'https://', $this->serverUrl));
 
         // Only initialize RoomServiceClient if we have valid credentials
         if ($apiKey && $apiSecret && $apiUrl) {
             Log::debug('Initializing LiveKit RoomServiceClient', [
                 'api_url' => $apiUrl,
-                'api_key' => $apiKey,
             ]);
             $this->roomService = new RoomServiceClient($apiUrl, $apiKey, $apiSecret);
         }

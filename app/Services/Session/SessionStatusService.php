@@ -154,7 +154,9 @@ class SessionStatusService
             return false;
         }
 
-        return DB::transaction(function () use ($session, $bufferMinutes) {
+        $meetingRoomName = null;
+
+        $completed = DB::transaction(function () use ($session, $bufferMinutes, &$meetingRoomName) {
             // Lock the session row to prevent concurrent updates
             $lockedSession = $session::lockForUpdate()->find($session->id);
 
@@ -181,23 +183,9 @@ class SessionStatusService
                 'actual_duration_minutes' => $lockedSession->duration_minutes ?? $this->getDefaultDurationMinutes(),
             ]);
 
-            // Refresh the original session instance
+            // Refresh the original session instance and capture room name before commit
             $session->refresh();
-
-            if ($session->meeting_room_name) {
-                try {
-                    $this->liveKitService->endMeeting($session->meeting_room_name);
-                    Log::info('LiveKit room closed on session auto-complete', [
-                        'session_id' => $session->id,
-                        'room_name' => $session->meeting_room_name,
-                    ]);
-                } catch (Exception $e) {
-                    Log::warning('Failed to close LiveKit room on auto-complete', [
-                        'session_id' => $session->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-            }
+            $meetingRoomName = $session->meeting_room_name;
 
             Log::info('Session auto-completed due to time expiration', [
                 'session_id' => $session->id,
@@ -206,6 +194,25 @@ class SessionStatusService
 
             return true;
         });
+
+        // End LiveKit room outside the transaction to avoid holding the row lock
+        // during a network call that could time out
+        if ($completed && $meetingRoomName) {
+            try {
+                $this->liveKitService->endMeeting($meetingRoomName);
+                Log::info('LiveKit room closed on session auto-complete', [
+                    'session_id' => $session->id,
+                    'room_name' => $meetingRoomName,
+                ]);
+            } catch (Exception $e) {
+                Log::warning('Failed to close LiveKit room on auto-complete', [
+                    'session_id' => $session->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return (bool) $completed;
     }
 
     /**
@@ -238,35 +245,67 @@ class SessionStatusService
     /**
      * Resolve session from ID across all session types.
      *
+     * Always scopes by the user's academy_id to prevent cross-tenant session access.
+     *
      * @param  string|null  $sessionType  'quran'|'academic'|'interactive' — avoids cross-type ID collision
      */
     public function resolveSession(int $sessionId, $user, ?string $sessionType = null)
     {
+        $academyId = $user?->academy_id;
+
         if ($sessionType === 'interactive') {
-            return InteractiveCourseSession::find($sessionId);
+            $q = InteractiveCourseSession::query();
+            if ($academyId) {
+                $q->whereHas('course', fn ($sub) => $sub->where('academy_id', $academyId));
+            }
+
+            return $q->find($sessionId);
         }
 
         if ($sessionType === 'academic') {
-            return AcademicSession::find($sessionId);
+            $q = AcademicSession::query();
+            if ($academyId) {
+                $q->where('academy_id', $academyId);
+            }
+
+            return $q->find($sessionId);
         }
 
         if ($sessionType === 'quran') {
-            return QuranSession::find($sessionId);
+            $q = QuranSession::query();
+            if ($academyId) {
+                $q->where('academy_id', $academyId);
+            }
+
+            return $q->find($sessionId);
         }
 
         // Fallback without type hint — query each model separately to avoid
         // returning the wrong session when integer IDs collide across tables.
-        $interactiveSession = InteractiveCourseSession::find($sessionId);
+        $iq = InteractiveCourseSession::query();
+        if ($academyId) {
+            $iq->whereHas('course', fn ($sub) => $sub->where('academy_id', $academyId));
+        }
+        $interactiveSession = $iq->find($sessionId);
         if ($interactiveSession) {
             return $interactiveSession;
         }
 
-        $academicSession = AcademicSession::find($sessionId);
+        $aq = AcademicSession::query();
+        if ($academyId) {
+            $aq->where('academy_id', $academyId);
+        }
+        $academicSession = $aq->find($sessionId);
         if ($academicSession) {
             return $academicSession;
         }
 
-        return QuranSession::find($sessionId);
+        $qq = QuranSession::query();
+        if ($academyId) {
+            $qq->where('academy_id', $academyId);
+        }
+
+        return $qq->find($sessionId);
     }
 
     /**

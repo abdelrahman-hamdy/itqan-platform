@@ -7,7 +7,7 @@ use Illuminate\Validation\Rules\Password;
 /**
  * Centralized password rules for the entire platform.
  *
- * Rule: minimum 6 characters, at least one letter, at least one number.
+ * Rule: minimum 8 characters, at least one letter, at least one number.
  *
  * Usage:
  *   'password' => ['required', 'confirmed', ...PasswordRules::create()]
@@ -18,11 +18,11 @@ class PasswordRules
     /**
      * Get the unified password validation rule.
      *
-     * Minimum 6 characters, at least one letter, at least one number.
+     * Minimum 8 characters, at least one letter, at least one number.
      */
     public static function rule(): Password
     {
-        return Password::min(6)->letters()->numbers();
+        return Password::min(8)->letters()->numbers();
     }
 
     /**
@@ -65,7 +65,7 @@ class PasswordRules
     {
         return [
             "{$field}.required" => __('كلمة المرور مطلوبة'),
-            "{$field}.min" => __('كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
+            "{$field}.min" => __('كلمة المرور يجب أن تكون 8 أحرف على الأقل'),
             "{$field}.letters" => __('كلمة المرور يجب أن تحتوي على حرف واحد على الأقل'),
             "{$field}.numbers" => __('كلمة المرور يجب أن تحتوي على رقم واحد على الأقل'),
             "{$field}.confirmed" => __('كلمة المرور غير متطابقة'),
@@ -82,7 +82,7 @@ class PasswordRules
     {
         return [
             "{$field}.required" => __('Password is required.'),
-            "{$field}.min" => __('Password must be at least 6 characters.'),
+            "{$field}.min" => __('Password must be at least 8 characters.'),
             "{$field}.letters" => __('Password must contain at least one letter.'),
             "{$field}.numbers" => __('Password must contain at least one number.'),
             "{$field}.confirmed" => __('Password confirmation does not match.'),
@@ -94,7 +94,7 @@ class PasswordRules
      */
     public static function minLength(): int
     {
-        return 6;
+        return 8;
     }
 
     /**
@@ -102,7 +102,7 @@ class PasswordRules
      */
     public static function description(): string
     {
-        return __('كلمة المرور يجب أن تكون 6 أحرف على الأقل وتحتوي على حرف ورقم');
+        return __('كلمة المرور يجب أن تكون 8 أحرف على الأقل وتحتوي على حرف ورقم على الأقل');
     }
 
     /**
@@ -110,6 +110,6 @@ class PasswordRules
      */
     public static function descriptionEn(): string
     {
-        return __('Password must be at least 6 characters and contain at least one letter and one number.');
+        return __('Password must be at least 8 characters and contain at least one letter and one number.');
     }
 }

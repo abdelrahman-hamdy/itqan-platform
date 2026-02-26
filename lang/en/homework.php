@@ -29,4 +29,6 @@ return [
         'graded' => 'Graded',
         'pending' => 'Pending',
     ],
+
+    'invalid_file_type' => 'File type not allowed. Accepted types: PDF, images, Word, Excel.',
 ];

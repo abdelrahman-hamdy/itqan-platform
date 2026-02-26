@@ -274,8 +274,9 @@ class UpdateSessionStatusesCommand extends Command
      */
     private function processQuranSessions(?int $academyId, bool $isDryRun, bool $isVerbose): array
     {
-        // Get base query
-        $query = QuranSession::query();
+        // Use withoutGlobalScopes so the scheduled job processes all academies
+        // (global scopes require an authenticated HTTP user, not available in CLI)
+        $query = QuranSession::withoutGlobalScopes();
 
         if ($academyId) {
             $query->where('academy_id', $academyId);
@@ -337,8 +338,8 @@ class UpdateSessionStatusesCommand extends Command
      */
     private function processAcademicSessions(?int $academyId, bool $isDryRun, bool $isVerbose): array
     {
-        // Get base query
-        $query = AcademicSession::query();
+        // Use withoutGlobalScopes so the scheduled job processes all academies
+        $query = AcademicSession::withoutGlobalScopes();
 
         if ($academyId) {
             $query->where('academy_id', $academyId);
@@ -400,8 +401,8 @@ class UpdateSessionStatusesCommand extends Command
      */
     private function processInteractiveSessions(?int $academyId, bool $isDryRun, bool $isVerbose): array
     {
-        // Get base query
-        $query = InteractiveCourseSession::query();
+        // Use withoutGlobalScopes so the scheduled job processes all academies
+        $query = InteractiveCourseSession::withoutGlobalScopes();
 
         // InteractiveCourseSession doesn't have academy_id directly, it gets it through course
         if ($academyId) {

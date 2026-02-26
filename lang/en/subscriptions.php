@@ -21,4 +21,8 @@ return [
         'started_watching' => 'You have started the course. Keep watching to complete the lessons.',
         'start_now' => 'Start the course now to achieve your learning goals.',
     ],
+
+    'type_quran' => 'Quran Subscription',
+    'type_academic' => 'Academic Subscription',
+    'type_course' => 'Course Subscription',
 ];

@@ -66,9 +66,9 @@ class SubscriptionService implements SubscriptionServiceInterface
     public function getSubscriptionTypes(): array
     {
         return [
-            self::TYPE_QURAN => 'اشتراك قرآن',
-            self::TYPE_ACADEMIC => 'اشتراك أكاديمي',
-            self::TYPE_COURSE => 'اشتراك دورة',
+            self::TYPE_QURAN => __('subscriptions.type_quran'),
+            self::TYPE_ACADEMIC => __('subscriptions.type_academic'),
+            self::TYPE_COURSE => __('subscriptions.type_course'),
         ];
     }
 
