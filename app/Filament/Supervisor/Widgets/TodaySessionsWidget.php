@@ -205,9 +205,11 @@ class TodaySessionsWidget extends BaseWidget
 
         // Use DB::table with raw subquery to avoid Eloquent's global scopes
         // We need to return an Eloquent Builder, so we use a model but override the table
+        // Alias must be 'quran_sessions' so Filament's secondary ORDER BY
+        // (quran_sessions.id asc) resolves correctly against the subquery alias.
         return QuranSession::query()
             ->withoutGlobalScopes()
-            ->from(DB::raw("({$unionSql}) as today_sessions"))
+            ->from(DB::raw("({$unionSql}) as quran_sessions"))
             ->setBindings($bindings);
     }
 }
