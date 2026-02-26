@@ -85,17 +85,21 @@ class SessionSchedulerService
         $graceMinutes = $this->settingsService->getGracePeriodMinutes($session);
         $graceDeadline = $session->scheduled_at->copy()->addMinutes($graceMinutes);
 
-        // Check if no student participation
-        $hasStudentParticipation = $session->meetingAttendances()
+        // Use eager-loaded collection to avoid N+1 queries (2 DB queries → 0)
+        $attendances = $session->relationLoaded('meetingAttendances')
+            ? $session->meetingAttendances
+            : $session->meetingAttendances()->get();
+
+        $hasStudentParticipation = $attendances
             ->where('user_type', 'student')
             ->where('total_duration_minutes', '>', 0)
-            ->exists();
+            ->isNotEmpty();
 
         // Check if no teacher participation (for logging purposes)
-        $hasTeacherParticipation = $session->meetingAttendances()
+        $hasTeacherParticipation = $attendances
             ->where('user_type', 'teacher')
             ->where('total_duration_minutes', '>', 0)
-            ->exists();
+            ->isNotEmpty();
 
         $shouldMarkAbsent = now()->gt($graceDeadline) && ! $hasStudentParticipation;
 

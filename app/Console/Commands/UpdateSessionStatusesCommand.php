@@ -282,7 +282,9 @@ class UpdateSessionStatusesCommand extends Command
             $query->where('academy_id', $academyId);
         }
 
-        $query->active();
+        // Only process sessions within a 48-hour window — prevents loading the entire
+        // historical backlog of stuck/orphaned SCHEDULED sessions from months ago.
+        $query->active()->where('scheduled_at', '>=', now()->subDay());
 
         // Count total sessions for progress tracking
         $totalCount = $query->count();
@@ -311,7 +313,7 @@ class UpdateSessionStatusesCommand extends Command
 
         // Process in chunks to prevent memory issues
         $query->with(['academy', 'circle', 'individualCircle', 'meetingAttendances'])
-            ->chunkById(200, function ($sessions) use (&$stats, &$processedCount, $isDryRun, $isVerbose) {
+            ->chunkById(50, function ($sessions) use (&$stats, &$processedCount, $isDryRun, $isVerbose) {
                 // Process status transitions using the unified service
                 if ($isDryRun) {
                     $chunkStats = $this->simulateStatusTransitions($sessions, $isVerbose, 'Quran session');
@@ -345,7 +347,7 @@ class UpdateSessionStatusesCommand extends Command
             $query->where('academy_id', $academyId);
         }
 
-        $query->active();
+        $query->active()->where('scheduled_at', '>=', now()->subDay());
 
         // Count total sessions for progress tracking
         $totalCount = $query->count();
@@ -374,7 +376,7 @@ class UpdateSessionStatusesCommand extends Command
 
         // Process in chunks to prevent memory issues
         $query->with(['academy', 'academicTeacher', 'student'])
-            ->chunkById(200, function ($sessions) use (&$stats, &$processedCount, $isDryRun, $isVerbose) {
+            ->chunkById(50, function ($sessions) use (&$stats, &$processedCount, $isDryRun, $isVerbose) {
                 // Process status transitions using the unified service
                 if ($isDryRun) {
                     $chunkStats = $this->simulateStatusTransitions($sessions, $isVerbose, 'Academic session');
@@ -411,7 +413,7 @@ class UpdateSessionStatusesCommand extends Command
             });
         }
 
-        $query->active();
+        $query->active()->where('scheduled_date', '>=', now()->subDay()->toDateString());
 
         // Count total sessions for progress tracking
         $totalCount = $query->count();
@@ -440,7 +442,7 @@ class UpdateSessionStatusesCommand extends Command
 
         // Process in chunks to prevent memory issues
         $query->with(['course.academy', 'course.assignedTeacher.user'])
-            ->chunkById(200, function ($sessions) use (&$stats, &$processedCount, $isDryRun, $isVerbose) {
+            ->chunkById(50, function ($sessions) use (&$stats, &$processedCount, $isDryRun, $isVerbose) {
                 // Process status transitions using the unified service
                 if ($isDryRun) {
                     $chunkStats = $this->simulateStatusTransitions($sessions, $isVerbose, 'Interactive session');
