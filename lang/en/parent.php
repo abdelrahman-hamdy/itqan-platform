@@ -527,6 +527,13 @@ return [
         'confirm_delete' => 'Are you sure you want to delete this?',
         'cannot_undo' => 'This action cannot be undone',
     ],
+    'stats' => [
+        'children' => 'Children',
+        'active_subscriptions' => 'Active Subscriptions',
+        'upcoming_sessions' => 'Upcoming Sessions',
+        'attendance_rate' => 'Attendance Rate',
+        'certificates' => 'Certificates',
+    ],
     'quick_stats' => [
         'selected_child' => 'Selected Child',
         'student' => 'Student',

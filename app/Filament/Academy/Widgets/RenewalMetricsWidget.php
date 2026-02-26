@@ -2,8 +2,6 @@
 
 namespace App\Filament\Academy\Widgets;
 
-use Carbon\Carbon;
-use Exception;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
@@ -11,7 +9,6 @@ use App\Models\SavedPaymentMethod;
 use Filament\Facades\Filament;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Facades\DB;
 
 class RenewalMetricsWidget extends BaseWidget
 {
@@ -91,46 +88,21 @@ class RenewalMetricsWidget extends BaseWidget
      */
     private function getTodayRenewalStats(int $academyId): array
     {
-        $today = now()->startOfDay();
-        $tomorrow = now()->addDay()->startOfDay();
+        $todayStart = now()->startOfDay()->toDateTimeString();
+        $todayEnd = now()->endOfDay()->toDateTimeString();
 
-        // Get Quran subscriptions that might have been renewed today
+        // Use DB-level JSON date filter to avoid loading all records into memory
         $quranRenewals = QuranSubscription::where('academy_id', $academyId)
             ->where('auto_renew', true)
             ->whereNotNull('metadata')
-            ->get()
-            ->filter(function ($subscription) use ($today, $tomorrow) {
-                $metadata = $subscription->metadata ?? [];
-                if (!isset($metadata['last_renewal_at'])) {
-                    return false;
-                }
+            ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.last_renewal_at')) BETWEEN ? AND ?", [$todayStart, $todayEnd])
+            ->get(['metadata']);
 
-                try {
-                    $lastRenewal = Carbon::parse($metadata['last_renewal_at']);
-                    return $lastRenewal->between($today, $tomorrow);
-                } catch (Exception $e) {
-                    return false;
-                }
-            });
-
-        // Get Academic subscriptions that might have been renewed today
         $academicRenewals = AcademicSubscription::where('academy_id', $academyId)
             ->where('auto_renew', true)
             ->whereNotNull('metadata')
-            ->get()
-            ->filter(function ($subscription) use ($today, $tomorrow) {
-                $metadata = $subscription->metadata ?? [];
-                if (!isset($metadata['last_renewal_at'])) {
-                    return false;
-                }
-
-                try {
-                    $lastRenewal = Carbon::parse($metadata['last_renewal_at']);
-                    return $lastRenewal->between($today, $tomorrow);
-                } catch (Exception $e) {
-                    return false;
-                }
-            });
+            ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.last_renewal_at')) BETWEEN ? AND ?", [$todayStart, $todayEnd])
+            ->get(['metadata']);
 
         $total = $quranRenewals->count() + $academicRenewals->count();
         $successful = 0;
@@ -167,48 +139,32 @@ class RenewalMetricsWidget extends BaseWidget
      */
     private function getAtRiskSubscriptionsCount(int $academyId): int
     {
-        // Get all active subscriptions with auto-renew enabled
-        $quranSubscriptions = QuranSubscription::where('academy_id', $academyId)
-            ->where('status', SessionSubscriptionStatus::ACTIVE)
+        // Get all auto-renewing student IDs in one query per subscription type
+        $quranStudentIds = QuranSubscription::where('academy_id', $academyId)
             ->where('auto_renew', true)
-            ->get();
+            ->whereIn('status', [SessionSubscriptionStatus::ACTIVE])
+            ->pluck('student_id');
 
-        $academicSubscriptions = AcademicSubscription::where('academy_id', $academyId)
-            ->where('status', SessionSubscriptionStatus::ACTIVE)
+        $academicStudentIds = AcademicSubscription::where('academy_id', $academyId)
             ->where('auto_renew', true)
-            ->get();
+            ->whereIn('status', [SessionSubscriptionStatus::ACTIVE])
+            ->pluck('student_id');
 
-        $atRiskCount = 0;
+        $allStudentIds = $quranStudentIds->merge($academicStudentIds)->filter()->unique();
 
-        // Check each subscription's student for saved card
-        foreach ($quranSubscriptions as $subscription) {
-            if ($subscription->student_id && !$this->hasSavedCard($subscription->student_id)) {
-                $atRiskCount++;
-            }
+        if ($allStudentIds->isEmpty()) {
+            return 0;
         }
 
-        foreach ($academicSubscriptions as $subscription) {
-            if ($subscription->student_id && !$this->hasSavedCard($subscription->student_id)) {
-                $atRiskCount++;
-            }
-        }
-
-        return $atRiskCount;
-    }
-
-    /**
-     * Check if user has a valid saved card
-     */
-    private function hasSavedCard(int $userId): bool
-    {
-        return SavedPaymentMethod::where('user_id', $userId)
+        // Count students WITH a valid saved card in one batch query
+        $withCard = SavedPaymentMethod::whereIn('user_id', $allStudentIds)
             ->where('gateway', 'paymob')
             ->where('is_active', true)
-            ->where(function ($query) {
-                $query->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
-            })
-            ->exists();
+            ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+            ->distinct('user_id')
+            ->count('user_id');
+
+        return $allStudentIds->count() - $withCard;
     }
 
     /**

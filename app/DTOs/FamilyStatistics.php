@@ -162,27 +162,27 @@ readonly class FamilyStatistics
     {
         return [
             [
-                'label' => 'الأبناء',
+                'label' => __('parent.stats.children'),
                 'value' => $this->totalChildren,
                 'icon' => 'users',
             ],
             [
-                'label' => 'الاشتراكات النشطة',
+                'label' => __('parent.stats.active_subscriptions'),
                 'value' => $this->activeSubscriptions,
                 'icon' => 'credit-card',
             ],
             [
-                'label' => 'الجلسات القادمة',
+                'label' => __('parent.stats.upcoming_sessions'),
                 'value' => $this->upcomingSessions,
                 'icon' => 'calendar',
             ],
             [
-                'label' => 'نسبة الحضور',
+                'label' => __('parent.stats.attendance_rate'),
                 'value' => $this->getFormattedAttendanceRate(),
                 'icon' => 'check-circle',
             ],
             [
-                'label' => 'الشهادات',
+                'label' => __('parent.stats.certificates'),
                 'value' => $this->totalCertificates,
                 'icon' => 'award',
             ],

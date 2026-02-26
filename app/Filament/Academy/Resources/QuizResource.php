@@ -42,13 +42,14 @@ class QuizResource extends BaseQuizResource
     public static function getNavigationBadge(): ?string
     {
         $tenant = Filament::getTenant();
-        $query = Quiz::query()->doesntHave('questions');
-
-        if ($tenant) {
-            $query->where('academy_id', $tenant->id);
+        if (!$tenant) {
+            return null;
         }
 
-        $count = $query->count();
+        $count = Quiz::query()
+            ->doesntHave('questions')
+            ->where('academy_id', $tenant->id)
+            ->count();
 
         return $count > 0 ? (string) $count : null;
     }

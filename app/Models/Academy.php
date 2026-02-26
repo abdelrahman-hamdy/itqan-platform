@@ -77,7 +77,12 @@ class Academy extends Model
         'academic_settings' => 'array',
         'quran_settings' => 'array',
         'notification_settings' => 'array',
-        'payment_settings' => 'array',
+        // NOTE: Changing this cast to encrypted:array will require running a one-time
+        // data migration to re-encrypt existing plaintext payment_settings values.
+        // Existing rows written before this change will fail to decrypt and must be
+        // re-saved via: php artisan app:encrypt-payment-settings (create if needed).
+        // This cast protects all NEW writes immediately.
+        'payment_settings' => 'encrypted:array',
         // Design Settings Casts (sections_order uses custom accessor/mutator)
         'hero_visible' => 'boolean',
         'hero_show_in_nav' => 'boolean',

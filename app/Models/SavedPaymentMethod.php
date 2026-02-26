@@ -102,6 +102,11 @@ class SavedPaymentMethod extends Model
         'last_used_at' => 'datetime',
         'verified_at' => 'datetime',
         'expires_at' => 'datetime',
+        // NOTE: Changing this cast to 'encrypted' will require a one-time data migration
+        // to re-encrypt existing plaintext token values already stored in the database.
+        // Rows written before this change will fail to decrypt until re-saved.
+        // This cast protects all NEW token writes immediately.
+        'token' => 'encrypted',
     ];
 
     /**

@@ -237,7 +237,10 @@ class StudentProfileResource extends BaseStudentProfileResource
 
     public static function canDelete($record): bool
     {
-        return true;
+        $academyId = auth()->user()?->academy_id;
+        $studentAcademyId = static::getRecordAcademyId($record);
+
+        return $academyId !== null && $studentAcademyId === $academyId;
     }
 
     public static function canCreate(): bool

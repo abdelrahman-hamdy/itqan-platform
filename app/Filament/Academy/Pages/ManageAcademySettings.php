@@ -173,6 +173,15 @@ class ManageAcademySettings extends Page implements HasForms
     {
         $data = $this->form->getState();
 
+        // Explicit allowlist — only update fields exposed in the form schema
+        $allowedFields = [
+            'name', 'name_en', 'description',
+            'logo', 'favicon',
+            'email', 'phone',
+            'timezone', 'currency',
+        ];
+        $data = array_intersect_key($data, array_flip($allowedFields));
+
         /** @var Academy $academy */
         $academy = Filament::getTenant();
 
@@ -187,7 +196,10 @@ class ManageAcademySettings extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        // Only academy admins can access
-        return auth()->user()?->user_type === UserType::ADMIN->value;
+        $user = auth()->user();
+
+        return $user !== null
+            && $user->hasRole(UserType::ADMIN->value)
+            && $user->academy_id !== null;
     }
 }

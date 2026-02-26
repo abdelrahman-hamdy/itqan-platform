@@ -263,9 +263,11 @@ Route::middleware(['api.is.parent', 'ability:parent:*'])->group(function () {
             ->name('api.v1.parent.profile.avatar');
 
         Route::post('/change-password', [ProfileController::class, 'changePassword'])
+            ->middleware('throttle:5,1')
             ->name('api.v1.parent.profile.change-password');
 
         Route::delete('/', [ProfileController::class, 'deleteAccount'])
+            ->middleware('throttle:3,1')
             ->name('api.v1.parent.profile.delete');
     });
 });

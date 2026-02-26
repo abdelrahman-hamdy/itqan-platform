@@ -31,6 +31,10 @@ class AddPaymentMethodModal extends Component
     #[On('openAddPaymentMethodModal')]
     public function initiateAddCard(): void
     {
+        if (! Auth::check()) {
+            return;
+        }
+
         $this->isLoading = true;
         $this->errorMessage = null;
 

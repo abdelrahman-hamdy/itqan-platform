@@ -35,7 +35,7 @@ class SearchService implements SearchServiceInterface
      */
     public function searchAll(string $query, ?StudentProfile $student = null, array $filters = []): Collection
     {
-        $query = trim($query);
+        $query = mb_substr(trim($query), 0, 200);
 
         if (empty($query)) {
             return collect([
@@ -71,6 +71,7 @@ class SearchService implements SearchServiceInterface
     {
         $queryBuilder = QuranCircle::query()
             ->with(['quranTeacher', 'students'])
+            ->where('status', true) // Only show active circles (status is boolean: true = active)
             ->where(function ($q) use ($query) {
                 $q->where('name', 'LIKE', "%{$query}%")
                     ->orWhere('description', 'LIKE', "%{$query}%")
@@ -379,7 +380,8 @@ class SearchService implements SearchServiceInterface
     protected function searchQuranTeachers(string $query, array $filters, string $subdomain): Collection
     {
         $queryBuilder = QuranTeacherProfile::query()
-            ->with(['user', 'quranCircles'])
+            ->with(['user'])
+            ->withCount('quranCircles')
             ->where(function ($q) use ($query) {
                 $q->where('bio_arabic', 'LIKE', "%{$query}%")
                     ->orWhere('bio_english', 'LIKE', "%{$query}%")
@@ -398,7 +400,7 @@ class SearchService implements SearchServiceInterface
             ->select('quran_teacher_profiles.*')
             ->limit(10)
             ->get()
-            ->map(function ($teacher) {
+            ->map(function ($teacher) use ($subdomain) {
                 return [
                     'type' => 'quran_teacher',
                     'id' => $teacher->id,
@@ -410,7 +412,7 @@ class SearchService implements SearchServiceInterface
                     'teacher_name' => null, // This IS the teacher
                     'meta' => [
                         'experience_years' => $teacher->teaching_experience_years,
-                        'circles_count' => $teacher->quranCircles->count(),
+                        'circles_count' => $teacher->quran_circles_count, // Use DB-level withCount result
                     ],
                     'status' => 'active',
                     'is_enrolled' => false,

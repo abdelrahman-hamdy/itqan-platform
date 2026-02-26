@@ -29,8 +29,13 @@
                 </div>
             </div>
 
+            {{-- Validate deeplink URL to only allow known app schemes --}}
+            @php
+                $safeDeeplinkUrl = \Illuminate\Support\Str::startsWith($deeplink_url ?? '', ['itqan://', 'https://']) ? $deeplink_url : '';
+            @endphp
+
             {{-- Manual Return Button --}}
-            <a href="{{ $deeplink_url }}"
+            <a href="{{ $safeDeeplinkUrl }}"
                class="inline-flex items-center justify-center gap-2 bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors mb-4 w-full">
                 <i class="ri-smartphone-line text-xl"></i>
                 <span>{{ __('Return to App Now') }}</span>
@@ -86,13 +91,13 @@
 
             if (seconds <= 0) {
                 clearInterval(interval);
-                window.location.href = {!! json_encode($deeplink_url ?? '') !!};
+                window.location.href = {!! json_encode($deeplink_url ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
             }
         }, 1000);
 
         // Immediate redirect on page load (some browsers need this)
         setTimeout(() => {
-            window.location.href = {!! json_encode($deeplink_url ?? '') !!};
+            window.location.href = {!! json_encode($deeplink_url ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
         }, {{ $auto_redirect_seconds * 1000 }});
     </script>
     @endpush

@@ -179,6 +179,20 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
         ];
     }
 
+    /**
+     * Guard deletion to the current academy only.
+     */
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $academyId = auth()->user()?->academy_id;
+
+        if ($record->academy_id !== $academyId) {
+            return false;
+        }
+
+        return true;
+    }
+
     // ========================================
     // Additional Form Sections
     // ========================================

@@ -92,7 +92,29 @@ class SessionRecordingResource extends BaseSessionRecordingResource
                     ->modalDescription('هل أنت متأكد من حذف التسجيلات المحددة؟ سيتم حذف الملفات من التخزين أيضاً.')
                     ->modalSubmitActionLabel('نعم، احذف')
                     ->action(function ($records) {
+                        $academyId = Auth::user()?->academy_id;
+
                         foreach ($records as $record) {
+                            // Verify the recording belongs to the current academy
+                            // through its session's course relationship
+                            if ($academyId) {
+                                $belongsToAcademy = \App\Models\SessionRecording::where('id', $record->id)
+                                    ->whereHasMorph(
+                                        'recordable',
+                                        [\App\Models\InteractiveCourseSession::class],
+                                        function ($q) use ($academyId) {
+                                            $q->whereHas('course', function ($courseQuery) use ($academyId) {
+                                                $courseQuery->where('academy_id', $academyId);
+                                            });
+                                        }
+                                    )
+                                    ->exists();
+
+                                if (! $belongsToAcademy) {
+                                    continue; // Skip foreign-tenant records
+                                }
+                            }
+
                             if ($record->status->canDelete()) {
                                 // markAsDeleted() triggers SessionRecordingObserver
                                 // which handles storage file cleanup

@@ -265,9 +265,9 @@ readonly class CalendarEvent
      */
     public function isOngoing(): bool
     {
-        $now = Carbon::now();
+        $now = nowInAcademyTimezone();
 
-        return $this->start->isPast() && $this->end->isFuture();
+        return $this->start->lte($now) && $this->end->gte($now);
     }
 
     /**

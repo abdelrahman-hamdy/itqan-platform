@@ -108,8 +108,7 @@ class NotificationDispatcher
         $title = $this->contentBuilder->getTitle($type, $data);
         $message = $this->contentBuilder->getMessage($type, $data);
 
-        // Prepare notification data for display
-        // Includes both frontend fields (title, message, color) and Filament fields (body, iconColor, actions, format)
+        // Build the full display data for broadcasting (can include full $data payload for FCM delivery)
         $displayData = array_merge($data, [
             // Frontend Livewire NotificationCenter reads these
             'title' => $title,
@@ -136,8 +135,42 @@ class NotificationDispatcher
             'duration' => 'persistent',
         ]);
 
-        // Prepare full notification payload
-        $notificationPayload = [
+        // Build minimal payload for DB storage — only display-safe fields, no raw $data blob.
+        // This prevents leaking internal model IDs, payment tokens, or other sensitive context
+        // that is only needed for FCM delivery but not for rendering stored notifications.
+        // TODO: Add a scheduled command to purge notifications older than 90 days:
+        // Notification::where('created_at', '<', now()->subDays(90))->delete();
+        $minimalStorageData = [
+            'title' => $title,
+            'message' => $message,
+            'category' => $category->value,
+            'icon' => $icon,
+            'color' => $color,
+            'action_url' => $actionUrl ?? null,
+
+            // Filament database notifications read these fields
+            'body' => $message,
+            'iconColor' => $type->getFilamentColor(),
+            'actions' => $displayData['actions'],
+            'format' => 'filament',
+            'duration' => 'persistent',
+        ];
+
+        // DB payload uses minimal storage data; broadcast payload uses full display data for push delivery
+        $dbNotificationPayload = [
+            'type' => $type->value,
+            'notification_type' => $type->value,
+            'category' => $category->value,
+            'icon' => $icon,
+            'icon_color' => $color,
+            'action_url' => $actionUrl,
+            'metadata' => $metadata,
+            'is_important' => $isImportant,
+            'tenant_id' => $tenantId,
+            'data' => $minimalStorageData,
+        ];
+
+        $broadcastPayload = [
             'type' => $type->value,
             'notification_type' => $type->value,
             'category' => $category->value,
@@ -150,9 +183,9 @@ class NotificationDispatcher
             'data' => $displayData,
         ];
 
-        // Always save to database and broadcast
-        $notificationId = $this->repository->create($user, $notificationPayload);
-        $this->broadcast($user, $notificationPayload);
+        // Save minimal data to database; broadcast full display data for real-time updates
+        $notificationId = $this->repository->create($user, $dbNotificationPayload);
+        $this->broadcast($user, $broadcastPayload);
 
         // Send email if academy settings allow
         $this->sendEmailIfEnabled($user, $type, $title, $message, $actionUrl);

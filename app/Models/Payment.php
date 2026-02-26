@@ -67,6 +67,16 @@ class Payment extends Model
         // Set polymorphic relationship explicitly in service layer
     ];
 
+    /**
+     * Sensitive attributes excluded from array/JSON serialization.
+     * gateway_response may contain raw gateway payloads with card details.
+     * client_secret is a gateway credential never intended for output.
+     */
+    protected $hidden = [
+        'gateway_response',
+        'client_secret',
+    ];
+
     protected $casts = [
         'status' => PaymentStatus::class,
         'amount' => 'decimal:2',

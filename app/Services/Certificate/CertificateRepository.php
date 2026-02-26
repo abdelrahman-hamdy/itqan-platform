@@ -4,24 +4,34 @@ namespace App\Services\Certificate;
 
 use App\Models\Certificate;
 use App\Models\CourseSubscription;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class CertificateRepository
 {
     /**
-     * Generate a unique certificate number
+     * Generate a unique certificate number.
+     *
+     * Wrapped in a DB transaction with a pessimistic lock to prevent two concurrent
+     * requests from generating the same certificate number (TOCTOU race condition).
+     * The DB UNIQUE constraint on certificates.certificate_number is the final safety net.
      */
     public function generateCertificateNumber(): string
     {
-        $year = now()->year;
-        $random = strtoupper(Str::random(6));
+        return DB::transaction(function () {
+            $year = now()->year;
 
-        // Ensure uniqueness
-        while (Certificate::where('certificate_number', "CERT-{$year}-{$random}")->exists()) {
-            $random = strtoupper(Str::random(6));
-        }
+            do {
+                $random = strtoupper(Str::random(6));
+                $number = "CERT-{$year}-{$random}";
+                $exists = Certificate::lockForUpdate()
+                    ->where('certificate_number', $number)
+                    ->exists();
+            } while ($exists);
 
-        return "CERT-{$year}-{$random}";
+            return $number;
+        });
     }
 
     /**
@@ -61,13 +71,20 @@ class CertificateRepository
     }
 
     /**
-     * Get certificates by student
+     * Get certificates by student, optionally scoped to a specific academy.
+     *
+     * Always pass $academyId when calling from a tenant context to prevent
+     * a student from seeing certificates that belong to other academies.
      */
-    public function getByStudent(int $studentId)
+    public function getByStudent(int $studentId, ?int $academyId = null): Collection
     {
-        return Certificate::where('student_id', $studentId)
-            ->orderBy('issued_at', 'desc')
-            ->get();
+        $query = Certificate::where('student_id', $studentId);
+
+        if ($academyId !== null) {
+            $query->where('academy_id', $academyId);
+        }
+
+        return $query->orderBy('issued_at', 'desc')->get();
     }
 
     /**

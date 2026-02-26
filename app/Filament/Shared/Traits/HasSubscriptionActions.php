@@ -106,6 +106,16 @@ trait HasSubscriptionActions
                     ->maxLength(255),
             ])
             ->action(function (BaseSubscription $record, array $data) {
+                // Tenant ownership guard
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    \Filament\Notifications\Notification::make()
+                        ->danger()
+                        ->title(__('common.unauthorized'))
+                        ->send();
+
+                    return;
+                }
                 DB::transaction(function () use ($record, $data) {
                 $updateData = [
                     'payment_status' => SubscriptionPaymentStatus::PAID,
@@ -204,6 +214,16 @@ trait HasSubscriptionActions
             ->modalHeading('إيقاف الاشتراك مؤقتاً')
             ->modalDescription('سيتم إيقاف الاشتراك مؤقتاً ويمكن استئنافه لاحقاً.')
             ->action(function (BaseSubscription $record) {
+                // Tenant ownership guard
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    \Filament\Notifications\Notification::make()
+                        ->danger()
+                        ->title(__('common.unauthorized'))
+                        ->send();
+
+                    return;
+                }
                 $record->update([
                     'status' => SessionSubscriptionStatus::PAUSED,
                     'paused_at' => now(),
@@ -232,6 +252,16 @@ trait HasSubscriptionActions
             ->modalHeading('استئناف الاشتراك')
             ->modalDescription('سيتم استئناف الاشتراك وإعادة تفعيله')
             ->action(function (BaseSubscription $record) {
+                // Tenant ownership guard
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    \Filament\Notifications\Notification::make()
+                        ->danger()
+                        ->title(__('common.unauthorized'))
+                        ->send();
+
+                    return;
+                }
                 $record->update([
                     'status' => SessionSubscriptionStatus::ACTIVE,
                     'paused_at' => null,
@@ -261,6 +291,16 @@ trait HasSubscriptionActions
             ->modalDescription('سيتم إعادة تفعيل الاشتراك الملغي وتأكيد الدفع. سيتم تحديث تواريخ البدء والانتهاء.')
             ->modalSubmitActionLabel('نعم، إعادة التفعيل')
             ->action(function (BaseSubscription $record) {
+                // Tenant ownership guard
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    \Filament\Notifications\Notification::make()
+                        ->danger()
+                        ->title(__('common.unauthorized'))
+                        ->send();
+
+                    return;
+                }
                 // Clear grace period metadata on reactivation
                 $metadata = $record->metadata ?? [];
                 unset(
@@ -346,6 +386,16 @@ trait HasSubscriptionActions
                         : 'عدد الأيام الإضافية'),
             ])
             ->action(function (BaseSubscription $record, array $data) {
+                // Tenant ownership guard
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    \Filament\Notifications\Notification::make()
+                        ->danger()
+                        ->title(__('common.unauthorized'))
+                        ->send();
+
+                    return;
+                }
                 $graceDays = (int) $data['grace_days'];
                 $metadata = $record->metadata ?? [];
 
@@ -399,6 +449,16 @@ trait HasSubscriptionActions
             ->modalDescription('سيتم إلغاء الاشتراك وإلغاء جميع الجلسات المجدولة القادمة.')
             ->modalSubmitActionLabel('نعم، إلغاء الاشتراك')
             ->action(function (BaseSubscription $record) {
+                // Tenant ownership guard
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    \Filament\Notifications\Notification::make()
+                        ->danger()
+                        ->title(__('common.unauthorized'))
+                        ->send();
+
+                    return;
+                }
                 DB::transaction(function () use ($record) {
                     $record->update([
                         'status' => SessionSubscriptionStatus::CANCELLED,
@@ -490,6 +550,16 @@ trait HasSubscriptionActions
                     ->default(45),
             ])
             ->action(function (BaseSubscription $record, array $data) {
+                // Tenant ownership guard
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    \Filament\Notifications\Notification::make()
+                        ->danger()
+                        ->title(__('common.unauthorized'))
+                        ->send();
+
+                    return;
+                }
                 $circleData = [
                     'academy_id' => $record->academy_id,
                     'quran_teacher_id' => $record->quran_teacher_id,
@@ -571,6 +641,16 @@ trait HasSubscriptionActions
             ->modalDescription('هل أنت متأكد من إلغاء طلب الاشتراك هذا؟ هذا الإجراء لا يمكن التراجع عنه.')
             ->modalSubmitActionLabel('نعم، إلغاء الطلب')
             ->action(function (BaseSubscription $record) {
+                // Tenant ownership guard
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    \Filament\Notifications\Notification::make()
+                        ->danger()
+                        ->title(__('common.unauthorized'))
+                        ->send();
+
+                    return;
+                }
                 $reason = config('subscriptions.cancellation_reasons.admin');
 
                 $record->cancelAsDuplicateOrExpired($reason);

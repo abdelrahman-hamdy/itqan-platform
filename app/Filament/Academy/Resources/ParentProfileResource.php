@@ -167,7 +167,9 @@ class ParentProfileResource extends BaseParentProfileResource
 
     public static function canDelete($record): bool
     {
-        return true;
+        $academyId = auth()->user()?->academy_id;
+
+        return $academyId !== null && $record->academy_id === $academyId;
     }
 
     public static function canCreate(): bool

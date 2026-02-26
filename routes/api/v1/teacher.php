@@ -252,9 +252,11 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
             ->name('api.v1.teacher.profile.avatar');
 
         Route::post('/change-password', [ProfileController::class, 'changePassword'])
+            ->middleware('throttle:5,1')
             ->name('api.v1.teacher.profile.change-password');
 
         Route::delete('/', [ProfileController::class, 'deleteAccount'])
+            ->middleware('throttle:3,1')
             ->name('api.v1.teacher.profile.delete');
     });
 

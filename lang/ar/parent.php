@@ -454,6 +454,13 @@ return [
         'no_sessions' => 'No الSessions Scheduled',
         'no_sessions_description' => 'الSessions will appear here once الy are scheduled',
     ],
+    'stats' => [
+        'children' => 'الأبناء',
+        'active_subscriptions' => 'الاشتراكات النشطة',
+        'upcoming_sessions' => 'الجلسات القادمة',
+        'attendance_rate' => 'نسبة الحضور',
+        'certificates' => 'الشهادات',
+    ],
     'quick_stats' => [
         'selected_child' => 'الابن المحدد',
         'student' => 'طالب',

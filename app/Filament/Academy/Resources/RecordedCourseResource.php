@@ -41,10 +41,13 @@ class RecordedCourseResource extends BaseRecordedCourseResource
 
     protected static function scopeEloquentQuery(Builder $query): Builder
     {
-        // Filter by current user's academy
-        if (Auth::user()->academy_id) {
-            $query->where('academy_id', Auth::user()->academy_id);
+        // Filter by current user's academy — deny all if no academy bound
+        $academyId = Auth::user()?->academy_id;
+        if (!$academyId) {
+            return $query->whereRaw('1 = 0');
         }
+
+        $query->where('academy_id', $academyId);
 
         // If user is a teacher, only show their courses
         if (Auth::user()->isAcademicTeacher()) {
@@ -93,6 +96,7 @@ class RecordedCourseResource extends BaseRecordedCourseResource
                     ->label('نشر المحدد')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
+                    ->requiresConfirmation()
                     ->action(function ($records) {
                         $records->each(function ($record) {
                             $record->update(['is_published' => true]);
@@ -103,6 +107,7 @@ class RecordedCourseResource extends BaseRecordedCourseResource
                     ->label('إلغاء نشر المحدد')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
+                    ->requiresConfirmation()
                     ->action(function ($records) {
                         $records->each(function ($record) {
                             $record->update(['is_published' => false]);

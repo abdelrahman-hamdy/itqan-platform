@@ -151,7 +151,9 @@ readonly class SessionOperationResult
     {
         return new self(
             success: (bool) ($data['success'] ?? false),
-            session: $data['session'] ?? null,
+            session: isset($data['session']) && $data['session'] instanceof \App\Models\BaseSession
+                ? $data['session']
+                : null,
             operation: $data['operation'] ?? 'unknown',
             previousStatus: $data['previousStatus'] ?? $data['previous_status'] ?? null,
             newStatus: $data['newStatus'] ?? $data['new_status'] ?? null,

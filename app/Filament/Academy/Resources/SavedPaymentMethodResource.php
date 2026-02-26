@@ -77,6 +77,31 @@ class SavedPaymentMethodResource extends BaseSavedPaymentMethodResource
     }
 
     // ========================================
+    // Authorization
+    // ========================================
+
+    public static function canEdit($record): bool
+    {
+        $academyId = auth()->user()?->academy_id;
+
+        return $academyId !== null && $record->academy_id === $academyId;
+    }
+
+    public static function canView($record): bool
+    {
+        $academyId = auth()->user()?->academy_id;
+
+        return $academyId !== null && $record->academy_id === $academyId;
+    }
+
+    public static function canDelete($record): bool
+    {
+        $academyId = auth()->user()?->academy_id;
+
+        return $academyId !== null && $record->academy_id === $academyId;
+    }
+
+    // ========================================
     // Pages
     // ========================================
 
