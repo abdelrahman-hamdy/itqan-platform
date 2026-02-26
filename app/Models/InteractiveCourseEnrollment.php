@@ -24,11 +24,7 @@ class InteractiveCourseEnrollment extends Model
         'payment_amount',
         'discount_applied',
         'enrollment_status',
-        'completion_percentage',
-        'final_grade',
-        'attendance_count',
         'total_possible_attendance',
-        'certificate_issued',
         'notes',
     ];
 

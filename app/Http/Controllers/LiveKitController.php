@@ -40,7 +40,6 @@ class LiveKitController extends Controller
 
             $roomName = $request->input('room_name');
             $participantName = $request->input('participant_name');
-            $userType = $request->input('user_type');
 
             // Get LiveKit configuration
             $apiKey = config('livekit.api_key');
@@ -52,6 +51,8 @@ class LiveKitController extends Controller
 
             // Create participant identity with user ID for uniqueness (consistent with other token generation)
             $user = auth()->user();
+            // Derive user type from the authenticated user's actual role (never trust client input)
+            $userType = $user->user_type;
             $identity = $user->id.'_'.Str::slug($user->first_name.'_'.$user->last_name);
 
             // Create access token options with metadata
@@ -156,7 +157,8 @@ class LiveKitController extends Controller
         } catch (Exception $e) {
             Log::error('Failed to mute/unmute participant', [
                 'error' => $e->getMessage(),
-                'request' => $request->all(),
+                'room_name' => $request->input('room_name'),
+                'user_id' => auth()->id(),
             ]);
 
             return $this->serverError('Failed to mute/unmute participant: '.$e->getMessage());
@@ -391,7 +393,8 @@ class LiveKitController extends Controller
         } catch (Exception $e) {
             Log::error('Failed to mute all students', [
                 'error' => $e->getMessage(),
-                'request' => $request->all(),
+                'room_name' => $request->input('room_name'),
+                'user_id' => auth()->id(),
             ]);
 
             return $this->serverError('Failed to mute all students: '.$e->getMessage());
@@ -498,7 +501,8 @@ class LiveKitController extends Controller
         } catch (Exception $e) {
             Log::error('Failed to control students cameras', [
                 'error' => $e->getMessage(),
-                'request' => $request->all(),
+                'room_name' => $request->input('room_name'),
+                'user_id' => auth()->id(),
             ]);
 
             return $this->serverError('Failed to control cameras: '.$e->getMessage());

@@ -12,7 +12,7 @@ class CustomFileUploadRequest extends FormRequest
      */
     private const ALLOWED_MIMES = [
         // Images
-        'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg',
+        'jpg', 'jpeg', 'png', 'gif', 'webp',
         // Documents
         'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
         // Text

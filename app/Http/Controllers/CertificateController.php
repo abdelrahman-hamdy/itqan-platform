@@ -133,9 +133,10 @@ class CertificateController extends Controller
 
         $enrollment = InteractiveCourseEnrollment::findOrFail($validated['enrollment_id']);
 
-        // Authorization: Ensure the current user owns this enrollment
-        if (Auth::id() !== $enrollment->student_id) {
-            $this->authorize('view', $enrollment); // Will fail with 403 if not authorized
+        // Authorization: Ensure the current user's student profile owns this enrollment
+        $studentProfile = Auth::user()->studentProfile;
+        if (! $studentProfile || $studentProfile->id !== $enrollment->student_id) {
+            abort(403);
         }
 
         // Check if certificate already issued

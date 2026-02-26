@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use App\Helpers\CountryList;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateStudentProfileRequest extends FormRequest
 {
@@ -32,7 +33,7 @@ class UpdateStudentProfileRequest extends FormRequest
             'nationality' => 'nullable|string|in:'.CountryList::validationRule(),
             'address' => 'nullable|string|max:500',
             'emergency_contact' => 'nullable|string|max:20',
-            'grade_level_id' => 'nullable|exists:academic_grade_levels,id',
+            'grade_level_id' => ['nullable', Rule::exists('academic_grade_levels', 'id')->where('academy_id', $this->user()->academy_id)],
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
     }

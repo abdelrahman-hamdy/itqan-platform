@@ -275,7 +275,7 @@
 
                 html += `<div class="calendar-event ${statusClass}" onclick='showEventModal(${JSON.stringify(event)})'>
                     <i class="ri-time-line text-xs"></i>
-                    <span class="flex-1 truncate">${eventTitle}</span>
+                    <span class="flex-1 truncate">${htmlEscape(eventTitle)}</span>
                 </div>`;
             });
 
@@ -351,10 +351,10 @@
 
                 document.getElementById('modal-teacher').innerHTML = `
                     <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 shadow-md ring-2 ring-white">
-                        <img src="${avatarUrl}" alt="${event.teacher_data.name}" class="w-full h-full object-cover">
+                        <img src="${avatarUrl}" alt="${htmlEscape(event.teacher_data.name)}" class="w-full h-full object-cover">
                     </div>
                     <div class="flex-1">
-                        <p class="text-base font-bold text-gray-900">${event.teacher_data.name}</p>
+                        <p class="text-base font-bold text-gray-900">${htmlEscape(event.teacher_data.name)}</p>
                         <p class="text-xs text-gray-500">{{ __('student.calendar.teacher_label') }}</p>
                     </div>
                 `;
@@ -366,10 +366,10 @@
 
                 document.getElementById('modal-teacher').innerHTML = `
                     <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 shadow-md ring-2 ring-white">
-                        <img src="${avatarUrl}" alt="${event.teacher_name}" class="w-full h-full object-cover">
+                        <img src="${avatarUrl}" alt="${htmlEscape(event.teacher_name)}" class="w-full h-full object-cover">
                     </div>
                     <div class="flex-1">
-                        <p class="text-base font-bold text-gray-900">${event.teacher_name}</p>
+                        <p class="text-base font-bold text-gray-900">${htmlEscape(event.teacher_name)}</p>
                         <p class="text-xs text-gray-500">{{ __('student.calendar.teacher_label') }}</p>
                     </div>
                 `;
@@ -393,10 +393,10 @@
                     const participantsHtml = students.map(p =>
                         `<div class="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
                             <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
-                                <span class="text-white font-bold text-sm">${p.name.charAt(0)}</span>
+                                <span class="text-white font-bold text-sm">${htmlEscape(p.name.charAt(0))}</span>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-semibold text-gray-900">${p.name}</p>
+                                <p class="text-sm font-semibold text-gray-900">${htmlEscape(p.name)}</p>
                                 <p class="text-xs text-gray-500">{{ __('student.calendar.student_label') }}</p>
                             </div>
                         </div>`
@@ -494,6 +494,12 @@
         }
 
         // Helper functions
+        function htmlEscape(str) {
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(String(str ?? '')));
+            return div.innerHTML;
+        }
+
         function truncate(str, length) {
             return str.length > length ? str.substring(0, length) + '...' : str;
         }

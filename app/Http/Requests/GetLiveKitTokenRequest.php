@@ -25,7 +25,6 @@ class GetLiveKitTokenRequest extends FormRequest
         return [
             'room_name' => 'required|string',
             'participant_name' => 'required|string',
-            'user_type' => 'required|string|in:quran_teacher,student',
         ];
     }
 }

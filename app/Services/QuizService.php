@@ -131,26 +131,31 @@ class QuizService implements QuizServiceInterface
      */
     public function startAttempt(QuizAssignment $assignment, int $studentId): QuizAttempt
     {
-        // Check if student has an in-progress attempt
-        $existingAttempt = QuizAttempt::where('quiz_assignment_id', $assignment->id)
-            ->where('student_id', $studentId)
-            ->whereNull('submitted_at')
-            ->first();
+        return DB::transaction(function () use ($assignment, $studentId) {
+            // Lock the assignment row to prevent concurrent duplicate attempts
+            $assignment = QuizAssignment::lockForUpdate()->find($assignment->id);
 
-        if ($existingAttempt) {
-            return $existingAttempt;
-        }
+            // Check if student has an in-progress attempt
+            $existingAttempt = QuizAttempt::where('quiz_assignment_id', $assignment->id)
+                ->where('student_id', $studentId)
+                ->whereNull('submitted_at')
+                ->first();
 
-        // Check if student can start a new attempt
-        if (! $assignment->canStudentAttempt($studentId)) {
-            throw new Exception(__('quiz.max_attempts_exceeded'));
-        }
+            if ($existingAttempt) {
+                return $existingAttempt;
+            }
 
-        return QuizAttempt::create([
-            'quiz_assignment_id' => $assignment->id,
-            'student_id' => $studentId,
-            'started_at' => now(),
-        ]);
+            // Check if student can start a new attempt
+            if (! $assignment->canStudentAttempt($studentId)) {
+                throw new Exception(__('quiz.max_attempts_exceeded'));
+            }
+
+            return QuizAttempt::create([
+                'quiz_assignment_id' => $assignment->id,
+                'student_id' => $studentId,
+                'started_at' => now(),
+            ]);
+        });
     }
 
     /**
@@ -158,13 +163,18 @@ class QuizService implements QuizServiceInterface
      */
     public function submitAttempt(QuizAttempt $attempt, array $answers): QuizAttempt
     {
-        if ($attempt->isCompleted()) {
-            throw new Exception(__('quiz.attempt_already_submitted'));
-        }
+        return DB::transaction(function () use ($attempt, $answers) {
+            // Lock the attempt row to prevent double submission
+            $attempt = QuizAttempt::lockForUpdate()->find($attempt->id);
 
-        $attempt->submit($answers);
+            if ($attempt->isCompleted()) {
+                throw new Exception(__('quiz.attempt_already_submitted'));
+            }
 
-        return $attempt->fresh();
+            $attempt->submit($answers);
+
+            return $attempt->fresh();
+        });
     }
 
     /**

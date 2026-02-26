@@ -26,9 +26,6 @@ class CourseReview extends Model
         'user_id',
         'rating',
         'review',
-        'is_approved',
-        'approved_at',
-        'approved_by',
     ];
 
     protected $casts = [
