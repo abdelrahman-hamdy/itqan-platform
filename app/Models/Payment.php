@@ -117,17 +117,6 @@ class Payment extends Model
         return $this->morphTo();
     }
 
-    /**
-     * Alias for payable() - for backwards compatibility.
-     * Use payable() for new code.
-     *
-     * @deprecated Use payable() instead
-     */
-    public function subscription(): MorphTo
-    {
-        return $this->payable();
-    }
-
     // Scopes
     public function scopeSuccessful($query)
     {

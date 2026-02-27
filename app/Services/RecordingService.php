@@ -265,12 +265,9 @@ class RecordingService implements RecordingServiceInterface
      *
      * Storage file cleanup is handled automatically by SessionRecordingObserver
      * when the status is changed to 'deleted' via markAsDeleted().
-     *
-     * @param  bool  $removeFile  Whether to remove the physical file (default: false for backward compatibility)
-     *                            Note: File deletion is now controlled by config('livekit.recordings.delete_files_on_delete')
-     *                            and handled by SessionRecordingObserver regardless of this parameter.
+     * File deletion behavior is controlled by config('livekit.recordings.delete_files_on_delete').
      */
-    public function deleteRecording(SessionRecording $recording, bool $removeFile = false): bool
+    public function deleteRecording(SessionRecording $recording): bool
     {
         try {
             // markAsDeleted() triggers the SessionRecordingObserver::updating() event

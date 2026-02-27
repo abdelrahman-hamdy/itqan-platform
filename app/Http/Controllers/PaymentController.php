@@ -164,7 +164,7 @@ class PaymentController extends Controller
             abort(403);
         }
 
-        $payment->load(['subscription', 'user']);
+        $payment->load(['payable', 'user']);
 
         // Check if this was a mobile-initiated purchase
         if (session('purchase_source') === 'mobile') {
@@ -196,7 +196,7 @@ class PaymentController extends Controller
     {
         $this->authorize('view', $payment);
 
-        $payment->load(['subscription', 'user']);
+        $payment->load(['payable', 'user']);
 
         return view('payments.failed', compact('payment'));
     }

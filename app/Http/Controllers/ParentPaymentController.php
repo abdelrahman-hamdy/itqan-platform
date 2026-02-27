@@ -50,7 +50,7 @@ class ParentPaymentController extends Controller
         // Build payments query with filters
         $paymentsQuery = Payment::whereIn('user_id', $childUserIds)
             ->where('academy_id', $parent->academy_id)
-            ->with(['subscription', 'user'])
+            ->with(['payable', 'user'])
             ->orderBy('payment_date', 'desc');
 
         // Apply status filter

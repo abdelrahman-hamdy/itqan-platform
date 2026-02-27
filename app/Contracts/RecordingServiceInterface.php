@@ -74,11 +74,9 @@ interface RecordingServiceInterface
      * File deletion behavior is controlled by config('livekit.recordings.delete_files_on_delete').
      *
      * @param  SessionRecording  $recording  The recording to delete
-     * @param  bool  $removeFile  Legacy parameter (kept for backward compatibility).
-     *                            File deletion is now handled by the observer.
      * @return bool True if recording was deleted successfully
      */
-    public function deleteRecording(SessionRecording $recording, bool $removeFile = false): bool;
+    public function deleteRecording(SessionRecording $recording): bool;
 
     /**
      * Get recording statistics.

@@ -23,7 +23,7 @@ class PaymentController extends Controller
         $status = $request->get('status'); // pending, completed, failed, refunded
 
         $query = Payment::where('user_id', $user->id)
-            ->with(['subscription']);
+            ->with(['payable']);
 
         if ($status) {
             $query->where('status', $status);
@@ -74,7 +74,7 @@ class PaymentController extends Controller
 
         $payment = Payment::where('id', $id)
             ->where('user_id', $user->id)
-            ->with(['subscription'])
+            ->with(['payable'])
             ->first();
 
         if (! $payment) {
@@ -94,10 +94,10 @@ class PaymentController extends Controller
                 'payment_method_details' => $payment->payment_method_details,
                 'description' => $payment->description,
                 'subscription_type' => $payment->subscription_type,
-                'subscription' => $payment->subscription ? [
-                    'id' => $payment->subscription->id,
-                    'code' => $payment->subscription->subscription_code,
-                    'title' => $payment->subscription->getSubscriptionTitle(),
+                'subscription' => $payment->payable ? [
+                    'id' => $payment->payable->id,
+                    'code' => $payment->payable->subscription_code,
+                    'title' => $payment->payable->getSubscriptionTitle(),
                 ] : null,
                 'transaction_id' => $payment->transaction_id,
                 'gateway' => $payment->gateway,

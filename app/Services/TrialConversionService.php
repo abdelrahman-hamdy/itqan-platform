@@ -262,9 +262,6 @@ class TrialConversionService
                 ],
             ]);
 
-            // Step 3: Update circle with subscription_id (for backward compatibility)
-            $circle->update(['subscription_id' => $subscription->id]);
-
             Log::info('Trial converted to subscription with independent circle', [
                 'trial_request_id' => $trialRequest->id,
                 'circle_id' => $circle->id,

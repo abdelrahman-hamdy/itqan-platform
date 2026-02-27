@@ -169,19 +169,6 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                     'current_level' => $lockedCircle->memorization_level ?? 'beginner',
                 ]);
 
-                // Also add to pivot table for backward compatibility
-                if (! $lockedCircle->students()->where('users.id', $user->id)->exists()) {
-                    $lockedCircle->students()->attach($user->id, [
-                        'enrolled_at' => now(),
-                        'status' => QuranCircleEnrollment::STATUS_ENROLLED,
-                        'attendance_count' => 0,
-                        'missed_sessions' => 0,
-                        'makeup_sessions_used' => 0,
-                        'current_level' => $lockedCircle->memorization_level ?? 'beginner',
-                        'subscription_id' => $subscription->id,
-                    ]);
-                }
-
                 // Update circle enrollment count
                 $lockedCircle->increment('enrolled_students');
 
