@@ -194,6 +194,7 @@ return [
     'gateways' => [
         'paymob' => 'Paymob',
         'easykash' => 'EasyKash',
+        'tap' => 'Tap Payments',
     ],
 
     'method_types' => [

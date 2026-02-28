@@ -7,6 +7,7 @@ use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Models\Academy;
 use App\Services\Payment\Gateways\EasyKashGateway;
 use App\Services\Payment\Gateways\PaymobGateway;
+use App\Services\Payment\Gateways\TapGateway;
 use InvalidArgumentException;
 
 /**
@@ -142,6 +143,7 @@ class AcademyPaymentGatewayFactory
         return match ($gateway) {
             'paymob' => new PaymobGateway($config),
             'easykash' => new EasyKashGateway($config),
+            'tap' => new TapGateway($config),
             default => throw new InvalidArgumentException(
                 "Unknown payment gateway: {$gateway}"
             ),

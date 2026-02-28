@@ -5,6 +5,7 @@ namespace App\Services\Payment;
 use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Services\Payment\Gateways\EasyKashGateway;
 use App\Services\Payment\Gateways\PaymobGateway;
+use App\Services\Payment\Gateways\TapGateway;
 use Illuminate\Support\Manager;
 use InvalidArgumentException;
 
@@ -45,6 +46,16 @@ class PaymentGatewayManager extends Manager
         $config = $this->config->get('payments.gateways.easykash', []);
 
         return new EasyKashGateway($config);
+    }
+
+    /**
+     * Create Tap gateway driver.
+     */
+    protected function createTapDriver(): PaymentGatewayInterface
+    {
+        $config = $this->config->get('payments.gateways.tap', []);
+
+        return new TapGateway($config);
     }
 
     /**

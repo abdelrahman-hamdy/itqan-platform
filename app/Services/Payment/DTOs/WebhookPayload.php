@@ -262,6 +262,104 @@ readonly class WebhookPayload
     }
 
     /**
+     * Create from Tap webhook data (Charge object).
+     */
+    public static function fromTap(array $data): self
+    {
+        $tapStatus = strtoupper($data['status'] ?? 'UNKNOWN');
+
+        // Handle refund gracefully
+        $refundDetected = $tapStatus === 'REFUNDED';
+        if ($refundDetected) {
+            Log::channel('payments')->warning('Tap refund detected but platform does not support refunds', [
+                'charge_id' => $data['id'] ?? null,
+            ]);
+        }
+
+        // Map Tap status to internal status
+        $status = match ($tapStatus) {
+            'CAPTURED' => PaymentResultStatus::SUCCESS,
+            'INITIATED', 'IN_PROGRESS' => PaymentResultStatus::PENDING,
+            'REFUNDED' => PaymentResultStatus::SUCCESS,  // Flag in metadata
+            'FAILED', 'DECLINED', 'RESTRICTED', 'CANCELLED', 'VOID' => PaymentResultStatus::FAILED,
+            default => PaymentResultStatus::PENDING,
+        };
+
+        $isSuccess = in_array($tapStatus, ['CAPTURED', 'REFUNDED']);
+
+        // Extract payment_id and academy_id from metadata or reference
+        $paymentId = null;
+        $academyId = null;
+
+        $metadata = $data['metadata'] ?? [];
+        if (! empty($metadata['payment_id'])) {
+            $paymentId = (int) $metadata['payment_id'];
+        }
+        if (! empty($metadata['academy_id'])) {
+            $academyId = (int) $metadata['academy_id'];
+        }
+
+        // Fallback: parse from reference.transaction (format: "PAYMENT-{id}")
+        if (! $paymentId) {
+            $refTransaction = $data['reference']['transaction'] ?? '';
+            if (str_starts_with($refTransaction, 'PAYMENT-')) {
+                $paymentId = (int) substr($refTransaction, strlen('PAYMENT-'));
+            }
+        }
+
+        // Fetch currency from payment record if needed
+        $currency = $data['currency'] ?? 'SAR';
+        if ($paymentId && ! $academyId) {
+            $payment = Payment::withoutGlobalScopes()->find($paymentId);
+            if ($payment) {
+                $currency = $payment->currency ?? $payment->academy?->currency?->value ?? $currency;
+                $academyId = $academyId ?? $payment->academy_id;
+            }
+        }
+
+        // Amount: Tap sends in major units (e.g. 100.00 for 100 SAR)
+        $amountInCents = (int) round(((float) ($data['amount'] ?? 0)) * 100);
+
+        // Card details from source
+        $source = $data['source'] ?? [];
+        $cardBrand = $source['card']['scheme'] ?? $source['payment_method'] ?? null;
+        $cardLastFour = $source['card']['last_four'] ?? null;
+
+        $webhookMetadata = [
+            'charge_status' => $tapStatus,
+            'reference_transaction' => $data['reference']['transaction'] ?? null,
+            'reference_order' => $data['reference']['order'] ?? null,
+            'payment_method' => $source['payment_method'] ?? null,
+        ];
+
+        if ($refundDetected) {
+            $webhookMetadata['gateway_refund_flag'] = true;
+            $webhookMetadata['gateway_refund_detected_at'] = now()->toIso8601String();
+        }
+
+        return new self(
+            eventType: 'TRANSACTION',
+            transactionId: (string) ($data['id'] ?? ''),
+            status: $status,
+            amountInCents: $amountInCents,
+            currency: $currency,
+            gateway: 'tap',
+            orderId: $data['reference']['order'] ?? null,
+            paymentMethod: $source['payment_method'] ?? 'card',
+            paymentId: $paymentId,
+            academyId: $academyId,
+            isSuccess: $isSuccess,
+            errorCode: $isSuccess ? null : $tapStatus,
+            errorMessage: $isSuccess ? null : "Tap charge status: {$tapStatus}",
+            cardBrand: $cardBrand,
+            cardLastFour: $cardLastFour,
+            processedAt: now(),
+            rawPayload: $data,
+            metadata: $webhookMetadata,
+        );
+    }
+
+    /**
      * Get amount in major currency units.
      */
     public function getAmountInMajorUnits(): float

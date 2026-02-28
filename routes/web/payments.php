@@ -10,6 +10,7 @@
 use App\Http\Controllers\EasyKashWebhookController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymobWebhookController;
+use App\Http\Controllers\TapWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,6 +25,7 @@ Route::prefix('webhooks')->middleware(['throttle:60,1'])->withoutMiddleware([\Ap
     // Payment gateway webhooks (validated via HMAC)
     Route::post('paymob', [PaymobWebhookController::class, 'handle'])->name('webhooks.paymob');
     Route::post('easykash', [EasyKashWebhookController::class, 'handle'])->name('webhooks.easykash');
+    Route::post('tap', [TapWebhookController::class, 'handle'])->name('webhooks.tap');
 });
 
 /*
@@ -95,6 +97,11 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         return redirect()->to('/payments/easykash/callback?' . http_build_query($request->query()));
     })->name('payments.easykash.tenant.callback');
 
+    // Tap callback - REDIRECT to global route to avoid subdomain routing issues
+    Route::get('/payments/tap/callback', function (\Illuminate\Http\Request $request) {
+        return redirect()->to('/payments/tap/callback?' . http_build_query($request->query()));
+    })->name('payments.tap.tenant.callback');
+
     /*
     |--------------------------------------------------------------------------
     | Payment Methods API
@@ -115,3 +122,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 // This is defined AFTER the subdomain route so subdomain routes take priority
 Route::get('/payments/easykash/callback', [EasyKashWebhookController::class, 'callback'])
     ->name('payments.easykash.callback');
+
+// Tap callback (global route - Tap appends ?tap_id={charge_id} to callback URL)
+Route::get('/payments/tap/callback', [TapWebhookController::class, 'callback'])
+    ->name('payments.tap.callback');

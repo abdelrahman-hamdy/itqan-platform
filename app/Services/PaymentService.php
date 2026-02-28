@@ -69,17 +69,20 @@ class PaymentService implements PaymentServiceInterface
             // Determine the correct webhook URL based on gateway
             $webhookUrl = match ($gatewayName) {
                 'easykash' => route('webhooks.easykash'),
+                'tap' => route('webhooks.tap'),
                 default => route('webhooks.paymob'),
             };
 
             // Get subdomain for route generation
             $subdomain = $academy?->subdomain ?? DefaultAcademy::subdomain();
 
-            // Generate callback URL - EasyKash uses global route, Paymob uses subdomain route
-            // CRITICAL: EasyKash needs absolute URL (not relative path) for Continue button to work correctly
-            $successUrl = $paymentData['success_url'] ?? ($gatewayName === 'easykash'
-                ? url('/payments/easykash/callback') // Absolute URL to fix Continue button redirect issue
-                : route('payments.callback', ['subdomain' => $subdomain, 'payment' => $payment->id]));
+            // Generate callback URL - EasyKash and Tap use global routes, Paymob uses subdomain route
+            // CRITICAL: EasyKash/Tap need absolute URLs (not relative paths) for redirect flow to work correctly
+            $successUrl = $paymentData['success_url'] ?? match ($gatewayName) {
+                'easykash' => url('/payments/easykash/callback'),
+                'tap' => url('/payments/tap/callback'),
+                default => route('payments.callback', ['subdomain' => $subdomain, 'payment' => $payment->id]),
+            };
 
             $cancelUrl = $paymentData['cancel_url'] ?? route('payments.failed', ['subdomain' => $subdomain, 'paymentId' => $payment->id]);
 

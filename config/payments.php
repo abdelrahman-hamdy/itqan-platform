@@ -77,15 +77,20 @@ return [
             ],
         ],
 
-        'tapay' => [
-            'driver' => 'tapay',
-            'api_key' => env('TAPAY_API_KEY'),
-            'secret_key' => env('TAPAY_SECRET_KEY'),
-            'merchant_id' => env('TAPAY_MERCHANT_ID'),
+        'tap' => [
+            'driver' => 'tap',
+            'secret_key' => env('TAP_SECRET_KEY'),
+            'public_key' => env('TAP_PUBLIC_KEY'),
+            'merchant_id' => env('TAP_MERCHANT_ID'),
             // SECURITY: Default to production mode (false) - must explicitly enable sandbox
-            'sandbox' => env('TAPAY_SANDBOX', false),
-            'base_url' => env('TAPAY_BASE_URL', 'https://api.tap.company/v2'),
-            'regions' => ['gcc', 'kuwait', 'bahrain', 'uae', 'qatar', 'oman'],
+            'sandbox' => env('TAP_SANDBOX', true),
+            'base_url' => env('TAP_BASE_URL', 'https://api.tap.company/v2'),
+            'regions' => ['gcc', 'saudi_arabia', 'kuwait', 'bahrain', 'uae', 'qatar', 'oman'],
+            // SECURITY: Whitelist of IPs allowed to send webhooks (comma-separated in env)
+            'webhook_ips' => env('TAP_WEBHOOK_IPS')
+                ? explode(',', env('TAP_WEBHOOK_IPS'))
+                : [],
+            'supported_currencies' => ['SAR', 'KWD', 'AED', 'BHD', 'QAR', 'OMR'],
         ],
 
         'moyasar' => [
@@ -156,7 +161,7 @@ return [
         'mada' => 0.015,         // 1.5%
         'stc_pay' => 0.02,       // 2.0%
         'paymob' => 0.028,       // 2.8%
-        'tapay' => 0.024,        // 2.4%
+        'tap' => 0.024,          // 2.4%
     ],
 
     /*
@@ -244,7 +249,7 @@ return [
 
     'webhooks' => [
         'paymob' => '/webhooks/paymob',
-        'tapay' => '/webhooks/tapay',
+        'tap' => '/webhooks/tap',
         'moyasar' => '/webhooks/moyasar',
         'stc_pay' => '/webhooks/stc-pay',
         'easykash' => '/webhooks/easykash',

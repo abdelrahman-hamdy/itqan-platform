@@ -195,6 +195,7 @@ return [
     'gateways' => [
         'paymob' => 'بيموب',
         'easykash' => 'إيزي كاش',
+        'tap' => 'تاب للمدفوعات',
     ],
 
     // Payment method type labels (for PaymentService)
