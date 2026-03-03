@@ -4,8 +4,8 @@ namespace Database\Seeders;
 
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
+use App\Enums\EnrollmentStatus;
 use App\Enums\RelationshipType;
-use App\Enums\SessionSubscriptionStatus;
 use App\Enums\UserType;
 use App\Models\Academy;
 use App\Models\Certificate;
@@ -720,7 +720,7 @@ class MobileE2ESeeder extends Seeder
                         'interactive_course_id' => $interactiveCourse->id,
                         'course_type' => 'interactive',
                         'subscription_code' => 'CS-E2E-INT-'.Str::random(4),
-                        'status' => SessionSubscriptionStatus::ACTIVE,
+                        'status' => EnrollmentStatus::ENROLLED,
                         'payment_status' => 'paid',
                         'enrollment_type' => 'paid',
                         'price_paid' => 200.00,
@@ -742,7 +742,7 @@ class MobileE2ESeeder extends Seeder
                         'recorded_course_id' => $recordedCourse->id,
                         'course_type' => 'recorded',
                         'subscription_code' => 'CS-E2E-REC-'.Str::random(4),
-                        'status' => SessionSubscriptionStatus::ACTIVE,
+                        'status' => EnrollmentStatus::ENROLLED,
                         'payment_status' => 'paid',
                         'enrollment_type' => 'paid',
                         'price_paid' => 150.00,
