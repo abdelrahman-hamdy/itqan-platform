@@ -130,16 +130,16 @@ class MobileE2ESeeder extends Seeder
         // 1. Clean chat conversations, participants, messages
         $this->cleanChatData();
 
-        // 2. Clean course subscriptions
+        // 2. Clean course subscriptions (use subscription_code prefix)
         CourseSubscription::withoutGlobalScopes()
             ->where('academy_id', $academyId)
-            ->where('admin_notes', 'like', "{$prefix}%")
+            ->where('subscription_code', 'like', 'CS-E2E-%')
             ->forceDelete();
 
-        // 2.5 Clean recorded courses
+        // 2.5 Clean recorded courses (use title prefix)
         RecordedCourse::withoutGlobalScopes()
             ->where('academy_id', $academyId)
-            ->where('admin_notes', 'like', "{$prefix}%")
+            ->where('title', 'like', "{$prefix}%")
             ->forceDelete();
 
         // 2.6 Clean quran group circles
@@ -729,8 +729,7 @@ class MobileE2ESeeder extends Seeder
                         'currency' => 'SAR',
                         'starts_at' => now()->subDays(14),
                         'enrolled_at' => now()->subDays(14),
-                        'admin_notes' => self::PREFIX.' interactive course sub',
-                    ]);
+                                            ]);
                 });
                 $this->command->info("Created CourseSubscription for InteractiveCourse #{$interactiveCourse->id}");
             }
@@ -753,8 +752,7 @@ class MobileE2ESeeder extends Seeder
                         'starts_at' => now()->subDays(10),
                         'enrolled_at' => now()->subDays(10),
                         'lifetime_access' => true,
-                        'admin_notes' => self::PREFIX.' recorded course sub',
-                    ]);
+                                            ]);
                 });
                 $this->command->info("Created CourseSubscription for RecordedCourse #{$recordedCourse->id}");
             }
