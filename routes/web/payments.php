@@ -84,20 +84,18 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     Route::post('/payments/{payment}/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate')->middleware('auth');
 
-    // Paymob payment callback
-    // Note: Using closure wrapper because direct controller binding [PaymobWebhookController::class, 'callback']
-    // causes routing issues with the subdomain parameter. The closure properly passes the payment ID.
-    Route::get('/payments/{payment}/callback', function (\Illuminate\Http\Request $request, $subdomain, $payment) {
-        return app(PaymobWebhookController::class)->callback($request, $payment);
-    })->name('payments.callback');
-
-    // EasyKash callback - handle directly (withoutGlobalScopes in controller handles cross-tenant)
+    // EasyKash callback - MUST be before {payment} wildcard to avoid capture
     Route::get('/payments/easykash/callback', [EasyKashWebhookController::class, 'callback'])
         ->name('payments.easykash.tenant.callback');
 
-    // Tap callback - handle directly (withoutGlobalScopes in controller handles cross-tenant)
+    // Tap callback - MUST be before {payment} wildcard to avoid capture
     Route::get('/payments/tap/callback', [TapWebhookController::class, 'callback'])
         ->name('payments.tap.tenant.callback');
+
+    // Paymob payment callback (wildcard {payment} - must be AFTER specific /easykash/ and /tap/ routes)
+    Route::get('/payments/{payment}/callback', function (\Illuminate\Http\Request $request, $subdomain, $payment) {
+        return app(PaymobWebhookController::class)->callback($request, $payment);
+    })->name('payments.callback')->where('payment', '[0-9]+');
 
     /*
     |--------------------------------------------------------------------------
