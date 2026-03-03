@@ -448,7 +448,7 @@ class SubscriptionController extends Controller
             'quran' => 'quran_individual',
             'quran_group' => 'quran_circle',
             'academic' => 'academic_lesson',
-            'course' => 'interactive_course',
+            'course' => $subscription->interactive_course_id ? 'interactive_course' : 'recorded_course',
             default => null,
         };
         $data['entity_id'] = $entityId;

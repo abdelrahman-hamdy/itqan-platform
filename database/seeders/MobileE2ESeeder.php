@@ -5,19 +5,23 @@ namespace Database\Seeders;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
 use App\Enums\RelationshipType;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\UserType;
 use App\Models\Academy;
 use App\Models\Certificate;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
+use App\Models\CourseSubscription;
 use App\Models\InteractiveCourse;
 use App\Models\ParentProfile;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
 use App\Models\QuizAttempt;
 use App\Models\QuizQuestion;
+use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
+use App\Models\RecordedCourse;
 use App\Models\StudentProfile;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -93,16 +97,20 @@ class MobileE2ESeeder extends Seeder
         // 4. Create parent account
         $this->createParentAccount();
 
-        // 5. Create notifications for all users
+        // 5. Create course subscriptions and quran group circle for dynamic route coverage
+        $this->createCourseSubscriptions();
+        $this->createQuranGroupCircle();
+
+        // 6. Create notifications for all users
         $this->createNotifications();
 
-        // 6. Create quiz data
+        // 7. Create quiz data
         $this->createQuizData();
 
-        // 7. Create certificates
+        // 8. Create certificates
         $this->createCertificates();
 
-        // 8. Create chat conversations
+        // 9. Create chat conversations
         $this->createChatConversations();
 
         $this->command->info('Mobile E2E data seeding completed!');
@@ -122,7 +130,25 @@ class MobileE2ESeeder extends Seeder
         // 1. Clean chat conversations, participants, messages
         $this->cleanChatData();
 
-        // 2. Clean certificates
+        // 2. Clean course subscriptions
+        CourseSubscription::withoutGlobalScopes()
+            ->where('academy_id', $academyId)
+            ->where('admin_notes', 'like', "{$prefix}%")
+            ->forceDelete();
+
+        // 2.5 Clean recorded courses
+        RecordedCourse::withoutGlobalScopes()
+            ->where('academy_id', $academyId)
+            ->where('admin_notes', 'like', "{$prefix}%")
+            ->forceDelete();
+
+        // 2.6 Clean quran group circles
+        QuranCircle::withoutGlobalScopes()
+            ->where('academy_id', $academyId)
+            ->where('name', 'like', "{$prefix}%")
+            ->forceDelete();
+
+        // 3. Clean certificates
         Certificate::withoutGlobalScopes()
             ->where('academy_id', $academyId)
             ->where('certificate_text', 'like', "{$prefix}%")
@@ -634,6 +660,131 @@ class MobileE2ESeeder extends Seeder
                 'participant_id' => $participant->id,
                 'body' => $body,
             ]);
+        }
+    }
+
+    /**
+     * Create course subscriptions (interactive + recorded) for the student
+     * so the student subscriptions API returns entity_id for course detail routes.
+     */
+    private function createCourseSubscriptions(): void
+    {
+        // Find interactive course from base seeder
+        $interactiveCourse = InteractiveCourse::withoutGlobalScopes()
+            ->where('academy_id', $this->academy->id)
+            ->where('title', 'like', '[E2E]%')
+            ->first();
+
+        if (! $interactiveCourse) {
+            $interactiveCourse = $this->createInteractiveCourse();
+        }
+
+        // Create a recorded course
+        $subject = AcademicSubject::withoutGlobalScopes()
+            ->where('academy_id', $this->academy->id)
+            ->first();
+        $gradeLevel = AcademicGradeLevel::withoutGlobalScopes()
+            ->where('academy_id', $this->academy->id)
+            ->first();
+
+        $recordedCourse = null;
+        if ($subject && $gradeLevel) {
+            try {
+                RecordedCourse::unguarded(function () use (&$recordedCourse, $subject, $gradeLevel) {
+                    $recordedCourse = RecordedCourse::create([
+                        'academy_id' => $this->academy->id,
+                        'subject_id' => $subject->id,
+                        'grade_level_id' => $gradeLevel->id,
+                        'course_code' => 'RC-E2E-'.Str::random(6),
+                        'title' => self::PREFIX.' دورة مسجلة اختبارية',
+                        'description' => 'دورة مسجلة اختبارية لتغطية شاشة التفاصيل',
+                        'price' => 150.00,
+                        'is_published' => true,
+                        'published_at' => now()->subDays(10),
+                        'admin_notes' => self::PREFIX.' recorded course',
+                    ]);
+                });
+                $this->command->info("Created RecordedCourse: {$recordedCourse->id}");
+            } catch (\Exception $e) {
+                $this->command->warn("RecordedCourse creation failed: {$e->getMessage()}");
+            }
+        }
+
+        // Create course subscriptions using withoutEvents + unguarded
+        CourseSubscription::withoutEvents(function () use ($interactiveCourse, $recordedCourse) {
+            if ($interactiveCourse) {
+                CourseSubscription::unguarded(function () use ($interactiveCourse) {
+                    CourseSubscription::create([
+                        'academy_id' => $this->academy->id,
+                        'student_id' => $this->student->id,
+                        'interactive_course_id' => $interactiveCourse->id,
+                        'course_type' => 'interactive',
+                        'subscription_code' => 'CS-E2E-INT-'.Str::random(4),
+                        'status' => SessionSubscriptionStatus::ACTIVE,
+                        'payment_status' => 'paid',
+                        'enrollment_type' => 'paid',
+                        'price_paid' => 200.00,
+                        'original_price' => 200.00,
+                        'final_price' => 200.00,
+                        'currency' => 'SAR',
+                        'starts_at' => now()->subDays(14),
+                        'enrolled_at' => now()->subDays(14),
+                        'admin_notes' => self::PREFIX.' interactive course sub',
+                    ]);
+                });
+                $this->command->info("Created CourseSubscription for InteractiveCourse #{$interactiveCourse->id}");
+            }
+
+            if ($recordedCourse) {
+                CourseSubscription::unguarded(function () use ($recordedCourse) {
+                    CourseSubscription::create([
+                        'academy_id' => $this->academy->id,
+                        'student_id' => $this->student->id,
+                        'recorded_course_id' => $recordedCourse->id,
+                        'course_type' => 'recorded',
+                        'subscription_code' => 'CS-E2E-REC-'.Str::random(4),
+                        'status' => SessionSubscriptionStatus::ACTIVE,
+                        'payment_status' => 'paid',
+                        'enrollment_type' => 'paid',
+                        'price_paid' => 150.00,
+                        'original_price' => 150.00,
+                        'final_price' => 150.00,
+                        'currency' => 'SAR',
+                        'starts_at' => now()->subDays(10),
+                        'enrolled_at' => now()->subDays(10),
+                        'lifetime_access' => true,
+                        'admin_notes' => self::PREFIX.' recorded course sub',
+                    ]);
+                });
+                $this->command->info("Created CourseSubscription for RecordedCourse #{$recordedCourse->id}");
+            }
+        });
+    }
+
+    /**
+     * Create a quran group circle for the quran teacher
+     * so the teacher quran-circles/:id dynamic route works.
+     */
+    private function createQuranGroupCircle(): void
+    {
+        try {
+            QuranCircle::withoutEvents(function () {
+                $circle = QuranCircle::create([
+                    'academy_id' => $this->academy->id,
+                    'quran_teacher_id' => $this->quranTeacher->id,
+                    'name' => self::PREFIX.' حلقة قرآن جماعية',
+                    'specialization' => 'memorization',
+                    'memorization_level' => 'intermediate',
+                    'max_students' => 10,
+                    'enrolled_students' => 1,
+                    'status' => true,
+                    'enrollment_status' => 'open',
+                    'admin_notes' => self::PREFIX.' group circle',
+                ]);
+                $this->command->info("Created QuranCircle (group): {$circle->id}");
+            });
+        } catch (\Exception $e) {
+            $this->command->warn("QuranCircle creation failed: {$e->getMessage()}");
         }
     }
 
