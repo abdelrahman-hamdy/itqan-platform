@@ -237,7 +237,6 @@ class MobileE2ESeeder extends Seeder
         $this->parent = User::firstOrCreate(
             ['email' => 'e2e-parent@itqan.com'],
             [
-                'name' => 'ولي أمر اختباري',
                 'first_name' => 'ولي',
                 'last_name' => 'أمر اختباري',
                 'password' => Hash::make('E2eTest@2025'),
