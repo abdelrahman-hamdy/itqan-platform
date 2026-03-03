@@ -244,7 +244,7 @@ class MobileE2ESeeder extends Seeder
                 'user_type' => UserType::PARENT,
                 'academy_id' => $this->academy->id,
                 'email_verified_at' => now(),
-                'is_active' => true,
+                'status' => 'active',
             ]
         );
 
@@ -252,22 +252,26 @@ class MobileE2ESeeder extends Seeder
         if ($this->parent->user_type !== UserType::PARENT) {
             $this->parent->update([
                 'user_type' => UserType::PARENT,
-                'is_active' => true,
+                'status' => 'active',
             ]);
         }
 
-        // Create parent profile
+        // Create parent profile (use firstOrCreate to be idempotent)
         $parentProfile = ParentProfile::withoutEvents(function () {
-            return ParentProfile::create([
-                'academy_id' => $this->academy->id,
-                'user_id' => $this->parent->id,
-                'first_name' => 'ولي',
-                'last_name' => 'أمر اختباري',
-                'email' => 'e2e-parent@itqan.com',
-                'phone' => '0501234567',
-                'relationship_type' => RelationshipType::FATHER,
-                'parent_code' => 'PAR-E2E-'.Str::random(4),
-            ]);
+            return ParentProfile::withoutGlobalScopes()->firstOrCreate(
+                [
+                    'academy_id' => $this->academy->id,
+                    'user_id' => $this->parent->id,
+                ],
+                [
+                    'first_name' => 'ولي',
+                    'last_name' => 'أمر اختباري',
+                    'email' => 'e2e-parent@itqan.com',
+                    'phone' => '0501234567',
+                    'relationship_type' => RelationshipType::FATHER,
+                    'parent_code' => 'PAR-E2E-'.Str::random(4),
+                ]
+            );
         });
 
         // Link parent to student
@@ -365,7 +369,6 @@ class MobileE2ESeeder extends Seeder
                 'passing_score' => 60,
                 'is_active' => true,
                 'randomize_questions' => false,
-                'created_by' => $this->academicTeacher->id,
             ]);
         });
 
@@ -449,7 +452,6 @@ class MobileE2ESeeder extends Seeder
                 'passing_score' => 70,
                 'is_active' => true,
                 'randomize_questions' => false,
-                'created_by' => $this->academicTeacher->id,
             ]);
         });
 
@@ -533,6 +535,7 @@ class MobileE2ESeeder extends Seeder
                     'issued_by' => $this->quranTeacher->id,
                     'certificate_type' => CertificateType::QURAN_SUBSCRIPTION,
                     'template_style' => CertificateTemplateStyle::TEMPLATE_1,
+                    'certificate_number' => 'CERT-E2E-Q-'.Str::random(6),
                     'certificate_text' => self::PREFIX.' شهادة إتمام حفظ جزء عم - حلقة قرآن اختبارية',
                     'certificateable_type' => QuranIndividualCircle::class,
                     'certificateable_id' => $circle->id,
@@ -551,6 +554,7 @@ class MobileE2ESeeder extends Seeder
                     'issued_by' => $this->academicTeacher->id,
                     'certificate_type' => CertificateType::INTERACTIVE_COURSE,
                     'template_style' => CertificateTemplateStyle::TEMPLATE_3,
+                    'certificate_number' => 'CERT-E2E-IC-'.Str::random(6),
                     'certificate_text' => self::PREFIX.' شهادة إتمام الدورة التفاعلية الاختبارية بنجاح',
                     'certificateable_type' => InteractiveCourse::class,
                     'certificateable_id' => $course->id,
@@ -577,7 +581,7 @@ class MobileE2ESeeder extends Seeder
             $conversationModel = \Namu\WireChat\Models\Conversation::class;
 
             // Create a private conversation between student and parent
-            $conversation1 = $conversationModel::create([]);
+            $conversation1 = $conversationModel::create(['type' => 'private']);
             // Add participants
             $this->addChatParticipant($conversation1, $this->student);
             $this->addChatParticipant($conversation1, $this->parent);
