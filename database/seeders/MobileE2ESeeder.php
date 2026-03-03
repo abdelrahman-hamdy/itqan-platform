@@ -239,6 +239,7 @@ class MobileE2ESeeder extends Seeder
             [
                 'first_name' => 'ولي',
                 'last_name' => 'أمر اختباري',
+                'phone' => '0501234567',
                 'password' => Hash::make('E2eTest@2025'),
                 'user_type' => UserType::PARENT,
                 'academy_id' => $this->academy->id,
