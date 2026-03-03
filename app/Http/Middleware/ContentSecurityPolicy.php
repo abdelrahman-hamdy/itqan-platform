@@ -165,7 +165,9 @@ class ContentSecurityPolicy
             "frame-src {$frameSrc}",
             "object-src 'none'",
             "base-uri 'self'",
-            "form-action 'self' {$subdomains} https://accept.paymob.com https://ksa.paymob.com https://pakistan.paymob.com https://uae.paymob.com https://api.easykash.com https://api.tap.company",
+            // form-action removed: Livewire's JS-triggered form.submit() conflicts with CSP
+            // form-action checks in some browsers. CSRF tokens provide form submission security.
+            // Payment gateway redirects (Paymob, EasyKash, Tap) also require broad form-action.
             "frame-ancestors {$frameAncestors}",
         ];
 
