@@ -80,6 +80,17 @@ class E2ETestDataSeeder extends Seeder
         $quranSubs = $this->createQuranSubscriptions($circle);
         $academicSubs = $this->createAcademicSubscriptions($lesson);
 
+        // 6.5 Link circle/lesson back to active subscriptions so the student
+        //     subscriptions API can resolve entity_id via HasOne relationships
+        if (isset($quranSubs['active'])) {
+            $circle->update(['subscription_id' => $quranSubs['active']->id]);
+            $this->command->info("Linked QuranIndividualCircle #{$circle->id} → QuranSubscription #{$quranSubs['active']->id}");
+        }
+        if (isset($academicSubs['active'])) {
+            $lesson->update(['academic_subscription_id' => $academicSubs['active']->id]);
+            $this->command->info("Linked AcademicIndividualLesson #{$lesson->id} → AcademicSubscription #{$academicSubs['active']->id}");
+        }
+
         // 7. Create sessions in all statuses
         $quranSessions = $this->createQuranSessions($circle, $quranSubs['active'] ?? null);
         $academicSessions = $this->createAcademicSessions($lesson, $academicSubs['active'] ?? null);
@@ -389,12 +400,13 @@ class E2ETestDataSeeder extends Seeder
             ],
         ];
 
-        QuranSession::withoutEvents(function () use ($statusConfigs, $activeSub, &$sessions) {
+        QuranSession::withoutEvents(function () use ($statusConfigs, $circle, $activeSub, &$sessions) {
             foreach ($statusConfigs as $key => $config) {
                 $sessions[$key] = QuranSession::create(array_merge([
                     'academy_id' => $this->academy->id,
                     'quran_teacher_id' => $this->quranTeacher->id,
                     'student_id' => $this->student->id,
+                    'individual_circle_id' => $circle->id,
                     'session_type' => 'individual',
                     'title' => self::PREFIX." جلسة قرآن - {$key}",
                     'session_code' => 'QS-E2E-'.strtoupper(substr($key, 0, 4)).'-'.Str::random(4),
@@ -460,6 +472,7 @@ class E2ETestDataSeeder extends Seeder
                     'academy_id' => $this->academy->id,
                     'academic_teacher_id' => $this->academicTeacherProfile->id,
                     'student_id' => $this->student->id,
+                    'academic_individual_lesson_id' => $lesson->id,
                     'session_type' => 'individual',
                     'title' => self::PREFIX." جلسة أكاديمية - {$key}",
                     'session_code' => 'AS-E2E-'.strtoupper(substr($key, 0, 4)).'-'.Str::random(4),
