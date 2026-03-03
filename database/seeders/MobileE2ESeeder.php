@@ -83,6 +83,8 @@ class MobileE2ESeeder extends Seeder
         $standardPassword = Hash::make('E2eTest@2025');
         foreach ([$this->student, $this->quranTeacher, $this->academicTeacher] as $user) {
             $user->update(['password' => $standardPassword, 'status' => 'active']);
+            // active_status is not in $fillable, must use raw DB update
+            DB::table('users')->where('id', $user->id)->update(['active_status' => 1]);
         }
 
         // 3. Clean old mobile-specific E2E data
@@ -254,13 +256,12 @@ class MobileE2ESeeder extends Seeder
             ]
         );
 
-        // Ensure user_type and active status
-        if ($this->parent->user_type !== UserType::PARENT) {
-            $this->parent->update([
-                'user_type' => UserType::PARENT,
-                'status' => 'active',
-            ]);
-        }
+        // Ensure user_type, status, and active_status
+        $this->parent->update([
+            'user_type' => UserType::PARENT,
+            'status' => 'active',
+        ]);
+        DB::table('users')->where('id', $this->parent->id)->update(['active_status' => 1]);
 
         // Create parent profile (use firstOrCreate to be idempotent)
         $parentProfile = ParentProfile::withoutEvents(function () {
