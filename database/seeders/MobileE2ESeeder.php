@@ -771,6 +771,7 @@ class MobileE2ESeeder extends Seeder
                 $circle = QuranCircle::create([
                     'academy_id' => $this->academy->id,
                     'quran_teacher_id' => $this->quranTeacher->id,
+                    'circle_code' => 'QC-E2E-'.Str::random(4),
                     'name' => self::PREFIX.' حلقة قرآن جماعية',
                     'specialization' => 'memorization',
                     'memorization_level' => 'intermediate',
