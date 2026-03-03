@@ -219,12 +219,27 @@ class EasyKashWebhookController extends Controller
             ];
         }
 
-        // Verify amount
+        // Verify amount - account for currency conversion (SAR → EGP)
+        // EasyKash may charge in EGP even when the payment was created in SAR
         $expectedAmount = (int) round($payment->amount * 100);
+
+        if ($payment->currency === 'SAR' && $payload->amountInCents !== $expectedAmount) {
+            $convertedAmount = convertCurrency($payment->amount, 'SAR', 'EGP');
+            $expectedAmount = (int) round($convertedAmount * 100);
+
+            Log::channel('payments')->debug('EasyKash webhook: Converted SAR amount to EGP for comparison', [
+                'original_amount_sar' => $payment->amount,
+                'converted_amount_egp' => $convertedAmount,
+                'expected_cents_egp' => $expectedAmount,
+                'received_cents' => $payload->amountInCents,
+            ]);
+        }
+
         if ($payload->amountInCents !== $expectedAmount) {
             Log::channel('payments')->error('Amount mismatch in EasyKash webhook', [
                 'expected' => $expectedAmount,
                 'received' => $payload->amountInCents,
+                'payment_currency' => $payment->currency,
             ]);
 
             $webhookEvent->markAsFailed('Amount mismatch');
@@ -596,7 +611,7 @@ class EasyKashWebhookController extends Controller
         // Match by gateway_transaction_id to ensure we find the exact payment, not just any recent one
         if ($providerRefNum) {
             $payment = Payment::withoutGlobalScopes()->with('academy')
-                ->where('payment_method', 'easykash')
+                ->where('payment_gateway', 'easykash')
                 ->where('gateway_transaction_id', $providerRefNum)
                 ->first();
 
@@ -628,26 +643,37 @@ class EasyKashWebhookController extends Controller
             // Bypass tenant scope - callback arrives on main domain without tenant context
             $candidatePayment = Payment::withoutGlobalScopes()->with('academy')->find($parsed['payment_id']);
 
-            // CRITICAL: Verify this is a recent pending payment to avoid activating old payments
-            if ($candidatePayment && $candidatePayment->status === PaymentStatus::PENDING) {
-                // Extract timestamp from customerReference (first 12 digits: ymdHis)
-                $timestampFromRef = substr($customerReference, 0, 12);
-                $timestampFromPayment = $candidatePayment->created_at->format('ymdHis');
+            // Verify this is a pending EasyKash payment to avoid cross-gateway activation
+            if ($candidatePayment
+                && $candidatePayment->payment_gateway === 'easykash'
+                && $candidatePayment->status === PaymentStatus::PENDING) {
+                $payment = $candidatePayment;
+                Log::channel('payments')->info('EasyKash callback: found payment by parsed ID', [
+                    'payment_id' => $payment->id,
+                    'parsed_id' => $parsed['payment_id'],
+                ]);
+            }
+        }
 
-                // Only use this payment if timestamps are close (within 1 hour)
-                if (abs((int) $timestampFromRef - (int) $timestampFromPayment) < 10000) {
-                    $payment = $candidatePayment;
-                    Log::channel('payments')->info('EasyKash callback: found payment by parsed ID with timestamp validation', [
-                        'payment_id' => $payment->id,
-                        'parsed_id' => $parsed['payment_id'],
-                    ]);
-                } else {
-                    Log::channel('payments')->warning('EasyKash callback: parsed payment ID timestamp mismatch', [
-                        'parsed_id' => $parsed['payment_id'],
-                        'timestamp_from_ref' => $timestampFromRef,
-                        'timestamp_from_payment' => $timestampFromPayment,
-                    ]);
-                }
+        // Fallback: If customerReference was mangled by JSON precision loss,
+        // find the most recent pending EasyKash payment whose gateway_intent_id
+        // starts with the same timestamp prefix (first 8 chars)
+        if (! $payment && strlen($customerReference) >= 8) {
+            $refPrefix = substr($customerReference, 0, 8);
+            $candidatePayment = Payment::withoutGlobalScopes()->with('academy')
+                ->where('payment_gateway', 'easykash')
+                ->where('status', PaymentStatus::PENDING)
+                ->where('gateway_intent_id', 'LIKE', $refPrefix.'%')
+                ->orderByDesc('id')
+                ->first();
+
+            if ($candidatePayment) {
+                $payment = $candidatePayment;
+                Log::channel('payments')->info('EasyKash callback: found payment by gateway_intent_id prefix match (precision loss recovery)', [
+                    'payment_id' => $payment->id,
+                    'customer_reference' => $customerReference,
+                    'stored_intent_id' => $payment->gateway_intent_id,
+                ]);
             }
         }
 

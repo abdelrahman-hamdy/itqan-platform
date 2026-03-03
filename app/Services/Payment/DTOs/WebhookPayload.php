@@ -4,6 +4,7 @@ namespace App\Services\Payment\DTOs;
 
 use App\Enums\PaymentResultStatus;
 use App\Models\Payment;
+use App\Services\Payment\EasyKashSignatureService;
 use DateTime;
 use DateTimeInterface;
 use Log;
@@ -177,26 +178,12 @@ readonly class WebhookPayload
 
         $isSuccess = in_array($statusString, ['PAID', 'DELIVERED', 'REFUNDED']);
 
-        // Extract payment ID from customerReference
-        // New format: just the payment_id (integer)
-        // Legacy format: {academy_id}-{payment_id}-{timestamp}
-        $customerReference = $data['customerReference'] ?? '';
-        $paymentId = null;
-        $academyId = null;
-
-        if (! empty($customerReference)) {
-            if (str_contains($customerReference, '-')) {
-                // Legacy format: {academy_id}-{payment_id}-{timestamp}
-                $parts = explode('-', $customerReference);
-                if (count($parts) >= 2) {
-                    $academyId = is_numeric($parts[0]) ? (int) $parts[0] : null;
-                    $paymentId = is_numeric($parts[1]) ? (int) $parts[1] : null;
-                }
-            } elseif (is_numeric($customerReference)) {
-                // New format: just the payment_id
-                $paymentId = (int) $customerReference;
-            }
-        }
+        // Extract payment ID from customerReference using the shared parser
+        // Supports: legacy dash format, 14-digit format (time+padded6), 18-digit format (ymdHis+padded6)
+        $customerReference = (string) ($data['customerReference'] ?? '');
+        $parsed = EasyKashSignatureService::parseCustomerReference($customerReference);
+        $paymentId = $parsed['payment_id'];
+        $academyId = $parsed['academy_id'];
 
         // Parse amount (EasyKash sends in major units as string)
         $amount = $data['Amount'] ?? '0';

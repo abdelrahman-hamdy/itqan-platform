@@ -2,15 +2,15 @@
 
 namespace App\Services\Payment\Gateways;
 
-use InvalidArgumentException;
-use Exception;
 use App\Contracts\Payment\SupportsWebhooks;
 use App\Enums\PaymentFlowType;
 use App\Services\Payment\DTOs\PaymentIntent;
 use App\Services\Payment\DTOs\PaymentResult;
 use App\Services\Payment\DTOs\WebhookPayload;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 
 /**
  * EasyKash payment gateway implementation.
@@ -152,11 +152,12 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
     {
         try {
             // Build customer reference for tracking
-            // CRITICAL: EasyKash requires customerReference to be a UNIQUE NUMBER (integer)
-            // Format: {ymdHis}{paymentId_padded_6} (e.g., 260129094500000012 for payment 12 at 2026-01-29 09:45:00)
-            // The last 6 digits encode the full payment ID (supports up to 999999)
-            // Total: 12 + 6 = 18 digits, safely within PHP_INT_MAX (19 digits on 64-bit)
-            $customerReference = (int) (date('ymdHis').str_pad($intent->paymentId ?? 0, 6, '0', STR_PAD_LEFT));
+            // Format: {unix_timestamp_last8_digits}{paymentId_padded_6} = 14 digits max
+            // CRITICAL: Must be <= 15 digits to avoid IEEE 754 precision loss in EasyKash's
+            // JSON parsing (JavaScript doubles only have 53-bit mantissa ≈ 15 decimal digits).
+            // Previous 18-digit format (ymdHis + padded6) exceeded this, causing EasyKash to
+            // return a different customerReference than what was sent.
+            $customerReference = (int) (substr((string) time(), -8).str_pad($intent->paymentId ?? 0, 6, '0', STR_PAD_LEFT));
 
             // Calculate amount in major units (EasyKash uses major units, not cents)
             // Amount must be a number, not a string
