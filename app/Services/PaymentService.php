@@ -67,10 +67,13 @@ class PaymentService implements PaymentServiceInterface
             PaymentAuditLog::logAttempt($payment, $gatewayName);
 
             // Determine the correct webhook URL based on gateway
+            // CRITICAL: Webhook routes are defined on root domain (no subdomain group),
+            // so force the root domain URL to prevent subdomain context from leaking in.
+            $rootUrl = rtrim(config('app.url'), '/');
             $webhookUrl = match ($gatewayName) {
-                'easykash' => route('webhooks.easykash'),
-                'tap' => route('webhooks.tap'),
-                default => route('webhooks.paymob'),
+                'easykash' => $rootUrl.'/webhooks/easykash',
+                'tap' => $rootUrl.'/webhooks/tap',
+                default => $rootUrl.'/webhooks/paymob',
             };
 
             // Get subdomain for route generation

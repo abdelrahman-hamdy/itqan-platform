@@ -241,21 +241,45 @@ class TapWebhookController extends Controller
                     ->with('success', __('payments.notifications.payment_success'));
             }
 
-            // Payment not yet captured — redirect to subscriptions, webhook will activate when ready
-            $redirectUrl = route('student.subscriptions', ['subdomain' => $subdomain]);
+            // Payment not captured — check if failed/cancelled/declined
+            $tapStatus = strtoupper($result->rawResponse['status'] ?? 'UNKNOWN');
 
-            return redirect()->to($redirectUrl)
+            Log::channel('payments')->info('Tap callback: non-successful result', [
+                'payment_id' => $payment->id,
+                'tap_id' => $tapId,
+                'tap_status' => $tapStatus,
+                'error_code' => $result->errorCode,
+            ]);
+
+            // Update payment status for terminal states
+            if (in_array($tapStatus, ['CANCELLED', 'DECLINED', 'FAILED', 'RESTRICTED', 'VOID'])) {
+                DB::transaction(function () use ($payment, $tapStatus) {
+                    $lockedPayment = Payment::withoutGlobalScopes()->lockForUpdate()->find($payment->id);
+                    if ($lockedPayment && $lockedPayment->status !== PaymentStatus::COMPLETED) {
+                        $newStatus = match ($tapStatus) {
+                            'CANCELLED' => PaymentStatus::CANCELLED,
+                            default => PaymentStatus::FAILED,
+                        };
+                        $lockedPayment->update(['status' => $newStatus, 'payment_status' => $newStatus]);
+                    }
+                });
+
+                return redirect()->to(route('student.subscriptions', ['subdomain' => $subdomain]))
+                    ->with('error', __('payments.subscription.payment_init_failed'));
+            }
+
+            // Still pending (INITIATED, IN_PROGRESS) — webhook will handle when ready
+            return redirect()->to(route('student.subscriptions', ['subdomain' => $subdomain]))
                 ->with('info', 'تم استلام الدفع وجاري المعالجة');
         } catch (Exception $e) {
             Log::channel('payments')->error('Tap callback: verification exception', [
                 'payment_id' => $payment->id,
                 'tap_id' => $tapId,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
-            $redirectUrl = route('student.subscriptions', ['subdomain' => $subdomain]);
-
-            return redirect()->to($redirectUrl)
+            return redirect()->to(route('student.subscriptions', ['subdomain' => $subdomain]))
                 ->with('info', 'تم استلام الدفع وجاري المعالجة');
         }
     }
