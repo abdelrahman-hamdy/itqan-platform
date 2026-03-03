@@ -108,19 +108,32 @@ class E2ETestDataSeeder extends Seeder
         $academyId = $this->academy->id;
 
         // Clean in reverse dependency order
+        // Use SELECT-then-DELETE-by-ID to avoid InnoDB gap locks on secondary indexes
         SessionRecording::where('meeting_room', 'like', "{$prefix}%")->forceDelete();
         StudentSessionReport::where('academy_id', $academyId)->where('notes', 'like', "{$prefix}%")->forceDelete();
         AcademicSessionReport::where('academy_id', $academyId)->where('notes', 'like', "{$prefix}%")->forceDelete();
-        QuranSession::withoutGlobalScopes()->where('academy_id', $academyId)->where('title', 'like', "{$prefix}%")->forceDelete();
-        AcademicSession::withoutGlobalScopes()->where('academy_id', $academyId)->where('title', 'like', "{$prefix}%")->forceDelete();
-        InteractiveCourseSession::withoutGlobalScopes()->where('title', 'like', "{$prefix}%")->forceDelete();
-        QuranSubscription::withoutGlobalScopes()->where('academy_id', $academyId)->where('admin_notes', 'like', "{$prefix}%")->forceDelete();
-        AcademicSubscription::withoutGlobalScopes()->where('academy_id', $academyId)->where('admin_notes', 'like', "{$prefix}%")->forceDelete();
-        QuranIndividualCircle::withoutGlobalScopes()->where('academy_id', $academyId)->where('name', 'like', "{$prefix}%")->forceDelete();
-        AcademicIndividualLesson::withoutGlobalScopes()->where('academy_id', $academyId)->where('name', 'like', "{$prefix}%")->forceDelete();
-        InteractiveCourse::withoutGlobalScopes()->where('academy_id', $academyId)->where('title', 'like', "{$prefix}%")->forceDelete();
+
+        $this->deleteByIds(QuranSession::withoutGlobalScopes()->where('academy_id', $academyId)->where('title', 'like', "{$prefix}%"));
+        $this->deleteByIds(AcademicSession::withoutGlobalScopes()->where('academy_id', $academyId)->where('title', 'like', "{$prefix}%"));
+        $this->deleteByIds(InteractiveCourseSession::withoutGlobalScopes()->where('title', 'like', "{$prefix}%"));
+        $this->deleteByIds(QuranSubscription::withoutGlobalScopes()->where('academy_id', $academyId)->where('admin_notes', 'like', "{$prefix}%"));
+        $this->deleteByIds(AcademicSubscription::withoutGlobalScopes()->where('academy_id', $academyId)->where('admin_notes', 'like', "{$prefix}%"));
+        $this->deleteByIds(QuranIndividualCircle::withoutGlobalScopes()->where('academy_id', $academyId)->where('name', 'like', "{$prefix}%"));
+        $this->deleteByIds(AcademicIndividualLesson::withoutGlobalScopes()->where('academy_id', $academyId)->where('name', 'like', "{$prefix}%"));
+        $this->deleteByIds(InteractiveCourse::withoutGlobalScopes()->where('academy_id', $academyId)->where('title', 'like', "{$prefix}%"));
 
         $this->command->info('Cleaned old E2E test data.');
+    }
+
+    /**
+     * SELECT IDs first, then DELETE by primary key to avoid InnoDB gap locks.
+     */
+    private function deleteByIds($query): void
+    {
+        $ids = $query->pluck('id');
+        if ($ids->isNotEmpty()) {
+            $query->getModel()::withoutGlobalScopes()->whereIn('id', $ids)->forceDelete();
+        }
     }
 
     private function ensureProfiles(): void
