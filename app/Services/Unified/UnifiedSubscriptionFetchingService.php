@@ -323,9 +323,15 @@ class UnifiedSubscriptionFetchingService
             default => 'unknown',
         };
 
-        $status = $subscription->status instanceof SessionSubscriptionStatus
-            ? $subscription->status
-            : SessionSubscriptionStatus::tryFrom($subscription->status);
+        $rawStatus = $subscription->status;
+        if ($rawStatus instanceof SessionSubscriptionStatus) {
+            $status = $rawStatus;
+        } elseif ($rawStatus instanceof \BackedEnum) {
+            // CourseSubscription uses EnrollmentStatus — map to SessionSubscriptionStatus
+            $status = SessionSubscriptionStatus::tryFrom($rawStatus->value);
+        } else {
+            $status = SessionSubscriptionStatus::tryFrom((string) $rawStatus);
+        }
 
         return [
             'id' => $subscription->id,
