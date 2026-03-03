@@ -718,6 +718,7 @@ class MobileE2ESeeder extends Seeder
                         'academy_id' => $this->academy->id,
                         'student_id' => $this->student->id,
                         'interactive_course_id' => $interactiveCourse->id,
+                        'recorded_course_id' => null,
                         'course_type' => 'interactive',
                         'subscription_code' => 'CS-E2E-INT-'.Str::random(4),
                         'status' => EnrollmentStatus::ENROLLED,
@@ -739,6 +740,7 @@ class MobileE2ESeeder extends Seeder
                     CourseSubscription::create([
                         'academy_id' => $this->academy->id,
                         'student_id' => $this->student->id,
+                        'interactive_course_id' => null,
                         'recorded_course_id' => $recordedCourse->id,
                         'course_type' => 'recorded',
                         'subscription_code' => 'CS-E2E-REC-'.Str::random(4),
