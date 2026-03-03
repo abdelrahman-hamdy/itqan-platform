@@ -541,6 +541,7 @@ class MobileE2ESeeder extends Seeder
                     'certificateable_id' => $circle->id,
                     'issued_at' => now()->subDays(7),
                     'is_manual' => true,
+                    'file_path' => 'e2e/certificates/e2e-quran-cert.pdf',
                     'metadata' => ['e2e_test' => true, 'juz' => 'عم'],
                 ]);
             }
@@ -560,6 +561,7 @@ class MobileE2ESeeder extends Seeder
                     'certificateable_id' => $course->id,
                     'issued_at' => now()->subDays(3),
                     'is_manual' => true,
+                    'file_path' => 'e2e/certificates/e2e-course-cert.pdf',
                     'metadata' => ['e2e_test' => true, 'grade' => 'A'],
                 ]);
             }
