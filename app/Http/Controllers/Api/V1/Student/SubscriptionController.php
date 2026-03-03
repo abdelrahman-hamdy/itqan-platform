@@ -114,7 +114,7 @@ class SubscriptionController extends Controller
 
         if (! $type || $type === 'course') {
             $query = CourseSubscription::where('student_id', $user->id)
-                ->with(['course.assignedTeacher']);
+                ->with(['interactiveCourse.assignedTeacher', 'recordedCourse']);
 
             if ($status && $status !== 'all') {
                 $query->where('status', $status);
@@ -180,7 +180,7 @@ class SubscriptionController extends Controller
             case 'course':
                 $subscription = CourseSubscription::where('id', $id)
                     ->where('student_id', $user->id)
-                    ->with(['course.assignedTeacher', 'course.sessions', 'payments'])
+                    ->with(['interactiveCourse.assignedTeacher', 'interactiveCourse.sessions', 'recordedCourse', 'payments'])
                     ->first();
                 break;
         }
@@ -382,18 +382,24 @@ class SubscriptionController extends Controller
      */
     protected function formatSubscription($subscription, string $type): array
     {
+        // For course subscriptions, resolve the actual course model (interactive or recorded)
+        $courseModel = null;
+        if ($type === 'course') {
+            $courseModel = $subscription->interactiveCourse ?? $subscription->recordedCourse;
+        }
+
         $title = match ($type) {
             'quran' => $subscription->package_name_ar ?? __('payments.subscription_types.individual'),
             'quran_group' => $subscription->quranCircle?->name ?? $subscription->package_name_ar ?? __('payments.subscription_types.group'),
             'academic' => $subscription->subject_name ?? $subscription->subject?->name ?? __('payments.subscription_types.academic'),
-            'course' => $subscription->course?->title ?? __('payments.subscription_types.course'),
+            'course' => $courseModel?->title ?? __('payments.subscription_types.course'),
             default => __('payments.subscription_types.generic'),
         };
 
         $teacher = match ($type) {
             'quran', 'quran_group' => $subscription->quranTeacher,
             'academic' => $subscription->teacher,
-            'course' => $subscription->course?->assignedTeacher,
+            'course' => $subscription->interactiveCourse?->assignedTeacher,
             default => null,
         };
 
@@ -504,11 +510,12 @@ class SubscriptionController extends Controller
         }
 
         if ($type === 'course') {
+            $courseModel = $subscription->interactiveCourse ?? $subscription->recordedCourse;
             $base['course_details'] = [
                 'course_id' => $subscription->interactive_course_id ?? $subscription->recorded_course_id,
-                'course_title' => $subscription->course?->title,
-                'course_description' => $subscription->course?->description,
-                'total_sessions' => $subscription->course?->total_sessions,
+                'course_title' => $courseModel?->title,
+                'course_description' => $courseModel?->description,
+                'total_sessions' => $courseModel?->total_sessions,
                 'progress' => $subscription->progress_percentage ?? 0,
             ];
         }
@@ -557,10 +564,14 @@ class SubscriptionController extends Controller
         }
 
         if ($type === 'course') {
-            $completed = $subscription->course?->sessions()
-                ->where('status', SessionStatus::COMPLETED->value)
-                ->count() ?? 0;
-            $total = $subscription->course?->total_sessions ?? 0;
+            $courseModel = $subscription->interactiveCourse ?? $subscription->recordedCourse;
+            $completed = 0;
+            if ($courseModel && method_exists($courseModel, 'sessions')) {
+                $completed = $courseModel->sessions()
+                    ->where('status', SessionStatus::COMPLETED->value)
+                    ->count();
+            }
+            $total = $courseModel?->total_sessions ?? 0;
 
             return [
                 'total' => $total,
