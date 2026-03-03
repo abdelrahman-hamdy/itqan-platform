@@ -206,7 +206,7 @@
                     <div class="bg-white rounded-lg md:rounded-xl shadow p-4 md:p-6">
                         <h3 class="text-sm md:text-lg font-bold text-gray-900 mb-3 md:mb-4">{{ __('parent.payments.quick_actions') }}</h3>
                         <div class="space-y-2">
-                            <a href="{{ route('parent.payments.download-receipt', ['subdomain' => $subdomain, 'id' => $payment->id]) }}"
+                            <a href="{{ route('parent.payments.receipt', ['subdomain' => $subdomain, 'payment' => $payment->id]) }}"
                                class="min-h-[44px] flex items-center justify-between p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
                                 <div class="flex items-center gap-2">
                                     <i class="ri-download-line text-green-600"></i>

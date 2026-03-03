@@ -206,7 +206,7 @@
             @endif
 
             @if($payment->receipt_url)
-            <a href="{{ $payment->receipt_url }}" class="btn btn-secondary" download>
+            <a href="{{ route('payments.receipt', ['subdomain' => request()->route('subdomain', ''), 'payment' => $payment->id]) }}" class="btn btn-secondary">
                 {{ __('payments.success.download_receipt') }}
             </a>
             @endif
