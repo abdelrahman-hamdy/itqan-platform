@@ -63,8 +63,11 @@ class Payment extends Model
         'paid_at',
         'payment_notification_sent_at',
         'subscription_notification_sent_at',
-        // Note: payable_type and payable_id are NOT fillable for security (SEC-003)
-        // Set polymorphic relationship explicitly in service layer
+        // Polymorphic subscription linkage (set by controllers, never from user input)
+        // API validation rules in PaymentApiController exclude these from user-supplied data
+        'payable_type',
+        'payable_id',
+        'save_card',
     ];
 
     /**
