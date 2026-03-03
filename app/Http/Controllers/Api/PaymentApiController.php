@@ -35,8 +35,8 @@ class PaymentApiController extends Controller
     {
         $validated = $request->validate([
             'currency' => 'required|string|size:3',
-            'payment_type' => 'required|string|in:course,subscription,session,service',
-            'payment_method' => 'nullable|string|in:card,wallet,apple_pay',
+            'payment_type' => 'required|string|in:course,subscription',
+            'payment_method' => 'nullable|string|in:card,credit_card,debit_card,wallet,apple_pay',
             'course_id' => 'nullable|integer|required_if:payment_type,course',
             'subscription_id' => 'nullable|integer|required_if:payment_type,subscription',
             'save_card' => 'nullable|boolean',
@@ -65,7 +65,10 @@ class PaymentApiController extends Controller
                 'amount' => $canonicalAmountCents / 100, // Convert from cents
                 'currency' => $validated['currency'],
                 'payment_type' => $validated['payment_type'],
-                'payment_method' => $validated['payment_method'] ?? 'card',
+                'payment_method' => match ($validated['payment_method'] ?? 'card') {
+                    'card' => 'credit_card',
+                    default => $validated['payment_method'],
+                },
                 'payment_gateway' => 'paymob',
                 'status' => 'pending',
                 'payment_status' => 'pending',
@@ -127,9 +130,9 @@ class PaymentApiController extends Controller
      * Returns null if the payable entity cannot be found or has no valid price.
      * This prevents clients from supplying a manipulated amount.
      *
-     * @param  array       $validated  Validated request data
-     * @param  int|null    $academyId  Current tenant academy ID
-     * @return int|null    Price in cents, or null on failure
+     * @param  array  $validated  Validated request data
+     * @param  int|null  $academyId  Current tenant academy ID
+     * @return int|null Price in cents, or null on failure
      */
     private function resolveCanonicalAmountCents(array $validated, ?int $academyId): ?int
     {
@@ -188,8 +191,9 @@ class PaymentApiController extends Controller
             return null;
         }
 
-        // For 'session' and 'service' types there is no canonical price in DB yet —
-        // reject these until server-side pricing is implemented.
+        // Unsupported payment_type — validation already blocks anything other than
+        // 'course' and 'subscription', so this branch should never be reached in
+        // normal operation. Return null to surface a 404 error defensively.
         return null;
     }
 
@@ -201,7 +205,7 @@ class PaymentApiController extends Controller
         $validated = $request->validate([
             'saved_payment_method_id' => 'required|integer|exists:saved_payment_methods,id',
             'currency' => 'required|string|size:3',
-            'payment_type' => 'required|string|in:course,subscription,session,service',
+            'payment_type' => 'required|string|in:course,subscription',
             'course_id' => 'nullable|integer|required_if:payment_type,course',
             'subscription_id' => 'nullable|integer|required_if:payment_type,subscription',
         ]);

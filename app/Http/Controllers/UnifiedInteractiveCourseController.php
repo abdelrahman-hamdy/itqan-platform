@@ -365,7 +365,7 @@ class UnifiedInteractiveCourseController extends Controller
                 'payable_type' => InteractiveCourseEnrollment::class,
                 'payable_id' => $enrollment->id,
                 'payment_code' => Payment::generatePaymentCode($academy->id, 'ICP'),
-                'payment_method' => $gateway,
+                'payment_method' => 'credit_card',
                 'payment_gateway' => $gateway,
                 'payment_type' => 'course_enrollment',
                 'amount' => $totalAmount,

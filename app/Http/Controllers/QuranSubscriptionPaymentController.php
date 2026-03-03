@@ -127,7 +127,7 @@ class QuranSubscriptionPaymentController extends Controller
                 'payable_type' => QuranSubscription::class,
                 'payable_id' => $subscription->id,
                 'payment_code' => Payment::generatePaymentCode($academy->id, 'QSP'),
-                'payment_method' => $gateway,
+                'payment_method' => 'credit_card',
                 'payment_gateway' => $gateway,
                 'payment_type' => 'subscription',
                 'amount' => $totalAmount,
