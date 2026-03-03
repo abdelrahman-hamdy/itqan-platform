@@ -343,8 +343,20 @@ class BaseSubscriptionObserver
             'reason' => $subscription->cancellation_reason,
         ]);
 
-        // Send cancellation notification
+        // Throttle: skip notification if one was already sent for this subscription in the last hour.
+        // This prevents notification spam when admins repeatedly cancel/reactivate subscriptions.
+        $cacheKey = "sub_cancel_notif:{$subscription->id}";
+        if (cache()->has($cacheKey)) {
+            Log::info('Subscription cancellation notification throttled', [
+                'subscription_id' => $subscription->id,
+            ]);
+
+            return;
+        }
+
+        // Send cancellation notification and set throttle
         $this->sendCancellationNotification($subscription);
+        cache()->put($cacheKey, true, now()->addHour());
 
         // Note: Session cancellation is handled separately by session management services
     }
@@ -505,9 +517,10 @@ class BaseSubscriptionObserver
                 $student,
                 NotificationType::SESSION_CANCELLED,
                 [
+                    'session_title' => $subscriptionName,
                     'subscription_name' => $subscriptionName,
                     'subscription_type' => $subscriptionType,
-                    'cancellation_reason' => $subscription->cancellation_reason ?? 'غير محدد',
+                    'cancellation_reason' => $subscription->cancellation_reason ?? __('common.unspecified'),
                     'cancelled_at' => $subscription->cancelled_at?->format('Y-m-d H:i'),
                 ],
                 $this->getSubscriptionUrl($subscription),
