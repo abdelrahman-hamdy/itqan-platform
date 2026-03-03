@@ -76,9 +76,7 @@ class PaymentGatewayModal extends Component
 
     private function loadGateways(): void
     {
-        $academy = Academy::where('id', $this->academyId)
-            ->where('id', currentAcademy()->id)
-            ->first();
+        $academy = Academy::find($this->academyId);
 
         if (! $academy) {
             $this->availableGateways = [];
