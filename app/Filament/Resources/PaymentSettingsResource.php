@@ -139,6 +139,7 @@ class PaymentSettingsResource extends BaseResource
                             ->options([
                                 'paymob' => 'باي موب (Paymob)',
                                 'easykash' => 'إيزي كاش (EasyKash)',
+                                'tap' => 'تاب (Tap)',
                             ])
                             ->placeholder('اختر البوابة الافتراضية')
                             ->helperText('البوابة التي سيتم استخدامها افتراضياً عند إنشاء الدفعات'),
@@ -148,6 +149,7 @@ class PaymentSettingsResource extends BaseResource
                             ->options([
                                 'paymob' => 'باي موب (Paymob) - مصر، السعودية، الإمارات',
                                 'easykash' => 'إيزي كاش (EasyKash) - مصر',
+                                'tap' => 'تاب (Tap) - السعودية، الخليج',
                             ])
                             ->helperText('اختر البوابات المتاحة للطلاب في هذه الأكاديمية. إذا لم يتم اختيار أي بوابة، ستكون جميع البوابات متاحة.')
                             ->columns(1),
@@ -268,6 +270,45 @@ class PaymentSettingsResource extends BaseResource
                                     ->visible(fn (Get $get) => ! $get('payment_settings.easykash.use_global')),
                             ]),
                     ]),
+
+                // Tap Gateway Settings
+                Section::make('إعدادات تاب (Tap)')
+                    ->description('بيانات الاتصال ببوابة تاب - تدعم البطاقات والمحافظ الإلكترونية في السعودية والخليج')
+                    ->icon('heroicon-o-credit-card')
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        Toggle::make('payment_settings.tap.use_global')
+                            ->label('استخدام البيانات العامة')
+                            ->helperText('عند التفعيل، سيتم استخدام بيانات تاب المحددة في إعدادات المنصة الرئيسية')
+                            ->default(true)
+                            ->live(),
+
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('payment_settings.tap.secret_key')
+                                    ->label('المفتاح السري')
+                                    ->password()
+                                    ->revealable()
+                                    ->placeholder('أدخل Secret Key')
+                                    ->helperText('Secret Key من لوحة تحكم تاب')
+                                    ->visible(fn (Get $get) => ! $get('payment_settings.tap.use_global')),
+
+                                TextInput::make('payment_settings.tap.public_key')
+                                    ->label('المفتاح العام')
+                                    ->password()
+                                    ->revealable()
+                                    ->placeholder('أدخل Public Key')
+                                    ->helperText('Public Key من لوحة تحكم تاب')
+                                    ->visible(fn (Get $get) => ! $get('payment_settings.tap.use_global')),
+
+                                TextInput::make('payment_settings.tap.merchant_id')
+                                    ->label('رقم التاجر')
+                                    ->placeholder('أدخل Merchant ID')
+                                    ->helperText('معرف التاجر من لوحة تحكم تاب')
+                                    ->visible(fn (Get $get) => ! $get('payment_settings.tap.use_global')),
+                            ]),
+                    ]),
             ]);
     }
 
@@ -297,12 +338,14 @@ class PaymentSettingsResource extends BaseResource
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'paymob' => 'باي موب',
                         'easykash' => 'إيزي كاش',
+                        'tap' => 'تاب',
                         default => 'غير محدد',
                     })
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
                         'paymob' => 'info',
                         'easykash' => 'success',
+                        'tap' => 'primary',
                         default => 'gray',
                     }),
 
@@ -319,6 +362,7 @@ class PaymentSettingsResource extends BaseResource
                             $labels[] = match ($gateway) {
                                 'paymob' => 'باي موب',
                                 'easykash' => 'إيزي كاش',
+                                'tap' => 'تاب',
                                 default => $gateway,
                             };
                         }

@@ -76,7 +76,9 @@ class PaymentGatewayModal extends Component
 
     private function loadGateways(): void
     {
-        $academy = Academy::find($this->academyId);
+        $academy = Academy::where('id', $this->academyId)
+            ->where('id', currentAcademy()->id)
+            ->first();
 
         if (! $academy) {
             $this->availableGateways = [];
@@ -105,7 +107,7 @@ class PaymentGatewayModal extends Component
             'paymob' => 'ri-visa-line',
             'easykash' => 'ri-secure-payment-line',
             'stc_pay' => 'ri-smartphone-line',
-            'tapay' => 'ri-bank-card-line',
+            'tap' => 'ri-bank-card-line',
             'moyasar' => 'ri-bank-card-2-line',
             default => 'ri-money-dollar-circle-line',
         };

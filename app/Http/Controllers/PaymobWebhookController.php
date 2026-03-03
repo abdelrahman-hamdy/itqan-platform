@@ -20,6 +20,7 @@ use App\Models\PaymentAuditLog;
 use App\Models\PaymentWebhookEvent;
 use App\Models\QuranSubscription;
 use App\Services\Payment\DTOs\TokenizationResult;
+use App\Enums\PaymentResultStatus;
 use App\Services\Payment\DTOs\WebhookPayload;
 use App\Services\Payment\Exceptions\WebhookValidationException;
 use App\Services\Payment\PaymentMethodService;
@@ -248,7 +249,7 @@ class PaymobWebhookController extends Controller
             }
 
             $oldStatus = $payment->status;
-            $newStatus = $payload->status->value;
+            $newStatus = $this->mapToPaymentStatus($payload->status);
 
             // Check if transition is valid
             if (! $this->stateMachine->canTransition($oldStatus, $newStatus)) {
@@ -570,6 +571,23 @@ class PaymobWebhookController extends Controller
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Map PaymentResultStatus (from webhook payload) to PaymentStatus value (for state machine).
+     *
+     * PaymentResultStatus uses 'success' while PaymentStateMachine expects 'completed'.
+     */
+    private function mapToPaymentStatus(PaymentResultStatus $resultStatus): string
+    {
+        return match ($resultStatus) {
+            PaymentResultStatus::SUCCESS => PaymentStatus::COMPLETED->value,
+            PaymentResultStatus::FAILED => PaymentStatus::FAILED->value,
+            PaymentResultStatus::CANCELLED => PaymentStatus::CANCELLED->value,
+            PaymentResultStatus::PENDING => PaymentStatus::PENDING->value,
+            PaymentResultStatus::EXPIRED => PaymentStatus::EXPIRED->value,
+            default => $resultStatus->value,
+        };
     }
 
     /**

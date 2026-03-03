@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Constants\DefaultAcademy;
 use App\Enums\NotificationType;
+use App\Enums\PaymentResultStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Payment;
@@ -320,7 +321,7 @@ class TapWebhookController extends Controller
             }
 
             $oldStatus = $payment->status;
-            $newStatus = $payload->status->value;
+            $newStatus = $this->mapToPaymentStatus($payload->status);
 
             // Check if transition is valid
             if (! $this->stateMachine->canTransition($oldStatus, $newStatus)) {
@@ -397,6 +398,23 @@ class TapWebhookController extends Controller
                 'payment_id' => $payment->id,
             ];
         });
+    }
+
+    /**
+     * Map PaymentResultStatus (from webhook payload) to PaymentStatus value (for state machine).
+     *
+     * PaymentResultStatus uses 'success' while PaymentStateMachine expects 'completed'.
+     */
+    private function mapToPaymentStatus(PaymentResultStatus $resultStatus): string
+    {
+        return match ($resultStatus) {
+            PaymentResultStatus::SUCCESS => PaymentStatus::COMPLETED->value,
+            PaymentResultStatus::FAILED => PaymentStatus::FAILED->value,
+            PaymentResultStatus::CANCELLED => PaymentStatus::CANCELLED->value,
+            PaymentResultStatus::PENDING => PaymentStatus::PENDING->value,
+            PaymentResultStatus::EXPIRED => PaymentStatus::EXPIRED->value,
+            default => $resultStatus->value,
+        };
     }
 
     /**

@@ -74,6 +74,7 @@ class ContentSecurityPolicy
         'https://pakistan.paymob.com',
         'https://ksa.paymob.com',
         'https://uae.paymob.com',
+        'https://checkout.tap.company',
     ];
 
     /**
@@ -164,7 +165,7 @@ class ContentSecurityPolicy
             "frame-src {$frameSrc}",
             "object-src 'none'",
             "base-uri 'self'",
-            "form-action 'self' https://accept.paymob.com https://ksa.paymob.com https://pakistan.paymob.com https://uae.paymob.com https://api.easykash.com",
+            "form-action 'self' {$subdomains} https://accept.paymob.com https://ksa.paymob.com https://pakistan.paymob.com https://uae.paymob.com https://api.easykash.com https://api.tap.company",
             "frame-ancestors {$frameAncestors}",
         ];
 
