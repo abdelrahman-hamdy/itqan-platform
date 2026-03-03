@@ -91,16 +91,13 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         return app(PaymobWebhookController::class)->callback($request, $payment);
     })->name('payments.callback');
 
-    // EasyKash callback - REDIRECT to global route to avoid subdomain routing issues
-    Route::get('/payments/easykash/callback', function (\Illuminate\Http\Request $request) {
-        // Redirect to global callback with all query parameters
-        return redirect()->to('/payments/easykash/callback?' . http_build_query($request->query()));
-    })->name('payments.easykash.tenant.callback');
+    // EasyKash callback - handle directly (withoutGlobalScopes in controller handles cross-tenant)
+    Route::get('/payments/easykash/callback', [EasyKashWebhookController::class, 'callback'])
+        ->name('payments.easykash.tenant.callback');
 
-    // Tap callback - REDIRECT to global route to avoid subdomain routing issues
-    Route::get('/payments/tap/callback', function (\Illuminate\Http\Request $request) {
-        return redirect()->to('/payments/tap/callback?' . http_build_query($request->query()));
-    })->name('payments.tap.tenant.callback');
+    // Tap callback - handle directly (withoutGlobalScopes in controller handles cross-tenant)
+    Route::get('/payments/tap/callback', [TapWebhookController::class, 'callback'])
+        ->name('payments.tap.tenant.callback');
 
     /*
     |--------------------------------------------------------------------------
