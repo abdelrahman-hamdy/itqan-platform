@@ -79,6 +79,12 @@ class MobileE2ESeeder extends Seeder
             ->where('user_id', $this->student->id)
             ->firstOrFail();
 
+        // 2.5 Ensure all base E2E users have the standard password and active status
+        $standardPassword = Hash::make('E2eTest@2025');
+        foreach ([$this->student, $this->quranTeacher, $this->academicTeacher] as $user) {
+            $user->update(['password' => $standardPassword, 'status' => 'active']);
+        }
+
         // 3. Clean old mobile-specific E2E data
         $this->cleanMobileData();
 
