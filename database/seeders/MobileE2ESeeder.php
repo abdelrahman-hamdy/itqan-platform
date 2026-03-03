@@ -8,6 +8,9 @@ use App\Enums\RelationshipType;
 use App\Enums\UserType;
 use App\Models\Academy;
 use App\Models\Certificate;
+use App\Models\AcademicGradeLevel;
+use App\Models\AcademicSubject;
+use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
 use App\Models\ParentProfile;
 use App\Models\Quiz;
@@ -54,8 +57,18 @@ class MobileE2ESeeder extends Seeder
     {
         $this->command->info('Starting Mobile E2E data seeding...');
 
-        // 1. Run the base E2E seeder first
-        $this->call(E2ETestDataSeeder::class);
+        // 1. Run the base E2E seeder first (may partially fail due to
+        //    pre-existing escapeLikeString framework bug — that's OK,
+        //    the core data it creates before the error is sufficient)
+        try {
+            $this->call(E2ETestDataSeeder::class);
+        } catch (\BadMethodCallException $e) {
+            if (str_contains($e->getMessage(), 'escapeLikeString')) {
+                $this->command->warn('Base seeder hit known escapeLikeString bug — continuing with partial data.');
+            } else {
+                throw $e;
+            }
+        }
 
         // 2. Find academy and existing users
         $this->academy = Academy::where('subdomain', 'e2e-test')->firstOrFail();
@@ -326,14 +339,18 @@ class MobileE2ESeeder extends Seeder
 
     private function createQuizData(): void
     {
-        // Find interactive course from base seeder
+        // Find interactive course from base seeder, or create one
         $course = InteractiveCourse::withoutGlobalScopes()
             ->where('academy_id', $this->academy->id)
             ->where('title', 'like', '[E2E]%')
             ->first();
 
         if (! $course) {
-            $this->command->warn('No E2E interactive course found. Skipping quiz data.');
+            $course = $this->createInteractiveCourse();
+        }
+
+        if (! $course) {
+            $this->command->warn('Could not find or create InteractiveCourse. Skipping quiz data.');
 
             return;
         }
@@ -604,6 +621,77 @@ class MobileE2ESeeder extends Seeder
                 'participant_id' => $participant->id,
                 'body' => $body,
             ]);
+        }
+    }
+
+    /**
+     * Create an InteractiveCourse if the base seeder failed before creating one.
+     * Uses Model::unguarded() to bypass mass assignment for academy_id.
+     */
+    private function createInteractiveCourse(): ?InteractiveCourse
+    {
+        try {
+            $subject = AcademicSubject::withoutGlobalScopes()
+                ->where('academy_id', $this->academy->id)
+                ->first();
+
+            $gradeLevel = AcademicGradeLevel::withoutGlobalScopes()
+                ->where('academy_id', $this->academy->id)
+                ->first();
+
+            $teacherProfile = AcademicTeacherProfile::withoutGlobalScopes()
+                ->where('user_id', $this->academicTeacher->id)
+                ->where('academy_id', $this->academy->id)
+                ->first();
+
+            if (! $subject || ! $gradeLevel || ! $teacherProfile) {
+                $this->command->warn('Missing subject/grade/teacher profile for InteractiveCourse.');
+
+                return null;
+            }
+
+            // Use unguarded to set academy_id (excluded from $fillable for security)
+            $course = null;
+            InteractiveCourse::unguarded(function () use (&$course, $subject, $gradeLevel, $teacherProfile) {
+                $course = InteractiveCourse::create([
+                    'academy_id' => $this->academy->id,
+                    'assigned_teacher_id' => $teacherProfile->id,
+                    'subject_id' => $subject->id,
+                    'grade_level_id' => $gradeLevel->id,
+                    'course_code' => 'IC-E2E-'.Str::random(6),
+                    'title' => '[E2E] دورة تفاعلية اختبارية',
+                    'description' => 'دورة اختبارية لفحص الاختبارات والشهادات',
+                    'difficulty_level' => 'intermediate',
+                    'max_students' => 30,
+                    'duration_weeks' => 8,
+                    'sessions_per_week' => 2,
+                    'session_duration_minutes' => 60,
+                    'total_sessions' => 10,
+                    'student_price' => 200.00,
+                    'teacher_payment' => 100.00,
+                    'payment_type' => 'fixed_amount',
+                    'start_date' => now()->subDays(14),
+                    'enrollment_deadline' => now()->subDays(16),
+                    'status' => 'published',
+                    'is_published' => true,
+                    'certificate_enabled' => false,
+                    'recording_enabled' => false,
+                    'schedule' => json_encode([
+                        ['day' => 'sunday', 'start_time' => '10:00', 'end_time' => '11:00'],
+                        ['day' => 'tuesday', 'start_time' => '10:00', 'end_time' => '11:00'],
+                    ]),
+                ]);
+            });
+
+            if ($course) {
+                $this->command->info("Created fallback InteractiveCourse: {$course->id}");
+            }
+
+            return $course;
+        } catch (\Exception $e) {
+            $this->command->warn("InteractiveCourse creation failed: {$e->getMessage()}");
+
+            return null;
         }
     }
 }
