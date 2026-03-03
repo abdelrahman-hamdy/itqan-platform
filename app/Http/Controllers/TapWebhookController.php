@@ -10,6 +10,8 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
 use App\Models\PaymentWebhookEvent;
+use App\Models\AcademicSubscription;
+use App\Models\CourseSubscription;
 use App\Models\QuranSubscription;
 use App\Services\NotificationService;
 use App\Services\Payment\DTOs\WebhookPayload;
@@ -445,11 +447,28 @@ class TapWebhookController extends Controller
                     'payable_class' => $payable ? get_class($payable) : null,
                 ]);
             }
-        } elseif ($payment->subscription_id && $payment->payment_type === 'subscription') {
-            // Legacy fallback: direct subscription_id lookup (for Quran subscriptions)
-            $subscription = QuranSubscription::find($payment->subscription_id);
-            if ($subscription && $subscription->payment_status->value !== 'paid') {
-                $subscription->activateFromPayment($payment);
+        } elseif ($payment->subscription_id) {
+            // Legacy fallback: direct subscription_id lookup
+            Log::channel('payments')->info('Tap: using legacy subscription_id fallback', [
+                'payment_id' => $payment->id,
+                'subscription_id' => $payment->subscription_id,
+            ]);
+
+            $subscription = QuranSubscription::find($payment->subscription_id)
+                ?? AcademicSubscription::find($payment->subscription_id)
+                ?? CourseSubscription::find($payment->subscription_id);
+
+            if ($subscription && method_exists($subscription, 'activateFromPayment')) {
+                $currentStatus = $subscription->payment_status->value ?? $subscription->status ?? null;
+                if ($currentStatus !== 'paid' && $currentStatus !== 'active') {
+                    $subscription->activateFromPayment($payment);
+
+                    Log::channel('payments')->info('Tap: subscription activated from legacy subscription_id', [
+                        'subscription_id' => $subscription->id,
+                        'subscription_type' => get_class($subscription),
+                        'payment_id' => $payment->id,
+                    ]);
+                }
             }
         } else {
             Log::channel('payments')->warning('Tap: no subscription linkage found', [

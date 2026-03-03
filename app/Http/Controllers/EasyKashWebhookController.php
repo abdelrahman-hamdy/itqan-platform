@@ -422,28 +422,32 @@ class EasyKashWebhookController extends Controller
                     'payable_id' => $payment->payable_id,
                 ]);
             }
-        } elseif ($payment->subscription_id && $payment->payment_type === 'subscription') {
+        } elseif ($payment->subscription_id) {
             Log::channel('payments')->info('EasyKash: using legacy subscription_id fallback', [
                 'payment_id' => $payment->id,
                 'subscription_id' => $payment->subscription_id,
             ]);
 
-            // Legacy fallback: direct subscription_id lookup (for Quran subscriptions)
-            // Use activateFromPayment() for consistent behavior (circle creation, metadata cleanup, notifications)
-            $subscription = QuranSubscription::find($payment->subscription_id);
-            if ($subscription && $subscription->payment_status->value !== 'paid') {
-                $subscription->activateFromPayment($payment);
+            // Legacy fallback: direct subscription_id lookup (try all subscription types)
+            $subscription = QuranSubscription::find($payment->subscription_id)
+                ?? AcademicSubscription::find($payment->subscription_id)
+                ?? CourseSubscription::find($payment->subscription_id);
 
-                Log::channel('payments')->info('EasyKash: Quran subscription activated from legacy subscription_id', [
-                    'subscription_id' => $subscription->id,
-                    'payment_id' => $payment->id,
-                ]);
+            if ($subscription && method_exists($subscription, 'activateFromPayment')) {
+                $currentStatus = $subscription->payment_status->value ?? $subscription->status ?? null;
+                if ($currentStatus !== 'paid' && $currentStatus !== 'active') {
+                    $subscription->activateFromPayment($payment);
+
+                    Log::channel('payments')->info('EasyKash: subscription activated from legacy subscription_id', [
+                        'subscription_id' => $subscription->id,
+                        'subscription_type' => get_class($subscription),
+                        'payment_id' => $payment->id,
+                    ]);
+                }
             } else {
-                Log::channel('payments')->warning('EasyKash: legacy subscription not found or already paid', [
+                Log::channel('payments')->warning('EasyKash: legacy subscription not found', [
                     'payment_id' => $payment->id,
                     'subscription_id' => $payment->subscription_id,
-                    'found' => $subscription !== null,
-                    'already_paid' => $subscription ? ($subscription->payment_status->value === 'paid') : false,
                 ]);
             }
         } else {
