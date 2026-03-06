@@ -651,11 +651,23 @@ class AuthController extends Controller
             ->first();
 
         if (! $record) {
+            Log::warning('Password reset: no record found', [
+                'email' => $request->email,
+                'academy_id' => $academy->id,
+            ]);
+
             return back()->withErrors(['email' => 'رابط إعادة التعيين غير صالح أو منتهي الصلاحية'])->withInput();
         }
 
         // Verify token
         if (! Hash::check($request->token, $record->token)) {
+            Log::warning('Password reset: token hash mismatch', [
+                'email' => $request->email,
+                'academy_id' => $academy->id,
+                'request_token_length' => strlen($request->token),
+                'stored_hash_prefix' => substr($record->token, 0, 10),
+            ]);
+
             return back()->withErrors(['email' => 'رابط إعادة التعيين غير صالح'])->withInput();
         }
 
