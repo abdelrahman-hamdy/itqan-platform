@@ -283,8 +283,10 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
 
             TextColumn::make('quranTeacher.full_name')
                 ->label('المعلم')
-                ->searchable()
-                ->sortable()
+                ->searchable(query: function (Builder $query, string $search): Builder {
+                    return $query->whereHas('quranTeacher', fn ($q) => $q->whereHas('user', fn ($u) => $u->where('name', 'like', "%{$search}%")));
+                })
+                ->sortable(query: fn (Builder $query, string $direction) => $query)
                 ->toggleable(),
 
             TextColumn::make('package.name')
