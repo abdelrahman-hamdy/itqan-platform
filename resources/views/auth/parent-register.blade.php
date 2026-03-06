@@ -150,7 +150,7 @@
                 @click="verifyStudents"
                 :disabled="verifying"
                 :class="{ 'opacity-75 cursor-wait': verifying }"
-                class="w-full flex items-center justify-center gap-2 px-6 py-3.5 text-white font-medium rounded-button hover:shadow-lg hover:-translate-y-0.5 transition-smooth disabled:cursor-not-allowed"
+                class="w-full flex items-center justify-center gap-2 px-6 py-3.5 cursor-pointer text-white font-medium rounded-button hover:shadow-lg hover:-translate-y-0.5 transition-smooth disabled:cursor-not-allowed"
                 style="background: linear-gradient(to right, {{ $gradientFromHex }}, {{ $gradientToHex }});"
             >
                 <div x-show="verifying" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -467,7 +467,10 @@
                 async verifyStudents() {
                     const phoneInput = document.querySelector('input[name="parent_phone"]');
                     const countryCodeInput = document.querySelector('input[name="parent_phone_country_code"]');
-                    const phone = phoneInput ? phoneInput.value : '';
+                    // Use native getter to bypass intl-tel-input's value interceptor
+                    // (strictMode overrides .value and calls getCoreNumber which needs async utils.js)
+                    const nativeGetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').get;
+                    const phone = phoneInput ? nativeGetter.call(phoneInput) : '';
                     const countryCode = countryCodeInput ? countryCodeInput.value : '';
                     const codes = this.studentCodes.filter(code => code.trim() !== '').map(code => code.trim().toUpperCase());
 
