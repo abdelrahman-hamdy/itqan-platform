@@ -541,11 +541,12 @@ class AuthController extends Controller
             // Generate reset token
             $token = Str::random(64);
 
-            // Store token in password_reset_tokens table
+            // Store token in password_reset_tokens table (scoped to academy)
             DB::table('password_reset_tokens')->updateOrInsert(
-                ['email' => $request->email],
+                ['email' => $request->email, 'academy_id' => $academy->id],
                 [
                     'email' => $request->email,
+                    'academy_id' => $academy->id,
                     'token' => Hash::make($token),
                     'created_at' => now(),
                 ]
@@ -585,9 +586,10 @@ class AuthController extends Controller
                 ->withErrors(['email' => 'رابط إعادة التعيين غير صالح']);
         }
 
-        // Verify token exists and is not expired
+        // Verify token exists and is not expired (scoped to academy)
         $record = DB::table('password_reset_tokens')
             ->where('email', $email)
+            ->where('academy_id', $academy->id)
             ->first();
 
         if (! $record) {
@@ -599,7 +601,10 @@ class AuthController extends Controller
         $createdAt = Carbon::parse($record->created_at);
         if ($createdAt->diffInMinutes(now()) > 60) {
             // Delete expired token
-            DB::table('password_reset_tokens')->where('email', $email)->delete();
+            DB::table('password_reset_tokens')
+                ->where('email', $email)
+                ->where('academy_id', $academy->id)
+                ->delete();
 
             return redirect()->route('password.request', ['subdomain' => $subdomain])
                 ->withErrors(['email' => 'انتهت صلاحية رابط إعادة التعيين. يرجى طلب رابط جديد.']);
@@ -639,9 +644,10 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'الأكاديمية غير موجودة أو غير نشطة'])->withInput();
         }
 
-        // Find reset record
+        // Find reset record (scoped to academy)
         $record = DB::table('password_reset_tokens')
             ->where('email', $request->email)
+            ->where('academy_id', $academy->id)
             ->first();
 
         if (! $record) {
@@ -657,7 +663,10 @@ class AuthController extends Controller
         $createdAt = Carbon::parse($record->created_at);
         if ($createdAt->diffInMinutes(now()) > 60) {
             // Delete expired token
-            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            DB::table('password_reset_tokens')
+                ->where('email', $request->email)
+                ->where('academy_id', $academy->id)
+                ->delete();
 
             return redirect()->route('password.request', ['subdomain' => $subdomain])
                 ->withErrors(['email' => 'انتهت صلاحية رابط إعادة التعيين. يرجى طلب رابط جديد.']);
@@ -680,6 +689,7 @@ class AuthController extends Controller
         // Delete reset token
         DB::table('password_reset_tokens')
             ->where('email', $request->email)
+            ->where('academy_id', $academy->id)
             ->delete();
 
         // Invalidate all existing sessions for security

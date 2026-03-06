@@ -11,6 +11,20 @@
         <input type="hidden" name="email" value="{{ $email }}">
 
         <div class="space-y-5">
+            <!-- Validation Errors -->
+            @if($errors->any())
+                <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="ri-error-warning-fill text-red-500 text-lg flex-shrink-0 mt-0.5"></i>
+                        <div class="ms-3">
+                            @foreach($errors->all() as $error)
+                                <p class="text-sm text-red-700">{{ $error }}</p>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <!-- Email Display (Read-only) -->
             <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <div class="flex items-center">
