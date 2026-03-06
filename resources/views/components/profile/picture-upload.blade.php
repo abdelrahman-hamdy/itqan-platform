@@ -1,33 +1,75 @@
 @props(['currentAvatar' => null, 'userName' => 'User', 'user' => null, 'userType' => null])
 
+@php
+    // Resolve default avatar URL using same logic as <x-avatar>
+    $resolvedUserType = $userType;
+    $resolvedGender = 'male';
+
+    if ($user) {
+        if (!$resolvedUserType) {
+            $userClass = get_class($user);
+            if ($userClass === 'App\Models\QuranTeacherProfile') {
+                $resolvedUserType = 'quran_teacher';
+            } elseif ($userClass === 'App\Models\AcademicTeacherProfile') {
+                $resolvedUserType = 'academic_teacher';
+            } else {
+                $resolvedUserType = 'student';
+            }
+        }
+        $resolvedGender = $user->gender ?? $user->user?->gender ?? 'male';
+    }
+
+    $avatarConfig = match($resolvedUserType) {
+        'quran_teacher' => [
+            'bgColor' => 'bg-yellow-100',
+            'defaultAvatarUrl' => asset('app-design-assets/' . ($resolvedGender === 'female' ? 'female' : 'male') . '-quran-teacher-avatar.png'),
+        ],
+        'academic_teacher' => [
+            'bgColor' => 'bg-violet-100',
+            'defaultAvatarUrl' => asset('app-design-assets/' . ($resolvedGender === 'female' ? 'female' : 'male') . '-academic-teacher-avatar.png'),
+        ],
+        default => [
+            'bgColor' => 'bg-blue-100',
+            'defaultAvatarUrl' => asset('app-design-assets/' . ($resolvedGender === 'female' ? 'female' : 'male') . '-student-avatar.png'),
+        ],
+    };
+@endphp
+
 <div class="mb-8 pb-8 border-b border-gray-200" style="display: flex; justify-content: center; width: 100%;">
     <div x-data="profilePictureUpload('{{ $currentAvatar ? asset('storage/' . $currentAvatar) : '' }}')" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
         <!-- Profile Picture Display -->
         <div class="relative" style="display: inline-block;">
             <!-- Avatar Container -->
-            <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg ring-2 ring-primary/20">
+            <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg ring-2 ring-primary/20 {{ $avatarConfig['bgColor'] }} relative">
                 <!-- Preview image (shown when user selects a file) -->
                 <img x-ref="previewImg"
                      :src="previewUrl"
                      alt="{{ __('common.profile.avatar_alt') }}"
-                     class="w-full h-full object-cover"
+                     class="w-full h-full object-cover relative z-10"
                      x-show="previewUrl"
                      x-cloak>
 
-                <!-- Default avatar (shown when no preview selected) -->
-                <div x-show="!previewUrl" class="w-full h-full">
+                <!-- Default state (shown when no preview selected) -->
+                <div x-show="!previewUrl" class="absolute inset-0">
                     @if($currentAvatar)
                         <img src="{{ asset('storage/' . $currentAvatar) }}"
                              alt="{{ __('common.profile.avatar_alt') }}"
                              class="w-full h-full object-cover">
+                    @elseif($avatarConfig['defaultAvatarUrl'])
+                        <img src="{{ $avatarConfig['defaultAvatarUrl'] }}"
+                             alt="{{ $userName }}"
+                             class="absolute object-cover"
+                             style="width: 120%; height: 120%; top: 0; left: 50%; transform: translateX(-50%);">
                     @else
-                        <x-avatar :user="$user ?? auth()->user()" size="2xl" :userType="$userType" class="!w-full !h-full !rounded-none" />
+                        <div class="w-full h-full flex items-center justify-center">
+                            <i class="ri-user-line text-5xl text-gray-400"></i>
+                        </div>
                     @endif
                 </div>
             </div>
 
             <!-- Camera Icon Badge -->
-            <div class="absolute bottom-1 w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center shadow-lg" style="inset-inline-end: 0.25rem;">
+            <div class="absolute bottom-1 w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center shadow-lg z-20" style="inset-inline-end: 0.25rem;">
                 <i class="ri-camera-line text-lg"></i>
             </div>
         </div>
