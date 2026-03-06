@@ -154,32 +154,16 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     // Teacher routes (profile-based with dashboard access)
     Route::middleware(['auth', 'role:teacher,quran_teacher,academic_teacher'])->prefix('teacher')->group(function () {
-        // Main teacher route with smart dashboard redirect
+        // Main teacher route - redirect to frontend dashboard
         Route::get('/', function () {
-            $user = Auth::user();
             $subdomain = request()->route('subdomain') ?? \App\Constants\DefaultAcademy::subdomain();
 
-            // Smart redirect based on teacher type
-            if ($user->isAcademicTeacher()) {
-                return redirect('/academic-teacher-panel');
-            } elseif ($user->isQuranTeacher()) {
-                return redirect('/teacher-panel');
-            }
-
-            // Fallback to profile for other teacher types
             return redirect()->route('teacher.profile', ['subdomain' => $subdomain]);
         })->name('teacher.dashboard');
 
         // Direct panel access redirect (for when users bookmark panel URLs)
         Route::get('/panel-redirect', function () {
-            $user = Auth::user();
             $subdomain = request()->route('subdomain') ?? \App\Constants\DefaultAcademy::subdomain();
-
-            if ($user->isAcademicTeacher()) {
-                return redirect('/academic-teacher-panel');
-            } elseif ($user->isQuranTeacher()) {
-                return redirect('/teacher-panel');
-            }
 
             return redirect()->route('teacher.profile', ['subdomain' => $subdomain]);
         })->name('teacher.panel.redirect');

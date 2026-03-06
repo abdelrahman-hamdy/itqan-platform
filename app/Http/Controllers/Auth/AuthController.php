@@ -908,15 +908,7 @@ class AuthController extends Controller
             return redirect('/panel');
         }
 
-        if ($user->isQuranTeacher()) {
-            // Quran teachers go to dashboard
-            $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? DefaultAcademy::subdomain());
-
-            return redirect()->route('teacher.dashboard', ['subdomain' => $subdomain]);
-        }
-
-        if ($user->isAcademicTeacher()) {
-            // Academic teachers go to profile page
+        if ($user->isQuranTeacher() || $user->isAcademicTeacher()) {
             $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? DefaultAcademy::subdomain());
 
             return redirect()->route('teacher.profile', ['subdomain' => $subdomain]);

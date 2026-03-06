@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Constants\DefaultAcademy;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
@@ -23,6 +24,22 @@ class Login extends \Filament\Auth\Pages\Login
 
             if ($user && method_exists($user, 'update')) {
                 $user->update(['last_login_at' => now()]);
+            }
+
+            // Redirect teachers to frontend dashboard instead of Filament panel
+            $panelId = Filament::getCurrentPanel()?->getId();
+            if ($user && in_array($panelId, ['teacher', 'academic-teacher'])) {
+                $subdomain = $user->academy->subdomain ?? DefaultAcademy::subdomain();
+
+                return new class($subdomain) implements LoginResponse
+                {
+                    public function __construct(protected string $subdomain) {}
+
+                    public function toResponse($request)
+                    {
+                        return redirect()->route('teacher.profile', ['subdomain' => $this->subdomain]);
+                    }
+                };
             }
         }
 
