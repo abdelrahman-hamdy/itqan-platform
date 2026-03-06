@@ -17,14 +17,14 @@
         }
     }
 
-    // GRADIENT COLORS: Use gradient_palette for gradient buttons only
-    $gradientFromFull = 'cyan-500';
-    $gradientToFull = 'blue-600';
+    // GRADIENT COLORS: Use hex values for inline styles (avoids Tailwind JIT purge issues)
+    $gradientFromHex = '#06b6d4'; // cyan-500
+    $gradientToHex = '#2563eb';   // blue-600
 
     if ($academy && $academy->gradient_palette) {
-        $colors = $academy->gradient_palette->getColors();
-        $gradientFromFull = $colors['from'];
-        $gradientToFull = $colors['to'];
+        $hexColors = $academy->gradient_palette->getHexColors();
+        $gradientFromHex = $hexColors['from'];
+        $gradientToHex = $hexColors['to'];
     }
 @endphp
     <form id="parentRegisterForm"
@@ -150,7 +150,8 @@
                 @click="verifyStudents"
                 :disabled="verifying"
                 :class="{ 'opacity-75 cursor-wait': verifying }"
-                class="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-{{ $gradientFromFull }} to-{{ $gradientToFull }} text-white font-medium rounded-button hover:shadow-lg hover:-translate-y-0.5 transition-smooth disabled:cursor-not-allowed"
+                class="w-full flex items-center justify-center gap-2 px-6 py-3.5 text-white font-medium rounded-button hover:shadow-lg hover:-translate-y-0.5 transition-smooth disabled:cursor-not-allowed"
+                style="background: linear-gradient(to right, {{ $gradientFromHex }}, {{ $gradientToHex }});"
             >
                 <div x-show="verifying" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 <i x-show="!verifying" class="ri-check-line text-lg"></i>
@@ -464,8 +465,10 @@
                 },
 
                 async verifyStudents() {
-                    const phone = document.getElementById('parent_phone').value;
-                    const countryCode = document.getElementById('parent_phone_country_code').value;
+                    const phoneInput = document.querySelector('input[name="parent_phone"]');
+                    const countryCodeInput = document.querySelector('input[name="parent_phone_country_code"]');
+                    const phone = phoneInput ? phoneInput.value : '';
+                    const countryCode = countryCodeInput ? countryCodeInput.value : '';
                     const codes = this.studentCodes.filter(code => code.trim() !== '').map(code => code.trim().toUpperCase());
 
                     if (!phone || codes.length === 0) {
