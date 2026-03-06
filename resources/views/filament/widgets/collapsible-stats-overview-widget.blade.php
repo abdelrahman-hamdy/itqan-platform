@@ -40,7 +40,7 @@
             </button>
         @endif
 
-        {{-- Stats content --}}
+        {{-- Stats content (hide inner heading on mobile to avoid duplication with toggle bar) --}}
         <div x-show="open" x-cloak
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
@@ -49,7 +49,14 @@
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
         >
-            {{ $this->content }}
+            <div class="collapsible-stats-content">
+                <style>
+                    @media (max-width: 767px) {
+                        .collapsible-stats-content .fi-section-header { display: none !important; }
+                    }
+                </style>
+                {{ $this->content }}
+            </div>
         </div>
     </div>
 </x-filament-widgets::widget>
