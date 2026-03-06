@@ -60,9 +60,22 @@
                             @csrf
                             <input type="hidden" name="payment_gateway" id="checkout_payment_gateway">
 
-                            <!-- Payment Method Selector with Saved Cards -->
+                            <!-- Payment Methods -->
                             @auth
-                                <livewire:payment.payment-method-selector />
+                                <!-- Payment Methods for Authenticated Users -->
+                                <div class="space-y-3">
+                                    <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                                        <input type="radio" name="payment_method" value="credit_card" checked
+                                               class="text-primary focus:ring-primary">
+                                        <div class="ms-3 flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <i class="ri-bank-card-line text-xl text-gray-600 shrink-0"></i>
+                                                <span class="font-medium text-gray-900">{{ __('courses.checkout.payment_method.credit_card') }}</span>
+                                            </div>
+                                            <p class="text-sm text-gray-600 mt-1">{{ __('courses.checkout.payment_method.credit_card_desc') }}</p>
+                                        </div>
+                                    </label>
+                                </div>
                             @else
                                 <!-- Guest Payment Methods -->
                                 <div class="space-y-3">
