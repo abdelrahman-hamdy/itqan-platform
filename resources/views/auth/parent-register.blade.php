@@ -475,7 +475,7 @@
                     const codes = this.studentCodes.filter(code => code.trim() !== '').map(code => code.trim().toUpperCase());
 
                     if (!phone || codes.length === 0) {
-                        window.toast?.warning('يرجى إدخال رقم الهاتف ورمز طالب واحد على الأقل');
+                        alert('يرجى إدخال رقم الهاتف ورمز طالب واحد على الأقل');
                         return;
                     }
 
@@ -495,7 +495,8 @@
                             })
                         });
 
-                        const data = await response.json();
+                        const json = await response.json();
+                        const data = json.data || json;
 
                         // Always update all arrays from API response
                         this.verifiedStudents = data.verified || [];
@@ -505,25 +506,25 @@
                         // Only set verified to true if we have students we can actually register
                         this.verified = this.verifiedStudents.length > 0;
 
-                        if (data.success && this.verified) {
+                        if (this.verified) {
                             setTimeout(() => {
                                 document.getElementById('personalInfoSection')?.scrollIntoView({
                                     behavior: 'smooth',
                                     block: 'start'
                                 });
                             }, 300);
-                        } else if (!data.success || this.verifiedStudents.length === 0) {
+                        } else if (this.verifiedStudents.length === 0) {
                             // Show appropriate message based on the results
-                            if (this.studentsWithParent.length > 0 && this.verifiedStudents.length === 0) {
-                                window.toast?.error('جميع الطلاب المدخلين لديهم حساب ولي أمر بالفعل. لا يمكن إنشاء حساب جديد.');
+                            if (this.studentsWithParent.length > 0) {
+                                alert('جميع الطلاب المدخلين لديهم حساب ولي أمر بالفعل. لا يمكن إنشاء حساب جديد.');
                             } else if (data.message) {
-                                window.toast?.error(data.message);
+                                alert(data.message);
                             } else {
-                                window.toast?.error('حدث خطأ أثناء التحقق. يرجى المحاولة مرة أخرى.');
+                                alert('لم يتم العثور على طلاب يطابقون الرموز المدخلة ورقم الهاتف.');
                             }
                         }
                     } catch (error) {
-                        window.toast?.error('حدث خطأ أثناء التحقق. يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.');
+                        alert('حدث خطأ أثناء التحقق. يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.');
                     } finally {
                         this.verifying = false;
                     }
@@ -535,10 +536,10 @@
 
                     if (!this.verified || (this.verifiedStudents.length === 0 && !(hasValidationErrors && hasOldInput))) {
                         event.preventDefault();
-                        window.toast?.warning('يرجى التحقق من رموز الطلاب أولاً');
+                        alert('يرجى التحقق من رموز الطلاب أولاً');
                     } else if (!this.passwordMatch) {
                         event.preventDefault();
-                        window.toast?.warning('كلمتا المرور غير متطابقتين. يرجى التأكد من تطابق كلمتي المرور');
+                        alert('كلمتا المرور غير متطابقتين. يرجى التأكد من تطابق كلمتي المرور');
                     } else {
                         this.loading = true;
                     }

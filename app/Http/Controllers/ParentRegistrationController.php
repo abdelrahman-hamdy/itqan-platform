@@ -125,7 +125,7 @@ class ParentRegistrationController extends Controller
             'unverified' => $unverified,
             'already_has_parent' => $alreadyHasParent,
             'message' => $message,
-        ], count($verified) > 0); // Only success if at least one verified
+        ]);
     }
 
     /**
