@@ -30,7 +30,8 @@ class StudentProfileService
      */
     public function getOrCreateProfile(User $user): ?StudentProfile
     {
-        $studentProfile = $user->studentProfileUnscoped;
+        // Use studentProfile (respects soft deletes) — don't resurrect deleted profiles
+        $studentProfile = $user->studentProfile;
 
         if ($studentProfile) {
             return $studentProfile;
@@ -48,8 +49,8 @@ class StudentProfileService
     public function createBasicProfile(User $user): ?StudentProfile
     {
         try {
-            // Check if a profile already exists but might be orphaned
-            $existingProfile = StudentProfile::withoutGlobalScopes()
+            // Check if a non-deleted profile already exists (bypass academy scope but respect soft deletes)
+            $existingProfile = StudentProfile::withoutGlobalScope('academy_via_relationship')
                 ->where('user_id', $user->id)
                 ->first();
 

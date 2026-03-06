@@ -65,7 +65,11 @@ class StudentProfileResource extends BaseStudentProfileResource
                     ->action(fn ($record) => $record->user?->update(['active_status' => false]))
                     ->visible(fn ($record) => $record->user && $record->user->active_status),
                 DeleteAction::make()
-                    ->label('حذف'),
+                    ->label('حذف')
+                    ->after(function ($record) {
+                        // Also soft-delete the associated user so they can't log in
+                        $record->user?->delete();
+                    }),
             ]),
         ];
     }
