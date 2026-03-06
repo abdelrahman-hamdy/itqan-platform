@@ -223,7 +223,7 @@ class StudentStatisticsService implements StudentStatisticsServiceInterface
                 $query->where('homework_assigned', true)
                     ->orWhereNotNull('homework_description');
             })
-            ->whereDoesntHave('studentReports', function ($query) use ($user) {
+            ->whereDoesntHave('sessionReports', function ($query) use ($user) {
                 $query->where('student_id', $user->id)
                     ->whereNotNull('homework_completion_degree');
             })
