@@ -16,54 +16,23 @@
       <!-- Quick Stats -->
       @include('components.stats.teacher-stats', ['stats' => $stats])
 
-      <!-- Main Content Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
+      <!-- Learning Sections (Full Width, Stacked) -->
+      <div class="space-y-6">
 
         @if($teacherType === 'quran')
           <!-- Quran Teacher Content -->
 
-          <!-- Assigned Group Circles -->
-          <div id="group-quran-circles">
-            @include('components.cards.learning-section-card', [
-              'title' => __('teacher.circles.group.title'),
-              'subtitle' => __('teacher.circles.group.subtitle'),
-              'icon' => 'ri-group-line',
-              'iconBgColor' => 'bg-green-500',
-              'hideDots' => true,
-              'items' => $assignedCircles->take(3)->map(function($circle) {
-                return [
-                  'title' => $circle->name,
-                  'description' => $circle->students->count() . ' ' . __('teacher.circles.group.registered_students') .
-                                   ($circle->schedule_days_text ? ' - ' . $circle->schedule_days_text : ''),
-                  'icon' => 'ri-group-line',
-                  'iconBgColor' => 'bg-green-100',
-                  'iconColor' => 'text-green-600',
-                  'status' => 'active',
-                  'link' => route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id])
-                ];
-              })->toArray(),
-              'footer' => [
-                'text' => __('teacher.circles.group.view_all_circles'),
-                'link' => route('teacher.group-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])
-              ],
-              'stats' => [
-                ['icon' => 'ri-group-line', 'value' => $assignedCircles->count() . ' ' . __('teacher.circles.group.active_circle')],
-                ['icon' => 'ri-user-line', 'value' => $assignedCircles->sum(function($circle) { return $circle->students->count(); }) . ' ' . __('teacher.common.student')]
-              ],
-              'emptyTitle' => __('teacher.circles.group.empty_title'),
-              'emptyDescription' => __('teacher.circles.group.empty_description'),
-              'emptyActionText' => ''
-            ])
-          </div>
-
-          <!-- Individual Quran Sessions (Private) -->
+          <!-- 1. Individual Quran Sessions (Private) -->
           <div id="individual-quran-sessions">
             @include('components.cards.learning-section-card', [
               'title' => __('teacher.circles.individual.title'),
               'subtitle' => __('teacher.circles.individual.subtitle'),
               'icon' => 'ri-user-star-line',
               'iconBgColor' => 'bg-yellow-500',
+              'primaryColor' => 'yellow',
               'hideDots' => true,
+              'collapsible' => true,
+              'startCollapsed' => $activeSubscriptions->isEmpty(),
               'items' => $activeSubscriptions->take(3)->map(function($subscription) {
                 // Skip subscriptions without individual circles
                 if (!$subscription->individualCircle) {
@@ -96,17 +65,103 @@
             ])
           </div>
 
+          <!-- 2. Trial Requests -->
+          <div id="trial-requests">
+            @include('components.cards.learning-section-card', [
+              'title' => __('teacher.trial.title'),
+              'subtitle' => __('teacher.trial.subtitle'),
+              'icon' => 'ri-gift-line',
+              'iconBgColor' => 'bg-amber-500',
+              'primaryColor' => 'amber',
+              'hideDots' => true,
+              'collapsible' => true,
+              'startCollapsed' => $pendingTrialRequests->isEmpty(),
+              'items' => $pendingTrialRequests->map(function($request) {
+                $statusColors = [
+                  'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-600', 'label' => __('teacher.trial.status.pending')],
+                  'approved' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-600', 'label' => __('teacher.trial.status.approved')],
+                  'scheduled' => ['bg' => 'bg-green-100', 'text' => 'text-green-600', 'label' => __('teacher.trial.status.scheduled')],
+                ];
+                $statusKey = is_object($request->status) ? $request->status->value : $request->status;
+                $status = $statusColors[$statusKey] ?? $statusColors['pending'];
+
+                return [
+                  'title' => $request->student->name ?? __('teacher.trial.new_student'),
+                  'description' => __('teacher.trial.trial_request') . ' - ' . $status['label'] .
+                                   ($request->preferred_time ? ' - ' . __('teacher.trial.preferred_time') . ': ' . $request->preferred_time : '') .
+                                   ($request->trialSession?->scheduled_at ? ' - ' . __('teacher.trial.scheduled_at') . ': ' . $request->trialSession->scheduled_at->format('Y-m-d H:i') : ''),
+                  'icon' => 'ri-user-add-line',
+                  'iconBgColor' => $status['bg'],
+                  'iconColor' => $status['text'],
+                  'status' => $request->status === 'scheduled' ? 'active' : ($request->status === 'approved' ? 'pending' : 'warning'),
+                  'link' => route('teacher.trial-sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'trialRequest' => $request->id])
+                ];
+              })->toArray(),
+              'footer' => [
+                'text' => __('teacher.trial.view_all_requests'),
+                'link' => route('teacher.trial-sessions.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])
+              ],
+              'stats' => [
+                ['icon' => 'ri-time-line', 'value' => $pendingTrialRequests->where('status', 'pending')->count() . ' ' . __('teacher.trial.pending_request')],
+                ['icon' => 'ri-calendar-check-line', 'value' => $pendingTrialRequests->where('status', 'scheduled')->count() . ' ' . __('teacher.trial.scheduled_session')]
+              ],
+              'emptyTitle' => __('teacher.trial.empty_title'),
+              'emptyDescription' => __('teacher.trial.empty_description'),
+              'emptyActionText' => ''
+            ])
+          </div>
+
+          <!-- 3. Assigned Group Circles -->
+          <div id="group-quran-circles">
+            @include('components.cards.learning-section-card', [
+              'title' => __('teacher.circles.group.title'),
+              'subtitle' => __('teacher.circles.group.subtitle'),
+              'icon' => 'ri-group-line',
+              'iconBgColor' => 'bg-green-500',
+              'primaryColor' => 'green',
+              'hideDots' => true,
+              'collapsible' => true,
+              'startCollapsed' => $assignedCircles->isEmpty(),
+              'items' => $assignedCircles->take(3)->map(function($circle) {
+                return [
+                  'title' => $circle->name,
+                  'description' => $circle->students->count() . ' ' . __('teacher.circles.group.registered_students') .
+                                   ($circle->schedule_days_text ? ' - ' . $circle->schedule_days_text : ''),
+                  'icon' => 'ri-group-line',
+                  'iconBgColor' => 'bg-green-100',
+                  'iconColor' => 'text-green-600',
+                  'status' => 'active',
+                  'link' => route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id])
+                ];
+              })->toArray(),
+              'footer' => [
+                'text' => __('teacher.circles.group.view_all_circles'),
+                'link' => route('teacher.group-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])
+              ],
+              'stats' => [
+                ['icon' => 'ri-group-line', 'value' => $assignedCircles->count() . ' ' . __('teacher.circles.group.active_circle')],
+                ['icon' => 'ri-user-line', 'value' => $assignedCircles->sum(function($circle) { return $circle->students->count(); }) . ' ' . __('teacher.common.student')]
+              ],
+              'emptyTitle' => __('teacher.circles.group.empty_title'),
+              'emptyDescription' => __('teacher.circles.group.empty_description'),
+              'emptyActionText' => ''
+            ])
+          </div>
+
         @else
           <!-- Academic Teacher Content -->
 
-          <!-- Private Academic Lessons -->
+          <!-- 1. Private Academic Lessons -->
           <div id="academic-private-sessions">
             @include('components.cards.learning-section-card', [
               'title' => __('teacher.sessions.academic.title'),
               'subtitle' => __('teacher.sessions.academic.subtitle'),
               'icon' => 'ri-user-3-line',
               'iconBgColor' => 'bg-orange-500',
+              'primaryColor' => 'orange',
               'hideDots' => true,
+              'collapsible' => true,
+              'startCollapsed' => $privateLessons->isEmpty(),
               'items' => $privateLessons->take(3)->map(function($subscription) {
                 return [
                   'title' => $subscription->student->name ?? __('teacher.common.student'),
@@ -135,14 +190,17 @@
             ])
           </div>
 
-          <!-- Interactive Courses -->
+          <!-- 2. Interactive Courses -->
           <div id="interactive-courses">
             @include('components.cards.learning-section-card', [
               'title' => __('teacher.sessions.interactive.title'),
               'subtitle' => __('teacher.sessions.interactive.subtitle'),
               'icon' => 'ri-book-open-line',
               'iconBgColor' => 'bg-blue-500',
+              'primaryColor' => 'blue',
               'hideDots' => true,
+              'collapsible' => true,
+              'startCollapsed' => $createdInteractiveCourses->isEmpty() && $assignedInteractiveCourses->isEmpty(),
               'items' => collect()
                 ->merge($createdInteractiveCourses->take(2)->map(function($course) {
                   return [
@@ -185,51 +243,6 @@
         @endif
 
       </div>
-
-      @if($teacherType === 'quran')
-        <!-- Trial Requests Section - Full Width -->
-        <div class="mt-6 md:mt-8" id="trial-requests">
-          @include('components.cards.learning-section-card', [
-            'title' => __('teacher.trial.title'),
-            'subtitle' => __('teacher.trial.subtitle'),
-            'icon' => 'ri-gift-line',
-            'iconBgColor' => 'bg-amber-500',
-            'hideDots' => true,
-            'items' => $pendingTrialRequests->map(function($request) {
-              $statusColors = [
-                'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-600', 'label' => __('teacher.trial.status.pending')],
-                'approved' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-600', 'label' => __('teacher.trial.status.approved')],
-                'scheduled' => ['bg' => 'bg-green-100', 'text' => 'text-green-600', 'label' => __('teacher.trial.status.scheduled')],
-              ];
-              $statusKey = is_object($request->status) ? $request->status->value : $request->status;
-              $status = $statusColors[$statusKey] ?? $statusColors['pending'];
-
-              return [
-                'title' => $request->student->name ?? __('teacher.trial.new_student'),
-                'description' => __('teacher.trial.trial_request') . ' - ' . $status['label'] .
-                                 ($request->preferred_time ? ' - ' . __('teacher.trial.preferred_time') . ': ' . $request->preferred_time : '') .
-                                 ($request->trialSession?->scheduled_at ? ' - ' . __('teacher.trial.scheduled_at') . ': ' . $request->trialSession->scheduled_at->format('Y-m-d H:i') : ''),
-                'icon' => 'ri-user-add-line',
-                'iconBgColor' => $status['bg'],
-                'iconColor' => $status['text'],
-                'status' => $request->status === 'scheduled' ? 'active' : ($request->status === 'approved' ? 'pending' : 'warning'),
-                'link' => route('teacher.trial-sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'trialRequest' => $request->id])
-              ];
-            })->toArray(),
-            'footer' => [
-              'text' => __('teacher.trial.view_all_requests'),
-              'link' => route('teacher.trial-sessions.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])
-            ],
-            'stats' => [
-              ['icon' => 'ri-time-line', 'value' => $pendingTrialRequests->where('status', 'pending')->count() . ' ' . __('teacher.trial.pending_request')],
-              ['icon' => 'ri-calendar-check-line', 'value' => $pendingTrialRequests->where('status', 'scheduled')->count() . ' ' . __('teacher.trial.scheduled_session')]
-            ],
-            'emptyTitle' => __('teacher.trial.empty_title'),
-            'emptyDescription' => __('teacher.trial.empty_description'),
-            'emptyActionText' => ''
-          ])
-        </div>
-      @endif
 
 </div>
 
