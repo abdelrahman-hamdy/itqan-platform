@@ -238,7 +238,7 @@ class AcademicGradeLevelResource extends BaseResource
                                 $blockedRecords = [];
 
                                 foreach ($records as $record) {
-                                    $hasDependencies = $record->students()->count() > 0
+                                    $hasDependencies = \App\Models\StudentProfile::where('grade_level_id', $record->id)->count() > 0
                                         || $record->interactiveCourses()->count() > 0
                                         || $record->recordedCourses()->count() > 0
                                         || $record->teachers()->count() > 0;
