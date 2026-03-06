@@ -2,10 +2,10 @@
 
 namespace App\Policies;
 
-use App\Services\AcademyContextService;
 use App\Enums\UserType;
 use App\Models\QuranIndividualCircle;
 use App\Models\User;
+use App\Services\AcademyContextService;
 
 /**
  * QuranIndividualCircle Policy
@@ -14,6 +14,21 @@ use App\Models\User;
  */
 class QuranIndividualCirclePolicy
 {
+    /**
+     * Determine whether the user can view any individual circles.
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->hasRole([
+            UserType::SUPER_ADMIN->value,
+            UserType::ADMIN->value,
+            UserType::SUPERVISOR->value,
+            UserType::QURAN_TEACHER->value,
+            UserType::STUDENT->value,
+            UserType::PARENT->value,
+        ]);
+    }
+
     /**
      * Determine whether the user can view the individual circle.
      */
