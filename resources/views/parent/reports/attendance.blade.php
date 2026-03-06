@@ -26,57 +26,73 @@
         <!-- Overall Attendance Statistics -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-4 md:mb-8">
             <!-- Total Sessions -->
-            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg md:rounded-xl shadow-md p-3 md:p-6 text-white">
-                <div class="flex items-center justify-between gap-2">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
                     <div class="min-w-0">
-                        <p class="text-blue-100 text-xs md:text-sm font-medium truncate">{{ __('parent.reports.total_sessions') }}</p>
-                        <p class="text-2xl md:text-4xl font-bold mt-1 md:mt-2">{{ $attendanceReport['overall']['total_sessions'] }}</p>
-                        <p class="text-xs md:text-sm text-blue-100 mt-0.5 md:mt-1 hidden sm:block">{{ __('parent.reports.sessions_recorded') }}</p>
+                        <p class="text-xs md:text-sm font-medium text-gray-500">{{ __('parent.reports.total_sessions') }}</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $attendanceReport['overall']['total_sessions'] }}</p>
+                        <p class="text-xs text-blue-600 mt-1 hidden sm:block">
+                            <i class="ri-calendar-event-line ms-1"></i>
+                            {{ __('parent.reports.sessions_recorded') }}
+                        </p>
                     </div>
-                    <div class="bg-white bg-opacity-20 rounded-full p-2 md:p-4 flex-shrink-0">
-                        <i class="ri-calendar-line text-xl md:text-3xl"></i>
+                    <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 me-2 md:me-4">
+                        <i class="ri-calendar-event-line text-lg md:text-xl text-blue-600"></i>
                     </div>
                 </div>
             </div>
 
             <!-- Present -->
-            <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg md:rounded-xl shadow-md p-3 md:p-6 text-white">
-                <div class="flex items-center justify-between gap-2">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
                     <div class="min-w-0">
-                        <p class="text-green-100 text-xs md:text-sm font-medium truncate">{{ __('parent.reports.present') }}</p>
-                        <p class="text-2xl md:text-4xl font-bold mt-1 md:mt-2">{{ $attendanceReport['overall']['present_count'] }}</p>
-                        <p class="text-xs md:text-sm text-green-100 mt-0.5 md:mt-1 hidden sm:block">{{ __('parent.reports.sessions_attended') }}</p>
+                        <p class="text-xs md:text-sm font-medium text-gray-500">{{ __('parent.reports.present') }}</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $attendanceReport['overall']['present_count'] }}</p>
+                        <p class="text-xs text-green-600 mt-1 hidden sm:block">
+                            <i class="ri-checkbox-circle-line ms-1"></i>
+                            {{ __('parent.reports.sessions_attended') }}
+                        </p>
                     </div>
-                    <div class="bg-white bg-opacity-20 rounded-full p-2 md:p-4 flex-shrink-0">
-                        <i class="ri-check-line text-xl md:text-3xl"></i>
+                    <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 me-2 md:me-4">
+                        <i class="ri-checkbox-circle-line text-lg md:text-xl text-green-600"></i>
                     </div>
                 </div>
             </div>
 
             <!-- Absent -->
-            <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-lg md:rounded-xl shadow-md p-3 md:p-6 text-white">
-                <div class="flex items-center justify-between gap-2">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
                     <div class="min-w-0">
-                        <p class="text-red-100 text-xs md:text-sm font-medium truncate">{{ __('parent.reports.absent') }}</p>
-                        <p class="text-2xl md:text-4xl font-bold mt-1 md:mt-2">{{ $attendanceReport['overall']['absent_count'] }}</p>
-                        <p class="text-xs md:text-sm text-red-100 mt-0.5 md:mt-1 hidden sm:block">{{ __('parent.reports.absent_sessions') }}</p>
+                        <p class="text-xs md:text-sm font-medium text-gray-500">{{ __('parent.reports.absent') }}</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $attendanceReport['overall']['absent_count'] }}</p>
+                        <p class="text-xs text-red-600 mt-1 hidden sm:block">
+                            <i class="ri-close-circle-line ms-1"></i>
+                            {{ __('parent.reports.absent_sessions') }}
+                        </p>
                     </div>
-                    <div class="bg-white bg-opacity-20 rounded-full p-2 md:p-4 flex-shrink-0">
-                        <i class="ri-close-line text-xl md:text-3xl"></i>
+                    <div class="w-10 h-10 md:w-12 md:h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0 me-2 md:me-4">
+                        <i class="ri-close-circle-line text-lg md:text-xl text-red-600"></i>
                     </div>
                 </div>
             </div>
 
             <!-- Attendance Rate -->
-            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg md:rounded-xl shadow-md p-3 md:p-6 text-white">
-                <div class="flex items-center justify-between gap-2">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
                     <div class="min-w-0">
-                        <p class="text-purple-100 text-xs md:text-sm font-medium truncate">{{ __('parent.reports.attendance_rate') }}</p>
-                        <p class="text-2xl md:text-4xl font-bold mt-1 md:mt-2">{{ $attendanceReport['overall']['attendance_rate'] }}%</p>
-                        <p class="text-xs md:text-sm text-purple-100 mt-0.5 md:mt-1 hidden sm:block">{{ __('parent.reports.attendance_rate_value') }}</p>
+                        <p class="text-xs md:text-sm font-medium text-gray-500">{{ __('parent.reports.attendance_rate') }}</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $attendanceReport['overall']['attendance_rate'] }}%</p>
+                        @php
+                            $rate = $attendanceReport['overall']['attendance_rate'];
+                            $rateColor = $rate >= 80 ? 'green' : ($rate >= 60 ? 'yellow' : 'red');
+                        @endphp
+                        <p class="text-xs text-{{ $rateColor }}-600 mt-1 hidden sm:block">
+                            <i class="ri-bar-chart-line ms-1"></i>
+                            {{ __('parent.reports.attendance_rate_value') }}
+                        </p>
                     </div>
-                    <div class="bg-white bg-opacity-20 rounded-full p-2 md:p-4 flex-shrink-0">
-                        <i class="ri-percent-line text-xl md:text-3xl"></i>
+                    <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 me-2 md:me-4">
+                        <i class="ri-bar-chart-line text-lg md:text-xl text-purple-600"></i>
                     </div>
                 </div>
             </div>
