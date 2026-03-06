@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use InvalidArgumentException;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
@@ -18,6 +17,7 @@ use App\Models\RecordedCourse;
 use App\Models\TeacherReview;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 
 class ReviewService
 {
@@ -247,16 +247,18 @@ class ReviewService
         // Check auto-approve setting
         $isApproved = $this->shouldAutoApprove($academyId);
 
-        return CourseReview::create([
+        $review = new CourseReview([
             'academy_id' => $academyId,
-            'reviewable_type' => get_class($course),
-            'reviewable_id' => $course->id,
             'user_id' => $student->id,
             'rating' => $rating,
             'review' => $comment,
             'is_approved' => $isApproved,
             'approved_at' => $isApproved ? now() : null,
         ]);
+        $review->reviewable()->associate($course);
+        $review->save();
+
+        return $review;
     }
 
     /**

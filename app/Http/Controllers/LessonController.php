@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Academy;
 use App\Constants\DefaultAcademy;
 use App\Enums\EnrollmentStatus;
 use App\Http\Requests\AddLessonNoteRequest;
-use App\Http\Requests\RateLessonRequest;
+use App\Http\Requests\Lesson\RateLessonRequest;
 use App\Http\Requests\UpdateLessonProgressRequest;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\Academy;
 use App\Models\CourseSubscription;
 use App\Models\Lesson;
 use App\Models\RecordedCourse;

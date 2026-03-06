@@ -2,20 +2,20 @@
 
 namespace App\Models;
 
-use App\Services\NotificationService;
-use App\Enums\NotificationType;
-use Exception;
-use Illuminate\Support\Facades\Log;
 use App\Constants\DefaultAcademy;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
+use App\Enums\NotificationType;
 use App\Models\Traits\ScopedToAcademy;
+use App\Services\NotificationService;
+use Exception;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class Certificate extends Model
@@ -26,8 +26,6 @@ class Certificate extends Model
         'academy_id',
         'student_id',
         'teacher_id',
-        'certificateable_type',
-        'certificateable_id',
         'certificate_type',
         'template_style',
         'certificate_text',

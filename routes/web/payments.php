@@ -68,16 +68,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Card Tokenization Callback (must be before {payment} wildcard routes)
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get('/payments/tokenization/callback', [PaymentController::class, 'tokenizationCallback'])
-        ->name('payments.tokenization.callback')
-        ->middleware('auth');
-
-    /*
-    |--------------------------------------------------------------------------
     | Payment Flow (Gateway System)
     |--------------------------------------------------------------------------
     */

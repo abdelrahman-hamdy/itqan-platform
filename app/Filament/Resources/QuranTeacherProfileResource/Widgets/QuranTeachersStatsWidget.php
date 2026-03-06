@@ -39,8 +39,13 @@ class QuranTeachersStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-users')
                 ->color('primary'),
 
+            Stat::make('معلمون غير نشطين', $inactive)
+                ->description($total > 0 ? round(($inactive / $total) * 100).'% من الإجمالي' : '-')
+                ->descriptionIcon('heroicon-m-user-minus')
+                ->color($inactive > 0 ? 'danger' : 'success'),
+
             Stat::make('يقدمون جلسات تجريبية', $offersTrial)
-                ->description($total > 0 ? round(($offersTrial / $total) * 100) . '% من الإجمالي' : '-')
+                ->description($total > 0 ? round(($offersTrial / $total) * 100).'% من الإجمالي' : '-')
                 ->descriptionIcon('heroicon-m-academic-cap')
                 ->color('success'),
 

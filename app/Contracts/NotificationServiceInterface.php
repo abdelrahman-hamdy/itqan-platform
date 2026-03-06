@@ -93,9 +93,10 @@ interface NotificationServiceInterface
      * Used for cleanup jobs to maintain database performance.
      *
      * @param  int  $days  Age threshold in days (default: 30)
+     * @param  int|null  $tenantId  Tenant academy ID — REQUIRED for multi-tenant safety
      * @return int Number of notifications deleted
      */
-    public function deleteOldReadNotifications(int $days = 30): int;
+    public function deleteOldReadNotifications(int $days = 30, ?int $tenantId = null): int;
 
     /**
      * Get unread notifications count for a user.

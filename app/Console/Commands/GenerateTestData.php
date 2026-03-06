@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use Exception;
 use App\Enums\AttendanceStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\HomeworkSubmissionStatus;
@@ -42,6 +41,7 @@ use App\Models\StudentProfile;
 use App\Models\StudentSessionReport;
 use App\Models\SupervisorProfile;
 use App\Models\User;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -910,7 +910,7 @@ class GenerateTestData extends Command
             // CLI context — no tenant scope available; loading student profile by user ID
             $studentProfile = StudentProfile::withoutGlobalScopes()->where('user_id', $student->id)->first();
             if ($studentProfile) {
-                Certificate::firstOrCreate(
+                $cert = Certificate::firstOrCreate(
                     [
                         'academy_id' => $this->academy->id,
                         'student_id' => $studentProfile->id, // StudentProfile ID
@@ -918,8 +918,6 @@ class GenerateTestData extends Command
                     ],
                     [
                         'teacher_id' => $quranTeacher->id,
-                        'certificateable_type' => QuranSubscription::class,
-                        'certificateable_id' => $subscription->id,
                         'certificate_number' => 'CERT-'.strtoupper(substr(md5(uniqid()), 0, 10)),
                         'template_style' => 'template_1', // Valid enum value
                         'certificate_text' => 'This is to certify that Test Student has successfully completed the Quran memorization program.',
@@ -929,6 +927,10 @@ class GenerateTestData extends Command
                         'is_manual' => false,
                     ]
                 );
+                if ($cert->wasRecentlyCreated) {
+                    $cert->certificateable()->associate($subscription);
+                    $cert->save();
+                }
             }
 
             $this->line('   ✅ Created 1 certificate');

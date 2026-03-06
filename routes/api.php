@@ -98,25 +98,12 @@ if (app()->environment('local', 'development')) {
 
 // ============================================================================
 // PAYMENT API ROUTES (Web Auth - Checkout Pages)
-// These endpoints support Paymob integration and saved payment methods.
 // ============================================================================
 Route::middleware(['web', 'auth', 'throttle:10,1'])
     ->prefix('v1/payments')
     ->group(function () {
         Route::post('/create-intent', [\App\Http\Controllers\Api\PaymentApiController::class, 'createIntent'])
             ->name('api.v1.payments.create-intent');
-
-        Route::post('/charge-saved', [\App\Http\Controllers\Api\PaymentApiController::class, 'chargeSaved'])
-            ->name('api.v1.payments.charge-saved');
-
-        Route::get('/saved-methods', [\App\Http\Controllers\Api\PaymentApiController::class, 'getSavedMethods'])
-            ->name('api.v1.payments.saved-methods');
-
-        Route::delete('/saved-methods/{id}', [\App\Http\Controllers\Api\PaymentApiController::class, 'deleteSavedMethod'])
-            ->name('api.v1.payments.delete-saved-method');
-
-        Route::post('/saved-methods/{id}/default', [\App\Http\Controllers\Api\PaymentApiController::class, 'setDefaultMethod'])
-            ->name('api.v1.payments.set-default-method');
     });
 
 // ============================================================================

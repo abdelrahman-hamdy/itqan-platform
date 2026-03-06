@@ -212,14 +212,20 @@ class AdminResource extends BaseResource
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
-                        ->action(fn ($record) => $record->update(['active_status' => true]))
+                        ->action(function ($record) {
+                            $record->active_status = true;
+                            $record->save();
+                        })
                         ->visible(fn ($record) => ! $record->active_status),
                     Action::make('deactivate')
                         ->label('إيقاف')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn ($record) => $record->update(['active_status' => false]))
+                        ->action(function ($record) {
+                            $record->active_status = false;
+                            $record->save();
+                        })
                         ->visible(fn ($record) => $record->active_status),
                     DeleteAction::make()->label('حذف'),
                     RestoreAction::make()->label(__('filament.actions.restore')),
@@ -233,13 +239,19 @@ class AdminResource extends BaseResource
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
-                        ->action(fn ($records) => $records->each(fn ($record) => $record->update(['active_status' => true]))),
+                        ->action(fn ($records) => $records->each(function ($record) {
+                            $record->active_status = true;
+                            $record->save();
+                        })),
                     BulkAction::make('deactivate')
                         ->label('إيقاف المحددين')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn ($records) => $records->each(fn ($record) => $record->update(['active_status' => false]))),
+                        ->action(fn ($records) => $records->each(function ($record) {
+                            $record->active_status = false;
+                            $record->save();
+                        })),
                     DeleteBulkAction::make()->label('حذف المحدد'),
                     RestoreBulkAction::make()->label(__('filament.actions.restore_selected')),
                     ForceDeleteBulkAction::make()->label(__('filament.actions.force_delete_selected')),

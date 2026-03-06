@@ -8,7 +8,6 @@ use App\Enums\NotificationType;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\UserType;
-use App\Models\Traits\HandlesSubscriptionRenewal;
 use App\Models\Traits\PreventsDuplicatePendingSubscriptions;
 use App\Services\CircleEnrollmentService;
 use App\Services\NotificationService;
@@ -56,7 +55,6 @@ use Illuminate\Support\Facades\Log;
  */
 class QuranSubscription extends BaseSubscription
 {
-    use HandlesSubscriptionRenewal;
     use PreventsDuplicatePendingSubscriptions;
 
     /**
@@ -1198,7 +1196,7 @@ class QuranSubscription extends BaseSubscription
                 ]);
             }
 
-            $subscriptionName = 'حلقة ' . ($this->individualCircle?->name ?? $this->quranCircle?->name ?? 'القرآن');
+            $subscriptionName = 'حلقة '.($this->individualCircle?->name ?? $this->quranCircle?->name ?? 'القرآن');
 
             $notificationService->send(
                 $this->student,

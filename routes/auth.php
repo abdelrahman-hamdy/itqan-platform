@@ -95,7 +95,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     // Parent registration with student code verification (public access)
     Route::get('/parent/register', [ParentRegistrationController::class, 'showRegistrationForm'])->name('parent.register');
     Route::post('/parent/register', [ParentRegistrationController::class, 'register'])->name('parent.register.post')->middleware('throttle:5,1');
-    Route::post('/parent/verify-students', [ParentRegistrationController::class, 'verifyStudentCodes'])->name('parent.verify.students');
+    Route::post('/parent/verify-students', [ParentRegistrationController::class, 'verifyStudentCodes'])->name('parent.verify.students')->middleware('throttle:10,1');
 
     /*
     |--------------------------------------------------------------------------

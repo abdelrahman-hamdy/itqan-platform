@@ -2,15 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Database\QueryException;
-use InvalidArgumentException;
-use Throwable;
-use Exception;
-use App\Services\NotificationService;
-use App\Services\Payment\InvoiceService;
-use App\Enums\NotificationType;
-use Illuminate\Http\RedirectResponse;
 use App\Constants\DefaultAcademy;
+use App\Enums\NotificationType;
+use App\Enums\PaymentResultStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSubscription;
@@ -19,17 +13,21 @@ use App\Models\Payment;
 use App\Models\PaymentAuditLog;
 use App\Models\PaymentWebhookEvent;
 use App\Models\QuranSubscription;
-use App\Services\Payment\DTOs\TokenizationResult;
-use App\Enums\PaymentResultStatus;
+use App\Services\NotificationService;
 use App\Services\Payment\DTOs\WebhookPayload;
 use App\Services\Payment\Exceptions\WebhookValidationException;
-use App\Services\Payment\PaymentMethodService;
+use App\Services\Payment\InvoiceService;
 use App\Services\Payment\PaymentStateMachine;
 use App\Services\Payment\PaymobSignatureService;
+use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
+use Throwable;
 
 /**
  * Controller for handling Paymob webhook callbacks.
@@ -44,7 +42,6 @@ class PaymobWebhookController extends Controller
     public function __construct(
         private PaymobSignatureService $signatureService,
         private PaymentStateMachine $stateMachine,
-        private PaymentMethodService $paymentMethodService,
     ) {}
 
     /**
@@ -391,88 +388,11 @@ class PaymobWebhookController extends Controller
             ]);
         }
 
-        // Save card token if payment was set to save card
-        if ($payload && $payload->hasTokenizationData() && $payment->save_card) {
-            $this->saveCardFromWebhook($payment, $payload);
-        }
-
         // Send success notification
         $this->sendPaymentSuccessNotification($payment);
 
         // Generate invoice/receipt
         $this->generateInvoice($payment);
-    }
-
-    /**
-     * Save card token from webhook payload.
-     */
-    private function saveCardFromWebhook(Payment $payment, WebhookPayload $payload): void
-    {
-        try {
-            $user = $payment->user;
-            $academy = $payment->academy;
-
-            if (! $user || ! $academy) {
-                Log::warning('Cannot save card: missing user or academy', [
-                    'payment_id' => $payment->id,
-                    'has_user' => (bool) $user,
-                    'has_academy' => (bool) $academy,
-                ]);
-
-                return;
-            }
-
-            // Create TokenizationResult from webhook payload
-            $tokenResult = TokenizationResult::success(
-                token: $payload->cardToken,
-                cardBrand: $payload->cardBrand,
-                lastFour: $payload->cardLastFour,
-                expiryMonth: $payload->cardExpiryMonth,
-                expiryYear: $payload->cardExpiryYear,
-                holderName: $payload->cardHolderName,
-                gatewayCustomerId: $payload->gatewayCustomerId,
-                rawResponse: $payload->rawPayload,
-                metadata: [
-                    'saved_from' => 'webhook',
-                    'transaction_id' => $payload->transactionId,
-                    'payment_id' => $payment->id,
-                ],
-            );
-
-            // Check if this is the user's first saved payment method (will be default)
-            $hasExistingMethods = $this->paymentMethodService->hasPaymentMethods($user, $payload->gateway);
-
-            // Save the payment method
-            $savedMethod = $this->paymentMethodService->saveFromTokenizationResult(
-                user: $user,
-                academy: $academy,
-                gateway: $payload->gateway,
-                tokenResult: $tokenResult,
-                setAsDefault: ! $hasExistingMethods, // Set as default if first card
-            );
-
-            if ($savedMethod) {
-                // Update payment with saved payment method reference
-                $payment->update([
-                    'saved_payment_method_id' => $savedMethod->id,
-                    'card_token' => $payload->cardToken,
-                ]);
-
-                Log::info('Card saved from webhook', [
-                    'payment_id' => $payment->id,
-                    'saved_payment_method_id' => $savedMethod->id,
-                    'user_id' => $user->id,
-                    'brand' => $payload->cardBrand,
-                    'last_four' => $payload->cardLastFour,
-                ]);
-            }
-        } catch (Exception $e) {
-            Log::error('Failed to save card from webhook', [
-                'payment_id' => $payment->id,
-                'error' => $e->getMessage(),
-            ]);
-            // Don't throw - card saving failure shouldn't fail the payment
-        }
     }
 
     /**
@@ -487,6 +407,7 @@ class PaymobWebhookController extends Controller
                     'payment_id' => $payment->id,
                     'sent_at' => $payment->payment_notification_sent_at,
                 ]);
+
                 return;
             }
 
@@ -704,7 +625,7 @@ class PaymobWebhookController extends Controller
 
                 // Only update transaction metadata, NOT status
                 // The webhook will update the status when it arrives
-                if (!$freshPayment->gateway_transaction_id) {
+                if (! $freshPayment->gateway_transaction_id) {
                     $freshPayment->update([
                         'gateway_transaction_id' => $transactionId,
                         'gateway_response' => [

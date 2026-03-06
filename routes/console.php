@@ -121,67 +121,18 @@ Schedule::command('recordings:stop-expired')
     ->description('Stop recordings for sessions that have reached their scheduled end time');
 
 // ════════════════════════════════════════════════════════════════
-// SUBSCRIPTION RENEWAL MANAGEMENT
+// SUBSCRIPTION MANAGEMENT
 // ════════════════════════════════════════════════════════════════
 
-// Process automatic subscription renewals
-// Runs daily at 6:00 AM (before peak usage hours)
-// Handles Quran and Academic subscriptions with auto_renew enabled
-// NOTE: NO grace period - failed payments immediately expire subscription
-Schedule::command('subscriptions:process-renewals')
-    ->name('process-subscription-renewals')
-    ->dailyAt('06:00')
+// Send expiry reminders for subscriptions expiring in 7, 3, or 1 days
+// Runs daily at 08:00 AM Riyadh time
+Schedule::command('subscriptions:send-expiry-reminders')
+    ->name('send-expiry-reminders')
+    ->dailyAt('08:00')
+    ->timezone('Asia/Riyadh')
     ->withoutOverlapping()
     ->runInBackground()
-    ->description('Process automatic subscription renewals for due subscriptions');
-
-// Send renewal reminder notifications
-// Runs daily at 9:00 AM (good time for users to see notifications)
-// Sends 7-day and 3-day reminders before renewal date
-Schedule::command('subscriptions:send-reminders')
-    ->name('send-renewal-reminders')
-    ->dailyAt('09:00')
-    ->withoutOverlapping()
-    ->runInBackground()
-    ->description('Send renewal reminder notifications for upcoming renewals');
-
-// Check expiring subscriptions and send notifications
-// Runs daily at 9:00 AM (same time as renewal reminders)
-// Sends notifications for subscriptions expiring in 7, 3, and 1 days
-Schedule::command('subscriptions:check-expiring')
-    ->name('check-expiring-subscriptions')
-    ->dailyAt('09:00')
-    ->withoutOverlapping()
-    ->runInBackground()
-    ->description('Send notifications for subscriptions expiring soon (7, 3, 1 days)');
-
-// Send daily warning notifications for admin-granted grace periods about to expire
-// Runs daily at 9:00 AM — notifies students (and parents) with days remaining
-Schedule::command('subscriptions:notify-grace-expiring')
-    ->name('notify-grace-period-expiring')
-    ->dailyAt('09:00')
-    ->withoutOverlapping()
-    ->runInBackground()
-    ->description('Send daily warning notifications for expiring grace periods');
-
-// Cancel subscriptions after grace period expires
-// Runs hourly to check for subscriptions whose grace period has passed
-// Grace period is given after 3 failed auto-renewal attempts
-Schedule::job(new \App\Jobs\ExpireGracePeriodSubscriptions)
-    ->name('expire-grace-period-subscriptions')
-    ->hourly()
-    ->withoutOverlapping()
-    ->description('Cancel subscriptions after grace period expires following failed renewals');
-
-// Suspend subscriptions whose admin-granted grace period has expired
-// Runs hourly to check for ACTIVE subscriptions where metadata['grace_period_ends_at'] is past
-// Sets status to SUSPENDED, clears grace metadata, cascades via model observers
-Schedule::command('subscriptions:suspend-expired-grace')
-    ->name('suspend-expired-grace-subscriptions')
-    ->hourly()
-    ->withoutOverlapping()
-    ->runInBackground()
-    ->description('Suspend subscriptions whose grace period has expired without payment');
+    ->description('Send expiry reminders for subscriptions expiring soon');
 
 // Cancel expired pending subscriptions
 // Runs every 6 hours to clean up pending subscriptions not paid within 48 hours
@@ -316,3 +267,17 @@ Schedule::command(\Spatie\Health\Commands\ScheduleCheckHeartbeatCommand::class)
 Schedule::command(\Spatie\Health\Commands\RunHealthChecksCommand::class)
     ->everyFiveMinutes()
     ->description('Run all health checks and store results');
+
+// ════════════════════════════════════════════════════════════════
+// NOTIFICATION MAINTENANCE
+// ════════════════════════════════════════════════════════════════
+
+// Purge old read notifications (weekly, Sunday 02:00 AM)
+Schedule::command('notifications:purge --days=90')
+    ->name('notifications-purge')
+    ->weekly()
+    ->sundays()
+    ->at('02:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Purge read notifications older than 90 days');

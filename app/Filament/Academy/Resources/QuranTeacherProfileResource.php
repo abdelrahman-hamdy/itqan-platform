@@ -40,9 +40,10 @@ class QuranTeacherProfileResource extends BaseQuranTeacherProfileResource
                     ->color(fn ($record) => $record->user?->active_status ? 'danger' : 'success')
                     ->requiresConfirmation()
                     ->action(function ($record) {
-                        $record->user?->update([
-                            'active_status' => ! $record->user->active_status,
-                        ]);
+                        if ($user = $record->user) {
+                            $user->active_status = ! $user->active_status;
+                            $user->save();
+                        }
                     }),
                 DeleteAction::make()
                     ->label('حذف'),

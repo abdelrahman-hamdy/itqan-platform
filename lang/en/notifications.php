@@ -345,4 +345,12 @@ return [
     'teacher_default' => 'Teacher',
     'quran_homework' => 'Quran Homework',
     'new_homework' => 'New Homework',
+
+    // Subscription expiry email
+    'subscription_expiry_email' => [
+        'subject' => 'Your subscription expires in :days days',
+        'greeting' => 'Hello :name',
+        'body' => 'This is a reminder that your subscription to :subscription_name will expire in :days days on :expiry_date.',
+        'action_hint' => 'Please renew your subscription through the platform to continue your service.',
+    ],
 ];

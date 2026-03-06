@@ -163,62 +163,66 @@ class ChatPermissionService implements ChatPermissionServiceInterface
      */
     protected function isTeacherOfStudent(User $teacher, User $student, int $academyId): bool
     {
-        // Get teacher profile IDs if needed
-        $academicTeacherProfile = $teacher->academicTeacherProfile;
-        $academicTeacherProfileId = $academicTeacherProfile ? $academicTeacherProfile->id : null;
+        $cacheKey = "chat_perm:{$teacher->id}:{$student->id}:{$academyId}";
 
-        // Check multiple relationships - return true if any exists
-        // Check Quran sessions
-        if (DB::table('quran_sessions')
-            ->where('quran_teacher_id', $teacher->id)
-            ->where('student_id', $student->id)
-            ->where('academy_id', $academyId)
-            ->exists()) {
-            return true;
-        }
+        return Cache::remember($cacheKey, 60, function () use ($teacher, $student, $academyId) {
+            // Get teacher profile IDs if needed
+            $academicTeacherProfile = $teacher->academicTeacherProfile;
+            $academicTeacherProfileId = $academicTeacherProfile ? $academicTeacherProfile->id : null;
 
-        // Academic sessions - uses profile ID
-        if ($academicTeacherProfileId && DB::table('academic_sessions')
-            ->where('academic_teacher_id', $academicTeacherProfileId)
-            ->where('student_id', $student->id)
-            ->where('academy_id', $academyId)
-            ->exists()) {
-            return true;
-        }
+            // Check multiple relationships - return true if any exists
+            // Check Quran sessions
+            if (DB::table('quran_sessions')
+                ->where('quran_teacher_id', $teacher->id)
+                ->where('student_id', $student->id)
+                ->where('academy_id', $academyId)
+                ->exists()) {
+                return true;
+            }
 
-        // Active academic subscriptions
-        if (DB::table('academic_subscriptions')
-            ->where('student_id', $student->id)
-            ->where('teacher_id', $teacher->id)
-            ->where('academy_id', $academyId)
-            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
-            ->exists()) {
-            return true;
-        }
+            // Academic sessions - uses profile ID
+            if ($academicTeacherProfileId && DB::table('academic_sessions')
+                ->where('academic_teacher_id', $academicTeacherProfileId)
+                ->where('student_id', $student->id)
+                ->where('academy_id', $academyId)
+                ->exists()) {
+                return true;
+            }
 
-        // Active Quran subscriptions
-        if (DB::table('quran_subscriptions')
-            ->where('student_id', $student->id)
-            ->where('quran_teacher_id', $teacher->id)
-            ->where('academy_id', $academyId)
-            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
-            ->exists()) {
-            return true;
-        }
+            // Active academic subscriptions
+            if (DB::table('academic_subscriptions')
+                ->where('student_id', $student->id)
+                ->where('teacher_id', $teacher->id)
+                ->where('academy_id', $academyId)
+                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+                ->exists()) {
+                return true;
+            }
 
-        // Group Quran circle memberships
-        if (DB::table('quran_circles')
-            ->join('quran_circle_students', 'quran_circles.id', '=', 'quran_circle_students.circle_id')
-            ->where('quran_circles.quran_teacher_id', $teacher->id)
-            ->where('quran_circle_students.student_id', $student->id)
-            ->where('quran_circles.academy_id', $academyId)
-            ->where('quran_circle_students.status', EnrollmentStatus::ENROLLED->value)
-            ->where('quran_circles.status', true)
-            ->exists()) {
-            return true;
-        }
+            // Active Quran subscriptions
+            if (DB::table('quran_subscriptions')
+                ->where('student_id', $student->id)
+                ->where('quran_teacher_id', $teacher->id)
+                ->where('academy_id', $academyId)
+                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+                ->exists()) {
+                return true;
+            }
 
-        return false;
+            // Group Quran circle memberships
+            if (DB::table('quran_circles')
+                ->join('quran_circle_students', 'quran_circles.id', '=', 'quran_circle_students.circle_id')
+                ->where('quran_circles.quran_teacher_id', $teacher->id)
+                ->where('quran_circle_students.student_id', $student->id)
+                ->where('quran_circles.academy_id', $academyId)
+                ->where('quran_circle_students.status', EnrollmentStatus::ENROLLED->value)
+                ->where('quran_circles.status', true)
+                ->exists()) {
+                return true;
+            }
+
+            return false;
+        });
     }
 
     /**

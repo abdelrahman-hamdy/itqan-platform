@@ -50,7 +50,7 @@ class HomeworkController extends Controller
                     'session_date' => $session->scheduled_at?->toDateString(),
                     'due_date' => null,
                     'submissions_count' => $session->homeworkSubmissions?->count() ?? 0,
-                    'pending_submissions' => $session->homeworkSubmissions?->where('submission_status', 'submitted')->count() ?? 0,
+                    'pending_submissions' => $session->homeworkSubmissions?->where('submission_status', HomeworkSubmissionStatus::SUBMITTED->value)->count() ?? 0,
                     'created_at' => $session->created_at?->toISOString(),
                 ];
             }
@@ -77,7 +77,7 @@ class HomeworkController extends Controller
                     'session_date' => $hw->session?->scheduled_at?->toDateString(),
                     'due_date' => $hw->due_date?->toDateString(),
                     'submissions_count' => $hw->submissions?->count() ?? 0,
-                    'pending_submissions' => $hw->submissions?->whereIn('submission_status', ['submitted', 'late'])->count() ?? 0,
+                    'pending_submissions' => $hw->submissions?->whereIn('submission_status', [HomeworkSubmissionStatus::SUBMITTED->value, HomeworkSubmissionStatus::LATE->value])->count() ?? 0,
                     'created_at' => $hw->created_at->toISOString(),
                 ];
             }

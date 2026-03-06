@@ -19,12 +19,10 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontWeight;
@@ -70,6 +68,7 @@ class StudentProfileResource extends BaseStudentProfileResource
                     })
                     ->visible(function ($record) {
                         $user = $record->user_id ? \App\Models\User::find($record->user_id) : null;
+
                         return $user && ! $user->active_status;
                     }),
                 Action::make('deactivate')
@@ -84,6 +83,7 @@ class StudentProfileResource extends BaseStudentProfileResource
                     })
                     ->visible(function ($record) {
                         $user = $record->user_id ? \App\Models\User::find($record->user_id) : null;
+
                         return $user && $user->active_status;
                     }),
                 Action::make('delete_student')
@@ -124,13 +124,23 @@ class StudentProfileResource extends BaseStudentProfileResource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => true]))),
+                    ->action(fn ($records) => $records->each(function ($record) {
+                        if ($user = $record->user) {
+                            $user->active_status = true;
+                            $user->save();
+                        }
+                    })),
                 BulkAction::make('deactivate')
                     ->label('إيقاف المحددين')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => false]))),
+                    ->action(fn ($records) => $records->each(function ($record) {
+                        if ($user = $record->user) {
+                            $user->active_status = false;
+                            $user->save();
+                        }
+                    })),
                 DeleteBulkAction::make(),
                 RestoreBulkAction::make()
                     ->label(__('filament.actions.restore_selected')),

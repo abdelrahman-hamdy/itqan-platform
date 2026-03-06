@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
-use App\Models\QuranIndividualCircle;
-use App\Models\AcademicIndividualLesson;
-use App\Models\InteractiveCourseEnrollment;
-use App\Models\QuranCircle;
-use App\Models\AcademicSubscription;
-use App\Models\InteractiveCourse;
-use App\Models\RecordedCourse;
-use App\Models\User;
-use App\Models\StudentProfile;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\AcademicIndividualLesson;
+use App\Models\AcademicSubscription;
+use App\Models\InteractiveCourse;
+use App\Models\InteractiveCourseEnrollment;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
 use App\Models\QuizAttempt;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
+use App\Models\RecordedCourse;
+use App\Models\StudentProfile;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -343,6 +343,7 @@ class QuizController extends Controller
             'answers' => ['required', 'array'],
             'answers.*.question_id' => ['required', 'integer'],
             'answers.*.selected_option_ids' => ['required', 'array'],
+            'answers.*.selected_option_ids.*' => ['required', 'integer', 'min:1'],
         ]);
 
         if ($validator->fails()) {
@@ -624,8 +625,8 @@ class QuizController extends Controller
     /**
      * Get assignable IDs for the student (circles, courses, lessons they belong to).
      *
-     * @param User $user The authenticated user (for subscriptions)
-     * @param StudentProfile $studentProfile The student profile (for enrollments)
+     * @param  User  $user  The authenticated user (for subscriptions)
+     * @param  StudentProfile  $studentProfile  The student profile (for enrollments)
      */
     protected function getStudentAssignableIds($user, $studentProfile): array
     {
@@ -742,19 +743,19 @@ class QuizController extends Controller
     protected function getAssignableName($assignable): string
     {
         if (! $assignable) {
-            return 'غير محدد';
+            return __('quiz.assignable.unknown');
         }
 
         $type = get_class($assignable);
 
         return match ($type) {
-            QuranCircle::class => $assignable->name ?? 'حلقة قرآن',
-            QuranIndividualCircle::class => $assignable->name ?? 'حلقة فردية',
-            AcademicIndividualLesson::class => $assignable->subscription?->teacher?->user?->name ?? 'درس أكاديمي',
-            AcademicSubscription::class => ($assignable->subject_name ?? 'درس خاص').' - '.($assignable->teacher?->user?->name ?? ''),
-            InteractiveCourse::class => $assignable->name ?? 'دورة تفاعلية',
-            RecordedCourse::class => $assignable->name ?? 'دورة مسجلة',
-            default => 'غير محدد',
+            QuranCircle::class => $assignable->name ?? __('quiz.assignable.quran_circle'),
+            QuranIndividualCircle::class => $assignable->name ?? __('quiz.assignable.individual_circle'),
+            AcademicIndividualLesson::class => $assignable->subscription?->teacher?->user?->name ?? __('quiz.assignable.academic_lesson'),
+            AcademicSubscription::class => ($assignable->subject_name ?? __('quiz.assignable.private_lesson')).' - '.($assignable->teacher?->user?->name ?? ''),
+            InteractiveCourse::class => $assignable->name ?? __('quiz.assignable.interactive_course'),
+            RecordedCourse::class => $assignable->name ?? __('quiz.assignable.recorded_course'),
+            default => __('quiz.assignable.unknown'),
         };
     }
 }

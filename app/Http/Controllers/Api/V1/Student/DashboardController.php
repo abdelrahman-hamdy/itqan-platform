@@ -2,19 +2,23 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
-use App\Models\AcademicHomework;
-use Illuminate\Support\Collection;
-use App\Models\QuranSubscription;
-use App\Models\AcademicSubscription;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\AcademicHomework;
+use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
+use App\Models\AcademicSubscription;
+use App\Models\InteractiveCourseEnrollment;
+use App\Models\QuizAssignment;
+use App\Models\QuizAttempt;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
+use App\Models\QuranSubscription;
 use App\Services\Unified\UnifiedSessionFetchingService;
 use App\Services\Unified\UnifiedSubscriptionFetchingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 /**
  * Student Dashboard API Controller
@@ -129,16 +133,106 @@ class DashboardController extends Controller
 
     /**
      * Get pending quizzes count.
-     * Note: Quizzes use polymorphic assignments to educational units (circles, courses, etc.)
-     * A proper implementation would require checking all units the student is enrolled in.
-     * For now, returning 0 as a placeholder.
+     *
+     * Counts QuizAssignment records for all educational entities the student is enrolled in
+     * where the student has not yet submitted a completed attempt.
+     * Uses the same assignable-entity resolution logic as QuizController::getStudentAssignableIds().
+     *
+     * QuizAttempt.student_id references StudentProfile.id (not User.id).
      */
     protected function getPendingQuizzesCount(int $userId): int
     {
-        // QuizAssignments don't have user_id - they use polymorphic assignable_type/id
-        // This would require the same logic as QuizController::getStudentAssignableIds()
-        // For dashboard purposes, we return 0 as students can check quizzes directly
-        return 0;
+        $user = \App\Models\User::find($userId);
+        if (! $user) {
+            return 0;
+        }
+
+        $studentProfile = $user->studentProfile()->first();
+        if (! $studentProfile) {
+            return 0;
+        }
+
+        $studentProfileId = $studentProfile->id;
+
+        // Build the map of assignable_type → [ids] the student belongs to,
+        // mirroring QuizController::getStudentAssignableIds().
+        $assignableIds = [];
+
+        // Quran subscriptions (education_unit_type / education_unit_id)
+        // quran_subscriptions.student_id references User.id
+        $quranSubs = $user->quranSubscriptions()
+            ->whereNotNull('education_unit_type')
+            ->whereNotNull('education_unit_id')
+            ->select('education_unit_type', 'education_unit_id')
+            ->get();
+
+        foreach ($quranSubs as $sub) {
+            $type = $sub->education_unit_type;
+            $id = $sub->education_unit_id;
+            if (! isset($assignableIds[$type])) {
+                $assignableIds[$type] = [];
+            }
+            if (! in_array($id, $assignableIds[$type])) {
+                $assignableIds[$type][] = $id;
+            }
+        }
+
+        // Quran individual circles (student_id → User.id)
+        $quranIndividualCircleIds = QuranIndividualCircle::where('student_id', $userId)
+            ->pluck('id')
+            ->toArray();
+        if (! empty($quranIndividualCircleIds)) {
+            $assignableIds['App\\Models\\QuranIndividualCircle'] = $quranIndividualCircleIds;
+        }
+
+        // Academic individual lessons (student_id → User.id)
+        $academicLessonIds = AcademicIndividualLesson::where('student_id', $userId)
+            ->pluck('id')
+            ->toArray();
+        if (! empty($academicLessonIds)) {
+            $assignableIds['App\\Models\\AcademicIndividualLesson'] = $academicLessonIds;
+        }
+
+        // Interactive course enrollments (student_id → StudentProfile.id)
+        $interactiveCourseIds = InteractiveCourseEnrollment::where('student_id', $studentProfileId)
+            ->pluck('course_id')
+            ->toArray();
+        if (! empty($interactiveCourseIds)) {
+            $assignableIds['App\\Models\\InteractiveCourse'] = $interactiveCourseIds;
+        }
+
+        // Recorded courses from course subscriptions (student_id → User.id)
+        $recordedCourseIds = $user->courseSubscriptions()
+            ->whereNotNull('recorded_course_id')
+            ->pluck('recorded_course_id')
+            ->toArray();
+        if (! empty($recordedCourseIds)) {
+            $assignableIds['App\\Models\\RecordedCourse'] = $recordedCourseIds;
+        }
+
+        if (empty($assignableIds)) {
+            return 0;
+        }
+
+        // Count QuizAssignment records for those entities where the student has NOT
+        // submitted a completed attempt (submitted_at IS NULL means in-progress or
+        // no attempt at all — we exclude those with a submitted attempt).
+        return QuizAssignment::where(function ($q) use ($assignableIds) {
+            foreach ($assignableIds as $type => $ids) {
+                $q->orWhere(function ($subQ) use ($type, $ids) {
+                    $subQ->where('assignable_type', $type)
+                        ->whereIn('assignable_id', $ids);
+                });
+            }
+        })
+            ->whereHas('quiz', function ($q) {
+                $q->where('is_active', true);
+            })
+            ->whereDoesntHave('attempts', function ($q) use ($studentProfileId) {
+                $q->where('student_id', $studentProfileId)
+                    ->whereNotNull('submitted_at');
+            })
+            ->count();
     }
 
     /**

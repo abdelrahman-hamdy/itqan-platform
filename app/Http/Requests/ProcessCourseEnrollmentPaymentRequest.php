@@ -12,7 +12,13 @@ class ProcessCourseEnrollmentPaymentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        if (! $this->user()) {
+            return false;
+        }
+
+        $course = $this->route('course');
+
+        return $course && $course->academy_id === currentAcademy()->id;
     }
 
     /**

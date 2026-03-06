@@ -326,8 +326,9 @@ abstract class BaseParentProfileResource extends Resource
                 ? 'هل أنت متأكد من تعطيل حساب ولي الأمر؟ لن يتمكن من تسجيل الدخول.'
                 : 'هل أنت متأكد من تفعيل حساب ولي الأمر؟')
             ->action(function ($record) {
-                if ($record->user) {
-                    $record->user->update(['active_status' => ! $record->user->active_status]);
+                if ($user = $record->user) {
+                    $user->active_status = ! $user->active_status;
+                    $user->save();
                 }
             });
     }
@@ -339,7 +340,12 @@ abstract class BaseParentProfileResource extends Resource
             ->icon('heroicon-o-check-circle')
             ->color('success')
             ->requiresConfirmation()
-            ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => true])));
+            ->action(fn ($records) => $records->each(function ($record) {
+                if ($user = $record->user) {
+                    $user->active_status = true;
+                    $user->save();
+                }
+            }));
     }
 
     protected static function getDeactivateBulkAction(): BulkAction
@@ -349,7 +355,12 @@ abstract class BaseParentProfileResource extends Resource
             ->icon('heroicon-o-x-circle')
             ->color('danger')
             ->requiresConfirmation()
-            ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => false])));
+            ->action(fn ($records) => $records->each(function ($record) {
+                if ($user = $record->user) {
+                    $user->active_status = false;
+                    $user->save();
+                }
+            }));
     }
 
     // ========================================

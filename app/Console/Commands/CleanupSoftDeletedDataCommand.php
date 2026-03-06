@@ -2,13 +2,13 @@
 
 namespace App\Console\Commands;
 
-use Exception;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\MeetingAttendanceEvent;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Services\CronJobLogger;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -74,7 +74,12 @@ class CleanupSoftDeletedDataCommand extends Command
         if ($isDryRun) {
             $this->warn('DRY RUN MODE - No records will be deleted (use --force to delete)');
         } else {
-            $this->warn('FORCE MODE - Records will be PERMANENTLY DELETED');
+            $this->warn('FORCE MODE — Records will be PERMANENTLY DELETED');
+            if (! $this->option('no-interaction') && ! $this->confirm('This will permanently delete soft-deleted records older than the configured thresholds. Proceed?')) {
+                $this->info('Aborted.');
+
+                return self::SUCCESS;
+            }
         }
 
         try {

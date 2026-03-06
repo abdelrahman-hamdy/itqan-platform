@@ -423,12 +423,4 @@ readonly class WebhookPayload
             'card_expiry_year' => $this->cardExpiryYear,
         ];
     }
-
-    /**
-     * Check if this webhook contains tokenization data that should be saved.
-     */
-    public function hasTokenizationData(): bool
-    {
-        return $this->isTokenized && ! empty($this->cardToken);
-    }
 }

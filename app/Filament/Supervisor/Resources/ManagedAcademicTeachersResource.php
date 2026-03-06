@@ -80,14 +80,24 @@ class ManagedAcademicTeachersResource extends BaseAcademicTeacherProfileResource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->action(fn ($record) => $record->user?->update(['active_status' => true]))
+                    ->action(function ($record) {
+                        if ($user = $record->user) {
+                            $user->active_status = true;
+                            $user->save();
+                        }
+                    })
                     ->visible(fn ($record) => $record->user && ! $record->user->active_status),
                 Action::make('deactivate')
                     ->label('إيقاف المعلم')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->action(fn ($record) => $record->user?->update(['active_status' => false]))
+                    ->action(function ($record) {
+                        if ($user = $record->user) {
+                            $user->active_status = false;
+                            $user->save();
+                        }
+                    })
                     ->visible(fn ($record) => $record->user && $record->user->active_status),
             ]),
         ];

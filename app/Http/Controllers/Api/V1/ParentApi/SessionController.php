@@ -36,6 +36,8 @@ class SessionController extends Controller
             ->with('student.user')
             ->get();
 
+        $perPage = (int) $request->get('per_page', 15);
+        $page = (int) $request->get('page', 1);
         $sessions = [];
 
         foreach ($children as $relationship) {
@@ -64,9 +66,8 @@ class SessionController extends Controller
                     $quranQuery->whereDate('scheduled_at', '<=', $request->to_date);
                 }
 
-                // TODO: Replace with cursor-based pagination for parents with many children/sessions
                 $quranSessions = $quranQuery->orderBy('scheduled_at', 'desc')
-                    ->limit(200)
+                    ->limit($perPage * 3)
                     ->get();
 
                 foreach ($quranSessions as $session) {
@@ -91,9 +92,8 @@ class SessionController extends Controller
                     $academicQuery->whereDate('scheduled_at', '<=', $request->to_date);
                 }
 
-                // TODO: Replace with cursor-based pagination for parents with many children/sessions
                 $academicSessions = $academicQuery->orderBy('scheduled_at', 'desc')
-                    ->limit(200)
+                    ->limit($perPage * 3)
                     ->get();
 
                 foreach ($academicSessions as $session) {
@@ -121,9 +121,8 @@ class SessionController extends Controller
                     $interactiveQuery->whereDate('scheduled_at', '<=', $request->to_date);
                 }
 
-                // TODO: Replace with cursor-based pagination for parents with many children/sessions
                 $interactiveSessions = $interactiveQuery->orderBy('scheduled_at', 'desc')
-                    ->limit(200)
+                    ->limit($perPage * 3)
                     ->get();
 
                 foreach ($interactiveSessions as $session) {
@@ -137,9 +136,6 @@ class SessionController extends Controller
             return strtotime($b['scheduled_at']) <=> strtotime($a['scheduled_at']);
         });
 
-        // Paginate manually
-        $perPage = $request->get('per_page', 15);
-        $page = $request->get('page', 1);
         $total = count($sessions);
         $sessions = array_slice($sessions, ($page - 1) * $perPage, $perPage);
 

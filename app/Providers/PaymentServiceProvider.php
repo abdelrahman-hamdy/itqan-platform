@@ -7,8 +7,6 @@ use App\Services\NotificationService;
 use App\Services\Payment\AcademyPaymentGatewayFactory;
 use App\Services\Payment\EasyKashSignatureService;
 use App\Services\Payment\PaymentGatewayManager;
-use App\Services\Payment\PaymentMethodService;
-use App\Services\Payment\PaymentRenewalService;
 use App\Services\Payment\PaymentResultHandler;
 use App\Services\Payment\PaymentStateMachine;
 use App\Services\Payment\PaymentVerificationService;
@@ -54,26 +52,10 @@ class PaymentServiceProvider extends ServiceProvider
             );
         });
 
-        // Register PaymentMethodService
-        $this->app->singleton(PaymentMethodService::class, function ($app) {
-            return new PaymentMethodService(
-                $app->make(PaymentGatewayManager::class),
-                $app->make(AcademyPaymentGatewayFactory::class)
-            );
-        });
-
         // Register PaymentResultHandler
         $this->app->singleton(PaymentResultHandler::class, function ($app) {
             return new PaymentResultHandler(
                 $app->make(NotificationService::class)
-            );
-        });
-
-        // Register PaymentRenewalService
-        $this->app->singleton(PaymentRenewalService::class, function ($app) {
-            return new PaymentRenewalService(
-                $app->make(PaymentMethodService::class),
-                $app->make(PaymentResultHandler::class)
             );
         });
 
@@ -92,7 +74,6 @@ class PaymentServiceProvider extends ServiceProvider
                 $app->make(PaymentStateMachine::class),
                 $app->make(AcademyPaymentGatewayFactory::class),
                 $app->make(PaymentResultHandler::class),
-                $app->make(PaymentRenewalService::class),
                 $app->make(PaymentVerificationService::class)
             );
         });

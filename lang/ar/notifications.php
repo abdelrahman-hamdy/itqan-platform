@@ -345,4 +345,12 @@ return [
     'teacher_default' => 'المعلم',
     'quran_homework' => 'واجب قرآني',
     'new_homework' => 'واجب جديد',
+
+    // Subscription expiry email
+    'subscription_expiry_email' => [
+        'subject' => 'اشتراكك سينتهي خلال :days أيام',
+        'greeting' => 'مرحباً :name',
+        'body' => 'نود تذكيرك بأن اشتراكك في :subscription_name سينتهي خلال :days أيام بتاريخ :expiry_date.',
+        'action_hint' => 'يرجى تجديد اشتراكك من خلال المنصة لضمان استمرار الخدمة.',
+    ],
 ];

@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'default_title' => 'Homework',
+
     'types' => [
         'academic_session' => 'Academic Session',
         'quran_session' => 'Quran Session',

@@ -8,7 +8,6 @@ use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\TimeSlot;
 use App\Enums\WeekDays;
 use App\Filament\Shared\Traits\HasSubscriptionActions;
-use App\Models\SavedPaymentMethod;
 use App\Services\AcademyContextService;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\CheckboxList;
@@ -146,44 +145,13 @@ abstract class BaseSubscriptionResource extends Resource
             ]);
     }
 
-    // Shared auto-renew toggle with saved payment method validation
+    // Shared auto-renew toggle (display only — auto-renewal processing removed)
     protected static function getAutoRenewToggle(): Toggle
     {
         return Toggle::make('auto_renew')
             ->label('التجديد التلقائي')
-            ->default(true)
-            ->helperText(function ($record) {
-                if (! $record || ! $record->student_id) {
-                    return 'يتطلب بطاقة دفع محفوظة';
-                }
-
-                $hasSavedCard = SavedPaymentMethod::where('user_id', $record->student_id)
-                    ->where('gateway', 'paymob')
-                    ->where('is_active', true)
-                    ->where(function ($query) {
-                        $query->whereNull('expires_at')
-                            ->orWhere('expires_at', '>', now());
-                    })
-                    ->exists();
-
-                return $hasSavedCard
-                    ? '✓ بطاقة محفوظة موجودة - التجديد التلقائي متاح'
-                    : '⚠️ لا توجد بطاقة محفوظة. يجب على الطالب إضافة بطاقة أولاً.';
-            })
-            ->disabled(function ($record) {
-                if (! $record || ! $record->student_id) {
-                    return false;
-                }
-
-                return ! SavedPaymentMethod::where('user_id', $record->student_id)
-                    ->where('gateway', 'paymob')
-                    ->where('is_active', true)
-                    ->where(function ($query) {
-                        $query->whereNull('expires_at')
-                            ->orWhere('expires_at', '>', now());
-                    })
-                    ->exists();
-            });
+            ->default(false)
+            ->helperText('سيتم إرسال تذكيرات قبل انتهاء الاشتراك');
     }
 
     // Shared table columns

@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use DB;
-use Log;
 use App\Enums\LessonStatus;
 use App\Models\Traits\ScopedToAcademy;
+use DB;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Log;
 
 class AcademicIndividualLesson extends Model
 {
@@ -79,8 +79,15 @@ class AcademicIndividualLesson extends Model
                     throw new \RuntimeException('academy_id is required to generate lesson_code');
                 }
                 $academyId = $model->academy_id;
-                $count = static::withoutGlobalScopes()->where('academy_id', $academyId)->count() + 1;
-                $model->lesson_code = 'AL-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
+                DB::transaction(function () use ($model, $academyId) {
+                    $last = static::withoutGlobalScopes()
+                        ->where('academy_id', $academyId)
+                        ->lockForUpdate()
+                        ->orderByRaw('CAST(SUBSTRING(lesson_code, -4) AS UNSIGNED) DESC')
+                        ->first(['lesson_code']);
+                    $seq = $last && preg_match('/(\d{4})$/', $last->lesson_code, $m) ? (int) $m[1] + 1 : 1;
+                    $model->lesson_code = 'AL-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.str_pad($seq, 4, '0', STR_PAD_LEFT);
+                });
             }
         });
     }

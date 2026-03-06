@@ -80,10 +80,11 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
                             ])
                             ->toArray();
                     })
-                    ->getOptionLabelUsing(fn ($value) => User::find($value)?->display_name
-                        ?? User::find($value)?->name
-                        ?? 'طالب #'.$value
-                    ),
+                    ->getOptionLabelUsing(function ($value) {
+                        $user = User::find($value);
+
+                        return $user?->display_name ?? $user?->name ?? 'طالب #'.$value;
+                    }),
 
                 Select::make('teacher_id')
                     ->label('المعلم')
@@ -99,10 +100,11 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
                             ])
                             ->toArray();
                     })
-                    ->getOptionLabelUsing(fn ($value) => User::find($value)?->display_name
-                        ?? User::find($value)?->name
-                        ?? 'معلم #'.$value
-                    ),
+                    ->getOptionLabelUsing(function ($value) {
+                        $user = User::find($value);
+
+                        return $user?->display_name ?? $user?->name ?? 'معلم #'.$value;
+                    }),
 
                 Select::make('academy_id')
                     ->relationship('academy', 'name')

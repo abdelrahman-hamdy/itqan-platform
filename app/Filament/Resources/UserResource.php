@@ -262,14 +262,20 @@ class UserResource extends BaseResource
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
-                        ->action(fn (User $record) => $record->update(['active_status' => true]))
+                        ->action(function (User $record) {
+                            $record->active_status = true;
+                            $record->save();
+                        })
                         ->visible(fn (User $record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]) && ! $record->active_status),
                     Action::make('deactivate')
                         ->label('إيقاف')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn (User $record) => $record->update(['active_status' => false]))
+                        ->action(function (User $record) {
+                            $record->active_status = false;
+                            $record->save();
+                        })
                         ->visible(fn (User $record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]) && $record->active_status),
                     DeleteAction::make()->label('حذف'),
                     RestoreAction::make()->label(__('filament.actions.restore')),
@@ -284,13 +290,19 @@ class UserResource extends BaseResource
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
-                        ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]))->each(fn ($record) => $record->update(['active_status' => true]))),
+                        ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]))->each(function ($record) {
+                            $record->active_status = true;
+                            $record->save();
+                        })),
                     BulkAction::make('deactivate')
                         ->label('إيقاف المحددين')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]))->each(fn ($record) => $record->update(['active_status' => false]))),
+                        ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]))->each(function ($record) {
+                            $record->active_status = false;
+                            $record->save();
+                        })),
                     RestoreBulkAction::make()
                         ->label(__('filament.actions.restore_selected')),
                     ForceDeleteBulkAction::make()

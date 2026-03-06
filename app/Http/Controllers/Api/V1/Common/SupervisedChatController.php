@@ -45,9 +45,6 @@ class SupervisedChatController extends Controller
      * - Teacher must have assigned supervisor
      * - Entity must exist and be valid
      * - Requestor must be teacher, student, or supervisor
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function createSupervisedChat(Request $request): JsonResponse
     {
@@ -68,6 +65,10 @@ class SupervisedChatController extends Controller
 
         if (! $teacher || ! $student) {
             return $this->notFound(__('Teacher or student not found.'));
+        }
+
+        if ($teacher->id === $student->id) {
+            return $this->error(__('Teacher and student cannot be the same user.'), 422);
         }
 
         // Get supervisor
@@ -141,9 +142,6 @@ class SupervisedChatController extends Controller
      *
      * Creates a private conversation between supervisor and student.
      * Only supervisors can initiate this type of chat.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function createSupervisorStudentChat(Request $request): JsonResponse
     {

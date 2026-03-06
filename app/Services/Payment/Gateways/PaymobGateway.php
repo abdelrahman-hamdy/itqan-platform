@@ -2,21 +2,16 @@
 
 namespace App\Services\Payment\Gateways;
 
-use App\Contracts\Payment\SupportsRecurringPayments;
 use App\Contracts\Payment\SupportsRefunds;
-use App\Contracts\Payment\SupportsTokenization;
 use App\Contracts\Payment\SupportsVoid;
 use App\Contracts\Payment\SupportsWebhooks;
 use App\Enums\PaymentFlowType;
-use App\Models\SavedPaymentMethod;
 use App\Services\Payment\DTOs\PaymentIntent;
 use App\Services\Payment\DTOs\PaymentResult;
-use App\Services\Payment\DTOs\TokenizationResult;
 use App\Services\Payment\DTOs\WebhookPayload;
 use App\Services\Payment\Gateways\Paymob\PaymobApiClient;
 use App\Services\Payment\Gateways\Paymob\PaymobPaymentProcessor;
 use App\Services\Payment\Gateways\Paymob\PaymobRefundService;
-use App\Services\Payment\Gateways\Paymob\PaymobTokenizationService;
 use App\Services\Payment\Gateways\Paymob\PaymobWebhookProcessor;
 use Illuminate\Http\Request;
 
@@ -31,17 +26,18 @@ use Illuminate\Http\Request;
  * - Mobile wallets
  * - Apple Pay
  * - Bank installments
- * - Card tokenization for recurring payments
  * - Refunds and voids
  *
  * @see https://developers.paymob.com/egypt/
  */
-class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments, SupportsRefunds, SupportsTokenization, SupportsVoid, SupportsWebhooks
+class PaymobGateway extends AbstractGateway implements SupportsRefunds, SupportsVoid, SupportsWebhooks
 {
     protected PaymobApiClient $apiClient;
+
     protected PaymobPaymentProcessor $paymentProcessor;
-    protected PaymobTokenizationService $tokenizationService;
+
     protected PaymobRefundService $refundService;
+
     protected PaymobWebhookProcessor $webhookProcessor;
 
     public function __construct(array $config)
@@ -50,7 +46,6 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
 
         $this->apiClient = new PaymobApiClient($config);
         $this->paymentProcessor = new PaymobPaymentProcessor($this->apiClient, $config);
-        $this->tokenizationService = new PaymobTokenizationService($this->apiClient, $config);
         $this->refundService = new PaymobRefundService($this->apiClient, $config);
         $this->webhookProcessor = new PaymobWebhookProcessor($config);
     }
@@ -116,11 +111,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
      */
     public function createPaymentIntent(PaymentIntent $intent): PaymentResult
     {
-        return $this->paymentProcessor->createPaymentIntent(
-            $intent,
-            fn (string $token, int $amount, string $currency, array $meta) =>
-                $this->tokenizationService->chargeToken($token, $amount, $currency, $meta)
-        );
+        return $this->paymentProcessor->createPaymentIntent($intent);
     }
 
     /**
@@ -129,95 +120,6 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
     public function verifyPayment(string $transactionId, array $data = []): PaymentResult
     {
         return $this->paymentProcessor->verifyPayment($transactionId, $data);
-    }
-
-    // ========================================
-    // Tokenization (SupportsTokenization)
-    // ========================================
-
-    /**
-     * Check if tokenization is properly configured.
-     */
-    public function supportsTokenization(): bool
-    {
-        return $this->tokenizationService->supportsTokenization();
-    }
-
-    /**
-     * Get tokenization iframe URL for adding a card without payment.
-     */
-    public function getTokenizationIframeUrl(int $userId, array $options = []): array
-    {
-        return $this->tokenizationService->getTokenizationIframeUrl($userId, $options);
-    }
-
-    /**
-     * Tokenize a card and get a reusable token.
-     */
-    public function tokenizeCard(array $cardData, int $userId): TokenizationResult
-    {
-        return $this->tokenizationService->tokenizeCard($cardData, $userId);
-    }
-
-    /**
-     * Charge a tokenized card directly.
-     */
-    public function chargeToken(string $token, int $amountInCents, string $currency, array $metadata = []): PaymentResult
-    {
-        return $this->tokenizationService->chargeToken($token, $amountInCents, $currency, $metadata);
-    }
-
-    /**
-     * Delete a saved token from Paymob.
-     */
-    public function deleteToken(string $token): bool
-    {
-        return $this->tokenizationService->deleteToken($token);
-    }
-
-    /**
-     * Get details about a tokenized card.
-     */
-    public function getTokenDetails(string $token): ?array
-    {
-        return $this->tokenizationService->getTokenDetails($token);
-    }
-
-    // ========================================
-    // Recurring Payments (SupportsRecurringPayments)
-    // ========================================
-
-    /**
-     * Check if recurring payments are supported.
-     */
-    public function supportsRecurring(): bool
-    {
-        return $this->tokenizationService->supportsRecurring();
-    }
-
-    /**
-     * Get minimum interval between recurring charges.
-     */
-    public function getMinimumRecurringInterval(): int
-    {
-        return $this->tokenizationService->getMinimumRecurringInterval();
-    }
-
-    /**
-     * Charge a saved payment method for recurring billing.
-     */
-    public function chargeSavedPaymentMethod(
-        SavedPaymentMethod $paymentMethod,
-        int $amountInCents,
-        string $currency,
-        array $metadata = []
-    ): PaymentResult {
-        return $this->tokenizationService->chargeSavedPaymentMethod(
-            $paymentMethod,
-            $amountInCents,
-            $currency,
-            $metadata
-        );
     }
 
     // ========================================

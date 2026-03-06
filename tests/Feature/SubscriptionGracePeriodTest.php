@@ -3,7 +3,6 @@
 use App\Enums\BillingCycle;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
-use App\Jobs\ExpireGracePeriodSubscriptions;
 use App\Models\QuranSubscription;
 use Carbon\Carbon;
 
@@ -131,50 +130,4 @@ test('getGracePeriodEndsAt returns correct date from legacy key', function () {
 
     expect($result)->toBeInstanceOf(Carbon::class);
     expect($result->toDateString())->toBe($graceEnd->toDateString());
-});
-
-// ========================================
-// Background Jobs
-// ========================================
-
-test('ExpireGracePeriodSubscriptions job cancels subscriptions with expired grace and FAILED payment', function () {
-    // Create subscription in grace period with expired grace + FAILED payment
-    $subscription = createSubscription([
-        'status' => SessionSubscriptionStatus::ACTIVE,
-        'payment_status' => SubscriptionPaymentStatus::FAILED,
-        'metadata' => [
-            'grace_period_ends_at' => now()->subDay()->toIso8601String(),
-            'grace_period_started_at' => now()->subDays(4)->toIso8601String(),
-            'renewal_failed_count' => 3,
-        ],
-    ]);
-
-    // Run the job synchronously
-    (new ExpireGracePeriodSubscriptions)->handle();
-
-    $subscription->refresh();
-
-    expect($subscription->status)->toBe(SessionSubscriptionStatus::CANCELLED);
-    expect($subscription->payment_status)->toBe(SubscriptionPaymentStatus::FAILED);
-});
-
-test('SuspendExpiredGraceSubscriptions command suspends subscriptions with expired admin-granted grace', function () {
-    // Create subscription with admin-granted grace (payment_status=PAID) that has expired
-    $subscription = createSubscription([
-        'status' => SessionSubscriptionStatus::ACTIVE,
-        'payment_status' => SubscriptionPaymentStatus::PAID,
-        'metadata' => [
-            'grace_period_ends_at' => now()->subDay()->toIso8601String(),
-            'grace_period_started_at' => now()->subDays(4)->toIso8601String(),
-        ],
-    ]);
-
-    $this->artisan('subscriptions:suspend-expired-grace')
-        ->assertExitCode(0);
-
-    $subscription->refresh();
-
-    expect($subscription->status)->toBe(SessionSubscriptionStatus::SUSPENDED);
-    // Grace metadata should be cleaned up
-    expect($subscription->metadata['grace_period_ends_at'] ?? null)->toBeNull();
 });

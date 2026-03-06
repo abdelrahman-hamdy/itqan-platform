@@ -9,7 +9,6 @@ use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
-use App\Models\Traits\HandlesSubscriptionRenewal;
 use App\Models\Traits\PreventsDuplicatePendingSubscriptions;
 use App\Services\NotificationService;
 use Carbon\Carbon;
@@ -58,7 +57,6 @@ use Log;
  */
 class AcademicSubscription extends BaseSubscription
 {
-    use HandlesSubscriptionRenewal;
     use PreventsDuplicatePendingSubscriptions;
 
     /**

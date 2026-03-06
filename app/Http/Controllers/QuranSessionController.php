@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
-use App\Http\Requests\AddQuranSessionFeedbackRequest;
 use App\Http\Requests\CancelQuranSessionRequest;
 use App\Http\Requests\MarkQuranSessionAbsentRequest;
+use App\Http\Requests\Session\AddQuranSessionFeedbackRequest;
 use App\Http\Requests\UpdateQuranSessionNotesRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;

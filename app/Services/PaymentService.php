@@ -2,14 +2,10 @@
 
 namespace App\Services;
 
-use Illuminate\Database\QueryException;
-use InvalidArgumentException;
-use Throwable;
 use App\Constants\DefaultAcademy;
 use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Contracts\PaymentServiceInterface;
 use App\Models\Academy;
-use App\Models\BaseSubscription;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
 use App\Services\Payment\AcademyPaymentGatewayFactory;
@@ -17,11 +13,13 @@ use App\Services\Payment\DTOs\PaymentIntent;
 use App\Services\Payment\DTOs\PaymentResult;
 use App\Services\Payment\Exceptions\PaymentException;
 use App\Services\Payment\PaymentGatewayManager;
-use App\Services\Payment\PaymentRenewalService;
 use App\Services\Payment\PaymentResultHandler;
 use App\Services\Payment\PaymentStateMachine;
 use App\Services\Payment\PaymentVerificationService;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
+use Throwable;
 
 /**
  * Orchestration service for payment operations.
@@ -37,7 +35,6 @@ class PaymentService implements PaymentServiceInterface
         private PaymentStateMachine $stateMachine,
         private AcademyPaymentGatewayFactory $gatewayFactory,
         private PaymentResultHandler $resultHandler,
-        private PaymentRenewalService $renewalService,
         private PaymentVerificationService $verificationService,
     ) {}
 
@@ -157,56 +154,6 @@ class PaymentService implements PaymentServiceInterface
                 'error_code' => 'PAYMENT_FAILED',
             ];
         }
-    }
-
-    /**
-     * Process subscription renewal payment.
-     *
-     * Accepts either:
-     * 1. A Payment object - processes the existing payment record
-     * 2. A BaseSubscription + renewal price - creates payment and charges saved card
-     *
-     * Called by HandlesSubscriptionRenewal trait for automatic renewals.
-     *
-     * @param  float|null  $renewalPrice  Required if passing a subscription
-     */
-    public function processSubscriptionRenewal(
-        Payment|BaseSubscription $paymentOrSubscription,
-        ?float $renewalPrice = null
-    ): array {
-        // Handle existing Payment object (backward compatibility)
-        if ($paymentOrSubscription instanceof Payment) {
-            return $this->processPaymentRenewal($paymentOrSubscription);
-        }
-
-        // Handle BaseSubscription with saved payment method
-        return $this->renewalService->processSubscriptionAutoRenewal($paymentOrSubscription, $renewalPrice);
-    }
-
-    /**
-     * Process renewal for an existing Payment record.
-     */
-    protected function processPaymentRenewal(Payment $payment): array
-    {
-        Log::info('Processing payment renewal', [
-            'payment_id' => $payment->id,
-            'amount' => $payment->amount,
-            'subscription_type' => $payment->payable_type,
-        ]);
-
-        // processPayment() handles all exceptions internally and returns an array
-        $result = $this->processPayment($payment, [
-            'is_renewal' => true,
-        ]);
-
-        // If successful or pending, the subscription service will handle activation
-        if ($result['success'] ?? false) {
-            $payment->update([
-                'notes' => ($payment->notes ?? '')."\nAuto-renewal processed",
-            ]);
-        }
-
-        return $result;
     }
 
     /**

@@ -49,14 +49,24 @@ class SupervisorProfileResource extends BaseSupervisorProfileResource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->action(fn ($record) => $record->user?->update(['active_status' => true]))
+                    ->action(function ($record) {
+                        if ($user = $record->user) {
+                            $user->active_status = true;
+                            $user->save();
+                        }
+                    })
                     ->visible(fn ($record) => $record->user && ! $record->user->active_status),
                 Action::make('deactivate')
                     ->label('إيقاف')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->action(fn ($record) => $record->user?->update(['active_status' => false]))
+                    ->action(function ($record) {
+                        if ($user = $record->user) {
+                            $user->active_status = false;
+                            $user->save();
+                        }
+                    })
                     ->visible(fn ($record) => $record->user && $record->user->active_status),
                 DeleteAction::make()->label('حذف'),
                 RestoreAction::make()->label(__('filament.actions.restore')),
@@ -74,13 +84,23 @@ class SupervisorProfileResource extends BaseSupervisorProfileResource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => true]))),
+                    ->action(fn ($records) => $records->each(function ($record) {
+                        if ($user = $record->user) {
+                            $user->active_status = true;
+                            $user->save();
+                        }
+                    })),
                 BulkAction::make('deactivate')
                     ->label('إيقاف المحددين')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => false]))),
+                    ->action(fn ($records) => $records->each(function ($record) {
+                        if ($user = $record->user) {
+                            $user->active_status = false;
+                            $user->save();
+                        }
+                    })),
                 DeleteBulkAction::make()->label('حذف المحدد'),
                 RestoreBulkAction::make()->label(__('filament.actions.restore_selected')),
                 ForceDeleteBulkAction::make()->label(__('filament.actions.force_delete_selected')),

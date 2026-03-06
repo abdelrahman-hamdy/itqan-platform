@@ -3,63 +3,60 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\Login;
-use Filament\Pages\Dashboard;
-use App\Filament\Widgets\SuperAdminControlPanelWidget;
-use App\Filament\Widgets\SuperAdminStatsWidget;
-use App\Filament\Widgets\SuperAdminMonthlyStatsWidget;
-use App\Filament\Widgets\UserAnalyticsChartWidget;
-use App\Filament\Widgets\SessionAnalyticsChartWidget;
-use App\Filament\Widgets\RecentBusinessRequestsWidget;
-use App\Filament\Widgets\SentryStatsWidget;
-use ShuvroRoy\FilamentSpatieLaravelHealth\Pages\HealthCheckResults;
-use App\Filament\Resources\AcademyManagementResource;
-use App\Filament\Resources\AcademyGeneralSettingsResource;
-use App\Filament\Resources\PaymentSettingsResource;
-use App\Filament\Resources\UserResource;
-use App\Filament\Resources\AdminResource;
-use App\Filament\Resources\StudentProfileResource;
-use App\Filament\Resources\ParentProfileResource;
-use App\Filament\Resources\SupervisorProfileResource;
-use App\Filament\Resources\AcademicTeacherProfileResource;
-use App\Filament\Resources\QuranTeacherProfileResource;
-use App\Filament\Resources\QuranPackageResource;
-use App\Filament\Resources\QuranCircleResource;
-use App\Filament\Resources\QuranIndividualCircleResource;
-use App\Filament\Resources\QuranSubscriptionResource;
-use App\Filament\Resources\QuranSessionResource;
-use App\Filament\Resources\QuranTrialRequestResource;
 use App\Filament\Resources\AcademicGradeLevelResource;
-use App\Filament\Resources\AcademicSubjectResource;
-use App\Filament\Resources\AcademicPackageResource;
 use App\Filament\Resources\AcademicIndividualLessonResource;
-use App\Filament\Resources\InteractiveCourseResource;
-use App\Filament\Resources\AcademicSubscriptionResource;
-use App\Filament\Resources\AcademicSessionResource;
-use App\Filament\Resources\InteractiveCourseSessionResource;
-use App\Filament\Resources\RecordedCourseResource;
-use App\Filament\Resources\PaymentResource;
-use App\Filament\Resources\SavedPaymentMethodResource;
-use App\Filament\Resources\TeacherReviewResource;
-use App\Filament\Resources\TeacherEarningResource;
-use App\Filament\Resources\StudentSessionReportResource;
+use App\Filament\Resources\AcademicPackageResource;
 use App\Filament\Resources\AcademicSessionReportResource;
-use App\Filament\Resources\InteractiveSessionReportResource;
-use App\Filament\Resources\MeetingAttendanceResource;
-use App\Filament\Resources\HomeworkSubmissionsResource;
-use App\Filament\Resources\StudentProgressResource;
-use App\Filament\Resources\CertificateResource;
-use App\Filament\Resources\QuizResource;
-use App\Filament\Resources\QuizAssignmentResource;
+use App\Filament\Resources\AcademicSessionResource;
+use App\Filament\Resources\AcademicSubjectResource;
+use App\Filament\Resources\AcademicSubscriptionResource;
+use App\Filament\Resources\AcademicTeacherProfileResource;
+use App\Filament\Resources\AcademyGeneralSettingsResource;
+use App\Filament\Resources\AcademyManagementResource;
+use App\Filament\Resources\AdminResource;
 use App\Filament\Resources\BusinessServiceCategoryResource;
 use App\Filament\Resources\BusinessServiceRequestResource;
+use App\Filament\Resources\CertificateResource;
+use App\Filament\Resources\HomeworkSubmissionsResource;
+use App\Filament\Resources\InteractiveCourseResource;
+use App\Filament\Resources\InteractiveCourseSessionResource;
+use App\Filament\Resources\InteractiveSessionReportResource;
+use App\Filament\Resources\MeetingAttendanceResource;
+use App\Filament\Resources\ParentProfileResource;
+use App\Filament\Resources\PaymentResource;
+use App\Filament\Resources\PaymentSettingsResource;
 use App\Filament\Resources\PortfolioItemResource;
+use App\Filament\Resources\QuizAssignmentResource;
+use App\Filament\Resources\QuizResource;
+use App\Filament\Resources\QuranCircleResource;
+use App\Filament\Resources\QuranIndividualCircleResource;
+use App\Filament\Resources\QuranPackageResource;
+use App\Filament\Resources\QuranSessionResource;
+use App\Filament\Resources\QuranSubscriptionResource;
+use App\Filament\Resources\QuranTeacherProfileResource;
+use App\Filament\Resources\QuranTrialRequestResource;
+use App\Filament\Resources\RecordedCourseResource;
 use App\Filament\Resources\SessionRecordingResource;
+use App\Filament\Resources\StudentProfileResource;
+use App\Filament\Resources\StudentProgressResource;
+use App\Filament\Resources\StudentSessionReportResource;
+use App\Filament\Resources\SupervisorProfileResource;
+use App\Filament\Resources\TeacherEarningResource;
+use App\Filament\Resources\TeacherReviewResource;
+use App\Filament\Resources\UserResource;
+use App\Filament\Widgets\RecentBusinessRequestsWidget;
+use App\Filament\Widgets\SentryStatsWidget;
+use App\Filament\Widgets\SessionAnalyticsChartWidget;
+use App\Filament\Widgets\SuperAdminControlPanelWidget;
+use App\Filament\Widgets\SuperAdminMonthlyStatsWidget;
+use App\Filament\Widgets\SuperAdminStatsWidget;
+use App\Filament\Widgets\UserAnalyticsChartWidget;
 use App\Http\Middleware\AcademyContext;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationItem;
-use Filament\Pages;
+use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -74,6 +71,7 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use ShuvroRoy\FilamentSpatieLaravelHealth\FilamentSpatieLaravelHealthPlugin;
+use ShuvroRoy\FilamentSpatieLaravelHealth\Pages\HealthCheckResults;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -223,7 +221,6 @@ class AdminPanelProvider extends PanelProvider
 
             // المالية - Financial Management
             PaymentResource::class,
-            SavedPaymentMethodResource::class,
 
             // إعدادات المعلمين - Teacher Settings
             TeacherReviewResource::class,

@@ -9,8 +9,6 @@ use App\Models\InteractiveCourse;
 use App\Models\Payment;
 use App\Models\QuranSubscription;
 use App\Models\RecordedCourse;
-use App\Models\SavedPaymentMethod;
-use App\Services\Payment\PaymentMethodService;
 use App\Services\PaymentService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +22,6 @@ class PaymentApiController extends Controller
 
     public function __construct(
         protected PaymentService $paymentService,
-        protected PaymentMethodService $paymentMethodService
     ) {}
 
     /**
@@ -39,7 +36,6 @@ class PaymentApiController extends Controller
             'payment_method' => 'nullable|string|in:card,credit_card,debit_card,wallet,apple_pay',
             'course_id' => 'nullable|integer|required_if:payment_type,course',
             'subscription_id' => 'nullable|integer|required_if:payment_type,subscription',
-            'save_card' => 'nullable|boolean',
         ]);
 
         $user = Auth::user();
@@ -72,7 +68,6 @@ class PaymentApiController extends Controller
                 'payment_gateway' => 'paymob',
                 'status' => 'pending',
                 'payment_status' => 'pending',
-                'save_card' => $validated['save_card'] ?? false,
             ]);
 
             // Create payment intent with Paymob
@@ -91,7 +86,6 @@ class PaymentApiController extends Controller
                     'payment_id' => $payment->id,
                     'user_id' => $user->id,
                     'payment_type' => $validated['payment_type'],
-                    'save_card' => $validated['save_card'] ?? false,
                 ],
             ]);
 
@@ -195,192 +189,5 @@ class PaymentApiController extends Controller
         // 'course' and 'subscription', so this branch should never be reached in
         // normal operation. Return null to surface a 404 error defensively.
         return null;
-    }
-
-    /**
-     * Charge a saved payment method.
-     */
-    public function chargeSaved(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'saved_payment_method_id' => 'required|integer|exists:saved_payment_methods,id',
-            'currency' => 'required|string|size:3',
-            'payment_type' => 'required|string|in:course,subscription',
-            'course_id' => 'nullable|integer|required_if:payment_type,course',
-            'subscription_id' => 'nullable|integer|required_if:payment_type,subscription',
-        ]);
-
-        $user = Auth::user();
-
-        if (! $user) {
-            return $this->unauthorized('يجب تسجيل الدخول أولاً');
-        }
-
-        // Get the saved payment method and verify ownership
-        $savedMethod = SavedPaymentMethod::where('id', $validated['saved_payment_method_id'])
-            ->where('user_id', $user->id)
-            ->active()
-            ->notExpired()
-            ->first();
-
-        if (! $savedMethod) {
-            return $this->notFound('طريقة الدفع غير موجودة أو منتهية الصلاحية');
-        }
-
-        // SECURITY: Resolve canonical amount from DB — never trust client-supplied amount.
-        $academyId = $user->academy_id;
-        $canonicalAmountCents = $this->resolveCanonicalAmountCents($validated, $academyId);
-        if ($canonicalAmountCents === null) {
-            return $this->error('لم يتم العثور على السعر المطلوب', 404);
-        }
-
-        try {
-            // Charge using the saved payment method
-            $result = $this->paymentMethodService->chargePaymentMethod(
-                $savedMethod,
-                $canonicalAmountCents,
-                $validated['currency'],
-                [
-                    'payment_type' => $validated['payment_type'],
-                    'course_id' => $validated['course_id'] ?? null,
-                    'subscription_id' => $validated['subscription_id'] ?? null,
-                ]
-            );
-
-            if ($result->isSuccessful()) {
-                return $this->success([
-                    'success' => true,
-                    'message' => 'تم الدفع بنجاح',
-                    'payment_id' => $result->gatewayOrderId,
-                    'transaction_id' => $result->transactionId,
-                ]);
-            }
-
-            return $this->error($result->errorMessage ?? 'فشلت عملية الدفع', 400, [
-                'error_code' => $result->errorCode,
-            ]);
-
-        } catch (Exception $e) {
-            Log::error('Saved card charge failed', [
-                'error' => $e->getMessage(),
-                'user_id' => $user->id,
-                'saved_method_id' => $validated['saved_payment_method_id'],
-            ]);
-
-            return $this->error(__('payments.service.unexpected_processing_error'), 500);
-        }
-    }
-
-    /**
-     * Get user's saved payment methods.
-     */
-    public function getSavedMethods(Request $request): JsonResponse
-    {
-        $user = Auth::user();
-
-        if (! $user) {
-            return $this->unauthorized('يجب تسجيل الدخول أولاً');
-        }
-
-        $gateway = $request->get('gateway');
-
-        $methods = $this->paymentMethodService->getUserPaymentMethods($user, $gateway);
-
-        return $this->success([
-            'payment_methods' => $methods->map(function ($method) {
-                return [
-                    'id' => $method->id,
-                    'type' => $method->type,
-                    'brand' => $method->brand,
-                    'brand_display' => $method->getBrandDisplayName(),
-                    'last_four' => $method->last_four,
-                    'masked_number' => $method->getMaskedNumber(),
-                    'expiry' => $method->getExpiryDisplay(),
-                    'is_default' => $method->is_default,
-                    'is_expired' => $method->isExpired(),
-                    'display_label' => $method->getDisplayLabel(),
-                    'icon' => $method->getBrandIcon(),
-                ];
-            }),
-        ]);
-    }
-
-    /**
-     * Delete a saved payment method.
-     */
-    public function deleteSavedMethod(Request $request, int $id): JsonResponse
-    {
-        $user = Auth::user();
-
-        if (! $user) {
-            return $this->unauthorized('يجب تسجيل الدخول أولاً');
-        }
-
-        $method = SavedPaymentMethod::where('id', $id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (! $method) {
-            return $this->notFound('طريقة الدفع غير موجودة');
-        }
-
-        try {
-            $deleted = $this->paymentMethodService->deletePaymentMethod($method);
-
-            if ($deleted) {
-                return $this->success([
-                    'success' => true,
-                    'message' => 'تم حذف طريقة الدفع بنجاح',
-                ]);
-            }
-
-            return $this->error('فشل حذف طريقة الدفع', 400);
-
-        } catch (Exception $e) {
-            Log::error('Delete saved payment method failed', [
-                'error' => $e->getMessage(),
-                'method_id' => $id,
-            ]);
-
-            return $this->error('فشل حذف طريقة الدفع', 500);
-        }
-    }
-
-    /**
-     * Set a saved payment method as default.
-     */
-    public function setDefaultMethod(Request $request, int $id): JsonResponse
-    {
-        $user = Auth::user();
-
-        if (! $user) {
-            return $this->unauthorized('يجب تسجيل الدخول أولاً');
-        }
-
-        $method = SavedPaymentMethod::where('id', $id)
-            ->where('user_id', $user->id)
-            ->active()
-            ->first();
-
-        if (! $method) {
-            return $this->notFound('طريقة الدفع غير موجودة');
-        }
-
-        try {
-            $this->paymentMethodService->setDefaultPaymentMethod($user, $method);
-
-            return $this->success([
-                'success' => true,
-                'message' => 'تم تعيين طريقة الدفع كافتراضية',
-            ]);
-
-        } catch (Exception $e) {
-            Log::error('Set default payment method failed', [
-                'error' => $e->getMessage(),
-                'method_id' => $id,
-            ]);
-
-            return $this->error('فشل تعيين طريقة الدفع الافتراضية', 500);
-        }
     }
 }

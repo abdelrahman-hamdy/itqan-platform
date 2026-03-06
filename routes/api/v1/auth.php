@@ -59,7 +59,7 @@ Route::middleware(['api.resolve.academy', 'api.academy.active'])->group(function
         ->name('api.v1.forgot-password');
 
     Route::post('/verify-reset-token', [ForgotPasswordController::class, 'verifyToken'])
-        ->middleware('throttle:10,1')
+        ->middleware('throttle:5,1')
         ->name('api.v1.verify-reset-token');
 
     Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'])

@@ -23,7 +23,10 @@ class ViewAdmin extends ViewRecord
                 ->icon(fn () => $this->record->active_status ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
                 ->color(fn () => $this->record->active_status ? 'warning' : 'success')
                 ->requiresConfirmation()
-                ->action(fn () => $this->record->update(['active_status' => ! $this->record->active_status])),
+                ->action(function () {
+                    $this->record->active_status = ! $this->record->active_status;
+                    $this->record->save();
+                }),
             DeleteAction::make()
                 ->label('حذف'),
         ];

@@ -12,14 +12,12 @@ use App\Filament\Academy\Resources\QuranPackageResource;
 use App\Filament\Academy\Resources\QuranSubscriptionResource;
 use App\Filament\Academy\Resources\QuranTeacherProfileResource;
 use App\Filament\Academy\Resources\RecordedCourseResource;
-use App\Filament\Academy\Resources\SavedPaymentMethodResource;
 use App\Filament\Academy\Resources\StudentProfileResource;
 use App\Filament\Academy\Resources\SupervisorProfileResource;
 use App\Filament\Academy\Widgets\AcademyMonthlyStatsWidget;
 use App\Filament\Academy\Widgets\AcademySessionAnalyticsChartWidget;
 use App\Filament\Academy\Widgets\AcademyStatsWidget;
 use App\Filament\Academy\Widgets\AcademyUserAnalyticsChartWidget;
-use App\Filament\Academy\Widgets\RenewalMetricsWidget;
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Resources\HomeworkSubmissionsResource;
 use App\Filament\Resources\InteractiveCourseResource;
@@ -31,10 +29,10 @@ use App\Filament\Resources\TeacherReviewResource;
 use App\Http\Middleware\AcademyContext;
 use App\Models\Academy;
 use Filament\Facades\Filament;
-use Filament\Navigation\NavigationItem;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -108,7 +106,6 @@ class AcademyPanelProvider extends PanelProvider
 
                 // المالية
                 PaymentResource::class,
-                SavedPaymentMethodResource::class,
 
                 // إعدادات المعلمين - Teacher Settings
                 TeacherReviewResource::class,
@@ -128,7 +125,6 @@ class AcademyPanelProvider extends PanelProvider
             ->widgets([
                 // Main stats widgets - same structure as super admin but scoped to academy
                 AcademyStatsWidget::class,
-                RenewalMetricsWidget::class,
                 AcademyMonthlyStatsWidget::class,
                 AcademyUserAnalyticsChartWidget::class,
                 AcademySessionAnalyticsChartWidget::class,

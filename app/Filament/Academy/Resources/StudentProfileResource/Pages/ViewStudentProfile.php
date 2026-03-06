@@ -23,14 +23,24 @@ class ViewStudentProfile extends ViewRecord
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->requiresConfirmation()
-                ->action(fn () => $this->record->user?->update(['active_status' => true]))
+                ->action(function () {
+                    if ($user = $this->record->user) {
+                        $user->active_status = true;
+                        $user->save();
+                    }
+                })
                 ->visible(fn () => $this->record->user && ! $this->record->user->active_status),
             Action::make('deactivate')
                 ->label('إيقاف')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->requiresConfirmation()
-                ->action(fn () => $this->record->user?->update(['active_status' => false]))
+                ->action(function () {
+                    if ($user = $this->record->user) {
+                        $user->active_status = false;
+                        $user->save();
+                    }
+                })
                 ->visible(fn () => $this->record->user && $this->record->user->active_status),
             DeleteAction::make()
                 ->label('حذف'),

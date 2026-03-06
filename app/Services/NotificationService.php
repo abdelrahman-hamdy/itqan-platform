@@ -102,10 +102,13 @@ class NotificationService implements NotificationServiceInterface
 
     /**
      * Delete all read notifications older than X days.
+     *
+     * Always pass $tenantId when calling from scheduled jobs to prevent
+     * cross-tenant deletion in multi-tenant environments.
      */
-    public function deleteOldReadNotifications(int $days = 30): int
+    public function deleteOldReadNotifications(int $days = 30, ?int $tenantId = null): int
     {
-        return $this->repository->deleteOldReadNotifications($days);
+        return $this->repository->deleteOldReadNotifications($days, $tenantId);
     }
 
     /**

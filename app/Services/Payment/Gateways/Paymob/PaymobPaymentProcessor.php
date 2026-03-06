@@ -2,10 +2,10 @@
 
 namespace App\Services\Payment\Gateways\Paymob;
 
-use Exception;
-use Illuminate\Support\Facades\Log;
 use App\Services\Payment\DTOs\PaymentIntent;
 use App\Services\Payment\DTOs\PaymentResult;
+use Exception;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Handles standard payment intent creation and payment verification for Paymob.
@@ -117,7 +117,7 @@ class PaymobPaymentProcessor
     /**
      * Create a payment intent using Unified Intention API.
      */
-    public function createPaymentIntent(PaymentIntent $intent, callable $chargeTokenCallback): PaymentResult
+    public function createPaymentIntent(PaymentIntent $intent, ?callable $chargeTokenCallback = null): PaymentResult
     {
         $conversion = $this->convertToEgpIfNeeded($intent);
 
@@ -137,7 +137,7 @@ class PaymobPaymentProcessor
         ]);
 
         try {
-            if (! empty($intent->cardToken)) {
+            if (! empty($intent->cardToken) && $chargeTokenCallback) {
                 return $chargeTokenCallback(
                     $intent->cardToken,
                     $conversion['amount_cents'],

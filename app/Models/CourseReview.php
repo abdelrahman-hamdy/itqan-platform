@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
-use App\Services\NotificationService;
-use App\Enums\NotificationType;
-use Exception;
-use Illuminate\Support\Facades\Log;
 use App\Constants\DefaultAcademy;
+use App\Enums\NotificationType;
 use App\Enums\ReviewStatus;
 use App\Models\Traits\ScopedToAcademy;
+use App\Services\NotificationService;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 
 class CourseReview extends Model
 {
@@ -21,8 +21,6 @@ class CourseReview extends Model
 
     protected $fillable = [
         'academy_id',
-        'reviewable_type',
-        'reviewable_id',
         'user_id',
         'rating',
         'review',

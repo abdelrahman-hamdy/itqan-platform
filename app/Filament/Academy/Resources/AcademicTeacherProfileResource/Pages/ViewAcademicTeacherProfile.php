@@ -23,7 +23,12 @@ class ViewAcademicTeacherProfile extends ViewRecord
                 ->icon(fn () => $this->record->user?->active_status ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
                 ->color(fn () => $this->record->user?->active_status ? 'warning' : 'success')
                 ->requiresConfirmation()
-                ->action(fn () => $this->record->user?->update(['active_status' => ! $this->record->user->active_status]))
+                ->action(function () {
+                    if ($user = $this->record->user) {
+                        $user->active_status = ! $user->active_status;
+                        $user->save();
+                    }
+                })
                 ->visible(fn () => $this->record->user !== null),
             DeleteAction::make()
                 ->label('حذف'),
