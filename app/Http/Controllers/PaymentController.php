@@ -372,23 +372,37 @@ class PaymentController extends Controller
                     ->with('error', __('student.saved_payment_methods.tokenization_failed'));
             }
 
-            // Extract card token from API response
+            // Extract card token from API response (try multiple sources)
+            $rawResponse = $verifyResult->rawResponse;
             $cardToken = $verifyResult->metadata['card_token'] ?? null;
-            $cardBrand = $verifyResult->metadata['card_brand'] ?? 'unknown';
-            $lastFour = $verifyResult->metadata['card_last_four'] ?? '****';
+            $tokenType = 'legacy';
 
-            // Also try to get from raw response if not in metadata
-            if (! $cardToken && isset($verifyResult->rawResponse['source_data']['token'])) {
-                $cardToken = $verifyResult->rawResponse['source_data']['token'];
-                $cardBrand = $verifyResult->rawResponse['source_data']['sub_type'] ?? 'unknown';
-                $lastFour = substr($verifyResult->rawResponse['source_data']['pan'] ?? '', -4) ?: '****';
+            // Source 1: metadata from verifyPayment (legacy source_data.token)
+            // Source 2: raw response source_data.token
+            if (! $cardToken && ! empty($rawResponse['source_data']['token'])) {
+                $cardToken = $rawResponse['source_data']['token'];
             }
+
+            // Source 3: Unified Intention API — next_payment_intention (save_card flow)
+            if (! $cardToken && ! empty($rawResponse['data']['payment_key_claims']['next_payment_intention'])) {
+                $cardToken = $rawResponse['data']['payment_key_claims']['next_payment_intention'];
+                $tokenType = 'intention';
+            }
+
+            // Extract card info from raw response or callback params
+            $cardBrand = $verifyResult->metadata['card_brand']
+                ?? $rawResponse['source_data']['sub_type']
+                ?? $request->input('source_data_sub_type')
+                ?? 'unknown';
+            $lastFour = $verifyResult->metadata['card_last_four']
+                ?? (substr($rawResponse['source_data']['pan'] ?? '', -4) ?: null)
+                ?? $request->input('source_data_pan')
+                ?? '****';
 
             if (! $cardToken) {
                 $this->logPayment('error', 'No card token in Paymob API response', [
                     'user_id' => $user->id,
                     'transaction_id' => $transactionId,
-                    'raw_response' => $verifyResult->rawResponse,
                 ]);
 
                 return redirect()->route('student.payments', ['subdomain' => $subdomain])
@@ -418,8 +432,8 @@ class PaymentController extends Controller
                 'is_active' => true,
                 'metadata' => [
                     'saved_from' => 'tokenization_callback',
+                    'token_type' => $tokenType,
                     'transaction_id' => $transactionId,
-                    'raw_response' => $request->except(['token', 'card_token']),
                 ],
             ]);
 
