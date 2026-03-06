@@ -184,6 +184,15 @@ class TeacherProfileController extends Controller
         // Remove non-model fields before update
         unset($validated['remove_preview_video']);
 
+        // Remove null values for NOT NULL columns to avoid SQL errors
+        // These fields may come as null when not present in the form submission
+        $notNullFields = ['educational_qualification', 'education_level'];
+        foreach ($notNullFields as $field) {
+            if (array_key_exists($field, $validated) && $validated[$field] === null) {
+                unset($validated[$field]);
+            }
+        }
+
         // Update teacher profile
         $teacherProfile->update($validated);
 
