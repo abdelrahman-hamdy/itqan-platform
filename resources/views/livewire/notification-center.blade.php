@@ -2,7 +2,7 @@
     {{-- Notification Bell Icon --}}
     <button @click="open = !open"
             wire:click="toggleNotificationPanel"
-            class="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-all duration-200"
+            class="relative w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-all duration-200"
             aria-label="{{ __('notifications.page.title') }}">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

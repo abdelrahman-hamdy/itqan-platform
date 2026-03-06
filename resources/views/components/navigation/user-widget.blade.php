@@ -38,7 +38,7 @@
 {{-- Chat Icon for Supervisors (Desktop) --}}
 @if($user->user_type === 'supervisor')
 <a href="{{ route('chats', ['subdomain' => $academy->subdomain]) }}"
-   class="relative hidden md:flex items-center justify-center {{ $height }} px-3 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors duration-200"
+   class="relative hidden md:flex items-center justify-center {{ $height }} px-3 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors duration-200"
    aria-label="{{ __('chat.messages') }}">
     <i class="ri-message-3-line text-xl"></i>
     {{-- Unread badge --}}
