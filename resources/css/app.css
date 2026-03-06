@@ -414,6 +414,14 @@ input[type="number"],
     border-color: var(--color-primary-500);
 }
 
+.focus-within\:ring-primary\/20:focus-within {
+    --tw-ring-color: color-mix(in srgb, var(--color-primary-500) 20%, transparent);
+}
+
+.focus-within\:border-primary:focus-within {
+    border-color: var(--color-primary-500);
+}
+
 .hover\:bg-primary:hover {
     background-color: var(--color-primary-500);
 }
