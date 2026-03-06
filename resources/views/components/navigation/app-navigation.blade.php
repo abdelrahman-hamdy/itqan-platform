@@ -40,12 +40,12 @@
     $teacherNavItems = [
       ['route' => null, 'href' => '/teacher-panel/quran-sessions', 'label' => __('components.navigation.app.teacher_nav.sessions_schedule'), 'icon' => 'ri-calendar-schedule-line', 'activeRoutes' => []],
       ['route' => null, 'href' => '/teacher-panel/quran-trial-requests', 'label' => __('components.navigation.app.teacher_nav.trial_sessions'), 'icon' => 'ri-user-add-line', 'activeRoutes' => []],
-      ['route' => null, 'href' => '/teacher-panel/quran-session-reports', 'label' => __('components.navigation.app.teacher_nav.session_reports'), 'icon' => 'ri-file-chart-line', 'activeRoutes' => []],
+      ['route' => null, 'href' => '/teacher-panel/student-session-reports', 'label' => __('components.navigation.app.teacher_nav.session_reports'), 'icon' => 'ri-file-chart-line', 'activeRoutes' => []],
     ];
   } elseif ($user && $user->isAcademicTeacher()) {
     $teacherNavItems = [
       ['route' => null, 'href' => '/academic-teacher-panel/academic-sessions', 'label' => __('components.navigation.app.teacher_nav.sessions_schedule'), 'icon' => 'ri-calendar-schedule-line', 'activeRoutes' => []],
-      ['route' => null, 'href' => '/academic-teacher-panel/homework-submissions', 'label' => __('components.navigation.app.teacher_nav.homework'), 'icon' => 'ri-file-list-3-line', 'activeRoutes' => []],
+      ['route' => null, 'href' => '/academic-teacher-panel/academic-individual-lessons', 'label' => __('components.navigation.app.teacher_nav.homework'), 'icon' => 'ri-file-list-3-line', 'activeRoutes' => []],
       ['route' => null, 'href' => '/academic-teacher-panel/academic-session-reports', 'label' => __('components.navigation.app.teacher_nav.session_reports'), 'icon' => 'ri-file-chart-line', 'activeRoutes' => []],
     ];
   }
