@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\UserType;
+use App\Models\Traits\CascadesSoftDeleteToUser;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SupervisorProfile extends Model
 {
-    use HasFactory, ScopedToAcademy, SoftDeletes;
+    use CascadesSoftDeleteToUser, HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id', // Direct academy relationship

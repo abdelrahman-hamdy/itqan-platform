@@ -3,16 +3,18 @@
 namespace App\Models;
 
 use App\Enums\RelationshipType;
+use App\Models\Traits\CascadesSoftDeleteToUser;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class ParentProfile extends Model
 {
-    use HasFactory, ScopedToAcademy, SoftDeletes;
+    use CascadesSoftDeleteToUser, HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id', // Direct academy relationship
@@ -50,10 +52,15 @@ class ParentProfile extends Model
                 // Use academy_id from the model, or fallback to 1 if not set
                 $academyId = $model->academy_id ?: 1;
 
-                // Generate unique code with timestamp to avoid race conditions
-                $timestamp = now()->format('His'); // HHMMSS
-                $random = rand(100, 999);
-                $model->parent_code = 'PAR-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.$timestamp.$random;
+                DB::transaction(function () use ($model, $academyId) {
+                    $last = static::withoutGlobalScopes()
+                        ->where('academy_id', $academyId)
+                        ->lockForUpdate()
+                        ->orderByRaw('CAST(SUBSTRING(parent_code, -6) AS UNSIGNED) DESC')
+                        ->first(['parent_code']);
+                    $seq = $last && preg_match('/(\d{6})$/', $last->parent_code, $m) ? (int) $m[1] + 1 : 1;
+                    $model->parent_code = 'PAR-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.str_pad($seq, 6, '0', STR_PAD_LEFT);
+                });
             }
         });
     }

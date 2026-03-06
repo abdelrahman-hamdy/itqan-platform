@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Traits\CascadesSoftDeleteToUser;
 use App\Models\Traits\ScopedToAcademyViaRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class StudentProfile extends Model
 {
-    use HasFactory, ScopedToAcademyViaRelationship, SoftDeletes;
+    use CascadesSoftDeleteToUser, HasFactory, ScopedToAcademyViaRelationship, SoftDeletes;
 
     protected $fillable = [
         'user_id', // Nullable - will be linked during registration
@@ -64,10 +66,15 @@ class StudentProfile extends Model
             }
 
             if (empty($model->student_code)) {
-                // Generate unique code with timestamp
-                $timestamp = now()->format('His'); // HHMMSS
-                $random = random_int(100, 999);
-                $model->student_code = 'ST-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.$timestamp.$random;
+                DB::transaction(function () use ($model, $academyId) {
+                    $last = static::withoutGlobalScopes()
+                        ->where('academy_id', $academyId)
+                        ->lockForUpdate()
+                        ->orderByRaw('CAST(SUBSTRING(student_code, -6) AS UNSIGNED) DESC')
+                        ->first(['student_code']);
+                    $seq = $last && preg_match('/(\d{6})$/', $last->student_code, $m) ? (int) $m[1] + 1 : 1;
+                    $model->student_code = 'ST-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.str_pad($seq, 6, '0', STR_PAD_LEFT);
+                });
             }
 
             // Also ensure academy_id column is populated
@@ -177,6 +184,7 @@ class StudentProfile extends Model
         if (isset($this->attributes['academy_id']) && $this->attributes['academy_id'] !== null) {
             return (int) $this->attributes['academy_id'];
         }
+
         // Fallback to relationship for legacy records
         return $this->gradeLevel?->academy_id;
     }

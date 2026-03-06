@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EducationalQualification;
+use App\Models\Traits\CascadesSoftDeleteToUser;
 use App\Models\Traits\HasReviews;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 
 class AcademicTeacherProfile extends Model
 {
-    use HasFactory, HasReviews, ScopedToAcademy, SoftDeletes;
+    use CascadesSoftDeleteToUser, HasFactory, HasReviews, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id', // Required at creation; set by registration services and Filament panel

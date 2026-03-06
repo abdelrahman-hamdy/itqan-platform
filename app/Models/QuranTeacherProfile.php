@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EducationalQualification;
 use Illuminate\Support\Collection;
 use App\Enums\CircleEnrollmentStatus;
+use App\Models\Traits\CascadesSoftDeleteToUser;
 use App\Models\Traits\HasReviews;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 
 class QuranTeacherProfile extends Model
 {
-    use HasFactory, HasReviews, ScopedToAcademy, SoftDeletes;
+    use CascadesSoftDeleteToUser, HasFactory, HasReviews, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id', // Required at creation; set by registration services and Filament panel
