@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Http\Controllers\Controller;
@@ -178,10 +179,22 @@ class SubscriptionController extends Controller
                 break;
 
             case 'course':
+                // Try by subscription ID first, then fall back to course ID
+                // (mobile navigates by course ID, not subscription ID)
                 $subscription = CourseSubscription::where('id', $id)
                     ->where('student_id', $user->id)
                     ->with(['interactiveCourse.assignedTeacher', 'interactiveCourse.sessions', 'recordedCourse', 'payments'])
                     ->first();
+
+                if (! $subscription) {
+                    $subscription = CourseSubscription::where('student_id', $user->id)
+                        ->where(function ($q) use ($id) {
+                            $q->where('interactive_course_id', $id)
+                                ->orWhere('recorded_course_id', $id);
+                        })
+                        ->with(['interactiveCourse.assignedTeacher', 'interactiveCourse.sessions', 'recordedCourse', 'payments'])
+                        ->first();
+                }
                 break;
         }
 
@@ -248,20 +261,34 @@ class SubscriptionController extends Controller
                 break;
 
             case 'course':
+                // Try by subscription ID first, then fall back to course ID
                 $subscription = CourseSubscription::where('id', $id)
                     ->where('student_id', $user->id)
-                    ->with(['course'])
+                    ->with(['interactiveCourse', 'recordedCourse'])
                     ->first();
+
+                if (! $subscription) {
+                    $subscription = CourseSubscription::where('student_id', $user->id)
+                        ->where(function ($q) use ($id) {
+                            $q->where('interactive_course_id', $id)
+                                ->orWhere('recorded_course_id', $id);
+                        })
+                        ->with(['interactiveCourse', 'recordedCourse'])
+                        ->first();
+                }
 
                 if (! $subscription) {
                     return $this->notFound(__('Subscription not found.'));
                 }
 
-                $sessions = $subscription->course->sessions()
-                    ->orderBy('scheduled_at', 'desc')
-                    ->get()
-                    ->map(fn ($s) => $this->formatSessionBrief($s, 'interactive'))
-                    ->toArray();
+                $courseModel = $subscription->interactiveCourse ?? $subscription->recordedCourse;
+                $sessions = ($courseModel && method_exists($courseModel, 'sessions'))
+                    ? $courseModel->sessions()
+                        ->orderBy('scheduled_at', 'desc')
+                        ->get()
+                        ->map(fn ($s) => $this->formatSessionBrief($s, 'interactive'))
+                        ->toArray()
+                    : [];
                 break;
         }
 
@@ -355,10 +382,21 @@ class SubscriptionController extends Controller
                 break;
 
             case 'course':
+                // Try by subscription ID first, then fall back to course ID
                 $subscription = CourseSubscription::where('id', $id)
                     ->where('student_id', $user->id)
-                    ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
+                    ->whereIn('status', [EnrollmentStatus::ENROLLED->value, EnrollmentStatus::PENDING->value])
                     ->first();
+
+                if (! $subscription) {
+                    $subscription = CourseSubscription::where('student_id', $user->id)
+                        ->where(function ($q) use ($id) {
+                            $q->where('interactive_course_id', $id)
+                                ->orWhere('recorded_course_id', $id);
+                        })
+                        ->whereIn('status', [EnrollmentStatus::ENROLLED->value, EnrollmentStatus::PENDING->value])
+                        ->first();
+                }
                 break;
         }
 
