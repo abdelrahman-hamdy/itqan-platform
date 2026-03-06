@@ -16,26 +16,20 @@
 
 
         <div class="flex gap-x-2 items-center">
-            @if ($redirectToHomeAction)
-                @php
-                    $userType = auth()->user()?->user_type;
-                    $profileRoute = match($userType) {
-                        'student' => route('student.profile'),
-                        'teacher' => route('teacher.profile'),
-                        'parent' => route('parent.dashboard'),
-                        default => config('wirechat.home_route', '/'),
-                    };
-                @endphp
-                @if(in_array($userType, ['student', 'teacher']))
-                    <a href="{{ $profileRoute }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                        <i class="ri-user-line text-base"></i>
-                        {{ __('wirechat::chats.profile_button') }}
-                    </a>
-                @else
-                    <a href="{{ $profileRoute }}" class="flex items-center transition-colors duration-200">
-                        <i class="ri-home-4-line text-2xl text-gray-500 hover:text-gray-900 transition-colors"></i>
-                    </a>
-                @endif
+            @php
+                $userType = auth()->user()?->user_type;
+                $profileRoute = match($userType) {
+                    'student' => route('student.profile'),
+                    'teacher' => route('teacher.profile'),
+                    'parent' => route('parent.dashboard'),
+                    default => config('wirechat.home_route', '/'),
+                };
+            @endphp
+            @if(in_array($userType, ['student', 'teacher']))
+                <a href="{{ $profileRoute }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    <i class="ri-user-line text-base"></i>
+                    {{ __('wirechat::chats.profile_button') }}
+                </a>
             @endif
         </div>
 
