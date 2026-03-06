@@ -597,6 +597,12 @@ class AuthController extends Controller
                 ->withErrors(['email' => 'رابط إعادة التعيين غير صالح أو منتهي الصلاحية']);
         }
 
+        // Verify token hash matches
+        if (! Hash::check($token, $record->token)) {
+            return redirect()->route('password.request', ['subdomain' => $subdomain])
+                ->withErrors(['email' => 'رابط إعادة التعيين غير صالح. يرجى استخدام آخر رابط تم إرساله إلى بريدك الإلكتروني.']);
+        }
+
         // Check if token is expired (60 minutes)
         $createdAt = Carbon::parse($record->created_at);
         if ($createdAt->diffInMinutes(now()) > 60) {
