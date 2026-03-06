@@ -276,7 +276,7 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                         return $record->individualCircle?->name ?? 'لم يتم إنشاء الحلقة';
                     }
 
-                    return $record->quranCircle?->name ?? 'لم يتم تحديد الحلقة';
+                    return $record->educationUnit?->name ?? 'لم يتم تحديد الحلقة';
                 })
                 ->limit(25)
                 ->toggleable(),
@@ -379,7 +379,7 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
         }
 
         return $query->where('academy_id', $academyId)
-            ->with(['student', 'quranTeacher', 'package', 'individualCircle', 'quranCircle']);
+            ->with(['student', 'quranTeacher', 'package', 'individualCircle', 'educationUnit']);
     }
 
     protected static function getTableActions(): array

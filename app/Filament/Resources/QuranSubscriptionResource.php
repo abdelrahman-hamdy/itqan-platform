@@ -302,12 +302,12 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
                         return $record->individualCircle?->name ?? 'لم يتم إنشاء الحلقة';
                     }
 
-                    return $record->quranCircle?->name ?? 'لم يتم تحديد الحلقة';
+                    return $record->educationUnit?->name ?? 'لم يتم تحديد الحلقة';
                 })
                 ->searchable(query: function (Builder $query, string $search): Builder {
                     return $query->where(function ($q) use ($search) {
                         $q->whereHas('individualCircle', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                            ->orWhereHas('quranCircle', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+                            ->orWhereHasMorph('educationUnit', [QuranCircle::class], fn ($q) => $q->where('name', 'like', "%{$search}%"));
                     });
                 })
                 ->limit(25)
@@ -428,7 +428,7 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
     {
         // Include soft-deleted records for admin management
         return $query->withoutGlobalScopes([SoftDeletingScope::class])
-            ->with(['student', 'quranTeacher', 'package', 'academy', 'individualCircle', 'quranCircle']);
+            ->with(['student', 'quranTeacher', 'package', 'academy', 'individualCircle', 'educationUnit']);
     }
 
     protected static function getTableActions(): array
