@@ -12,6 +12,11 @@ class QuranTeachersStatsWidget extends BaseWidget
 
     protected static bool $isDiscoverable = false;
 
+    protected function getColumns(): int|array|null
+    {
+        return ['default' => 2, 'sm' => 2, 'lg' => 4];
+    }
+
     protected function getStats(): array
     {
         $total = QuranTeacherProfile::count();

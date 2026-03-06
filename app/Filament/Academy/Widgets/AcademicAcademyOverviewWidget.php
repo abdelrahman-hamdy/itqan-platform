@@ -26,6 +26,11 @@ class AcademicAcademyOverviewWidget extends BaseWidget
         return 'نظرة عامة أكاديمية';
     }
 
+    protected function getColumns(): int|array|null
+    {
+        return ['default' => 2, 'sm' => 2, 'lg' => 4];
+    }
+
     public function getStats(): array
     {
         $academy = Auth::user()->academy;

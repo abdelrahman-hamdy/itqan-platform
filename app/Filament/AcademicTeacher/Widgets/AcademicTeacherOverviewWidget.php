@@ -38,9 +38,9 @@ class AcademicTeacherOverviewWidget extends BaseWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected function getColumns(): int
+    protected function getColumns(): int|array|null
     {
-        return 4;
+        return ['default' => 2, 'sm' => 2, 'lg' => 4];
     }
 
     protected function getStats(): array

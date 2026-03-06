@@ -36,6 +36,11 @@ abstract class BaseEarningsOverviewWidget extends BaseWidget
         return 'نظرة عامة على الأرباح';
     }
 
+    protected function getColumns(): int|array|null
+    {
+        return ['default' => 2, 'sm' => 2, 'lg' => 4];
+    }
+
     protected function getStats(): array
     {
         $profileData = $this->getTeacherProfileData();

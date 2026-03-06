@@ -25,9 +25,9 @@ class RenewalMetricsWidget extends BaseWidget
         return 'مقاييس التجديد التلقائي';
     }
 
-    protected function getColumns(): int
+    protected function getColumns(): int|array|null
     {
-        return 4;
+        return ['default' => 2, 'sm' => 2, 'lg' => 4];
     }
 
     protected function getStats(): array

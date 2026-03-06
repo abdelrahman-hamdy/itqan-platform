@@ -33,9 +33,9 @@ class ConversationStatsWidget extends BaseWidget
         return 'إحصائيات المحادثات';
     }
 
-    protected function getColumns(): int
+    protected function getColumns(): int|array|null
     {
-        return 2;
+        return ['default' => 2, 'sm' => 2, 'lg' => 2];
     }
 
     /**

@@ -21,6 +21,11 @@ class PlatformOverviewWidget extends BaseWidget
         return 'نظرة عامة على المنصة';
     }
 
+    protected function getColumns(): int|array|null
+    {
+        return ['default' => 2, 'sm' => 2, 'lg' => 4];
+    }
+
     protected function getStats(): array
     {
         // Check if super admin is in global view mode

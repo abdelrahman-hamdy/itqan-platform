@@ -27,6 +27,11 @@ class QuranOverviewWidget extends BaseWidget
         return 'نظرة عامة على القرآن';
     }
 
+    protected function getColumns(): int|array|null
+    {
+        return ['default' => 2, 'sm' => 2, 'lg' => 4];
+    }
+
     public function getStats(): array
     {
         // Get total counts across all academies
