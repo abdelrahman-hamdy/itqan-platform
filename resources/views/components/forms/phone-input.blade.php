@@ -112,7 +112,6 @@
             separateDialCode: true,
             formatOnDisplay: false,
             autoPlaceholder: 'aggressive',
-            strictMode: true,
             loadUtils: 'https://cdn.jsdelivr.net/npm/intl-tel-input@25.15.0/build/js/utils.js'
         });
 
