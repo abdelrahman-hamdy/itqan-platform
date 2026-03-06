@@ -57,67 +57,79 @@
         <!-- Statistics Cards -->
         @if(isset($statistics))
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-md p-4 md:p-6 text-white">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between">
                     <div class="min-w-0 flex-1">
-                        <p class="text-blue-100 text-xs md:text-sm font-medium">{{ __('student.homework.stats_total') }}</p>
-                        <p class="text-2xl md:text-4xl font-bold mt-1 md:mt-2">{{ $statistics['total'] }}</p>
+                        <p class="text-xs md:text-sm font-medium text-gray-500">{{ __('student.homework.stats_total') }}</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $statistics['total'] }}</p>
                         @if(isset($statistics['type_breakdown']))
-                        <p class="text-xs text-blue-100 mt-1 hidden md:block">
+                        <p class="text-xs text-blue-600 mt-1 hidden md:block">
+                            <i class="ri-book-2-line ms-1"></i>
                             {{ $statistics['type_breakdown']['academic'] }} {{ __('student.homework.stats_academic') }} •
                             {{ $statistics['type_breakdown']['quran'] }} {{ __('student.homework.stats_quran') }} •
                             {{ $statistics['type_breakdown']['interactive'] }} {{ __('student.homework.stats_interactive') }}
                         </p>
                         @endif
                     </div>
-                    <div class="bg-white bg-opacity-20 rounded-full p-2 md:p-4 flex-shrink-0">
-                        <i class="ri-file-list-line text-xl md:text-3xl"></i>
+                    <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 me-2 md:me-4">
+                        <i class="ri-book-2-line text-lg md:text-xl text-blue-600"></i>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-xl shadow-md p-4 md:p-6 text-white">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between">
                     <div class="min-w-0 flex-1">
-                        <p class="text-yellow-100 text-xs md:text-sm font-medium">{{ __('student.homework.stats_pending') }}</p>
-                        <p class="text-2xl md:text-4xl font-bold mt-1 md:mt-2">{{ $statistics['pending'] }}</p>
+                        <p class="text-xs md:text-sm font-medium text-gray-500">{{ __('student.homework.stats_pending') }}</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $statistics['pending'] }}</p>
                         @if(isset($statistics['overdue']) && $statistics['overdue'] > 0)
-                        <p class="text-xs md:text-sm text-yellow-100 mt-1">
-                            <i class="ri-error-warning-line"></i>
+                        <p class="text-xs text-amber-600 mt-1">
+                            <i class="ri-error-warning-line ms-1"></i>
                             {{ $statistics['overdue'] }} {{ __('student.homework.stats_overdue') }}
+                        </p>
+                        @else
+                        <p class="text-xs text-amber-600 mt-1">
+                            <i class="ri-time-line ms-1"></i>
+                            {{ __('student.homework.stats_pending') }}
                         </p>
                         @endif
                     </div>
-                    <div class="bg-white bg-opacity-20 rounded-full p-2 md:p-4 flex-shrink-0">
-                        <i class="ri-time-line text-xl md:text-3xl"></i>
+                    <div class="w-10 h-10 md:w-12 md:h-12 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0 me-2 md:me-4">
+                        <i class="ri-time-line text-lg md:text-xl text-amber-600"></i>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-md p-4 md:p-6 text-white">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between">
                     <div class="min-w-0 flex-1">
-                        <p class="text-green-100 text-xs md:text-sm font-medium">{{ __('student.homework.stats_submitted') }}</p>
-                        <p class="text-2xl md:text-4xl font-bold mt-1 md:mt-2">{{ $statistics['submitted'] + $statistics['graded'] }}</p>
+                        <p class="text-xs md:text-sm font-medium text-gray-500">{{ __('student.homework.stats_submitted') }}</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $statistics['submitted'] + $statistics['graded'] }}</p>
                         @if(isset($statistics['completion_rate']))
-                        <p class="text-xs md:text-sm text-green-100 mt-1 hidden sm:block">{{ $statistics['completion_rate'] }}% {{ __('student.homework.stats_completion_rate') }}</p>
+                        <p class="text-xs text-green-600 mt-1 hidden sm:block">
+                            <i class="ri-checkbox-circle-line ms-1"></i>
+                            {{ $statistics['completion_rate'] }}% {{ __('student.homework.stats_completion_rate') }}
+                        </p>
                         @endif
                     </div>
-                    <div class="bg-white bg-opacity-20 rounded-full p-2 md:p-4 flex-shrink-0">
-                        <i class="ri-check-double-line text-xl md:text-3xl"></i>
+                    <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 me-2 md:me-4">
+                        <i class="ri-checkbox-circle-line text-lg md:text-xl text-green-600"></i>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl shadow-md p-4 md:p-6 text-white">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between">
                     <div class="min-w-0 flex-1">
-                        <p class="text-purple-100 text-xs md:text-sm font-medium">{{ __('student.homework.stats_average') }}</p>
-                        <p class="text-2xl md:text-4xl font-bold mt-1 md:mt-2">{{ isset($statistics['average_score']) ? number_format($statistics['average_score'], 1) : '0' }}%</p>
-                        <p class="text-xs md:text-sm text-purple-100 mt-1 hidden sm:block">{{ $statistics['graded'] }} {{ __('student.homework.stats_graded') }}</p>
+                        <p class="text-xs md:text-sm font-medium text-gray-500">{{ __('student.homework.stats_average') }}</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ isset($statistics['average_score']) ? number_format($statistics['average_score'], 1) : '0' }}%</p>
+                        <p class="text-xs text-purple-600 mt-1 hidden sm:block">
+                            <i class="ri-star-line ms-1"></i>
+                            {{ $statistics['graded'] }} {{ __('student.homework.stats_graded') }}
+                        </p>
                     </div>
-                    <div class="bg-white bg-opacity-20 rounded-full p-2 md:p-4 flex-shrink-0">
-                        <i class="ri-star-line text-xl md:text-3xl"></i>
+                    <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 me-2 md:me-4">
+                        <i class="ri-star-line text-lg md:text-xl text-purple-600"></i>
                     </div>
                 </div>
             </div>
