@@ -98,17 +98,17 @@ class AcademicTeacherProfileResource extends BaseAcademicTeacherProfileResource
                 ->copyable(),
             TextColumn::make('full_name')
                 ->label('الاسم الكامل')
-                ->searchable(['first_name', 'last_name'])
-                ->sortable(),
+                ->searchable(query: fn (Builder $query, string $search) => $query->whereHas('user', fn ($q) => $q->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")))
+                ->sortable(query: fn (Builder $query, string $direction) => $query),
             TextColumn::make('email')
                 ->label('البريد الإلكتروني')
-                ->searchable()
+                ->searchable(query: fn (Builder $query, string $search) => $query->whereHas('user', fn ($q) => $q->where('email', 'like', "%{$search}%")))
                 ->sortable()
                 ->copyable()
                 ->toggleable(),
             TextColumn::make('phone')
                 ->label('رقم الهاتف')
-                ->searchable()
+                ->searchable(query: fn (Builder $query, string $search) => $query->whereHas('user', fn ($q) => $q->where('phone', 'like', "%{$search}%")))
                 ->toggleable(isToggledHiddenByDefault: true),
             IconColumn::make('user.active_status')
                 ->label('نشط')

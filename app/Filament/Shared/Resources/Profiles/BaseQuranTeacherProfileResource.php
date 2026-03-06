@@ -129,9 +129,15 @@ abstract class BaseQuranTeacherProfileResource extends Resource
     {
         return [
             TextColumn::make('teacher_code')->label('رمز المعلم')->searchable()->sortable()->weight('bold')->copyable(),
-            TextColumn::make('full_name')->label('الاسم الكامل')->searchable(['first_name', 'last_name'])->sortable(),
-            TextColumn::make('email')->label('البريد الإلكتروني')->searchable()->sortable()->copyable()->toggleable(),
-            TextColumn::make('phone')->label('رقم الهاتف')->searchable()->toggleable(isToggledHiddenByDefault: true),
+            TextColumn::make('full_name')->label('الاسم الكامل')
+                ->searchable(query: fn (Builder $query, string $search) => $query->whereHas('user', fn ($q) => $q->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")))
+                ->sortable(query: fn (Builder $query, string $direction) => $query),
+            TextColumn::make('email')->label('البريد الإلكتروني')
+                ->searchable(query: fn (Builder $query, string $search) => $query->whereHas('user', fn ($q) => $q->where('email', 'like', "%{$search}%")))
+                ->sortable()->copyable()->toggleable(),
+            TextColumn::make('phone')->label('رقم الهاتف')
+                ->searchable(query: fn (Builder $query, string $search) => $query->whereHas('user', fn ($q) => $q->where('phone', 'like', "%{$search}%")))
+                ->toggleable(isToggledHiddenByDefault: true),
             IconColumn::make('user.active_status')->label('نشط')->boolean()->trueIcon('heroicon-o-check-circle')
                 ->falseIcon('heroicon-o-x-circle')->trueColor('success')->falseColor('danger'),
             TextColumn::make('created_at')->label('تاريخ الإنشاء')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
