@@ -17,7 +17,9 @@
       <!-- Profile Picture Upload -->
       <x-profile.picture-upload
           :currentAvatar="$teacherProfile->avatar ?? null"
-          :userName="($teacherProfile->first_name ?? '') . ' ' . ($teacherProfile->last_name ?? '')" />
+          :userName="($teacherProfile->first_name ?? '') . ' ' . ($teacherProfile->last_name ?? '')"
+          :user="$teacherProfile"
+          :userType="$isQuranTeacher ? 'quran_teacher' : 'academic_teacher'" />
 
       <!-- Personal Information Section -->
       <div class="mb-6 md:mb-8">

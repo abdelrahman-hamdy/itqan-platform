@@ -12,7 +12,9 @@
       <!-- Profile Picture Upload -->
       <x-profile.picture-upload
           :currentAvatar="$studentProfile?->avatar"
-          :userName="($studentProfile?->first_name ?? '') . ' ' . ($studentProfile?->last_name ?? '')" />
+          :userName="($studentProfile?->first_name ?? '') . ' ' . ($studentProfile?->last_name ?? '')"
+          :user="$studentProfile"
+          userType="student" />
 
       <!-- Personal Information -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

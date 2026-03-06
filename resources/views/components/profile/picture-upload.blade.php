@@ -1,20 +1,28 @@
-@props(['currentAvatar' => null, 'userName' => 'User'])
+@props(['currentAvatar' => null, 'userName' => 'User', 'user' => null, 'userType' => null])
 
 <div class="mb-8 pb-8 border-b border-gray-200" style="display: flex; justify-content: center; width: 100%;">
-    <div x-data="profilePictureUpload('{{ $currentAvatar ? asset('storage/' . $currentAvatar) : '' }}', '{{ $userName }}')" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+    <div x-data="profilePictureUpload('{{ $currentAvatar ? asset('storage/' . $currentAvatar) : '' }}')" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
         <!-- Profile Picture Display -->
         <div class="relative" style="display: inline-block;">
-            <!-- Avatar Image -->
+            <!-- Avatar Container -->
             <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg ring-2 ring-primary/20">
-                <img :src="previewUrl || defaultAvatar"
+                <!-- Preview image (shown when user selects a file) -->
+                <img x-ref="previewImg"
+                     :src="previewUrl"
                      alt="{{ __('common.profile.avatar_alt') }}"
                      class="w-full h-full object-cover"
-                     x-show="previewUrl || defaultAvatar">
+                     x-show="previewUrl"
+                     x-cloak>
 
-                <!-- Placeholder if no image -->
-                <div x-show="!previewUrl && !defaultAvatar"
-                     class="w-full h-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                    <i class="ri-user-line text-5xl text-white"></i>
+                <!-- Default avatar (shown when no preview selected) -->
+                <div x-show="!previewUrl" class="w-full h-full">
+                    @if($currentAvatar)
+                        <img src="{{ asset('storage/' . $currentAvatar) }}"
+                             alt="{{ __('common.profile.avatar_alt') }}"
+                             class="w-full h-full object-cover">
+                    @else
+                        <x-avatar :user="$user ?? auth()->user()" size="2xl" :userType="$userType" class="!w-full !h-full !rounded-none" />
+                    @endif
                 </div>
             </div>
 
@@ -72,10 +80,9 @@
 </div>
 
 <script>
-function profilePictureUpload(currentAvatar, userName) {
+function profilePictureUpload(currentAvatar) {
     return {
-        previewUrl: currentAvatar || '',
-        defaultAvatar: currentAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=4169E1&color=fff&size=128`,
+        previewUrl: '',
         fileName: '',
         hasImage: !!currentAvatar,
         translations: {
