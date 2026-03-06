@@ -15,6 +15,8 @@ return [
 
     ],
 
+    'profile_button' => 'الملف الشخصي',
+
     'inputs' => [
         'search' => [
             'label' => 'بحث في المحادثات',

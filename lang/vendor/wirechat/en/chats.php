@@ -15,6 +15,8 @@ return [
 
     ],
 
+    'profile_button' => 'Profile',
+
     'inputs' => [
         'search' => [
             'label' => 'Search Conversations',

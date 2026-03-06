@@ -15,35 +15,28 @@
 
 
 
-        <div class="flex gap-x-3 items-center  ">
-
-            {{-- New chat button removed as per user request --}}
-
-            {{-- Only show if is not widget --}}
+        <div class="flex gap-x-2 items-center">
             @if ($redirectToHomeAction)
-            @php
-                // Navigate to profile page based on user type
-                $profileRoute = match(auth()->user()?->user_type) {
-                    'student' => route('student.profile'),
-                    'teacher' => route('teacher.profile'),
-                    'parent' => route('parent.profile'),
-                    default => config('wirechat.home_route', '/'),
-                };
-            @endphp
-            <a id="redirect-button" href="{{ $profileRoute }}" class="flex items-center transition-colors duration-200">
-                <svg class="bi bi-x-octagon-fill w-8 my-auto h-8 stroke-[0.9] text-gray-500 dark:text-gray-400 transition-colors duration-300 dark:hover:text-gray-500 hover:text-gray-900"
-                    xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
-                    <g fill="none" stroke="currentColor">
-                        <path
-                            d="M5 12.76c0-1.358 0-2.037.274-2.634c.275-.597.79-1.038 1.821-1.922l1-.857C9.96 5.75 10.89 4.95 12 4.95s2.041.799 3.905 2.396l1 .857c1.03.884 1.546 1.325 1.82 1.922c.275.597.275 1.276.275 2.634V17c0 1.886 0 2.828-.586 3.414S16.886 21 15 21H9c-1.886 0-2.828 0-3.414-.586S5 18.886 5 17z" />
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M14.5 21v-5a1 1 0 0 0-1-1h-3a1 1 0 0 0-1 1v5" />
-                    </g>
-                </svg>
-            </a>
+                @php
+                    $userType = auth()->user()?->user_type;
+                    $profileRoute = match($userType) {
+                        'student' => route('student.profile'),
+                        'teacher' => route('teacher.profile'),
+                        'parent' => route('parent.dashboard'),
+                        default => config('wirechat.home_route', '/'),
+                    };
+                @endphp
+                @if(in_array($userType, ['student', 'teacher']))
+                    <a href="{{ $profileRoute }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        <i class="ri-user-line text-base"></i>
+                        {{ __('wirechat::chats.profile_button') }}
+                    </a>
+                @else
+                    <a href="{{ $profileRoute }}" class="flex items-center transition-colors duration-200">
+                        <i class="ri-home-4-line text-2xl text-gray-500 hover:text-gray-900 transition-colors"></i>
+                    </a>
+                @endif
             @endif
-
-
         </div>
 
 
