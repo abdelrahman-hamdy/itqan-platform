@@ -220,9 +220,9 @@ class AuthController extends Controller
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
-            'active_status' => true,
         ]);
         $user->user_type = UserType::STUDENT->value;
+        $user->active_status = true;
         $user->save();
 
         // Create or update student profile
@@ -405,12 +405,12 @@ class AuthController extends Controller
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
-            'active_status' => false, // Will be activated after approval
             'education_level' => $request->education_level,
             'university' => $request->university,
             'years_experience' => $request->years_experience,
         ]);
         $user->user_type = $teacherType;
+        $user->active_status = false; // Will be activated after approval
         $user->save();
 
         // Create teacher profile manually (automatic creation is disabled for teachers)

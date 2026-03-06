@@ -77,9 +77,9 @@ class RegisterController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'active_status' => true,
             ]);
             $user->user_type = UserType::STUDENT->value;
+            $user->active_status = true;
             $user->save();
 
             // Refresh to load the auto-created student profile
@@ -230,9 +230,9 @@ class RegisterController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'active_status' => true,
             ]);
             $user->user_type = UserType::PARENT->value;
+            $user->active_status = true; // Parents are automatically active upon registration
             $user->save();
 
             // Refresh to load the auto-created parent profile
@@ -415,9 +415,9 @@ class RegisterController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'active_status' => false, // Requires admin approval
             ]);
             $user->user_type = $teacherType;
+            $user->active_status = false; // Requires admin approval
             $user->save();
 
             // Create teacher profile based on type

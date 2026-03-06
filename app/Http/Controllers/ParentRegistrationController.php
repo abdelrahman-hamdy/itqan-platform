@@ -274,10 +274,9 @@ class ParentRegistrationController extends Controller
                 'email' => $request->email,
                 'phone' => $request->parent_phone, // Use parent_phone from verification step
                 'password' => Hash::make($request->password),
-                // Note: Email verification is now required - removed auto-verification
-                'active_status' => true, // Parents are automatically active upon registration
             ]);
             $user->user_type = UserType::PARENT->value;
+            $user->active_status = true; // Parents are automatically active upon registration
             $user->save();
 
             // Refresh user to load relationships created by boot() hook
