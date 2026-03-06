@@ -63,22 +63,39 @@ class StudentProfileResource extends BaseStudentProfileResource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->action(fn ($record) => $record->user?->update(['active_status' => true]))
-                    ->visible(fn ($record) => $record->user && ! $record->user->active_status),
+                    ->action(function ($record) {
+                        if ($record->user_id) {
+                            \App\Models\User::where('id', $record->user_id)->update(['active_status' => true]);
+                        }
+                    })
+                    ->visible(function ($record) {
+                        $user = $record->user_id ? \App\Models\User::find($record->user_id) : null;
+                        return $user && ! $user->active_status;
+                    }),
                 Action::make('deactivate')
                     ->label('إيقاف')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->action(fn ($record) => $record->user?->update(['active_status' => false]))
-                    ->visible(fn ($record) => $record->user && $record->user->active_status),
+                    ->action(function ($record) {
+                        if ($record->user_id) {
+                            \App\Models\User::where('id', $record->user_id)->update(['active_status' => false]);
+                        }
+                    })
+                    ->visible(function ($record) {
+                        $user = $record->user_id ? \App\Models\User::find($record->user_id) : null;
+                        return $user && $user->active_status;
+                    }),
                 Action::make('delete_student')
                     ->label('حذف')
                     ->icon('heroicon-o-trash')
                     ->color('danger')
                     ->requiresConfirmation()
                     ->action(function ($record) {
-                        $record->user?->delete();
+                        // Query User directly by FK — relationship may return null due to academy scope
+                        if ($record->user_id) {
+                            \App\Models\User::find($record->user_id)?->delete();
+                        }
                         $record->delete();
                     })
                     ->visible(fn ($record) => ! $record->trashed()),
