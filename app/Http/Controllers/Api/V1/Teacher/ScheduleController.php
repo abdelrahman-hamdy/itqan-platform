@@ -58,7 +58,7 @@ class ScheduleController extends Controller
                 'start_date' => $startDate->toDateString(),
                 'end_date' => $endDate->toDateString(),
             ],
-            'schedule' => $byDate,
+            'schedule' => (object) $byDate,
             'total_sessions' => count($sessions),
         ], __('Schedule retrieved successfully'));
     }
