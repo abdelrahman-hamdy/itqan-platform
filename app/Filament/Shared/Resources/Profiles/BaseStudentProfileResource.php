@@ -106,6 +106,11 @@ abstract class BaseStudentProfileResource extends BaseResource
     {
         return Section::make('المعلومات الشخصية')
             ->schema([
+                TextInput::make('student_code')
+                    ->label('رمز الطالب')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->visibleOn('view'),
                 Grid::make(2)
                     ->schema([
                         TextInput::make('first_name')
