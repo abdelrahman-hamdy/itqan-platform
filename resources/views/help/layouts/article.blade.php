@@ -203,8 +203,26 @@ function initDiagramFullscreen() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(initDiagramFullscreen, 500);
-});
+// Use MutationObserver to detect when mermaid renders SVGs into containers.
+// The mermaid CDN script loads after this script, so a simple timeout is unreliable.
+(function() {
+    var containers = document.querySelectorAll('.help-mermaid, .mermaid-wrapper');
+    if (!containers.length) return;
+
+    // Run once immediately in case SVGs already exist
+    initDiagramFullscreen();
+
+    // Watch for mermaid rendering SVGs into containers
+    var observer = new MutationObserver(function() {
+        initDiagramFullscreen();
+    });
+
+    containers.forEach(function(el) {
+        observer.observe(el, { childList: true, subtree: true });
+    });
+
+    // Safety fallback: stop observing after 10s
+    setTimeout(function() { observer.disconnect(); }, 10000);
+})();
 </script>
 @endpush
