@@ -120,7 +120,7 @@ sequenceDiagram
         </tr>
         <tr>
             <td>Teacher view session</td>
-            <td><code>resource.teacher.id</code> stores the STUDENT user ID in teacher-view responses (confusing naming, inherited from a refactor)</td>
+            <td><code>resource.teacher.id</code> stores the STUDENT user ID in teacher-view session responses</td>
         </tr>
         <tr>
             <td>InteractiveCourse materials</td>

@@ -185,7 +185,7 @@
                 <tr>
                     <td><strong>Teacher FK</strong></td>
                     <td><code>quran_teacher_id → users.id</code></td>
-                    <td><code>academic_teacher_id → users.id</code></td>
+                    <td><code>teacher_id → academic_teacher_profiles.id</code></td>
                     <td>N/A</td>
                 </tr>
                 <tr>
@@ -351,7 +351,7 @@ sequenceDiagram
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <script>
 mermaid.initialize({
     startOnLoad: true,

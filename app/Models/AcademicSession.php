@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
-use App\Services\NotificationService;
-use Exception;
-use DB;
-use Illuminate\Database\QueryException;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Eloquent\Collection;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Models\Traits\CountsTowardsSubscription;
+use App\Services\NotificationService;
+use DB;
+use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -246,7 +246,7 @@ class AcademicSession extends BaseSession
                     // Lock the sessions for update to prevent concurrent reads
                     // This ensures only one transaction can generate a code at a time
                     $lastSession = static::withTrashed()
-                        ->where('session_code', 'LIKE', DB::escapeLikeString($codePrefix).'%')
+                        ->where('session_code', 'LIKE', addcslashes($codePrefix, '%_').'%')
                         ->lockForUpdate()
                         ->orderByRaw('CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC')
                         ->first(['session_code']);
@@ -302,14 +302,6 @@ class AcademicSession extends BaseSession
         return $this->belongsTo(AcademicSubscription::class);
     }
 
-    /**
-     * Alias for academicSubscription relationship for easier access
-     */
-    public function subscription(): BelongsTo
-    {
-        return $this->academicSubscription();
-    }
-
     public function academicIndividualLesson(): BelongsTo
     {
         return $this->belongsTo(AcademicIndividualLesson::class);
@@ -322,29 +314,10 @@ class AcademicSession extends BaseSession
 
     /**
      * Get all session reports (student evaluations/feedback)
-     * Primary relationship name for clarity
      */
     public function sessionReports(): HasMany
     {
         return $this->hasMany(AcademicSessionReport::class, 'session_id');
-    }
-
-    /**
-     * Alias for sessionReports (legacy/compatibility)
-     *
-     * @deprecated Use sessionReports() instead
-     */
-    public function studentReports(): HasMany
-    {
-        return $this->sessionReports();
-    }
-
-    /**
-     * Alias for sessionReports (API compatibility)
-     */
-    public function reports(): HasMany
-    {
-        return $this->sessionReports();
     }
 
     /**
@@ -353,14 +326,6 @@ class AcademicSession extends BaseSession
     public function attendanceRecords(): HasMany
     {
         return $this->hasMany(AcademicSessionAttendance::class, 'session_id');
-    }
-
-    /**
-     * Alias for attendanceRecords() - for consistency with QuranSession/InteractiveCourseSession
-     */
-    public function attendances(): HasMany
-    {
-        return $this->attendanceRecords();
     }
 
     /**
@@ -385,15 +350,6 @@ class AcademicSession extends BaseSession
             'id', // Local key on AcademicSession
             'id' // Local key on AcademicHomework
         );
-    }
-
-    /**
-     * Alias for academicTeacher (for API compatibility)
-     * Returns the teacher profile, not the User
-     */
-    public function teacher(): BelongsTo
-    {
-        return $this->academicTeacher();
     }
 
     /**

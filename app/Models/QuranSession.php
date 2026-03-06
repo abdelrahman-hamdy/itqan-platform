@@ -290,18 +290,6 @@ class QuranSession extends BaseSession
         return $query->where('session_type', 'individual');
     }
 
-    /**
-     * Scope for group sessions (circles)
-     * Note: Standardized to 'group' value - 'circle' is deprecated
-     */
-    public function scopeCircle($query)
-    {
-        return $query->where('session_type', 'group');
-    }
-
-    /**
-     * Alias for scopeCircle - preferred method name
-     */
     public function scopeGroup($query)
     {
         return $query->where('session_type', 'group');

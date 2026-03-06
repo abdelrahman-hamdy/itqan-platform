@@ -64,7 +64,7 @@ graph TB
     <tbody>
         <tr><td>Backend Framework</td><td>Laravel</td><td>12.x</td><td>HTTP routing, ORM, queues, events</td></tr>
         <tr><td>Language</td><td>PHP</td><td>8.4.x (prod)</td><td>Server-side language</td></tr>
-        <tr><td>Admin UI</td><td>Filament</td><td>5.2.x</td><td>4 role-based admin panels</td></tr>
+        <tr><td>Admin UI</td><td>Filament</td><td>5.2.x</td><td>5 role-based admin panels</td></tr>
         <tr><td>Reactive UI</td><td>Livewire</td><td>4.1.x</td><td>Server-driven components</td></tr>
         <tr><td>JS Framework</td><td>Alpine.js</td><td>3.15.x</td><td>Lightweight interactivity</td></tr>
         <tr><td>CSS Framework</td><td>TailwindCSS</td><td>4.2.x</td><td>Utility-first CSS with RTL support</td></tr>
@@ -130,7 +130,7 @@ graph LR
 <h2 id="panels">Filament Admin Panels</h2>
 
 <p>
-    There are <strong>4 Filament panels</strong>, each serving a distinct user role with its own
+    There are <strong>5 Filament panels</strong>, each serving a distinct user role with its own
     navigation, resources, and access control enforced via <code>canAccessPanel()</code> on the User model.
 </p>
 
@@ -221,7 +221,7 @@ sequenceDiagram
 ├── app/
 │   ├── Console/Commands/       # 60+ Artisan commands
 │   ├── Enums/                  # 55+ type-safe enums
-│   ├── Filament/               # 4 admin panels
+│   ├── Filament/               # 5 admin panels
 │   │   ├── Academy/            # Main admin panel
 │   │   ├── Teacher/            # Quran teacher panel
 │   │   ├── AcademicTeacher/    # Academic teacher panel
@@ -235,7 +235,7 @@ sequenceDiagram
 │   ├── Models/
 │   │   └── Traits/             # 22 model traits
 │   ├── Observers/              # Eloquent model observers
-│   ├── Policies/               # 20 authorization policies
+│   ├── Policies/               # 22 authorization policies
 │   ├── Providers/              # Service providers
 │   └── Services/               # 100+ business logic services
 ├── config/                     # 40 config files

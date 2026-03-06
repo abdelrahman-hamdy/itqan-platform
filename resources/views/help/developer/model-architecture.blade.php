@@ -13,7 +13,7 @@
 <pre class="mermaid">
 classDiagram
     class BaseSession {
-        #37 common fields
+        #32 common fields
         +HasAttendanceTracking
         +HasMeetingData
         +HasMeetings
@@ -35,7 +35,7 @@ classDiagram
         +course_id
         +session_number
         +HasRecording
-        -NO academy_id column
+        +academy_id column
     }
     class BaseSubscription {
         #Common billing fields
@@ -100,8 +100,8 @@ class QuranSession extends BaseSession
 
     public function __construct(array $attributes = [])
     {
-        // Merge parent's $fillable BEFORE calling parent constructor
-        $this->fillable = array_merge(parent::$fillable ?? [], $this->fillable);
+        // Merge parent's $baseFillable BEFORE calling parent constructor
+        $this->fillable = array_merge(parent::$baseFillable, $this->fillable);
         parent::__construct($attributes);
     }
 
@@ -200,13 +200,14 @@ sequenceDiagram
         <tr><td><code>ScopedToAcademy</code></td><td>Global scope for <code>academy_id</code> filtering.</td></tr>
         <tr><td><code>ScopedToAcademyForWeb</code></td><td>Web-specific academy scoping (prevents blank result on missing context).</td></tr>
         <tr><td><code>ScopedToAcademyViaRelationship</code></td><td>Academy scoping via <code>user → academy</code> relationship (StudentProfile).</td></tr>
+        <tr><td><code>HasHomeworkEvaluation</code></td><td>Homework evaluation and grading helpers shared by session types.</td></tr>
     </tbody>
 </table>
 </div>
 
 <h2 id="policies">Authorization Policies</h2>
 
-<p>20 policy classes in <code>app/Policies/</code>. All policies check both role and tenant context.</p>
+<p>22 policy classes in <code>app/Policies/</code>. All policies check both role and tenant context.</p>
 
 <div style="overflow-x: auto; direction: ltr;">
 <table class="help-table">
@@ -233,7 +234,9 @@ sequenceDiagram
         <tr><td><code>SessionPolicy</code></td><td>Session join, view, feedback (polymorphic)</td></tr>
         <tr><td><code>StudentProfilePolicy</code></td><td>Student profile view and update</td></tr>
         <tr><td><code>SubscriptionPolicy</code></td><td>Purchase, renew, cancel subscriptions</td></tr>
+        <tr><td><code>TeacherEarningPolicy</code></td><td>Teacher earnings view and export</td></tr>
         <tr><td><code>TeacherProfilePolicy</code></td><td>Teacher activation and suspension</td></tr>
+        <tr><td><code>InteractiveCourseHomeworkPolicy</code></td><td>Interactive course homework assignment and submission</td></tr>
     </tbody>
 </table>
 </div>

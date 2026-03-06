@@ -163,7 +163,7 @@ public static function getEloquentQuery(): Builder
     <i class="ri-information-line help-callout-icon"></i>
     <div>
         <strong>Pitfall 6: <code>deferFilters(false)</code> must be added to <code>table()</code> methods.</strong><br>
-        This was applied to all 87 table() methods during the Filament 4→5 upgrade. New resources must include it.
+        Every resource's <code>table()</code> method must call <code>->deferFilters(false)</code>. New resources must include it.
     </div>
 </div>
 

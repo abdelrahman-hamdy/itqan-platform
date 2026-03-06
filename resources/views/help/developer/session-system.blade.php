@@ -12,7 +12,7 @@
     <h2 id="overview">Session Architecture Overview</h2>
     <p>
         The session system is built on a polymorphic inheritance model with a single abstract base class —
-        <code>BaseSession</code> — that holds 37 common fields shared by every session type.
+        <code>BaseSession</code> — that holds 32 common fields shared by every session type.
         Three concrete child classes extend it:
     </p>
     <ul>
@@ -29,7 +29,7 @@
     <p>
         The <strong>Constructor Merge Pattern</strong> is used by QuranSession and AcademicSession to merge their own
         <code>$fillable</code> arrays and <code>getCasts()</code> definitions with those of <code>BaseSession</code>
-        at runtime — avoiding copy-paste of the ~37 fillable fields and 14 casts.
+        at runtime — avoiding copy-paste of the 32 fillable fields and 14 casts.
     </p>
 
     <div class="help-warning">
@@ -43,7 +43,7 @@
          ========================================================= --}}
     <h2 id="base-fields">BaseSession Common Fields</h2>
     <p>
-        These 37 fields exist on every session table (<code>quran_sessions</code>, <code>academic_sessions</code>,
+        These 32 fields exist on every session table (<code>quran_sessions</code>, <code>academic_sessions</code>,
         <code>interactive_course_sessions</code>):
     </p>
 
@@ -230,13 +230,13 @@ stateDiagram-v2
                     <td><strong><code>academy_id</code> column</strong></td>
                     <td>YES (real column)</td>
                     <td>YES (real column)</td>
-                    <td><strong>NO</strong> — virtual accessor only</td>
+                    <td>YES — real column (fallback accessor handles any legacy NULL values)</td>
                 </tr>
                 <tr>
                     <td><strong>Scheduling fields</strong></td>
                     <td><code>scheduled_at</code> (datetime)</td>
                     <td><code>scheduled_at</code> (datetime)</td>
-                    <td><code>scheduled_date</code> (date) + <code>scheduled_time</code> (time) <strong>separately</strong></td>
+                    <td><code>scheduled_at</code> (datetime)</td>
                 </tr>
                 <tr>
                     <td><strong>CountsTowardsSubscription</strong></td>
@@ -439,7 +439,7 @@ sequenceDiagram
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <script>
 mermaid.initialize({
     startOnLoad: true,
