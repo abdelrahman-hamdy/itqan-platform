@@ -4,7 +4,7 @@
 
 @section('content')
 @php
-    use App\Enums\SubscriptionStatus;
+    use App\Enums\SessionSubscriptionStatus;
 
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
 
@@ -14,11 +14,11 @@
 
     $filterOptions = [
         '' => __('teacher.academic_lessons.all_subscriptions'),
-        SubscriptionStatus::ACTIVE->value => __('teacher.academic_lessons.active'),
-        SubscriptionStatus::PENDING->value => __('teacher.academic_lessons.pending_payment'),
-        SubscriptionStatus::EXPIRED->value => __('teacher.academic_lessons.expired'),
-        SubscriptionStatus::COMPLETED->value => __('teacher.academic_lessons.completed'),
-        SubscriptionStatus::CANCELLED->value => __('teacher.academic_lessons.cancelled'),
+        SessionSubscriptionStatus::ACTIVE->value => __('teacher.academic_lessons.active'),
+        SessionSubscriptionStatus::PENDING->value => __('teacher.academic_lessons.pending_payment'),
+        SessionSubscriptionStatus::PAUSED->value => __('enums.session_subscription_status.paused'),
+        SessionSubscriptionStatus::SUSPENDED->value => __('enums.session_subscription_status.suspended'),
+        SessionSubscriptionStatus::CANCELLED->value => __('teacher.academic_lessons.cancelled'),
     ];
 
     $stats = [
@@ -33,22 +33,22 @@
             'icon' => 'ri-play-circle-line',
             'bgColor' => 'bg-green-100',
             'iconColor' => 'text-green-600',
-            'value' => $subscriptions->filter(fn($s) => $s->status?->value === SubscriptionStatus::ACTIVE->value || $s->status === SubscriptionStatus::ACTIVE->value)->count(),
+            'value' => $subscriptions->filter(fn($s) => $s->status?->value === SessionSubscriptionStatus::ACTIVE->value || $s->status === SessionSubscriptionStatus::ACTIVE->value)->count(),
             'label' => __('teacher.academic_lessons.active_subscriptions'),
         ],
         [
             'icon' => 'ri-time-line',
             'bgColor' => 'bg-yellow-100',
             'iconColor' => 'text-yellow-600',
-            'value' => $subscriptions->filter(fn($s) => $s->status?->value === SubscriptionStatus::PENDING->value || $s->status === SubscriptionStatus::PENDING->value)->count(),
+            'value' => $subscriptions->filter(fn($s) => $s->status?->value === SessionSubscriptionStatus::PENDING->value || $s->status === SessionSubscriptionStatus::PENDING->value)->count(),
             'label' => __('teacher.academic_lessons.pending_subscriptions'),
         ],
         [
-            'icon' => 'ri-check-double-line',
-            'bgColor' => 'bg-violet-100',
-            'iconColor' => 'text-violet-600',
-            'value' => $subscriptions->filter(fn($s) => $s->status?->value === SubscriptionStatus::COMPLETED->value || $s->status === SubscriptionStatus::COMPLETED->value)->count(),
-            'label' => __('teacher.academic_lessons.completed_subscriptions'),
+            'icon' => 'ri-pause-circle-line',
+            'bgColor' => 'bg-blue-100',
+            'iconColor' => 'text-blue-600',
+            'value' => $subscriptions->filter(fn($s) => $s->status?->value === SessionSubscriptionStatus::PAUSED->value || $s->status === SessionSubscriptionStatus::PAUSED->value)->count(),
+            'label' => __('enums.session_subscription_status.paused'),
         ],
     ];
 @endphp
@@ -74,11 +74,11 @@
             // Handle both enum and string status
             $statusValue = is_object($subscription->status) ? $subscription->status->value : $subscription->status;
             $statusConfig = match($statusValue) {
-                SubscriptionStatus::ACTIVE->value => ['class' => 'bg-green-100 text-green-800', 'text' => __('teacher.academic_lessons.active')],
-                SubscriptionStatus::PENDING->value => ['class' => 'bg-yellow-100 text-yellow-800', 'text' => __('teacher.academic_lessons.pending_payment')],
-                SubscriptionStatus::EXPIRED->value => ['class' => 'bg-red-100 text-red-800', 'text' => __('teacher.academic_lessons.expired')],
-                SubscriptionStatus::COMPLETED->value => ['class' => 'bg-violet-100 text-violet-800', 'text' => __('teacher.academic_lessons.completed')],
-                SubscriptionStatus::CANCELLED->value => ['class' => 'bg-gray-100 text-gray-800', 'text' => __('teacher.academic_lessons.cancelled')],
+                SessionSubscriptionStatus::ACTIVE->value => ['class' => 'bg-green-100 text-green-800', 'text' => __('teacher.academic_lessons.active')],
+                SessionSubscriptionStatus::PENDING->value => ['class' => 'bg-yellow-100 text-yellow-800', 'text' => __('teacher.academic_lessons.pending_payment')],
+                SessionSubscriptionStatus::PAUSED->value => ['class' => 'bg-blue-100 text-blue-800', 'text' => __('enums.session_subscription_status.paused')],
+                SessionSubscriptionStatus::SUSPENDED->value => ['class' => 'bg-red-100 text-red-800', 'text' => __('enums.session_subscription_status.suspended')],
+                SessionSubscriptionStatus::CANCELLED->value => ['class' => 'bg-gray-100 text-gray-800', 'text' => __('teacher.academic_lessons.cancelled')],
                 default => ['class' => 'bg-gray-100 text-gray-800', 'text' => $statusValue ?? __('common.not_specified')]
             };
 
@@ -105,7 +105,7 @@
             ];
 
             // Chat action for active subscriptions (Supervised)
-            if ($statusValue === SubscriptionStatus::ACTIVE->value && $subscription->student && auth()->user()->hasSupervisor()) {
+            if ($statusValue === SessionSubscriptionStatus::ACTIVE->value && $subscription->student && auth()->user()->hasSupervisor()) {
                 $studentUser = ($subscription->student instanceof \App\Models\User) ? $subscription->student : ($subscription->student->user ?? null);
                 if ($studentUser) {
                     $actions[] = [
