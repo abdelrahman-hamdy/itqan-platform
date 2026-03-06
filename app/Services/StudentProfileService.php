@@ -37,6 +37,16 @@ class StudentProfileService
             return $studentProfile;
         }
 
+        // If a soft-deleted profile exists, the student was intentionally deleted — don't recreate
+        $softDeleted = StudentProfile::withoutGlobalScopes()
+            ->where('user_id', $user->id)
+            ->onlyTrashed()
+            ->exists();
+
+        if ($softDeleted) {
+            return null;
+        }
+
         return $this->createBasicProfile($user);
     }
 

@@ -64,12 +64,16 @@ class StudentProfileResource extends BaseStudentProfileResource
                     ->requiresConfirmation()
                     ->action(fn ($record) => $record->user?->update(['active_status' => false]))
                     ->visible(fn ($record) => $record->user && $record->user->active_status),
-                DeleteAction::make()
+                Action::make('delete_student')
                     ->label('حذف')
-                    ->after(function ($record) {
-                        // Also soft-delete the associated user so they can't log in
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
                         $record->user?->delete();
-                    }),
+                        $record->delete();
+                    })
+                    ->visible(fn ($record) => ! $record->trashed()),
             ]),
         ];
     }

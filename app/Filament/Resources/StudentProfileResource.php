@@ -72,17 +72,27 @@ class StudentProfileResource extends BaseStudentProfileResource
                     ->requiresConfirmation()
                     ->action(fn ($record) => $record->user?->update(['active_status' => false]))
                     ->visible(fn ($record) => $record->user && $record->user->active_status),
-                DeleteAction::make()->label('حذف')
-                    ->after(function ($record) {
-                        // Also soft-delete the associated user so they can't log in
+                Action::make('delete_student')
+                    ->label('حذف')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
                         $record->user?->delete();
-                    }),
-                RestoreAction::make()->label(__('filament.actions.restore'))
-                    ->after(function ($record) {
-                        // Also restore the associated user
+                        $record->delete();
+                    })
+                    ->visible(fn ($record) => ! $record->trashed()),
+                Action::make('restore_student')
+                    ->label(__('filament.actions.restore'))
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
+                        $record->restore();
                         $user = \App\Models\User::withTrashed()->find($record->user_id);
                         $user?->restore();
-                    }),
+                    })
+                    ->visible(fn ($record) => $record->trashed()),
                 ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
             ]),
         ];
