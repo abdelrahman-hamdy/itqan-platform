@@ -14,7 +14,7 @@
 
     @php
         /* Show header if any of these conditions are true  */
-        $showHeader = $createChatAction || $chatsSearch || $redirectToHomeAction || !empty($heading);
+        $showHeader = $createChatAction || $chatsSearch || $redirectToHomeAction || !empty($heading) || in_array(auth()->user()?->user_type, ['student', 'quran_teacher', 'academic_teacher']);
     @endphp
 
     {{-- include header --}}

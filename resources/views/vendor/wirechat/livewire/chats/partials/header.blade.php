@@ -18,14 +18,15 @@
         <div class="flex gap-x-2 items-center">
             @php
                 $userType = auth()->user()?->user_type;
-                $profileRoute = match($userType) {
-                    'student' => route('student.profile'),
-                    'teacher' => route('teacher.profile'),
-                    'parent' => route('parent.dashboard'),
+                $isTeacher = in_array($userType, ['quran_teacher', 'academic_teacher']);
+                $profileRoute = match(true) {
+                    $userType === 'student' => route('student.profile'),
+                    $isTeacher => route('teacher.profile'),
+                    $userType === 'parent' => route('parent.dashboard'),
                     default => config('wirechat.home_route', '/'),
                 };
             @endphp
-            @if(in_array($userType, ['student', 'teacher']))
+            @if($userType === 'student' || $isTeacher)
                 <a href="{{ $profileRoute }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
                     <i class="ri-user-line text-base"></i>
                     {{ __('wirechat::chats.profile_button') }}
