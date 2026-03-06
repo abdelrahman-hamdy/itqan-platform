@@ -30,8 +30,8 @@
 
             <!-- Success Message -->
             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <div class="text-center">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4 text-center">
                         <i class="ri-information-fill {{ app()->getLocale() === 'ar' ? 'ml-2' : 'mr-2' }} text-blue-600"></i>
                         {{ __('auth.register.teacher.success.what_next_title') }}
                     </h3>
@@ -43,7 +43,7 @@
                                     <span class="text-blue-600 text-xs font-bold">1</span>
                                 </div>
                             </div>
-                            <div class="{{ app()->getLocale() === 'ar' ? 'mr-3' : 'ml-3' }}">
+                            <div class="ms-3">
                                 <p class="font-medium text-gray-900">{{ __('auth.register.teacher.success.step1_title') }}</p>
                                 <p>{{ __('auth.register.teacher.success.step1_description') }}</p>
                             </div>
@@ -55,7 +55,7 @@
                                     <span class="text-blue-600 text-xs font-bold">2</span>
                                 </div>
                             </div>
-                            <div class="{{ app()->getLocale() === 'ar' ? 'mr-3' : 'ml-3' }}">
+                            <div class="ms-3">
                                 <p class="font-medium text-gray-900">{{ __('auth.register.teacher.success.step2_title') }}</p>
                                 <p>{{ __('auth.register.teacher.success.step2_description') }}</p>
                             </div>
@@ -67,7 +67,7 @@
                                     <span class="text-blue-600 text-xs font-bold">3</span>
                                 </div>
                             </div>
-                            <div class="{{ app()->getLocale() === 'ar' ? 'mr-3' : 'ml-3' }}">
+                            <div class="ms-3">
                                 <p class="font-medium text-gray-900">{{ __('auth.register.teacher.success.step3_title') }}</p>
                                 <p>{{ __('auth.register.teacher.success.step3_description') }}</p>
                             </div>
@@ -82,7 +82,7 @@
                     <div class="flex-shrink-0">
                         <i class="ri-alert-fill text-yellow-400"></i>
                     </div>
-                    <div class="{{ app()->getLocale() === 'ar' ? 'mr-3' : 'ml-3' }}">
+                    <div class="ms-3">
                         <h3 class="text-sm font-medium text-yellow-800">
                             {{ __('auth.register.teacher.success.important_notes') }}
                         </h3>
