@@ -19,6 +19,7 @@
 |   GET /help                   → HelpCenterController@index
 |   GET /help/search            → HelpCenterController@search
 |   GET /help/common/{slug}     → HelpCenterController@commonArticle
+|   GET /help/{role}            → HelpCenterController@roleIndex
 |   GET /help/{role}/{slug}     → HelpCenterController@article
 |
 | NOTE: common/{slug} MUST be registered before {role}/{slug} to prevent
@@ -37,6 +38,9 @@ Route::middleware(['auth'])->prefix('help')->name('help.')->group(function () {
 
     // Must be before /{role}/{slug}
     Route::get('/common/{slug}', [HelpCenterController::class, 'commonArticle'])->name('common');
+
+    // Must be before /{role}/{slug}
+    Route::get('/{role}', [HelpCenterController::class, 'roleIndex'])->name('role');
 
     Route::get('/{role}/{slug}', [HelpCenterController::class, 'article'])->name('article');
 

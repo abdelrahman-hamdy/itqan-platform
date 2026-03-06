@@ -76,6 +76,43 @@ class HelpCenterController extends Controller
     }
 
     /**
+     * Role-level landing page — shows all articles for a given role, grouped by section.
+     */
+    public function roleIndex(string $role)
+    {
+        if (! $this->canAccessRole($role)) {
+            abort(403, __('help.article.access_denied'));
+        }
+
+        $config     = config('help');
+        $roleConfig = $config['roles'][$role] ?? null;
+
+        if (! $roleConfig || empty($roleConfig['articles'])) {
+            abort(404);
+        }
+
+        $userRole = $this->getUserRole();
+
+        $sectionLabels = [
+            'overview'       => __('help.sections.overview'),
+            'quran'          => __('help.sections.quran'),
+            'academic'       => __('help.sections.academic'),
+            'courses'        => __('help.sections.courses'),
+            'users'          => __('help.sections.users'),
+            'finance'        => __('help.sections.finance'),
+            'settings'       => __('help.sections.settings'),
+            'architecture'   => 'Architecture',
+            'models'         => 'Models & Database',
+            'services'       => 'Services & Integrations',
+            'admin'          => 'Admin Panels',
+            'conventions'    => 'Code Conventions',
+            'infrastructure' => 'Deployment & Infrastructure',
+        ];
+
+        return view('help.role-index', compact('role', 'roleConfig', 'userRole', 'sectionLabels'));
+    }
+
+    /**
      * Render a role-specific article view.
      *
      * Authorization: users can only read their own role's articles.

@@ -63,6 +63,8 @@ return [
         'all_roles_title'      => 'أدلة حسب نوع المستخدم',
         'empty_section'        => 'سيتم إضافة مقالات هذا القسم قريباً.',
         'view_all'             => 'عرض الكل',
+        'articles_count'       => ':count مقال',
+        'browse'               => 'تصفح المقالات',
     ],
 
     'article' => [

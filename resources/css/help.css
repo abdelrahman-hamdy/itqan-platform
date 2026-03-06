@@ -369,3 +369,83 @@
 [dir="ltr"] .help-toc-link.active {
     border-left-color: var(--color-primary-500, #3b82f6);
 }
+
+/* ── Diagram fullscreen overlay ─────────────────────────────────────────── */
+
+.help-mermaid,
+.mermaid-wrapper {
+    position: relative;
+}
+
+.help-diagram-expand-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.85);
+    color: #64748b;
+    font-size: 1.125rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+    z-index: 5;
+}
+
+.help-mermaid:hover .help-diagram-expand-btn,
+.mermaid-wrapper:hover .help-diagram-expand-btn {
+    opacity: 1;
+}
+
+.help-diagram-expand-btn:hover {
+    background: #ffffff;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+.help-diagram-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 42, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    padding: 2rem;
+}
+
+.help-diagram-overlay svg {
+    width: auto;
+    max-width: 95vw;
+    max-height: 90vh;
+    height: auto;
+}
+
+.help-diagram-overlay-close {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: none;
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 10000;
+    transition: background-color 0.15s ease;
+}
+
+.help-diagram-overlay-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}

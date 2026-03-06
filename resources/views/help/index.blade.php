@@ -1,21 +1,38 @@
 @php
-    // Group articles by their 'section' key for display
-    $sectionLabels = [
-        // Arabic sections
-        'overview'       => __('help.sections.overview'),
-        'quran'          => __('help.sections.quran'),
-        'academic'       => __('help.sections.academic'),
-        'courses'        => __('help.sections.courses'),
-        'users'          => __('help.sections.users'),
-        'finance'        => __('help.sections.finance'),
-        'settings'       => __('help.sections.settings'),
-        // Developer (English) sections
-        'architecture'   => 'Architecture',
-        'models'         => 'Models & Database',
-        'services'       => 'Services & Integrations',
-        'admin'          => 'Admin Panels',
-        'conventions'    => 'Code Conventions',
-        'infrastructure' => 'Deployment & Infrastructure',
+    // Build the list of category cards visible to this user
+    $categories = [];
+
+    if ($userRole === 'developer') {
+        // super_admin sees developer docs + admin guide
+        if (!empty($allRoles['developer']['articles'])) {
+            $categories[] = ['key' => 'developer', 'config' => $allRoles['developer']];
+        }
+        if (!empty($allRoles['admin']['articles'])) {
+            $categories[] = ['key' => 'admin', 'config' => $allRoles['admin']];
+        }
+    } elseif ($userRole === 'admin') {
+        // admin sees admin guide + can browse others
+        if (!empty($allRoles['admin']['articles'])) {
+            $categories[] = ['key' => 'admin', 'config' => $allRoles['admin']];
+        }
+        if (!empty($allRoles['developer']['articles'])) {
+            $categories[] = ['key' => 'developer', 'config' => $allRoles['developer']];
+        }
+    } else {
+        // Other roles see their own category
+        if (!empty($roleConfig['articles'])) {
+            $categories[] = ['key' => $userRole, 'config' => $roleConfig];
+        }
+    }
+
+    $categoryDescriptions = [
+        'developer' => 'الوثائق التقنية للمطورين: البنية التحتية، قواعد البيانات، الخدمات، والنشر',
+        'admin'     => 'أدلة إدارة المنصة: القرآن، الأكاديمي، المستخدمون، والمالية',
+        'student'   => 'دليل استخدام المنصة للطلاب',
+        'parent'    => 'دليل متابعة أبنائك على المنصة',
+        'quran_teacher'    => 'دليل معلم القرآن الكريم',
+        'academic_teacher' => 'دليل المعلم الأكاديمي',
+        'supervisor'       => 'دليل المشرف على المعلمين والطلاب',
     ];
 @endphp
 
@@ -47,101 +64,48 @@
             </div>
         </div>
 
-        {{-- Current user's role section (prominently shown) ─────────────────── --}}
-        @if(!empty($roleConfig['articles']))
-            <section class="mb-10">
-                <div class="flex items-center gap-2 mb-5">
-                    <i class="{{ $roleConfig['icon'] ?? 'ri-book-line' }} text-xl text-primary"></i>
-                    <h2 class="text-xl font-bold text-gray-900">{{ $roleConfig['label'] ?? '' }}</h2>
-                </div>
-
-                @php
-                    // Group articles by their 'section' key
-                    $grouped = [];
-                    foreach ($roleConfig['articles'] as $slug => $art) {
-                        $section = $art['section'] ?? 'general';
-                        $grouped[$section][] = ['slug' => $slug, 'article' => $art];
-                    }
-                @endphp
-
-                @foreach($grouped as $sectionKey => $sectionArticles)
-                    @if(count($grouped) > 1)
-                        <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-5">
-                            {{ $sectionLabels[$sectionKey] ?? $sectionKey }}
-                        </h3>
-                    @endif
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        @foreach($sectionArticles as $item)
-                            <a href="{{ route('help.article', ['role' => $userRole, 'slug' => $item['slug']]) }}"
-                               class="group flex items-start gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-primary/40 hover:shadow-md transition-all duration-200 card-hover">
-                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
-                                    <i class="{{ $item['article']['icon'] ?? 'ri-file-text-line' }} text-primary text-lg"></i>
+        {{-- Category cards ────────────────────────────────────────────────────── --}}
+        @if(count($categories) > 0)
+            <div class="grid grid-cols-1 {{ count($categories) > 1 ? 'md:grid-cols-2' : '' }} gap-6 max-w-4xl mx-auto">
+                @foreach($categories as $cat)
+                    @php
+                        $catKey    = $cat['key'];
+                        $catConfig = $cat['config'];
+                        $count     = count($catConfig['articles'] ?? []);
+                    @endphp
+                    <a href="{{ route('help.role', ['role' => $catKey]) }}"
+                       class="group block p-6 bg-white rounded-2xl border border-gray-200 shadow-sm hover:border-primary/40 hover:shadow-lg transition-all duration-200">
+                        <div class="flex items-start gap-4">
+                            <div class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                                <i class="{{ $catConfig['icon'] ?? 'ri-book-line' }} text-primary text-2xl"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h2 class="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">
+                                    {{ $catConfig['label'] ?? '' }}
+                                </h2>
+                                <p class="text-gray-500 text-sm mt-1 leading-relaxed">
+                                    {{ $categoryDescriptions[$catKey] ?? '' }}
+                                </p>
+                                <div class="flex items-center gap-3 mt-4">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                                        <i class="ri-article-line"></i>
+                                        {{ __('help.landing.articles_count', ['count' => $count]) }}
+                                    </span>
+                                    <span class="text-sm text-primary font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+                                        {{ __('help.landing.browse') }}
+                                        <i class="ri-arrow-left-line text-xs"></i>
+                                    </span>
                                 </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="font-semibold text-gray-900 text-sm leading-snug group-hover:text-primary transition-colors">
-                                        {{ $item['article']['title'] }}
-                                    </p>
-                                    @if(!empty($item['article']['description']))
-                                        <p class="text-gray-500 text-xs mt-0.5 line-clamp-2">
-                                            {{ $item['article']['description'] }}
-                                        </p>
-                                    @endif
-                                </div>
-                                <i class="ri-arrow-left-line text-gray-300 group-hover:text-primary text-sm flex-shrink-0 mt-0.5 transition-colors"></i>
-                            </a>
-                        @endforeach
-                    </div>
+                            </div>
+                        </div>
+                    </a>
                 @endforeach
-            </section>
-        @endif
-
-        {{-- For super_admin: also show the Academy Admin guide alongside developer docs ── --}}
-        @if(!empty($additionalSection['articles']))
-            <section class="mb-10">
-                <div class="flex items-center gap-2 mb-5">
-                    <i class="{{ $additionalSection['icon'] ?? 'ri-book-line' }} text-xl text-primary"></i>
-                    <h2 class="text-xl font-bold text-gray-900">{{ $additionalSection['label'] ?? '' }}</h2>
-                </div>
-
-                @php
-                    $additionalGrouped = [];
-                    foreach ($additionalSection['articles'] as $slug => $art) {
-                        $section = $art['section'] ?? 'general';
-                        $additionalGrouped[$section][] = ['slug' => $slug, 'article' => $art];
-                    }
-                @endphp
-
-                @foreach($additionalGrouped as $sectionKey => $sectionArticles)
-                    @if(count($additionalGrouped) > 1)
-                        <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-5">
-                            {{ $sectionLabels[$sectionKey] ?? $sectionKey }}
-                        </h3>
-                    @endif
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        @foreach($sectionArticles as $item)
-                            <a href="{{ route('help.article', ['role' => 'admin', 'slug' => $item['slug']]) }}"
-                               class="group flex items-start gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-primary/40 hover:shadow-md transition-all duration-200 card-hover">
-                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
-                                    <i class="{{ $item['article']['icon'] ?? 'ri-file-text-line' }} text-primary text-lg"></i>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="font-semibold text-gray-900 text-sm leading-snug group-hover:text-primary transition-colors">
-                                        {{ $item['article']['title'] }}
-                                    </p>
-                                    @if(!empty($item['article']['description']))
-                                        <p class="text-gray-500 text-xs mt-0.5 line-clamp-2">
-                                            {{ $item['article']['description'] }}
-                                        </p>
-                                    @endif
-                                </div>
-                                <i class="ri-arrow-left-line text-gray-300 group-hover:text-primary text-sm flex-shrink-0 mt-0.5 transition-colors"></i>
-                            </a>
-                        @endforeach
-                    </div>
-                @endforeach
-            </section>
+            </div>
+        @else
+            <div class="text-center py-12 text-gray-400">
+                <i class="ri-book-line text-4xl mb-3 block"></i>
+                <p>{{ __('help.landing.empty_section') }}</p>
+            </div>
         @endif
 
     </div>

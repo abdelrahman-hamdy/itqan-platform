@@ -22,7 +22,8 @@
                 {{ __('help.breadcrumb.home') }}
             </a>
             <i class="ri-arrow-left-s-line text-gray-400 rtl:rotate-180"></i>
-            <span class="text-gray-600 font-medium">{{ $roleConfig['label'] ?? '' }}</span>
+            <a href="{{ route('help.role', ['role' => $role]) }}"
+               class="hover:text-primary transition-colors">{{ $roleConfig['label'] ?? '' }}</a>
             <i class="ri-arrow-left-s-line text-gray-400 rtl:rotate-180"></i>
             <span class="text-gray-900 font-semibold truncate max-w-xs">{{ $article['title'] ?? '' }}</span>
         </nav>
@@ -148,5 +149,62 @@ function helpArticleToc() {
         }
     };
 }
+
+function initDiagramFullscreen() {
+    document.querySelectorAll('.help-mermaid, .mermaid-wrapper').forEach(function(container) {
+        if (container.querySelector('.help-diagram-expand-btn')) return;
+
+        var btn = document.createElement('button');
+        btn.className = 'help-diagram-expand-btn';
+        btn.type = 'button';
+        btn.title = 'عرض بملء الشاشة';
+        btn.innerHTML = '<i class="ri-fullscreen-line"></i>';
+        container.appendChild(btn);
+
+        btn.addEventListener('click', function() {
+            var svg = container.querySelector('svg');
+            if (!svg) return;
+
+            var overlay = document.createElement('div');
+            overlay.className = 'help-diagram-overlay';
+
+            var closeBtn = document.createElement('button');
+            closeBtn.className = 'help-diagram-overlay-close';
+            closeBtn.type = 'button';
+            closeBtn.innerHTML = '<i class="ri-close-line"></i>';
+
+            var clone = svg.cloneNode(true);
+            clone.removeAttribute('width');
+            clone.removeAttribute('height');
+            clone.style.width = 'auto';
+            clone.style.maxWidth = '95vw';
+            clone.style.maxHeight = '90vh';
+            clone.style.height = 'auto';
+
+            overlay.appendChild(closeBtn);
+            overlay.appendChild(clone);
+            document.body.appendChild(overlay);
+
+            function close() {
+                overlay.remove();
+                document.removeEventListener('keydown', onEsc);
+            }
+
+            function onEsc(e) {
+                if (e.key === 'Escape') close();
+            }
+
+            closeBtn.addEventListener('click', close);
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) close();
+            });
+            document.addEventListener('keydown', onEsc);
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(initDiagramFullscreen, 500);
+});
 </script>
 @endpush
