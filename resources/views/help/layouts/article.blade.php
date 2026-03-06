@@ -130,99 +130,95 @@
 
     </div>
 
-</x-layouts.help>
+    @push('scripts')
+    <script>
+    function helpArticleToc() {
+        return {
+            headings: [],
+            buildToc() {
+                const content = this.$el;
+                const h2s = content.querySelectorAll('h2');
+                this.headings = Array.from(h2s).map((el, i) => {
+                    if (!el.id) {
+                        el.id = 'section-' + i;
+                    }
+                    return { id: el.id, text: el.textContent.trim() };
+                });
+            }
+        };
+    }
 
-@push('scripts')
-<script>
-function helpArticleToc() {
-    return {
-        headings: [],
-        buildToc() {
-            const content = this.$el;
-            const h2s = content.querySelectorAll('h2');
-            this.headings = Array.from(h2s).map((el, i) => {
-                if (!el.id) {
-                    el.id = 'section-' + i;
+    function initDiagramFullscreen() {
+        document.querySelectorAll('.help-mermaid, .mermaid-wrapper').forEach(function(container) {
+            if (container.querySelector('.help-diagram-expand-btn')) return;
+
+            var btn = document.createElement('button');
+            btn.className = 'help-diagram-expand-btn';
+            btn.type = 'button';
+            btn.title = 'عرض بملء الشاشة';
+            btn.innerHTML = '<i class="ri-fullscreen-line"></i>';
+            container.appendChild(btn);
+
+            btn.addEventListener('click', function() {
+                var svg = container.querySelector('svg');
+                if (!svg) return;
+
+                var overlay = document.createElement('div');
+                overlay.className = 'help-diagram-overlay';
+
+                var closeBtn = document.createElement('button');
+                closeBtn.className = 'help-diagram-overlay-close';
+                closeBtn.type = 'button';
+                closeBtn.innerHTML = '<i class="ri-close-line"></i>';
+
+                var clone = svg.cloneNode(true);
+                clone.removeAttribute('width');
+                clone.removeAttribute('height');
+                clone.style.width = 'auto';
+                clone.style.maxWidth = '95vw';
+                clone.style.maxHeight = '90vh';
+                clone.style.height = 'auto';
+
+                overlay.appendChild(closeBtn);
+                overlay.appendChild(clone);
+                document.body.appendChild(overlay);
+
+                function close() {
+                    overlay.remove();
+                    document.removeEventListener('keydown', onEsc);
                 }
-                return { id: el.id, text: el.textContent.trim() };
+
+                function onEsc(e) {
+                    if (e.key === 'Escape') close();
+                }
+
+                closeBtn.addEventListener('click', close);
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) close();
+                });
+                document.addEventListener('keydown', onEsc);
             });
-        }
-    };
-}
-
-function initDiagramFullscreen() {
-    document.querySelectorAll('.help-mermaid, .mermaid-wrapper').forEach(function(container) {
-        if (container.querySelector('.help-diagram-expand-btn')) return;
-
-        var btn = document.createElement('button');
-        btn.className = 'help-diagram-expand-btn';
-        btn.type = 'button';
-        btn.title = 'عرض بملء الشاشة';
-        btn.innerHTML = '<i class="ri-fullscreen-line"></i>';
-        container.appendChild(btn);
-
-        btn.addEventListener('click', function() {
-            var svg = container.querySelector('svg');
-            if (!svg) return;
-
-            var overlay = document.createElement('div');
-            overlay.className = 'help-diagram-overlay';
-
-            var closeBtn = document.createElement('button');
-            closeBtn.className = 'help-diagram-overlay-close';
-            closeBtn.type = 'button';
-            closeBtn.innerHTML = '<i class="ri-close-line"></i>';
-
-            var clone = svg.cloneNode(true);
-            clone.removeAttribute('width');
-            clone.removeAttribute('height');
-            clone.style.width = 'auto';
-            clone.style.maxWidth = '95vw';
-            clone.style.maxHeight = '90vh';
-            clone.style.height = 'auto';
-
-            overlay.appendChild(closeBtn);
-            overlay.appendChild(clone);
-            document.body.appendChild(overlay);
-
-            function close() {
-                overlay.remove();
-                document.removeEventListener('keydown', onEsc);
-            }
-
-            function onEsc(e) {
-                if (e.key === 'Escape') close();
-            }
-
-            closeBtn.addEventListener('click', close);
-            overlay.addEventListener('click', function(e) {
-                if (e.target === overlay) close();
-            });
-            document.addEventListener('keydown', onEsc);
         });
-    });
-}
+    }
 
-// Use MutationObserver to detect when mermaid renders SVGs into containers.
-// The mermaid CDN script loads after this script, so a simple timeout is unreliable.
-(function() {
-    var containers = document.querySelectorAll('.help-mermaid, .mermaid-wrapper');
-    if (!containers.length) return;
+    // Use MutationObserver to detect when mermaid renders SVGs into containers.
+    (function() {
+        var containers = document.querySelectorAll('.help-mermaid, .mermaid-wrapper');
+        if (!containers.length) return;
 
-    // Run once immediately in case SVGs already exist
-    initDiagramFullscreen();
-
-    // Watch for mermaid rendering SVGs into containers
-    var observer = new MutationObserver(function() {
         initDiagramFullscreen();
-    });
 
-    containers.forEach(function(el) {
-        observer.observe(el, { childList: true, subtree: true });
-    });
+        var observer = new MutationObserver(function() {
+            initDiagramFullscreen();
+        });
 
-    // Safety fallback: stop observing after 10s
-    setTimeout(function() { observer.disconnect(); }, 10000);
-})();
-</script>
-@endpush
+        containers.forEach(function(el) {
+            observer.observe(el, { childList: true, subtree: true });
+        });
+
+        setTimeout(function() { observer.disconnect(); }, 10000);
+    })();
+    </script>
+    @endpush
+
+</x-layouts.help>
