@@ -401,7 +401,7 @@
         <!-- User Dropdown (hidden on mobile - sidebar has user widget) -->
         <div class="relative hidden md:block" x-data="{ open: false }">
           <button @click="open = !open"
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-{{ $brandColor }}-500"
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none"
                   aria-expanded="false"
                   aria-haspopup="true">
             <x-avatar
@@ -426,7 +426,7 @@
                x-transition:leave="transition ease-in duration-75"
                x-transition:leave-start="transform opacity-100 scale-100"
                x-transition:leave-end="transform opacity-0 scale-95"
-               class="rtl:origin-top-left ltr:origin-top-right absolute rtl:left-0 ltr:right-0 mt-2 w-56 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden"
+               class="rtl:origin-top-left ltr:origin-top-right absolute rtl:left-0 ltr:right-0 mt-2 w-56 rounded-xl shadow-lg bg-white border border-gray-200 focus:outline-none overflow-hidden"
                role="menu"
                aria-orientation="vertical">
             <div class="py-1" role="none">

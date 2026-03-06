@@ -2,10 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Exception;
-use App\Services\Payment\InvoiceService;
-use App\Services\PaymentService;
-use App\Services\Payment\AcademyPaymentGatewayFactory;
 use App\Constants\DefaultAcademy;
 use App\Http\Requests\ProcessCourseEnrollmentPaymentRequest;
 use App\Http\Traits\Api\ApiResponses;
@@ -14,6 +10,10 @@ use App\Models\CourseSubscription;
 use App\Models\Payment;
 use App\Models\RecordedCourse;
 use App\Models\SavedPaymentMethod;
+use App\Services\Payment\AcademyPaymentGatewayFactory;
+use App\Services\Payment\InvoiceService;
+use App\Services\PaymentService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -296,10 +296,6 @@ class PaymentController extends Controller
                 $paymentService = app(PaymentService::class);
 
                 return $paymentService->processPayment($payment);
-            case 'moyasar':
-                return $this->processMoyasarPayment($payment, $paymentData);
-            case 'stc_pay':
-                return $this->processStcPayPayment($payment, $paymentData);
             default:
                 return [
                     'success' => false,
@@ -309,62 +305,13 @@ class PaymentController extends Controller
     }
 
     /**
-     * Mock Moyasar payment processing
-     */
-    private function processMoyasarPayment(Payment $payment, array $paymentData): array
-    {
-        // Mock successful payment
-        // In real implementation, you would call Moyasar API
-
-        return [
-            'success' => true,
-            'data' => [
-                'transaction_id' => 'TXN_'.time(),
-                'receipt_number' => 'REC_'.$payment->id.'_'.time(),
-                'gateway_response' => 'Payment processed successfully',
-            ],
-        ];
-    }
-
-    /**
-     * Mock STC Pay payment processing
-     */
-    private function processStcPayPayment(Payment $payment, array $paymentData): array
-    {
-        // Mock successful payment
-        return [
-            'success' => true,
-            'data' => [
-                'transaction_id' => 'STC_'.time(),
-                'receipt_number' => 'STC_REC_'.$payment->id.'_'.time(),
-                'gateway_response' => 'STC Pay payment processed successfully',
-            ],
-        ];
-    }
-
-    /**
-     * Process refund with gateway
-     */
-    private function processRefundWithGateway(Payment $payment, float $amount): array
-    {
-        // Mock refund processing
-        return [
-            'success' => true,
-            'data' => [
-                'refund_id' => 'REF_'.time(),
-                'refunded_amount' => $amount,
-            ],
-        ];
-    }
-
-    /**
      * Handle Paymob tokenization callback after card save.
      */
     public function tokenizationCallback(Request $request): RedirectResponse
     {
         $subdomain = $request->route('subdomain') ?? DefaultAcademy::subdomain();
 
-        Log::channel('payments')->info('Tokenization callback received', [
+        $this->logPayment('info', 'Tokenization callback received', [
             'all_params' => $request->all(),
             'user_id' => Auth::id(),
         ]);
@@ -386,7 +333,7 @@ class PaymentController extends Controller
         $isSuccess = $request->input('success') === 'true' || $request->input('success') === true;
 
         if (! $isSuccess) {
-            Log::channel('payments')->warning('Tokenization failed', [
+            $this->logPayment('warning', 'Tokenization failed', [
                 'user_id' => $user->id,
                 'response' => $request->all(),
             ]);
@@ -398,7 +345,7 @@ class PaymentController extends Controller
         // Get transaction ID from callback
         $transactionId = $request->input('id');
         if (! $transactionId) {
-            Log::channel('payments')->error('No transaction ID in callback', [
+            $this->logPayment('error', 'No transaction ID in callback', [
                 'user_id' => $user->id,
                 'response' => $request->all(),
             ]);
@@ -415,7 +362,7 @@ class PaymentController extends Controller
             $verifyResult = $gateway->verifyPayment($transactionId);
 
             if (! $verifyResult->isSuccessful()) {
-                Log::channel('payments')->error('Failed to verify tokenization transaction', [
+                $this->logPayment('error', 'Failed to verify tokenization transaction', [
                     'user_id' => $user->id,
                     'transaction_id' => $transactionId,
                     'error' => $verifyResult->errorMessage,
@@ -438,7 +385,7 @@ class PaymentController extends Controller
             }
 
             if (! $cardToken) {
-                Log::channel('payments')->error('No card token in Paymob API response', [
+                $this->logPayment('error', 'No card token in Paymob API response', [
                     'user_id' => $user->id,
                     'transaction_id' => $transactionId,
                     'raw_response' => $verifyResult->rawResponse,
@@ -446,17 +393,6 @@ class PaymentController extends Controller
 
                 return redirect()->route('student.payments', ['subdomain' => $subdomain])
                     ->with('error', __('student.saved_payment_methods.tokenization_failed'));
-            }
-
-            // Check if card already exists
-            $existingCard = SavedPaymentMethod::where('user_id', $user->id)
-                ->where('academy_id', $academy->id)
-                ->where('token', $cardToken)
-                ->first();
-
-            if ($existingCard) {
-                return redirect()->route('student.payments', ['subdomain' => $subdomain])
-                    ->with('info', __('student.saved_payment_methods.card_already_saved'));
             }
 
             // Check if this is the first card (will be default)
@@ -487,7 +423,7 @@ class PaymentController extends Controller
                 ],
             ]);
 
-            Log::channel('payments')->info('Card saved from tokenization callback', [
+            $this->logPayment('info', 'Card saved from tokenization callback', [
                 'user_id' => $user->id,
                 'saved_payment_method_id' => $savedMethod->id,
                 'brand' => $cardBrand,
@@ -498,14 +434,26 @@ class PaymentController extends Controller
                 ->with('success', __('student.saved_payment_methods.card_saved_success'));
 
         } catch (Exception $e) {
-            Log::channel('payments')->error('Failed to save card from callback', [
-                'user_id' => $user->id,
+            $this->logPayment('error', 'Failed to save card from callback', [
+                'user_id' => $user->id ?? Auth::id(),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return redirect()->route('student.payments', ['subdomain' => $subdomain])
                 ->with('error', __('student.saved_payment_methods.tokenization_failed'));
+        }
+    }
+
+    /**
+     * Log to the payments channel with fallback to the default logger.
+     */
+    private function logPayment(string $level, string $message, array $context = []): void
+    {
+        try {
+            Log::channel('payments')->{$level}($message, $context);
+        } catch (\Throwable) {
+            Log::{$level}("[payments] {$message}", $context);
         }
     }
 }
