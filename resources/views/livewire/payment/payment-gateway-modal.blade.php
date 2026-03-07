@@ -1,6 +1,7 @@
 <div>
     @if($showModal)
-        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="gateway-modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="gateway-modal-title" role="dialog" aria-modal="true"
+             x-data="{ selected: @entangle('selectedGateway') }">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
                 {{-- Backdrop --}}
                 <div class="fixed inset-0 transition-opacity" style="background-color: rgba(0, 0, 0, 0.5)" wire:click="close"></div>
@@ -13,7 +14,7 @@
                             <h3 id="gateway-modal-title" class="text-lg font-bold text-white">
                                 {{ __('payments.gateway_selection.title') }}
                             </h3>
-                            <button wire:click="close" class="text-white/80 hover:text-white transition-colors">
+                            <button wire:click="close" class="text-white/80 hover:text-white transition-colors outline-none focus:outline-none" tabindex="-1">
                                 <i class="ri-close-line text-xl"></i>
                             </button>
                         </div>
@@ -26,13 +27,13 @@
                     <div class="px-6 py-5 space-y-3">
                         @foreach($availableGateways as $key => $gateway)
                             <button
-                                wire:click="selectGateway('{{ $key }}')"
-                                class="w-full p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-4 text-right
-                                    {{ $selectedGateway === $key ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-200' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50' }}"
+                                @click="selected = '{{ $key }}'; $wire.selectGateway('{{ $key }}')"
+                                class="w-full p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-4 text-right outline-none focus:outline-none"
+                                :class="selected === '{{ $key }}' ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-200' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'"
                             >
                                 {{-- Logo --}}
-                                <div class="flex-shrink-0 w-20 h-14 rounded-xl flex items-center justify-center overflow-hidden p-1
-                                    {{ $selectedGateway === $key ? 'bg-blue-50' : 'bg-gray-50' }}">
+                                <div class="flex-shrink-0 w-20 h-14 rounded-xl flex items-center justify-center overflow-hidden p-2 border border-gray-200"
+                                     :class="selected === '{{ $key }}' ? 'bg-blue-50' : 'bg-gray-50'">
                                     @if($gateway['icon'])
                                         <img src="{{ $gateway['icon'] }}" alt="{{ $gateway['display_name'] }}" class="max-w-full max-h-full object-contain">
                                     @endif
@@ -44,11 +45,9 @@
                                 </div>
 
                                 {{-- Checkmark --}}
-                                @if($selectedGateway === $key)
-                                    <div class="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                                        <i class="ri-check-line text-white text-sm"></i>
-                                    </div>
-                                @endif
+                                <div x-show="selected === '{{ $key }}'" class="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <i class="ri-check-line text-white text-sm"></i>
+                                </div>
                             </button>
                         @endforeach
                     </div>
@@ -57,11 +56,11 @@
                     <div class="px-6 pb-8">
                         <button
                             wire:click="confirm"
-                            @if(!$selectedGateway) disabled @endif
-                            class="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200
-                                {{ $selectedGateway
-                                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200'
-                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed' }}"
+                            :disabled="!selected"
+                            class="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 outline-none focus:outline-none"
+                            :class="selected
+                                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200'
+                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'"
                         >
                             <i class="ri-lock-line ml-2"></i>
                             {{ __('payments.gateway_selection.confirm') }}
