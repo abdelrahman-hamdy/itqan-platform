@@ -18,6 +18,7 @@ class ViewQuranTrialRequest extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
+            QuranTrialRequestResource::makeViewSessionAction(),
             QuranTrialRequestResource::makeScheduleAction(),
             Action::make('cancel')
                 ->label('إلغاء الطلب')

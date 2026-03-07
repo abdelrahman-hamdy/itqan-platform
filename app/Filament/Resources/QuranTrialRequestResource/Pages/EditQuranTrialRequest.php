@@ -16,6 +16,7 @@ class EditQuranTrialRequest extends EditRecord
     {
         return [
             ViewAction::make(),
+            QuranTrialRequestResource::makeViewSessionAction(),
             DeleteAction::make(),
         ];
     }

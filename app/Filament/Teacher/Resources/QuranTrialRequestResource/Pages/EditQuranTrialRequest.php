@@ -17,6 +17,7 @@ class EditQuranTrialRequest extends EditRecord
         return [
             ViewAction::make()
                 ->label('عرض'),
+            QuranTrialRequestResource::makeViewSessionAction(),
             DeleteAction::make()
                 ->label('حذف'),
         ];

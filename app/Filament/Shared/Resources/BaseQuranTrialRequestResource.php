@@ -289,6 +289,35 @@ abstract class BaseQuranTrialRequestResource extends Resource
     // ========================================
 
     /**
+     * Create a "View Session" action that links to the QuranSession view page.
+     * Resolves the correct resource class based on the current Filament panel.
+     */
+    public static function makeViewSessionAction(): Action
+    {
+        return Action::make('view_session')
+            ->label('عرض الجلسة')
+            ->icon('heroicon-o-eye')
+            ->color('success')
+            ->visible(fn (QuranTrialRequest $record) => $record->trial_session_id !== null)
+            ->url(function (QuranTrialRequest $record): ?string {
+                $sessionId = $record->trial_session_id;
+                if (! $sessionId) {
+                    return null;
+                }
+
+                $panelId = filament()->getCurrentPanel()?->getId();
+
+                $resourceClass = match ($panelId) {
+                    'teacher' => \App\Filament\Teacher\Resources\QuranSessionResource::class,
+                    'academy' => \App\Filament\Academy\Resources\QuranSessionResource::class,
+                    default => \App\Filament\Resources\QuranSessionResource::class,
+                };
+
+                return $resourceClass::getUrl('view', ['record' => $sessionId]);
+            });
+    }
+
+    /**
      * Create the schedule trial session action - shared logic.
      * Public so view pages can reuse it.
      */
