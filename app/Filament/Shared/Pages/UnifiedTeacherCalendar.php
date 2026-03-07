@@ -2,6 +2,7 @@
 
 namespace App\Filament\Shared\Pages;
 
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
@@ -328,32 +329,32 @@ class UnifiedTeacherCalendar extends Page
 
         return Group::make([
             Placeholder::make('subscription_info')
-                ->label(__('scheduling.info.subscription_info'))
+                ->hiddenLabel()
                 ->content(function () use ($item) {
                     if (! $item) {
                         return '';
                     }
 
-                    $lines = [];
+                    $parts = [];
 
-                    // Subscription/course dates
+                    // Dates
+                    $startDate = null;
+                    $endDate = null;
+
                     if (isset($item['subscription_start']) && $item['subscription_start']) {
-                        $start = $item['subscription_start'] instanceof Carbon
+                        $startDate = $item['subscription_start'] instanceof Carbon
                             ? $item['subscription_start']->format('Y/m/d')
                             : Carbon::parse($item['subscription_start'])->format('Y/m/d');
-                        $lines[] = __('scheduling.info.subscription_start').': '.$start;
+                    } elseif (isset($item['start_date']) && $item['start_date']) {
+                        $startDate = $item['start_date'];
                     }
+
                     if (isset($item['subscription_end']) && $item['subscription_end']) {
-                        $end = $item['subscription_end'] instanceof Carbon
+                        $endDate = $item['subscription_end'] instanceof Carbon
                             ? $item['subscription_end']->format('Y/m/d')
                             : Carbon::parse($item['subscription_end'])->format('Y/m/d');
-                        $lines[] = __('scheduling.info.subscription_end').': '.$end;
-                    }
-                    if (isset($item['start_date']) && $item['start_date']) {
-                        $lines[] = __('scheduling.info.subscription_start').': '.$item['start_date'];
-                    }
-                    if (isset($item['end_date']) && $item['end_date']) {
-                        $lines[] = __('scheduling.info.subscription_end').': '.$item['end_date'];
+                    } elseif (isset($item['end_date']) && $item['end_date']) {
+                        $endDate = $item['end_date'];
                     }
 
                     // Session counts
@@ -361,25 +362,42 @@ class UnifiedTeacherCalendar extends Page
                     $scheduled = $item['sessions_scheduled'] ?? null;
                     $remaining = $item['sessions_remaining'] ?? null;
 
-                    if ($total !== null) {
-                        $lines[] = __('scheduling.info.total_sessions').': '.$total;
-                    }
-                    if ($scheduled !== null) {
-                        $lines[] = __('scheduling.info.scheduled_sessions').': '.$scheduled;
-                    }
-                    if ($remaining !== null) {
-                        $lines[] = __('scheduling.info.remaining_sessions').': '.$remaining;
-                    }
-
-                    if (empty($lines)) {
+                    if (! $startDate && ! $endDate && $total === null) {
                         return '';
                     }
 
-                    return new HtmlString(
-                        '<div class="text-sm space-y-1 p-3 bg-primary-50 dark:bg-primary-950 rounded-lg border border-primary-200 dark:border-primary-800">'
-                        .implode('<br>', array_map(fn ($l) => e($l), $lines))
-                        .'</div>'
-                    );
+                    $html = '<div class="flex flex-wrap gap-x-6 gap-y-2 p-3 rounded-lg text-sm bg-primary-50 dark:bg-primary-950 border border-primary-200 dark:border-primary-800">';
+
+                    if ($startDate) {
+                        $parts[] = '<span class="text-gray-500 dark:text-gray-400">'
+                            .e(__('scheduling.info.subscription_start')).':</span> '
+                            .'<span class="font-medium text-gray-900 dark:text-white">'.e($startDate).'</span>';
+                    }
+                    if ($endDate) {
+                        $parts[] = '<span class="text-gray-500 dark:text-gray-400">'
+                            .e(__('scheduling.info.subscription_end')).':</span> '
+                            .'<span class="font-medium text-gray-900 dark:text-white">'.e($endDate).'</span>';
+                    }
+                    if ($total !== null) {
+                        $parts[] = '<span class="text-gray-500 dark:text-gray-400">'
+                            .e(__('scheduling.info.total_sessions')).':</span> '
+                            .'<span class="font-medium text-gray-900 dark:text-white">'.$total.'</span>';
+                    }
+                    if ($scheduled !== null) {
+                        $parts[] = '<span class="text-gray-500 dark:text-gray-400">'
+                            .e(__('scheduling.info.scheduled_sessions')).':</span> '
+                            .'<span class="font-medium text-gray-900 dark:text-white">'.$scheduled.'</span>';
+                    }
+                    if ($remaining !== null) {
+                        $parts[] = '<span class="text-gray-500 dark:text-gray-400">'
+                            .e(__('scheduling.info.remaining_sessions')).':</span> '
+                            .'<span class="font-semibold text-primary-600 dark:text-primary-400">'.$remaining.'</span>';
+                    }
+
+                    $html .= implode('<span class="hidden sm:inline text-gray-300 dark:text-gray-600">|</span>', $parts);
+                    $html .= '</div>';
+
+                    return new HtmlString($html);
                 })
                 ->visible(fn () => $item !== null),
 
@@ -395,7 +413,10 @@ class UnifiedTeacherCalendar extends Page
                     'thursday' => 'الخميس',
                     'friday' => 'الجمعة',
                 ])
-                ->columns(2)
+                ->columns([
+                    'default' => 2,
+                    'sm' => 3,
+                ])
                 ->helperText(function () use ($validator) {
                     if (! $validator) {
                         return '';
@@ -451,20 +472,24 @@ class UnifiedTeacherCalendar extends Page
                 ->closeOnDateSelection()
                 ->live(),
 
-            TimePicker::make('schedule_time')
-                ->label('وقت الجلسة')
-                ->required()
-                ->seconds(false)
-                ->minutesStep(15)
-                ->native(false)
-                ->helperText(function () {
-                    $timezone = AcademyContextService::getTimezone();
-                    $currentTime = Carbon::now($timezone)->format('H:i');
+            Grid::make([
+                'default' => 1,
+                'sm' => 2,
+            ])->schema([
+                TimePicker::make('schedule_time')
+                    ->label('وقت الجلسة')
+                    ->required()
+                    ->seconds(false)
+                    ->minutesStep(15)
+                    ->native(false)
+                    ->helperText(function () {
+                        $timezone = AcademyContextService::getTimezone();
+                        $currentTime = Carbon::now($timezone)->format('H:i');
 
-                    return "الوقت الذي ستبدأ فيه الجلسات (التوقيت المحلي - الوقت الحالي: {$currentTime})";
-                }),
+                        return "التوقيت المحلي - الوقت الحالي: {$currentTime}";
+                    }),
 
-            TextInput::make('session_count')
+                TextInput::make('session_count')
                 ->label('عدد الجلسات المطلوب إنشاؤها')
                 ->helperText(function () use ($item) {
                     // Trial sessions always have exactly 1 session
@@ -523,6 +548,7 @@ class UnifiedTeacherCalendar extends Page
                 ->placeholder('أدخل العدد')
                 ->disabled(fn () => $this->selectedItemType === 'trial')
                 ->live(),
+            ]),
         ]);
     }
 

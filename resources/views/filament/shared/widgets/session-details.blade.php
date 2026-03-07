@@ -81,7 +81,7 @@
             <p class="text-gray-900 dark:text-white font-medium">
                 @switch($type)
                     @case(CalendarSessionType::QURAN_INDIVIDUAL)
-                        {{ $session->student?->name ?? '-' }}
+                        {{ $session->student?->name ?? $session->individualCircle?->student?->name ?? '-' }}
                         @break
                     @case(CalendarSessionType::QURAN_GROUP)
                         {{ $session->circle?->name ?? '-' }}
