@@ -4,7 +4,7 @@ namespace App\Filament\Teacher\Resources;
 
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
@@ -76,11 +76,9 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
             ->schema([
                 Grid::make(2)
                     ->schema([
-                        Select::make('student_id')
-                            ->relationship('student', 'name')
+                        Placeholder::make('student_name_display')
                             ->label('الطالب')
-                            ->disabled()
-                            ->dehydrated(false),
+                            ->content(fn ($record) => $record?->student?->name ?? '-'),
 
                         TextInput::make('name')
                             ->label('اسم الحلقة')
@@ -130,30 +128,6 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
     protected static function getAdditionalFormSections(): array
     {
         return [
-            Section::make('إعدادات الجلسة')
-                ->schema([
-                    Grid::make(2)
-                        ->schema([
-                            TextInput::make('default_duration_minutes')
-                                ->label('مدة الجلسة الافتراضية (بالدقائق)')
-                                ->numeric()
-                                ->minValue(15)
-                                ->maxValue(240)
-                                ->default(45)
-                                ->disabled()
-                                ->helperText('يتم تحديدها من الباقة المشترك بها'),
-
-                            TextInput::make('meeting_link')
-                                ->label('رابط الاجتماع')
-                                ->url()
-                                ->maxLength(255),
-
-                            TextInput::make('meeting_id')
-                                ->label('معرف الاجتماع')
-                                ->maxLength(255),
-                        ]),
-                ]),
-
             Section::make('ملاحظات')
                 ->schema([
                     Textarea::make('teacher_notes')
@@ -221,12 +195,23 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                 ->toggleable(),
 
             IconColumn::make('is_active')
-                ->label('الحالة')
+                ->label('نشط')
                 ->boolean()
                 ->trueIcon('heroicon-o-check-circle')
                 ->falseIcon('heroicon-o-x-circle')
                 ->trueColor('success')
                 ->falseColor('danger'),
+
+            TextColumn::make('scheduling_status')
+                ->label('حالة الجدولة')
+                ->badge()
+                ->state(function ($record) {
+                    return static::getSchedulingStatusLabel($record);
+                })
+                ->color(function ($record) {
+                    return static::getSchedulingStatusColor($record);
+                })
+                ->toggleable(),
 
             TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')

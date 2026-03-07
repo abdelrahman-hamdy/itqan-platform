@@ -333,12 +333,23 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                 ->toggleable(),
 
             IconColumn::make('is_active')
-                ->label('الحالة')
+                ->label('نشط')
                 ->boolean()
                 ->trueIcon('heroicon-o-check-circle')
                 ->falseIcon('heroicon-o-x-circle')
                 ->trueColor('success')
                 ->falseColor('danger'),
+
+            TextColumn::make('scheduling_status')
+                ->label('حالة الجدولة')
+                ->badge()
+                ->state(function ($record) {
+                    return static::getSchedulingStatusLabel($record);
+                })
+                ->color(function ($record) {
+                    return static::getSchedulingStatusColor($record);
+                })
+                ->toggleable(),
 
             TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')

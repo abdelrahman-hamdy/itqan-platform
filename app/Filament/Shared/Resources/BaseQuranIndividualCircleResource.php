@@ -21,6 +21,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 
 /**
  * Base Quran Individual Circle Resource
@@ -102,6 +103,10 @@ abstract class BaseQuranIndividualCircleResource extends Resource
         $schema[] = static::getAcademicProgressFormSection()
             ->hidden(fn ($record) => $record && static::isSubscriptionSuspended($record));
 
+        // Add subscription info section (shared, view/edit only)
+        $schema[] = static::getSubscriptionInfoFormSection()
+            ->hidden(fn ($record) => $record && static::isSubscriptionSuspended($record));
+
         // Add progress tracking section (shared)
         $schema[] = static::getProgressTrackingFormSection()
             ->hidden(fn ($record) => $record && static::isSubscriptionSuspended($record));
@@ -174,6 +179,161 @@ abstract class BaseQuranIndividualCircleResource extends Resource
             ])
             ->collapsible()
             ->collapsed();
+    }
+
+    /**
+     * Subscription info section - read-only, shows linked subscription data.
+     */
+    protected static function getSubscriptionInfoFormSection(): Section
+    {
+        return Section::make('معلومات الاشتراك')
+            ->icon('heroicon-o-credit-card')
+            ->schema([
+                Grid::make(3)
+                    ->schema([
+                        Placeholder::make('subscription_package')
+                            ->label('الباقة')
+                            ->content(function ($record) {
+                                $sub = $record?->activeSubscription ?? $record?->subscription;
+                                if (! $sub) {
+                                    return '-';
+                                }
+
+                                return $sub->package_name_ar ?? $sub->package_name_en ?? '-';
+                            }),
+
+                        Placeholder::make('subscription_status_display')
+                            ->label('حالة الاشتراك')
+                            ->content(function ($record) {
+                                $sub = $record?->activeSubscription ?? $record?->subscription;
+                                if (! $sub) {
+                                    return '-';
+                                }
+
+                                return $sub->status instanceof SessionSubscriptionStatus
+                                    ? $sub->status->label()
+                                    : ($sub->status ?? '-');
+                            }),
+
+                        Placeholder::make('subscription_billing_cycle')
+                            ->label('دورة الفوترة')
+                            ->content(function ($record) {
+                                $sub = $record?->activeSubscription ?? $record?->subscription;
+                                if (! $sub) {
+                                    return '-';
+                                }
+
+                                return $sub->billing_cycle instanceof \App\Enums\BillingCycle
+                                    ? $sub->billing_cycle->label()
+                                    : ($sub->billing_cycle ?? '-');
+                            }),
+                    ]),
+
+                Grid::make(3)
+                    ->schema([
+                        Placeholder::make('subscription_total_sessions')
+                            ->label('إجمالي الجلسات')
+                            ->content(function ($record) {
+                                $sub = $record?->activeSubscription ?? $record?->subscription;
+
+                                return $sub?->total_sessions ?? $record?->total_sessions ?? '-';
+                            }),
+
+                        Placeholder::make('subscription_completed_sessions')
+                            ->label('الجلسات المكتملة')
+                            ->content(fn ($record) => $record?->sessions_completed ?? 0),
+
+                        Placeholder::make('subscription_remaining_sessions')
+                            ->label('الجلسات المتبقية')
+                            ->content(function ($record) {
+                                $sub = $record?->activeSubscription ?? $record?->subscription;
+                                $total = $sub?->total_sessions ?? $record?->total_sessions ?? 0;
+                                $completed = $record?->sessions_completed ?? 0;
+                                $remaining = max(0, $total - $completed);
+
+                                return $remaining;
+                            }),
+                    ]),
+
+                Grid::make(3)
+                    ->schema([
+                        Placeholder::make('subscription_starts_at')
+                            ->label('تاريخ البداية')
+                            ->content(function ($record) {
+                                $sub = $record?->activeSubscription ?? $record?->subscription;
+
+                                return $sub?->starts_at
+                                    ? toAcademyTimezone($sub->starts_at)->format('Y-m-d')
+                                    : '-';
+                            }),
+
+                        Placeholder::make('subscription_ends_at')
+                            ->label('تاريخ الانتهاء')
+                            ->content(function ($record) {
+                                $sub = $record?->activeSubscription ?? $record?->subscription;
+
+                                return $sub?->ends_at
+                                    ? toAcademyTimezone($sub->ends_at)->format('Y-m-d')
+                                    : '-';
+                            }),
+
+                        Placeholder::make('subscription_session_duration')
+                            ->label('مدة الجلسة')
+                            ->content(function ($record) {
+                                $duration = $record?->default_duration_minutes;
+
+                                return $duration ? "{$duration} دقيقة" : '-';
+                            }),
+                    ]),
+
+                Grid::make(2)
+                    ->schema([
+                        Placeholder::make('subscription_learning_goals')
+                            ->label('أهداف التعلم')
+                            ->content(function ($record) {
+                                $sub = $record?->activeSubscription ?? $record?->subscription;
+                                $goals = $sub?->learning_goals;
+                                if (empty($goals)) {
+                                    return '-';
+                                }
+
+                                return new HtmlString(
+                                    collect($goals)->map(fn ($g) => e($g))->implode('، ')
+                                );
+                            }),
+
+                        Placeholder::make('subscription_student_notes')
+                            ->label('ملاحظات الطالب')
+                            ->content(function ($record) {
+                                $sub = $record?->activeSubscription ?? $record?->subscription;
+
+                                return $sub?->student_notes ?? '-';
+                            }),
+                    ]),
+
+                Placeholder::make('subscription_weekly_schedule')
+                    ->label('الجدول الأسبوعي')
+                    ->content(function ($record) {
+                        $sub = $record?->activeSubscription ?? $record?->subscription;
+                        $schedule = $sub?->weekly_schedule;
+                        if (empty($schedule)) {
+                            return '-';
+                        }
+
+                        return new HtmlString(
+                            collect($schedule)->map(fn ($s) => e(is_array($s) ? json_encode($s, JSON_UNESCAPED_UNICODE) : $s))->implode('، ')
+                        );
+                    })
+                    ->columnSpanFull(),
+
+                Placeholder::make('no_subscription_notice')
+                    ->label('')
+                    ->content(new HtmlString('<span class="text-warning-600 dark:text-warning-400">لا يوجد اشتراك مرتبط بهذه الحلقة</span>'))
+                    ->visible(fn ($record) => ! ($record?->activeSubscription ?? $record?->subscription))
+                    ->columnSpanFull(),
+            ])
+            ->collapsible()
+            ->visible(fn ($record) => $record !== null);
     }
 
     /**
@@ -297,12 +457,23 @@ abstract class BaseQuranIndividualCircleResource extends Resource
                 ->toggleable(isToggledHiddenByDefault: true),
 
             IconColumn::make('is_active')
-                ->label('الحالة')
+                ->label('نشط')
                 ->boolean()
                 ->trueIcon('heroicon-o-check-circle')
                 ->falseIcon('heroicon-o-x-circle')
                 ->trueColor('success')
                 ->falseColor('danger'),
+
+            TextColumn::make('scheduling_status')
+                ->label('حالة الجدولة')
+                ->badge()
+                ->state(function ($record) {
+                    return static::getSchedulingStatusLabel($record);
+                })
+                ->color(function ($record) {
+                    return static::getSchedulingStatusColor($record);
+                })
+                ->toggleable(),
 
             TextColumn::make('last_session_at')
                 ->label('آخر جلسة')
@@ -342,6 +513,70 @@ abstract class BaseQuranIndividualCircleResource extends Resource
     }
 
     // ========================================
+    // Scheduling Status Helpers (for table columns)
+    // ========================================
+
+    /**
+     * Get scheduling status label using cached model fields (avoids N+1).
+     */
+    protected static function getSchedulingStatusLabel($record): string
+    {
+        $sub = $record->activeSubscription ?? $record->subscription;
+
+        if (! $sub || $sub->status !== SessionSubscriptionStatus::ACTIVE) {
+            return 'الاشتراك غير نشط';
+        }
+
+        if ($sub->ends_at?->isPast()) {
+            return 'الاشتراك منتهي';
+        }
+
+        $total = $sub->total_sessions ?? $record->total_sessions ?? 0;
+        $scheduled = $record->sessions_scheduled ?? 0;
+        $remaining = $total - $scheduled;
+
+        if ($remaining <= 0) {
+            return 'مجدولة بالكامل';
+        }
+
+        if ($scheduled > 0) {
+            return "مجدولة جزئياً ({$scheduled}/{$total})";
+        }
+
+        return "غير مجدولة ({$remaining} متبقية)";
+    }
+
+    /**
+     * Get scheduling status color.
+     */
+    protected static function getSchedulingStatusColor($record): string
+    {
+        $sub = $record->activeSubscription ?? $record->subscription;
+
+        if (! $sub || $sub->status !== SessionSubscriptionStatus::ACTIVE) {
+            return 'gray';
+        }
+
+        if ($sub->ends_at?->isPast()) {
+            return 'danger';
+        }
+
+        $total = $sub->total_sessions ?? $record->total_sessions ?? 0;
+        $scheduled = $record->sessions_scheduled ?? 0;
+        $remaining = $total - $scheduled;
+
+        if ($remaining <= 0) {
+            return 'success';
+        }
+
+        if ($scheduled > 0) {
+            return 'info';
+        }
+
+        return 'warning';
+    }
+
+    // ========================================
     // Eloquent Query
     // ========================================
 
@@ -353,6 +588,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
                 'student',
                 'academy',
                 'subscription',
+                'linkedSubscriptions',
             ]);
 
         return static::scopeEloquentQuery($query);
