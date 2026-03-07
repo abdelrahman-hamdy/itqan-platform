@@ -4,7 +4,7 @@
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.homework.title') }}</h3>
             @if($homework)
-            <button onclick="hwCall(this, 'openEditModal')"
+            <button onclick="hwDebug(this)"
                     class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors shadow-sm">
                 <i class="ri-edit-line ms-1"></i>
                 {{ __('components.sessions.homework.edit_homework') }}
@@ -292,6 +292,25 @@
     @endif
 
     <script>
+    function hwDebug(el) {
+        var msgs = [];
+        var root = el.closest('[wire\\:id]');
+        msgs.push('1. wire:id element: ' + (root ? 'FOUND' : 'NOT FOUND'));
+        if (root) {
+            var id = root.getAttribute('wire:id');
+            msgs.push('2. wire:id value: ' + id);
+            msgs.push('3. window.Livewire exists: ' + (!!window.Livewire));
+            msgs.push('4. Livewire.find exists: ' + (window.Livewire && typeof window.Livewire.find === 'function'));
+            if (window.Livewire && window.Livewire.find) {
+                var comp = window.Livewire.find(id);
+                msgs.push('5. Livewire.find(id): ' + (comp ? 'FOUND' : 'NULL'));
+            }
+            msgs.push('6. root.__livewire: ' + (!!root.__livewire));
+            msgs.push('7. root.closest wire:initial-data: ' + (!!root.getAttribute('wire:initial-data')));
+        }
+        alert(msgs.join('\n'));
+    }
+
     function hwGetComp(el) {
         var root = el.closest('[wire\\:id]');
         if (!root) return null;
