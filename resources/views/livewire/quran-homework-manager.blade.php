@@ -1,10 +1,13 @@
 <div>
+    <!-- DEBUG MARKER: If you see this red text, this Livewire component IS rendering -->
+    <p style="color:red;font-weight:bold;font-size:12px;">DEBUG: Livewire QuranHomeworkManager (session={{ $sessionId ?? 'N/A' }})</p>
+
     <!-- Homework Management Section -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.homework.title') }}</h3>
             @if($homework)
-            <button wire:click="openEditModal"
+            <button onclick="alert('DEBUG: onclick works! Livewire should fire next.')" wire:click="openEditModal"
                     wire:loading.attr="disabled"
                     wire:loading.class="opacity-50 cursor-wait"
                     class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors shadow-sm">
