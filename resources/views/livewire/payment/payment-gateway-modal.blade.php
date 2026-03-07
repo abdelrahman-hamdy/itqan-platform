@@ -3,7 +3,7 @@
         <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="gateway-modal-title" role="dialog" aria-modal="true">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
                 {{-- Backdrop --}}
-                <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" wire:click="close"></div>
+                <div class="fixed inset-0 bg-gray-900/75 transition-opacity" wire:click="close"></div>
 
                 {{-- Modal Panel --}}
                 <div class="relative bg-white rounded-2xl text-right overflow-hidden shadow-2xl transform transition-all sm:my-8 w-full max-w-md">
