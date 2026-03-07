@@ -4,7 +4,6 @@ namespace App\Filament\Teacher\Resources;
 
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
@@ -76,9 +75,13 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
             ->schema([
                 Grid::make(2)
                     ->schema([
-                        Placeholder::make('student_name_display')
+                        TextInput::make('student_name_display')
                             ->label('الطالب')
-                            ->content(fn ($record) => $record?->student?->name ?? '-'),
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function (TextInput $component, $record) {
+                                $component->state($record?->student?->name ?? '-');
+                            }),
 
                         TextInput::make('name')
                             ->label('اسم الحلقة')

@@ -191,137 +191,158 @@ abstract class BaseQuranIndividualCircleResource extends Resource
             ->schema([
                 Grid::make(3)
                     ->schema([
-                        Placeholder::make('subscription_package')
+                        TextInput::make('subscription_package')
                             ->label('الباقة')
-                            ->content(function ($record) {
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function (TextInput $component, $record) {
                                 $sub = $record?->activeSubscription ?? $record?->subscription;
-                                if (! $sub) {
-                                    return '-';
-                                }
-
-                                return $sub->package_name_ar ?? $sub->package_name_en ?? '-';
+                                $component->state($sub?->package_name_ar ?? $sub?->package_name_en ?? '-');
                             }),
 
-                        Placeholder::make('subscription_status_display')
+                        TextInput::make('subscription_status_display')
                             ->label('حالة الاشتراك')
-                            ->content(function ($record) {
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function (TextInput $component, $record) {
                                 $sub = $record?->activeSubscription ?? $record?->subscription;
                                 if (! $sub) {
-                                    return '-';
-                                }
+                                    $component->state('-');
 
-                                return $sub->status instanceof SessionSubscriptionStatus
-                                    ? $sub->status->label()
-                                    : ($sub->status ?? '-');
+                                    return;
+                                }
+                                $component->state(
+                                    $sub->status instanceof SessionSubscriptionStatus
+                                        ? $sub->status->label()
+                                        : ($sub->status ?? '-')
+                                );
                             }),
 
-                        Placeholder::make('subscription_billing_cycle')
+                        TextInput::make('subscription_billing_cycle')
                             ->label('دورة الفوترة')
-                            ->content(function ($record) {
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function (TextInput $component, $record) {
                                 $sub = $record?->activeSubscription ?? $record?->subscription;
                                 if (! $sub) {
-                                    return '-';
-                                }
+                                    $component->state('-');
 
-                                return $sub->billing_cycle instanceof \App\Enums\BillingCycle
-                                    ? $sub->billing_cycle->label()
-                                    : ($sub->billing_cycle ?? '-');
+                                    return;
+                                }
+                                $component->state(
+                                    $sub->billing_cycle instanceof \App\Enums\BillingCycle
+                                        ? $sub->billing_cycle->label()
+                                        : ($sub->billing_cycle ?? '-')
+                                );
                             }),
                     ]),
 
                 Grid::make(3)
                     ->schema([
-                        Placeholder::make('subscription_total_sessions')
+                        TextInput::make('subscription_total_sessions')
                             ->label('إجمالي الجلسات')
-                            ->content(function ($record) {
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function (TextInput $component, $record) {
                                 $sub = $record?->activeSubscription ?? $record?->subscription;
-
-                                return $sub?->total_sessions ?? $record?->total_sessions ?? '-';
+                                $component->state($sub?->total_sessions ?? $record?->total_sessions ?? '-');
                             }),
 
-                        Placeholder::make('subscription_completed_sessions')
+                        TextInput::make('subscription_completed_sessions')
                             ->label('الجلسات المكتملة')
-                            ->content(fn ($record) => $record?->sessions_completed ?? 0),
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function (TextInput $component, $record) {
+                                $component->state($record?->sessions_completed ?? 0);
+                            }),
 
-                        Placeholder::make('subscription_remaining_sessions')
+                        TextInput::make('subscription_remaining_sessions')
                             ->label('الجلسات المتبقية')
-                            ->content(function ($record) {
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function (TextInput $component, $record) {
                                 $sub = $record?->activeSubscription ?? $record?->subscription;
                                 $total = $sub?->total_sessions ?? $record?->total_sessions ?? 0;
                                 $completed = $record?->sessions_completed ?? 0;
-                                $remaining = max(0, $total - $completed);
-
-                                return $remaining;
+                                $component->state(max(0, $total - $completed));
                             }),
                     ]),
 
                 Grid::make(3)
                     ->schema([
-                        Placeholder::make('subscription_starts_at')
+                        TextInput::make('subscription_starts_at')
                             ->label('تاريخ البداية')
-                            ->content(function ($record) {
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function (TextInput $component, $record) {
                                 $sub = $record?->activeSubscription ?? $record?->subscription;
-
-                                return $sub?->starts_at
-                                    ? toAcademyTimezone($sub->starts_at)->format('Y-m-d')
-                                    : '-';
+                                $component->state(
+                                    $sub?->starts_at
+                                        ? toAcademyTimezone($sub->starts_at)->format('Y-m-d')
+                                        : '-'
+                                );
                             }),
 
-                        Placeholder::make('subscription_ends_at')
+                        TextInput::make('subscription_ends_at')
                             ->label('تاريخ الانتهاء')
-                            ->content(function ($record) {
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function (TextInput $component, $record) {
                                 $sub = $record?->activeSubscription ?? $record?->subscription;
-
-                                return $sub?->ends_at
-                                    ? toAcademyTimezone($sub->ends_at)->format('Y-m-d')
-                                    : '-';
+                                $component->state(
+                                    $sub?->ends_at
+                                        ? toAcademyTimezone($sub->ends_at)->format('Y-m-d')
+                                        : '-'
+                                );
                             }),
 
-                        Placeholder::make('subscription_session_duration')
+                        TextInput::make('subscription_session_duration')
                             ->label('مدة الجلسة')
-                            ->content(function ($record) {
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function (TextInput $component, $record) {
                                 $duration = $record?->default_duration_minutes;
-
-                                return $duration ? "{$duration} دقيقة" : '-';
+                                $component->state($duration ? "{$duration} دقيقة" : '-');
                             }),
                     ]),
 
                 Grid::make(2)
                     ->schema([
-                        Placeholder::make('subscription_learning_goals')
+                        TextInput::make('subscription_learning_goals')
                             ->label('أهداف التعلم')
-                            ->content(function ($record) {
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function (TextInput $component, $record) {
                                 $sub = $record?->activeSubscription ?? $record?->subscription;
                                 $goals = $sub?->learning_goals;
-                                if (empty($goals)) {
-                                    return '-';
-                                }
-
-                                return new HtmlString(
-                                    collect($goals)->map(fn ($g) => e($g))->implode('، ')
+                                $component->state(
+                                    ! empty($goals)
+                                        ? collect($goals)->implode('، ')
+                                        : '-'
                                 );
                             }),
 
-                        Placeholder::make('subscription_student_notes')
+                        TextInput::make('subscription_student_notes')
                             ->label('ملاحظات الطالب')
-                            ->content(function ($record) {
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function (TextInput $component, $record) {
                                 $sub = $record?->activeSubscription ?? $record?->subscription;
-
-                                return $sub?->student_notes ?? '-';
+                                $component->state($sub?->student_notes ?? '-');
                             }),
                     ]),
 
-                Placeholder::make('subscription_weekly_schedule')
+                TextInput::make('subscription_weekly_schedule')
                     ->label('الجدول الأسبوعي')
-                    ->content(function ($record) {
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->afterStateHydrated(function (TextInput $component, $record) {
                         $sub = $record?->activeSubscription ?? $record?->subscription;
                         $schedule = $sub?->weekly_schedule;
-                        if (empty($schedule)) {
-                            return '-';
-                        }
-
-                        return new HtmlString(
-                            collect($schedule)->map(fn ($s) => e(is_array($s) ? json_encode($s, JSON_UNESCAPED_UNICODE) : $s))->implode('، ')
+                        $component->state(
+                            ! empty($schedule)
+                                ? collect($schedule)->map(fn ($s) => is_array($s) ? json_encode($s, JSON_UNESCAPED_UNICODE) : $s)->implode('، ')
+                                : '-'
                         );
                     })
                     ->columnSpanFull(),
