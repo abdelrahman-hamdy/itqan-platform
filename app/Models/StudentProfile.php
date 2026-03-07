@@ -66,14 +66,16 @@ class StudentProfile extends Model
             }
 
             if (empty($model->student_code)) {
-                DB::transaction(function () use ($model, $academyId) {
+                $prefix = 'ST-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
+
+                DB::transaction(function () use ($model, $prefix) {
                     $last = static::withoutGlobalScopes()
-                        ->where('academy_id', $academyId)
+                        ->where('student_code', 'like', $prefix.'%')
                         ->lockForUpdate()
                         ->orderByRaw('CAST(SUBSTRING(student_code, -6) AS UNSIGNED) DESC')
                         ->first(['student_code']);
                     $seq = $last && preg_match('/(\d{6})$/', $last->student_code, $m) ? (int) $m[1] + 1 : 1;
-                    $model->student_code = 'ST-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.str_pad($seq, 6, '0', STR_PAD_LEFT);
+                    $model->student_code = $prefix.str_pad($seq, 6, '0', STR_PAD_LEFT);
                 });
             }
 
