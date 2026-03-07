@@ -42,12 +42,7 @@ class QuranHomeworkManager extends Component
 
     public function openEditModal(): void
     {
-        $session = $this->getSession();
-        if (! $session) {
-            return;
-        }
-
-        $homework = $session->sessionHomework;
+        $homework = QuranSessionHomework::where('session_id', $this->sessionId)->first();
         if (! $homework) {
             $this->dispatch('toast', type: 'error', message: __('components.sessions.homework.loading_error'));
 
@@ -84,13 +79,6 @@ class QuranHomeworkManager extends Component
 
         if (! $this->has_new_memorization && ! $this->has_review && ! $this->has_comprehensive_review) {
             $this->dispatch('toast', type: 'error', message: __('components.sessions.homework.at_least_one_type'));
-
-            return;
-        }
-
-        $session = $this->getSession();
-        if (! $session) {
-            $this->dispatch('toast', type: 'error', message: __('components.sessions.homework.loading_error'));
 
             return;
         }
@@ -132,13 +120,6 @@ class QuranHomeworkManager extends Component
     public function closeModal(): void
     {
         $this->showModal = false;
-    }
-
-    private function getSession(): ?QuranSession
-    {
-        return QuranSession::where('id', $this->sessionId)
-            ->where('quran_teacher_id', Auth::id())
-            ->first();
     }
 
     private function resetForm(): void
