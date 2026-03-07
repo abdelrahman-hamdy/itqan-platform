@@ -20,7 +20,7 @@
     <div class="fixed inset-0 z-50 overflow-y-auto" wire:key="trial-conversion-modal-{{ $trialRequestId }}">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <!-- Background Overlay -->
-            <div class="fixed inset-0 transition-opacity bg-gray-900/75" wire:click="closeModal"></div>
+            <div class="fixed inset-0 transition-opacity" style="background-color: rgba(0, 0, 0, 0.5)" wire:click="closeModal"></div>
 
             <!-- Modal Container -->
             <div class="inline-block w-full max-w-2xl overflow-hidden text-start align-middle transition-all transform bg-white rounded-2xl shadow-2xl sm:my-8">
