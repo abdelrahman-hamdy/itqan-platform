@@ -106,10 +106,10 @@
             <!-- Homework Management (Teacher) or Homework Display (Student) -->
             @if($viewType === 'teacher')
                 @livewire('quran-homework-manager', ['sessionId' => $session->id], key('homework-'.$session->id))
-            @elseif($session->homework && $session->homework->count() > 0)
+            @elseif($session->sessionHomework)
                 <x-sessions.homework-display
                     :session="$session"
-                    :homework="$session->homework"
+                    :homework="$session->sessionHomework"
                     view-type="student" />
             @endif
 
