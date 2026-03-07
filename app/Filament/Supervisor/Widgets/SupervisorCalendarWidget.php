@@ -233,10 +233,10 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             ->whereNull('trial_request_id')
             ->with([
                 'quranTeacher:id,first_name,last_name,name,email,gender',
-                'student:id,name',
+                'student:id,first_name,last_name,name',
                 'subscription:id,package_id,starts_at,ends_at,status',
                 'individualCircle:id,name,circle_code,default_duration_minutes,student_id',
-                'individualCircle.student:id,name',
+                'individualCircle.student:id,first_name,last_name,name',
             ])
             ->get();
     }
@@ -274,7 +274,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             ->whereNotNull('trial_request_id')
             ->with([
                 'quranTeacher:id,first_name,last_name,name,email,gender',
-                'student:id,name',
+                'student:id,first_name,last_name,name',
                 'trialRequest:id,student_name,status',
             ])
             ->get();
@@ -300,7 +300,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             ->with([
                 'academicTeacher:id,user_id',
                 'academicTeacher.user:id,name,email,gender',
-                'student:id,name',
+                'student:id,first_name,last_name,name',
                 'academicIndividualLesson:id,subject_id,subscription_id',
                 'academicIndividualLesson.subject:id,name,name_en',
                 'subscription:id,package_id,starts_at,ends_at,status',
