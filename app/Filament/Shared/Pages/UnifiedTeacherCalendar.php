@@ -565,7 +565,7 @@ class UnifiedTeacherCalendar extends Page
 
             Placeholder::make('schedule_summary')
                 ->hiddenLabel()
-                ->content(function (Forms\Get $get) {
+                ->content(function (\Filament\Schemas\Components\Utilities\Get $get) {
                     $days = $get('schedule_days') ?? [];
                     $hour = $get('schedule_hour');
                     $minute = $get('schedule_minute');
