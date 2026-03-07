@@ -65,7 +65,7 @@ class TrialNotificationService
                 'preferred_time' => $trialRequest->time_label,
                 'request_code' => $trialRequest->request_code,
             ],
-            $this->urlBuilder->getTeacherTrialRequestUrl($trialRequest->id),
+            $this->urlBuilder->getTeacherTrialRequestUrl($trialRequest->id, $trialRequest->academy?->subdomain),
             ['trial_request_id' => $trialRequest->id],
             true // important
         );
@@ -168,7 +168,7 @@ class TrialNotificationService
                     'student_name' => $trialRequest->student?->name ?? $trialRequest->student_name,
                     'request_code' => $trialRequest->request_code,
                 ],
-                $this->urlBuilder->getTeacherTrialRequestUrl($trialRequest->id),
+                $this->urlBuilder->getTeacherTrialRequestUrl($trialRequest->id, $trialRequest->academy?->subdomain),
                 ['trial_request_id' => $trialRequest->id]
             );
         }

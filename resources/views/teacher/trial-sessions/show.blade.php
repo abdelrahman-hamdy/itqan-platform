@@ -303,6 +303,16 @@
                 </h3>
 
                 <div class="space-y-3">
+                    @if(!$trialRequest->trialSession && $trialRequest->status !== 'cancelled')
+                        <a href="/teacher-panel/quran-trial-requests/{{ $trialRequest->id }}"
+                           target="_blank"
+                           class="flex items-center gap-3 p-3 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-colors">
+                            <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                                <i class="ri-calendar-schedule-line text-emerald-600"></i>
+                            </div>
+                            <span class="text-emerald-700 font-medium">{{ __('teacher.trial_sessions.schedule_session') }}</span>
+                        </a>
+                    @endif
                     <a href="{{ route('teacher.trial-sessions.index', ['subdomain' => $subdomain]) }}"
                        class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
                         <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">

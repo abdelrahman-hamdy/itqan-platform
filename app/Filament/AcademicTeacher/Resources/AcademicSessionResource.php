@@ -118,7 +118,7 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
-                MeetingActions::viewMeeting('academic'),
+                MeetingActions::viewMeeting('academic', forTeacher: true),
             ]),
         ];
     }

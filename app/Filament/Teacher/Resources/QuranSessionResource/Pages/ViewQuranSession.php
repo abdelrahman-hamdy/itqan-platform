@@ -26,7 +26,7 @@ class ViewQuranSession extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
-            MeetingActions::viewMeeting('quran'),
+            MeetingActions::viewMeeting('quran', forTeacher: true),
         ];
     }
 

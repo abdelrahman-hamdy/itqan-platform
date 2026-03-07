@@ -345,7 +345,9 @@ abstract class BaseQuranTrialRequestResource extends Resource
                             ->required()
                             ->native(false)
                             ->timezone(AcademyContextService::getTimezone())
-                            ->minDate(now())
+                            ->seconds(false)
+                            ->minutesStep(15)
+                            ->minDate(now()->setTimezone(AcademyContextService::getTimezone()))
                             ->helperText('سيتم إنشاء غرفة اجتماع LiveKit تلقائياً'),
                     ]),
             ])
@@ -371,6 +373,18 @@ abstract class BaseQuranTrialRequestResource extends Resource
 
             // Academy timezone version for session code display
             $scheduledAtLocal = $scheduledAtUtc->copy()->setTimezone(AcademyContextService::getTimezone());
+
+            // Prevent scheduling in the past
+            $academyNow = now()->setTimezone(AcademyContextService::getTimezone());
+            if ($scheduledAtLocal->lt($academyNow)) {
+                Notification::make()
+                    ->danger()
+                    ->title('لا يمكن جدولة جلسة في الماضي')
+                    ->body('يرجى اختيار موعد مستقبلي للجلسة')
+                    ->send();
+
+                return;
+            }
 
             // Generate unique session code (use academy timezone for display in code)
             $sessionCode = 'TR-'.str_pad($record->teacher_id, 3, '0', STR_PAD_LEFT).'-'.$scheduledAtLocal->format('Ymd-Hi');

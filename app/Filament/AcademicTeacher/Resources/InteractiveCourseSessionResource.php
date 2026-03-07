@@ -118,7 +118,7 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
-                MeetingActions::viewMeeting('interactive'),
+                MeetingActions::viewMeeting('interactive', forTeacher: true),
             ]),
         ];
     }

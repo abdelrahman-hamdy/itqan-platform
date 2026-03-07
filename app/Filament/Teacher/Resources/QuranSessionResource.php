@@ -98,7 +98,7 @@ class QuranSessionResource extends BaseQuranSessionResource
                     ->label('عرض'),
                 EditAction::make()
                     ->label('تعديل'),
-                MeetingActions::viewMeeting('quran'),
+                MeetingActions::viewMeeting('quran', forTeacher: true),
                 DeleteAction::make()
                     ->label('حذف')
                     ->after(function (QuranSession $record) {

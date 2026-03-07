@@ -22,7 +22,7 @@ class ViewInteractiveCourseSession extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
-            MeetingActions::viewMeeting('interactive'),
+            MeetingActions::viewMeeting('interactive', forTeacher: true),
         ];
     }
 

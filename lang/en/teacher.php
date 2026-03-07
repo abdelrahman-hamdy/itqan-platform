@@ -1356,6 +1356,7 @@ return [
         'your_rating' => 'Your Rating',
         'your_feedback' => 'Your Feedback',
         'your_notes' => 'Your Notes',
+        'schedule_session' => 'Schedule Session',
         'back_to_list' => 'Back to List',
         'message_student' => 'Message Student',
         'view_circle' => 'View Circle',

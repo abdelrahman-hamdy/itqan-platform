@@ -294,11 +294,16 @@ class NotificationUrlBuilder
     }
 
     /**
-     * Get teacher trial request URL in the Filament teacher panel.
+     * Get teacher trial request URL in the frontend teacher view.
      */
-    public function getTeacherTrialRequestUrl(string $trialRequestId): string
+    public function getTeacherTrialRequestUrl(string $trialRequestId, ?string $subdomain = null): string
     {
-        return "/teacher-panel/quran-trial-requests/{$trialRequestId}";
+        $subdomain = $subdomain ?? DefaultAcademy::subdomain();
+
+        return route('teacher.trial-sessions.show', [
+            'subdomain' => $subdomain,
+            'trialRequest' => $trialRequestId,
+        ]);
     }
 
     /**

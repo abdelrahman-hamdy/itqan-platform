@@ -1176,6 +1176,7 @@ return [
         'your_rating' => 'تقييمك',
         'your_feedback' => 'ملاحظاتك للطالب',
         'your_notes' => 'ملاحظاتك الخاصة',
+        'schedule_session' => 'جدولة الجلسة',
         'back_to_list' => 'العودة للقائمة',
         'message_student' => 'مراسلة الطالب',
         'view_circle' => 'عرض الحلقة',

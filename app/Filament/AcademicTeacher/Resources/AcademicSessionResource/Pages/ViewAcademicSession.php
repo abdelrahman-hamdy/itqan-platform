@@ -23,7 +23,7 @@ class ViewAcademicSession extends ViewRecord
         return [
             EditAction::make()
                 ->label('تعديل'),
-            MeetingActions::viewMeeting('academic'),
+            MeetingActions::viewMeeting('academic', forTeacher: true),
         ];
     }
 
