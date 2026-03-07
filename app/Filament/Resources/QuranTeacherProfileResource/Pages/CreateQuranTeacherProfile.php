@@ -4,11 +4,11 @@ namespace App\Filament\Resources\QuranTeacherProfileResource\Pages;
 
 use Exception;
 use Log;
+use App\Enums\UserType;
 use App\Filament\Resources\QuranTeacherProfileResource;
 use App\Models\User;
 use Filament\Notifications\Notification;
 use App\Filament\Pages\BaseCreateRecord as CreateRecord;
-use Illuminate\Support\Facades\Hash;
 
 class CreateQuranTeacherProfile extends CreateRecord
 {
@@ -36,18 +36,20 @@ class CreateQuranTeacherProfile extends CreateRecord
         // Check if password was provided in the form
         if (! empty($formData['password'])) {
             try {
-                // Create User account
-                $user = User::create([
+                // Create User account — user_type and active_status are guarded,
+                // so set them via direct assignment to bypass mass-assignment protection
+                $user = new User([
                     'academy_id' => $teacherProfile->academy_id,
                     'first_name' => $teacherProfile->first_name,
                     'last_name' => $teacherProfile->last_name,
                     'email' => $teacherProfile->email,
                     'phone' => $teacherProfile->phone,
-                    'password' => Hash::make($formData['password']),
-                    'user_type' => User::ROLE_QURAN_TEACHER,
-                    'active_status' => true,
+                    'password' => $formData['password'], // 'hashed' cast auto-hashes
                     'avatar' => $teacherProfile->avatar,
                 ]);
+                $user->user_type = UserType::QURAN_TEACHER->value;
+                $user->active_status = true;
+                $user->save();
 
                 // Link the User account to the teacher profile
                 $teacherProfile->update([

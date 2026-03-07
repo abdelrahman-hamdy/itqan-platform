@@ -3,8 +3,10 @@
 namespace App\Filament\Shared\Resources\Profiles;
 
 use App\Enums\Gender;
+use App\Enums\UserType;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Models\SupervisorProfile;
+use App\Models\User;
 use App\Rules\PasswordRules;
 use App\Services\AcademyContextService;
 use Filament\Facades\Filament;
@@ -68,6 +70,7 @@ abstract class BaseSupervisorProfileResource extends Resource
         return $schema->components([
             static::getBasicInfoSection(),
             static::getAccountInfoSection(),
+            static::getResponsibilitiesSection(),
         ]);
     }
 
@@ -228,6 +231,42 @@ abstract class BaseSupervisorProfileResource extends Resource
                 ->sortable()
                 ->toggleable(isToggledHiddenByDefault: true),
         ];
+    }
+
+    protected static function getResponsibilitiesSection(): Section
+    {
+        return Section::make('المسؤوليات')
+            ->schema([
+                Toggle::make('can_manage_teachers')
+                    ->label('صلاحية إدارة المعلمين')
+                    ->helperText('السماح للمشرف بإدارة المعلمين المعينين له'),
+                Grid::make(2)->schema([
+                    Select::make('quran_teacher_ids')
+                        ->label('معلمو القرآن')
+                        ->multiple()
+                        ->searchable()
+                        ->preload()
+                        ->options(fn ($record) => User::where('user_type', UserType::QURAN_TEACHER->value)
+                            ->where('active_status', true)
+                            ->when($record?->academy_id, fn ($q, $id) => $q->where('academy_id', $id))
+                            ->get()
+                            ->mapWithKeys(fn ($u) => [$u->id => $u->name.' ('.$u->email.')']))
+                        ->dehydrated(false),
+                    Select::make('academic_teacher_ids')
+                        ->label('المعلمون الأكاديميون')
+                        ->multiple()
+                        ->searchable()
+                        ->preload()
+                        ->options(fn ($record) => User::where('user_type', UserType::ACADEMIC_TEACHER->value)
+                            ->where('active_status', true)
+                            ->when($record?->academy_id, fn ($q, $id) => $q->where('academy_id', $id))
+                            ->get()
+                            ->mapWithKeys(fn ($u) => [$u->id => $u->name.' ('.$u->email.')']))
+                        ->dehydrated(false),
+                ]),
+            ])
+            ->visible(fn (string $operation): bool => $operation === 'edit')
+            ->collapsible();
     }
 
     public static function getEloquentQuery(): Builder

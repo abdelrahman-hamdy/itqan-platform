@@ -7,9 +7,7 @@ use App\Models\SupervisorProfile;
 use App\Filament\Resources\SupervisorProfileResource;
 use App\Models\SupervisorResponsibility;
 use App\Models\User;
-use Filament\Actions;
 use App\Filament\Pages\BaseEditRecord as EditRecord;
-use Illuminate\Support\Facades\Hash;
 
 /**
  * @property SupervisorProfile $record
@@ -111,6 +109,7 @@ class EditSupervisorProfile extends EditRecord
 
     /**
      * Update user's active_status and password after save.
+     * Uses direct assignment because active_status is guarded against mass-assignment.
      */
     protected function afterSave(): void
     {
@@ -118,18 +117,21 @@ class EditSupervisorProfile extends EditRecord
             return;
         }
 
-        $updates = [];
+        $user = $this->record->user;
+        $dirty = false;
 
         if (isset($this->data['user_active_status'])) {
-            $updates['active_status'] = $this->data['user_active_status'];
+            $user->active_status = $this->data['user_active_status'];
+            $dirty = true;
         }
 
         if (filled($this->data['password'] ?? null)) {
-            $updates['password'] = Hash::make($this->data['password']);
+            $user->password = $this->data['password']; // 'hashed' cast auto-hashes
+            $dirty = true;
         }
 
-        if ($updates) {
-            $this->record->user->update($updates);
+        if ($dirty) {
+            $user->save();
         }
     }
 }

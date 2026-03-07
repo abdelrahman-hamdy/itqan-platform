@@ -4,12 +4,12 @@ namespace App\Filament\Resources\SupervisorProfileResource\Pages;
 
 use Exception;
 use Log;
+use App\Enums\UserType;
 use App\Filament\Resources\SupervisorProfileResource;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Notifications\Notification;
 use App\Filament\Pages\BaseCreateRecord as CreateRecord;
-use Illuminate\Support\Facades\Hash;
 
 class CreateSupervisorProfile extends CreateRecord
 {
@@ -49,18 +49,20 @@ class CreateSupervisorProfile extends CreateRecord
         // Check if password was provided in the form
         if (! empty($formData['password'])) {
             try {
-                // Create User account (name is auto-generated from first_name + last_name)
-                $user = User::create([
+                // Create User account — user_type and active_status are guarded,
+                // so set them via direct assignment to bypass mass-assignment protection
+                $user = new User([
                     'academy_id' => $supervisorProfile->academy_id,
                     'first_name' => $supervisorProfile->first_name,
                     'last_name' => $supervisorProfile->last_name,
                     'email' => $supervisorProfile->email,
                     'phone' => $supervisorProfile->phone,
-                    'password' => Hash::make($formData['password']),
-                    'user_type' => User::ROLE_SUPERVISOR,
-                    'active_status' => $formData['user_active_status'] ?? true,
+                    'password' => $formData['password'], // 'hashed' cast auto-hashes
                     'avatar' => $supervisorProfile->avatar,
                 ]);
+                $user->user_type = UserType::SUPERVISOR->value;
+                $user->active_status = $formData['user_active_status'] ?? true;
+                $user->save();
 
                 // Link the User account to the supervisor profile
                 $supervisorProfile->update([

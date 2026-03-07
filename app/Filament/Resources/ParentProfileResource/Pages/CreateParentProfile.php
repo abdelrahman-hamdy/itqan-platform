@@ -11,7 +11,6 @@ use App\Notifications\ParentInvitationNotification;
 use App\Services\AcademyContextService;
 use Filament\Notifications\Notification;
 use App\Filament\Pages\BaseCreateRecord as CreateRecord;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
@@ -49,18 +48,18 @@ class CreateParentProfile extends CreateRecord
         $parentProfile = $this->record;
 
         try {
-            // Create User account
-            $user = User::create([
+            $user = new User([
                 'academy_id' => $parentProfile->academy_id,
                 'first_name' => $parentProfile->first_name,
                 'last_name' => $parentProfile->last_name,
                 'email' => $parentProfile->email,
                 'phone' => $parentProfile->phone,
-                'password' => Hash::make(Str::random(32)), // Generate random password (will be reset by user)
-                'user_type' => UserType::PARENT->value,
-                'email_verified_at' => now(), // Auto-verify email
+                'password' => Str::random(32),
                 'avatar' => $parentProfile->avatar,
             ]);
+            $user->user_type = UserType::PARENT->value;
+            $user->email_verified_at = now();
+            $user->save();
 
             // Link the User account to the parent profile
             $parentProfile->update([

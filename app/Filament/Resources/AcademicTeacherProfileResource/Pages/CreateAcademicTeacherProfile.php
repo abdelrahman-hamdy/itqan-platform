@@ -4,12 +4,12 @@ namespace App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 
 use Exception;
 use Log;
+use App\Enums\UserType;
 use App\Filament\Resources\AcademicTeacherProfileResource;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Notifications\Notification;
 use App\Filament\Pages\BaseCreateRecord as CreateRecord;
-use Illuminate\Support\Facades\Hash;
 
 class CreateAcademicTeacherProfile extends CreateRecord
 {
@@ -49,18 +49,18 @@ class CreateAcademicTeacherProfile extends CreateRecord
         // Check if password was provided in the form
         if (! empty($formData['password'])) {
             try {
-                // Create User account
-                $user = User::create([
+                $user = new User([
                     'academy_id' => $teacherProfile->academy_id,
                     'first_name' => $teacherProfile->first_name,
                     'last_name' => $teacherProfile->last_name,
                     'email' => $teacherProfile->email,
                     'phone' => $teacherProfile->phone,
-                    'password' => Hash::make($formData['password']),
-                    'user_type' => User::ROLE_ACADEMIC_TEACHER,
-                    'active_status' => true,
+                    'password' => $formData['password'],
                     'avatar' => $teacherProfile->avatar,
                 ]);
+                $user->user_type = UserType::ACADEMIC_TEACHER->value;
+                $user->active_status = true;
+                $user->save();
 
                 // Link the User account to the teacher profile
                 $teacherProfile->update([

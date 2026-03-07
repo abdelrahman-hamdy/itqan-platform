@@ -4,6 +4,7 @@ namespace App\Filament\Academy\Resources\SupervisorProfileResource\Pages;
 
 use App\Filament\Academy\Resources\SupervisorProfileResource;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use App\Filament\Widgets\SupervisorResponsibilitiesWidget;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -32,6 +33,20 @@ class ViewSupervisorProfile extends ViewRecord
                 ->visible(fn () => $this->record->user !== null),
             DeleteAction::make()
                 ->label('حذف'),
+        ];
+    }
+
+    protected function getFooterWidgets(): array
+    {
+        return [
+            SupervisorResponsibilitiesWidget::class,
+        ];
+    }
+
+    public function getWidgetsData(): array
+    {
+        return [
+            'record' => $this->record,
         ];
     }
 }

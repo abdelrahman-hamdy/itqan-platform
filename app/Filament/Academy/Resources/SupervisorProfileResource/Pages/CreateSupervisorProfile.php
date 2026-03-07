@@ -2,12 +2,12 @@
 
 namespace App\Filament\Academy\Resources\SupervisorProfileResource\Pages;
 
+use App\Enums\UserType;
 use App\Filament\Academy\Resources\SupervisorProfileResource;
 use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use App\Models\User;
 use Exception;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class CreateSupervisorProfile extends CreateRecord
@@ -33,17 +33,18 @@ class CreateSupervisorProfile extends CreateRecord
 
         if (! empty($formData['password'])) {
             try {
-                $user = User::create([
+                $user = new User([
                     'academy_id' => $supervisorProfile->academy_id,
                     'first_name' => $supervisorProfile->first_name,
                     'last_name' => $supervisorProfile->last_name,
                     'email' => $supervisorProfile->email,
                     'phone' => $supervisorProfile->phone,
-                    'password' => Hash::make($formData['password']),
-                    'user_type' => User::ROLE_SUPERVISOR,
-                    'active_status' => $formData['user_active_status'] ?? true,
+                    'password' => $formData['password'],
                     'avatar' => $supervisorProfile->avatar,
                 ]);
+                $user->user_type = UserType::SUPERVISOR->value;
+                $user->active_status = $formData['user_active_status'] ?? true;
+                $user->save();
 
                 $supervisorProfile->update([
                     'user_id' => $user->id,
