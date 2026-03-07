@@ -5,13 +5,13 @@
             <h3 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.homework.title') }}</h3>
             @if($homework)
             <button onclick="hwCall(this, 'openEditModal')"
-                    class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors shadow-sm">
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors shadow-sm cursor-pointer">
                 <i class="ri-edit-line ms-1"></i>
                 {{ __('components.sessions.homework.edit_homework') }}
             </button>
             @else
             <button onclick="hwCall(this, 'openAddModal')"
-                    class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors shadow-sm">
+                    class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors shadow-sm cursor-pointer">
                 <i class="ri-add-line ms-1"></i>
                 {{ __('components.sessions.homework.add_homework') }}
             </button>

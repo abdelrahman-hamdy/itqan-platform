@@ -83,7 +83,7 @@
 
                         <button
                             type="submit"
-                            class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors">
+                            class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors">
                             <i class="ri-save-line ms-2"></i>
                             {{ __('components.sessions.session_detail.save_lesson_content') }}
                         </button>
