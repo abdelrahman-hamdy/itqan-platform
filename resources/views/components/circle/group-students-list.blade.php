@@ -35,7 +35,7 @@
                             :gender="$student->gender ?? $student->studentProfile?->gender ?? 'male'" />
                         <div class="flex-1">
                             <h4 class="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">{{ $student->name }}</h4>
-                            <p class="text-sm text-gray-500">{{ $student->email ?? __('components.circle.group_students_list.student_default') }}</p>
+                            <p class="text-sm text-gray-500">{{ __('components.circle.group_students_list.student_default') }}</p>
                             @if($student->parent)
                                 <p class="text-xs text-gray-400">{{ __('components.circle.group_students_list.parent') }} {{ $student->parent->name }}</p>
                             @endif

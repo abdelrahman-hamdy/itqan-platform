@@ -173,14 +173,11 @@
                         {{ $student->name ?? __('components.circle.header.student') }}
                     </h3>
                     <p class="text-sm text-gray-500">{{ $subscription->package->name ?? __('components.circle.header.custom_subscription') }}</p>
-                    <div class="flex items-center gap-3 mt-2">
-                        @if($student->email)
-                            <span class="text-xs text-gray-400">{{ $student->email }}</span>
-                        @endif
-                        @if(isset($subscription) && $subscription->ends_at)
+                    @if(isset($subscription) && $subscription->ends_at)
+                        <div class="flex items-center gap-3 mt-2">
                             <span class="text-xs text-gray-400">{{ __('components.circle.header.expires') }} {{ $subscription->ends_at->format('Y-m-d') }}</span>
-                        @endif
-                    </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
