@@ -371,7 +371,7 @@ class UnifiedTeacherCalendar extends Page
                         return '';
                     }
 
-                    $html = '<div class="flex flex-wrap gap-x-6 gap-y-2 p-3 rounded-lg text-sm bg-primary-50 dark:bg-primary-950 border border-primary-200 dark:border-primary-800">';
+                    $html = '<div class="flex flex-wrap gap-x-6 gap-y-2 p-3 rounded-lg text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700">';
 
                     if ($startDate) {
                         $parts[] = '<span class="text-gray-500 dark:text-gray-400">'
@@ -420,7 +420,7 @@ class UnifiedTeacherCalendar extends Page
                 ])
                 ->columns([
                     'default' => 2,
-                    'sm' => 3,
+                    'sm' => 4,
                 ])
                 ->helperText(function () use ($validator) {
                     if (! $validator) {
@@ -436,10 +436,10 @@ class UnifiedTeacherCalendar extends Page
                 ->label('تاريخ بداية الجدولة')
                 ->helperText(function () use ($item) {
                     if ($item && isset($item['start_date']) && $item['start_date']) {
-                        return 'تاريخ بداية الدورة: '.$item['start_date'];
+                        return 'ستبدأ الجلسات من هذا التاريخ (بداية الدورة: '.$item['start_date'].')';
                     }
 
-                    return 'تاريخ البداية لجدولة الجلسات الجديدة';
+                    return 'اختر التاريخ الذي تبدأ منه الجلسات الجديدة (اتركه فارغاً للبدء من اليوم)';
                 })
                 ->default(function () use ($item) {
                     // For interactive courses, default to the course's start_date
@@ -478,18 +478,21 @@ class UnifiedTeacherCalendar extends Page
                 ->live(),
 
             Grid::make([
-                'default' => 2,
-                'sm' => 4,
+                'default' => 3,
             ])->schema([
                 Select::make('schedule_hour')
                     ->label('الساعة')
                     ->required()
-                    ->options(collect(range(0, 23))->mapWithKeys(fn ($h) => [
-                        $h => str_pad($h, 2, '0', STR_PAD_LEFT),
-                    ])->toArray())
+                    ->options(collect(range(0, 23))->mapWithKeys(function ($h) {
+                        $hour12 = $h % 12 ?: 12;
+                        $period = $h < 12 ? 'ص' : 'م';
+
+                        return [$h => str_pad($h, 2, '0', STR_PAD_LEFT)." ({$hour12} {$period})"];
+                    })->toArray())
                     ->default(10)
                     ->native(false)
-                    ->searchable(),
+                    ->searchable()
+                    ->live(),
 
                 Select::make('schedule_minute')
                     ->label('الدقيقة')
@@ -501,7 +504,8 @@ class UnifiedTeacherCalendar extends Page
                         45 => '45',
                     ])
                     ->default(0)
-                    ->native(false),
+                    ->native(false)
+                    ->live(),
 
                 TextInput::make('session_count')
                     ->label('عدد الجلسات')
@@ -552,22 +556,87 @@ class UnifiedTeacherCalendar extends Page
                             return $item['sessions_remaining'];
                         }
 
-                        // When all sessions are scheduled, default to 1 (minimum)
                         return 1;
                     })
                     ->placeholder('العدد')
                     ->disabled(fn () => $this->selectedItemType === 'trial')
                     ->live(),
-
-                Placeholder::make('current_time_hint')
-                    ->hiddenLabel()
-                    ->content(function () {
-                        $timezone = AcademyContextService::getTimezone();
-                        $currentTime = Carbon::now($timezone)->format('H:i');
-
-                        return new HtmlString('<div class="text-xs text-gray-500 dark:text-gray-400 pt-6">الوقت الحالي: '.$currentTime.'</div>');
-                    }),
             ]),
+
+            Placeholder::make('schedule_summary')
+                ->hiddenLabel()
+                ->content(function (Forms\Get $get) {
+                    $days = $get('schedule_days') ?? [];
+                    $hour = $get('schedule_hour');
+                    $minute = $get('schedule_minute');
+                    $count = $get('session_count');
+                    $startDate = $get('schedule_start_date');
+
+                    $timezone = AcademyContextService::getTimezone();
+                    $now = Carbon::now($timezone);
+                    $currentTime = $now->format('h:i A');
+
+                    // Build time string
+                    $timeStr = '';
+                    if ($hour !== null && $minute !== null) {
+                        $h = (int) $hour;
+                        $m = (int) $minute;
+                        $hour12 = $h % 12 ?: 12;
+                        $period = $h < 12 ? 'ص' : 'م';
+                        $timeStr = $hour12.':'.str_pad($m, 2, '0', STR_PAD_LEFT).' '.$period;
+                    }
+
+                    // Build days string
+                    $dayLabels = [
+                        'saturday' => 'السبت', 'sunday' => 'الأحد', 'monday' => 'الاثنين',
+                        'tuesday' => 'الثلاثاء', 'wednesday' => 'الأربعاء',
+                        'thursday' => 'الخميس', 'friday' => 'الجمعة',
+                    ];
+                    $selectedDayNames = array_map(fn ($d) => $dayLabels[$d] ?? $d, $days);
+                    $daysStr = implode(' و', $selectedDayNames);
+
+                    // Build start date string
+                    $startStr = 'اليوم';
+                    if ($startDate) {
+                        try {
+                            $startStr = Carbon::parse($startDate)->translatedFormat('j F Y');
+                        } catch (\Exception $e) {
+                            $startStr = $startDate;
+                        }
+                    }
+
+                    // Build summary
+                    $parts = [];
+                    if ($count) {
+                        $parts[] = '<span class="font-semibold">'.e($count).'</span> جلسة';
+                    }
+                    if ($daysStr) {
+                        $parts[] = 'أيام <span class="font-semibold">'.e($daysStr).'</span>';
+                    }
+                    $parts[] = 'بدءاً من <span class="font-semibold">'.e($startStr).'</span>';
+                    if ($timeStr) {
+                        $parts[] = 'الساعة <span class="font-semibold">'.e($timeStr).'</span>';
+                    }
+
+                    $summary = implode(' ', $parts);
+
+                    // Timezone info
+                    $tzLabel = match ($timezone) {
+                        'Asia/Riyadh' => 'توقيت الرياض',
+                        'Africa/Cairo' => 'توقيت القاهرة',
+                        default => $timezone,
+                    };
+                    $gmtOffset = $now->format('P');
+
+                    $html = '<div class="p-3 rounded-lg text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700">';
+                    $html .= '<div class="text-gray-700 dark:text-gray-300">'.$summary.'</div>';
+                    $html .= '<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">';
+                    $html .= e($tzLabel).' (GMT'.e($gmtOffset).') — الوقت الحالي: '.e($currentTime);
+                    $html .= '</div>';
+                    $html .= '</div>';
+
+                    return new HtmlString($html);
+                }),
         ]);
     }
 
