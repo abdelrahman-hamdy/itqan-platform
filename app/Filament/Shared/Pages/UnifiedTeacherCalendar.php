@@ -10,7 +10,7 @@ use Exception;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\TimePicker;
+
 use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
 use App\Enums\UserType;
@@ -304,7 +304,12 @@ class UnifiedTeacherCalendar extends Page
             ->schema([$this->buildScheduleForm()])
             ->action(function (array $data) {
                 $this->scheduleDays = $data['schedule_days'] ?? [];
-                $this->scheduleTime = $data['schedule_time'] ?? null;
+
+                // Combine hour and minute selects into HH:MM format
+                $hour = str_pad($data['schedule_hour'] ?? '10', 2, '0', STR_PAD_LEFT);
+                $minute = str_pad($data['schedule_minute'] ?? '00', 2, '0', STR_PAD_LEFT);
+                $this->scheduleTime = "{$hour}:{$minute}";
+
                 $this->scheduleStartDate = $data['schedule_start_date'] ?? null;
 
                 // Trial sessions always have exactly 1 session
@@ -473,81 +478,95 @@ class UnifiedTeacherCalendar extends Page
                 ->live(),
 
             Grid::make([
-                'default' => 1,
-                'sm' => 2,
+                'default' => 2,
+                'sm' => 4,
             ])->schema([
-                TimePicker::make('schedule_time')
-                    ->label('وقت الجلسة')
+                Select::make('schedule_hour')
+                    ->label('الساعة')
                     ->required()
-                    ->seconds(false)
-                    ->minutesStep(15)
+                    ->options(collect(range(0, 23))->mapWithKeys(fn ($h) => [
+                        $h => str_pad($h, 2, '0', STR_PAD_LEFT),
+                    ])->toArray())
+                    ->default(10)
                     ->native(false)
-                    ->helperText(function () {
+                    ->searchable(),
+
+                Select::make('schedule_minute')
+                    ->label('الدقيقة')
+                    ->required()
+                    ->options([
+                        0 => '00',
+                        15 => '15',
+                        30 => '30',
+                        45 => '45',
+                    ])
+                    ->default(0)
+                    ->native(false),
+
+                TextInput::make('session_count')
+                    ->label('عدد الجلسات')
+                    ->helperText(function () use ($item) {
+                        if ($this->selectedItemType === 'trial') {
+                            return 'جلسة تجريبية واحدة فقط';
+                        }
+
+                        if (! $item) {
+                            return '';
+                        }
+
+                        $remaining = $item['sessions_remaining'] ?? 0;
+                        if ($remaining > 0) {
+                            return "المتبقية: {$remaining}";
+                        }
+
+                        return '';
+                    })
+                    ->numeric()
+                    ->required()
+                    ->minValue(1)
+                    ->maxValue(function () use ($item) {
+                        if ($this->selectedItemType === 'trial') {
+                            return 1;
+                        }
+
+                        if (! $item) {
+                            return 100;
+                        }
+
+                        if (isset($item['sessions_remaining']) && $item['sessions_remaining'] > 0) {
+                            return max(1, $item['sessions_remaining']);
+                        }
+
+                        return 100;
+                    })
+                    ->default(function () use ($item) {
+                        if ($this->selectedItemType === 'trial') {
+                            return 1;
+                        }
+
+                        if (! $item) {
+                            return 4;
+                        }
+
+                        if (isset($item['sessions_remaining']) && $item['sessions_remaining'] > 0) {
+                            return $item['sessions_remaining'];
+                        }
+
+                        // When all sessions are scheduled, default to 1 (minimum)
+                        return 1;
+                    })
+                    ->placeholder('العدد')
+                    ->disabled(fn () => $this->selectedItemType === 'trial')
+                    ->live(),
+
+                Placeholder::make('current_time_hint')
+                    ->hiddenLabel()
+                    ->content(function () {
                         $timezone = AcademyContextService::getTimezone();
                         $currentTime = Carbon::now($timezone)->format('H:i');
 
-                        return "التوقيت المحلي - الوقت الحالي: {$currentTime}";
+                        return new HtmlString('<div class="text-xs text-gray-500 dark:text-gray-400 pt-6">الوقت الحالي: '.$currentTime.'</div>');
                     }),
-
-                TextInput::make('session_count')
-                ->label('عدد الجلسات المطلوب إنشاؤها')
-                ->helperText(function () use ($item) {
-                    // Trial sessions always have exactly 1 session
-                    if ($this->selectedItemType === 'trial') {
-                        return 'الجلسات التجريبية تتكون دائماً من جلسة واحدة فقط';
-                    }
-
-                    if (! $item) {
-                        return 'حدد عدد الجلسات التي تريد جدولتها';
-                    }
-
-                    $remaining = $item['sessions_remaining'] ?? 0;
-                    if ($remaining > 0) {
-                        return "حدد عدد الجلسات التي تريد جدولتها (المتبقية: {$remaining} جلسة)";
-                    }
-
-                    return 'حدد عدد الجلسات التي تريد جدولتها (الحد الأقصى: 100 جلسة)';
-                })
-                ->numeric()
-                ->required()
-                ->minValue(1)
-                ->maxValue(function () use ($item) {
-                    // Trial sessions always have exactly 1 session
-                    if ($this->selectedItemType === 'trial') {
-                        return 1;
-                    }
-
-                    if (! $item) {
-                        return 100;
-                    }
-
-                    // Check if item has sessions_remaining
-                    if (isset($item['sessions_remaining']) && $item['sessions_remaining'] > 0) {
-                        return max(1, $item['sessions_remaining']);
-                    }
-
-                    return 100;
-                })
-                ->default(function () use ($item) {
-                    // Trial sessions always have exactly 1 session
-                    if ($this->selectedItemType === 'trial') {
-                        return 1;
-                    }
-
-                    if (! $item) {
-                        return 4;
-                    }
-
-                    // FIXED: Always default to maximum available sessions (not capped at 8)
-                    if (isset($item['sessions_remaining']) && $item['sessions_remaining'] > 0) {
-                        return $item['sessions_remaining'];
-                    }
-
-                    return $item['monthly_sessions'] ?? 4;
-                })
-                ->placeholder('أدخل العدد')
-                ->disabled(fn () => $this->selectedItemType === 'trial')
-                ->live(),
             ]),
         ]);
     }

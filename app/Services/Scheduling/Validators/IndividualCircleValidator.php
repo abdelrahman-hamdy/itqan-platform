@@ -154,12 +154,16 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
     {
         $limits = $this->getSubscriptionLimits();
 
+        $reason = $limits['remaining_sessions'] > 0
+            ? __('scheduling.recommendations.circle_reason', ['recommended' => $limits['recommended_per_week'], 'remaining' => $limits['remaining_sessions'], 'weeks' => $limits['weeks_remaining']])
+            : __('scheduling.status.fully_scheduled');
+
         return [
             'recommended_days' => (int) round($limits['recommended_per_week']),
             'max_days' => $limits['max_per_week'],
             'remaining_sessions' => $limits['remaining_sessions'],
             'weeks_remaining' => $limits['weeks_remaining'],
-            'reason' => __('scheduling.recommendations.circle_reason', ['recommended' => $limits['recommended_per_week'], 'remaining' => $limits['remaining_sessions'], 'weeks' => $limits['weeks_remaining']]),
+            'reason' => $reason,
         ];
     }
 
@@ -290,8 +294,10 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             // For subscriptions without billing cycle, assume a reasonable scheduling window
             $weeksRemaining = 52; // 1 year
         } else {
-            $daysRemaining = max(1, $startDate->diffInDays($endDate, false));
-            $weeksRemaining = max(1, ceil($daysRemaining / 7));
+            // Use diffInWeeks for accurate week count, then add 1 for partial weeks
+            $fullWeeks = $startDate->diffInWeeks($endDate);
+            $hasPartialWeek = $startDate->copy()->addWeeks($fullWeeks)->lt($endDate);
+            $weeksRemaining = max(1, $fullWeeks + ($hasPartialWeek ? 1 : 0));
         }
 
         // Calculate recommended pacing
