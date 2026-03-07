@@ -539,7 +539,17 @@ abstract class BaseQuranIndividualCircleResource extends Resource
     // ========================================
 
     /**
-     * Get scheduling status label using cached model fields (avoids N+1).
+     * Get the actual scheduled count from the eager-loaded withCount.
+     * Falls back to cached field if withCount not available.
+     */
+    protected static function getScheduledCount($record): int
+    {
+        // Use withCount result (sessions_not_cancelled_count) if available
+        return $record->sessions_not_cancelled_count ?? $record->sessions_scheduled ?? 0;
+    }
+
+    /**
+     * Get scheduling status label using live session counts.
      */
     protected static function getSchedulingStatusLabel($record): string
     {
@@ -554,7 +564,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
         }
 
         $total = $sub->total_sessions ?? $record->total_sessions ?? 0;
-        $scheduled = $record->sessions_scheduled ?? 0;
+        $scheduled = static::getScheduledCount($record);
         $remaining = $total - $scheduled;
 
         if ($remaining <= 0) {
@@ -584,7 +594,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
         }
 
         $total = $sub->total_sessions ?? $record->total_sessions ?? 0;
-        $scheduled = $record->sessions_scheduled ?? 0;
+        $scheduled = static::getScheduledCount($record);
         $remaining = $total - $scheduled;
 
         if ($remaining <= 0) {
@@ -611,7 +621,10 @@ abstract class BaseQuranIndividualCircleResource extends Resource
                 'academy',
                 'subscription.package',
                 'linkedSubscriptions.package',
-            ]);
+            ])
+            ->withCount(['sessions as sessions_not_cancelled_count' => function ($q) {
+                $q->whereNotIn('status', ['cancelled']);
+            }]);
 
         return static::scopeEloquentQuery($query);
     }
