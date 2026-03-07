@@ -64,6 +64,7 @@ class ContentSecurityPolicy
     private const TRUSTED_CONNECT_SOURCES = [
         'https://soketi.itqan-academy.com',
         'https://api.livekit.io',
+        'https://cdn.jsdelivr.net',
     ];
 
     /**
