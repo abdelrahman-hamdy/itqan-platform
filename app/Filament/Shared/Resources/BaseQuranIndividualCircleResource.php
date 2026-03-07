@@ -197,7 +197,8 @@ abstract class BaseQuranIndividualCircleResource extends Resource
                             ->dehydrated(false)
                             ->afterStateHydrated(function (TextInput $component, $record) {
                                 $sub = $record?->activeSubscription ?? $record?->subscription;
-                                $component->state($sub?->package_name_ar ?? $sub?->package_name_en ?? '-');
+                                $name = $sub?->package_name_ar ?: $sub?->package_name_en ?: $sub?->package?->name;
+                                $component->state($name ?: '-');
                             }),
 
                         TextInput::make('subscription_status_display')
@@ -608,8 +609,8 @@ abstract class BaseQuranIndividualCircleResource extends Resource
                 'quranTeacher',
                 'student',
                 'academy',
-                'subscription',
-                'linkedSubscriptions',
+                'subscription.package',
+                'linkedSubscriptions.package',
             ]);
 
         return static::scopeEloquentQuery($query);
