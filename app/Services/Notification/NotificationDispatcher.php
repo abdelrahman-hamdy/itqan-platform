@@ -5,6 +5,7 @@ namespace App\Services\Notification;
 use Exception;
 use App\Enums\NotificationType;
 use App\Events\NotificationSent;
+use App\Jobs\SendPushNotificationJob;
 use App\Models\Academy;
 use App\Models\User;
 use App\Notifications\GenericEmailNotification;
@@ -190,6 +191,9 @@ class NotificationDispatcher
         // Send email if academy settings allow
         $this->sendEmailIfEnabled($user, $type, $title, $message, $actionUrl);
 
+        // Send push notification via FCM (async)
+        $this->sendPushNotification($user, $type, $title, $message, $actionUrl, $metadata);
+
         return $notificationId;
     }
 
@@ -260,11 +264,46 @@ class NotificationDispatcher
     }
 
     /**
-     * Check if a notification type is enabled for a user.
-     *
-     * @param  User  $user  The user
-     * @param  NotificationType  $type  The notification type
+     * Dispatch push notification via FCM (queued).
      */
+    private function sendPushNotification(
+        User $user,
+        NotificationType $type,
+        string $title,
+        string $message,
+        ?string $actionUrl,
+        array $metadata
+    ): void {
+        try {
+            if (! config('services.fcm.enabled')) {
+                return;
+            }
+
+            $category = $type->getCategory();
+
+            $fcmData = [
+                'notification_type' => $type->value,
+                'category' => $category->value,
+                'action_url' => $actionUrl ?? '',
+                'metadata' => json_encode($metadata),
+            ];
+
+            SendPushNotificationJob::dispatch(
+                $user->id,
+                $title,
+                $message,
+                $fcmData
+            );
+        } catch (Exception $e) {
+            Log::error('Failed to dispatch push notification job', [
+                'user_id' => $user->id,
+                'type' => $type->value,
+                'error' => $e->getMessage(),
+            ]);
+            // Push failure should never break notification flow
+        }
+    }
+
     /**
      * Check if a notification type is enabled for a user.
      * Always returns true since user preferences have been removed.

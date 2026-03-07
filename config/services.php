@@ -63,4 +63,8 @@ return [
         'base_url' => env('SENTRY_BASE_URL', 'https://sentry.io'),
     ],
 
+    'fcm' => [
+        'enabled' => env('FCM_ENABLED', false),
+    ],
+
 ];

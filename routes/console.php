@@ -281,3 +281,13 @@ Schedule::command('notifications:purge --days=90')
     ->withoutOverlapping()
     ->runInBackground()
     ->description('Purge read notifications older than 90 days');
+
+// Cleanup stale device tokens (weekly, Sunday 02:30 AM)
+Schedule::command('device-tokens:cleanup --days=90')
+    ->name('cleanup-stale-device-tokens')
+    ->weekly()
+    ->sundays()
+    ->at('02:30')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Remove device tokens not used in 90+ days');
