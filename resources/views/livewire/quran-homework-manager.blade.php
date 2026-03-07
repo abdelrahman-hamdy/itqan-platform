@@ -292,6 +292,20 @@
     @endif
 
     <script>
+    // Auto-run diagnostic on load
+    (function() {
+        var lwScripts = document.querySelectorAll('script[src*="livewire"]');
+        console.log('=== LIVEWIRE LOAD CHECK ===');
+        console.log('Livewire script tags found:', lwScripts.length);
+        lwScripts.forEach(function(s, i) {
+            console.log('  Script ' + i + ':', s.src, 'data-navigate-once:', s.getAttribute('data-navigate-once'));
+        });
+        console.log('window.Livewire:', typeof window.Livewire, window.Livewire);
+        console.log('window.Alpine:', typeof window.Alpine, !!window.Alpine);
+        if (window.Alpine) console.log('Alpine._started:', window.Alpine._started);
+        console.log('=== END LOAD CHECK ===');
+    })();
+
     function hwDebug(el) {
         var root = el.closest('[wire\\:id]');
         console.log('=== HW DEBUG ===');
