@@ -102,12 +102,10 @@ class PaymentGatewayModal extends Component
     private function getGatewayIcon(string $gateway): string
     {
         return match ($gateway) {
-            'paymob' => 'ri-visa-line',
-            'easykash' => 'ri-secure-payment-line',
-            'stc_pay' => 'ri-smartphone-line',
-            'tap' => 'ri-bank-card-line',
-            'moyasar' => 'ri-bank-card-2-line',
-            default => 'ri-money-dollar-circle-line',
+            'paymob' => asset('app-design-assets/paymob-logo.png'),
+            'easykash' => asset('app-design-assets/easykash-logo.png'),
+            'tap' => asset('app-design-assets/tap-logo.png'),
+            default => '',
         };
     }
 

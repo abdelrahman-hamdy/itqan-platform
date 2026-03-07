@@ -30,25 +30,17 @@
                                 class="w-full p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-4 text-right
                                     {{ $selectedGateway === $key ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-200' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50' }}"
                             >
-                                {{-- Icon --}}
-                                <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center
-                                    {{ $selectedGateway === $key ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500' }}">
-                                    <i class="{{ $gateway['icon'] }} text-2xl"></i>
+                                {{-- Logo --}}
+                                <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden
+                                    {{ $selectedGateway === $key ? 'bg-blue-50' : 'bg-gray-50' }}">
+                                    @if($gateway['icon'])
+                                        <img src="{{ $gateway['icon'] }}" alt="{{ $gateway['display_name'] }}" class="w-10 h-10 object-contain">
+                                    @endif
                                 </div>
 
-                                {{-- Info --}}
+                                {{-- Name --}}
                                 <div class="flex-1 min-w-0">
                                     <p class="font-semibold text-gray-900">{{ $gateway['display_name'] }}</p>
-                                    <p class="text-xs text-gray-500 mt-0.5">
-                                        {{ __('payments.gateway_selection.supported_methods') }}
-                                        @foreach($gateway['methods'] as $method)
-                                            <span class="inline-block bg-gray-100 rounded px-1.5 py-0.5 text-gray-600 ml-1">
-                                                {{ __('payments.method_types.'.$method, [], app()->getLocale()) !== 'payments.method_types.'.$method
-                                                    ? __('payments.method_types.'.$method)
-                                                    : $method }}
-                                            </span>
-                                        @endforeach
-                                    </p>
                                 </div>
 
                                 {{-- Checkmark --}}
