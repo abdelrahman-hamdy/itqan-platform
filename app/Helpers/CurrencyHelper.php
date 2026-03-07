@@ -262,12 +262,16 @@ if (! function_exists('convertCurrency')) {
 
         } catch (Exception $e) {
             // If service fails, log and return original amount (safe fallback)
-            Log::channel('payments')->error('Currency conversion failed', [
-                'from' => $fromCode,
-                'to' => $toCode,
-                'amount' => $amount,
-                'error' => $e->getMessage(),
-            ]);
+            try {
+                Log::channel('payments')->error('Currency conversion failed', [
+                    'from' => $fromCode,
+                    'to' => $toCode,
+                    'amount' => $amount,
+                    'error' => $e->getMessage(),
+                ]);
+            } catch (\Throwable) {
+                // Never let logging crash the payment flow
+            }
 
             return $amount;
         }
