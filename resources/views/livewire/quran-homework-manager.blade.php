@@ -293,22 +293,24 @@
 
     <script>
     function hwDebug(el) {
-        var msgs = [];
         var root = el.closest('[wire\\:id]');
-        msgs.push('1. wire:id element: ' + (root ? 'FOUND' : 'NOT FOUND'));
+        console.log('=== HW DEBUG ===');
+        console.log('1. wire:id element:', root ? 'FOUND' : 'NOT FOUND');
         if (root) {
             var id = root.getAttribute('wire:id');
-            msgs.push('2. wire:id value: ' + id);
-            msgs.push('3. window.Livewire exists: ' + (!!window.Livewire));
-            msgs.push('4. Livewire.find exists: ' + (window.Livewire && typeof window.Livewire.find === 'function'));
+            console.log('2. wire:id value:', id);
+            console.log('3. window.Livewire exists:', !!window.Livewire);
+            console.log('4. Livewire.find exists:', window.Livewire && typeof window.Livewire.find === 'function');
             if (window.Livewire && window.Livewire.find) {
                 var comp = window.Livewire.find(id);
-                msgs.push('5. Livewire.find(id): ' + (comp ? 'FOUND' : 'NULL'));
+                console.log('5. Livewire.find(id):', comp ? 'FOUND' : 'NULL');
+                if (comp) console.log('5b. comp type:', typeof comp, Object.keys(comp));
             }
-            msgs.push('6. root.__livewire: ' + (!!root.__livewire));
-            msgs.push('7. root.closest wire:initial-data: ' + (!!root.getAttribute('wire:initial-data')));
+            console.log('6. root.__livewire:', !!root.__livewire);
+            console.log('7. wire:initial-data:', !!root.getAttribute('wire:initial-data'));
+            console.log('8. All wire: attrs:', Array.from(root.attributes).filter(a => a.name.startsWith('wire:')).map(a => a.name + '=' + a.value.substring(0,50)));
         }
-        alert(msgs.join('\n'));
+        console.log('=== END DEBUG ===');
     }
 
     function hwGetComp(el) {
