@@ -89,7 +89,7 @@
     </div>
   </main>
 
-  <!-- Early Alpine component registration listener - MUST be before @livewireScripts -->
+  <!-- Early Alpine component registration listener - MUST be before livewireScripts -->
   <script>
     // Set up alpine:init listener BEFORE Livewire loads Alpine
     // This ensures we can register components before Alpine processes the DOM

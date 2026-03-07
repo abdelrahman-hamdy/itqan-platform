@@ -4,7 +4,7 @@
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.homework.title') }}</h3>
             @if($homework)
-            <button onclick="hwDebug(this)"
+            <button onclick="hwCall(this, 'openEditModal')"
                     class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors shadow-sm">
                 <i class="ri-edit-line ms-1"></i>
                 {{ __('components.sessions.homework.edit_homework') }}
@@ -292,41 +292,6 @@
     @endif
 
     <script>
-    // Auto-run diagnostic on load
-    (function() {
-        var lwScripts = document.querySelectorAll('script[src*="livewire"]');
-        console.log('=== LIVEWIRE LOAD CHECK ===');
-        console.log('Livewire script tags found:', lwScripts.length);
-        lwScripts.forEach(function(s, i) {
-            console.log('  Script ' + i + ':', s.src, 'data-navigate-once:', s.getAttribute('data-navigate-once'));
-        });
-        console.log('window.Livewire:', typeof window.Livewire, window.Livewire);
-        console.log('window.Alpine:', typeof window.Alpine, !!window.Alpine);
-        if (window.Alpine) console.log('Alpine._started:', window.Alpine._started);
-        console.log('=== END LOAD CHECK ===');
-    })();
-
-    function hwDebug(el) {
-        var root = el.closest('[wire\\:id]');
-        console.log('=== HW DEBUG ===');
-        console.log('1. wire:id element:', root ? 'FOUND' : 'NOT FOUND');
-        if (root) {
-            var id = root.getAttribute('wire:id');
-            console.log('2. wire:id value:', id);
-            console.log('3. window.Livewire exists:', !!window.Livewire);
-            console.log('4. Livewire.find exists:', window.Livewire && typeof window.Livewire.find === 'function');
-            if (window.Livewire && window.Livewire.find) {
-                var comp = window.Livewire.find(id);
-                console.log('5. Livewire.find(id):', comp ? 'FOUND' : 'NULL');
-                if (comp) console.log('5b. comp type:', typeof comp, Object.keys(comp));
-            }
-            console.log('6. root.__livewire:', !!root.__livewire);
-            console.log('7. wire:initial-data:', !!root.getAttribute('wire:initial-data'));
-            console.log('8. All wire: attrs:', Array.from(root.attributes).filter(a => a.name.startsWith('wire:')).map(a => a.name + '=' + a.value.substring(0,50)));
-        }
-        console.log('=== END DEBUG ===');
-    }
-
     function hwGetComp(el) {
         var root = el.closest('[wire\\:id]');
         if (!root) return null;
