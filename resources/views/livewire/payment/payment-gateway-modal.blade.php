@@ -31,10 +31,10 @@
                                     {{ $selectedGateway === $key ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-200' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50' }}"
                             >
                                 {{-- Logo --}}
-                                <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden
+                                <div class="flex-shrink-0 w-20 h-14 rounded-xl flex items-center justify-center overflow-hidden p-1
                                     {{ $selectedGateway === $key ? 'bg-blue-50' : 'bg-gray-50' }}">
                                     @if($gateway['icon'])
-                                        <img src="{{ $gateway['icon'] }}" alt="{{ $gateway['display_name'] }}" class="w-10 h-10 object-contain">
+                                        <img src="{{ $gateway['icon'] }}" alt="{{ $gateway['display_name'] }}" class="max-w-full max-h-full object-contain">
                                     @endif
                                 </div>
 
