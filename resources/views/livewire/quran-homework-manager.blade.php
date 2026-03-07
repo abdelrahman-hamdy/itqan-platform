@@ -1,27 +1,24 @@
-<div>
-    <!-- DEBUG MARKER: If you see this red text, this Livewire component IS rendering -->
-    <p style="color:red;font-weight:bold;font-size:12px;">DEBUG: Livewire QuranHomeworkManager (session={{ $sessionId ?? 'N/A' }})</p>
-
+<div x-data="{
+    showModal: $wire.entangle('showModal'),
+    has_new_memorization: $wire.entangle('has_new_memorization'),
+    has_review: $wire.entangle('has_review'),
+    has_comprehensive_review: $wire.entangle('has_comprehensive_review'),
+    saving: false
+}">
     <!-- Homework Management Section -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.homework.title') }}</h3>
             @if($homework)
-            <button onclick="alert('DEBUG: onclick works! Livewire should fire next.')" wire:click="openEditModal"
-                    wire:loading.attr="disabled"
-                    wire:loading.class="opacity-50 cursor-wait"
+            <button @click="$wire.openEditModal()"
                     class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors shadow-sm">
-                <span wire:loading wire:target="openEditModal"><i class="ri-loader-line animate-spin ms-1"></i></span>
-                <span wire:loading.remove wire:target="openEditModal"><i class="ri-edit-line ms-1"></i></span>
+                <i class="ri-edit-line ms-1"></i>
                 {{ __('components.sessions.homework.edit_homework') }}
             </button>
             @else
-            <button wire:click="openAddModal"
-                    wire:loading.attr="disabled"
-                    wire:loading.class="opacity-50 cursor-wait"
+            <button @click="$wire.openAddModal()"
                     class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors shadow-sm">
-                <span wire:loading wire:target="openAddModal"><i class="ri-loader-line animate-spin ms-1"></i></span>
-                <span wire:loading.remove wire:target="openAddModal"><i class="ri-add-line ms-1"></i></span>
+                <i class="ri-add-line ms-1"></i>
                 {{ __('components.sessions.homework.add_homework') }}
             </button>
             @endif
@@ -146,159 +143,152 @@
     </div>
 
     <!-- Homework Modal -->
-    @if($showModal)
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4"
-         x-data
-         x-on:keydown.escape.window="$wire.closeModal()">
-        {{-- Backdrop with opacity --}}
-        <div class="fixed inset-0 bg-black/60 transition-opacity" wire:click="closeModal"></div>
+    <template x-teleport="body">
+        <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {{-- Backdrop with opacity --}}
+            <div class="fixed inset-0 bg-black/60 transition-opacity" @click="$wire.closeModal()"></div>
 
-        {{-- Modal content --}}
-        <div class="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto z-10">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-bold text-gray-900">
-                        {{ $homework ? __('components.sessions.homework.modal_title_edit') : __('components.sessions.homework.modal_title_add') }}
-                    </h3>
-                    <button wire:click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
-                        <i class="ri-close-line text-2xl"></i>
-                    </button>
+            {{-- Modal content --}}
+            <div class="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto z-10"
+                 x-show="showModal" x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-gray-900">
+                            {{ $homework ? __('components.sessions.homework.modal_title_edit') : __('components.sessions.homework.modal_title_add') }}
+                        </h3>
+                        <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <i class="ri-close-line text-2xl"></i>
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="p-6">
-                <form wire:submit="save" class="space-y-6">
-                    <!-- Homework Type Selection -->
-                    <div class="space-y-4">
-                        <h4 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.homework.homework_type') }}</h4>
+                <div class="p-6">
+                    <div class="space-y-6">
+                        <!-- Homework Type Selection -->
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.homework.homework_type') }}</h4>
 
-                        <!-- New Memorization -->
-                        <div class="border border-gray-200 rounded-lg p-4">
-                            <div class="flex items-center mb-3">
-                                <input type="checkbox" id="has_new_memorization" wire:model.live="has_new_memorization"
-                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                <label for="has_new_memorization" class="me-2 text-sm font-medium text-gray-900">
-                                    {{ __('components.sessions.homework.new_memorization') }}
-                                </label>
-                            </div>
-
-                            @if($has_new_memorization)
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="new_memorization_surah" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.surah') }}</label>
-                                    <select id="new_memorization_surah" wire:model="new_memorization_surah"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option value="">{{ __('components.sessions.homework.select_surah') }}</option>
-                                        @foreach($surahs as $key => $name)
-                                            <option value="{{ $name }}">{{ $name }}</option>
-                                        @endforeach
-                                    </select>
+                            <!-- New Memorization -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center mb-3">
+                                    <input type="checkbox" id="has_new_memorization" x-model="has_new_memorization"
+                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    <label for="has_new_memorization" class="me-2 text-sm font-medium text-gray-900">
+                                        {{ __('components.sessions.homework.new_memorization') }}
+                                    </label>
                                 </div>
-                                <div>
-                                    <label for="new_memorization_pages" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.pages_number') }}</label>
-                                    <input type="number" id="new_memorization_pages" wire:model="new_memorization_pages" step="0.5" min="0.5" max="10"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                           placeholder="1.5">
-                                </div>
-                            </div>
-                            @endif
-                        </div>
 
-                        <!-- Review -->
-                        <div class="border border-gray-200 rounded-lg p-4">
-                            <div class="flex items-center mb-3">
-                                <input type="checkbox" id="has_review" wire:model.live="has_review"
-                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                <label for="has_review" class="me-2 text-sm font-medium text-gray-900">
-                                    {{ __('components.sessions.homework.review') }}
-                                </label>
-                            </div>
-
-                            @if($has_review)
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="review_surah" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.surah') }}</label>
-                                    <select id="review_surah" wire:model="review_surah"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option value="">{{ __('components.sessions.homework.select_surah') }}</option>
-                                        @foreach($surahs as $key => $name)
-                                            <option value="{{ $name }}">{{ $name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="review_pages" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.pages_number') }}</label>
-                                    <input type="number" id="review_pages" wire:model="review_pages" step="0.5" min="0.5" max="20"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                           placeholder="2">
-                                </div>
-                            </div>
-                            @endif
-                        </div>
-
-                        <!-- Comprehensive Review -->
-                        <div class="border border-gray-200 rounded-lg p-4">
-                            <div class="flex items-center mb-3">
-                                <input type="checkbox" id="has_comprehensive_review" wire:model.live="has_comprehensive_review"
-                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                <label for="has_comprehensive_review" class="me-2 text-sm font-medium text-gray-900">
-                                    {{ __('components.sessions.homework.comprehensive_review') }}
-                                </label>
-                            </div>
-
-                            @if($has_comprehensive_review)
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.surahs') }}</label>
-                                <div class="max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3 bg-white">
-                                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                        @foreach($surahs as $key => $name)
-                                            <label class="flex items-center gap-2">
-                                                <input type="checkbox" wire:model="comprehensive_review_surahs" value="{{ $key }}"
-                                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                                <span class="text-sm text-gray-700">{{ $name }}</span>
-                                            </label>
-                                        @endforeach
+                                <div x-show="has_new_memorization" x-collapse>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="new_memorization_surah" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.surah') }}</label>
+                                            <select id="new_memorization_surah" x-model="$wire.new_memorization_surah"
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                <option value="">{{ __('components.sessions.homework.select_surah') }}</option>
+                                                @foreach($surahs as $key => $name)
+                                                    <option value="{{ $name }}">{{ $name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="new_memorization_pages" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.pages_number') }}</label>
+                                            <input type="number" id="new_memorization_pages" x-model="$wire.new_memorization_pages" step="0.5" min="0.5" max="10"
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                   placeholder="1.5">
+                                        </div>
                                     </div>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1">{{ __('components.sessions.homework.surahs_help') }}</p>
                             </div>
-                            @endif
+
+                            <!-- Review -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center mb-3">
+                                    <input type="checkbox" id="has_review" x-model="has_review"
+                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    <label for="has_review" class="me-2 text-sm font-medium text-gray-900">
+                                        {{ __('components.sessions.homework.review') }}
+                                    </label>
+                                </div>
+
+                                <div x-show="has_review" x-collapse>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="review_surah" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.surah') }}</label>
+                                            <select id="review_surah" x-model="$wire.review_surah"
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                <option value="">{{ __('components.sessions.homework.select_surah') }}</option>
+                                                @foreach($surahs as $key => $name)
+                                                    <option value="{{ $name }}">{{ $name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="review_pages" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.pages_number') }}</label>
+                                            <input type="number" id="review_pages" x-model="$wire.review_pages" step="0.5" min="0.5" max="20"
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                   placeholder="2">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Comprehensive Review -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center mb-3">
+                                    <input type="checkbox" id="has_comprehensive_review" x-model="has_comprehensive_review"
+                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    <label for="has_comprehensive_review" class="me-2 text-sm font-medium text-gray-900">
+                                        {{ __('components.sessions.homework.comprehensive_review') }}
+                                    </label>
+                                </div>
+
+                                <div x-show="has_comprehensive_review" x-collapse>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.surahs') }}</label>
+                                        <div class="max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3 bg-white">
+                                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                @foreach($surahs as $key => $name)
+                                                    <label class="flex items-center gap-2">
+                                                        <input type="checkbox" x-model="$wire.comprehensive_review_surahs" value="{{ $key }}"
+                                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                                        <span class="text-sm text-gray-700">{{ $name }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1">{{ __('components.sessions.homework.surahs_help') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="additional_instructions" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.additional_instructions') }}</label>
+                            <textarea id="additional_instructions" x-model="$wire.additional_instructions" rows="3"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      placeholder="{{ __('components.sessions.homework.additional_instructions_placeholder') }}"></textarea>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button type="button" @click="$wire.closeModal()"
+                                    class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                {{ __('components.sessions.homework.cancel') }}
+                            </button>
+                            <button type="button" @click="saving = true; $wire.save().then(() => { saving = false; })" :disabled="saving"
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50">
+                                <span x-show="!saving">{{ __('components.sessions.homework.save') }}</span>
+                                <span x-show="saving" class="inline-flex items-center">
+                                    <i class="ri-loader-line animate-spin ms-1"></i>
+                                    {{ __('components.sessions.homework.saving') }}
+                                </span>
+                            </button>
                         </div>
                     </div>
-
-                    <div>
-                        <label for="additional_instructions" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.additional_instructions') }}</label>
-                        <textarea id="additional_instructions" wire:model="additional_instructions" rows="3"
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  placeholder="{{ __('components.sessions.homework.additional_instructions_placeholder') }}"></textarea>
-                    </div>
-
-                    <div class="flex gap-3">
-                        <button type="button" wire:click="closeModal"
-                                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                            {{ __('components.sessions.homework.cancel') }}
-                        </button>
-                        <button type="submit"
-                                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                                wire:loading.attr="disabled"
-                                wire:loading.class="opacity-50 cursor-not-allowed">
-                            <span wire:loading.remove wire:target="save">{{ __('components.sessions.homework.save') }}</span>
-                            <span wire:loading wire:target="save">
-                                <i class="ri-loader-line animate-spin ms-1"></i>
-                                {{ __('components.sessions.homework.save') }}...
-                            </span>
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
-    </div>
-    @endif
-
-    @script
-    <script>
-        // Debug: verify Livewire component initialized on client
-        console.log('[QuranHomeworkManager] Component initialized, sessionId:', $wire.sessionId);
-    </script>
-    @endscript
+    </template>
 </div>
