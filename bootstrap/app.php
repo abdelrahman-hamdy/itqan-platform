@@ -75,6 +75,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'webhooks/paymob',    // Paymob payment webhook
             'webhooks/easykash',  // EasyKash payment webhook
             'api/payments/easykash/callback',  // EasyKash payment callback
+            '*/logout',           // Logout should work even with expired CSRF token
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {
