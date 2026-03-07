@@ -1,22 +1,16 @@
-<div x-data="{
-    showModal: $wire.entangle('showModal'),
-    has_new_memorization: $wire.entangle('has_new_memorization'),
-    has_review: $wire.entangle('has_review'),
-    has_comprehensive_review: $wire.entangle('has_comprehensive_review'),
-    saving: false
-}">
+<div>
     <!-- Homework Management Section -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.homework.title') }}</h3>
             @if($homework)
-            <button @click="$wire.openEditModal()"
+            <button onclick="hwCall(this, 'openEditModal')"
                     class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors shadow-sm">
                 <i class="ri-edit-line ms-1"></i>
                 {{ __('components.sessions.homework.edit_homework') }}
             </button>
             @else
-            <button @click="$wire.openAddModal()"
+            <button onclick="hwCall(this, 'openAddModal')"
                     class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors shadow-sm">
                 <i class="ri-add-line ms-1"></i>
                 {{ __('components.sessions.homework.add_homework') }}
@@ -143,152 +137,207 @@
     </div>
 
     <!-- Homework Modal -->
-    <template x-teleport="body">
-        <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {{-- Backdrop with opacity --}}
-            <div class="fixed inset-0 bg-black/60 transition-opacity" @click="$wire.closeModal()"></div>
+    @if($showModal)
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        {{-- Backdrop --}}
+        <div class="fixed inset-0 bg-black/60 transition-opacity" onclick="hwCall(this, 'closeModal')"></div>
 
-            {{-- Modal content --}}
-            <div class="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto z-10"
-                 x-show="showModal" x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-                 x-transition:leave="transition ease-in duration-150"
-                 x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
-                <div class="p-6 border-b border-gray-200">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-xl font-bold text-gray-900">
-                            {{ $homework ? __('components.sessions.homework.modal_title_edit') : __('components.sessions.homework.modal_title_add') }}
-                        </h3>
-                        <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                            <i class="ri-close-line text-2xl"></i>
-                        </button>
-                    </div>
+        {{-- Modal content --}}
+        <div class="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto z-10">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-gray-900">
+                        {{ $homework ? __('components.sessions.homework.modal_title_edit') : __('components.sessions.homework.modal_title_add') }}
+                    </h3>
+                    <button onclick="hwCall(this, 'closeModal')" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="ri-close-line text-2xl"></i>
+                    </button>
                 </div>
+            </div>
 
-                <div class="p-6">
-                    <div class="space-y-6">
-                        <!-- Homework Type Selection -->
-                        <div class="space-y-4">
-                            <h4 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.homework.homework_type') }}</h4>
+            <div class="p-6">
+                <div data-homework-form class="space-y-6">
+                    <!-- Homework Type Selection -->
+                    <div class="space-y-4">
+                        <h4 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.homework.homework_type') }}</h4>
 
-                            <!-- New Memorization -->
-                            <div class="border border-gray-200 rounded-lg p-4">
-                                <div class="flex items-center mb-3">
-                                    <input type="checkbox" id="has_new_memorization" x-model="has_new_memorization"
-                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                    <label for="has_new_memorization" class="me-2 text-sm font-medium text-gray-900">
-                                        {{ __('components.sessions.homework.new_memorization') }}
-                                    </label>
-                                </div>
-
-                                <div x-show="has_new_memorization" x-collapse>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label for="new_memorization_surah" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.surah') }}</label>
-                                            <select id="new_memorization_surah" x-model="$wire.new_memorization_surah"
-                                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                                <option value="">{{ __('components.sessions.homework.select_surah') }}</option>
-                                                @foreach($surahs as $key => $name)
-                                                    <option value="{{ $name }}">{{ $name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label for="new_memorization_pages" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.pages_number') }}</label>
-                                            <input type="number" id="new_memorization_pages" x-model="$wire.new_memorization_pages" step="0.5" min="0.5" max="10"
-                                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                   placeholder="1.5">
-                                        </div>
-                                    </div>
-                                </div>
+                        <!-- New Memorization -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-center mb-3">
+                                <input type="checkbox" id="hw_has_new_memorization"
+                                       {{ $has_new_memorization ? 'checked' : '' }}
+                                       onchange="document.getElementById('hw-memorization-fields').classList.toggle('hidden', !this.checked)"
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="hw_has_new_memorization" class="me-2 text-sm font-medium text-gray-900">
+                                    {{ __('components.sessions.homework.new_memorization') }}
+                                </label>
                             </div>
 
-                            <!-- Review -->
-                            <div class="border border-gray-200 rounded-lg p-4">
-                                <div class="flex items-center mb-3">
-                                    <input type="checkbox" id="has_review" x-model="has_review"
-                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                    <label for="has_review" class="me-2 text-sm font-medium text-gray-900">
-                                        {{ __('components.sessions.homework.review') }}
-                                    </label>
-                                </div>
-
-                                <div x-show="has_review" x-collapse>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label for="review_surah" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.surah') }}</label>
-                                            <select id="review_surah" x-model="$wire.review_surah"
-                                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                                <option value="">{{ __('components.sessions.homework.select_surah') }}</option>
-                                                @foreach($surahs as $key => $name)
-                                                    <option value="{{ $name }}">{{ $name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label for="review_pages" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.pages_number') }}</label>
-                                            <input type="number" id="review_pages" x-model="$wire.review_pages" step="0.5" min="0.5" max="20"
-                                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                   placeholder="2">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Comprehensive Review -->
-                            <div class="border border-gray-200 rounded-lg p-4">
-                                <div class="flex items-center mb-3">
-                                    <input type="checkbox" id="has_comprehensive_review" x-model="has_comprehensive_review"
-                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                    <label for="has_comprehensive_review" class="me-2 text-sm font-medium text-gray-900">
-                                        {{ __('components.sessions.homework.comprehensive_review') }}
-                                    </label>
-                                </div>
-
-                                <div x-show="has_comprehensive_review" x-collapse>
+                            <div id="hw-memorization-fields" class="{{ $has_new_memorization ? '' : 'hidden' }}">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.surahs') }}</label>
-                                        <div class="max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3 bg-white">
-                                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                                @foreach($surahs as $key => $name)
-                                                    <label class="flex items-center gap-2">
-                                                        <input type="checkbox" x-model="$wire.comprehensive_review_surahs" value="{{ $key }}"
-                                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                                        <span class="text-sm text-gray-700">{{ $name }}</span>
-                                                    </label>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                        <p class="text-xs text-gray-500 mt-1">{{ __('components.sessions.homework.surahs_help') }}</p>
+                                        <label for="hw_new_memorization_surah" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.surah') }}</label>
+                                        <select id="hw_new_memorization_surah"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option value="">{{ __('components.sessions.homework.select_surah') }}</option>
+                                            @foreach($surahs as $key => $name)
+                                                <option value="{{ $name }}" {{ $new_memorization_surah === $name ? 'selected' : '' }}>{{ $name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="hw_new_memorization_pages" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.pages_number') }}</label>
+                                        <input type="number" id="hw_new_memorization_pages" step="0.5" min="0.5" max="10"
+                                               value="{{ $new_memorization_pages }}"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                               placeholder="1.5">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div>
-                            <label for="additional_instructions" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.additional_instructions') }}</label>
-                            <textarea id="additional_instructions" x-model="$wire.additional_instructions" rows="3"
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      placeholder="{{ __('components.sessions.homework.additional_instructions_placeholder') }}"></textarea>
+                        <!-- Review -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-center mb-3">
+                                <input type="checkbox" id="hw_has_review"
+                                       {{ $has_review ? 'checked' : '' }}
+                                       onchange="document.getElementById('hw-review-fields').classList.toggle('hidden', !this.checked)"
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="hw_has_review" class="me-2 text-sm font-medium text-gray-900">
+                                    {{ __('components.sessions.homework.review') }}
+                                </label>
+                            </div>
+
+                            <div id="hw-review-fields" class="{{ $has_review ? '' : 'hidden' }}">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="hw_review_surah" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.surah') }}</label>
+                                        <select id="hw_review_surah"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option value="">{{ __('components.sessions.homework.select_surah') }}</option>
+                                            @foreach($surahs as $key => $name)
+                                                <option value="{{ $name }}" {{ $review_surah === $name ? 'selected' : '' }}>{{ $name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="hw_review_pages" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.pages_number') }}</label>
+                                        <input type="number" id="hw_review_pages" step="0.5" min="0.5" max="20"
+                                               value="{{ $review_pages }}"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                               placeholder="2">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="flex gap-3">
-                            <button type="button" @click="$wire.closeModal()"
-                                    class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                                {{ __('components.sessions.homework.cancel') }}
-                            </button>
-                            <button type="button" @click="saving = true; $wire.save().then(() => { saving = false; })" :disabled="saving"
-                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50">
-                                <span x-show="!saving">{{ __('components.sessions.homework.save') }}</span>
-                                <span x-show="saving" class="inline-flex items-center">
-                                    <i class="ri-loader-line animate-spin ms-1"></i>
-                                    {{ __('components.sessions.homework.saving') }}
-                                </span>
-                            </button>
+                        <!-- Comprehensive Review -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-center mb-3">
+                                <input type="checkbox" id="hw_has_comprehensive_review"
+                                       {{ $has_comprehensive_review ? 'checked' : '' }}
+                                       onchange="document.getElementById('hw-comprehensive-fields').classList.toggle('hidden', !this.checked)"
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="hw_has_comprehensive_review" class="me-2 text-sm font-medium text-gray-900">
+                                    {{ __('components.sessions.homework.comprehensive_review') }}
+                                </label>
+                            </div>
+
+                            <div id="hw-comprehensive-fields" class="{{ $has_comprehensive_review ? '' : 'hidden' }}">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.surahs') }}</label>
+                                    <div class="max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3 bg-white">
+                                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                            @foreach($surahs as $key => $name)
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" data-surah-cb value="{{ $key }}"
+                                                           {{ is_array($comprehensive_review_surahs) && in_array($key, $comprehensive_review_surahs) ? 'checked' : '' }}
+                                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                                    <span class="text-sm text-gray-700">{{ $name }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">{{ __('components.sessions.homework.surahs_help') }}</p>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+
+                    <div>
+                        <label for="hw_additional_instructions" class="block text-sm font-medium text-gray-700 mb-1">{{ __('components.sessions.homework.additional_instructions') }}</label>
+                        <textarea id="hw_additional_instructions" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="{{ __('components.sessions.homework.additional_instructions_placeholder') }}">{{ $additional_instructions }}</textarea>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="button" onclick="hwCall(this, 'closeModal')"
+                                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                            {{ __('components.sessions.homework.cancel') }}
+                        </button>
+                        <button type="button" onclick="hwSave(this)"
+                                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50">
+                            <span data-save-text>{{ __('components.sessions.homework.save') }}</span>
+                            <span data-save-loading class="hidden inline-flex items-center">
+                                <i class="ri-loader-line animate-spin ms-1"></i>
+                                {{ __('components.sessions.homework.saving') }}
+                            </span>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-    </template>
+    </div>
+    @endif
+
+    <script>
+    function hwGetComp(el) {
+        var root = el.closest('[wire\\:id]');
+        if (!root) return null;
+        var id = root.getAttribute('wire:id');
+        if (window.Livewire && window.Livewire.find) {
+            return window.Livewire.find(id);
+        }
+        if (root.__livewire) {
+            return root.__livewire;
+        }
+        return null;
+    }
+
+    function hwCall(el, method) {
+        var comp = hwGetComp(el);
+        if (comp) comp.call(method);
+    }
+
+    function hwSave(el) {
+        var comp = hwGetComp(el);
+        if (!comp) return;
+
+        var root = el.closest('[wire\\:id]');
+        var form = root.querySelector('[data-homework-form]');
+        if (!form) return;
+
+        var data = {
+            has_new_memorization: !!form.querySelector('#hw_has_new_memorization')?.checked,
+            has_review: !!form.querySelector('#hw_has_review')?.checked,
+            has_comprehensive_review: !!form.querySelector('#hw_has_comprehensive_review')?.checked,
+            new_memorization_surah: form.querySelector('#hw_new_memorization_surah')?.value || null,
+            new_memorization_pages: form.querySelector('#hw_new_memorization_pages')?.value || null,
+            review_surah: form.querySelector('#hw_review_surah')?.value || null,
+            review_pages: form.querySelector('#hw_review_pages')?.value || null,
+            comprehensive_review_surahs: Array.from(form.querySelectorAll('[data-surah-cb]:checked')).map(function(cb) { return cb.value; }),
+            additional_instructions: form.querySelector('#hw_additional_instructions')?.value || null
+        };
+
+        // Show loading state
+        el.disabled = true;
+        var textEl = el.querySelector('[data-save-text]');
+        var loadEl = el.querySelector('[data-save-loading]');
+        if (textEl) textEl.classList.add('hidden');
+        if (loadEl) loadEl.classList.remove('hidden');
+
+        comp.call('saveFormData', data);
+    }
+    </script>
 </div>

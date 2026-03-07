@@ -62,6 +62,20 @@ class QuranHomeworkManager extends Component
         $this->showModal = true;
     }
 
+    public function saveFormData(array $formData): void
+    {
+        $this->has_new_memorization = (bool) ($formData['has_new_memorization'] ?? false);
+        $this->has_review = (bool) ($formData['has_review'] ?? false);
+        $this->has_comprehensive_review = (bool) ($formData['has_comprehensive_review'] ?? false);
+        $this->new_memorization_surah = $formData['new_memorization_surah'] ?? null;
+        $this->new_memorization_pages = $formData['new_memorization_pages'] ?? null;
+        $this->review_surah = $formData['review_surah'] ?? null;
+        $this->review_pages = $formData['review_pages'] ?? null;
+        $this->comprehensive_review_surahs = $formData['comprehensive_review_surahs'] ?? [];
+        $this->additional_instructions = $formData['additional_instructions'] ?? null;
+        $this->save();
+    }
+
     public function save(): void
     {
         $this->validate([
