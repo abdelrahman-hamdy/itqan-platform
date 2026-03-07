@@ -53,10 +53,10 @@ use App\Enums\SessionStatus;
                     </div>
                 </div>
                 <span class="self-start px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-full flex-shrink-0
-                    {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-800' : '' }}
-                    {{ $subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? 'bg-red-100 text-red-800' : '' }}
-                    {{ $subscription->status === \App\Enums\SubscriptionStatus::PENDING->value ? 'bg-yellow-100 text-yellow-800' : '' }}">
-                    {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? __('parent.subscriptions.status.active') : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? __('parent.subscriptions.status.expired') : __('parent.subscriptions.status.pending')) }}
+                    {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-800' : '' }}
+                    {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED->value ? 'bg-red-100 text-red-800' : '' }}
+                    {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::PENDING->value ? 'bg-yellow-100 text-yellow-800' : '' }}">
+                    {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE->value ? __('parent.subscriptions.status.active') : ($subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED->value ? __('parent.subscriptions.status.expired') : __('parent.subscriptions.status.pending')) }}
                 </span>
             </div>
         </div>
@@ -269,12 +269,12 @@ use App\Enums\SessionStatus;
                 </div>
 
                 <!-- Subscription Status -->
-                <div class="bg-gradient-to-br {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'from-green-500 to-green-600' : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? 'from-red-500 to-red-600' : 'from-yellow-500 to-yellow-600') }} rounded-lg md:rounded-xl shadow-lg p-4 md:p-6 text-white">
+                <div class="bg-gradient-to-br {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE->value ? 'from-green-500 to-green-600' : ($subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED->value ? 'from-red-500 to-red-600' : 'from-yellow-500 to-yellow-600') }} rounded-lg md:rounded-xl shadow-lg p-4 md:p-6 text-white">
                     <h3 class="text-sm md:text-lg font-bold mb-3 md:mb-4">{{ __('parent.subscriptions.subscription_status') }}</h3>
                     <div class="text-center">
-                        <i class="ri-{{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'checkbox-circle' : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? 'close-circle' : 'time') }}-line text-4xl md:text-6xl mb-2 md:mb-3 opacity-80"></i>
+                        <i class="ri-{{ $subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE->value ? 'checkbox-circle' : ($subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED->value ? 'close-circle' : 'time') }}-line text-4xl md:text-6xl mb-2 md:mb-3 opacity-80"></i>
                         <p class="text-xl md:text-2xl font-bold">
-                            {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? __('parent.subscriptions.status.active') : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? __('parent.subscriptions.status.expired') : __('parent.subscriptions.status.pending')) }}
+                            {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE->value ? __('parent.subscriptions.status.active') : ($subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED->value ? __('parent.subscriptions.status.expired') : __('parent.subscriptions.status.pending')) }}
                         </p>
                     </div>
                 </div>

@@ -4,7 +4,7 @@
 ])
 
 @php
-    use App\Enums\SubscriptionStatus;
+    use App\Enums\SessionSubscriptionStatus as SubscriptionStatus;
 
     // Status is automatically cast to SubscriptionStatus enum by the model
     $statusEnum = $subscription->status ?? SubscriptionStatus::PENDING;

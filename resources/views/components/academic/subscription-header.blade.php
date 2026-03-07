@@ -4,7 +4,7 @@
 ])
 
 @php
-    use App\Enums\SubscriptionStatus;
+    use App\Enums\SessionSubscriptionStatus as SubscriptionStatus;
 
     $student = $subscription->student;
     $teacher = $subscription->teacher;

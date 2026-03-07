@@ -75,8 +75,8 @@
                 <span class="text-sm font-bold
                     @if(($isAcademic ? $subscription->status : $subscription->status) === 'active') text-green-600
                     @elseif(($isAcademic ? $subscription->status : $subscription->status) === 'paused') text-yellow-600
-                    @elseif(($isAcademic ? $subscription->status : $subscription->status) === \App\Enums\SubscriptionStatus::EXPIRED) text-blue-600
-                    @elseif(($isAcademic ? $subscription->status : $subscription->status) === \App\Enums\SubscriptionStatus::CANCELLED) text-red-600
+                    @elseif(($isAcademic ? $subscription->status : $subscription->status) === \App\Enums\SessionSubscriptionStatus::CANCELLED) text-blue-600
+                    @elseif(($isAcademic ? $subscription->status : $subscription->status) === \App\Enums\SessionSubscriptionStatus::CANCELLED) text-red-600
                     @else text-gray-600 @endif">
                     @php $status = $isAcademic ? $subscription->status : $subscription->status; @endphp
                     {{ $status->label() }}

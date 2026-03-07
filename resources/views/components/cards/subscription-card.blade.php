@@ -7,7 +7,7 @@
 ])
 
 @php
-    use App\Enums\SubscriptionStatus;
+    use App\Enums\SessionSubscriptionStatus as SubscriptionStatus;
 
     $user = $viewType === 'teacher' ? $subscription->student : $subscription->quranTeacher;
     $userDisplayName = $viewType === 'teacher' ?
