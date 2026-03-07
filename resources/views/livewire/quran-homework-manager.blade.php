@@ -5,14 +5,20 @@
             <h3 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.homework.title') }}</h3>
             @if($homework)
             <button wire:click="openEditModal"
+                    wire:loading.attr="disabled"
+                    wire:loading.class="opacity-50 cursor-wait"
                     class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors shadow-sm">
-                <i class="ri-edit-line ms-1"></i>
+                <span wire:loading wire:target="openEditModal"><i class="ri-loader-line animate-spin ms-1"></i></span>
+                <span wire:loading.remove wire:target="openEditModal"><i class="ri-edit-line ms-1"></i></span>
                 {{ __('components.sessions.homework.edit_homework') }}
             </button>
             @else
             <button wire:click="openAddModal"
+                    wire:loading.attr="disabled"
+                    wire:loading.class="opacity-50 cursor-wait"
                     class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors shadow-sm">
-                <i class="ri-add-line ms-1"></i>
+                <span wire:loading wire:target="openAddModal"><i class="ri-loader-line animate-spin ms-1"></i></span>
+                <span wire:loading.remove wire:target="openAddModal"><i class="ri-add-line ms-1"></i></span>
                 {{ __('components.sessions.homework.add_homework') }}
             </button>
             @endif
@@ -285,4 +291,11 @@
         </div>
     </div>
     @endif
+
+    @script
+    <script>
+        // Debug: verify Livewire component initialized on client
+        console.log('[QuranHomeworkManager] Component initialized, sessionId:', $wire.sessionId);
+    </script>
+    @endscript
 </div>

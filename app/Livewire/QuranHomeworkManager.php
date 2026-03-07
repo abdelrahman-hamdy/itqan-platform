@@ -14,24 +14,24 @@ use Livewire\Component;
 class QuranHomeworkManager extends Component
 {
     #[Locked]
-    public int|string $sessionId;
+    public $sessionId;
 
-    public bool $showModal = false;
+    public $showModal = false;
 
     // Form fields
-    public bool $has_new_memorization = false;
-    public bool $has_review = false;
-    public bool $has_comprehensive_review = false;
-    public ?string $new_memorization_surah = null;
-    public ?float $new_memorization_pages = null;
-    public ?string $review_surah = null;
-    public ?float $review_pages = null;
-    public array $comprehensive_review_surahs = [];
-    public ?string $additional_instructions = null;
+    public $has_new_memorization = false;
+    public $has_review = false;
+    public $has_comprehensive_review = false;
+    public $new_memorization_surah = null;
+    public $new_memorization_pages = null;
+    public $review_surah = null;
+    public $review_pages = null;
+    public $comprehensive_review_surahs = [];
+    public $additional_instructions = null;
 
-    public function mount(QuranSession $session): void
+    public function mount($sessionId)
     {
-        $this->sessionId = $session->id;
+        $this->sessionId = $sessionId;
     }
 
     public function openAddModal(): void
