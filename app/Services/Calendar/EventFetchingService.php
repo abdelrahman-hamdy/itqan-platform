@@ -37,7 +37,8 @@ class EventFetchingService
                 'student:id,name',
                 'subscription:id,package_id',
                 'circle:id,name,circle_code',
-                'individualCircle:id,name,circle_code,default_duration_minutes',
+                'individualCircle:id,name,circle_code,default_duration_minutes,student_id',
+                'individualCircle.student:id,name',
             ]);
 
         if ($user->isQuranTeacher()) {
@@ -321,7 +322,8 @@ class EventFetchingService
                 'quranTeacher:id,first_name,last_name,name,email,gender',
                 'student:id,name',
                 'subscription:id,package_id,starts_at,ends_at,status',
-                'individualCircle:id,name,circle_code,default_duration_minutes',
+                'individualCircle:id,name,circle_code,default_duration_minutes,student_id',
+                'individualCircle.student:id,name',
             ])
             ->get();
     }

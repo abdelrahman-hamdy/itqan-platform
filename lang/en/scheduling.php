@@ -112,6 +112,15 @@ return [
         'ready_to_schedule' => 'Ready to schedule',
     ],
 
+    'info' => [
+        'subscription_info' => 'Subscription Info',
+        'subscription_start' => 'Subscription start',
+        'subscription_end' => 'Subscription end',
+        'total_sessions' => 'Total sessions',
+        'scheduled_sessions' => 'Scheduled',
+        'remaining_sessions' => 'Remaining',
+    ],
+
     'capacity' => [
         'no_students' => '⚠️ No students enrolled in this circle. Consider enrolling students before scheduling sessions.',
         'low_students' => '⚠️ Student count is low (:current of :max). Consider accepting more students.',

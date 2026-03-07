@@ -134,6 +134,8 @@ class SessionNamingService
         // Get student name (for individual/trial sessions)
         if ($session->student) {
             $studentName = $session->student->name ?? '';
+        } elseif ($session->individualCircle?->student) {
+            $studentName = $session->individualCircle->student->name ?? '';
         } elseif ($session->individualCircle?->subscription?->student) {
             $studentName = $session->individualCircle->subscription->student->name ?? '';
         }

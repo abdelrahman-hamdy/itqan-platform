@@ -305,14 +305,14 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
         $weeksRemaining = max(1, ceil($daysRemaining / 7));
 
         // Calculate recommended pacing
-        $recommendedPerWeek = $remainingSessions / $weeksRemaining;
+        $recommendedPerWeek = (int) ceil($remainingSessions / $weeksRemaining);
         $maxPerWeek = ceil($recommendedPerWeek * 1.5); // Allow 50% more for flexibility
 
         return [
             'remaining_sessions' => $remainingSessions,
             'total_sessions' => $totalSessions,
             'used_sessions' => $usedSessions,
-            'recommended_per_week' => round($recommendedPerWeek, 1),
+            'recommended_per_week' => $recommendedPerWeek,
             'max_per_week' => $maxPerWeek,
             'valid_start_date' => $validStartDate,
             'valid_end_date' => $validEndDate,

@@ -128,6 +128,16 @@ return [
         'ready_to_schedule' => 'جاهز للجدولة',
     ],
 
+    // Subscription info
+    'info' => [
+        'subscription_info' => 'معلومات الاشتراك',
+        'subscription_start' => 'بداية الاشتراك',
+        'subscription_end' => 'نهاية الاشتراك',
+        'total_sessions' => 'إجمالي الجلسات',
+        'scheduled_sessions' => 'المجدولة',
+        'remaining_sessions' => 'المتبقية',
+    ],
+
     // Capacity (Group circles)
     'capacity' => [
         'no_students' => '⚠️ لا يوجد طلاب مسجلين في هذه الحلقة. قد ترغب في تسجيل طلاب قبل جدولة الجلسات.',

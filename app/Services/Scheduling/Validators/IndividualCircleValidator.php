@@ -249,11 +249,11 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
 
             // Default scheduling window of 12 weeks (~3 months)
             $weeksRemaining = $remainingSessions > 0 ? 12 : 0;
-            $recommendedPerWeek = $weeksRemaining > 0 ? $remainingSessions / $weeksRemaining : 0;
+            $recommendedPerWeek = $weeksRemaining > 0 ? (int) ceil($remainingSessions / $weeksRemaining) : 0;
 
             return [
                 'remaining_sessions' => $remainingSessions,
-                'recommended_per_week' => round($recommendedPerWeek, 1),
+                'recommended_per_week' => $recommendedPerWeek,
                 'max_per_week' => $remainingSessions > 0 ? ceil($recommendedPerWeek * 1.5) : 0,
                 'valid_start_date' => Carbon::now($timezone),
                 'valid_end_date' => null, // No end date when subscription missing
@@ -295,12 +295,12 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         }
 
         // Calculate recommended pacing
-        $recommendedPerWeek = $remainingSessions / $weeksRemaining;
+        $recommendedPerWeek = (int) ceil($remainingSessions / $weeksRemaining);
         $maxPerWeek = ceil($recommendedPerWeek * 1.5); // Allow 50% flexibility
 
         return [
             'remaining_sessions' => $remainingSessions,
-            'recommended_per_week' => round($recommendedPerWeek, 1),
+            'recommended_per_week' => $recommendedPerWeek,
             'max_per_week' => $maxPerWeek,
             'valid_start_date' => $startDate,
             'valid_end_date' => $endDate, // Based on billing cycle

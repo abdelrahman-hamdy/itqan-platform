@@ -6,9 +6,12 @@ use Filament\Schemas\Components\Group;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
 use Exception;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Illuminate\Support\Collection;
+use Illuminate\Support\HtmlString;
 use App\Enums\UserType;
 use App\Filament\Shared\Traits\FormatsCalendarData;
 use App\Filament\Shared\Traits\HandlesScheduling;
@@ -324,6 +327,62 @@ class UnifiedTeacherCalendar extends Page
         $validator = $item ? $this->getStrategy()->getValidator($this->selectedItemType, $item) : null;
 
         return Group::make([
+            Placeholder::make('subscription_info')
+                ->label(__('scheduling.info.subscription_info'))
+                ->content(function () use ($item) {
+                    if (! $item) {
+                        return '';
+                    }
+
+                    $lines = [];
+
+                    // Subscription/course dates
+                    if (isset($item['subscription_start']) && $item['subscription_start']) {
+                        $start = $item['subscription_start'] instanceof Carbon
+                            ? $item['subscription_start']->format('Y/m/d')
+                            : Carbon::parse($item['subscription_start'])->format('Y/m/d');
+                        $lines[] = __('scheduling.info.subscription_start').': '.$start;
+                    }
+                    if (isset($item['subscription_end']) && $item['subscription_end']) {
+                        $end = $item['subscription_end'] instanceof Carbon
+                            ? $item['subscription_end']->format('Y/m/d')
+                            : Carbon::parse($item['subscription_end'])->format('Y/m/d');
+                        $lines[] = __('scheduling.info.subscription_end').': '.$end;
+                    }
+                    if (isset($item['start_date']) && $item['start_date']) {
+                        $lines[] = __('scheduling.info.subscription_start').': '.$item['start_date'];
+                    }
+                    if (isset($item['end_date']) && $item['end_date']) {
+                        $lines[] = __('scheduling.info.subscription_end').': '.$item['end_date'];
+                    }
+
+                    // Session counts
+                    $total = $item['sessions_count'] ?? $item['total_sessions'] ?? null;
+                    $scheduled = $item['sessions_scheduled'] ?? null;
+                    $remaining = $item['sessions_remaining'] ?? null;
+
+                    if ($total !== null) {
+                        $lines[] = __('scheduling.info.total_sessions').': '.$total;
+                    }
+                    if ($scheduled !== null) {
+                        $lines[] = __('scheduling.info.scheduled_sessions').': '.$scheduled;
+                    }
+                    if ($remaining !== null) {
+                        $lines[] = __('scheduling.info.remaining_sessions').': '.$remaining;
+                    }
+
+                    if (empty($lines)) {
+                        return '';
+                    }
+
+                    return new HtmlString(
+                        '<div class="text-sm space-y-1 p-3 bg-primary-50 dark:bg-primary-950 rounded-lg border border-primary-200 dark:border-primary-800">'
+                        .implode('<br>', array_map(fn ($l) => e($l), $lines))
+                        .'</div>'
+                    );
+                })
+                ->visible(fn () => $item !== null),
+
             CheckboxList::make('schedule_days')
                 ->label('أيام الأسبوع')
                 ->required()
@@ -392,23 +451,12 @@ class UnifiedTeacherCalendar extends Page
                 ->closeOnDateSelection()
                 ->live(),
 
-            Select::make('schedule_time')
+            TimePicker::make('schedule_time')
                 ->label('وقت الجلسة')
                 ->required()
-                ->placeholder('اختر الساعة')
-                ->options(function () {
-                    $options = [];
-                    for ($hour = 0; $hour <= 23; $hour++) {
-                        $time = sprintf('%02d:00', $hour);
-                        $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
-                        $period = $hour >= 12 ? 'م' : 'ص';
-                        $display = sprintf('%02d:00', $hour).' ('.$hour12.' '.$period.')';
-                        $options[$time] = $display;
-                    }
-
-                    return $options;
-                })
-                ->searchable()
+                ->seconds(false)
+                ->minutesStep(15)
+                ->native(false)
                 ->helperText(function () {
                     $timezone = AcademyContextService::getTimezone();
                     $currentTime = Carbon::now($timezone)->format('H:i');

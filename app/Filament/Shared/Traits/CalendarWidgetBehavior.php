@@ -145,7 +145,9 @@ trait CalendarWidgetBehavior
     protected function getStudentName($session, CalendarSessionType $type): string
     {
         return match ($type) {
-            CalendarSessionType::QURAN_INDIVIDUAL => $session->student?->name ?? 'طالب',
+            CalendarSessionType::QURAN_INDIVIDUAL => $session->student?->name
+                ?? $session->individualCircle?->student?->name
+                ?? 'طالب',
             CalendarSessionType::QURAN_GROUP => $session->circle?->name ?? 'حلقة',
             CalendarSessionType::QURAN_TRIAL => $session->trialRequest?->student_name ?? $session->student?->name ?? 'تجريبي',
             CalendarSessionType::ACADEMIC_PRIVATE => $session->student?->name ?? 'طالب',
