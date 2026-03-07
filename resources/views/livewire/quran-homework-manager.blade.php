@@ -39,8 +39,8 @@
                     <div class="grid gap-4 mb-6 @if($homeworkCount == 1) grid-cols-1 @elseif($homeworkCount == 2) grid-cols-1 md:grid-cols-2 @else grid-cols-1 md:grid-cols-2 lg:grid-cols-3 @endif">
                         @if($homework->has_new_memorization)
                         <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border border-green-200 shadow-sm hover:shadow-md transition-all duration-200 h-full">
-                            <div class="flex items-center mb-3">
-                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center ms-3">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center shrink-0">
                                     <i class="ri-book-open-line text-green-600 text-lg"></i>
                                 </div>
                                 <span class="text-sm text-green-700 font-semibold">{{ __('components.sessions.homework.new_memorization') }}</span>
@@ -49,15 +49,15 @@
                             <p class="text-green-900 font-bold text-lg mb-1">{{ \App\Enums\QuranSurah::getArabicName($homework->new_memorization_surah) }}</p>
                             @endif
                             @if($homework->new_memorization_pages)
-                            <p class="text-green-700 text-sm font-medium">{{ $homework->new_memorization_pages }} {{ __('components.sessions.homework.pages_count') }}</p>
+                            <p class="text-green-700 text-sm font-medium">{{ (float) $homework->new_memorization_pages }} {{ __('components.sessions.homework.pages_count') }}</p>
                             @endif
                         </div>
                         @endif
 
                         @if($homework->has_review)
                         <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-5 border border-blue-200 shadow-sm hover:shadow-md transition-all duration-200 h-full">
-                            <div class="flex items-center mb-3">
-                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center ms-3">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
                                     <i class="ri-refresh-line text-blue-600 text-lg"></i>
                                 </div>
                                 <span class="text-sm text-blue-700 font-semibold">{{ __('components.sessions.homework.review') }}</span>
@@ -66,15 +66,15 @@
                             <p class="text-blue-900 font-bold text-lg mb-1">{{ \App\Enums\QuranSurah::getArabicName($homework->review_surah) }}</p>
                             @endif
                             @if($homework->review_pages)
-                            <p class="text-blue-700 text-sm font-medium">{{ $homework->review_pages }} {{ __('components.sessions.homework.pages_count') }}</p>
+                            <p class="text-blue-700 text-sm font-medium">{{ (float) $homework->review_pages }} {{ __('components.sessions.homework.pages_count') }}</p>
                             @endif
                         </div>
                         @endif
 
                         @if($homework->has_comprehensive_review && $homework->comprehensive_review_surahs)
                         <div class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-5 border border-purple-200 shadow-sm hover:shadow-md transition-all duration-200 h-full">
-                            <div class="flex items-center mb-3">
-                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center ms-3">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center shrink-0">
                                     <i class="ri-list-check text-purple-600 text-lg"></i>
                                 </div>
                                 <span class="text-sm text-purple-700 font-semibold">{{ __('components.sessions.homework.comprehensive_review') }}</span>
@@ -112,8 +112,8 @@
                     @if($homework->additional_instructions)
                     <div class="border-t border-gray-200 pt-6 mt-6">
                         <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-5 border border-amber-200 shadow-sm">
-                            <div class="flex items-center mb-3">
-                                <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center ms-3">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center shrink-0">
                                     <i class="ri-information-line text-amber-600 text-lg"></i>
                                 </div>
                                 <h5 class="font-semibold text-amber-900">{{ __('components.sessions.homework.additional_instructions') }}</h5>
@@ -168,7 +168,7 @@
                                        {{ $has_new_memorization ? 'checked' : '' }}
                                        onchange="document.getElementById('hw-memorization-fields').classList.toggle('hidden', !this.checked)"
                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                <label for="hw_has_new_memorization" class="me-2 text-sm font-medium text-gray-900">
+                                <label for="hw_has_new_memorization" class="ms-2 text-sm font-medium text-gray-900">
                                     {{ __('components.sessions.homework.new_memorization') }}
                                 </label>
                             </div>
@@ -190,7 +190,7 @@
                                         <input type="number" id="hw_new_memorization_pages" step="0.5" min="0.5" max="10"
                                                value="{{ $new_memorization_pages }}"
                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                               placeholder="1.5">
+                                               placeholder="مثال: 2 أو 1.5">
                                     </div>
                                 </div>
                             </div>
@@ -203,7 +203,7 @@
                                        {{ $has_review ? 'checked' : '' }}
                                        onchange="document.getElementById('hw-review-fields').classList.toggle('hidden', !this.checked)"
                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                <label for="hw_has_review" class="me-2 text-sm font-medium text-gray-900">
+                                <label for="hw_has_review" class="ms-2 text-sm font-medium text-gray-900">
                                     {{ __('components.sessions.homework.review') }}
                                 </label>
                             </div>
@@ -225,7 +225,7 @@
                                         <input type="number" id="hw_review_pages" step="0.5" min="0.5" max="20"
                                                value="{{ $review_pages }}"
                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                               placeholder="2">
+                                               placeholder="مثال: 3 أو 2.5">
                                     </div>
                                 </div>
                             </div>
@@ -238,7 +238,7 @@
                                        {{ $has_comprehensive_review ? 'checked' : '' }}
                                        onchange="document.getElementById('hw-comprehensive-fields').classList.toggle('hidden', !this.checked)"
                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                <label for="hw_has_comprehensive_review" class="me-2 text-sm font-medium text-gray-900">
+                                <label for="hw_has_comprehensive_review" class="ms-2 text-sm font-medium text-gray-900">
                                     {{ __('components.sessions.homework.comprehensive_review') }}
                                 </label>
                             </div>
@@ -279,7 +279,7 @@
                         <button type="button" onclick="hwSave(this)"
                                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50">
                             <span data-save-text>{{ __('components.sessions.homework.save') }}</span>
-                            <span data-save-loading class="hidden inline-flex items-center">
+                            <span data-save-loading style="display:none" class="inline-flex items-center">
                                 <i class="ri-loader-line animate-spin ms-1"></i>
                                 {{ __('components.sessions.homework.saving') }}
                             </span>
@@ -334,8 +334,8 @@
         el.disabled = true;
         var textEl = el.querySelector('[data-save-text]');
         var loadEl = el.querySelector('[data-save-loading]');
-        if (textEl) textEl.classList.add('hidden');
-        if (loadEl) loadEl.classList.remove('hidden');
+        if (textEl) textEl.style.display = 'none';
+        if (loadEl) loadEl.style.display = 'inline-flex';
 
         comp.call('saveFormData', data);
     }

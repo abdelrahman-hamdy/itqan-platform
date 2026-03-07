@@ -74,6 +74,10 @@ class QuranHomeworkManager extends Component
         $this->comprehensive_review_surahs = $formData['comprehensive_review_surahs'] ?? [];
         $this->additional_instructions = $formData['additional_instructions'] ?? null;
         $this->save();
+
+        if (! $this->showModal) {
+            $this->dispatch('toast', type: 'success', message: __('components.sessions.homework.saved_successfully'));
+        }
     }
 
     public function save(): void
@@ -121,7 +125,6 @@ class QuranHomeworkManager extends Component
             });
 
             $this->showModal = false;
-            $this->dispatch('toast', type: 'success', message: __('components.sessions.homework.saved_successfully'));
         } catch (\Exception $e) {
             Log::error('Error saving homework', [
                 'session_id' => $this->sessionId,
