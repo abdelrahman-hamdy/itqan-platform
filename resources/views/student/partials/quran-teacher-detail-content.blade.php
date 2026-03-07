@@ -103,6 +103,7 @@
       @endif
 
       <!-- Why Choose Individual Circles -->
+      @if($hasIndividualCircles)
       <x-teacher.features-widget
         :title="__('components.teacher_detail.individual_circles_features')"
         icon="ri-star-line"
@@ -116,6 +117,7 @@
           __('components.teacher_detail.features.flexible_schedule')
         ]"
       />
+      @endif
 
     </div>
   </div>

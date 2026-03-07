@@ -12,6 +12,7 @@ use App\Enums\UserType;
 use App\Models\Academy;
 use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
+use App\Models\QuranIndividualCircle;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
 use App\Services\QuranEnrollmentService;
@@ -191,6 +192,11 @@ class UnifiedQuranTeacherController extends Controller
 
         $offersTrialSessions = $teacher->offers_trial_sessions;
 
+        // Check if teacher has any individual circles
+        $hasIndividualCircles = QuranIndividualCircle::where('academy_id', $academy->id)
+            ->where('quran_teacher_id', $teacher->user_id)
+            ->exists();
+
         // Check for existing trial request and subscription (authenticated only)
         $existingTrialRequest = null;
         $mySubscription = null;
@@ -221,7 +227,8 @@ class UnifiedQuranTeacherController extends Controller
             'offersTrialSessions',
             'existingTrialRequest',
             'mySubscription',
-            'isAuthenticated'
+            'isAuthenticated',
+            'hasIndividualCircles'
         ));
     }
 
