@@ -2,9 +2,11 @@
 
 namespace App\Filament\Supervisor\Pages;
 
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Exception;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -24,6 +26,7 @@ use Filament\Pages\Page;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\HtmlString;
 
 /**
  * Supervisor Calendar Page
@@ -488,7 +491,12 @@ class SupervisorCalendar extends Page implements HasForms
             ->schema([$this->buildScheduleForm()])
             ->action(function (array $data) {
                 $this->scheduleDays = $data['schedule_days'] ?? [];
-                $this->scheduleTime = $data['schedule_time'] ?? null;
+
+                // Combine hour and minute selects into HH:MM format
+                $hour = str_pad($data['schedule_hour'] ?? '10', 2, '0', STR_PAD_LEFT);
+                $minute = str_pad($data['schedule_minute'] ?? '00', 2, '0', STR_PAD_LEFT);
+                $this->scheduleTime = "{$hour}:{$minute}";
+
                 $this->scheduleStartDate = $data['schedule_start_date'] ?? null;
 
                 // Trial sessions always have exactly 1 session
@@ -513,6 +521,79 @@ class SupervisorCalendar extends Page implements HasForms
         $validator = ($item && $strategy) ? $strategy->getValidator($this->selectedItemType, $item) : null;
 
         return Group::make([
+            Placeholder::make('subscription_info')
+                ->hiddenLabel()
+                ->content(function () use ($item) {
+                    if (! $item) {
+                        return '';
+                    }
+
+                    $parts = [];
+
+                    // Dates
+                    $startDate = null;
+                    $endDate = null;
+
+                    if (isset($item['subscription_start']) && $item['subscription_start']) {
+                        $startDate = $item['subscription_start'] instanceof Carbon
+                            ? $item['subscription_start']->format('Y/m/d')
+                            : Carbon::parse($item['subscription_start'])->format('Y/m/d');
+                    } elseif (isset($item['start_date']) && $item['start_date']) {
+                        $startDate = $item['start_date'];
+                    }
+
+                    if (isset($item['subscription_end']) && $item['subscription_end']) {
+                        $endDate = $item['subscription_end'] instanceof Carbon
+                            ? $item['subscription_end']->format('Y/m/d')
+                            : Carbon::parse($item['subscription_end'])->format('Y/m/d');
+                    } elseif (isset($item['end_date']) && $item['end_date']) {
+                        $endDate = $item['end_date'];
+                    }
+
+                    // Session counts
+                    $total = $item['sessions_count'] ?? $item['total_sessions'] ?? null;
+                    $scheduled = $item['sessions_scheduled'] ?? null;
+                    $remaining = $item['sessions_remaining'] ?? null;
+
+                    if (! $startDate && ! $endDate && $total === null) {
+                        return '';
+                    }
+
+                    $html = '<div class="flex flex-wrap gap-x-6 gap-y-2 p-3 rounded-lg text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700">';
+
+                    if ($startDate) {
+                        $parts[] = '<span class="text-gray-500 dark:text-gray-400">'
+                            .e(__('scheduling.info.subscription_start')).':</span> '
+                            .'<span class="font-medium text-gray-900 dark:text-white">'.e($startDate).'</span>';
+                    }
+                    if ($endDate) {
+                        $parts[] = '<span class="text-gray-500 dark:text-gray-400">'
+                            .e(__('scheduling.info.subscription_end')).':</span> '
+                            .'<span class="font-medium text-gray-900 dark:text-white">'.e($endDate).'</span>';
+                    }
+                    if ($total !== null) {
+                        $parts[] = '<span class="text-gray-500 dark:text-gray-400">'
+                            .e(__('scheduling.info.total_sessions')).':</span> '
+                            .'<span class="font-medium text-gray-900 dark:text-white">'.$total.'</span>';
+                    }
+                    if ($scheduled !== null) {
+                        $parts[] = '<span class="text-gray-500 dark:text-gray-400">'
+                            .e(__('scheduling.info.scheduled_sessions')).':</span> '
+                            .'<span class="font-medium text-gray-900 dark:text-white">'.$scheduled.'</span>';
+                    }
+                    if ($remaining !== null) {
+                        $parts[] = '<span class="text-gray-500 dark:text-gray-400">'
+                            .e(__('scheduling.info.remaining_sessions')).':</span> '
+                            .'<span class="font-semibold text-primary-600 dark:text-primary-400">'.$remaining.'</span>';
+                    }
+
+                    $html .= implode('<span class="hidden sm:inline text-gray-300 dark:text-gray-600">|</span>', $parts);
+                    $html .= '</div>';
+
+                    return new HtmlString($html);
+                })
+                ->visible(fn () => $item !== null),
+
             CheckboxList::make('schedule_days')
                 ->label('أيام الأسبوع')
                 ->required()
@@ -525,7 +606,10 @@ class SupervisorCalendar extends Page implements HasForms
                     'thursday' => 'الخميس',
                     'friday' => 'الجمعة',
                 ])
-                ->columns(2)
+                ->columns([
+                    'default' => 2,
+                    'sm' => 4,
+                ])
                 ->helperText(function () use ($validator) {
                     if (! $validator) {
                         return '';
@@ -540,10 +624,10 @@ class SupervisorCalendar extends Page implements HasForms
                 ->label('تاريخ بداية الجدولة')
                 ->helperText(function () use ($item) {
                     if ($item && isset($item['start_date']) && $item['start_date']) {
-                        return 'تاريخ بداية الدورة: '.$item['start_date'];
+                        return 'ستبدأ الجلسات من هذا التاريخ (بداية الدورة: '.$item['start_date'].')';
                     }
 
-                    return 'تاريخ البداية لجدولة الجلسات الجديدة';
+                    return 'اختر التاريخ الذي تبدأ منه الجلسات الجديدة (اتركه فارغاً للبدء من اليوم)';
                 })
                 ->default(function () use ($item) {
                     // For interactive courses, default to the course's start_date
@@ -562,7 +646,7 @@ class SupervisorCalendar extends Page implements HasForms
 
                     return null;
                 })
-                ->minDate(AcademyContextService::nowInAcademyTimezone()->format('Y-m-d'))
+                ->minDate(now()->format('Y-m-d'))
                 ->maxDate(function () use ($validator) {
                     if (! $validator) {
                         return null;
@@ -578,84 +662,166 @@ class SupervisorCalendar extends Page implements HasForms
                 ->closeOnDateSelection()
                 ->live(),
 
-            Select::make('schedule_time')
-                ->label('وقت الجلسة')
-                ->required()
-                ->placeholder('اختر الساعة')
-                ->options(function () {
-                    $options = [];
-                    for ($hour = 0; $hour <= 23; $hour++) {
-                        $time = sprintf('%02d:00', $hour);
-                        $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
-                        $period = $hour >= 12 ? 'م' : 'ص';
-                        $display = sprintf('%02d:00', $hour).' ('.$hour12.' '.$period.')';
-                        $options[$time] = $display;
-                    }
+            Grid::make([
+                'default' => 3,
+            ])->schema([
+                Select::make('schedule_hour')
+                    ->label('الساعة')
+                    ->required()
+                    ->options(collect(range(0, 23))->mapWithKeys(function ($h) {
+                        $hour12 = $h % 12 ?: 12;
+                        $period = $h < 12 ? 'ص' : 'م';
 
-                    return $options;
-                })
-                ->searchable()
-                ->helperText(function () {
-                    $timezone = AcademyContextService::getTimezone();
-                    $currentTime = Carbon::now($timezone)->format('H:i');
+                        return [$h => str_pad($h, 2, '0', STR_PAD_LEFT)." ({$hour12} {$period})"];
+                    })->toArray())
+                    ->default(10)
+                    ->native(false)
+                    ->searchable()
+                    ->live(),
 
-                    return "الوقت الذي ستبدأ فيه الجلسات (التوقيت المحلي - الوقت الحالي: {$currentTime})";
-                }),
+                Select::make('schedule_minute')
+                    ->label('الدقيقة')
+                    ->required()
+                    ->options([
+                        0 => '00',
+                        15 => '15',
+                        30 => '30',
+                        45 => '45',
+                    ])
+                    ->default(0)
+                    ->native(false)
+                    ->live(),
 
-            TextInput::make('session_count')
-                ->label('عدد الجلسات المطلوب إنشاؤها')
-                ->helperText(function () use ($item) {
-                    if ($this->selectedItemType === 'trial') {
-                        return 'الجلسات التجريبية تتكون دائماً من جلسة واحدة فقط';
-                    }
+                TextInput::make('session_count')
+                    ->label('عدد الجلسات')
+                    ->helperText(function () use ($item) {
+                        if ($this->selectedItemType === 'trial') {
+                            return 'جلسة تجريبية واحدة فقط';
+                        }
 
-                    if (! $item) {
-                        return 'حدد عدد الجلسات التي تريد جدولتها';
-                    }
+                        if (! $item) {
+                            return '';
+                        }
 
-                    $remaining = $item['sessions_remaining'] ?? 0;
-                    if ($remaining > 0) {
-                        return "حدد عدد الجلسات التي تريد جدولتها (المتبقية: {$remaining} جلسة)";
-                    }
+                        $remaining = $item['sessions_remaining'] ?? 0;
+                        if ($remaining > 0) {
+                            return "المتبقية: {$remaining}";
+                        }
 
-                    return 'حدد عدد الجلسات التي تريد جدولتها (الحد الأقصى: 100 جلسة)';
-                })
-                ->numeric()
-                ->required()
-                ->minValue(1)
-                ->maxValue(function () use ($item) {
-                    if ($this->selectedItemType === 'trial') {
-                        return 1;
-                    }
+                        return '';
+                    })
+                    ->numeric()
+                    ->required()
+                    ->minValue(1)
+                    ->maxValue(function () use ($item) {
+                        if ($this->selectedItemType === 'trial') {
+                            return 1;
+                        }
 
-                    if (! $item) {
+                        if (! $item) {
+                            return 100;
+                        }
+
+                        if (isset($item['sessions_remaining']) && $item['sessions_remaining'] > 0) {
+                            return max(1, $item['sessions_remaining']);
+                        }
+
                         return 100;
-                    }
+                    })
+                    ->default(function () use ($item) {
+                        if ($this->selectedItemType === 'trial') {
+                            return 1;
+                        }
 
-                    if (isset($item['sessions_remaining']) && $item['sessions_remaining'] > 0) {
-                        return max(1, $item['sessions_remaining']);
-                    }
+                        if (! $item) {
+                            return 4;
+                        }
 
-                    return 100;
-                })
-                ->default(function () use ($item) {
-                    if ($this->selectedItemType === 'trial') {
+                        if (isset($item['sessions_remaining']) && $item['sessions_remaining'] > 0) {
+                            return $item['sessions_remaining'];
+                        }
+
                         return 1;
+                    })
+                    ->placeholder('العدد')
+                    ->disabled(fn () => $this->selectedItemType === 'trial')
+                    ->live(),
+            ]),
+
+            Placeholder::make('schedule_summary')
+                ->hiddenLabel()
+                ->content(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                    $days = $get('schedule_days') ?? [];
+                    $hour = $get('schedule_hour');
+                    $minute = $get('schedule_minute');
+                    $count = $get('session_count');
+                    $startDate = $get('schedule_start_date');
+
+                    $timezone = AcademyContextService::getTimezone();
+                    $now = Carbon::now($timezone);
+                    $currentTime = $now->format('h:i A');
+
+                    // Build time string
+                    $timeStr = '';
+                    if ($hour !== null && $minute !== null) {
+                        $h = (int) $hour;
+                        $m = (int) $minute;
+                        $hour12 = $h % 12 ?: 12;
+                        $period = $h < 12 ? 'ص' : 'م';
+                        $timeStr = $hour12.':'.str_pad($m, 2, '0', STR_PAD_LEFT).' '.$period;
                     }
 
-                    if (! $item) {
-                        return 4;
+                    // Build days string
+                    $dayLabels = [
+                        'saturday' => 'السبت', 'sunday' => 'الأحد', 'monday' => 'الاثنين',
+                        'tuesday' => 'الثلاثاء', 'wednesday' => 'الأربعاء',
+                        'thursday' => 'الخميس', 'friday' => 'الجمعة',
+                    ];
+                    $selectedDayNames = array_map(fn ($d) => $dayLabels[$d] ?? $d, $days);
+                    $daysStr = implode(' و', $selectedDayNames);
+
+                    // Build start date string
+                    $startStr = 'اليوم';
+                    if ($startDate) {
+                        try {
+                            $startStr = Carbon::parse($startDate)->translatedFormat('j F Y');
+                        } catch (\Exception $e) {
+                            $startStr = $startDate;
+                        }
                     }
 
-                    if (isset($item['sessions_remaining']) && $item['sessions_remaining'] > 0) {
-                        return $item['sessions_remaining'];
+                    // Build summary
+                    $parts = [];
+                    if ($count) {
+                        $parts[] = '<span class="font-semibold">'.e($count).'</span> جلسة';
+                    }
+                    if ($daysStr) {
+                        $parts[] = 'أيام <span class="font-semibold">'.e($daysStr).'</span>';
+                    }
+                    $parts[] = 'بدءاً من <span class="font-semibold">'.e($startStr).'</span>';
+                    if ($timeStr) {
+                        $parts[] = 'الساعة <span class="font-semibold">'.e($timeStr).'</span>';
                     }
 
-                    return $item['monthly_sessions'] ?? 4;
-                })
-                ->placeholder('أدخل العدد')
-                ->disabled(fn () => $this->selectedItemType === 'trial')
-                ->live(),
+                    $summary = implode(' ', $parts);
+
+                    // Timezone info
+                    $tzLabel = match ($timezone) {
+                        'Asia/Riyadh' => 'توقيت الرياض',
+                        'Africa/Cairo' => 'توقيت القاهرة',
+                        default => $timezone,
+                    };
+                    $gmtOffset = $now->format('P');
+
+                    $html = '<div class="p-3 rounded-lg text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700">';
+                    $html .= '<div class="text-gray-700 dark:text-gray-300">'.$summary.'</div>';
+                    $html .= '<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">';
+                    $html .= e($tzLabel).' (GMT'.e($gmtOffset).') — الوقت الحالي: '.e($currentTime);
+                    $html .= '</div>';
+                    $html .= '</div>';
+
+                    return new HtmlString($html);
+                }),
         ]);
     }
 
