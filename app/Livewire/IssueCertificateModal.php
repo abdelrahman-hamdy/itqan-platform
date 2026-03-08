@@ -153,7 +153,7 @@ class IssueCertificateModal extends Component
             ->map(function ($student) {
                 // Count certificates issued to this student for this circle
                 $certificateCount = Certificate::where('student_id', $student->id)
-                    ->where('certificateable_type', QuranCircle::class)
+                    ->where('certificateable_type', (new QuranCircle)->getMorphClass())
                     ->where('certificateable_id', $this->circleId)
                     ->count();
 
@@ -189,7 +189,7 @@ class IssueCertificateModal extends Component
             ->map(function ($enrollment) {
                 // Count certificates issued to this student for this course
                 $certificateCount = Certificate::where('student_id', $enrollment->student_id)
-                    ->where('certificateable_type', InteractiveCourse::class)
+                    ->where('certificateable_type', (new InteractiveCourse)->getMorphClass())
                     ->where('certificateable_id', $this->circleId)
                     ->count();
 

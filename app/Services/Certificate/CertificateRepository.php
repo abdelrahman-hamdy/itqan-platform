@@ -112,7 +112,7 @@ class CertificateRepository
      */
     public function getByCertificateable($certificateable): ?Certificate
     {
-        return Certificate::where('certificateable_type', get_class($certificateable))
+        return Certificate::where('certificateable_type', $certificateable->getMorphClass())
             ->where('certificateable_id', $certificateable->id)
             ->first();
     }
@@ -122,7 +122,7 @@ class CertificateRepository
      */
     public function existsForSubscription($subscription): bool
     {
-        return Certificate::where('certificateable_type', get_class($subscription))
+        return Certificate::where('certificateable_type', $subscription->getMorphClass())
             ->where('certificateable_id', $subscription->id)
             ->exists();
     }

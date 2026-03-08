@@ -2,11 +2,6 @@
 
 namespace App\Services;
 
-use Exception;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\Response;
-use App\Models\QuranCircle;
 use App\Contracts\CertificateServiceInterface;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
@@ -16,13 +11,18 @@ use App\Models\Certificate;
 use App\Models\CourseSubscription;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
+use App\Models\QuranCircle;
 use App\Models\QuranSubscription;
 use App\Models\User;
 use App\Services\Certificate\CertificateEmailService;
 use App\Services\Certificate\CertificatePdfGenerator;
 use App\Services\Certificate\CertificateRepository;
 use App\Services\Certificate\CertificateTemplateEngine;
+use Exception;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Tcpdf\Fpdi;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Certificate Service - Facade Pattern
@@ -89,7 +89,7 @@ class CertificateService implements CertificateServiceInterface
             'academy_id' => $academy->id,
             'student_id' => $subscription->student_id,
             'teacher_id' => null,
-            'certificateable_type' => CourseSubscription::class,
+            'certificateable_type' => (new CourseSubscription)->getMorphClass(),
             'certificateable_id' => $subscription->id,
             'certificate_type' => CertificateType::RECORDED_COURSE,
             'template_style' => $templateStyle,
@@ -147,7 +147,7 @@ class CertificateService implements CertificateServiceInterface
             'academy_id' => $academy->id,
             'student_id' => $enrollment->student_id,
             'teacher_id' => $teacher?->user_id,
-            'certificateable_type' => InteractiveCourseEnrollment::class,
+            'certificateable_type' => (new InteractiveCourseEnrollment)->getMorphClass(),
             'certificateable_id' => $enrollment->id,
             'certificate_type' => CertificateType::INTERACTIVE_COURSE,
             'template_style' => $templateStyle,
@@ -222,7 +222,7 @@ class CertificateService implements CertificateServiceInterface
             'academy_id' => $academy->id,
             'student_id' => $student->id,
             'teacher_id' => $teacherId,
-            'certificateable_type' => get_class($subscriptionable),
+            'certificateable_type' => $subscriptionable->getMorphClass(),
             'certificateable_id' => $subscriptionable->id,
             'certificate_type' => $certificateType,
             'template_style' => $templateStyle,
@@ -377,7 +377,7 @@ class CertificateService implements CertificateServiceInterface
             'academy_id' => $academy->id,
             'student_id' => $student->id,
             'teacher_id' => $circle->quran_teacher_id,
-            'certificateable_type' => QuranCircle::class,
+            'certificateable_type' => (new QuranCircle)->getMorphClass(),
             'certificateable_id' => $circle->id,
             'certificate_type' => CertificateType::QURAN_SUBSCRIPTION,
             'template_style' => $templateStyle,
@@ -422,7 +422,7 @@ class CertificateService implements CertificateServiceInterface
             'academy_id' => $academy->id,
             'student_id' => $student->id,
             'teacher_id' => $teacher?->user_id ?? $teacher?->id,
-            'certificateable_type' => InteractiveCourse::class,
+            'certificateable_type' => (new InteractiveCourse)->getMorphClass(),
             'certificateable_id' => $course->id,
             'certificate_type' => CertificateType::INTERACTIVE_COURSE,
             'template_style' => $templateStyle,

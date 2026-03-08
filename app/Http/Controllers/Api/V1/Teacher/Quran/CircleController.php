@@ -244,7 +244,7 @@ class CircleController extends Controller
 
         // Count certificates issued for students in this circle
         $studentIds = $circle->students->pluck('id')->filter()->toArray();
-        $certificatesIssued = Certificate::where('certificateable_type', QuranCircle::class)
+        $certificatesIssued = Certificate::where('certificateable_type', (new QuranCircle)->getMorphClass())
             ->where('certificateable_id', $circle->id)
             ->whereIn('student_id', $studentIds)
             ->count();
@@ -308,7 +308,7 @@ class CircleController extends Controller
 
         // Get all certificates for this circle
         $studentIds = $circle->students->pluck('id')->filter()->toArray();
-        $certificates = Certificate::where('certificateable_type', QuranCircle::class)
+        $certificates = Certificate::where('certificateable_type', (new QuranCircle)->getMorphClass())
             ->where('certificateable_id', $circle->id)
             ->whereIn('student_id', $studentIds)
             ->get()
@@ -377,7 +377,7 @@ class CircleController extends Controller
         // Get all certificates for this circle
         // students() returns User models — use 'id', not 'user_id' (User has no user_id field)
         $studentIds = $circle->students->pluck('id')->filter()->toArray();
-        $certificates = Certificate::where('certificateable_type', QuranCircle::class)
+        $certificates = Certificate::where('certificateable_type', (new QuranCircle)->getMorphClass())
             ->where('certificateable_id', $circle->id)
             ->whereIn('student_id', $studentIds)
             ->with('student')

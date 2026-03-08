@@ -14,7 +14,7 @@
         if ($circleModel) {
             // Get all certificates for this student in this circle
             $certificates = \App\Models\Certificate::where('student_id', $studentId)
-                ->where('certificateable_type', \App\Models\QuranCircle::class)
+                ->where('certificateable_type', (new \App\Models\QuranCircle)->getMorphClass())
                 ->where('certificateable_id', $circleModel->id)
                 ->orderBy('issued_at', 'desc')
                 ->get();

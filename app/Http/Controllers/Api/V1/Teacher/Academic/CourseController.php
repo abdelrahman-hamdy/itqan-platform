@@ -96,7 +96,7 @@ class CourseController extends Controller
 
         // Count certificates issued for students in this course
         $studentIds = CourseSubscription::where('interactive_course_id', $id)->pluck('student_id')->filter()->toArray();
-        $certificatesIssued = Certificate::where('certificateable_type', InteractiveCourse::class)
+        $certificatesIssued = Certificate::where('certificateable_type', (new InteractiveCourse)->getMorphClass())
             ->where('certificateable_id', $course->id)
             ->whereIn('student_id', $studentIds)
             ->count();
@@ -187,7 +187,7 @@ class CourseController extends Controller
 
         // Get all certificates for this course
         $studentIds = collect($enrollments->items())->pluck('user_id')->filter()->toArray();
-        $certificates = Certificate::where('certificateable_type', InteractiveCourse::class)
+        $certificates = Certificate::where('certificateable_type', (new InteractiveCourse)->getMorphClass())
             ->where('certificateable_id', $course->id)
             ->whereIn('student_id', $studentIds)
             ->get()
@@ -255,7 +255,7 @@ class CourseController extends Controller
         $studentIds = CourseSubscription::where('interactive_course_id', $id)->pluck('student_id')->filter()->toArray();
 
         // Get all certificates for this course
-        $certificates = Certificate::where('certificateable_type', InteractiveCourse::class)
+        $certificates = Certificate::where('certificateable_type', (new InteractiveCourse)->getMorphClass())
             ->where('certificateable_id', $course->id)
             ->whereIn('student_id', $studentIds)
             ->with('student')
