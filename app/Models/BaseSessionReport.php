@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Log;
 use App\Enums\AttendanceStatus;
 use App\Enums\PerformanceLevel;
 use App\Models\Traits\ScopedToAcademy;
@@ -12,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Log;
 
 /**
  * Base Session Report Model
@@ -379,7 +379,9 @@ abstract class BaseSessionReport extends Model
                 'status' => $meetingAttendance->attendance_status,
             ]);
 
-            return $meetingAttendance->attendance_status;
+            $status = $meetingAttendance->attendance_status;
+
+            return $status instanceof AttendanceStatus ? $status->value : (string) $status;
         }
 
         // Fallback to real-time calculation if not yet finalized
