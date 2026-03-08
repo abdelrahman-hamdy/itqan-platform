@@ -26,6 +26,8 @@ class Certificate extends Model
         'academy_id',
         'student_id',
         'teacher_id',
+        'certificateable_type',
+        'certificateable_id',
         'certificate_type',
         'template_style',
         'certificate_text',
