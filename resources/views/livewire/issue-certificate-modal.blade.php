@@ -72,6 +72,8 @@
                                                    value="{{ $student['subscription_id'] }}"
                                                    wire:model.live="selectedStudents"
                                                    class="w-5 h-5 text-green-500 border-gray-300 rounded focus:ring-green-500">
+                                            <x-avatar :user="(object)['name' => $student['name'], 'avatar' => $student['avatar'] ?? null, 'gender' => $student['gender'] ?? 'male']"
+                                                       userType="student" size="sm" />
                                             <div class="flex-1">
                                                 <p class="font-medium text-gray-900">{{ $student['name'] }}</p>
                                                 <p class="text-sm text-gray-500">{{ $student['email'] }}</p>
@@ -120,9 +122,12 @@
                         <!-- Individual Mode: Student Info Card -->
                         <div class="bg-blue-50 rounded-xl p-4 mb-6 border-2 border-blue-100">
                             <div class="flex items-center gap-4">
-                                <div class="w-16 h-16 bg-blue-200 rounded-full flex items-center justify-center">
-                                    <i class="ri-user-line text-2xl text-blue-600"></i>
-                                </div>
+                                @php
+                                    $studentUser = $subscriptionType === 'interactive'
+                                        ? ($subscription->student->user ?? $subscription->student)
+                                        : $subscription->student;
+                                @endphp
+                                <x-avatar :user="$studentUser" userType="student" size="md" />
                                 <div class="flex-1">
                                     <p class="text-sm text-blue-600 mb-1">{{ __('components.certificate.modal.student_label') }}</p>
                                     <p class="text-lg font-bold text-gray-900">{{ $studentName }}</p>
@@ -252,7 +257,7 @@
                             </div>
                         </div>
                     @elseif($previewMode)
-                        <!-- Preview Mode - Template Image with Text Preview -->
+                        <!-- Preview Mode - Template Image with CSS Overlay -->
                         <div class="bg-gray-50 rounded-xl p-4 mb-6">
                             <div class="flex items-center justify-between mb-4">
                                 <h4 class="text-lg font-bold text-gray-900">
@@ -273,42 +278,90 @@
                                 </div>
                             @endif
 
-                            <!-- Template Image Preview -->
-                            <div class="bg-white rounded-lg shadow-lg border-2 border-amber-200 overflow-hidden">
+                            <!-- Certificate Preview with Text Overlay -->
+                            <div class="bg-white rounded-lg shadow-lg border-2 border-amber-200 overflow-hidden"
+                                 dir="ltr"
+                                 style="position: relative; aspect-ratio: 297 / 210;">
+                                {{-- Template background image --}}
                                 <img src="{{ $templateStyles[$templateStyle]['previewImage'] ?? '' }}"
                                      alt="{{ __('components.certificate.modal.preview_alt') }}"
-                                     class="w-full h-auto">
-                            </div>
+                                     class="w-full h-full object-cover"
+                                     style="position: absolute; inset: 0;">
 
-                            <!-- Certificate Data Summary -->
-                            <div class="mt-4 bg-white rounded-lg border border-gray-200 p-4">
-                                <h5 class="font-bold text-gray-900 mb-3 text-sm">
-                                    <i class="ri-file-list-3-line ms-1 text-amber-500"></i>
-                                    {{ __('components.certificate.modal.certificate_data') }}
-                                </h5>
-                                <div class="space-y-2 text-sm">
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">{{ __('components.certificate.modal.student_name') }}</span>
-                                        <span class="font-medium text-gray-900">
-                                            @if($isGroup)
-                                                {{ __('components.certificate.modal.will_fill_each') }}
-                                            @else
-                                                {{ $studentName }}
-                                            @endif
-                                        </span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">{{ __('components.certificate.modal.academy_label') }}</span>
-                                        <span class="font-medium text-gray-900">{{ $academyName }}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">{{ __('components.certificate.modal.teacher_label') }}</span>
-                                        <span class="font-medium text-gray-900">{{ $teacherName }}</span>
-                                    </div>
-                                    <div class="border-t pt-2 mt-2">
-                                        <span class="text-gray-600 block mb-1">{{ __('components.certificate.modal.achievement_label') }}</span>
-                                        <p class="font-medium text-gray-900 text-start leading-relaxed">{{ $achievementText }}</p>
-                                    </div>
+                                {{-- Title: شهادة تقدير --}}
+                                <div style="position: absolute; top: 16.67%; width: 100%; text-align: center; direction: rtl;">
+                                    <span style="font-size: clamp(0.9rem, 2.5vw, 1.6rem); font-weight: 800; color: {{ $primaryColor }}; font-family: 'Cairo', 'Tajawal', sans-serif;">
+                                        شهادة تقدير
+                                    </span>
+                                </div>
+
+                                {{-- Subtitle --}}
+                                <div style="position: absolute; top: 26.19%; width: 100%; text-align: center; direction: rtl;">
+                                    <span style="font-size: clamp(0.5rem, 1.4vw, 0.85rem); color: #374151; font-family: 'Tajawal', sans-serif;">
+                                        تشهد {{ $academyName }} بأن
+                                    </span>
+                                </div>
+
+                                {{-- Student Name --}}
+                                <div style="position: absolute; top: 33.33%; width: 100%; text-align: center; direction: rtl;">
+                                    <span style="font-size: clamp(0.75rem, 2vw, 1.3rem); font-weight: 700; color: {{ $primaryColor }}; font-family: 'Cairo', 'Tajawal', sans-serif;">
+                                        @if($isGroup)
+                                            {{ __('components.certificate.modal.student_name_placeholder') }}
+                                        @else
+                                            {{ $studentName }}
+                                        @endif
+                                    </span>
+                                </div>
+
+                                {{-- Certificate / Achievement Text --}}
+                                <div style="position: absolute; top: 45.24%; left: 13.47%; width: 73.06%; text-align: center; direction: rtl;">
+                                    <p style="font-size: clamp(0.4rem, 1.1vw, 0.7rem); color: #4b5563; line-height: 1.7; font-family: 'Tajawal', sans-serif; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;">
+                                        {{ $achievementText }}
+                                    </p>
+                                </div>
+
+                                {{-- Bottom row: Teacher | Date | Academy (RTL order in LTR container) --}}
+                                {{-- Teacher (right side in certificate = left in LTR) --}}
+                                <div style="position: absolute; top: 74.76%; left: 10.77%; width: 23.57%; text-align: center; direction: rtl;">
+                                    <span style="font-size: clamp(0.35rem, 0.8vw, 0.55rem); color: #6b7280; font-family: 'Tajawal', sans-serif;">
+                                        المعلم
+                                    </span>
+                                </div>
+                                <div style="position: absolute; top: 78.57%; left: 10.77%; width: 23.57%; text-align: center; direction: rtl;">
+                                    <span style="font-size: clamp(0.35rem, 0.9vw, 0.6rem); font-weight: 600; color: #1f2937; font-family: 'Tajawal', sans-serif;">
+                                        {{ $teacherName }}
+                                    </span>
+                                </div>
+
+                                {{-- Date (center) --}}
+                                <div style="position: absolute; top: 74.76%; left: 36.70%; width: 26.94%; text-align: center; direction: rtl;">
+                                    <span style="font-size: clamp(0.35rem, 0.8vw, 0.55rem); color: #6b7280; font-family: 'Tajawal', sans-serif;">
+                                        التاريخ
+                                    </span>
+                                </div>
+                                <div style="position: absolute; top: 78.57%; left: 36.70%; width: 26.94%; text-align: center; direction: rtl;">
+                                    <span style="font-size: clamp(0.35rem, 0.9vw, 0.6rem); font-weight: 600; color: #1f2937; font-family: 'Tajawal', sans-serif;">
+                                        {{ $previewDate }}
+                                    </span>
+                                </div>
+
+                                {{-- Academy (left side in certificate = right in LTR) --}}
+                                <div style="position: absolute; top: 74.76%; left: 65.66%; width: 23.57%; text-align: center; direction: rtl;">
+                                    <span style="font-size: clamp(0.35rem, 0.8vw, 0.55rem); color: #6b7280; font-family: 'Tajawal', sans-serif;">
+                                        الأكاديمية
+                                    </span>
+                                </div>
+                                <div style="position: absolute; top: 78.57%; left: 65.66%; width: 23.57%; text-align: center; direction: rtl;">
+                                    <span style="font-size: clamp(0.35rem, 0.9vw, 0.6rem); font-weight: 600; color: #1f2937; font-family: 'Tajawal', sans-serif;">
+                                        {{ $academyName }}
+                                    </span>
+                                </div>
+
+                                {{-- Certificate Number --}}
+                                <div style="position: absolute; top: 90.48%; width: 100%; text-align: center; direction: rtl;">
+                                    <span style="font-size: clamp(0.3rem, 0.7vw, 0.5rem); color: #9ca3af; font-family: 'Tajawal', sans-serif;">
+                                        CERT-XXXX-XXXXXX
+                                    </span>
                                 </div>
                             </div>
 

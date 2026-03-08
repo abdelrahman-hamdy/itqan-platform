@@ -578,6 +578,7 @@ return [
             'certificate_data' => 'بيانات الشهادة',
             'student_name' => 'اسم الطالب:',
             'will_fill_each' => '[سيتم تعبئته لكل طالب]',
+            'student_name_placeholder' => 'اسم الطالب',
             'academy_label' => 'الأكاديمية:',
             'teacher_label' => 'المعلم:',
             'achievement_label' => 'نص الإنجاز:',

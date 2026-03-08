@@ -710,6 +710,7 @@ return [
             'certificate_data' => 'Certificate Data',
             'student_name' => 'Student Name:',
             'will_fill_each' => '[Will be filled for each student]',
+            'student_name_placeholder' => 'Student Name',
             'academy_label' => 'Academy:',
             'teacher_label' => 'Teacher:',
             'achievement_label' => 'Achievement Text:',

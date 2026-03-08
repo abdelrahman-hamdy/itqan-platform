@@ -2,22 +2,22 @@
 
 namespace App\Livewire;
 
-use App\Models\Certificate;
-use Log;
-use Exception;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\UserType;
 use App\Models\AcademicSubscription;
+use App\Models\Certificate;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
 use App\Models\QuranCircle;
 use App\Models\QuranSubscription;
 use App\Models\User;
 use App\Services\CertificateService;
+use Exception;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Log;
 
 /**
  * @property array $templateStyles
@@ -162,6 +162,8 @@ class IssueCertificateModal extends Component
                     'subscription_id' => (string) $student->id, // Cast to string for checkbox compatibility
                     'name' => $student->name ?? __('components.certificate.modal.fallbacks.student'),
                     'email' => $student->email ?? '',
+                    'avatar' => $student->avatar ?? null,
+                    'gender' => $student->gender ?? 'male',
                     'certificate_count' => $certificateCount,
                 ];
             })->values()->toArray();
@@ -177,7 +179,7 @@ class IssueCertificateModal extends Component
 
         // Scope to current user's academy to prevent cross-tenant access
         $this->course = InteractiveCourse::where('academy_id', $user->academy_id)
-            ->with(['academy', 'enrollments.student'])
+            ->with(['academy', 'enrollments.student.user'])
             ->findOrFail($this->circleId);
 
         // Get all enrolled students with their certificate count for this course
@@ -191,12 +193,16 @@ class IssueCertificateModal extends Component
                     ->where('certificateable_id', $this->circleId)
                     ->count();
 
+                $studentUser = $enrollment->student->user ?? $enrollment->student;
+
                 return [
                     'id' => $enrollment->student_id,
                     'enrollment_id' => $enrollment->id,
                     'subscription_id' => (string) $enrollment->student_id, // Cast to string for checkbox compatibility
-                    'name' => $enrollment->student->name ?? __('components.certificate.modal.fallbacks.student'),
-                    'email' => $enrollment->student->email ?? '',
+                    'name' => $studentUser->name ?? __('components.certificate.modal.fallbacks.student'),
+                    'email' => $studentUser->email ?? '',
+                    'avatar' => $studentUser->avatar ?? null,
+                    'gender' => $studentUser->gender ?? 'male',
                     'certificate_count' => $certificateCount,
                 ];
             })->values()->toArray();
@@ -558,6 +564,8 @@ class IssueCertificateModal extends Component
             'studentName' => $this->studentName,
             'academyName' => $this->academyName,
             'teacherName' => $this->teacherName,
+            'previewDate' => now()->locale('ar')->translatedFormat('d F Y'),
+            'primaryColor' => CertificateTemplateStyle::tryFrom($this->templateStyle)?->primaryColor() ?? '#1e40af',
         ]);
     }
 }
