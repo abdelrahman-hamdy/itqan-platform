@@ -53,61 +53,38 @@
                                     $previewImageUrl = $certificate->template_style?->previewImageUrl() ?? asset('certificates/templates/template_images/template_1.png');
                                 @endphp
 
-                                <div class="max-w-2xl mx-auto">
-                                    <!-- Certificate Card -->
-                                    <div class="bg-white rounded-lg md:rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                                        <!-- Template Preview -->
-                                        <div class="aspect-[297/210] relative overflow-hidden bg-gray-100">
-                                            <img src="{{ $previewImageUrl }}"
-                                                 alt="{{ __('teacher.common.certificate_preview') }}"
-                                                 class="w-full h-full object-cover">
-                                            <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-black/10 backdrop-blur-sm"></div>
-                                            <div class="absolute inset-0 flex items-center justify-center p-4">
-                                                <span class="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-white/95 backdrop-blur-sm rounded-lg md:rounded-xl text-sm sm:text-lg font-bold text-gray-800 shadow-lg">
-                                                    <i class="ri-award-fill text-lg sm:text-2xl text-amber-600"></i>
-                                                    {{ __('teacher.circles.individual.completion_certificate') }}
-                                                </span>
+                                <div class="space-y-3 md:space-y-4">
+                                    <div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow md:flex md:items-center">
+                                        <!-- Student Info -->
+                                        <div class="bg-gradient-to-r from-amber-50 to-yellow-50 px-3 md:px-4 py-2.5 md:py-3 border-b md:border-b-0 md:border-e border-amber-100 md:min-w-[200px] md:self-stretch md:flex md:items-center">
+                                            <div class="flex items-center gap-2 md:gap-3">
+                                                <x-avatar :user="$circle->student" size="sm" user-type="student" />
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="font-bold text-gray-900 text-sm truncate">{{ $circle->student->name }}</p>
+                                                    <p class="text-xs text-gray-600 truncate">{{ $certificate->certificate_number }}</p>
+                                                </div>
                                             </div>
                                         </div>
 
                                         <!-- Certificate Details -->
-                                        <div class="p-4 md:p-6">
-                                            <!-- Certificate Number -->
-                                            <div class="bg-amber-50 rounded-lg p-3 md:p-4 mb-3 md:mb-4 border border-amber-200">
-                                                <p class="text-xs text-amber-600 mb-0.5 md:mb-1">{{ __('teacher.circles.individual.certificate_number') }}</p>
-                                                <p class="text-sm md:text-lg font-mono font-bold text-amber-900 break-all">
-                                                    {{ $certificate->certificate_number }}
-                                                </p>
-                                            </div>
-
-                                            <!-- Meta Information -->
-                                            <div class="space-y-2 md:space-y-3 mb-4 md:mb-6">
-                                                <!-- Student -->
-                                                <div class="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm">
-                                                    <i class="ri-user-line text-gray-400 text-base md:text-lg"></i>
-                                                    <span class="text-gray-600">{{ __('teacher.circles.individual.student_name') }}:</span>
-                                                    <span class="font-medium text-gray-900 truncate">{{ $circle->student->name }}</span>
-                                                </div>
-
-                                                <!-- Issue Date -->
-                                                <div class="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm">
-                                                    <i class="ri-calendar-line text-gray-400 text-base md:text-lg"></i>
-                                                    <span class="text-gray-600">{{ __('teacher.circles.individual.issue_date') }}:</span>
-                                                    <span class="font-medium text-gray-900">{{ $certificate->issued_at->locale(app()->getLocale())->translatedFormat('d F Y') }}</span>
-                                                </div>
+                                        <div class="p-3 md:p-4 flex-1 md:flex md:items-center md:justify-between md:gap-4">
+                                            <!-- Issue Date -->
+                                            <div class="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-gray-600 mb-2 md:mb-0">
+                                                <i class="ri-calendar-line text-amber-500"></i>
+                                                <span>{{ $certificate->issued_at->locale(app()->getLocale())->translatedFormat('d F Y') }}</span>
                                             </div>
 
                                             <!-- Action Buttons -->
-                                            <div class="flex flex-col sm:flex-row gap-2 md:gap-3">
+                                            <div class="flex gap-2 md:shrink-0">
                                                 <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
                                                    target="_blank"
-                                                   class="min-h-[44px] flex-1 inline-flex items-center justify-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm md:text-base font-medium rounded-lg transition-colors shadow-sm hover:shadow-md">
-                                                    <i class="ri-eye-line text-base md:text-lg"></i>
+                                                   class="min-h-[40px] md:min-h-[44px] flex-1 md:flex-initial inline-flex items-center justify-center gap-1 px-3 md:px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
+                                                    <i class="ri-eye-line"></i>
                                                     {{ __('teacher.circles.individual.view_certificate') }}
                                                 </a>
                                                 <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
-                                                   class="min-h-[44px] flex-1 inline-flex items-center justify-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 bg-green-500 hover:bg-green-600 text-white text-sm md:text-base font-medium rounded-lg transition-colors shadow-sm hover:shadow-md">
-                                                    <i class="ri-download-line text-base md:text-lg"></i>
+                                                   class="min-h-[40px] md:min-h-[44px] flex-1 md:flex-initial inline-flex items-center justify-center gap-1 px-3 md:px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors">
+                                                    <i class="ri-download-line"></i>
                                                     {{ __('teacher.circles.individual.download_pdf') }}
                                                 </a>
                                             </div>
