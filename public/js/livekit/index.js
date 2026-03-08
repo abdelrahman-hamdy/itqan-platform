@@ -100,7 +100,7 @@ class LiveKitMeeting {
             roomName: this.config.roomName,
             participantName: this.config.participantName,
             role: this.config.role,
-            onConnectionStateChange: (state) => this.handleConnectionStateChange(state),
+            onConnectionStateChange: (state, context) => this.handleConnectionStateChange(state, context),
             onParticipantConnected: (participant) => this.handleParticipantConnected(participant),
             onParticipantDisconnected: (participant) => this.handleParticipantDisconnected(participant),
             onTrackSubscribed: (track, publication, participant) => this.handleTrackSubscribed(track, publication, participant),
@@ -993,8 +993,9 @@ class LiveKitMeeting {
     /**
      * Handle connection state changes - ENHANCED WITH LOADING OVERLAY
      * @param {string} state - Connection state
+     * @param {Object} context - Extra context from connection module
      */
-    handleConnectionStateChange(state) {
+    handleConnectionStateChange(state, context = {}) {
 
         switch (state) {
             case 'connected':
@@ -1003,13 +1004,16 @@ class LiveKitMeeting {
                 break;
             case 'disconnected':
                 this.isConnected = false;
-                this.showNotification(t('connection.disconnected'), 'error');
-                // CRITICAL FIX: Show loading overlay during disconnection
-                this.showLoadingOverlay(t('connection.disconnected_reconnecting'));
+                // Determine if this is a meeting-ended scenario vs unexpected disconnect
+                if (this.isMeetingEnded(context)) {
+                    this.showMeetingEndedOverlay();
+                } else {
+                    this.showNotification(t('connection.disconnected'), 'error');
+                    this.showLoadingOverlay(t('connection.disconnected_reconnecting'));
+                }
                 break;
             case 'reconnecting':
                 this.showNotification(t('connection.reconnecting'), 'info');
-                // CRITICAL FIX: Show loading overlay during reconnection
                 this.showLoadingOverlay(t('connection.reconnecting'));
                 break;
             case 'reconnected':
@@ -1018,6 +1022,53 @@ class LiveKitMeeting {
                 this.performSmoothTransition();
                 break;
         }
+    }
+
+    /**
+     * Check if the disconnect means the meeting has ended (not a network error)
+     */
+    isMeetingEnded(context) {
+        // 1. Explicitly flagged by autoTerminateMeeting / leave / end actions
+        if (window._meetingEndedIntentionally) return true;
+        if (context?.intentional) return true;
+
+        // 2. LiveKit disconnect reasons that indicate the room/meeting is gone
+        const endReasons = ['SERVER_SHUTDOWN', 'ROOM_DELETED', 'PARTICIPANT_REMOVED'];
+        if (context?.reason && endReasons.includes(String(context.reason))) return true;
+
+        // 3. Session timer says we're in the 'ended' phase
+        if (window.sessionTimer?.currentPhase === 'ended') return true;
+
+        return false;
+    }
+
+    /**
+     * Show a clean "meeting ended" view instead of the loading spinner
+     */
+    showMeetingEndedOverlay() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (!loadingOverlay) return;
+
+        const translations = window.meetingTranslations || {};
+        const endedTitle = translations.status?.session_ended || translations.timer?.session_ended || 'Meeting ended';
+        const endedDescription = translations.messages?.auto_terminated_description || 'The session has ended.';
+
+        loadingOverlay.innerHTML = `
+            <div class="text-center text-white px-6">
+                <div class="w-20 h-20 mx-auto mb-6 bg-white bg-opacity-10 rounded-full flex items-center justify-center">
+                    <i class="ri-checkbox-circle-line text-4xl text-green-400"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">${endedTitle}</h3>
+                <p class="text-gray-300 text-base mb-8 max-w-md mx-auto">${endedDescription}</p>
+                <button onclick="window.location.reload()" class="inline-flex items-center gap-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200">
+                    <i class="ri-arrow-go-back-line"></i>
+                    ${translations.messages?.return_to_session || 'Back to session'}
+                </button>
+            </div>
+        `;
+
+        loadingOverlay.classList.remove('fade-out');
+        loadingOverlay.style.display = 'flex';
     }
 
     /**
@@ -1364,6 +1415,7 @@ class LiveKitMeeting {
      * Handle leave request
      */
     handleLeaveRequest() {
+        window._meetingEndedIntentionally = true;
 
         this.destroy().then(() => {
             // Simply reload the current page instead of redirecting

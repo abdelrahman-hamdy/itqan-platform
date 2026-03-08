@@ -355,6 +355,8 @@ class MeetingDataChannelHandler {
     }
 
     handleEndSession(data) {
+        // Flag as intentional so the disconnect shows "meeting ended" not "reconnecting"
+        window._meetingEndedIntentionally = true;
 
         this.showNotification(t('session.ended_by_teacher'), 'warning');
 
@@ -373,6 +375,7 @@ class MeetingDataChannelHandler {
         const currentUserId = this.getCurrentUserId();
 
         if (targetId && currentUserId && targetId.toString() === currentUserId.toString()) {
+            window._meetingEndedIntentionally = true;
 
             this.showNotification(t('session.kicked_from_session'), 'error');
 

@@ -213,6 +213,7 @@
         messages: {
             auto_terminated: @json(__('meetings.messages.auto_terminated')),
             auto_terminated_description: @json(__('meetings.messages.auto_terminated_description')),
+            return_to_session: @json(__('meetings.messages.return_to_session')),
             session_cancelled_success: @json(__('meetings.messages.session_cancelled_success')),
             cancel_failed: @json(__('meetings.messages.cancel_failed')),
             unknown_error: @json(__('meetings.messages.unknown_error')),
@@ -685,6 +686,9 @@
      * Auto-terminate meeting when time expires
      */
     function autoTerminateMeeting() {
+        // Flag the disconnect as intentional so the UI shows "meeting ended" instead of "reconnecting"
+        window._meetingEndedIntentionally = true;
+
         // Show notification to user
         if (typeof showNotification !== 'undefined') {
             showNotification(window.meetingTranslations.messages.auto_terminated, 'info');
@@ -922,11 +926,14 @@
 
         // CRITICAL FIX: Stop timer when session is completed
         if (status === SessionStatus.COMPLETED && window.sessionTimer) {
+            // Flag so any subsequent disconnect shows "ended" not "reconnecting"
+            window._meetingEndedIntentionally = true;
+
             window.sessionTimer.stop();
-            
+
             // Mark timer as permanently stopped to prevent restart
             window.sessionTimer.isSessionCompleted = true;
-            
+
             // Set timer display to 00:00 and prevent further updates
             const timeDisplay = document.getElementById('time-display');
             if (timeDisplay) {
@@ -934,7 +941,7 @@
                 // Lock the display to prevent timer updates
                 timeDisplay.dataset.locked = 'true';
             }
-            
+
             // Update phase to ended
             updateSessionPhaseUI('ended');
         }
@@ -1535,6 +1542,9 @@ function completeSession(sessionId) {
     if (!confirm(window.meetingTranslations.confirm.end_session)) {
         return;
     }
+
+    // Flag the disconnect as intentional
+    window._meetingEndedIntentionally = true;
 
     fetch(`/teacher/sessions/${sessionId}/complete`, {
         method: 'PUT',

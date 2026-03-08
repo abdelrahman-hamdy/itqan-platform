@@ -121,6 +121,7 @@ return [
         'session_already_ended' => 'انتهت الجلسة',
         'auto_terminated' => 'انتهى وقت الجلسة وتم إنهاؤها تلقائياً',
         'auto_terminated_description' => 'تم إنهاء الجلسة تلقائياً بانتهاء الوقت المحدد',
+        'return_to_session' => 'العودة إلى الجلسة',
     ],
 
     // Attendance Status

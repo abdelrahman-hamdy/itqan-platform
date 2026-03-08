@@ -33,6 +33,7 @@ class LiveKitConnection {
         this.isConnecting = false;
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
+        this.intentionalDisconnect = false;
 
     }
 
@@ -90,6 +91,13 @@ class LiveKitConnection {
         // Connection state changes
         this.room.on(window.LiveKit.RoomEvent.ConnectionStateChanged, (state) => {
             this.handleConnectionStateChange(state);
+        });
+
+        // Disconnected event — fires with a reason when room is left
+        this.room.on(window.LiveKit.RoomEvent.Disconnected, (reason) => {
+            // reason can be: CLIENT_INITIATED, DUPLICATE_IDENTITY, SERVER_SHUTDOWN,
+            // PARTICIPANT_REMOVED, ROOM_DELETED, STATE_MISMATCH, JOIN_FAILURE, etc.
+            this.lastDisconnectReason = reason;
         });
 
         // Participant events
@@ -235,12 +243,12 @@ class LiveKitConnection {
         if (state === 'connected') {
             this.isConnecting = false;
             this.reconnectAttempts = 0;
-            
+
             // CRITICAL FIX: Record attendance when successfully connected
             this.recordAttendanceJoin();
         } else if (state === 'disconnected') {
             this.isConnecting = false;
-            
+
             // CRITICAL FIX: Record attendance when disconnected
             this.recordAttendanceLeave();
             this.handleDisconnection();
@@ -249,7 +257,11 @@ class LiveKitConnection {
         }
 
         if (this.config.onConnectionStateChange) {
-            this.config.onConnectionStateChange(state);
+            // Pass extra context so the UI can distinguish intentional vs unexpected disconnect
+            this.config.onConnectionStateChange(state, {
+                intentional: this.intentionalDisconnect,
+                reason: this.lastDisconnectReason || null,
+            });
         }
     }
 
@@ -354,7 +366,7 @@ class LiveKitConnection {
      */
     async disconnect() {
         if (this.room && this.isConnected) {
-            
+            this.intentionalDisconnect = true;
             await this.room.disconnect();
             this.isConnected = false;
             this.isConnecting = false;

@@ -121,6 +121,7 @@ return [
         'session_already_ended' => 'Session has ended',
         'auto_terminated' => 'Session time has expired and was automatically terminated',
         'auto_terminated_description' => 'Session was automatically ended as the scheduled time elapsed',
+        'return_to_session' => 'Back to session',
     ],
 
     // Attendance Status
