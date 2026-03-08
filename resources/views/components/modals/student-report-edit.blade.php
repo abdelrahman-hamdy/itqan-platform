@@ -26,7 +26,8 @@
          class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
 
     <!-- Modal Container - Bottom sheet on mobile, centered on desktop -->
-    <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+    <div @click="open = false; closeReportModal()"
+         class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
         <!-- Modal panel -->
         <div x-show="open"
              x-transition:enter="transition ease-out duration-300"
@@ -48,7 +49,7 @@
                     <span id="modalTitle">{{ __('components.modals.student_report_edit.edit_report_title') }}</span>
                 </h3>
                 <button @click="open = false; closeReportModal()"
-                        class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+                        class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-500 transition-colors cursor-pointer">
                     <i class="ri-close-line text-xl"></i>
                 </button>
             </div>
@@ -198,12 +199,12 @@
             <!-- Modal Footer - Fixed at bottom -->
             <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 p-4 md:p-5 border-t border-gray-100 bg-gray-50 flex-shrink-0">
                 <button type="button" @click="open = false; closeReportModal()"
-                        class="inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] px-6 py-3 sm:py-2 text-base sm:text-sm font-medium bg-gray-100 text-gray-700 rounded-xl sm:rounded-lg hover:bg-gray-200 transition-colors">
+                        class="inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] px-6 py-3 sm:py-2 text-base sm:text-sm font-medium bg-gray-100 text-gray-700 rounded-xl sm:rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
                     <i class="ri-close-line ms-1 rtl:ms-1 ltr:me-1"></i>
                     {{ __('components.modals.student_report_edit.cancel') }}
                 </button>
                 <button type="submit" form="reportEditForm" id="save_report_btn"
-                        class="inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] px-6 py-3 sm:py-2 text-base sm:text-sm font-medium bg-primary text-white rounded-xl sm:rounded-lg hover:bg-secondary transition-colors">
+                        class="inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] px-6 py-3 sm:py-2 text-base sm:text-sm font-medium bg-primary text-white rounded-xl sm:rounded-lg hover:bg-primary/80 transition-colors cursor-pointer">
                     <i class="ri-save-line ms-1 rtl:ms-1 ltr:me-1"></i>
                     {{ __('components.modals.student_report_edit.save_report') }}
                 </button>
@@ -497,25 +498,28 @@ document.getElementById('reportEditForm')?.addEventListener('submit', function(e
             `;
             messageDiv.classList.remove('hidden');
 
-            // Update the student card in place instead of reloading (to preserve LiveKit connection)
+            // Extract report from response (nested under data due to ApiResponses trait)
             const studentId = data.student_id;
-            if (result.report && typeof updateStudentCardDisplay === 'function') {
-                updateStudentCardDisplay(studentId, result.report);
+            const savedReport = result.data?.report || result.report;
+
+            // Update the student card in place instead of reloading (to preserve LiveKit connection)
+            if (savedReport && typeof updateStudentCardDisplay === 'function') {
+                updateStudentCardDisplay(studentId, savedReport);
             }
 
             // Update the shared reports cache so subsequent modal opens show fresh data
             if (typeof window.sessionReports !== 'undefined' && window.sessionReports) {
-                const reportId = result.report?.id || data.report_id;
+                const reportId = savedReport?.id || data.report_id;
                 window.sessionReports[studentId] = {
                     id: reportId,
-                    attendance_status: result.report?.attendance_status || data.attendance_status || '',
+                    attendance_status: savedReport?.attendance_status || data.attendance_status || '',
                     manually_evaluated: !!data.attendance_status,
-                    attendance_percentage: result.report?.attendance_percentage || null,
-                    actual_attendance_minutes: result.report?.actual_attendance_minutes || null,
-                    new_memorization_degree: result.report?.new_memorization_degree ?? data.new_memorization_degree ?? null,
-                    reservation_degree: result.report?.reservation_degree ?? data.reservation_degree ?? null,
-                    homework_degree: result.report?.homework_degree ?? data.homework_degree ?? null,
-                    notes: result.report?.notes || data.notes || ''
+                    attendance_percentage: savedReport?.attendance_percentage || null,
+                    actual_attendance_minutes: savedReport?.actual_attendance_minutes || null,
+                    new_memorization_degree: savedReport?.new_memorization_degree ?? data.new_memorization_degree ?? null,
+                    reservation_degree: savedReport?.reservation_degree ?? data.reservation_degree ?? null,
+                    homework_degree: savedReport?.homework_degree ?? data.homework_degree ?? null,
+                    notes: savedReport?.notes || data.notes || ''
                 };
             }
 

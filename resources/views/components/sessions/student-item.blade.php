@@ -359,7 +359,7 @@
 
     <!-- Action Buttons -->
     <div class="flex items-center justify-end gap-2">
-        <button id="student-edit-btn-{{ $student->id }}" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm" onclick="editStudentReport({{ $student->id }}, {{ $report?->id ?? 'null' }})">
+        <button id="student-edit-btn-{{ $student->id }}" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm cursor-pointer" onclick="editStudentReport({{ $student->id }}, {{ $report?->id ?? 'null' }})">
             <i class="ri-edit-line ms-1 rtl:ms-1 ltr:me-1"></i>
             <span id="student-edit-btn-text-{{ $student->id }}">{{ $report ? __('components.sessions.student_item.edit_report') : __('components.sessions.student_item.create_report') }}</span>
         </button>
