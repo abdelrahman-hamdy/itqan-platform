@@ -120,7 +120,7 @@ return [
             'breadcrumb' => 'الحلقات الفردية',
             'page_title' => 'الحلقة الفردية',
             'page_description' => 'إدارة الحلقة الفردية للطالب:',
-            'certificate_tab' => 'الشهادة',
+            'certificate_tab' => 'الشهادات',
             'no_sessions_yet' => 'لا توجد جلسات مجدولة بعد',
             'completion_certificate' => 'شهادة إتمام البرنامج',
             'certificate_number' => 'رقم الشهادة',

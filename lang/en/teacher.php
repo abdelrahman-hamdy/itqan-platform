@@ -230,7 +230,7 @@ return [
             'breadcrumb' => 'Individual Circles',
             'page_title' => 'Individual Circle',
             'page_description' => 'Managing individual circle for student:',
-            'certificate_tab' => 'Certificate',
+            'certificate_tab' => 'Certificates',
             'no_sessions_yet' => 'No sessions scheduled yet',
             'completion_certificate' => 'Program Completion Certificate',
             'certificate_number' => 'Certificate Number',
