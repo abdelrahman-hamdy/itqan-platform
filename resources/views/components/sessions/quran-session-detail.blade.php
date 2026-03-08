@@ -449,6 +449,70 @@
         }
     }
 
+    // Poll live attendance to update "لم ينضم بعد" badges in real-time
+    @php
+        $sessionStatusVal = $session->status instanceof \App\Enums\SessionStatus ? $session->status->value : $session->status;
+        $isSessionActive = in_array($sessionStatusVal, [
+            \App\Enums\SessionStatus::ONGOING->value,
+            \App\Enums\SessionStatus::READY->value,
+            \App\Enums\SessionStatus::SCHEDULED->value,
+        ]);
+    @endphp
+    @if($isSessionActive)
+    (function() {
+        const liveAttendanceUrl = '{{ route("teacher.student-reports.live-attendance", ["subdomain" => request()->route("subdomain"), "sessionId" => $session->id]) }}';
+        const statusLabels = {
+            in_meeting: { label: '{{ __("components.sessions.student_item.in_session_now") }}', class: 'bg-green-100 text-green-800', icon: 'ri-check-line animate-pulse' },
+            left: { label: '{{ __("components.sessions.student_item.left_session") }}', class: 'bg-orange-100 text-orange-800', icon: 'ri-logout-box-line' },
+            waiting: { label: '{{ __("components.sessions.student_item.not_joined") }}', class: 'bg-blue-50 text-blue-700', icon: 'ri-time-line' }
+        };
+
+        function pollLiveAttendance() {
+            fetch(liveAttendanceUrl, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.data?.attendances) return;
+                    const attendances = data.data.attendances;
+
+                    document.querySelectorAll('[id^="student-attendance-"]').forEach(container => {
+                        const studentId = container.id.replace('student-attendance-', '');
+                        const att = attendances[studentId];
+
+                        // Skip if report was manually evaluated (badge already set by teacher)
+                        if (window.sessionReports?.[studentId]?.manually_evaluated) return;
+
+                        let status;
+                        if (att?.is_in_meeting) {
+                            status = statusLabels.in_meeting;
+                        } else if (att?.has_joined && att?.has_left) {
+                            status = statusLabels.left;
+                        } else if (att?.has_joined) {
+                            status = statusLabels.in_meeting;
+                        } else {
+                            return; // Still waiting — don't touch the badge
+                        }
+
+                        container.innerHTML = `
+                            <span class="inline-flex items-center px-3 py-1.5 ${status.class} rounded-full text-sm font-semibold">
+                                <i class="${status.icon} ms-1 rtl:ms-1 ltr:me-1"></i>
+                                ${status.label}
+                            </span>`;
+                    });
+                })
+                .catch(() => {}); // Silently ignore polling errors
+        }
+
+        // Poll every 15 seconds while session is active
+        pollLiveAttendance();
+        const pollInterval = setInterval(pollLiveAttendance, 15000);
+
+        // Stop polling when page is hidden or navigated away
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) clearInterval(pollInterval);
+        });
+    })();
+    @endif
+
     document.addEventListener('DOMContentLoaded', function() {
         const sessionContentForm = document.getElementById('sessionContentForm');
         if (sessionContentForm) {

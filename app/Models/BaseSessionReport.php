@@ -305,6 +305,7 @@ abstract class BaseSessionReport extends Model
     /**
      * Sync attendance data from MeetingAttendance record
      * CRITICAL: Includes real-time attendance for active users
+     * Respects manually_evaluated flag — skips attendance_status override if teacher set it manually
      */
     public function syncFromMeetingAttendance(): void
     {
@@ -319,15 +320,22 @@ abstract class BaseSessionReport extends Model
                 : $meetingAttendance->total_duration_minutes;      // Completed cycles only
 
             $sessionDuration = $this->session->duration_minutes ?? 60;
-            $this->update([
+
+            $updateData = [
                 'meeting_enter_time' => $meetingAttendance->first_join_time,
                 'meeting_leave_time' => $meetingAttendance->last_leave_time,
                 'actual_attendance_minutes' => $actualMinutes,
-                'attendance_status' => $this->calculateRealtimeAttendanceStatusFromMeeting($meetingAttendance),
                 'attendance_percentage' => $this->calculateAttendancePercentage($actualMinutes, $sessionDuration),
                 'meeting_events' => $meetingAttendance->join_leave_cycles ?? [],
                 'is_calculated' => $meetingAttendance->is_calculated,
-            ]);
+            ];
+
+            // Only overwrite attendance_status if NOT manually evaluated
+            if (! $this->manually_evaluated) {
+                $updateData['attendance_status'] = $this->calculateRealtimeAttendanceStatusFromMeeting($meetingAttendance);
+            }
+
+            $this->update($updateData);
 
             // Recalculate lateness based on session timing
             $this->calculateLateness();

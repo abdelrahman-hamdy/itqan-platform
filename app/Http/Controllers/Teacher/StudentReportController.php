@@ -6,6 +6,7 @@ use Exception;
 use App\Contracts\StudentReportServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Models\User;
@@ -307,6 +308,48 @@ class StudentReportController extends Controller
             ]);
 
             return $this->serverError('خطأ في جلب إحصائيات الجلسة');
+        }
+    }
+
+    /**
+     * Get live meeting attendance status for all students in a session.
+     * Used by polling JS to update "لم ينضم بعد" badges in real-time.
+     */
+    public function getLiveAttendance(string $subdomain, string $sessionId): JsonResponse
+    {
+        try {
+            $session = QuranSession::where('id', $sessionId)
+                ->where('quran_teacher_id', Auth::id())
+                ->first();
+
+            if (! $session) {
+                return $this->notFound('الجلسة غير موجودة');
+            }
+
+            $attendances = MeetingAttendance::where('session_id', $sessionId)
+                ->get(['user_id', 'first_join_time', 'last_leave_time', 'total_duration_minutes', 'is_currently_in_meeting']);
+
+            $result = [];
+            foreach ($attendances as $attendance) {
+                $result[$attendance->user_id] = [
+                    'has_joined' => $attendance->first_join_time !== null,
+                    'is_in_meeting' => (bool) $attendance->is_currently_in_meeting,
+                    'has_left' => $attendance->last_leave_time !== null && ! $attendance->is_currently_in_meeting,
+                    'duration_minutes' => $attendance->total_duration_minutes ?? 0,
+                ];
+            }
+
+            return $this->success([
+                'attendances' => $result,
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('Error fetching live attendance', [
+                'session_id' => $sessionId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->serverError('خطأ في جلب بيانات الحضور');
         }
     }
 }

@@ -151,6 +151,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
             Route::post('update', [\App\Http\Controllers\Teacher\StudentReportController::class, 'updateEvaluation'])->name('update');
             Route::post('sessions/{sessionId}/generate', [\App\Http\Controllers\Teacher\StudentReportController::class, 'generateSessionReports'])->name('generate-session');
             Route::get('sessions/{sessionId}/stats', [\App\Http\Controllers\Teacher\StudentReportController::class, 'getSessionStats'])->name('session-stats');
+            Route::get('sessions/{sessionId}/live-attendance', [\App\Http\Controllers\Teacher\StudentReportController::class, 'getLiveAttendance'])->name('live-attendance');
         });
 
         // Student basic info API
