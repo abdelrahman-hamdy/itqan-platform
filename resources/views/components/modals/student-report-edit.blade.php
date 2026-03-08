@@ -384,8 +384,9 @@ function fetchQuranHomeworkConfig(sessionId) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success && data.homework) {
-            const homework = data.homework;
+        // homework is nested under data.data due to ApiResponses trait wrapping
+        const homework = data.data?.homework || data.homework;
+        if (data.success && homework) {
 
             // Show/hide memorization field based on has_new_memorization
             if (homework.has_new_memorization) {
