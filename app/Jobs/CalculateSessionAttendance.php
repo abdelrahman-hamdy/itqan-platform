@@ -11,12 +11,14 @@ use App\Models\Academy;
 use App\Models\InteractiveCourseSession;
 use App\Models\InteractiveSessionReport;
 use App\Models\MeetingAttendance;
+use App\Models\MeetingAttendanceEvent;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Services\Traits\AttendanceCalculatorTrait;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -31,20 +33,21 @@ use Throwable;
  * Runs 5 minutes after session ends to ensure all webhooks received.
  *
  * MULTI-TENANCY: Processes sessions grouped by academy for proper tenant isolation.
+ * ShouldBeUnique: prevents overlapping dispatches that cause duplicate UUID failures.
  */
-class CalculateSessionAttendance implements ShouldQueue
+class CalculateSessionAttendance implements ShouldBeUnique, ShouldQueue
 {
     use AttendanceCalculatorTrait, Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TenantAwareJob;
 
     /**
      * The number of times the job may be attempted.
      */
-    public int $tries = 3;
+    public int $tries = 5;
 
     /**
      * The maximum number of unhandled exceptions to allow before failing.
      */
-    public int $maxExceptions = 2;
+    public int $maxExceptions = 3;
 
     /**
      * The number of seconds to wait before retrying with exponential backoff.
@@ -54,7 +57,12 @@ class CalculateSessionAttendance implements ShouldQueue
     /**
      * The number of seconds the job can run before timing out.
      */
-    public int $timeout = 120;
+    public int $timeout = 300;
+
+    /**
+     * The number of seconds the unique lock should be held.
+     */
+    public int $uniqueFor = 600;
 
     /**
      * Execute the job.
@@ -97,95 +105,70 @@ class CalculateSessionAttendance implements ShouldQueue
 
     /**
      * Process all sessions for a specific academy.
+     *
+     * Optimized approach: query uncalculated MeetingAttendance records first,
+     * then load the associated session. This avoids scanning thousands of sessions
+     * that have no pending attendance to calculate.
      */
     private function processAcademySessions(Academy $academy, int &$processed, int &$skipped, int &$failed): void
     {
-        // Find all sessions that ended recently
-        // Use configurable delay to allow session data to finalize
         $calculationDelayMinutes = config('business.attendance.calculation_delay_minutes', 5);
         $gracePeriod = now()->subMinutes($calculationDelayMinutes);
 
-        $chunkSize = 100;
+        // Process each session type
+        $sessionTypes = [
+            'quran' => QuranSession::class,
+            'academic' => AcademicSession::class,
+            'interactive' => InteractiveCourseSession::class,
+        ];
 
-        // Process Quran sessions with chunking - filtered by academy
-        // ONGOING sessions are included regardless of the 7-day lookback window to handle
-        // sessions that started before midnight and are still ongoing at job run time
-        QuranSession::where('academy_id', $academy->id)
-            ->whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
-            ->where(function ($q) {
-                $q->where('status', SessionStatus::ONGOING->value)
-                    ->orWhere(function ($q2) {
-                        $q2->where('status', SessionStatus::COMPLETED->value)
-                            ->where('scheduled_at', '>=', now()->subDays(7));
-                    });
-            })
-            ->chunk($chunkSize, function ($sessions) use (&$processed, &$skipped, &$failed) {
-                $this->processSessionBatch($sessions, $processed, $skipped, $failed);
-            });
+        foreach ($sessionTypes as $type => $sessionClass) {
+            $query = $sessionClass::query();
 
-        // Process Academic sessions with chunking - filtered by academy
-        AcademicSession::where('academy_id', $academy->id)
-            ->whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
-            ->where(function ($q) {
-                $q->where('status', SessionStatus::ONGOING->value)
-                    ->orWhere(function ($q2) {
-                        $q2->where('status', SessionStatus::COMPLETED->value)
-                            ->where('scheduled_at', '>=', now()->subDays(7));
-                    });
-            })
-            ->chunk($chunkSize, function ($sessions) use (&$processed, &$skipped, &$failed) {
-                $this->processSessionBatch($sessions, $processed, $skipped, $failed);
-            });
-
-        // Process Interactive course sessions with chunking - filtered by academy via course relationship
-        if (class_exists(InteractiveCourseSession::class)) {
-            InteractiveCourseSession::whereHas('course', function ($query) use ($academy) {
+            // Scope by academy
+            if ($type === 'interactive') {
+                $query->whereHas('course', fn ($q) => $q->where('academy_id', $academy->id));
+            } else {
                 $query->where('academy_id', $academy->id);
-            })
-                ->whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
-                ->where(function ($q) {
-                    $q->where('status', SessionStatus::ONGOING->value)
-                        ->orWhere(function ($q2) {
-                            $q2->where('status', SessionStatus::COMPLETED->value)
-                                ->where('scheduled_at', '>=', now()->subDays(7));
-                        });
-                })
-                ->chunk($chunkSize, function ($sessions) use (&$processed, &$skipped, &$failed) {
-                    $this->processSessionBatch($sessions, $processed, $skipped, $failed);
-                });
-        }
-    }
-
-    /**
-     * Process a batch of sessions
-     */
-    private function processSessionBatch($sessions, int &$processed, int &$skipped, int &$failed): void
-    {
-        foreach ($sessions as $session) {
-            // Find all uncalculated attendance records for this session
-            $attendances = MeetingAttendance::where('session_id', $session->id)
-                ->where('is_calculated', false)
-                ->get();
-
-            if ($attendances->isEmpty()) {
-                $skipped++;
-
-                continue;
             }
 
-            foreach ($attendances as $attendance) {
-                try {
-                    $this->calculateAttendance($session, $attendance);
-                    $processed++;
-                } catch (Exception $e) {
-                    Log::error('Failed to calculate attendance', [
-                        'session_id' => $session->id,
-                        'user_id' => $attendance->user_id,
-                        'error' => $e->getMessage(),
-                    ]);
-                    $failed++;
+            // Only sessions that have ended (past grace period)
+            $query->whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod]);
+
+            // Only ONGOING or recently COMPLETED sessions
+            $query->where(function ($q) {
+                $q->where('status', SessionStatus::ONGOING->value)
+                    ->orWhere(function ($q2) {
+                        $q2->where('status', SessionStatus::COMPLETED->value)
+                            ->where('scheduled_at', '>=', now()->subDays(7));
+                    });
+            });
+
+            // Only sessions that have uncalculated attendance records.
+            // Use direct table subquery (not scoped relationship) to avoid
+            // session_type mismatch between getMeetingType() and stored session_type.
+            $table = (new $sessionClass)->getTable();
+            $query->whereRaw("EXISTS (SELECT 1 FROM meeting_attendances WHERE meeting_attendances.session_id = {$table}.id AND meeting_attendances.is_calculated = 0)");
+
+            $query->each(function ($session) use (&$processed, &$failed) {
+                $attendances = MeetingAttendance::where('session_id', $session->id)
+                    ->where('is_calculated', false)
+                    ->get();
+
+                foreach ($attendances as $attendance) {
+                    try {
+                        $this->calculateAttendance($session, $attendance);
+                        $processed++;
+                    } catch (Exception $e) {
+                        Log::error('Failed to calculate attendance', [
+                            'session_id' => $session->id,
+                            'user_id' => $attendance->user_id,
+                            'error' => $e->getMessage(),
+                        ]);
+                        $failed++;
+                    }
                 }
-            }
+            });
         }
     }
 
@@ -199,6 +182,9 @@ class CalculateSessionAttendance implements ShouldQueue
         // Session timing info
         $sessionStart = $session->scheduled_at;
         $sessionEnd = $session->scheduled_end_at ?? $sessionStart->copy()->addMinutes($session->duration_minutes ?? 60);
+
+        // Reconcile any open cycles before calculating
+        $cycles = $this->reconcileOpenCycles($cycles, $session, $attendance, $sessionEnd);
         $sessionDuration = $sessionStart->diffInMinutes($sessionEnd);
 
         // 🔥 FIX: Calculate total duration from cycles, excluding preparation and buffer time
@@ -327,6 +313,108 @@ class CalculateSessionAttendance implements ShouldQueue
         ]);
 
         return $totalMinutes;
+    }
+
+    /**
+     * Reconcile open join cycles that have no matching leave.
+     *
+     * Looks up MeetingAttendanceEvent for a matching closed event,
+     * otherwise falls back to session end time.
+     */
+    private function reconcileOpenCycles(array $cycles, $session, MeetingAttendance $attendance, Carbon $sessionEnd): array
+    {
+        $hasChanges = false;
+        $fallbackLeaveTime = $session->ended_at ?? $sessionEnd;
+
+        // We need to iterate carefully because we may insert elements (array_splice)
+        $i = 0;
+        while ($i < count($cycles)) {
+            $cycle = $cycles[$i];
+
+            $isOpenWebhookJoin = isset($cycle['type']) && $cycle['type'] === 'join'
+                && ! $this->hasMatchingLeave($cycles, $i);
+            $isOpenManualCycle = isset($cycle['joined_at']) && ! isset($cycle['left_at']);
+
+            if (! $isOpenWebhookJoin && ! $isOpenManualCycle) {
+                $i++;
+                continue;
+            }
+
+            // Try to find matching closed event in MeetingAttendanceEvent table
+            $participantSid = $cycle['participant_sid'] ?? null;
+            $closedEvent = null;
+
+            if ($participantSid) {
+                $closedEvent = MeetingAttendanceEvent::where('session_id', $session->id)
+                    ->where('participant_sid', $participantSid)
+                    ->whereNotNull('left_at')
+                    ->first();
+            }
+
+            $leaveTime = $closedEvent?->left_at ?? $fallbackLeaveTime;
+
+            if ($isOpenWebhookJoin) {
+                // Insert matching leave after this join
+                array_splice($cycles, $i + 1, 0, [[
+                    'type' => 'leave',
+                    'timestamp' => $leaveTime instanceof Carbon ? $leaveTime->toISOString() : (string) $leaveTime,
+                    'auto_reconciled' => true,
+                    'reconciled_from' => $closedEvent ? 'event_table' : 'session_end',
+                ]]);
+                $i += 2; // Skip past both join and new leave
+            } elseif ($isOpenManualCycle) {
+                $cycles[$i]['left_at'] = $leaveTime instanceof Carbon ? $leaveTime->toISOString() : (string) $leaveTime;
+                $cycles[$i]['auto_reconciled'] = true;
+                $cycles[$i]['reconciled_from'] = $closedEvent ? 'event_table' : 'session_end';
+                $i++;
+            }
+
+            $hasChanges = true;
+
+            Log::info('Reconciled open attendance cycle', [
+                'session_id' => $session->id,
+                'user_id' => $attendance->user_id,
+                'cycle_index' => $i,
+                'format' => $isOpenWebhookJoin ? 'webhook' : 'manual',
+                'leave_source' => $closedEvent ? 'event_table' : 'session_end',
+                'leave_time' => $leaveTime instanceof Carbon ? $leaveTime->toISOString() : (string) $leaveTime,
+            ]);
+        }
+
+        if ($hasChanges) {
+            $attendance->update(['join_leave_cycles' => $cycles]);
+        }
+
+        return $cycles;
+    }
+
+    /**
+     * Check if a webhook join event at the given index has a matching leave event after it.
+     */
+    private function hasMatchingLeave(array $cycles, int $joinIndex): bool
+    {
+        $joinCycle = $cycles[$joinIndex];
+        $participantSid = $joinCycle['participant_sid'] ?? null;
+
+        for ($i = $joinIndex + 1; $i < count($cycles); $i++) {
+            $cycle = $cycles[$i];
+            if (isset($cycle['type']) && $cycle['type'] === 'leave') {
+                // If participant_sid matches or next leave in sequence
+                if ($participantSid && isset($cycle['participant_sid']) && $cycle['participant_sid'] === $participantSid) {
+                    return true;
+                }
+                // If no participant_sid, match positionally (next leave after this join)
+                if (! $participantSid) {
+                    return true;
+                }
+            }
+            // If we hit another join before finding a leave, this join is open
+            if (isset($cycle['type']) && $cycle['type'] === 'join') {
+                break;
+            }
+        }
+
+        return false;
     }
 
     /**
