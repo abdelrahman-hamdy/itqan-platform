@@ -588,7 +588,7 @@ class SessionTransitionService
             ->first();
 
         if ($studentReport) {
-            if ($studentReport->attendance_status === AttendanceStatus::ABSENT->value) {
+            if ($studentReport->attendance_status === AttendanceStatus::ABSENT) {
                 $session->update(['status' => SessionStatus::ABSENT]);
                 Log::info('Individual session marked as ABSENT based on StudentSessionReport', [
                     'session_id' => $session->id,
@@ -597,29 +597,26 @@ class SessionTransitionService
                     'report_status' => $studentReport->attendance_status,
                 ]);
             }
+        } else {
+            // Fallback: Check MeetingAttendance only if no StudentSessionReport exists
+            $studentAttendance = $session->meetingAttendances()
+                ->where('user_id', $session->student_id)
+                ->where('user_type', 'student')
+                ->first();
 
-            return;
+            if ($studentAttendance && $studentAttendance->attendance_status === AttendanceStatus::ABSENT) {
+                $session->update(['status' => SessionStatus::ABSENT]);
+                Log::info('Individual session marked as ABSENT based on MeetingAttendance (fallback)', [
+                    'session_id' => $session->id,
+                    'session_type' => $this->settingsService->getSessionType($session),
+                    'student_id' => $session->student_id,
+                ]);
+            }
         }
 
-        // Fallback: Check MeetingAttendance only if no StudentSessionReport exists
-        $studentAttendance = $session->meetingAttendances()
-            ->where('user_id', $session->student_id)
-            ->where('user_type', 'student')
-            ->first();
-
-        if ($studentAttendance && $studentAttendance->attendance_status === AttendanceStatus::ABSENT->value) {
-            $session->update(['status' => SessionStatus::ABSENT]);
-            Log::info('Individual session marked as ABSENT based on MeetingAttendance (fallback)', [
-                'session_id' => $session->id,
-                'session_type' => $this->settingsService->getSessionType($session),
-                'student_id' => $session->student_id,
-            ]);
-
-            // Session is ABSENT — do not count towards subscription (consistent with StudentSessionReport path above).
-            return;
-        }
-
-        // Update subscription usage for genuinely completed sessions only
+        // Always count subscription usage — the trait's countsTowardsSubscription()
+        // checks session status (COMPLETED/ABSENT count, CANCELLED does not),
+        // and subscription_counted flag prevents double-counting.
         if (method_exists($session, 'updateSubscriptionUsage')) {
             $session->updateSubscriptionUsage();
         }

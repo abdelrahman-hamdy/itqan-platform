@@ -556,7 +556,9 @@ class AcademicSubscription extends BaseSubscription
      */
     public function updateProgress(): void
     {
-        $this->update([
+        // Use updateQuietly to avoid re-triggering the updated event,
+        // which would cause infinite recursion (updated → updateProgress → update → updated → ...)
+        $this->updateQuietly([
             'progress_percentage' => $this->completion_rate,
         ]);
     }
