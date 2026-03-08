@@ -308,7 +308,7 @@ class CertificateService implements CertificateServiceInterface
         }
 
         $filePath = $certificate->file_path;
-        if (! str_starts_with($filePath, 'certificates/')) {
+        if (! str_contains($filePath, 'certificates/')) {
             throw new \RuntimeException('Invalid certificate file path.');
         }
 

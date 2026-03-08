@@ -166,8 +166,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         */
 
         Route::get('/my-certificates', [CertificateController::class, 'index'])->name('student.certificates');
-        Route::get('/my-certificates/{certificate}/download', [CertificateController::class, 'download'])->name('student.certificate.download');
-        Route::get('/my-certificates/{certificate}/view', [CertificateController::class, 'view'])->name('student.certificate.view');
         Route::post('/my-certificates/request-interactive', [CertificateController::class, 'requestForInteractiveCourse'])->name('student.certificate.request-interactive');
 
         /*
@@ -247,9 +245,13 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    // Unified routes accessible by authenticated users (authorization enforced in controller)
+    // Unified routes accessible by authenticated users (authorization enforced in controller/policy)
     Route::middleware(['auth'])->group(function () {
         Route::get('/individual-circles/{circle}', [\App\Http\Controllers\QuranIndividualCircleController::class, 'show'])
             ->name('individual-circles.show');
+
+        // Certificate view/download - accessible by students, teachers, admins (authorization via CertificatePolicy)
+        Route::get('/my-certificates/{certificate}/download', [CertificateController::class, 'download'])->name('student.certificate.download');
+        Route::get('/my-certificates/{certificate}/view', [CertificateController::class, 'view'])->name('student.certificate.view');
     });
 });
