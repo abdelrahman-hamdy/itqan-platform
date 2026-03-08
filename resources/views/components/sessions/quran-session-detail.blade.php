@@ -229,28 +229,28 @@
         @endif
     };
 
+    // Shared reports cache — updated by the modal's save handler so reopening shows fresh data
+    @php
+        $reports = $session->studentReports ?? collect();
+    @endphp
+    window.sessionReports = {
+        @foreach($reports as $report)
+            {{ $report->student_id }}: {
+                id: {{ $report->id ?? 'null' }},
+                attendance_status: '{{ $report->attendance_status ?? '' }}',
+                manually_evaluated: {{ $report->manually_evaluated ? 'true' : 'false' }},
+                attendance_percentage: {{ $report->attendance_percentage ?? 'null' }},
+                actual_attendance_minutes: {{ $report->actual_attendance_minutes ?? 'null' }},
+                new_memorization_degree: {{ $report->new_memorization_degree ?? 'null' }},
+                reservation_degree: {{ $report->reservation_degree ?? 'null' }},
+                notes: `{{ addslashes($report->notes ?? '') }}`
+            },
+        @endforeach
+    };
+
     // Get report data for modal
     function getReportData(studentId) {
-        @php
-            $reports = $session->studentReports ?? collect();
-        @endphp
-
-        const reports = {
-            @foreach($reports as $report)
-                {{ $report->student_id }}: {
-                    id: {{ $report->id ?? 'null' }},
-                    attendance_status: '{{ $report->attendance_status ?? '' }}',
-                    manually_evaluated: {{ $report->manually_evaluated ? 'true' : 'false' }},
-                    attendance_percentage: {{ $report->attendance_percentage ?? 'null' }},
-                    actual_attendance_minutes: {{ $report->actual_attendance_minutes ?? 'null' }},
-                    new_memorization_degree: {{ $report->new_memorization_degree ?? 'null' }},
-                    reservation_degree: {{ $report->reservation_degree ?? 'null' }},
-                    notes: `{{ addslashes($report->notes ?? '') }}`
-                },
-            @endforeach
-        };
-
-        return reports[studentId] || null;
+        return window.sessionReports[studentId] || null;
     }
 
     function getStudentName(studentId) {

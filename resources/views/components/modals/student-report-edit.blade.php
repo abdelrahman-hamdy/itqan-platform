@@ -246,6 +246,13 @@ function openReportModal(sessionId, studentId, studentName, reportData = null, r
     form.reset();
     document.getElementById('modal_message').classList.add('hidden');
 
+    // Reset save button state (may be stuck in "saving" from previous submit)
+    const submitButton = document.getElementById('save_report_btn');
+    if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="ri-save-line ms-1 rtl:ms-1 ltr:me-1"></i>' + @json(__('components.modals.student_report_edit.save_report'));
+    }
+
     // Dispatch Alpine.js event to open modal
     window.dispatchEvent(new CustomEvent('open-report-modal'));
 
@@ -367,12 +374,13 @@ function fetchQuranHomeworkConfig(sessionId) {
     reviewField.style.display = 'block';
     noHomeworkMsg.classList.add('hidden');
 
-    // Try to fetch homework config
+    // Try to fetch homework config (no-store prevents stale cached responses)
     fetch(`/teacher/sessions/${sessionId}/homework`, {
         headers: {
             'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-        }
+        },
+        cache: 'no-store'
     })
     .then(response => response.json())
     .then(data => {
@@ -494,22 +502,20 @@ document.getElementById('reportEditForm')?.addEventListener('submit', function(e
                 updateStudentCardDisplay(studentId, result.report);
             }
 
-            // Update the local reports cache if it exists
-            if (typeof window.getReportData === 'function' || typeof reports !== 'undefined') {
+            // Update the shared reports cache so subsequent modal opens show fresh data
+            if (typeof window.sessionReports !== 'undefined' && window.sessionReports) {
                 const reportId = result.report?.id || data.report_id;
-                if (typeof reports !== 'undefined' && reports) {
-                    reports[studentId] = {
-                        id: reportId,
-                        attendance_status: result.report?.attendance_status || data.attendance_status || '',
-                        manually_evaluated: !!data.attendance_status,
-                        attendance_percentage: result.report?.attendance_percentage || null,
-                        actual_attendance_minutes: result.report?.actual_attendance_minutes || null,
-                        new_memorization_degree: result.report?.new_memorization_degree ?? data.new_memorization_degree ?? null,
-                        reservation_degree: result.report?.reservation_degree ?? data.reservation_degree ?? null,
-                        homework_degree: result.report?.homework_degree ?? data.homework_degree ?? null,
-                        notes: result.report?.notes || data.notes || ''
-                    };
-                }
+                window.sessionReports[studentId] = {
+                    id: reportId,
+                    attendance_status: result.report?.attendance_status || data.attendance_status || '',
+                    manually_evaluated: !!data.attendance_status,
+                    attendance_percentage: result.report?.attendance_percentage || null,
+                    actual_attendance_minutes: result.report?.actual_attendance_minutes || null,
+                    new_memorization_degree: result.report?.new_memorization_degree ?? data.new_memorization_degree ?? null,
+                    reservation_degree: result.report?.reservation_degree ?? data.reservation_degree ?? null,
+                    homework_degree: result.report?.homework_degree ?? data.homework_degree ?? null,
+                    notes: result.report?.notes || data.notes || ''
+                };
             }
 
             // Close modal after short delay
