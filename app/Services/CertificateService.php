@@ -23,6 +23,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Tcpdf\Fpdi;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Certificate Service - Facade Pattern
@@ -298,7 +299,7 @@ class CertificateService implements CertificateServiceInterface
     /**
      * Download certificate
      */
-    public function downloadCertificate(Certificate $certificate): BinaryFileResponse
+    public function downloadCertificate(Certificate $certificate): BinaryFileResponse|StreamedResponse
     {
         if (! $certificate->fileExists()) {
             // Regenerate if file doesn't exist
