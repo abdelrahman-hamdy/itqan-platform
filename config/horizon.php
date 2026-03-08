@@ -228,7 +228,7 @@ return [
         ],
         'supervisor-meetings' => [
             'connection' => 'redis',
-            'queue' => ['meetings', 'attendance'],
+            'queue' => ['meetings'],
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
             'maxProcesses' => 1,
@@ -237,6 +237,19 @@ return [
             'memory' => 128,
             'tries' => 3,
             'timeout' => 120,
+            'nice' => 0,
+        ],
+        'supervisor-attendance' => [
+            'connection' => 'redis',
+            'queue' => ['attendance'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 128,
+            'tries' => 3,
+            'timeout' => 180,
             'nice' => 0,
         ],
     ],
@@ -258,6 +271,11 @@ return [
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
+            'supervisor-attendance' => [
+                'maxProcesses' => 10,
+                'balanceMaxShift' => 3,
+                'balanceCooldown' => 3,
+            ],
         ],
 
         'local' => [
@@ -269,6 +287,9 @@ return [
             ],
             'supervisor-meetings' => [
                 'maxProcesses' => 2,
+            ],
+            'supervisor-attendance' => [
+                'maxProcesses' => 3,
             ],
         ],
     ],

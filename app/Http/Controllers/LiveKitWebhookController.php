@@ -9,6 +9,7 @@ use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
 use App\Exceptions\WebhookValidationException;
 use App\Http\Traits\Api\ApiResponses;
+use App\Jobs\CalculateSessionForAttendance;
 use App\Jobs\ProcessDelayedLeaveEvent;
 use App\Jobs\RetryAttendanceOperation;
 use App\Models\AcademicSession;
@@ -352,6 +353,13 @@ class LiveKitWebhookController extends Controller
                     ]);
                 }
             }
+
+            // Dispatch per-session attendance calculation job with config-based delay
+            $delayMinutes = config('business.attendance.calculation_delay_minutes', 5);
+            CalculateSessionForAttendance::dispatch(
+                $session->id,
+                get_class($session)
+            )->delay(now()->addMinutes($delayMinutes));
 
             Log::info('Session meeting finished', [
                 'session_id' => $session->id,

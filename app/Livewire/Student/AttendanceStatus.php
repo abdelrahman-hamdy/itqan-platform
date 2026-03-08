@@ -2,8 +2,6 @@
 
 namespace App\Livewire\Student;
 
-use ValueError;
-use Log;
 use App\Enums\AttendanceStatus as AttendanceStatusEnum;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
@@ -12,8 +10,9 @@ use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
-use Livewire\Attributes\On;
 use Livewire\Component;
+use Log;
+use ValueError;
 
 class AttendanceStatus extends Component
 {
@@ -75,7 +74,29 @@ class AttendanceStatus extends Component
         $this->updateAttendanceStatus();
     }
 
-    #[On('attendance-updated')]
+    /**
+     * Get Livewire event listeners including Echo broadcast channel.
+     */
+    protected function getListeners(): array
+    {
+        return [
+            "echo-private:session.{$this->sessionId},.attendance.updated" => 'handleEchoAttendanceUpdated',
+            'attendance-updated' => 'refreshAttendance',
+        ];
+    }
+
+    /**
+     * Handle Echo broadcast attendance update (from CalculateSessionForAttendance job).
+     */
+    public function handleEchoAttendanceUpdated(array $data): void
+    {
+        // Only react to events for this specific user
+        if (isset($data['user_id']) && (int) $data['user_id'] !== (int) $this->userId) {
+            return;
+        }
+        $this->updateAttendanceStatus();
+    }
+
     public function refreshAttendance()
     {
         $this->updateAttendanceStatus();

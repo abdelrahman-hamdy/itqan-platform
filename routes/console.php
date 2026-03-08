@@ -104,11 +104,12 @@ $calculateAttendanceJob = Schedule::job(new \App\Jobs\CalculateSessionAttendance
     ->withoutOverlapping()
     ->description('Calculate final attendance from webhook events after sessions end');
 
-// Run every 10 seconds in local for fast testing, every 5 minutes in production
+// Run every 10 seconds in local for fast testing, every minute in production as safety net
+// Primary calculation now happens via per-session CalculateSessionForAttendance job
 if ($isLocal) {
     $calculateAttendanceJob->everyTenSeconds(); // Every 10 seconds for development testing
 } else {
-    $calculateAttendanceJob->everyFiveMinutes(); // Every 5 minutes for production
+    $calculateAttendanceJob->everyMinute(); // Every minute as safety net (per-session job handles primary calc)
 }
 
 // RECORDING: Stop recordings when session scheduled end time is reached

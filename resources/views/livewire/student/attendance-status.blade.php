@@ -1,6 +1,6 @@
 <div
     @if($status === 'completed' && !$showProgress)
-        wire:poll.30s="updateAttendanceStatus"
+        wire:poll.10s="updateAttendanceStatus"
     @endif
     class="attendance-status bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200 shadow-sm relative"
     id="attendance-status"
