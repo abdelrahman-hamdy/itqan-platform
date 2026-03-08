@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Teacher;
 
-use Exception;
 use App\Contracts\StudentReportServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
@@ -10,6 +9,7 @@ use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -208,11 +208,10 @@ class StudentReportController extends Controller
                     ]);
                 } else {
                     // Empty value selected - use automatic calculation
-                    // Sync from MeetingAttendance to get auto-calculated status
+                    // First clear the manual flag so syncFromMeetingAttendance can update status
+                    $report->update(['manually_evaluated' => false]);
+                    $report->refresh();
                     $report->syncFromMeetingAttendance();
-                    $report->update([
-                        'manually_evaluated' => false,
-                    ]);
                 }
             }
 

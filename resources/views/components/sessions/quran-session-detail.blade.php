@@ -347,8 +347,8 @@
                     class: 'bg-purple-100 text-purple-800'
                 });
             }
-            // Attendance minutes
-            if (reportData.actual_attendance_minutes !== null && reportData.actual_attendance_minutes !== undefined) {
+            // Attendance minutes (skip 0 values to match Blade behavior)
+            if (reportData.actual_attendance_minutes !== null && reportData.actual_attendance_minutes !== undefined && reportData.actual_attendance_minutes > 0) {
                 infoItems.push({
                     icon: 'ri-time-line text-purple-600',
                     label: jsTranslations.attendanceDuration,
@@ -356,8 +356,8 @@
                     class: 'bg-purple-100 text-purple-800'
                 });
             }
-            // Attendance percentage
-            if (reportData.attendance_percentage !== null && reportData.attendance_percentage !== undefined) {
+            // Attendance percentage (skip 0 values to match Blade behavior)
+            if (reportData.attendance_percentage !== null && reportData.attendance_percentage !== undefined && reportData.attendance_percentage > 0) {
                 infoItems.push({
                     icon: 'ri-percent-line text-indigo-600',
                     label: jsTranslations.attendancePercentage,
@@ -373,8 +373,8 @@
 
                 const generateColumn = (items) => items.map(item => `
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <i class="${item.icon} ms-2"></i>
+                        <div class="flex items-center gap-1.5">
+                            <i class="${item.icon}"></i>
                             <span class="text-gray-900 text-sm">${item.label}</span>
                         </div>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.class}">

@@ -212,6 +212,7 @@ return [
             'attendance_percentage' => 'Attendance Percentage',
             'notes' => 'Notes:',
             'minutes' => 'minutes',
+            'manual' => 'Manual',
         ],
         'session_detail' => [
             'session_content' => 'Session Content',

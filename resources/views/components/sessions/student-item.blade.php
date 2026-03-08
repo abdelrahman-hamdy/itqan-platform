@@ -86,14 +86,17 @@
     }
 
     // Get enum instance for display
+    // Show badge when calculated OR when teacher manually set the status
     $statusEnum = null;
-    if ($isCalculated && $attendanceStatus && $attendanceStatus !== 'unknown') {
-        try {
-            $statusEnum = $attendanceStatus instanceof AttendanceStatus
-                ? $attendanceStatus
-                : AttendanceStatus::from($attendanceStatus);
-        } catch (\ValueError $e) {
-            $statusEnum = null;
+    if ($attendanceStatus && $attendanceStatus !== 'unknown') {
+        if ($isCalculated || ($report && $report->manually_evaluated)) {
+            try {
+                $statusEnum = $attendanceStatus instanceof AttendanceStatus
+                    ? $attendanceStatus
+                    : AttendanceStatus::from($attendanceStatus);
+            } catch (\ValueError $e) {
+                $statusEnum = null;
+            }
         }
     }
 
@@ -146,8 +149,8 @@
         ];
     }
 
-    // 🔥 FIX: Show attendance minutes from calculated report or live data
-    if($actualMinutes !== null) {
+    // Show attendance minutes from calculated report or live data (skip 0 values)
+    if($actualMinutes !== null && $actualMinutes > 0) {
         $infoItems[] = [
             'icon' => 'ri-time-line text-purple-600',
             'label' => $isCalculated ? __('components.sessions.student_item.attendance_duration') : __('components.sessions.student_item.attendance_duration_live'),
@@ -201,7 +204,7 @@
                 <span class="inline-flex items-center px-3 py-1.5 {{ $statusEnum->badgeClass() }} rounded-full text-sm font-semibold">
                     <i class="{{ $statusEnum->icon() }} ms-1 rtl:ms-1 ltr:me-1"></i>
                     {{ $statusEnum->label() }}
-                    @if($attendancePercentage) ({{ number_format($attendancePercentage, 0) }}%)@endif
+                    @if($report && $report->manually_evaluated) ({{ __('components.sessions.student_item.manual') }})@elseif($attendancePercentage) ({{ number_format($attendancePercentage, 0) }}%)@endif
                 </span>
             @elseif($attendanceStatus === 'in_meeting')
                 {{-- Live status: Currently in meeting --}}
@@ -254,8 +257,8 @@
                 <div class="space-y-3">
                     @foreach($leftColumn as $item)
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <i class="{{ $item['icon'] }} ms-2 rtl:ms-2 ltr:me-2"></i>
+                            <div class="flex items-center gap-1.5">
+                                <i class="{{ $item['icon'] }}"></i>
                                 <span class="text-gray-900 text-sm">{{ $item['label'] }}</span>
                             </div>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item['badge_class'] }}">
@@ -269,8 +272,8 @@
                 <div class="space-y-3">
                     @foreach($rightColumn as $item)
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <i class="{{ $item['icon'] }} ms-2 rtl:ms-2 ltr:me-2"></i>
+                            <div class="flex items-center gap-1.5">
+                                <i class="{{ $item['icon'] }}"></i>
                                 <span class="text-gray-900 text-sm">{{ $item['label'] }}</span>
                             </div>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item['badge_class'] }}">
@@ -306,8 +309,8 @@
                 <div class="space-y-3">
                     @foreach($leftColumn as $item)
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <i class="{{ $item['icon'] }} ms-2 rtl:ms-2 ltr:me-2"></i>
+                            <div class="flex items-center gap-1.5">
+                                <i class="{{ $item['icon'] }}"></i>
                                 <span class="text-gray-900 text-sm">{{ $item['label'] }}</span>
                             </div>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item['badge_class'] }}">
@@ -321,8 +324,8 @@
                 <div class="space-y-3">
                     @foreach($rightColumn as $item)
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <i class="{{ $item['icon'] }} ms-2 rtl:ms-2 ltr:me-2"></i>
+                            <div class="flex items-center gap-1.5">
+                                <i class="{{ $item['icon'] }}"></i>
                                 <span class="text-gray-900 text-sm">{{ $item['label'] }}</span>
                             </div>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item['badge_class'] }}">

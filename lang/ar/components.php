@@ -212,6 +212,7 @@ return [
             'attendance_percentage' => 'نسبة الحضور',
             'notes' => 'الملاحظات:',
             'minutes' => 'دقيقة',
+            'manual' => 'يدوي',
         ],
         'session_detail' => [
             'session_content' => 'محتوى الجلسة',

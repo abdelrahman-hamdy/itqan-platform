@@ -2,9 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Validation\ValidationException;
-use Exception;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Http\Requests\StoreStudentReportRequest;
 use App\Http\Requests\UpdateStudentReportRequest;
 use App\Http\Traits\Api\ApiResponses;
@@ -14,9 +11,12 @@ use App\Models\InteractiveCourseSession;
 use App\Models\InteractiveSessionReport;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class StudentReportController extends Controller
 {
@@ -157,6 +157,7 @@ class StudentReportController extends Controller
             }
 
             // Only update attendance_status if provided (otherwise keep auto-calculated)
+            $wasManuallyEvaluated = $report->manually_evaluated;
             if (! empty($validated['attendance_status'])) {
                 $updateData['attendance_status'] = $validated['attendance_status'];
                 $updateData['manually_evaluated'] = true;
@@ -167,6 +168,11 @@ class StudentReportController extends Controller
 
             // Update report
             $report->update($updateData);
+
+            // If reverting from manual to auto mode, sync attendance from meeting data
+            if (empty($validated['attendance_status']) && $wasManuallyEvaluated) {
+                $report->syncFromMeetingAttendance();
+            }
 
             DB::commit();
 
