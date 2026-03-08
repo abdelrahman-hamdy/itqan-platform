@@ -316,11 +316,11 @@
                 </p>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-6">
+              <div class="space-y-3 md:space-y-4">
                 @foreach($certificates as $certificate)
-                  <div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                    <!-- Student Info Header -->
-                    <div class="bg-gradient-to-r from-amber-50 to-yellow-50 px-3 md:px-4 py-2.5 md:py-3 border-b border-amber-100">
+                  <div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow md:flex md:items-center">
+                    <!-- Student Info -->
+                    <div class="bg-gradient-to-r from-amber-50 to-yellow-50 px-3 md:px-4 py-2.5 md:py-3 border-b md:border-b-0 md:border-e border-amber-100 md:min-w-[200px] md:self-stretch md:flex md:items-center">
                       <div class="flex items-center gap-2 md:gap-3">
                         <x-avatar :user="$certificate->student" size="sm" user-type="student" />
                         <div class="min-w-0 flex-1">
@@ -331,23 +331,23 @@
                     </div>
 
                     <!-- Certificate Details -->
-                    <div class="p-3 md:p-4 space-y-2 md:space-y-3">
+                    <div class="p-3 md:p-4 flex-1 md:flex md:items-center md:justify-between md:gap-4">
                       <!-- Issue Date -->
-                      <div class="flex items-center text-xs md:text-sm text-gray-600">
+                      <div class="flex items-center text-xs md:text-sm text-gray-600 mb-2 md:mb-0">
                         <i class="ri-calendar-line ms-1.5 md:ms-2 text-amber-500"></i>
                         <span>{{ $certificate->issued_at->locale('ar')->translatedFormat('d F Y') }}</span>
                       </div>
 
                       <!-- Action Buttons -->
-                      <div class="flex gap-2 pt-1 md:pt-2">
+                      <div class="flex gap-2 md:shrink-0">
                         <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
                            target="_blank"
-                           class="min-h-[40px] md:min-h-[44px] flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
+                           class="min-h-[40px] md:min-h-[44px] flex-1 md:flex-initial inline-flex items-center justify-center px-3 md:px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
                           <i class="ri-eye-line ms-1"></i>
                           {{ __('teacher.course_detail.view') }}
                         </a>
                         <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
-                           class="min-h-[40px] md:min-h-[44px] flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors">
+                           class="min-h-[40px] md:min-h-[44px] flex-1 md:flex-initial inline-flex items-center justify-center px-3 md:px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors">
                           <i class="ri-download-line ms-1"></i>
                           {{ __('teacher.course_detail.download') }}
                         </a>
