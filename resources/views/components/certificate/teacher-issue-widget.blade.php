@@ -18,24 +18,16 @@
             $subscriptionType = 'quran';
             $subscriptionId = $entity->subscription->id ?? null;
             $circleId = null;
-            $hasCertificate = ($entity->subscription?->certificate_issued && $entity->subscription?->certificate);
             $buttonText = __('components.certificate.teacher.issue_certificate');
             $description = __('components.certificate.teacher.can_issue_individual');
-            if ($hasCertificate) {
-                $certificate = $entity->subscription->certificate;
-            }
             break;
 
         case 'academic':
             $subscriptionType = 'academic';
             $subscriptionId = $entity->id;
             $circleId = null;
-            $hasCertificate = ($entity->certificate_issued && $entity->certificate);
             $buttonText = __('components.certificate.teacher.issue_certificate');
             $description = __('components.certificate.teacher.can_issue_individual');
-            if ($hasCertificate) {
-                $certificate = $entity->certificate;
-            }
             break;
 
         case 'interactive':
@@ -60,36 +52,12 @@
         {{ $isIndividual ? __('components.certificate.teacher.title_singular') : __('components.certificate.teacher.title_plural') }}
     </h3>
 
-    @if($isIndividual && isset($hasCertificate) && $hasCertificate && isset($certificate))
-        <!-- Individual Certificate Status -->
-        <div class="bg-green-50 rounded-lg p-3 mb-4 border border-green-200">
-            <p class="text-sm text-green-800">
-                <i class="ri-checkbox-circle-fill ms-1 rtl:ms-1 ltr:me-1"></i>
-                {{ __('components.certificate.teacher.certificate_issued') }}
-            </p>
-        </div>
-        <div class="flex gap-2">
-            <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
-               target="_blank"
-               class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
-                <i class="ri-eye-line ms-1 rtl:ms-1 ltr:me-1"></i>
-                {{ __('components.certificate.teacher.view') }}
-            </a>
-            <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
-               class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors">
-                <i class="ri-download-line ms-1 rtl:ms-1 ltr:me-1"></i>
-                {{ __('components.certificate.teacher.download') }}
-            </a>
-        </div>
-    @else
-        <!-- Issue Certificate Button -->
-        <p class="text-sm text-gray-600 mb-4">{{ $description }}</p>
+    <p class="text-sm text-gray-600 mb-4">{{ $description }}</p>
 
-        <button type="button"
-                onclick="Livewire.dispatch('openModal', { subscriptionType: '{{ $subscriptionType }}', subscriptionId: {{ $subscriptionId ?? 'null' }}, circleId: {{ $circleId ?? 'null' }} })"
-                class="w-full inline-flex items-center justify-center px-5 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl">
-            <i class="ri-award-line ms-2 rtl:ms-2 ltr:me-2 text-lg"></i>
-            {{ $buttonText }}
-        </button>
-    @endif
+    <button type="button"
+            onclick="Livewire.dispatch('openModal', { subscriptionType: '{{ $subscriptionType }}', subscriptionId: {{ $subscriptionId ?? 'null' }}, circleId: {{ $circleId ?? 'null' }} })"
+            class="w-full inline-flex items-center justify-center px-5 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl">
+        <i class="ri-award-line ms-2 rtl:ms-2 ltr:me-2 text-lg"></i>
+        {{ $buttonText }}
+    </button>
 </div>
