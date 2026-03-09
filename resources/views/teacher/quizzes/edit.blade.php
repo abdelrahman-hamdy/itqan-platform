@@ -138,11 +138,6 @@
                     {{ __('teacher.quizzes.questions_section') }}
                     <span class="text-sm font-normal text-gray-500 ms-2" x-text="'(' + questions.length + ')'"></span>
                 </h2>
-                <button type="button" @click="addQuestion()"
-                        class="min-h-[44px] inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-                    <i class="ri-add-line"></i>
-                    {{ __('teacher.quizzes.add_question') }}
-                </button>
             </div>
 
             {{-- Questions List --}}
@@ -224,6 +219,15 @@
                            :value="question.correctOption">
                 </div>
             </template>
+
+            {{-- Add Question Button (below list) --}}
+            <div x-show="questions.length > 0" class="mt-4 flex justify-center">
+                <button type="button" @click="addQuestion()"
+                        class="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="ri-add-line"></i>
+                    {{ __('teacher.quizzes.add_question') }}
+                </button>
+            </div>
 
             {{-- Empty State --}}
             <div x-show="questions.length === 0" class="text-center py-8 md:py-12">
