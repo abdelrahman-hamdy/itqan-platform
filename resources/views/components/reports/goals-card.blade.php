@@ -33,7 +33,7 @@
             <div class="mb-6">
                 <div class="flex justify-between items-center mb-2">
                     <div class="flex items-center">
-                        <i class="ri-calendar-week-line text-gray-600 ms-2"></i>
+                        <i class="ri-calendar-week-line text-gray-600 me-2"></i>
                         <span class="text-sm font-medium text-gray-700">{{ __('components.reports.goals_card.weekly_goal') }}</span>
                     </div>
                     <span class="text-sm font-bold {{ $weeklyProgressPercentage >= 100 ? 'text-green-600' : ($weeklyProgressPercentage >= 50 ? 'text-blue-600' : 'text-yellow-600') }}">
@@ -54,7 +54,7 @@
                 @if($weeklyProgressPercentage >= 100)
                     <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                         <div class="flex items-center">
-                            <i class="ri-trophy-line text-green-600 ms-2"></i>
+                            <i class="ri-trophy-line text-green-600 me-2"></i>
                             <span class="text-sm text-green-800 font-medium">{{ __('components.reports.goals_card.weekly_achievement') }}</span>
                         </div>
                     </div>
@@ -67,7 +67,7 @@
             <div class="mb-6">
                 <div class="flex justify-between items-center mb-2">
                     <div class="flex items-center">
-                        <i class="ri-calendar-line text-gray-600 ms-2"></i>
+                        <i class="ri-calendar-line text-gray-600 me-2"></i>
                         <span class="text-sm font-medium text-gray-700">{{ __('components.reports.goals_card.monthly_goal') }}</span>
                     </div>
                     <span class="text-sm font-bold {{ $monthlyProgressPercentage >= 100 ? 'text-green-600' : ($monthlyProgressPercentage >= 50 ? 'text-blue-600' : 'text-yellow-600') }}">
@@ -88,7 +88,7 @@
                 @if($monthlyProgressPercentage >= 100)
                     <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                         <div class="flex items-center">
-                            <i class="ri-medal-line text-green-600 ms-2"></i>
+                            <i class="ri-medal-line text-green-600 me-2"></i>
                             <span class="text-sm text-green-800 font-medium">{{ __('components.reports.goals_card.monthly_achievement') }}</span>
                         </div>
                     </div>

@@ -19,7 +19,7 @@ $hasData = is_object($data) && method_exists($data, 'hasData') ? $data->hasData(
 @if($hasData)
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-        <i class="ri-line-chart-line text-blue-600 ms-2"></i>
+        <i class="ri-line-chart-line text-blue-600 me-2"></i>
         {{ $displayTitle }}
     </h2>
     <div class="h-80">
@@ -44,6 +44,18 @@ $hasData = is_object($data) && method_exists($data, 'hasData') ? $data->hasData(
         const lineTension = dataPointCount <= 2 ? 0 : 0.4;
         const borderWidth = dataPointCount <= 3 ? 3 : 2;
 
+        // Replace leading nulls with 0 so lines/fill areas render from the start
+        function fillLeadingNulls(arr) {
+            const result = [...arr];
+            for (let i = 0; i < result.length; i++) {
+                if (result[i] !== null) break;
+                result[i] = 0;
+            }
+            return result;
+        }
+        const memorization = fillLeadingNulls(memorizationRaw);
+        const reservation = fillLeadingNulls(reservationRaw);
+
         // Only include datasets that have at least one non-null value
         const hasMemorization = memorizationRaw.some(v => v !== null && v !== 0);
         const hasReservation = reservationRaw.some(v => v !== null && v !== 0);
@@ -66,7 +78,7 @@ $hasData = is_object($data) && method_exists($data, 'hasData') ? $data->hasData(
         if (hasMemorization) {
             datasets.push({
                 label: @json(__('components.reports.trend_chart.memorization_scores')),
-                data: memorizationRaw,
+                data: memorization,
                 borderColor: 'rgb(168, 85, 247)',
                 backgroundColor: 'rgba(168, 85, 247, 0.1)',
                 tension: lineTension,
@@ -82,7 +94,7 @@ $hasData = is_object($data) && method_exists($data, 'hasData') ? $data->hasData(
         if (hasReservation) {
             datasets.push({
                 label: @json(__('components.reports.trend_chart.review_scores')),
-                data: reservationRaw,
+                data: reservation,
                 borderColor: 'rgb(59, 130, 246)',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 tension: lineTension,

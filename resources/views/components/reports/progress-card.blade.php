@@ -90,7 +90,7 @@
         <div class="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <i class="ri-line-chart-line text-green-600 ms-2"></i>
+                    <i class="ri-line-chart-line text-green-600 me-2"></i>
                     <span class="text-sm text-green-800">{{ __('components.reports.progress_card.avg_pages_per_session') }}</span>
                 </div>
                 <span class="text-sm font-bold text-green-700">

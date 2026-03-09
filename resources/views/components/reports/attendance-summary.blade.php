@@ -26,7 +26,7 @@ $colorClass = is_object($data) && method_exists($data, 'getColorClass')
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
-        <i class="ri-calendar-check-line text-{{ $colorClass }}-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+        <i class="ri-calendar-check-line text-{{ $colorClass }}-600 me-2"></i>
         {{ $displayTitle }}
     </h2>
 
