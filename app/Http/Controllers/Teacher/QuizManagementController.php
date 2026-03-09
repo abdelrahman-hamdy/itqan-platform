@@ -53,7 +53,16 @@ class QuizManagementController extends Controller
 
         // Search by title
         if ($request->filled('search')) {
-            $query->where('title', 'like', '%' . $request->input('search') . '%');
+            $query->where('title', 'like', '%'.$request->input('search').'%');
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
         }
 
         $quizzes = $query->latest()->paginate(12)->withQueryString();
@@ -417,7 +426,7 @@ class QuizManagementController extends Controller
                     ->get()
                     ->map(fn ($l) => [
                         'id' => $l->id,
-                        'name' => $l->name ?: ($l->lesson_code . ' - ' . ($l->student?->name ?? '-')),
+                        'name' => $l->name ?: ($l->lesson_code.' - '.($l->student?->name ?? '-')),
                     ])
                     ->all();
             }
@@ -527,7 +536,7 @@ class QuizManagementController extends Controller
                         'label' => __('quiz.assignable.academic_lesson'),
                         'options' => $lessons->map(fn ($l) => [
                             'id' => $l->id,
-                            'name' => $l->name ?: ($l->lesson_code . ' - ' . ($l->student?->name ?? '-')),
+                            'name' => $l->name ?: ($l->lesson_code.' - '.($l->student?->name ?? '-')),
                         ])->all(),
                     ];
                 }

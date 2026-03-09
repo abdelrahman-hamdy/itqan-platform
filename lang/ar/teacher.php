@@ -1125,6 +1125,13 @@ return [
         'validation_question_text_required' => 'نص السؤال مطلوب للسؤال رقم',
         'validation_min_options' => 'يجب إضافة خيارين على الأقل للسؤال رقم',
         'empty_filter_description' => 'لا توجد اختبارات تطابق الفلتر المحدد',
+        'filter' => 'تصفية',
+        'clear_filters' => 'مسح الفلاتر',
+        'filter_search' => 'البحث بالعنوان',
+        'search_placeholder' => 'ابحث عن اختبار...',
+        'filter_status' => 'الحالة',
+        'date_from' => 'من تاريخ',
+        'date_to' => 'إلى تاريخ',
         // Filament resource labels
         'nav_group' => 'الاختبارات',
         'nav_my_quizzes' => 'اختباراتي',

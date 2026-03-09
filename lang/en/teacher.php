@@ -1355,6 +1355,13 @@ return [
         'validation_question_text_required' => 'Question text is required for question #',
         'validation_min_options' => 'At least two options are required for question #',
         'empty_filter_description' => 'No quizzes match the selected filter',
+        'filter' => 'Filter',
+        'clear_filters' => 'Clear Filters',
+        'filter_search' => 'Search by Title',
+        'search_placeholder' => 'Search for a quiz...',
+        'filter_status' => 'Status',
+        'date_from' => 'From Date',
+        'date_to' => 'To Date',
         // Filament resource labels
         'nav_group' => 'Quizzes',
         'nav_my_quizzes' => 'My Quizzes',
