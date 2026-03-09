@@ -29,13 +29,15 @@ class CertificateListController extends Controller
             // Certificates where teacher_id matches, or certificateable is a circle/individual the teacher owns
             $query->where(function ($q) use ($user) {
                 $q->where('teacher_id', $user->id)
-                    ->orWhere(function ($q2) use ($user) {
-                        $q2->where('certificateable_type', \App\Models\QuranCircle::class)
-                            ->whereHas('certificateable', fn ($sub) => $sub->where('quran_teacher_id', $user->id));
+                    ->orWhereHasMorph('certificateable', [\App\Models\QuranCircle::class], function ($sub) use ($user) {
+                        $sub->where('quran_teacher_id', $user->id);
                     })
-                    ->orWhere(function ($q2) use ($user) {
-                        $q2->where('certificateable_type', \App\Models\QuranIndividualCircle::class)
-                            ->whereHas('certificateable', fn ($sub) => $sub->where('quran_teacher_id', $user->id));
+                    ->orWhereHasMorph('certificateable', [\App\Models\QuranIndividualCircle::class], function ($sub) use ($user) {
+                        $sub->where('quran_teacher_id', $user->id);
+                    })
+                    ->orWhereHasMorph('certificateable', [\App\Models\QuranSubscription::class], function ($sub) use ($user) {
+                        $sub->whereHas('circle', fn ($c) => $c->where('quran_teacher_id', $user->id))
+                            ->orWhereHas('individualCircle', fn ($c) => $c->where('quran_teacher_id', $user->id));
                     });
             });
         } elseif ($user->isAcademicTeacher()) {
@@ -47,13 +49,14 @@ class CertificateListController extends Controller
 
             $query->where(function ($q) use ($user, $profileId) {
                 $q->where('teacher_id', $user->id)
-                    ->orWhere(function ($q2) use ($profileId) {
-                        $q2->where('certificateable_type', \App\Models\AcademicIndividualLesson::class)
-                            ->whereHas('certificateable', fn ($sub) => $sub->where('academic_teacher_id', $profileId));
+                    ->orWhereHasMorph('certificateable', [\App\Models\AcademicIndividualLesson::class], function ($sub) use ($profileId) {
+                        $sub->where('academic_teacher_id', $profileId);
                     })
-                    ->orWhere(function ($q2) use ($profileId) {
-                        $q2->where('certificateable_type', \App\Models\InteractiveCourse::class)
-                            ->whereHas('certificateable', fn ($sub) => $sub->where('assigned_teacher_id', $profileId));
+                    ->orWhereHasMorph('certificateable', [\App\Models\InteractiveCourse::class], function ($sub) use ($profileId) {
+                        $sub->where('assigned_teacher_id', $profileId);
+                    })
+                    ->orWhereHasMorph('certificateable', [\App\Models\AcademicSubscription::class], function ($sub) use ($profileId) {
+                        $sub->whereHas('lesson', fn ($l) => $l->where('academic_teacher_id', $profileId));
                     });
             });
         }
