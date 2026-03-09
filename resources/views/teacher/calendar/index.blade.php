@@ -33,13 +33,11 @@
     {{-- Scheduling Panel (full width, above calendar)                    --}}
     {{-- ================================================================ --}}
     <div class="mb-6" x-data="schedulingPanel()">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6"
-             :class="{ 'cursor-pointer': !panelOpen }"
-             @click="if (!panelOpen) { panelOpen = true; $event.stopPropagation(); }">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
 
-            <!-- Panel Header + Collapse Toggle -->
-            <div class="flex items-center justify-between cursor-pointer select-none"
-                 @click.stop="panelOpen = !panelOpen"
+            <!-- Panel Header + Collapse Toggle — entire area is clickable -->
+            <div class="flex items-center justify-between cursor-pointer select-none p-4 md:p-6"
+                 @click="panelOpen = !panelOpen"
                  role="button" tabindex="0" @keydown.enter="panelOpen = !panelOpen">
                 <div>
                     <h2 class="text-lg font-bold text-gray-900 mb-0.5">
@@ -69,7 +67,7 @@
             </div>
 
             <!-- Collapsible Content -->
-            <div x-show="panelOpen" x-collapse>
+            <div x-show="panelOpen" x-collapse class="px-4 md:px-6 pb-4 md:pb-6">
                 <!-- Alerts -->
                 <template x-if="error">
                     <div class="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">
@@ -100,7 +98,7 @@
                 <div class="mt-4 flex flex-col lg:flex-row gap-6">
 
                     <!-- Items List (left side) -->
-                    <div class="w-full lg:w-1/2">
+                    <div class="w-full lg:w-1/2 min-h-[200px] flex flex-col">
                         <!-- Loading -->
                         <template x-if="loading">
                             <div class="flex items-center justify-center py-8">
@@ -110,7 +108,7 @@
 
                         <!-- Empty State -->
                         <template x-if="!loading && items.length === 0">
-                            <div class="flex flex-col items-center justify-center text-center py-12">
+                            <div class="flex-1 flex flex-col items-center justify-center text-center py-12">
                                 <i class="ri-inbox-line text-4xl text-gray-300 mb-3"></i>
                                 <p class="text-sm font-semibold text-gray-600" x-text="getEmptyTitle()"></p>
                                 <p class="text-xs text-gray-400 mt-1" x-text="getEmptyDescription()"></p>
@@ -586,32 +584,35 @@
                             <span class="text-sm font-medium text-gray-700">{{ __('teacher.calendar.hw_comprehensive_review') }}</span>
                         </label>
                         <template x-if="hwData.has_comprehensive_review">
-                            <div class="ps-6" x-data="{ surahSearch: '', surahDropdownOpen: false }" @click.outside="surahDropdownOpen = false">
+                            <div class="ps-6">
                                 {{-- Selected tags --}}
-                                <div class="flex flex-wrap gap-1 mb-2" x-show="hwData.comprehensive_review_surahs.length > 0">
-                                    <template x-for="sv in hwData.comprehensive_review_surahs" :key="sv">
+                                <div class="flex flex-wrap gap-1 mb-2" x-show="hwData.comprehensive_review_surahs && hwData.comprehensive_review_surahs.length > 0">
+                                    <template x-for="sv in (hwData.comprehensive_review_surahs || [])" :key="sv">
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
                                             <span x-text="surahList.find(s => s.value == sv)?.label || sv"></span>
-                                            <button type="button" @click="hwData.comprehensive_review_surahs = hwData.comprehensive_review_surahs.filter(v => v !== sv)"
+                                            <button type="button" @click.stop="hwData.comprehensive_review_surahs = hwData.comprehensive_review_surahs.filter(v => v !== sv)"
                                                     class="text-blue-600 hover:text-blue-800 cursor-pointer">&times;</button>
                                         </span>
                                     </template>
                                 </div>
                                 {{-- Search input --}}
-                                <div class="relative">
-                                    <input type="text" x-model="surahSearch" @focus="surahDropdownOpen = true"
+                                <div class="relative" @click.outside="surahDropdownOpen = false">
+                                    <input type="text" x-model="surahSearch"
+                                           @focus="surahDropdownOpen = true"
+                                           @click.stop
                                            placeholder="{{ __('teacher.calendar.hw_search_surah') }}"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
                                     {{-- Dropdown list --}}
                                     <div x-show="surahDropdownOpen" x-transition
-                                         class="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg">
+                                         @click.stop
+                                         class="absolute z-[60] mt-1 w-full max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg">
                                         <template x-for="s in surahList.filter(s => !surahSearch || s.label.includes(surahSearch) || s.value.toString().includes(surahSearch))" :key="s.value">
                                             <button type="button"
-                                                    @click="if (hwData.comprehensive_review_surahs.includes(s.value)) { hwData.comprehensive_review_surahs = hwData.comprehensive_review_surahs.filter(v => v !== s.value); } else { hwData.comprehensive_review_surahs.push(s.value); }"
+                                                    @click.stop="if (hwData.comprehensive_review_surahs.includes(s.value)) { hwData.comprehensive_review_surahs = hwData.comprehensive_review_surahs.filter(v => v !== s.value); } else { hwData.comprehensive_review_surahs.push(s.value); }"
                                                     class="w-full text-start px-3 py-1.5 text-sm hover:bg-blue-50 cursor-pointer flex items-center justify-between"
                                                     :class="hwData.comprehensive_review_surahs.includes(s.value) ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">
                                                 <span x-text="s.label"></span>
-                                                <svg x-show="hwData.comprehensive_review_surahs.includes(s.value)" class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg x-show="hwData.comprehensive_review_surahs.includes(s.value)" class="w-4 h-4 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                                                 </svg>
                                             </button>
@@ -621,7 +622,7 @@
                                     </div>
                                 </div>
                                 <p class="text-[10px] text-gray-400 mt-1">
-                                    <span x-text="hwData.comprehensive_review_surahs.length"></span> {{ __('teacher.calendar.hw_selected_count') }}
+                                    <span x-text="(hwData.comprehensive_review_surahs || []).length"></span> {{ __('teacher.calendar.hw_selected_count') }}
                                 </p>
                             </div>
                         </template>
@@ -765,6 +766,19 @@
         }
         .fc table {
             width: 100% !important;
+            table-layout: fixed !important;
+        }
+        .fc .fc-scrollgrid {
+            width: 100% !important;
+        }
+        .fc .fc-daygrid-body {
+            width: 100% !important;
+        }
+        .fc .fc-daygrid-body table {
+            width: 100% !important;
+        }
+        .fc td, .fc th {
+            max-width: none !important;
         }
         @media (max-width: 640px) {
             .fc .fc-toolbar {
@@ -991,6 +1005,8 @@
             homeworkOpen: false,
             hwSaving: false,
             hwData: {},
+            surahSearch: '',
+            surahDropdownOpen: false,
             surahList: @js(collect(\App\Enums\QuranSurah::cases())->map(fn($s) => ['value' => $s->value, 'label' => $s->getNumber() . '. ' . $s->value])->values()),
 
             async show(eventData) {
@@ -1075,6 +1091,8 @@
 
             openHomeworkModal() {
                 this.homeworkOpen = true;
+                this.surahSearch = '';
+                this.surahDropdownOpen = false;
                 // Pre-fill homework data from session
                 if (this.session?.homework_data) {
                     this.hwData = { ...this.session.homework_data };
@@ -1425,6 +1443,12 @@
 
         calendar.render();
         window.teacherCalendar = calendar;
+
+        // Re-render calendar when container resizes (e.g. sidebar collapse)
+        const resizeObserver = new ResizeObserver(() => {
+            calendar.updateSize();
+        });
+        resizeObserver.observe(calendarEl.parentElement);
     });
 </script>
 </x-slot:scripts>
