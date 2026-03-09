@@ -15,7 +15,6 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 use InvalidArgumentException;
 
@@ -284,37 +283,10 @@ class CalendarController extends Controller
             'rescheduled_to' => $newScheduledAt,
         ]);
 
-        // Bust calendar cache so refetchEvents returns fresh data
-        $this->flushUserCalendarCache($user);
-
         return response()->json([
             'success' => true,
             'message' => __('teacher.calendar.reschedule_success'),
         ]);
     }
 
-    /**
-     * Flush all cached calendar data for a user.
-     */
-    private function flushUserCalendarCache($user): void
-    {
-        $prefix = config('cache.prefix', 'laravel_cache');
-        $pattern = "calendar:academy:{$user->academy_id}:user:{$user->id}:*";
-
-        try {
-            $redis = Cache::store(config('cache.default'))->getStore()->getRedis();
-            $cursor = null;
-            do {
-                [$cursor, $keys] = $redis->scan($cursor ?: 0, [
-                    'match' => $prefix . ':' . $pattern,
-                    'count' => 100,
-                ]);
-                if (! empty($keys)) {
-                    $redis->del(...$keys);
-                }
-            } while ($cursor);
-        } catch (Exception $e) {
-            // Fallback: just let the cache expire naturally
-        }
-    }
 }

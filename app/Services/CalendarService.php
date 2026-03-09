@@ -11,7 +11,6 @@ use App\Services\Calendar\EventFormattingService;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 
 class CalendarService implements CalendarServiceInterface
 {
@@ -34,38 +33,34 @@ class CalendarService implements CalendarServiceInterface
         array $filters = []
     ): Collection {
 
-        $cacheKey = $this->generateCacheKey($user, $startDate, $endDate, $filters);
+        $events = collect();
 
-        return Cache::remember($cacheKey, config('business.cache.calendar_ttl', 300), function () use ($user, $startDate, $endDate, $filters) {
-            $events = collect();
+        // Get Quran sessions
+        if ($this->filterService->shouldIncludeEventType('quran_sessions', $filters)) {
+            $quranSessions = $this->eventFetcher->getQuranSessions($user, $startDate, $endDate);
+            $events = $events->merge($this->eventFormatter->formatQuranSessions($quranSessions, $user));
+        }
 
-            // Get Quran sessions
-            if ($this->filterService->shouldIncludeEventType('quran_sessions', $filters)) {
-                $quranSessions = $this->eventFetcher->getQuranSessions($user, $startDate, $endDate);
-                $events = $events->merge($this->eventFormatter->formatQuranSessions($quranSessions, $user));
-            }
+        // Get Interactive course sessions
+        if ($this->filterService->shouldIncludeEventType('course_sessions', $filters)) {
+            $courseSessions = $this->eventFetcher->getCourseSessions($user, $startDate, $endDate);
+            $events = $events->merge($this->eventFormatter->formatCourseSessions($courseSessions, $user));
+        }
 
-            // Get Interactive course sessions
-            if ($this->filterService->shouldIncludeEventType('course_sessions', $filters)) {
-                $courseSessions = $this->eventFetcher->getCourseSessions($user, $startDate, $endDate);
-                $events = $events->merge($this->eventFormatter->formatCourseSessions($courseSessions, $user));
-            }
+        // Get Circle sessions
+        if ($this->filterService->shouldIncludeEventType('circle_sessions', $filters)) {
+            $circleSessions = $this->eventFetcher->getCircleSessions($user, $startDate, $endDate);
+            $events = $events->merge($this->eventFormatter->formatCircleSessions($circleSessions, $user));
+        }
 
-            // Get Circle sessions
-            if ($this->filterService->shouldIncludeEventType('circle_sessions', $filters)) {
-                $circleSessions = $this->eventFetcher->getCircleSessions($user, $startDate, $endDate);
-                $events = $events->merge($this->eventFormatter->formatCircleSessions($circleSessions, $user));
-            }
+        // Get Break times / Unavailable periods
+        if ($this->filterService->shouldIncludeEventType('breaks', $filters)) {
+            $breaks = $this->eventFetcher->getBreakTimes($user, $startDate, $endDate);
+            $events = $events->merge($breaks);
+        }
 
-            // Get Break times / Unavailable periods
-            if ($this->filterService->shouldIncludeEventType('breaks', $filters)) {
-                $breaks = $this->eventFetcher->getBreakTimes($user, $startDate, $endDate);
-                $events = $events->merge($breaks);
-            }
-
-            // Apply additional filters
-            return $this->filterService->applyFilters($events, $filters);
-        });
+        // Apply additional filters
+        return $this->filterService->applyFilters($events, $filters);
     }
 
     /**
@@ -237,15 +232,4 @@ class CalendarService implements CalendarServiceInterface
         return $stats;
     }
 
-    /**
-     * Generate cache key for calendar data
-     */
-    private function generateCacheKey(User $user, Carbon $startDate, Carbon $endDate, array $filters): string
-    {
-        $filterHash = md5(serialize($filters));
-
-        // Include academy_id to prevent cross-tenant cache collisions for super-admins
-        // who may switch between academies while keeping the same user ID
-        return "calendar:academy:{$user->academy_id}:user:{$user->id}:{$startDate->format('Y-m-d')}:{$endDate->format('Y-m-d')}:{$filterHash}";
-    }
 }
