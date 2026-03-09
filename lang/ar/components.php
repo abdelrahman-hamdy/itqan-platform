@@ -1891,7 +1891,7 @@ return [
             'my_overall_rating' => 'تقييمي العام',
             'overall_rating' => 'التقييم العام',
             'my_overall_assessment' => 'تقييمي العام',
-            'overall_assessment' => 'التقييم العام',
+            'overall_assessment' => 'الأداء العام',
             'my_performance_trend' => 'تطور أدائي',
             'performance_trend' => 'تطور الأداء',
             'my_performance_progress' => 'تطور أدائي',
