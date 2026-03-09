@@ -17,22 +17,22 @@
             @if($quizData->passed)
                 <span class="inline-flex items-center px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-full text-sm font-medium text-green-700">
                     <i class="ri-check-line ms-1.5 text-green-600"></i>
-                    ناجح
+                    {{ __('student.quiz.status_passed') }}
                 </span>
             @elseif($quizData->in_progress_attempt)
                 <span class="inline-flex items-center px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-full text-sm font-medium text-yellow-700">
                     <i class="ri-time-line ms-1.5 text-yellow-600"></i>
-                    قيد التقدم
+                    {{ __('student.quiz.status_in_progress') }}
                 </span>
             @elseif($quizData->completed_attempts > 0)
                 <span class="inline-flex items-center px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-full text-sm font-medium text-red-700">
                     <i class="ri-close-line ms-1.5 text-red-600"></i>
-                    لم ينجح
+                    {{ __('student.quiz.status_failed') }}
                 </span>
             @else
                 <span class="inline-flex items-center px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-full text-sm font-medium text-blue-700">
                     <i class="ri-star-line ms-1.5 text-blue-600"></i>
-                    جديد
+                    {{ __('student.quiz.status_new') }}
                 </span>
             @endif
         </div>
@@ -58,21 +58,21 @@
         <!-- Stats Grid -->
         <div class="grid grid-cols-2 gap-2 mb-4 pb-4 border-b border-gray-100">
             <div class="text-center p-2 bg-gray-50 rounded-lg">
-                <p class="text-xs text-gray-500">عدد الأسئلة</p>
+                <p class="text-xs text-gray-500">{{ __('student.quiz.questions_count_label') }}</p>
                 <p class="font-bold text-gray-900">{{ $quizData->quiz->questions->count() }}</p>
             </div>
             <div class="text-center p-2 bg-gray-50 rounded-lg">
-                <p class="text-xs text-gray-500">درجة النجاح</p>
+                <p class="text-xs text-gray-500">{{ __('student.quiz.passing_score_label') }}</p>
                 <p class="font-bold text-gray-900">{{ $quizData->quiz->passing_score }}%</p>
             </div>
             @if($quizData->quiz->duration_minutes)
             <div class="text-center p-2 bg-gray-50 rounded-lg">
-                <p class="text-xs text-gray-500">المدة</p>
-                <p class="font-bold text-gray-900">{{ $quizData->quiz->duration_minutes }} د</p>
+                <p class="text-xs text-gray-500">{{ __('student.quiz.duration_label') }}</p>
+                <p class="font-bold text-gray-900">{{ $quizData->quiz->duration_minutes }} {{ __('student.quiz.minutes_short') }}</p>
             </div>
             @endif
             <div class="text-center p-2 bg-gray-50 rounded-lg">
-                <p class="text-xs text-gray-500">المحاولات</p>
+                <p class="text-xs text-gray-500">{{ __('student.quiz.attempts_label') }}</p>
                 <p class="font-bold text-gray-900">{{ $quizData->completed_attempts }}/{{ $quizData->assignment->max_attempts }}</p>
             </div>
         </div>
@@ -81,7 +81,7 @@
         @if($quizData->best_score !== null)
             <div class="mb-4 p-3 rounded-lg {{ $quizData->passed ? 'bg-green-50' : 'bg-gray-50' }}">
                 <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-600">أفضل درجة</span>
+                    <span class="text-sm text-gray-600">{{ __('student.quiz.best_score') }}</span>
                     <span class="font-bold text-lg {{ $quizData->passed ? 'text-green-600' : 'text-gray-900' }}">{{ $quizData->best_score }}%</span>
                 </div>
             </div>
@@ -93,25 +93,25 @@
                 <a href="{{ route('student.quiz.take', ['subdomain' => $subdomain, 'attempt_id' => $quizData->in_progress_attempt->id]) }}"
                    class="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors">
                     <i class="ri-play-fill ms-2"></i>
-                    متابعة الاختبار
+                    {{ __('student.quiz.continue_quiz') }}
                 </a>
             @elseif($quizData->can_attempt)
                 <a href="{{ route('student.quiz.start', ['subdomain' => $subdomain, 'quiz_id' => $quizData->assignment->id]) }}"
                    class="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
                     <i class="ri-play-circle-line ms-2"></i>
-                    {{ $quizData->completed_attempts > 0 ? 'إعادة الاختبار' : 'بدء الاختبار' }}
+                    {{ $quizData->completed_attempts > 0 ? __('student.quiz.retry_quiz') : __('student.quiz.start_quiz') }}
                 </a>
             @elseif($quizData->completed_attempts > 0)
                 <a href="{{ route('student.quiz.result', ['subdomain' => $subdomain, 'quiz_id' => $quizData->assignment->id]) }}"
                    class="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors">
                     <i class="ri-eye-line ms-2"></i>
-                    عرض النتيجة
+                    {{ __('student.quiz.view_result') }}
                 </a>
             @else
                 <button disabled
                         class="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-gray-100 text-gray-400 font-medium rounded-lg cursor-not-allowed">
                     <i class="ri-lock-line ms-2"></i>
-                    غير متاح
+                    {{ __('student.quiz.unavailable') }}
                 </button>
             @endif
         </div>

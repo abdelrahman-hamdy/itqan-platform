@@ -16,9 +16,9 @@ class EditQuiz extends EditRecord
     {
         return [
             ViewAction::make()
-                ->label('عرض'),
+                ->label(__('teacher.quizzes.action_view')),
             DeleteAction::make()
-                ->label('حذف'),
+                ->label(__('teacher.quizzes.action_delete')),
         ];
     }
 }

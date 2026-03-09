@@ -69,16 +69,16 @@ class QuizResource extends BaseQuizResource
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make()
-                        ->label('تعديل'),
+                        ->label(__('teacher.quizzes.action_edit')),
                     static::getAssignAction(),
                     DeleteAction::make()
-                        ->label('حذف'),
+                        ->label(__('teacher.quizzes.action_delete')),
                 ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->label('حذف المحدد'),
+                        ->label(__('teacher.quizzes.action_delete_selected')),
                 ]),
             ]);
     }

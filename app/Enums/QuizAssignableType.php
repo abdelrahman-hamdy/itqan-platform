@@ -23,11 +23,11 @@ enum QuizAssignableType: string
     public function label(): string
     {
         return match ($this) {
-            self::QURAN_CIRCLE => 'حلقة قرآن جماعية',
-            self::QURAN_INDIVIDUAL_CIRCLE => 'حلقة قرآن فردية',
-            self::ACADEMIC_INDIVIDUAL_LESSON => 'درس أكاديمي خاص',
-            self::INTERACTIVE_COURSE => 'دورة تفاعلية',
-            self::RECORDED_COURSE => 'دورة مسجلة',
+            self::QURAN_CIRCLE => __('teacher.quizzes.type_quran_circle'),
+            self::QURAN_INDIVIDUAL_CIRCLE => __('teacher.quizzes.type_quran_individual'),
+            self::ACADEMIC_INDIVIDUAL_LESSON => __('teacher.quizzes.type_academic_lesson'),
+            self::INTERACTIVE_COURSE => __('teacher.quizzes.type_interactive_course'),
+            self::RECORDED_COURSE => __('teacher.quizzes.type_recorded_course'),
         };
     }
 
@@ -37,11 +37,11 @@ enum QuizAssignableType: string
     public function labelEn(): string
     {
         return match ($this) {
-            self::QURAN_CIRCLE => 'Quran Group Circle',
-            self::QURAN_INDIVIDUAL_CIRCLE => 'Quran Individual Circle',
-            self::ACADEMIC_INDIVIDUAL_LESSON => 'Academic Private Lesson',
-            self::INTERACTIVE_COURSE => 'Interactive Course',
-            self::RECORDED_COURSE => 'Recorded Course',
+            self::QURAN_CIRCLE => __('teacher.quizzes.type_quran_circle', [], 'en'),
+            self::QURAN_INDIVIDUAL_CIRCLE => __('teacher.quizzes.type_quran_individual', [], 'en'),
+            self::ACADEMIC_INDIVIDUAL_LESSON => __('teacher.quizzes.type_academic_lesson', [], 'en'),
+            self::INTERACTIVE_COURSE => __('teacher.quizzes.type_interactive_course', [], 'en'),
+            self::RECORDED_COURSE => __('teacher.quizzes.type_recorded_course', [], 'en'),
         };
     }
 

@@ -114,12 +114,12 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
      */
     protected static function getAssignableTypeLabel(): string
     {
-        return 'نوع الحلقة';
+        return __('teacher.quizzes.circle_type_label');
     }
 
     protected static function getAssignableTargetLabel(): string
     {
-        return 'الحلقة';
+        return __('teacher.quizzes.circle_target_label');
     }
 
     public static function table(Table $table): Table
@@ -130,17 +130,17 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()
-                        ->label('عرض'),
+                        ->label(__('teacher.quizzes.action_view')),
                     EditAction::make()
-                        ->label('تعديل'),
+                        ->label(__('teacher.quizzes.action_edit')),
                     DeleteAction::make()
-                        ->label('حذف'),
+                        ->label(__('teacher.quizzes.action_delete')),
                 ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->label('حذف المحدد'),
+                        ->label(__('teacher.quizzes.action_delete_selected')),
                 ]),
             ]);
     }

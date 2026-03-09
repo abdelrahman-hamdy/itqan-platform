@@ -42,15 +42,27 @@ abstract class BaseQuizAssignmentResource extends BaseResource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-plus';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'الاختبارات';
-
-    protected static ?string $navigationLabel = 'تعيينات الاختبارات';
-
-    protected static ?string $modelLabel = 'تعيين اختبار';
-
-    protected static ?string $pluralModelLabel = 'تعيينات الاختبارات';
-
     protected static ?int $navigationSort = 2;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('teacher.quizzes.nav_group');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('teacher.quiz_assignments.nav_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('teacher.quiz_assignments.model_label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('teacher.quiz_assignments.model_label_plural');
+    }
 
     // Disable automatic tenant scoping - we filter by teacher in getEloquentQuery()
     protected static bool $isScopedToTenant = false;
@@ -93,7 +105,7 @@ abstract class BaseQuizAssignmentResource extends BaseResource
      */
     protected static function getAssignableTypeLabel(): string
     {
-        return 'نوع الجهة';
+        return __('teacher.quizzes.assignable_type_label');
     }
 
     /**
@@ -101,7 +113,7 @@ abstract class BaseQuizAssignmentResource extends BaseResource
      */
     protected static function getAssignableTargetLabel(): string
     {
-        return 'الجهة';
+        return __('teacher.quizzes.assignable_target_label');
     }
 
     public static function form(Schema $schema): Schema
@@ -110,10 +122,10 @@ abstract class BaseQuizAssignmentResource extends BaseResource
 
         return $schema
             ->components([
-                Section::make('تعيين الاختبار')
+                Section::make(__('teacher.quiz_assignments.assignment_section'))
                     ->schema([
                         Select::make('quiz_id')
-                            ->label('الاختبار')
+                            ->label(__('teacher.quiz_assignments.quiz_select'))
                             ->options(function () use ($tenant) {
                                 $query = Quiz::active();
                                 if ($tenant) {
@@ -143,15 +155,15 @@ abstract class BaseQuizAssignmentResource extends BaseResource
                     ])
                     ->columns(2),
 
-                Section::make('إعدادات التوفر')
+                Section::make(__('teacher.quiz_assignments.availability_section'))
                     ->schema([
                         Toggle::make('is_visible')
-                            ->label('مرئي للطلاب')
+                            ->label(__('teacher.quizzes.visible_to_students'))
                             ->default(true)
-                            ->helperText('إخفاء الاختبار عن الطلاب مؤقتاً'),
+                            ->helperText(__('teacher.quiz_assignments.hide_quiz_hint')),
 
                         TextInput::make('max_attempts')
-                            ->label('عدد المحاولات المسموحة')
+                            ->label(__('teacher.quiz_assignments.max_attempts_allowed'))
                             ->numeric()
                             ->default(1)
                             ->minValue(1)
@@ -159,21 +171,21 @@ abstract class BaseQuizAssignmentResource extends BaseResource
                             ->required(),
 
                         DateTimePicker::make('available_from')
-                            ->label('متاح من')
+                            ->label(__('teacher.quizzes.available_from_label'))
                             ->native(false)
                             ->seconds(false)
                             ->displayFormat('Y-m-d H:i')
-                            ->placeholder('اتركه فارغاً للإتاحة فوراً')
-                            ->helperText('تاريخ ووقت بدء إتاحة الاختبار للطلاب'),
+                            ->placeholder(__('teacher.quizzes.available_from_placeholder'))
+                            ->helperText(__('teacher.quiz_assignments.available_from_hint')),
 
                         DateTimePicker::make('available_until')
-                            ->label('متاح حتى')
+                            ->label(__('teacher.quizzes.available_until_label'))
                             ->native(false)
                             ->seconds(false)
                             ->displayFormat('Y-m-d H:i')
-                            ->placeholder('اتركه فارغاً للإتاحة دائماً')
+                            ->placeholder(__('teacher.quizzes.available_until_placeholder'))
                             ->after('available_from')
-                            ->helperText('تاريخ ووقت انتهاء إتاحة الاختبار'),
+                            ->helperText(__('teacher.quiz_assignments.available_until_hint')),
                     ])
                     ->columns(2),
             ]);
@@ -185,7 +197,7 @@ abstract class BaseQuizAssignmentResource extends BaseResource
             static::getAcademyColumn(),
 
             TextColumn::make('quiz.title')
-                ->label('الاختبار')
+                ->label(__('teacher.quiz_assignments.column_quiz'))
                 ->searchable()
                 ->sortable(),
 
@@ -198,29 +210,29 @@ abstract class BaseQuizAssignmentResource extends BaseResource
                 ->formatStateUsing(fn ($record) => static::formatAssignableName($record)),
 
             IconColumn::make('is_visible')
-                ->label('مرئي')
+                ->label(__('teacher.quiz_assignments.column_visible'))
                 ->boolean(),
 
             TextColumn::make('max_attempts')
-                ->label('المحاولات')
+                ->label(__('teacher.quiz_assignments.column_attempts'))
                 ->sortable(),
 
             TextColumn::make('attempts_count')
-                ->label('عدد التقديمات')
+                ->label(__('teacher.quiz_assignments.column_submissions'))
                 ->counts('attempts'),
 
             TextColumn::make('available_from')
-                ->label('متاح من')
+                ->label(__('teacher.quiz_assignments.column_available_from'))
                 ->dateTime('Y-m-d H:i')
-                ->placeholder('فوري'),
+                ->placeholder(__('teacher.quiz_assignments.placeholder_immediate')),
 
             TextColumn::make('available_until')
-                ->label('متاح حتى')
+                ->label(__('teacher.quiz_assignments.column_available_until'))
                 ->dateTime('Y-m-d H:i')
-                ->placeholder('دائم'),
+                ->placeholder(__('teacher.quiz_assignments.placeholder_permanent')),
 
             TextColumn::make('created_at')
-                ->label('تاريخ الإنشاء')
+                ->label(__('teacher.quizzes.column_created_at'))
                 ->dateTime('Y-m-d')
                 ->sortable()
                 ->toggleable(isToggledHiddenByDefault: true),
@@ -235,13 +247,13 @@ abstract class BaseQuizAssignmentResource extends BaseResource
                 SelectFilter::make('assignable_type')
                     ->label(static::getAssignableTypeLabel())
                     ->options(static::getAssignableTypes())
-                    ->placeholder('الكل'),
+                    ->placeholder(__('teacher.quizzes.filter_all')),
 
                 TernaryFilter::make('is_visible')
-                    ->label('الظهور')
-                    ->placeholder('الكل')
-                    ->trueLabel('مرئي')
-                    ->falseLabel('مخفي'),
+                    ->label(__('teacher.quiz_assignments.filter_visibility'))
+                    ->placeholder(__('teacher.quizzes.filter_all'))
+                    ->trueLabel(__('teacher.quiz_assignments.filter_visible'))
+                    ->falseLabel(__('teacher.quiz_assignments.filter_hidden')),
             ])
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
@@ -249,9 +261,9 @@ abstract class BaseQuizAssignmentResource extends BaseResource
             ->deferColumnManager(false)
             ->recordActions([
                 ActionGroup::make([
-                    ViewAction::make()->label('عرض'),
-                    EditAction::make()->label('تعديل'),
-                    DeleteAction::make()->label('حذف'),
+                    ViewAction::make()->label(__('teacher.quizzes.action_view')),
+                    EditAction::make()->label(__('teacher.quizzes.action_edit')),
+                    DeleteAction::make()->label(__('teacher.quizzes.action_delete')),
                 ]),
             ])
             ->toolbarActions([

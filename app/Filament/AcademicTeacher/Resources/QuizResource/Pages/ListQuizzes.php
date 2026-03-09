@@ -15,7 +15,7 @@ class ListQuizzes extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('إضافة اختبار'),
+                ->label(__('teacher.quizzes.action_add_quiz')),
         ];
     }
 }

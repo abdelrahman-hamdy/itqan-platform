@@ -47,13 +47,25 @@ abstract class BaseQuizResource extends BaseResource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'الاختبارات';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('teacher.quizzes.nav_group');
+    }
 
-    protected static ?string $navigationLabel = 'اختباراتي';
+    public static function getNavigationLabel(): string
+    {
+        return __('teacher.quizzes.nav_my_quizzes');
+    }
 
-    protected static ?string $modelLabel = 'اختبار';
+    public static function getModelLabel(): string
+    {
+        return __('teacher.quizzes.model_label');
+    }
 
-    protected static ?string $pluralModelLabel = 'الاختبارات';
+    public static function getPluralModelLabel(): string
+    {
+        return __('teacher.quizzes.model_label_plural');
+    }
 
     /**
      * Get the assignable types with their labels.
@@ -75,7 +87,7 @@ abstract class BaseQuizResource extends BaseResource
      */
     protected static function getAssignableTypeLabel(): string
     {
-        return 'نوع الجهة';
+        return __('teacher.quizzes.assignable_type_label');
     }
 
     /**
@@ -83,71 +95,71 @@ abstract class BaseQuizResource extends BaseResource
      */
     protected static function getAssignableTargetLabel(): string
     {
-        return 'الجهة';
+        return __('teacher.quizzes.assignable_target_label');
     }
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                Section::make('معلومات الاختبار')
+                Section::make(__('teacher.quizzes.quiz_info'))
                     ->schema([
                         TextInput::make('title')
-                            ->label('عنوان الاختبار')
+                            ->label(__('teacher.quizzes.field_title'))
                             ->required()
                             ->maxLength(255),
 
                         Textarea::make('description')
-                            ->label('وصف الاختبار')
+                            ->label(__('teacher.quizzes.field_description'))
                             ->rows(3)
                             ->maxLength(1000),
 
                         TextInput::make('duration_minutes')
-                            ->label('المدة (بالدقائق)')
+                            ->label(__('teacher.quizzes.duration_minutes_label'))
                             ->numeric()
                             ->minValue(1)
                             ->maxValue(180)
-                            ->helperText('اتركه فارغاً لاختبار بدون وقت محدد'),
+                            ->helperText(__('teacher.quizzes.duration_helper')),
 
                         TextInput::make('passing_score')
-                            ->label('درجة النجاح (%)')
+                            ->label(__('teacher.quizzes.passing_score_percent'))
                             ->numeric()
                             ->default(60)
                             ->minValue(10)
                             ->maxValue(90)
                             ->required()
                             ->suffix('%')
-                            ->helperText('يجب أن تكون درجة النجاح بين 10% و 90%'),
+                            ->helperText(__('teacher.quizzes.passing_score_helper')),
 
                         Toggle::make('is_active')
-                            ->label('نشط')
+                            ->label(__('teacher.quizzes.active_label'))
                             ->default(true),
 
                         Toggle::make('randomize_questions')
-                            ->label('ترتيب عشوائي للأسئلة')
-                            ->helperText('عند التفعيل، ستظهر الأسئلة بترتيب مختلف لكل طالب')
+                            ->label(__('teacher.quizzes.randomize_label_form'))
+                            ->helperText(__('teacher.quizzes.randomize_helper'))
                             ->default(false),
                     ])
                     ->columns(2),
 
-                Section::make('الأسئلة')
+                Section::make(__('teacher.quizzes.questions_section'))
                     ->schema([
                         Repeater::make('questions')
                             ->relationship()
                             ->label('')
                             ->schema([
                                 Textarea::make('question_text')
-                                    ->label('نص السؤال')
+                                    ->label(__('teacher.quizzes.question_text_label'))
                                     ->required()
                                     ->rows(2)
                                     ->columnSpanFull(),
 
                                 Repeater::make('options')
-                                    ->label('الخيارات')
+                                    ->label(__('teacher.quizzes.options_label'))
                                     ->simple(
                                         TextInput::make('option')
                                             ->required()
-                                            ->placeholder('أدخل نص الخيار')
+                                            ->placeholder(__('teacher.quizzes.option_input_placeholder'))
                                             ->live(onBlur: true),
                                     )
                                     ->minItems(2)
@@ -158,7 +170,7 @@ abstract class BaseQuizResource extends BaseResource
                                     ->live(),
 
                                 Select::make('correct_option')
-                                    ->label('الإجابة الصحيحة')
+                                    ->label(__('teacher.quizzes.correct_answer_label'))
                                     ->options(function (Get $get): array {
                                         $options = $get('options') ?? [];
                                         $result = [];
@@ -166,25 +178,25 @@ abstract class BaseQuizResource extends BaseResource
                                         foreach ($options as $option) {
                                             $text = is_array($option) ? ($option['option'] ?? $option[0] ?? '') : $option;
                                             $displayIndex = $counter + 1;
-                                            $result[$counter] = "الخيار {$displayIndex}: ".($text ?: '(فارغ)');
+                                            $result[$counter] = __('teacher.quizzes.option_prefix') . " {$displayIndex}: ".($text ?: __('teacher.quizzes.option_empty'));
                                             $counter++;
                                         }
 
-                                        return $result ?: [0 => 'أدخل الخيارات أولاً'];
+                                        return $result ?: [0 => __('teacher.quizzes.enter_options_first')];
                                     })
                                     ->live()
                                     ->required()
-                                    ->helperText('اختر الإجابة الصحيحة من الخيارات أعلاه'),
+                                    ->helperText(__('teacher.quizzes.correct_answer_helper')),
 
                                 Hidden::make('order')
                                     ->default(0),
                             ])
                             ->orderColumn('order')
                             ->defaultItems(1)
-                            ->addActionLabel('إضافة سؤال')
+                            ->addActionLabel(__('teacher.quizzes.add_question_action'))
                             ->collapsible()
                             ->cloneable()
-                            ->itemLabel(fn (array $state): ?string => $state['question_text'] ?? 'سؤال جديد'),
+                            ->itemLabel(fn (array $state): ?string => $state['question_text'] ?? __('teacher.quizzes.new_question')),
                     ]),
             ]);
     }
@@ -196,32 +208,32 @@ abstract class BaseQuizResource extends BaseResource
                 static::getAcademyColumn(),
 
                 TextColumn::make('title')
-                    ->label('العنوان')
+                    ->label(__('teacher.quizzes.column_title'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('questions_count')
-                    ->label('عدد الأسئلة')
+                    ->label(__('teacher.quizzes.column_questions_count'))
                     ->counts('questions')
                     ->sortable()
                     ->toggleable(),
 
                 TextColumn::make('duration_minutes')
-                    ->label('المدة')
-                    ->formatStateUsing(fn ($state) => $state ? "{$state} دقيقة" : 'غير محدد')
+                    ->label(__('teacher.quizzes.column_duration'))
+                    ->formatStateUsing(fn ($state) => $state ? __('teacher.quizzes.duration_x_minutes', ['count' => $state]) : __('teacher.quizzes.duration_not_set'))
                     ->toggleable(),
 
                 TextColumn::make('passing_score')
-                    ->label('درجة النجاح')
+                    ->label(__('teacher.quizzes.column_passing_score'))
                     ->formatStateUsing(fn ($state) => "{$state}%")
                     ->toggleable(),
 
                 IconColumn::make('is_active')
-                    ->label('نشط')
+                    ->label(__('teacher.quizzes.column_active'))
                     ->boolean(),
 
                 IconColumn::make('randomize_questions')
-                    ->label('عشوائي')
+                    ->label(__('teacher.quizzes.column_randomize'))
                     ->boolean()
                     ->trueIcon('heroicon-o-arrows-right-left')
                     ->falseIcon('heroicon-o-bars-3')
@@ -230,23 +242,23 @@ abstract class BaseQuizResource extends BaseResource
                     ->toggleable(),
 
                 TextColumn::make('assignments_count')
-                    ->label('عدد التعيينات')
+                    ->label(__('teacher.quizzes.column_assignments_count'))
                     ->counts('assignments')
                     ->sortable()
                     ->toggleable(),
 
                 TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
+                    ->label(__('teacher.quizzes.column_created_at'))
                     ->dateTime('Y-m-d')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 TernaryFilter::make('is_active')
-                    ->label('الحالة')
-                    ->placeholder('الكل')
-                    ->trueLabel('نشط')
-                    ->falseLabel('غير نشط'),
+                    ->label(__('teacher.quizzes.filter_status'))
+                    ->placeholder(__('teacher.quizzes.filter_all'))
+                    ->trueLabel(__('teacher.quizzes.active'))
+                    ->falseLabel(__('teacher.quizzes.inactive')),
             ])
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
@@ -270,7 +282,7 @@ abstract class BaseQuizResource extends BaseResource
     protected static function getAssignAction(): Action
     {
         return Action::make('assign')
-            ->label('تعيين')
+            ->label(__('teacher.quizzes.action_assign'))
             ->icon('heroicon-o-link')
             ->color('success')
             ->schema([
@@ -288,29 +300,29 @@ abstract class BaseQuizResource extends BaseResource
                     ->preload(),
 
                 Toggle::make('is_visible')
-                    ->label('مرئي للطلاب')
+                    ->label(__('teacher.quizzes.visible_to_students'))
                     ->default(true),
 
                 TextInput::make('max_attempts')
-                    ->label('عدد المحاولات')
+                    ->label(__('teacher.quizzes.max_attempts_field'))
                     ->numeric()
                     ->default(1)
                     ->minValue(1)
                     ->maxValue(10),
 
                 DateTimePicker::make('available_from')
-                    ->label('متاح من')
+                    ->label(__('teacher.quizzes.available_from_label'))
                     ->native(false)
                     ->seconds(false)
                     ->displayFormat('Y-m-d H:i')
-                    ->placeholder('اتركه فارغاً للإتاحة فوراً'),
+                    ->placeholder(__('teacher.quizzes.available_from_placeholder')),
 
                 DateTimePicker::make('available_until')
-                    ->label('متاح حتى')
+                    ->label(__('teacher.quizzes.available_until_label'))
                     ->native(false)
                     ->seconds(false)
                     ->displayFormat('Y-m-d H:i')
-                    ->placeholder('اتركه فارغاً للإتاحة دائماً')
+                    ->placeholder(__('teacher.quizzes.available_until_placeholder'))
                     ->after('available_from'),
             ])
             ->action(function (Quiz $record, array $data) {

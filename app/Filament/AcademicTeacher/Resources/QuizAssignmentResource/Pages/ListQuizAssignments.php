@@ -15,7 +15,7 @@ class ListQuizAssignments extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('تعيين اختبار'),
+                ->label(__('teacher.quiz_assignments.action_assign_quiz')),
         ];
     }
 }

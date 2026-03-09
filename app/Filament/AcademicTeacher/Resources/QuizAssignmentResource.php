@@ -117,17 +117,17 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()
-                        ->label('عرض'),
+                        ->label(__('teacher.quizzes.action_view')),
                     EditAction::make()
-                        ->label('تعديل'),
+                        ->label(__('teacher.quizzes.action_edit')),
                     DeleteAction::make()
-                        ->label('حذف'),
+                        ->label(__('teacher.quizzes.action_delete')),
                 ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->label('حذف المحدد'),
+                        ->label(__('teacher.quizzes.action_delete_selected')),
                 ]),
             ]);
     }
