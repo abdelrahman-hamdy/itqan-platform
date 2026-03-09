@@ -275,11 +275,20 @@ class CalendarController extends Controller
         }
 
         $oldScheduledAt = $session->scheduled_at;
+        $newScheduledAt = Carbon::parse($validated['scheduled_at']);
+
+        \Log::info('Calendar reschedule', [
+            'source' => $source,
+            'session_id' => $sessionId,
+            'old_scheduled_at' => $oldScheduledAt->toISOString(),
+            'new_scheduled_at' => $newScheduledAt->toISOString(),
+            'raw_input' => $validated['scheduled_at'],
+        ]);
 
         $session->update([
-            'scheduled_at' => $validated['scheduled_at'],
+            'scheduled_at' => $newScheduledAt,
             'rescheduled_from' => $oldScheduledAt,
-            'rescheduled_to' => Carbon::parse($validated['scheduled_at']),
+            'rescheduled_to' => $newScheduledAt,
         ]);
 
         return response()->json([
