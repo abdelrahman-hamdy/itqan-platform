@@ -138,7 +138,7 @@ class TeacherStudentOverviewService
         return $circles->map(function ($circle) use ($user) {
             $reports = StudentSessionReport::where('teacher_id', $user->id)
                 ->whereHas('session', fn ($q) => $q->where('individual_circle_id', $circle->id))
-                ->get(['attendance_status', 'overall_performance']);
+                ->get();
 
             $totalSessions = $reports->count();
             $attendedCount = $reports->whereIn('attendance_status', [
@@ -194,7 +194,7 @@ class TeacherStudentOverviewService
                 $reports = StudentSessionReport::where('teacher_id', $user->id)
                     ->where('student_id', $student->id)
                     ->whereHas('session', fn ($q) => $q->where('circle_id', $circle->id))
-                    ->get(['attendance_status', 'overall_performance']);
+                    ->get();
 
                 $totalSessions = $reports->count();
                 $attendedCount = $reports->whereIn('attendance_status', [
@@ -308,7 +308,7 @@ class TeacherStudentOverviewService
 
                 $reports = InteractiveSessionReport::where('student_id', $studentUser->id)
                     ->whereHas('session', fn ($q) => $q->where('interactive_course_id', $course->id))
-                    ->get(['attendance_status', 'overall_performance']);
+                    ->get();
 
                 $totalSessions = $reports->count();
                 $attendedCount = $reports->whereIn('attendance_status', [
