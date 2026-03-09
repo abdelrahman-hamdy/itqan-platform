@@ -145,7 +145,7 @@
                     if ($row->report_route) {
                         $actions[] = [
                             'href' => route($row->report_route, array_merge($row->report_params, ['subdomain' => $subdomain])),
-                            'text' => __('teacher.reports.view_report'),
+                            'label' => __('teacher.reports.view_report'),
                             'icon' => 'ri-eye-line',
                         ];
                     }
