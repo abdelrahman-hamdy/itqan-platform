@@ -6,10 +6,18 @@
 @endphp
 
     <x-teacher.entity-list-page
-        :title="__('teacher.certificates.page_title') . ' (' . ($totalCertificates ?? 0) . ')'"
+        :title="__('teacher.certificates.page_title')"
         :subtitle="__('teacher.certificates.page_description')"
         :items="$certificates"
-        :stats="[]"
+        :stats="[
+            [
+                'icon' => 'ri-award-line',
+                'bgColor' => 'bg-orange-100',
+                'iconColor' => 'text-orange-600',
+                'value' => $totalCertificates ?? 0,
+                'label' => __('teacher.certificates.total_certificates'),
+            ],
+        ]"
         :filter-options="[]"
         :breadcrumbs="[['label' => __('teacher.certificates.breadcrumb')]]"
         theme-color="orange"
