@@ -421,31 +421,38 @@ function assignmentForm() {
 
         revokeBaseUrl: @js(route('teacher.quizzes.revoke-assignment', ['subdomain' => $subdomain, 'assignment' => '__ASSIGNMENT_ID__'])),
 
-        async revokeAssignment(assignmentId) {
-            if (!confirm(@js(__('teacher.quizzes.confirm_revoke')))) return;
+        revokeAssignment(assignmentId) {
+            confirmAction({
+                title: @js(__('teacher.quizzes.revoke_assignment')),
+                message: @js(__('teacher.quizzes.confirm_revoke')),
+                confirmText: @js(__('teacher.quizzes.revoke_assignment')),
+                isDangerous: true,
+                icon: 'ri-delete-bin-line',
+                onConfirm: async () => {
+                    try {
+                        const response = await fetch(
+                            this.revokeBaseUrl.replace('__ASSIGNMENT_ID__', assignmentId),
+                            {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': @js(csrf_token()),
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                }
+                            }
+                        );
 
-            try {
-                const response = await fetch(
-                    this.revokeBaseUrl.replace('__ASSIGNMENT_ID__', assignmentId),
-                    {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': @js(csrf_token()),
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
+                        if (response.ok) {
+                            window.location.reload();
+                        } else {
+                            const data = await response.json();
+                            this.errorMessage = data.message || @js(__('teacher.quizzes.error_revoking'));
                         }
+                    } catch (e) {
+                        this.errorMessage = @js(__('teacher.quizzes.error_revoking'));
                     }
-                );
-
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    const data = await response.json();
-                    alert(data.message || @js(__('teacher.quizzes.error_revoking')));
                 }
-            } catch (e) {
-                alert(@js(__('teacher.quizzes.error_revoking')));
-            }
+            });
         }
     }
 }

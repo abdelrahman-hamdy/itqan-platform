@@ -23,7 +23,7 @@
         @if($availableQuizzes->count() > 0 || $showForm)
             <button wire:click="toggleForm" type="button"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors cursor-pointer
-                           {{ $showForm ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-purple-600 text-white hover:bg-purple-700' }}">
+                           {{ $showForm ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-blue-600 text-white hover:bg-blue-700' }}">
                 @if($showForm)
                     <i class="ri-close-line"></i> {{ __('common.cancel') }}
                 @else
@@ -35,8 +35,8 @@
 
     {{-- Assignment Form --}}
     @if($showForm)
-        <div class="p-4 bg-purple-50 rounded-lg border border-purple-200 mb-4">
-            <h4 class="text-sm font-semibold text-purple-900 mb-3">{{ __('teacher.quizzes.new_assignment') }}</h4>
+        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200 mb-4">
+            <h4 class="text-sm font-semibold text-blue-900 mb-3">{{ __('teacher.quizzes.new_assignment') }}</h4>
 
             <div class="space-y-3">
                 {{-- Quiz Select --}}
@@ -45,7 +45,7 @@
                         {{ __('teacher.quizzes.select_quiz_label') }} <span class="text-red-500">*</span>
                     </label>
                     <select wire:model="selectedQuizId"
-                            class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500 text-sm">
+                            class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-sm">
                         <option value="">{{ __('teacher.quizzes.select_quiz_placeholder') }}</option>
                         @foreach($availableQuizzes as $quiz)
                             <option value="{{ $quiz->id }}">
@@ -64,12 +64,12 @@
                             {{ __('teacher.quizzes.field_max_attempts') }}
                         </label>
                         <input type="number" wire:model="maxAttempts" min="1" max="10"
-                               class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500 text-sm">
+                               class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-sm">
                     </div>
                     <div class="flex items-end">
                         <label class="flex items-center gap-2 cursor-pointer pb-2">
                             <input type="checkbox" wire:model="isVisible"
-                                   class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                             <span class="text-sm text-gray-700">{{ __('teacher.quizzes.field_is_visible') }}</span>
                         </label>
                     </div>
@@ -82,21 +82,21 @@
                             {{ __('teacher.quizzes.field_available_from') }}
                         </label>
                         <input type="datetime-local" wire:model="availableFrom"
-                               class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500 text-sm">
+                               class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-sm">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             {{ __('teacher.quizzes.field_available_until') }}
                         </label>
                         <input type="datetime-local" wire:model="availableUntil"
-                               class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500 text-sm">
+                               class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-sm">
                     </div>
                 </div>
 
                 {{-- Submit --}}
                 <div class="flex justify-end">
                     <button wire:click="assignQuiz" wire:loading.attr="disabled"
-                            class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 cursor-pointer">
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer">
                         <span wire:loading.remove wire:target="assignQuiz"><i class="ri-check-line"></i></span>
                         <span wire:loading wire:target="assignQuiz"><i class="ri-loader-4-line animate-spin"></i></span>
                         {{ __('teacher.quizzes.assign_quiz') }}
@@ -117,7 +117,7 @@
                 <p class="text-sm text-gray-600 mb-4">{{ __('teacher.quizzes.no_assignments_desc') }}</p>
                 @if($availableQuizzes->count() > 0)
                     <button wire:click="toggleForm" type="button"
-                            class="inline-flex items-center gap-1.5 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors cursor-pointer">
+                            class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
                         <i class="ri-add-line"></i>
                         {{ __('teacher.quizzes.assign_quiz') }}
                     </button>
@@ -164,8 +164,14 @@
                                 </span>
                             @endif
                             @if($assignment->can_revoke)
-                                <button wire:click="revokeAssignment('{{ $assignment->id }}')"
-                                        wire:confirm="{{ __('teacher.quizzes.confirm_revoke') }}"
+                                <button @click="confirmAction({
+                                            title: @js(__('teacher.quizzes.revoke_assignment')),
+                                            message: @js(__('teacher.quizzes.confirm_revoke')),
+                                            confirmText: @js(__('teacher.quizzes.revoke_assignment')),
+                                            isDangerous: true,
+                                            icon: 'ri-delete-bin-line',
+                                            onConfirm: () => $wire.revokeAssignment('{{ $assignment->id }}')
+                                        })"
                                         class="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
                                         title="{{ __('teacher.quizzes.revoke_assignment') }}">
                                     <i class="ri-delete-bin-line text-base"></i>
