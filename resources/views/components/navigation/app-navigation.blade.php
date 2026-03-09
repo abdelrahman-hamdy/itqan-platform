@@ -253,6 +253,23 @@
           @endif
         @endif
 
+        <!-- Filament Admin Panel Link (Admin/SuperAdmin only) -->
+        @if($role === 'supervisor' && $user)
+          @if($user->isSuperAdmin())
+            <a href="{{ route('filament.admin.pages.dashboard') }}" target="_blank"
+               class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+              <i class="ri-settings-3-line"></i>
+              {{ __('supervisor.sidebar.admin_panel') }}
+            </a>
+          @elseif($user->isAdmin() || $user->isAcademyAdmin())
+            <a href="/panel" target="_blank"
+               class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+              <i class="ri-settings-3-line"></i>
+              {{ __('supervisor.sidebar.admin_panel') }}
+            </a>
+          @endif
+        @endif
+
         <!-- Child Selector (Parent only) -->
         @if($role === 'parent' && isset($parentChildren) && $parentChildren->count() > 0)
           <div class="relative hidden md:block" x-data="childSelector()" x-init="init()">
@@ -610,6 +627,22 @@
                class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
               <i class="ri-apps-2-line text-xl"></i>
               <span>{{ __('components.navigation.app.teacher_nav.dashboard') }}</span>
+            </a>
+          @endif
+        @endif
+
+        @if($role === 'supervisor' && $user)
+          @if($user->isSuperAdmin())
+            <a href="{{ route('filament.admin.pages.dashboard') }}" target="_blank"
+               class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              <i class="ri-settings-3-line text-xl"></i>
+              <span>{{ __('supervisor.sidebar.admin_panel') }}</span>
+            </a>
+          @elseif($user->isAdmin() || $user->isAcademyAdmin())
+            <a href="/panel" target="_blank"
+               class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              <i class="ri-settings-3-line text-xl"></i>
+              <span>{{ __('supervisor.sidebar.admin_panel') }}</span>
             </a>
           @endif
         @endif
