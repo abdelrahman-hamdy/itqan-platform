@@ -39,6 +39,15 @@
           :active="request()->routeIs('teacher.profile.edit')" />
       </x-sidebar.nav-section>
 
+      <!-- Calendar & Scheduling -->
+      <x-sidebar.nav-section :title="__('teacher.sidebar.calendar_scheduling')">
+        <x-sidebar.nav-item
+          :href="route('teacher.calendar.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
+          :label="__('teacher.sidebar.calendar')"
+          icon="ri-calendar-schedule-line"
+          :active="request()->routeIs('teacher.calendar.*')" />
+      </x-sidebar.nav-section>
+
       <!-- Teaching Management -->
       <x-sidebar.nav-section :title="__('teacher.sidebar.teaching_management')">
         @if($isQuran)

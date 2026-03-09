@@ -74,4 +74,8 @@ return [
         'subscription_inactive' => 'Subscription is not active. Subscription must be activated to schedule sessions',
         'no_remaining_circle_sessions' => 'No remaining sessions to schedule for this circle',
     ],
+
+    'invalid_tab' => 'Invalid tab',
+    'invalid_tab_method' => 'Invalid loading method',
+    'schedule_created_successfully' => 'Sessions scheduled successfully',
 ];

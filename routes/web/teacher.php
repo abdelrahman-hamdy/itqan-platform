@@ -16,6 +16,7 @@ use App\Http\Controllers\QuranIndividualCircleController;
 use App\Http\Controllers\QuranSessionController;
 use App\Http\Controllers\StudentInteractiveCourseController;
 use App\Http\Controllers\StudentReportController;
+use App\Http\Controllers\Teacher\CalendarController;
 use App\Http\Controllers\Teacher\GroupCircleReportController;
 use App\Http\Controllers\Teacher\HomeworkGradingController;
 use App\Http\Controllers\Teacher\IndividualCircleReportController;
@@ -44,6 +45,20 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     | Homework Grading Routes (All Teachers)
     |--------------------------------------------------------------------------
     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Teacher Calendar & Scheduling Routes (All Teachers)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::middleware(['auth', 'role:quran_teacher,academic_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
+        Route::get('/calendar/events', [CalendarController::class, 'getEvents'])->name('calendar.events');
+        Route::get('/calendar/schedulable-items', [CalendarController::class, 'getSchedulableItems'])->name('calendar.schedulable-items');
+        Route::post('/calendar/schedule', [CalendarController::class, 'createSchedule'])->name('calendar.schedule');
+        Route::post('/calendar/check-conflicts', [CalendarController::class, 'checkConflicts'])->name('calendar.check-conflicts');
+    });
 
     Route::middleware(['auth', 'role:quran_teacher,academic_teacher'])->group(function () {
         Route::prefix('teacher/homework')->name('teacher.homework.')->group(function () {

@@ -88,4 +88,8 @@ return [
         'subscription_inactive' => 'الاشتراك غير نشط. يجب تفعيل الاشتراك لجدولة الجلسات',
         'no_remaining_circle_sessions' => 'لا توجد جلسات متبقية للجدولة في هذه الحلقة',
     ],
+
+    'invalid_tab' => 'علامة تبويب غير صالحة',
+    'invalid_tab_method' => 'طريقة التحميل غير صالحة',
+    'schedule_created_successfully' => 'تم جدولة الجلسات بنجاح',
 ];
