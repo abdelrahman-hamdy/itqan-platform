@@ -44,7 +44,7 @@ class QuranReportService extends BaseReportService implements QuranReportService
         }
 
         $sessions = $sessionsQuery->get();
-        $completedSessions = $sessions->whereIn('status', array_map(fn ($s) => $s->value, SessionStatus::resolvedStatuses()));
+        $completedSessions = $sessions->whereIn('status', SessionStatus::resolvedStatuses());
 
         // Get student session reports using Eloquent for tenant scoping
         $sessionReports = StudentSessionReport::whereIn('session_id', $sessions->pluck('id'))
@@ -170,7 +170,7 @@ class QuranReportService extends BaseReportService implements QuranReportService
             ->orderBy('scheduled_at', 'desc')
             ->get();
 
-        $completedSessions = $allSessions->whereIn('status', array_map(fn ($s) => $s->value, SessionStatus::resolvedStatuses()));
+        $completedSessions = $allSessions->whereIn('status', SessionStatus::resolvedStatuses());
 
         // Get student's session reports using Eloquent for tenant scoping
         $sessionReports = StudentSessionReport::whereIn('session_id', $allSessions->pluck('id'))
