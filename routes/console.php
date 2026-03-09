@@ -188,6 +188,19 @@ Schedule::command('earnings:calculate-missed --days=7')
     ->description('Backup: Calculate earnings for sessions that missed observer dispatch');
 
 // ════════════════════════════════════════════════════════════════
+// SUBSCRIPTION COUNT RECONCILIATION (SAFETY NET)
+// ════════════════════════════════════════════════════════════════
+
+// Catch completed/absent sessions where subscription_counted = false
+// Handles cases where the queued FinalizeAttendanceListener failed
+Schedule::command('subscriptions:reconcile-missed')
+    ->name('reconcile-subscription-counts')
+    ->everyTenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Safety net: count subscriptions for completed sessions that were missed');
+
+// ════════════════════════════════════════════════════════════════
 // DATA MAINTENANCE
 // ════════════════════════════════════════════════════════════════
 

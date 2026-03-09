@@ -7,6 +7,7 @@ use App\Contracts\RecordingCapable;
 use App\Contracts\SessionMeetingServiceInterface;
 use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
+use App\Events\SessionCompletedEvent;
 use App\Exceptions\WebhookValidationException;
 use App\Http\Traits\Api\ApiResponses;
 use App\Jobs\CalculateSessionForAttendance;
@@ -325,12 +326,14 @@ class LiveKitWebhookController extends Controller
             }
 
             // Only mark as completed if the session was actually used
+            $wasCompletedByThisEvent = false;
             if ($duration > 60) { // At least 1 minute of activity
                 $session->update([
                     'status' => SessionStatus::COMPLETED,
                     'ended_at' => now(),
                     'actual_duration_minutes' => round($duration / 60),
                 ]);
+                $wasCompletedByThisEvent = true;
             } elseif (! in_array($currentStatus, [SessionStatus::COMPLETED])) {
                 // Very short session, just mark as ended (don't overwrite already-completed)
                 $session->update([
@@ -354,7 +357,24 @@ class LiveKitWebhookController extends Controller
                 }
             }
 
-            // Dispatch per-session attendance calculation job with config-based delay
+            // Dispatch SessionCompletedEvent for attendance finalization + subscription counting
+            if ($wasCompletedByThisEvent) {
+                $sessionType = match (true) {
+                    $session instanceof QuranSession => 'quran',
+                    $session instanceof AcademicSession => 'academic',
+                    $session instanceof InteractiveCourseSession => 'interactive',
+                    default => 'unknown',
+                };
+                SessionCompletedEvent::dispatch($session, $sessionType);
+
+                Log::info('SessionCompletedEvent dispatched from handleRoomFinished', [
+                    'session_id' => $session->id,
+                    'session_type' => $sessionType,
+                ]);
+            }
+
+            // Dispatch per-session attendance calculation job as safety net
+            // (FinalizeAttendanceListener also calculates attendance, but this catches edge cases)
             $delayMinutes = config('business.attendance.calculation_delay_minutes', 5);
             CalculateSessionForAttendance::dispatch(
                 $session->id,

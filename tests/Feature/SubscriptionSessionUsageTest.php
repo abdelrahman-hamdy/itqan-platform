@@ -60,14 +60,19 @@ test('useSession auto-pauses subscription when sessions reach zero', function ()
     expect($subscription->status)->toBe(SessionSubscriptionStatus::PAUSED);
 });
 
-test('useSession throws when no sessions remaining', function () {
+test('useSession allows over-usage when no sessions remaining (logs warning)', function () {
     $subscription = sessionSubscription([
         'sessions_used' => 8,
         'sessions_remaining' => 0,
     ]);
 
+    // Should NOT throw — over-usage is allowed to prevent lost subscription counts
     $subscription->useSession();
-})->throws(Exception::class);
+    $subscription->refresh();
+
+    expect($subscription->sessions_used)->toBe(9);
+    expect($subscription->sessions_remaining)->toBe(0); // Clamped to 0 via max()
+});
 
 // ========================================
 // returnSession()

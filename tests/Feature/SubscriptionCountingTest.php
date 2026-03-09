@@ -6,17 +6,21 @@ use App\Enums\LessonStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Events\SessionCompletedEvent;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
-use App\Models\AcademicSubscription;
 use App\Models\AcademicSubject;
+use App\Models\AcademicSubscription;
 use App\Models\MeetingAttendance;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\StudentSessionReport;
+use App\Services\LiveKitService;
+use App\Services\Session\SessionStatusService;
 use App\Services\SessionTransitionService;
+use Illuminate\Support\Facades\Event;
 
 beforeEach(function () {
     $this->academy = createAcademy();
@@ -261,4 +265,219 @@ test('subscription is counted for absent sessions via MeetingAttendance fallback
     expect($session->status)->toBe(SessionStatus::ABSENT);
     expect($subscription->sessions_remaining)->toBe(9);
     expect($session->subscription_counted)->toBeTrue();
+});
+
+// ════════════════════════════════════════════════════════════════
+// NEW TESTS: Completion path coverage + safety-net command
+// ════════════════════════════════════════════════════════════════
+
+// ─── Test 7: autoCompleteIfExpired dispatches SessionCompletedEvent ───
+
+test('autoCompleteIfExpired dispatches SessionCompletedEvent for quran session', function () {
+    Event::fake([SessionCompletedEvent::class]);
+
+    $liveKitMock = Mockery::mock(LiveKitService::class);
+    $liveKitMock->shouldReceive('endMeeting')->andReturn(true);
+
+    $service = new SessionStatusService($liveKitMock);
+
+    $session = QuranSession::factory()->create([
+        'academy_id' => $this->academy->id,
+        'quran_teacher_id' => $this->teacher->id,
+        'student_id' => $this->student->id,
+        'status' => SessionStatus::ONGOING,
+        'scheduled_at' => now()->subHours(3),
+        'started_at' => now()->subHours(3),
+        'duration_minutes' => 45,
+    ]);
+
+    $result = $service->autoCompleteIfExpired($session);
+
+    expect($result)->toBeTrue();
+
+    $session->refresh();
+    expect($session->status)->toBe(SessionStatus::COMPLETED);
+
+    Event::assertDispatched(SessionCompletedEvent::class, function ($event) use ($session) {
+        return $event->session->id === $session->id && $event->sessionType === 'quran';
+    });
+});
+
+test('autoCompleteIfExpired dispatches SessionCompletedEvent for academic session', function () {
+    Event::fake([SessionCompletedEvent::class]);
+
+    $liveKitMock = Mockery::mock(LiveKitService::class);
+    $liveKitMock->shouldReceive('endMeeting')->andReturn(true);
+
+    $service = new SessionStatusService($liveKitMock);
+
+    $academicTeacher = createAcademicTeacher($this->academy);
+
+    $session = AcademicSession::factory()->create([
+        'academy_id' => $this->academy->id,
+        'academic_teacher_id' => $academicTeacher->academicTeacherProfile->id,
+        'student_id' => $this->student->id,
+        'status' => SessionStatus::ONGOING,
+        'scheduled_at' => now()->subHours(3),
+        'started_at' => now()->subHours(3),
+        'duration_minutes' => 60,
+    ]);
+
+    $result = $service->autoCompleteIfExpired($session);
+
+    expect($result)->toBeTrue();
+
+    Event::assertDispatched(SessionCompletedEvent::class, function ($event) use ($session) {
+        return $event->session->id === $session->id && $event->sessionType === 'academic';
+    });
+});
+
+test('autoCompleteIfExpired does not dispatch event for non-expired sessions', function () {
+    Event::fake([SessionCompletedEvent::class]);
+
+    $liveKitMock = Mockery::mock(LiveKitService::class);
+    $service = new SessionStatusService($liveKitMock);
+
+    $session = QuranSession::factory()->create([
+        'academy_id' => $this->academy->id,
+        'quran_teacher_id' => $this->teacher->id,
+        'student_id' => $this->student->id,
+        'status' => SessionStatus::ONGOING,
+        'scheduled_at' => now()->subMinutes(10),
+        'started_at' => now()->subMinutes(10),
+        'duration_minutes' => 45,
+    ]);
+
+    $result = $service->autoCompleteIfExpired($session);
+
+    expect($result)->toBeFalse();
+    Event::assertNotDispatched(SessionCompletedEvent::class);
+});
+
+// ─── Test 8: Zero remaining sessions doesn't throw ───
+
+test('QuranSubscription useSession allows over-usage when zero sessions remaining', function () {
+    $subscription = QuranSubscription::factory()->create([
+        'academy_id' => $this->academy->id,
+        'student_id' => $this->student->id,
+        'quran_teacher_id' => $this->teacher->id,
+        'total_sessions' => 4,
+        'sessions_used' => 4,
+        'sessions_remaining' => 0,
+        'status' => SessionSubscriptionStatus::ACTIVE,
+    ]);
+
+    // Should NOT throw — previously threw "لا توجد جلسات متبقية في الاشتراك"
+    $subscription->useSession();
+
+    $subscription->refresh();
+    expect($subscription->sessions_used)->toBe(5);
+    expect($subscription->sessions_remaining)->toBe(0); // max(0, 0-1) = 0
+});
+
+test('AcademicSubscription useSession allows over-usage when zero sessions remaining', function () {
+    $academicTeacher = createAcademicTeacher($this->academy);
+
+    $subscription = AcademicSubscription::factory()->create([
+        'academy_id' => $this->academy->id,
+        'student_id' => $this->student->id,
+        'teacher_id' => $academicTeacher->academicTeacherProfile->id,
+        'total_sessions' => 4,
+        'sessions_used' => 4,
+        'sessions_remaining' => 0,
+        'status' => SessionSubscriptionStatus::ACTIVE,
+        'payment_status' => SubscriptionPaymentStatus::PAID,
+    ]);
+
+    $subscription->useSession();
+
+    $subscription->refresh();
+    expect($subscription->sessions_used)->toBe(5);
+    expect($subscription->sessions_remaining)->toBe(0);
+});
+
+// ─── Test 9: Safety-net reconciliation command ───
+
+test('reconcile command fixes uncounted completed sessions', function () {
+    ['subscription' => $subscription, 'session' => $session] = createQuranSessionWithSubscription([
+        'status' => SessionStatus::COMPLETED,
+        'ended_at' => now()->subHours(2),
+        'subscription_counted' => false,
+    ]);
+
+    $this->artisan('subscriptions:reconcile-missed', ['--minutes' => 1])
+        ->assertSuccessful();
+
+    $session->refresh();
+    $subscription->refresh();
+
+    expect($session->subscription_counted)->toBeTrue();
+    expect($subscription->sessions_used)->toBe(1);
+    expect($subscription->sessions_remaining)->toBe(9);
+});
+
+test('reconcile command fixes uncounted absent sessions', function () {
+    ['subscription' => $subscription, 'session' => $session] = createQuranSessionWithSubscription([
+        'status' => SessionStatus::ABSENT,
+        'ended_at' => now()->subHours(2),
+        'subscription_counted' => false,
+    ]);
+
+    $this->artisan('subscriptions:reconcile-missed', ['--minutes' => 1])
+        ->assertSuccessful();
+
+    $session->refresh();
+    $subscription->refresh();
+
+    expect($session->subscription_counted)->toBeTrue();
+    expect($subscription->sessions_used)->toBe(1);
+});
+
+test('reconcile command dry run does not modify data', function () {
+    ['subscription' => $subscription, 'session' => $session] = createQuranSessionWithSubscription([
+        'status' => SessionStatus::COMPLETED,
+        'ended_at' => now()->subHours(2),
+        'subscription_counted' => false,
+    ]);
+
+    $this->artisan('subscriptions:reconcile-missed', ['--dry-run' => true, '--minutes' => 1])
+        ->assertSuccessful();
+
+    $session->refresh();
+    $subscription->refresh();
+
+    expect($session->subscription_counted)->toBeFalse();
+    expect($subscription->sessions_used)->toBe(0);
+});
+
+test('reconcile command skips recently ended sessions', function () {
+    ['subscription' => $subscription, 'session' => $session] = createQuranSessionWithSubscription([
+        'status' => SessionStatus::COMPLETED,
+        'ended_at' => now()->subMinutes(3), // Only 3 min ago, within default 10-min window
+        'subscription_counted' => false,
+    ]);
+
+    // Default --minutes=10, so session ended 3 min ago should be skipped
+    $this->artisan('subscriptions:reconcile-missed')
+        ->assertSuccessful();
+
+    $session->refresh();
+    expect($session->subscription_counted)->toBeFalse();
+});
+
+test('reconcile command also processes academic sessions', function () {
+    ['subscription' => $subscription, 'session' => $session] = createAcademicSessionWithSubscription([
+        'status' => SessionStatus::COMPLETED,
+        'ended_at' => now()->subHours(2),
+        'subscription_counted' => false,
+    ]);
+
+    $this->artisan('subscriptions:reconcile-missed', ['--minutes' => 1])
+        ->assertSuccessful();
+
+    $session->refresh();
+    $subscription->refresh();
+
+    expect($session->subscription_counted)->toBeTrue();
+    expect($subscription->sessions_used)->toBe(1);
 });

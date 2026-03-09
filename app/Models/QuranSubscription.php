@@ -512,12 +512,16 @@ class QuranSubscription extends BaseSubscription
             }
 
             if ($subscription->sessions_remaining <= 0) {
-                throw new Exception('لا توجد جلسات متبقية في الاشتراك');
+                Log::warning("QuranSubscription {$subscription->id} has no remaining sessions, allowing over-usage", [
+                    'subscription_id' => $subscription->id,
+                    'sessions_remaining' => $subscription->sessions_remaining,
+                    'sessions_used' => $subscription->sessions_used,
+                ]);
             }
 
             $subscription->update([
                 'sessions_used' => $subscription->sessions_used + 1,
-                'sessions_remaining' => $subscription->sessions_remaining - 1,
+                'sessions_remaining' => max(0, $subscription->sessions_remaining - 1),
                 'last_session_at' => now(),
             ]);
 
@@ -909,7 +913,7 @@ class QuranSubscription extends BaseSubscription
         // Update sessions remaining when sessions are used
         static::updating(function ($subscription) {
             if ($subscription->isDirty('sessions_used') && ! $subscription->isDirty('sessions_remaining')) {
-                $subscription->sessions_remaining = $subscription->total_sessions - $subscription->sessions_used;
+                $subscription->sessions_remaining = max(0, $subscription->total_sessions - $subscription->sessions_used);
             }
         });
 

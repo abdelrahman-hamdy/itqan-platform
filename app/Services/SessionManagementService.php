@@ -2,22 +2,22 @@
 
 namespace App\Services;
 
-use Exception;
-use Log;
-use App\Models\QuranCircleSchedule;
-use App\Models\QuranTrialRequest;
-use App\Enums\TrialRequestStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
+use App\Enums\TrialRequestStatus;
 use App\Models\QuranCircle;
+use App\Models\QuranCircleSchedule;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
+use App\Models\QuranTrialRequest;
 use App\Services\Calendar\Traits\GeneratesSessionDates;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Log;
 
 class SessionManagementService
 {
@@ -65,9 +65,12 @@ class SessionManagementService
             $sessionMonth = $scheduledAt->format('Y-m-01');
             $monthlySessionNumber = $this->getNextSessionNumberForMonth($lockedCircle, $sessionMonth);
 
+            // Get the next sequential session number inside the transaction
+            $sessionNumber = $this->namingService->getNextIndividualSessionNumber($lockedCircle);
+
             // Use the naming service for consistent sequential session naming
             if (! $title) {
-                $title = $this->namingService->generateIndividualSessionTitle($lockedCircle);
+                $title = $this->namingService->generateIndividualSessionTitle($lockedCircle, $sessionNumber);
             }
 
             if (! $description) {
@@ -90,6 +93,7 @@ class SessionManagementService
                 'description' => $description,
                 'scheduled_at' => $scheduledAtUtc,
                 'duration_minutes' => $durationMinutes,
+                'session_number' => $sessionNumber,
                 'session_month' => $sessionMonth,
                 'monthly_session_number' => $monthlySessionNumber,
                 'created_by' => Auth::id(),
@@ -125,9 +129,12 @@ class SessionManagementService
             // Remove the hard monthly limit to support cases where teachers need extra sessions
             // The circle's monthly_sessions_count serves as a guideline/recommendation, not a strict limit
 
+            // Get the next sequential session number inside the transaction
+            $sessionNumber = $this->namingService->getNextGroupSessionNumber($circle);
+
             // Use the naming service for consistent sequential session naming
             if (! $title) {
-                $title = $this->namingService->generateGroupSessionTitle($circle);
+                $title = $this->namingService->generateGroupSessionTitle($circle, $sessionNumber);
             }
 
             if (! $description) {
@@ -148,6 +155,7 @@ class SessionManagementService
                 'description' => $description,
                 'scheduled_at' => $scheduledAtUtc,
                 'duration_minutes' => $durationMinutes,
+                'session_number' => $sessionNumber,
                 'session_month' => $sessionMonth,
                 'monthly_session_number' => $monthlySessionNumber,
                 'created_by' => Auth::id(),
@@ -436,7 +444,7 @@ class SessionManagementService
     /**
      * Generate exact number of group sessions from a schedule
      *
-     * @param QuranCircleSchedule $schedule The circle schedule with weekly_schedule
+     * @param  QuranCircleSchedule  $schedule  The circle schedule with weekly_schedule
      * @param  int  $sessionCount  Number of sessions to generate
      * @return int Number of sessions created
      */
@@ -582,7 +590,7 @@ class SessionManagementService
     /**
      * Create a trial session for a trial request
      *
-     * @param QuranTrialRequest $trialRequest The trial request
+     * @param  QuranTrialRequest  $trialRequest  The trial request
      * @param  array  $data  Schedule configuration containing schedule_time, schedule_start_date
      * @return int Number of sessions created (1 on success)
      */

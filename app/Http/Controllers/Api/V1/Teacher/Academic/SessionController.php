@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher\Academic;
 
-use Exception;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
@@ -10,6 +9,7 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use App\Models\InteractiveCourseSession;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -435,10 +435,6 @@ class SessionController extends Controller
         }
 
         $statusValue = $session->status->value ?? $session->status;
-        if ($statusValue === SessionStatus::COMPLETED->value) {
-            return $this->error(__('Cannot mark absent for a completed session.'), 400, 'SESSION_COMPLETED');
-        }
-
         if ($statusValue === SessionStatus::CANCELLED->value) {
             return $this->error(__('Cannot mark absent for a cancelled session.'), 400, 'SESSION_CANCELLED');
         }
@@ -451,10 +447,15 @@ class SessionController extends Controller
             return $this->validationError($validator->errors()->toArray());
         }
 
-        $session->update([
-            'status' => SessionStatus::ABSENT,
+        $result = $session->markAsAbsent($request->reason);
+
+        if (! $result) {
+            return $this->error(__('Cannot mark this session as absent.'), 400, 'MARK_ABSENT_FAILED');
+        }
+
+        // Set the additional fields that markAsAbsent() doesn't handle
+        $session->updateQuietly([
             'student_absent_at' => now(),
-            'student_absence_reason' => $request->reason,
             'marked_absent_by' => $user->id,
         ]);
 
@@ -580,30 +581,30 @@ class SessionController extends Controller
 
         $formatted = $records->map(function ($record) {
             return [
-                'id'               => $record->id,
-                'student_id'       => $record->student_id,
-                'student_name'     => trim($record->student_name),
-                'student_avatar'   => $record->avatar_path ? asset('storage/'.$record->avatar_path) : null,
-                'status'           => $record->status_raw ?? 'absent',
-                'attended_at'      => $record->attended_at,
-                'left_at'          => $record->left_at,
+                'id' => $record->id,
+                'student_id' => $record->student_id,
+                'student_name' => trim($record->student_name),
+                'student_avatar' => $record->avatar_path ? asset('storage/'.$record->avatar_path) : null,
+                'status' => $record->status_raw ?? 'absent',
+                'attended_at' => $record->attended_at,
+                'left_at' => $record->left_at,
                 'duration_minutes' => $record->duration_minutes ?? 0,
-                'is_manually_set'  => false,
-                'override_reason'  => null,
+                'is_manually_set' => false,
+                'override_reason' => null,
             ];
         });
 
         $summary = [
-            'total'    => $records->count(),
+            'total' => $records->count(),
             'attended' => $records->where('status_raw', 'attended')->count(),
-            'late'     => $records->where('status_raw', 'late')->count(),
-            'absent'   => $records->where('status_raw', 'absent')->count(),
-            'left'     => $records->where('status_raw', 'left')->count(),
+            'late' => $records->where('status_raw', 'late')->count(),
+            'absent' => $records->where('status_raw', 'absent')->count(),
+            'left' => $records->where('status_raw', 'left')->count(),
         ];
 
         return $this->success([
             'attendance' => $formatted->values()->toArray(),
-            'summary'    => $summary,
+            'summary' => $summary,
         ], __('Attendance retrieved successfully'));
     }
 
@@ -651,7 +652,7 @@ class SessionController extends Controller
         }
 
         $validated = $request->validate([
-            'status'          => ['required', Rule::in(['attended', 'absent', 'late', 'left'])],
+            'status' => ['required', Rule::in(['attended', 'absent', 'late', 'left'])],
             'override_reason' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -660,7 +661,7 @@ class SessionController extends Controller
             ->where('academy_id', $session->academy_id)
             ->update([
                 'attendance_status' => $validated['status'],
-                'updated_at'        => now(),
+                'updated_at' => now(),
             ]);
 
         return $this->success([], __('Attendance updated successfully'));

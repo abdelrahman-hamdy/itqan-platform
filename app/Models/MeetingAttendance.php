@@ -600,8 +600,16 @@ class MeetingAttendance extends Model
                     $cycles[$index]['duration_minutes'] = $actualDuration;
                     $cycles[$index]['auto_closed'] = true;
                     $cycles[$index]['auto_close_reason'] = 'session_ended';
+                } elseif ($isWebhookFormat) {
+                    // Insert a matching leave event after the open join
+                    array_splice($cycles, $index + 1, 0, [[
+                        'type' => 'leave',
+                        'timestamp' => $estimatedLeaveTime->toISOString(),
+                        'auto_closed' => true,
+                        'auto_close_reason' => 'session_ended',
+                        'duration_minutes' => $actualDuration,
+                    ]]);
                 }
-                // Note: We don't auto-close webhook format cycles here - they should get proper leave webhooks
 
                 $hasChanges = true;
 

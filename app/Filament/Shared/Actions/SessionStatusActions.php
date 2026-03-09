@@ -178,7 +178,7 @@ class SessionStatusActions
             ->modalHeading('تسجيل غياب الطالب')
             ->modalDescription('سيتم تسجيل غياب الطالب عن هذه الجلسة')
             ->modalSubmitActionLabel('تأكيد الغياب')
-            ->visible(fn (Model $record): bool => static::isScheduledOrOngoing($record) &&
+            ->visible(fn (Model $record): bool => static::canMarkAbsent($record) &&
                 ($record->session_type === 'individual' || ! isset($record->session_type))
             )
             ->action(function (Model $record) {
@@ -238,6 +238,27 @@ class SessionStatusActions
         }
 
         return $status === SessionStatus::ONGOING->value;
+    }
+
+    /**
+     * Check if session can be marked as absent
+     * Includes COMPLETED and ABSENT for teacher correction after the fact
+     */
+    protected static function canMarkAbsent(Model $record): bool
+    {
+        $status = $record->status;
+
+        if ($status instanceof SessionStatus) {
+            return in_array($status, [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING, SessionStatus::COMPLETED, SessionStatus::ABSENT]);
+        }
+
+        return in_array($status, [
+            SessionStatus::SCHEDULED->value,
+            SessionStatus::READY->value,
+            SessionStatus::ONGOING->value,
+            SessionStatus::COMPLETED->value,
+            SessionStatus::ABSENT->value,
+        ]);
     }
 
     /**

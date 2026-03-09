@@ -41,10 +41,15 @@ class AcademicSessionSchedulingService
             ]);
         }
 
+        // Get next session number (includes deleted sessions to never reuse)
+        $sessionNumber = (AcademicSession::withTrashed()
+            ->where('academic_subscription_id', $subscription->id)
+            ->max('session_number') ?? 0) + 1;
+
         // Auto-populate title if not provided
         if (! $title) {
-            $sessionCount = AcademicSession::where('academic_subscription_id', $subscription->id)->count() + 1;
-            $title = "جلسة أكاديمية - {$subscription->student->name} - المادة: {$subscription->subject->name} (جلسة {$sessionCount})";
+            $subjectName = $subscription->subject_name ?? $subscription->subject?->name ?? __('sessions.naming.default_subject');
+            $title = __('sessions.naming.academic_session', ['n' => $sessionNumber, 'subject' => $subjectName]);
         }
 
         return AcademicSession::create([
@@ -55,6 +60,7 @@ class AcademicSessionSchedulingService
             'session_type' => 'individual',
             'status' => SessionStatus::SCHEDULED,
             'is_scheduled' => true,
+            'session_number' => $sessionNumber,
             'title' => $title,
             'description' => $description,
             'scheduled_at' => $scheduledAt,

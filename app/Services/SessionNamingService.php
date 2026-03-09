@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AcademicSession;
+use App\Models\AcademicSubscription;
 use App\Models\BaseSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranCircle;
@@ -153,7 +154,11 @@ class SessionNamingService
             $circleName = $session->individualCircle->name ?? '';
         }
 
+        $sessionNumber = $session->session_number ?? 0;
+
         return [
+            'session_number' => $sessionNumber,
+            'n' => $sessionNumber,
             'student_name' => $studentName,
             'student_first' => $this->getFirstName($studentName),
             'teacher_name' => $teacherName,
@@ -190,7 +195,11 @@ class SessionNamingService
             $subjectName = $session->academicIndividualLesson->subscription->subject->getDisplayName() ?? '';
         }
 
+        $sessionNumber = $session->session_number ?? 0;
+
         return [
+            'session_number' => $sessionNumber,
+            'n' => $sessionNumber,
             'student_name' => $studentName,
             'student_first' => $this->getFirstName($studentName),
             'teacher_name' => $teacherName,
@@ -301,104 +310,92 @@ class SessionNamingService
 
     /**
      * Get the next session number for an individual circle.
-     * This counts all sessions for the circle (excluding cancelled ones).
-     *
-     * For new circles: returns 1
-     * For existing circles: returns the next sequential number
+     * Uses MAX(session_number) with lockForUpdate to prevent duplicates.
+     * Includes all sessions (cancelled, soft-deleted) so numbers are never reused.
      */
     public function getNextIndividualSessionNumber(QuranIndividualCircle $circle): int
     {
-        // Get the highest session number from existing sessions
-        $lastSession = QuranSession::where('individual_circle_id', $circle->id)
-            ->whereNotIn('status', ['cancelled'])
-            ->orderBy('created_at', 'desc')
-            ->first();
+        $maxNumber = QuranSession::withTrashed()
+            ->where('individual_circle_id', $circle->id)
+            ->lockForUpdate()
+            ->max('session_number');
 
-        if (!$lastSession) {
-            return 1;
-        }
-
-        // Try to extract session number from the title if it follows our pattern
-        // Pattern: "جلسة {n} - ..." or variations
-        if (preg_match('/جلسة\s+(\d+)/u', $lastSession->title ?? '', $matches)) {
-            return (int) $matches[1] + 1;
-        }
-
-        // Fallback: count all non-cancelled sessions + 1
-        return QuranSession::where('individual_circle_id', $circle->id)
-            ->whereNotIn('status', ['cancelled'])
-            ->count() + 1;
+        return ($maxNumber ?? 0) + 1;
     }
 
     /**
      * Get the next session number for a group circle.
-     * This counts all sessions for the circle (excluding cancelled ones).
-     *
-     * For new circles: returns 1
-     * For existing circles: returns the next sequential number
+     * Uses MAX(session_number) with lockForUpdate to prevent duplicates.
+     * Includes all sessions (cancelled, soft-deleted) so numbers are never reused.
      */
     public function getNextGroupSessionNumber(QuranCircle $circle): int
     {
-        // Get the highest session number from existing sessions
-        $lastSession = QuranSession::where('circle_id', $circle->id)
-            ->whereNotIn('status', ['cancelled'])
-            ->orderBy('created_at', 'desc')
-            ->first();
+        $maxNumber = QuranSession::withTrashed()
+            ->where('circle_id', $circle->id)
+            ->lockForUpdate()
+            ->max('session_number');
 
-        if (!$lastSession) {
-            return 1;
-        }
+        return ($maxNumber ?? 0) + 1;
+    }
 
-        // Try to extract session number from the title if it follows our pattern
-        // Pattern: "جلسة {n} - ..." or variations
-        if (preg_match('/جلسة\s+(\d+)/u', $lastSession->title ?? '', $matches)) {
-            return (int) $matches[1] + 1;
-        }
+    /**
+     * Get the next session number for an academic subscription.
+     * Uses MAX(session_number) with lockForUpdate to prevent duplicates.
+     * Includes all sessions (cancelled, soft-deleted) so numbers are never reused.
+     */
+    public function getNextAcademicSessionNumber(AcademicSubscription $subscription): int
+    {
+        $maxNumber = AcademicSession::withTrashed()
+            ->where('academic_subscription_id', $subscription->id)
+            ->lockForUpdate()
+            ->max('session_number');
 
-        // Fallback: count all non-cancelled sessions + 1
-        return QuranSession::where('circle_id', $circle->id)
-            ->whereNotIn('status', ['cancelled'])
-            ->count() + 1;
+        return ($maxNumber ?? 0) + 1;
     }
 
     /**
      * Generate session title for an individual circle.
      * Format: "جلسة {n} - {student_name}"
      *
-     * @param QuranIndividualCircle $circle
-     * @param int|null $sessionNumber Optional session number (auto-calculated if not provided)
-     * @return string
+     * @param  int|null  $sessionNumber  Optional session number (auto-calculated if not provided)
      */
     public function generateIndividualSessionTitle(QuranIndividualCircle $circle, ?int $sessionNumber = null): string
     {
         $sessionNumber = $sessionNumber ?? $this->getNextIndividualSessionNumber($circle);
         $studentName = $circle->student?->name ?? __('sessions.naming.default_student');
 
-        return __('sessions.naming.session_n_student', ['n' => $sessionNumber, 'student' => $studentName]);
+        return __('sessions.naming.individual_circle_session', ['n' => $sessionNumber, 'student' => $studentName]);
     }
 
     /**
      * Generate session title for a group circle.
      * Format: "جلسة {n} - {circle_name}"
      *
-     * @param QuranCircle $circle
-     * @param int|null $sessionNumber Optional session number (auto-calculated if not provided)
-     * @return string
+     * @param  int|null  $sessionNumber  Optional session number (auto-calculated if not provided)
      */
     public function generateGroupSessionTitle(QuranCircle $circle, ?int $sessionNumber = null): string
     {
         $sessionNumber = $sessionNumber ?? $this->getNextGroupSessionNumber($circle);
         $circleName = $circle->name ?? __('sessions.naming.default_circle');
 
-        return __('sessions.naming.session_n_circle', ['n' => $sessionNumber, 'circle' => $circleName]);
+        return __('sessions.naming.group_circle_session', ['n' => $sessionNumber, 'circle' => $circleName]);
+    }
+
+    /**
+     * Generate session title for an academic session.
+     * Format: "جلسة أكاديمية {n} - {subject}"
+     */
+    public function generateAcademicSessionTitle(AcademicSubscription $subscription, ?int $sessionNumber = null): string
+    {
+        $sessionNumber = $sessionNumber ?? $this->getNextAcademicSessionNumber($subscription);
+        $subjectName = $subscription->subject_name ?? __('sessions.naming.default_subject');
+
+        return __('sessions.naming.academic_session', ['n' => $sessionNumber, 'subject' => $subjectName]);
     }
 
     /**
      * Generate session title for a trial session.
      * Format: "جلسة تجريبية - {student_name}"
-     *
-     * @param string $studentName
-     * @return string
      */
     public function generateTrialSessionTitle(string $studentName): string
     {
@@ -407,10 +404,6 @@ class SessionNamingService
 
     /**
      * Generate session description for an individual circle.
-     *
-     * @param QuranIndividualCircle $circle
-     * @param Carbon|null $scheduledAt
-     * @return string
      */
     public function generateIndividualSessionDescription(QuranIndividualCircle $circle, ?Carbon $scheduledAt = null): string
     {
@@ -419,7 +412,7 @@ class SessionNamingService
         $description = __('sessions.naming.quran_individual_description', ['student' => $studentName]);
 
         if ($scheduledAt) {
-            $description .= ' - ' . $scheduledAt->translatedFormat('l j F Y');
+            $description .= ' - '.$scheduledAt->translatedFormat('l j F Y');
         }
 
         return $description;
@@ -427,10 +420,6 @@ class SessionNamingService
 
     /**
      * Generate session description for a group circle.
-     *
-     * @param QuranCircle $circle
-     * @param Carbon|null $scheduledAt
-     * @return string
      */
     public function generateGroupSessionDescription(QuranCircle $circle, ?Carbon $scheduledAt = null): string
     {
@@ -438,7 +427,7 @@ class SessionNamingService
         $description = __('sessions.naming.group_circle_description', ['circle' => $circleName]);
 
         if ($scheduledAt) {
-            $description .= ' - ' . $scheduledAt->translatedFormat('l j F Y');
+            $description .= ' - '.$scheduledAt->translatedFormat('l j F Y');
         }
 
         return $description;
@@ -446,8 +435,6 @@ class SessionNamingService
 
     /**
      * Generate session description for a trial session.
-     *
-     * @return string
      */
     public function generateTrialSessionDescription(): string
     {
@@ -458,7 +445,7 @@ class SessionNamingService
      * Bulk calculate starting session number for multiple sessions.
      * Useful when scheduling multiple sessions at once to avoid recalculating each time.
      *
-     * @param QuranCircle|QuranIndividualCircle $circle
+     * @param  QuranCircle|QuranIndividualCircle  $circle
      * @return int The starting session number
      */
     public function getStartingSessionNumber($circle): int

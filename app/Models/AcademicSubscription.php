@@ -597,12 +597,16 @@ class AcademicSubscription extends BaseSubscription
             }
 
             if ($subscription->sessions_remaining <= 0) {
-                throw new Exception('لا توجد جلسات متبقية في الاشتراك');
+                Log::warning("AcademicSubscription {$subscription->id} has no remaining sessions, allowing over-usage", [
+                    'subscription_id' => $subscription->id,
+                    'sessions_remaining' => $subscription->sessions_remaining,
+                    'sessions_used' => $subscription->sessions_used,
+                ]);
             }
 
             $subscription->update([
                 'sessions_used' => $subscription->sessions_used + 1,
-                'sessions_remaining' => $subscription->sessions_remaining - 1,
+                'sessions_remaining' => max(0, $subscription->sessions_remaining - 1),
                 'total_sessions_completed' => $subscription->total_sessions_completed + 1,
                 'last_session_at' => now(),
             ]);
@@ -691,9 +695,10 @@ class AcademicSubscription extends BaseSubscription
         $billingCycleMultiplier = $this->billing_cycle->sessionMultiplier();
         $totalNewSessions = $sessionsPerMonth * $billingCycleMultiplier;
 
-        // Get the current highest session number for this subscription
-        $lastSessionNumber = AcademicSession::where('academic_subscription_id', $this->id)
-            ->count();
+        // Get the current highest session number (includes deleted sessions to never reuse)
+        $lastSessionNumber = AcademicSession::withTrashed()
+            ->where('academic_subscription_id', $this->id)
+            ->max('session_number') ?? 0;
 
         Log::info('Creating sessions for renewed subscription', [
             'subscription_id' => $this->id,
@@ -716,7 +721,8 @@ class AcademicSubscription extends BaseSubscription
                 'session_code' => 'AS-'.$this->id.'-'.str_pad($sessionNumber, 3, '0', STR_PAD_LEFT),
                 'session_type' => 'individual',
                 'status' => SessionStatus::UNSCHEDULED,
-                'title' => "جلسة {$sessionNumber} - {$this->subject_name}",
+                'session_number' => $sessionNumber,
+                'title' => __('sessions.naming.academic_session', ['n' => $sessionNumber, 'subject' => $this->subject_name]),
                 'description' => "جلسة في مادة {$this->subject_name} - {$this->grade_level_name}",
                 'duration_minutes' => $this->session_duration_minutes ?? 60,
                 'created_by' => $this->student_id,
@@ -1198,7 +1204,8 @@ class AcademicSubscription extends BaseSubscription
                 'session_code' => 'AS-'.$this->id.'-'.str_pad($i, 3, '0', STR_PAD_LEFT),
                 'session_type' => 'individual',
                 'status' => SessionStatus::UNSCHEDULED,
-                'title' => "جلسة {$i} - {$subjectName}",
+                'session_number' => $i,
+                'title' => __('sessions.naming.academic_session', ['n' => $i, 'subject' => $subjectName]),
                 'description' => "جلسة في مادة {$subjectName} - {$gradeLevelName}",
                 'duration_minutes' => $this->session_duration_minutes ?? 60,
                 'created_by' => $this->student_id,

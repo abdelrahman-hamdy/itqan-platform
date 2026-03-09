@@ -20,12 +20,12 @@ return new class extends Migration
     {
         // password_reset_tokens — academy_id is part of the composite PK
         // MySQL treats PK columns as NOT NULL even when declared nullable in schema,
-        // so the FK will match every real record.
+        // so we use cascadeOnDelete to avoid the NOT NULL / SET NULL conflict.
         Schema::table('password_reset_tokens', function (Blueprint $table) {
             $table->foreign('academy_id')
                 ->references('id')
                 ->on('academies')
-                ->nullOnDelete();
+                ->cascadeOnDelete();
         });
 
         // student_profiles — academy_id is a regular nullable indexed column

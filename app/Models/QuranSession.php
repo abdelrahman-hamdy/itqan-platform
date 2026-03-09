@@ -101,6 +101,9 @@ class QuranSession extends BaseSession
         // Subscription counting
         'subscription_counted',
 
+        // Session numbering
+        'session_number',
+
         // Monthly tracking
         'monthly_session_number',
         'session_month',
@@ -476,17 +479,20 @@ class QuranSession extends BaseSession
     public function markAsAbsent(?string $reason = null): bool
     {
         // Prevent marking future sessions as absent
+        // Allow COMPLETED and ABSENT sessions to be re-marked as absent
+        // (teacher correcting attendance after the fact)
+        $allowedStatuses = [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING, SessionStatus::COMPLETED, SessionStatus::ABSENT];
         if ($this->session_type !== 'individual' ||
-            ! $this->status->canComplete() ||
+            ! in_array($this->status, $allowedStatuses) ||
             ($this->scheduled_at && $this->scheduled_at->isFuture())) {
             return false;
         }
 
-        return DB::transaction(function () use ($reason) {
+        return DB::transaction(function () use ($reason, $allowedStatuses) {
             // Lock the row to prevent concurrent modifications
             $session = static::lockForUpdate()->find($this->id);
             if (! $session || $session->session_type !== 'individual' ||
-                ! $session->status->canComplete() ||
+                ! in_array($session->status, $allowedStatuses) ||
                 ($session->scheduled_at && $session->scheduled_at->isFuture())) {
                 return false;
             }

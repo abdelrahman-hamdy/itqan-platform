@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Enums\MeetingEventType;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
 use App\Models\MeetingAttendanceEvent;
 use App\Models\QuranSession;
+use App\Services\AttendanceEventService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -172,18 +174,37 @@ class DevMeetingController extends Controller
             ]);
         }
 
-        $durationMinutes = $event->event_timestamp->diffInMinutes(now());
+        $leaveTime = now();
+        $durationMinutes = $event->event_timestamp->diffInMinutes($leaveTime);
+        $leaveEventId = 'LEAVE_'.uniqid();
+
         $event->update([
-            'left_at' => now(),
+            'left_at' => $leaveTime,
             'duration_minutes' => $durationMinutes,
-            'leave_event_id' => 'LEAVE_'.uniqid(),
+            'leave_event_id' => $leaveEventId,
         ]);
+
+        // Also update MeetingAttendance.join_leave_cycles via AttendanceEventService
+        // This is critical: without this, CalculateSessionAttendance sees open cycles → 0 minutes
+        $session = QuranSession::find($sessionId)
+            ?? AcademicSession::find($sessionId)
+            ?? InteractiveCourseSession::find($sessionId);
+
+        if ($session) {
+            app(AttendanceEventService::class)->recordLeave($session, $user, [
+                'timestamp' => $leaveTime,
+                'event_id' => $leaveEventId,
+                'participant_sid' => $event->participant_sid,
+                'duration_minutes' => $durationMinutes,
+            ]);
+        }
 
         Cache::forget("attendance_status_{$sessionId}_{$user->id}");
 
         Log::info('Meeting leave recorded via API', [
             'event_id' => $event->id,
             'duration_minutes' => $durationMinutes,
+            'join_leave_cycles_updated' => $session !== null,
         ]);
 
         return response()->json([

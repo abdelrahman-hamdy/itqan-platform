@@ -87,6 +87,9 @@ class AcademicSession extends BaseSession
         'student_id',
         'session_type',
 
+        // Session numbering
+        'session_number',
+
         // Content
         'lesson_content',
 
@@ -777,7 +780,10 @@ class AcademicSession extends BaseSession
             return false;
         }
 
-        if (! in_array($this->status, [SessionStatus::ONGOING, SessionStatus::READY, SessionStatus::SCHEDULED])) {
+        // Allow COMPLETED and ABSENT sessions to be re-marked as absent
+        // (teacher correcting attendance after the fact)
+        $allowedStatuses = [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING, SessionStatus::COMPLETED, SessionStatus::ABSENT];
+        if (! in_array($this->status, $allowedStatuses)) {
             return false;
         }
 
@@ -785,10 +791,10 @@ class AcademicSession extends BaseSession
             return false;
         }
 
-        return DB::transaction(function () use ($reason) {
+        return DB::transaction(function () use ($reason, $allowedStatuses) {
             // Lock the row to prevent concurrent modifications
             $session = static::lockForUpdate()->find($this->id);
-            if (! $session || ! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY, SessionStatus::SCHEDULED])) {
+            if (! $session || ! in_array($session->status, $allowedStatuses)) {
                 return false;
             }
 

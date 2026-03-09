@@ -2,14 +2,15 @@
 
 namespace App\Services\Session;
 
-use Exception;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
+use App\Events\SessionCompletedEvent;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use App\Services\LiveKitService;
+use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -210,6 +211,23 @@ class SessionStatusService
                     'error' => $e->getMessage(),
                 ]);
             }
+        }
+
+        // Dispatch SessionCompletedEvent for attendance finalization + subscription counting
+        // Same pattern as SessionTransitionService::transitionToCompleted()
+        if ($completed) {
+            $sessionType = match (true) {
+                $session instanceof QuranSession => 'quran',
+                $session instanceof AcademicSession => 'academic',
+                $session instanceof InteractiveCourseSession => 'interactive',
+                default => 'unknown',
+            };
+            SessionCompletedEvent::dispatch($session, $sessionType);
+
+            Log::info('SessionCompletedEvent dispatched from autoCompleteIfExpired', [
+                'session_id' => $session->id,
+                'session_type' => $sessionType,
+            ]);
         }
 
         return (bool) $completed;
