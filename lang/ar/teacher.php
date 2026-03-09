@@ -1700,6 +1700,42 @@ return [
         'date_to' => 'إلى تاريخ',
         'filter' => 'تصفية',
         'clear_filters' => 'مسح التصفية',
+
+        // Tab labels
+        'tab_student_overview' => 'تقارير الطلاب',
+        'tab_session_reports' => 'تقارير الجلسات',
+
+        // Student overview
+        'student_overview_title' => 'نظرة عامة على الطلاب',
+        'student_overview_description' => 'عرض ملخص أداء وحضور الطلاب عبر جميع الحلقات والدروس',
+        'total_students' => 'إجمالي الطلاب',
+        'total_entities' => 'إجمالي الحلقات/الدروس',
+        'avg_attendance' => 'متوسط الحضور',
+        'attendance_rate' => 'نسبة الحضور',
+        'sessions_completed' => 'الجلسات المكتملة',
+        'view_report' => 'عرض التقرير',
+        'avg_performance_label' => 'متوسط الأداء',
+
+        // Filters
+        'filter_type' => 'نوع التقرير',
+        'filter_entity' => 'الحلقة/الدرس',
+        'all_types' => 'جميع الأنواع',
+        'all_entities' => 'الكل',
+        'search_student' => 'بحث عن طالب',
+        'search_student_placeholder' => 'اكتب اسم الطالب...',
+        'report_type' => 'نوع التقرير',
+
+        // Type badges
+        'type_quran_individual' => 'حلقة فردية',
+        'type_quran_group' => 'حلقة جماعية',
+        'type_academic_lesson' => 'درس أكاديمي',
+        'type_interactive_course' => 'دورة تفاعلية',
+
+        // Empty states
+        'empty_students_title' => 'لا يوجد طلاب',
+        'empty_students_description' => 'لم يتم تسجيل أي طلاب في حلقاتك أو دروسك بعد',
+        'empty_students_filter_description' => 'لا يوجد طلاب يطابقون معايير التصفية',
+        'no_report_available' => 'لا يوجد تقرير',
     ],
 
     // ========================================

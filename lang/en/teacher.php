@@ -1700,6 +1700,42 @@ return [
         'date_to' => 'To Date',
         'filter' => 'Filter',
         'clear_filters' => 'Clear Filters',
+
+        // Tab labels
+        'tab_student_overview' => 'Student Reports',
+        'tab_session_reports' => 'Session Reports',
+
+        // Student overview
+        'student_overview_title' => 'Student Overview',
+        'student_overview_description' => 'View student performance and attendance summary across all circles and lessons',
+        'total_students' => 'Total Students',
+        'total_entities' => 'Total Circles/Lessons',
+        'avg_attendance' => 'Average Attendance',
+        'attendance_rate' => 'Attendance Rate',
+        'sessions_completed' => 'Sessions Completed',
+        'view_report' => 'View Report',
+        'avg_performance_label' => 'Avg Performance',
+
+        // Filters
+        'filter_type' => 'Report Type',
+        'filter_entity' => 'Circle/Lesson',
+        'all_types' => 'All Types',
+        'all_entities' => 'All',
+        'search_student' => 'Search Student',
+        'search_student_placeholder' => 'Type student name...',
+        'report_type' => 'Report Type',
+
+        // Type badges
+        'type_quran_individual' => 'Individual Circle',
+        'type_quran_group' => 'Group Circle',
+        'type_academic_lesson' => 'Academic Lesson',
+        'type_interactive_course' => 'Interactive Course',
+
+        // Empty states
+        'empty_students_title' => 'No Students',
+        'empty_students_description' => 'No students have been enrolled in your circles or lessons yet',
+        'empty_students_filter_description' => 'No students match the selected filters',
+        'no_report_available' => 'No Report',
     ],
 
     // ========================================
