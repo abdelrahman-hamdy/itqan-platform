@@ -437,8 +437,13 @@ class QuranReportService extends BaseReportService implements QuranReportService
 
             // Calculate attendance points (attended=1, late=0.5, absent=0) * 10 to scale to 0-10
             $attendancePoints = 0;
-            if ($report && $report->attendance_status === AttendanceStatus::ATTENDED->value) {
-                $attendancePoints = $report->is_late ? 5 : 10;
+            if ($report) {
+                $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+                if ($status === AttendanceStatus::ATTENDED->value) {
+                    $attendancePoints = $report->is_late ? 5 : 10;
+                } elseif ($status === AttendanceStatus::LATE->value) {
+                    $attendancePoints = 5;
+                }
             }
             $attendanceData[] = $attendancePoints;
 
