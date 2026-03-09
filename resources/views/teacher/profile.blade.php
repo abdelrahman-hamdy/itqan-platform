@@ -46,7 +46,7 @@
                   'icon' => 'ri-user-star-line',
                   'iconBgColor' => 'bg-yellow-100',
                   'iconColor' => 'text-yellow-600',
-                  'progress' => $subscription->progress_percentage ?? 0,
+                  'progress' => $subscription->completion_rate,
                   'status' => (is_object($subscription->status) ? $subscription->status->value : $subscription->status) === \App\Enums\SessionSubscriptionStatus::ACTIVE->value ? 'active' : 'pending',
                   'link' => route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $subscription->individualCircle->id])
                 ];
