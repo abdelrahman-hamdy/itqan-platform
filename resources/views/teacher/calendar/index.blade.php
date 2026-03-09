@@ -3,6 +3,7 @@
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
     $eventsRoute = route('teacher.calendar.events', ['subdomain' => $subdomain]);
+    $rescheduleRoute = route('teacher.calendar.reschedule', ['subdomain' => $subdomain]);
 @endphp
 
     <!-- Page Header -->
@@ -511,6 +512,7 @@
         const calendarEl = document.getElementById('fullcalendar');
         const academyTimezone = @js(\App\Services\AcademyContextService::getTimezone());
         const eventsRoute = @js($eventsRoute);
+        const rescheduleRoute = @js($rescheduleRoute);
 
         // Live clock
         function updateLiveClock() {
@@ -646,66 +648,78 @@
                 // Only allow rescheduling of scheduled sessions
                 if (props.status !== 'scheduled' && props.status !== 'ready') {
                     info.revert();
+                    if (window.toast) {
+                        window.toast.warning(@js(__('teacher.calendar.cannot_reschedule_status')));
+                    }
+                    return;
+                }
+
+                // Extract numeric session ID from prefixed ID (e.g., "quran_session_433" → 433)
+                const eventId = event.id || '';
+                const idParts = eventId.split('_');
+                const sessionId = parseInt(idParts[idParts.length - 1]);
+                const source = props.source;
+
+                if (!sessionId || !source) {
+                    info.revert();
                     return;
                 }
 
                 const newStart = event.start;
-                const confirmMsg = @js(__('teacher.calendar.confirm_reschedule'))
-                    + '\n' + event.title
-                    + '\n→ ' + newStart.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-                    + ' ' + newStart.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true });
+                const newDateStr = newStart.toLocaleDateString('ar-SA', {
+                    timeZone: academyTimezone,
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                });
+                const newTimeStr = newStart.toLocaleTimeString('ar-SA', {
+                    timeZone: academyTimezone,
+                    hour: '2-digit', minute: '2-digit', hour12: true
+                });
 
-                if (!confirm(confirmMsg)) {
-                    info.revert();
-                    return;
-                }
+                const confirmMsg = event.title + '\n' + newDateStr + ' ' + newTimeStr;
 
-                // Call reschedule API if session has a URL pattern
-                const sessionUrl = props.url;
-                if (sessionUrl) {
-                    const rescheduleUrl = sessionUrl.replace(/\/?$/, '') + '/reschedule';
-
-                    fetch(rescheduleUrl, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': @js(csrf_token()),
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            scheduled_at: event.start.toISOString(),
+                window.confirmAction({
+                    title: @js(__('teacher.calendar.confirm_reschedule')),
+                    message: confirmMsg,
+                    confirmText: @js(__('teacher.calendar.reschedule_confirm_btn')),
+                    cancelText: @js(__('common.cancel')),
+                    icon: 'ri-calendar-schedule-line',
+                    isDangerous: false,
+                    onConfirm: () => {
+                        fetch(rescheduleRoute, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': @js(csrf_token()),
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                source: source,
+                                session_id: sessionId,
+                                scheduled_at: newStart.toISOString(),
+                            })
                         })
-                    })
-                    .then(r => {
-                        if (!r.ok) {
-                            r.json().then(data => {
-                                alert(data.message || @js(__('teacher.calendar.reschedule_error')));
-                            }).catch(() => {
-                                alert(@js(__('teacher.calendar.reschedule_error')));
-                            });
-                            info.revert();
-                        }
-                    })
-                    .catch(() => {
-                        alert(@js(__('teacher.calendar.reschedule_error')));
-                        info.revert();
-                    });
-                } else {
-                    info.revert();
-                }
+                        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+                        .then(({ ok, data }) => {
+                            if (ok) {
+                                if (window.toast) window.toast.success(data.message || @js(__('teacher.calendar.reschedule_success')));
+                                // Refresh calendar to show updated position
+                                if (window.teacherCalendar) window.teacherCalendar.refetchEvents();
+                            } else {
+                                if (window.toast) window.toast.error(data.message || @js(__('teacher.calendar.reschedule_error')));
+                            }
+                        })
+                        .catch(() => {
+                            if (window.toast) window.toast.error(@js(__('teacher.calendar.reschedule_error')));
+                        });
+                    }
+                });
+
+                // Always revert the drag — on confirm success we refetch events from server
+                info.revert();
             },
 
-            // Resize → update duration
+            // Resize → revert (duration API not implemented)
             eventResize: function(info) {
-                const event = info.event;
-                const props = event.extendedProps;
-
-                if (props.status !== 'scheduled' && props.status !== 'ready') {
-                    info.revert();
-                    return;
-                }
-
-                // For now, revert resize since duration updates need specific API
                 info.revert();
             },
 

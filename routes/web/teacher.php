@@ -64,6 +64,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/calendar/schedulable-items', [CalendarController::class, 'getSchedulableItems'])->name('calendar.schedulable-items');
         Route::post('/calendar/schedule', [CalendarController::class, 'createSchedule'])->name('calendar.schedule');
         Route::post('/calendar/check-conflicts', [CalendarController::class, 'checkConflicts'])->name('calendar.check-conflicts');
+        Route::put('/calendar/reschedule', [CalendarController::class, 'rescheduleEvent'])->name('calendar.reschedule');
     });
 
     /*

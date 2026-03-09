@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
+use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use App\Services\CalendarService;
 use App\Services\Calendar\SessionStrategyFactory;
@@ -219,6 +223,68 @@ class CalendarController extends Controller
             'success' => true,
             'has_conflicts' => $conflicts->isNotEmpty(),
             'conflicts' => $conflicts->values(),
+        ]);
+    }
+
+    /**
+     * Reschedule a session via drag & drop on the calendar.
+     */
+    public function rescheduleEvent(Request $request, $subdomain = null): JsonResponse
+    {
+        $validated = $request->validate([
+            'source' => ['required', 'string', 'in:quran_session,circle_session,course_session,academic_session'],
+            'session_id' => ['required', 'integer'],
+            'scheduled_at' => ['required', 'date', 'after:now'],
+        ]);
+
+        $user = Auth::user();
+        $sessionId = $validated['session_id'];
+        $source = $validated['source'];
+
+        // Resolve session model based on source type
+        $session = match ($source) {
+            'quran_session', 'circle_session' => QuranSession::where('id', $sessionId)
+                ->where('quran_teacher_id', $user->id)
+                ->first(),
+            'academic_session' => AcademicSession::where('id', $sessionId)
+                ->whereHas('academicTeacher', fn ($q) => $q->where('user_id', $user->id))
+                ->first(),
+            'course_session' => InteractiveCourseSession::where('id', $sessionId)
+                ->whereHas('course.assignedTeacher', fn ($q) => $q->where('user_id', $user->id))
+                ->first(),
+            default => null,
+        };
+
+        if (! $session) {
+            return response()->json([
+                'success' => false,
+                'message' => __('teacher.calendar.session_not_found'),
+            ], 404);
+        }
+
+        // Only allow rescheduling scheduled/ready sessions
+        $status = $session->status instanceof SessionStatus
+            ? $session->status
+            : SessionStatus::tryFrom($session->status);
+
+        if (! in_array($status, [SessionStatus::SCHEDULED, SessionStatus::READY])) {
+            return response()->json([
+                'success' => false,
+                'message' => __('teacher.calendar.cannot_reschedule_status'),
+            ], 422);
+        }
+
+        $oldScheduledAt = $session->scheduled_at;
+
+        $session->update([
+            'scheduled_at' => $validated['scheduled_at'],
+            'rescheduled_from' => $oldScheduledAt,
+            'rescheduled_to' => Carbon::parse($validated['scheduled_at']),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => __('teacher.calendar.reschedule_success'),
         ]);
     }
 }
