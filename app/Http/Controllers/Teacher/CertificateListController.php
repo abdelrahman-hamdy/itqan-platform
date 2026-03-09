@@ -72,14 +72,6 @@ class CertificateListController extends Controller
             $query->where('certificate_type', $request->certificate_type);
         }
 
-        if ($request->filled('template_style')) {
-            $query->where('template_style', $request->template_style);
-        }
-
-        if ($request->filled('is_manual')) {
-            $query->where('is_manual', $request->is_manual);
-        }
-
         if ($request->filled('student_id')) {
             $query->where('student_id', $request->student_id);
         }
