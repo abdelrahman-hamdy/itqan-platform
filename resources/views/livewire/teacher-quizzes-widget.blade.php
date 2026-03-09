@@ -114,20 +114,7 @@
                     <i class="ri-file-list-3-line text-2xl text-blue-400"></i>
                 </div>
                 <h3 class="text-base font-semibold text-gray-900 mb-1">{{ __('teacher.quizzes.no_assignments_title') }}</h3>
-                <p class="text-sm text-gray-600 mb-4">{{ __('teacher.quizzes.no_assignments_desc') }}</p>
-                @if($availableQuizzes->count() > 0)
-                    <button wire:click="toggleForm" type="button"
-                            class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
-                        <i class="ri-add-line"></i>
-                        {{ __('teacher.quizzes.assign_quiz') }}
-                    </button>
-                @else
-                    <a href="{{ route('teacher.quizzes.create', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}"
-                       class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-                        <i class="ri-add-line"></i>
-                        {{ __('teacher.quizzes.create_quiz') }}
-                    </a>
-                @endif
+                <p class="text-sm text-gray-600">{{ __('teacher.quizzes.no_assignments_desc') }}</p>
             </div>
         </div>
     @else
