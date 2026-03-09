@@ -9,19 +9,11 @@
         :title="__('teacher.certificates.page_title')"
         :subtitle="__('teacher.certificates.page_description')"
         :items="$certificates"
-        :stats="[
-            [
-                'icon' => 'ri-award-line',
-                'bgColor' => 'bg-orange-100',
-                'iconColor' => 'text-orange-600',
-                'value' => $totalCertificates ?? 0,
-                'label' => __('teacher.certificates.total_certificates'),
-            ],
-        ]"
+        :stats="[]"
         :filter-options="[]"
         :breadcrumbs="[['label' => __('teacher.certificates.breadcrumb')]]"
         theme-color="orange"
-        :list-title="__('teacher.certificates.list_title')"
+        :list-title="__('teacher.certificates.list_title') . ' (' . ($totalCertificates ?? 0) . ')'"
         empty-icon="ri-award-line"
         :empty-title="__('teacher.certificates.empty_title')"
         :empty-description="__('teacher.certificates.empty_description')"
