@@ -80,7 +80,25 @@
             :label="__('teacher.sidebar.interactive_courses')"
             icon="ri-book-open-line"
             :active="request()->routeIs('teacher.interactive-courses.*')" />
+
+          <x-sidebar.nav-item
+            :href="route('teacher.recordings.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
+            :label="__('teacher.sidebar.recordings')"
+            icon="ri-video-line"
+            :active="request()->routeIs('teacher.recordings.*')" />
         @endif
+
+        <x-sidebar.nav-item
+          :href="route('teacher.session-reports.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
+          :label="__('teacher.sidebar.session_reports')"
+          icon="ri-file-chart-line"
+          :active="request()->routeIs('teacher.session-reports.*')" />
+
+        <x-sidebar.nav-item
+          :href="route('teacher.certificates.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
+          :label="__('teacher.sidebar.certificates')"
+          icon="ri-award-line"
+          :active="request()->routeIs('teacher.certificates.*')" />
       </x-sidebar.nav-section>
 
       <!-- Quiz Management -->

@@ -1,8 +1,13 @@
 @props([
     'session',
     'students',
-    'viewType' => 'teacher'
+    'viewType' => 'teacher' // 'teacher', 'admin', 'supervisor'
 ])
+
+@php
+    $isReadOnly = $viewType === 'supervisor';
+    $canEdit = in_array($viewType, ['teacher', 'admin']);
+@endphp
 
 @php
 use App\Enums\AttendanceStatus;
@@ -13,7 +18,7 @@ use App\Enums\SessionStatus;
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.attendance.title') }}</h3>
-        @if($session->status === SessionStatus::ONGOING || $session->status === SessionStatus::COMPLETED)
+        @if($canEdit && ($session->status === SessionStatus::ONGOING || $session->status === SessionStatus::COMPLETED))
             <div class="flex items-center gap-2">
                 <button id="markAllPresentBtn"
                         class="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors">
@@ -54,8 +59,8 @@ use App\Enums\SessionStatus;
                         
                         <!-- Attendance Status -->
                         <div class="flex items-center gap-4">
-                            @if($session->status === SessionStatus::ONGOING || $session->status === SessionStatus::COMPLETED)
-                                <!-- Attendance Options -->
+                            @if($canEdit && ($session->status === SessionStatus::ONGOING || $session->status === SessionStatus::COMPLETED))
+                                <!-- Attendance Options (editable) -->
                                 <div class="flex items-center gap-2">
                                     <label class="flex items-center">
                                         <input type="radio" name="attendance_{{ $student->id }}" value="{{ AttendanceStatus::ATTENDED->value }}"
@@ -81,6 +86,16 @@ use App\Enums\SessionStatus;
                                         <span class="me-2 text-sm font-medium text-red-600">{{ __('components.sessions.attendance.absent') }}</span>
                                     </label>
                                 </div>
+                            @elseif($isReadOnly && ($session->status === SessionStatus::ONGOING || $session->status === SessionStatus::COMPLETED))
+                                <!-- Attendance Status (read-only for supervisor) -->
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                    {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? 'bg-green-100 text-green-800' :
+                                       ($attendanceStatus === AttendanceStatus::LATE->value ? 'bg-yellow-100 text-yellow-800' :
+                                       ($attendanceStatus === AttendanceStatus::ABSENT->value ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')) }}">
+                                    {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? __('components.sessions.attendance.present') :
+                                       ($attendanceStatus === AttendanceStatus::LATE->value ? __('components.sessions.attendance.late') :
+                                       ($attendanceStatus === AttendanceStatus::ABSENT->value ? __('components.sessions.attendance.absent') : __('components.sessions.attendance.not_specified'))) }}
+                                </span>
                             @else
                                 <!-- Display Status for Scheduled Sessions -->
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
@@ -163,11 +178,13 @@ use App\Enums\SessionStatus;
                         </span>
                     </div>
 
+                    @if($canEdit)
                     <button id="saveAttendanceBtn"
                             class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
                         <i class="ri-save-line ms-1"></i>
                         {{ __('components.sessions.attendance.save_attendance') }}
                     </button>
+                    @endif
                 </div>
             </div>
         @endif

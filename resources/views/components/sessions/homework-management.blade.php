@@ -1,24 +1,31 @@
 @props([
     'session',
-    'viewType' => 'teacher'
+    'viewType' => 'teacher' // 'teacher', 'admin', 'supervisor'
 ])
+
+@php
+    $isReadOnly = $viewType === 'supervisor';
+    $canEdit = in_array($viewType, ['teacher', 'admin']);
+@endphp
 
 <!-- Homework Management Section -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <div class="flex items-center justify-between mb-6">
         <h3 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.homework.title') }}</h3>
-        @if($session->sessionHomework)
-        <button id="editHomeworkBtn"
-                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors shadow-sm">
-            <i class="ri-edit-line ms-1"></i>
-            {{ __('components.sessions.homework.edit_homework') }}
-        </button>
-        @else
-        <button id="addHomeworkBtn"
-                class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors shadow-sm">
-            <i class="ri-add-line ms-1"></i>
-            {{ __('components.sessions.homework.add_homework') }}
-        </button>
+        @if($canEdit)
+            @if($session->sessionHomework)
+            <button id="editHomeworkBtn"
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors shadow-sm">
+                <i class="ri-edit-line ms-1"></i>
+                {{ __('components.sessions.homework.edit_homework') }}
+            </button>
+            @else
+            <button id="addHomeworkBtn"
+                    class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors shadow-sm">
+                <i class="ri-add-line ms-1"></i>
+                {{ __('components.sessions.homework.add_homework') }}
+            </button>
+            @endif
         @endif
     </div>
     

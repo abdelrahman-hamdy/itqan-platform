@@ -1,6 +1,15 @@
 <?php
 
 return [
+    'sidebar' => [
+        'supervisor' => 'مشرف',
+        'supervisor_panel_description' => 'لوحة تحكم المشرف',
+        'navigation_label' => 'قائمة تنقل المشرف',
+        'overview' => 'نظرة عامة',
+        'supervision' => 'الإشراف',
+        'reports' => 'التقارير والتحليلات',
+    ],
+
     'observation' => [
         // Page & Banner
         'observer_mode' => 'وضع المراقبة',

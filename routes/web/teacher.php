@@ -16,12 +16,17 @@ use App\Http\Controllers\QuranIndividualCircleController;
 use App\Http\Controllers\QuranSessionController;
 use App\Http\Controllers\StudentInteractiveCourseController;
 use App\Http\Controllers\StudentReportController;
+use App\Http\Controllers\Teacher\AcademicLessonController;
 use App\Http\Controllers\Teacher\CalendarController;
+use App\Http\Controllers\Teacher\CertificateListController;
+use App\Http\Controllers\Teacher\GroupCircleController;
 use App\Http\Controllers\Teacher\QuizManagementController;
 use App\Http\Controllers\Teacher\GroupCircleReportController;
 use App\Http\Controllers\Teacher\HomeworkGradingController;
 use App\Http\Controllers\Teacher\IndividualCircleReportController;
+use App\Http\Controllers\Teacher\RecordingListController;
 use App\Http\Controllers\Teacher\SessionHomeworkController;
+use App\Http\Controllers\Teacher\SessionReportListController;
 use App\Http\Controllers\Teacher\TrialSessionController;
 use Illuminate\Support\Facades\Route;
 
@@ -80,6 +85,17 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::delete('/quizzes/assignments/{assignment}', [QuizManagementController::class, 'revokeAssignment'])->name('quizzes.revoke-assignment');
     });
 
+    /*
+    |--------------------------------------------------------------------------
+    | Teacher Session Reports & Certificates Routes (All Teachers)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::middleware(['auth', 'role:quran_teacher,academic_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        Route::get('/session-reports', [SessionReportListController::class, 'index'])->name('session-reports.index');
+        Route::get('/certificates', [CertificateListController::class, 'index'])->name('certificates.index');
+    });
+
     Route::middleware(['auth', 'role:quran_teacher,academic_teacher'])->group(function () {
         Route::prefix('teacher/homework')->name('teacher.homework.')->group(function () {
             Route::get('/', [HomeworkGradingController::class, 'index'])->name('index');
@@ -98,8 +114,15 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     Route::middleware(['auth', 'role:academic_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
 
+        // Session Recordings (academic teacher only)
+        Route::get('/recordings', [RecordingListController::class, 'index'])->name('recordings.index');
+
         // Academic sessions list
         Route::get('/academic-sessions', [AcademicSessionController::class, 'index'])->name('academic-sessions.index');
+
+        // Academic session create/store (MUST come before {session} route)
+        Route::get('/academic-sessions/create', [AcademicSessionController::class, 'create'])->name('academic-sessions.create');
+        Route::post('/academic-sessions', [AcademicSessionController::class, 'storeSession'])->name('academic-sessions.store');
 
         // Academic subscription comprehensive report
         Route::get('/academic-subscriptions/{subscription}/report', [AcademicSessionController::class, 'subscriptionReport'])->name('academic-subscriptions.report');
@@ -128,9 +151,17 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Interactive course individual student report
         Route::get('/interactive-courses/{course}/students/{student}/report', [StudentInteractiveCourseController::class, 'interactiveCourseStudentReport'])->name('interactive-courses.student-report');
 
+        // Interactive session create/store (MUST come before {session} route)
+        Route::get('/interactive-sessions/create', [StudentInteractiveCourseController::class, 'createSession'])->name('interactive-sessions.create');
+        Route::post('/interactive-sessions', [StudentInteractiveCourseController::class, 'storeSession'])->name('interactive-sessions.store');
+
         Route::prefix('interactive-sessions/{session}')->name('interactive-sessions.')->group(function () {
             // Session view for teachers
             Route::get('/', [StudentInteractiveCourseController::class, 'showInteractiveCourseSession'])->name('show');
+            // Edit session
+            Route::get('/edit', [StudentInteractiveCourseController::class, 'editSession'])->name('edit');
+            // Update session
+            Route::put('/', [StudentInteractiveCourseController::class, 'updateSession'])->name('update');
             // Update session content
             Route::put('/content', [StudentInteractiveCourseController::class, 'updateInteractiveSessionContent'])->name('content');
             // Assign homework
@@ -138,6 +169,12 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
             // Update homework
             Route::put('/update-homework', [StudentInteractiveCourseController::class, 'updateInteractiveSessionHomework'])->name('update-homework');
         });
+
+        // Academic Individual Lesson create/edit routes
+        Route::get('/academic/lessons/create', [AcademicLessonController::class, 'create'])->name('academic.lessons.create');
+        Route::post('/academic/lessons', [AcademicLessonController::class, 'store'])->name('academic.lessons.store');
+        Route::get('/academic/lessons/{lesson}/edit', [AcademicLessonController::class, 'edit'])->name('academic.lessons.edit');
+        Route::put('/academic/lessons/{lesson}', [AcademicLessonController::class, 'update'])->name('academic.lessons.update');
     });
 
     /*
@@ -209,7 +246,14 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     Route::middleware(['auth', 'role:quran_teacher,admin,super_admin'])->prefix('teacher')->name('teacher.')->group(function () {
         // Group Circles Management
         Route::get('/group-circles', [QuranGroupCircleScheduleController::class, 'index'])->name('group-circles.index');
+
+        // Group Circle create/edit (MUST come before {circle} route)
+        Route::get('/group-circles/create', [GroupCircleController::class, 'create'])->name('group-circles.create');
+        Route::post('/group-circles', [GroupCircleController::class, 'store'])->name('group-circles.store');
+
         Route::get('/group-circles/{circle}', [QuranGroupCircleScheduleController::class, 'show'])->name('group-circles.show');
+        Route::get('/group-circles/{circle}/edit', [GroupCircleController::class, 'edit'])->name('group-circles.edit');
+        Route::put('/group-circles/{circle}', [GroupCircleController::class, 'update'])->name('group-circles.update');
         Route::get('/group-circles/{circle}/progress', [QuranGroupCircleScheduleController::class, 'progressReport'])->name('group-circles.progress');
         Route::get('/group-circles/{circle}/students/{student}/progress', [QuranGroupCircleScheduleController::class, 'studentProgressReport'])->name('group-circles.student-progress');
 
@@ -217,8 +261,14 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/group-circles/{circle}/report', [GroupCircleReportController::class, 'show'])->name('group-circles.report');
         Route::get('/group-circles/{circle}/students/{student}/report', [GroupCircleReportController::class, 'studentReport'])->name('group-circles.student-report');
 
+        // Session create/store (MUST come before {sessionId} route)
+        Route::get('/sessions/create', [QuranSessionController::class, 'create'])->name('sessions.create');
+        Route::post('/sessions', [QuranSessionController::class, 'storeSession'])->name('sessions.store');
+
         // Session management routes
         Route::get('/sessions/{sessionId}', [QuranSessionController::class, 'showForTeacher'])->name('sessions.show');
+        Route::get('/sessions/{sessionId}/edit', [QuranSessionController::class, 'edit'])->name('sessions.edit');
+        Route::put('/sessions/{sessionId}/update', [QuranSessionController::class, 'updateSession'])->name('sessions.update');
         Route::put('/sessions/{sessionId}/notes', [QuranSessionController::class, 'updateNotes'])->name('sessions.update-notes');
         Route::put('/sessions/{sessionId}/complete', [QuranSessionController::class, 'markCompleted'])->name('sessions.complete');
         Route::put('/sessions/{sessionId}/cancel', [QuranSessionController::class, 'markCancelled'])->name('sessions.cancel');

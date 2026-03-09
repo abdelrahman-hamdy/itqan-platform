@@ -193,6 +193,24 @@ require __DIR__.'/web/supervisor.php';
 
 /*
 |--------------------------------------------------------------------------
+| Supervisor Education Frontend Routes
+|--------------------------------------------------------------------------
+| Supervisor education pages: sessions, circles, lessons, reports.
+*/
+
+require __DIR__.'/web/supervisor-education.php';
+
+/*
+|--------------------------------------------------------------------------
+| Admin Education Management Routes
+|--------------------------------------------------------------------------
+| Admin education management pages: overview, teachers, sessions, reports.
+*/
+
+require __DIR__.'/web/admin-education.php';
+
+/*
+|--------------------------------------------------------------------------
 | Legal Pages (Public - No Auth Required)
 |--------------------------------------------------------------------------
 | Static pages required by app stores and regulations.

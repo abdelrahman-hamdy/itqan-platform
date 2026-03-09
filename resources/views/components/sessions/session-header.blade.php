@@ -1,11 +1,11 @@
 @props([
     'session',
-    'viewType' => 'student' // 'student' or 'teacher'
+    'viewType' => 'student' // 'student', 'teacher', 'supervisor', 'admin'
 ])
 
 @php
 use App\Enums\SessionStatus;
-    $isTeacher = $viewType === 'teacher';
+    $isTeacher = in_array($viewType, ['teacher', 'admin', 'supervisor']);
     
     // Detect session type - check if it's an AcademicSession or QuranSession
     $isAcademicSession = $session instanceof \App\Models\AcademicSession;

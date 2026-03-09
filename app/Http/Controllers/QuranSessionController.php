@@ -9,8 +9,13 @@ use App\Http\Requests\MarkQuranSessionAbsentRequest;
 use App\Http\Requests\Session\AddQuranSessionFeedbackRequest;
 use App\Http\Requests\UpdateQuranSessionNotesRequest;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
+use App\Services\AcademyContextService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -499,5 +504,227 @@ class QuranSessionController extends Controller
         ]);
 
         return $this->success(null, 'تم إرسال تقييمك بنجاح');
+    }
+
+    /**
+     * Show form to create a new Quran session
+     */
+    public function create(Request $request, $subdomain, $sessionId = null): View
+    {
+        $user = Auth::user();
+        $academy = current_academy() ?? $user->academy;
+
+        if (! $academy) {
+            abort(404, __('errors.academy_not_found'));
+        }
+
+        // Get teacher's individual circles
+        $individualCircles = QuranIndividualCircle::where('quran_teacher_id', $user->id)
+            ->where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->with('student')
+            ->get();
+
+        // Get teacher's group circles
+        $groupCircles = QuranCircle::where('quran_teacher_id', $user->id)
+            ->where('academy_id', $academy->id)
+            ->where('status', true)
+            ->get();
+
+        $session = null;
+        $isEdit = false;
+        $selectedCircleId = $request->query('circle_id');
+        $selectedCircleType = $request->query('circle_type', 'individual');
+
+        return view('teacher.sessions.quran-form', compact(
+            'session', 'isEdit', 'academy', 'individualCircles', 'groupCircles',
+            'selectedCircleId', 'selectedCircleType'
+        ));
+    }
+
+    /**
+     * Store a new Quran session
+     */
+    public function storeSession(Request $request, $subdomain): RedirectResponse
+    {
+        $user = Auth::user();
+        $academy = current_academy() ?? $user->academy;
+
+        if (! $academy) {
+            abort(404, __('errors.academy_not_found'));
+        }
+
+        $validated = $request->validate([
+            'circle_type' => 'required|string|in:individual,group',
+            'individual_circle_id' => 'required_if:circle_type,individual|nullable|exists:quran_individual_circles,id',
+            'circle_id' => 'required_if:circle_type,group|nullable|exists:quran_circles,id',
+            'scheduled_at' => 'required|date|after:now',
+            'title' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:2000',
+            'lesson_content' => 'nullable|string|max:5000',
+            'duration_minutes' => 'nullable|integer|min:15|max:180',
+        ]);
+
+        // Determine circle ownership and session type
+        $sessionData = [
+            'academy_id' => $academy->id,
+            'quran_teacher_id' => $user->id,
+            'status' => SessionStatus::SCHEDULED,
+            'title' => $validated['title'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'lesson_content' => $validated['lesson_content'] ?? null,
+            'meeting_auto_generated' => true,
+        ];
+
+        // Convert scheduled_at from academy timezone to UTC
+        $scheduledAt = Carbon::parse($validated['scheduled_at'], AcademyContextService::getTimezone());
+        $sessionData['scheduled_at'] = AcademyContextService::toUtcForStorage($scheduledAt);
+
+        if ($validated['circle_type'] === 'individual') {
+            $circle = QuranIndividualCircle::where('id', $validated['individual_circle_id'])
+                ->where('quran_teacher_id', $user->id)
+                ->where('academy_id', $academy->id)
+                ->firstOrFail();
+
+            $sessionData['session_type'] = 'individual';
+            $sessionData['individual_circle_id'] = $circle->id;
+            $sessionData['student_id'] = $circle->student_id;
+            $sessionData['duration_minutes'] = $validated['duration_minutes'] ?? $circle->default_duration_minutes ?? 45;
+
+            // Link to subscription if available
+            if ($circle->subscription_id) {
+                $sessionData['quran_subscription_id'] = $circle->subscription_id;
+            }
+        } else {
+            $circle = QuranCircle::where('id', $validated['circle_id'])
+                ->where('quran_teacher_id', $user->id)
+                ->where('academy_id', $academy->id)
+                ->firstOrFail();
+
+            $sessionData['session_type'] = 'group';
+            $sessionData['circle_id'] = $circle->id;
+            $sessionData['duration_minutes'] = $validated['duration_minutes'] ?? 60;
+        }
+
+        $session = QuranSession::create($sessionData);
+
+        return redirect()
+            ->route('teacher.sessions.show', ['subdomain' => $academy->subdomain, 'sessionId' => $session->id])
+            ->with('success', __('teacher.session_form.created_success'));
+    }
+
+    /**
+     * Show form to edit a Quran session (only SCHEDULED sessions)
+     */
+    public function edit(Request $request, $subdomain, $sessionId): View
+    {
+        $user = Auth::user();
+        $academy = current_academy() ?? $user->academy;
+
+        if (! $academy) {
+            abort(404, __('errors.academy_not_found'));
+        }
+
+        $teacherProfileId = $user->quranTeacherProfile?->id;
+
+        $session = QuranSession::where('id', $sessionId)
+            ->where('academy_id', $academy->id)
+            ->where(function ($query) use ($user, $teacherProfileId) {
+                $query->where('quran_teacher_id', $user->id);
+                if ($teacherProfileId) {
+                    $query->orWhere('quran_teacher_id', $teacherProfileId);
+                }
+            })
+            ->firstOrFail();
+
+        // Only SCHEDULED sessions can be edited
+        if ($session->status !== SessionStatus::SCHEDULED) {
+            return redirect()
+                ->route('teacher.sessions.show', ['subdomain' => $academy->subdomain, 'sessionId' => $session->id])
+                ->with('error', __('teacher.session_form.only_scheduled_editable'));
+        }
+
+        $this->authorize('update', $session);
+
+        $isEdit = true;
+
+        // Get teacher's circles for the form
+        $individualCircles = QuranIndividualCircle::where('quran_teacher_id', $user->id)
+            ->where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->with('student')
+            ->get();
+
+        $groupCircles = QuranCircle::where('quran_teacher_id', $user->id)
+            ->where('academy_id', $academy->id)
+            ->where('status', true)
+            ->get();
+
+        $selectedCircleId = $session->session_type === 'individual'
+            ? $session->individual_circle_id
+            : $session->circle_id;
+        $selectedCircleType = $session->session_type === 'group' ? 'group' : 'individual';
+
+        return view('teacher.sessions.quran-form', compact(
+            'session', 'isEdit', 'academy', 'individualCircles', 'groupCircles',
+            'selectedCircleId', 'selectedCircleType'
+        ));
+    }
+
+    /**
+     * Update an existing Quran session (only SCHEDULED sessions)
+     */
+    public function updateSession(Request $request, $subdomain, $sessionId): RedirectResponse
+    {
+        $user = Auth::user();
+        $academy = current_academy() ?? $user->academy;
+
+        if (! $academy) {
+            abort(404, __('errors.academy_not_found'));
+        }
+
+        $teacherProfileId = $user->quranTeacherProfile?->id;
+
+        $session = QuranSession::where('id', $sessionId)
+            ->where('academy_id', $academy->id)
+            ->where(function ($query) use ($user, $teacherProfileId) {
+                $query->where('quran_teacher_id', $user->id);
+                if ($teacherProfileId) {
+                    $query->orWhere('quran_teacher_id', $teacherProfileId);
+                }
+            })
+            ->firstOrFail();
+
+        // Only SCHEDULED sessions can be edited
+        if ($session->status !== SessionStatus::SCHEDULED) {
+            return redirect()
+                ->route('teacher.sessions.show', ['subdomain' => $academy->subdomain, 'sessionId' => $session->id])
+                ->with('error', __('teacher.session_form.only_scheduled_editable'));
+        }
+
+        $this->authorize('update', $session);
+
+        $validated = $request->validate([
+            'scheduled_at' => 'required|date|after:now',
+            'title' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:2000',
+            'lesson_content' => 'nullable|string|max:5000',
+            'duration_minutes' => 'nullable|integer|min:15|max:180',
+        ]);
+
+        // Convert scheduled_at from academy timezone to UTC
+        $scheduledAt = Carbon::parse($validated['scheduled_at'], AcademyContextService::getTimezone());
+
+        $session->update([
+            'scheduled_at' => AcademyContextService::toUtcForStorage($scheduledAt),
+            'title' => $validated['title'] ?? $session->title,
+            'description' => $validated['description'] ?? $session->description,
+            'lesson_content' => $validated['lesson_content'] ?? $session->lesson_content,
+            'duration_minutes' => $validated['duration_minutes'] ?? $session->duration_minutes,
+        ]);
+
+        return redirect()
+            ->route('teacher.sessions.show', ['subdomain' => $academy->subdomain, 'sessionId' => $session->id])
+            ->with('success', __('teacher.session_form.updated_success'));
     }
 }

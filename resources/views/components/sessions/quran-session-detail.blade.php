@@ -1,6 +1,6 @@
 @props([
     'session',
-    'viewType' => 'student' // student, teacher
+    'viewType' => 'student' // student, teacher, supervisor, admin
 ])
 
 @php
@@ -28,7 +28,7 @@
         }
     } else {
         // Fallback - trial or other session
-        if($viewType === 'teacher') {
+        if(in_array($viewType, ['teacher', 'supervisor', 'admin'])) {
             $breadcrumbItems[] = ['label' => $session->session_type === 'trial' ? __('components.sessions.breadcrumbs.trial_sessions') : __('components.sessions.breadcrumbs.session_schedule'), 'route' => route('teacher.profile', ['subdomain' => $subdomain])];
         }
     }
@@ -54,8 +54,8 @@
             </div>
 
             {{-- Session Content Section --}}
-            @if($viewType === 'teacher')
-                {{-- Teacher: Editable Form --}}
+            @if(in_array($viewType, ['teacher', 'admin']))
+                {{-- Teacher/Admin: Editable Form --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">
                         <i class="ri-file-text-line text-primary ms-2"></i>
@@ -103,8 +103,8 @@
                 </div>
             @endif
 
-            <!-- Homework Management (Teacher) or Homework Display (Student) -->
-            @if($viewType === 'teacher')
+            <!-- Homework Management (Teacher/Admin) or Homework Display (Student/Supervisor) -->
+            @if(in_array($viewType, ['teacher', 'admin']))
                 @livewire('quran-homework-manager', ['sessionId' => $session->id], key('homework-'.$session->id))
             @elseif($session->sessionHomework)
                 <x-sessions.homework-display
@@ -113,8 +113,8 @@
                     view-type="student" />
             @endif
 
-            <!-- Students Section (Teacher Only) -->
-            @if($viewType === 'teacher')
+            <!-- Students Section (Teacher/Admin/Supervisor) -->
+            @if(in_array($viewType, ['teacher', 'admin', 'supervisor']))
                 @if($session->session_type === 'group' && $session->students && $session->students->count() > 0)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">
@@ -150,8 +150,8 @@
     </div>
 </div>
 
-<!-- Unified Report Edit Modal (Teacher Only) -->
-@if($viewType === 'teacher')
+<!-- Unified Report Edit Modal (Teacher/Admin) -->
+@if(in_array($viewType, ['teacher', 'admin']))
     <x-modals.student-report-edit session-type="quran" />
 
     <!-- Pre-rendered avatars for modal (using unified x-avatar component) -->

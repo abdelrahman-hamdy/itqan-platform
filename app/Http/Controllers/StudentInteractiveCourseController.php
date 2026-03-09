@@ -19,10 +19,12 @@ use App\Http\Requests\UpdateInteractiveSessionContentRequest;
 use App\Http\Requests\UpdateInteractiveSessionHomeworkRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\InteractiveCourse;
+use App\Services\AcademyContextService;
 use App\Services\Attendance\InteractiveReportService;
 use App\Services\HomeworkService;
 use App\Services\Reports\InteractiveCourseReportService;
 use App\Services\Student\StudentCourseService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -621,5 +623,230 @@ class StudentInteractiveCourseController extends Controller
         }
 
         return back()->with('success', 'Homework submitted successfully');
+    }
+
+    /**
+     * Show form to create a new interactive course session
+     */
+    public function createSession($subdomain): View
+    {
+        $user = Auth::user();
+        $academy = current_academy() ?? $user->academy;
+
+        if (! $academy) {
+            abort(404, __('errors.academy_not_found'));
+        }
+
+        $teacherProfile = $user->academicTeacherProfile;
+        if (! $teacherProfile) {
+            abort(404, __('errors.teacher_profile_not_found'));
+        }
+
+        $session = null;
+        $isEdit = false;
+
+        // Get teacher's interactive courses
+        $courses = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academy->id)
+            ->orderBy('title')
+            ->get(['id', 'title', 'session_duration_minutes', 'total_sessions']);
+
+        return view('teacher.sessions.interactive-form', compact(
+            'session', 'isEdit', 'academy', 'courses', 'teacherProfile'
+        ));
+    }
+
+    /**
+     * Store a new interactive course session
+     */
+    public function storeSession(Request $request, $subdomain): RedirectResponse
+    {
+        $user = Auth::user();
+        $academy = current_academy() ?? $user->academy;
+
+        if (! $academy) {
+            abort(404, __('errors.academy_not_found'));
+        }
+
+        $teacherProfile = $user->academicTeacherProfile;
+        if (! $teacherProfile) {
+            abort(404, __('errors.teacher_profile_not_found'));
+        }
+
+        $validated = $request->validate([
+            'course_id' => 'required|exists:interactive_courses,id',
+            'session_number' => 'nullable|integer|min:1',
+            'scheduled_at' => 'required|date|after:now',
+            'duration_minutes' => 'required|integer|min:15|max:180',
+            'title' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:2000',
+            'lesson_content' => 'nullable|string|max:5000',
+            'homework_assigned' => 'nullable|boolean',
+            'homework_description' => 'nullable|string|max:2000',
+            'homework_file' => 'nullable|file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png',
+        ]);
+
+        // Verify course belongs to this teacher
+        $course = InteractiveCourse::where('id', $validated['course_id'])
+            ->where('assigned_teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academy->id)
+            ->firstOrFail();
+
+        // Handle homework file upload
+        $homeworkFilePath = null;
+        if ($request->hasFile('homework_file')) {
+            $homeworkFilePath = $request->file('homework_file')->store(
+                "tenants/{$academy->id}/interactive-homework",
+                'public'
+            );
+        }
+
+        // Convert scheduled_at from academy timezone to UTC
+        $scheduledAt = Carbon::parse($validated['scheduled_at'], AcademyContextService::getTimezone());
+
+        // Auto-calculate session number if not provided
+        $sessionNumber = $validated['session_number'] ?? (
+            InteractiveCourseSession::where('course_id', $course->id)->max('session_number') + 1
+        );
+
+        $session = InteractiveCourseSession::create([
+            'academy_id' => $academy->id,
+            'course_id' => $course->id,
+            'session_number' => $sessionNumber,
+            'status' => SessionStatus::SCHEDULED,
+            'scheduled_at' => AcademyContextService::toUtcForStorage($scheduledAt),
+            'title' => $validated['title'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'lesson_content' => $validated['lesson_content'] ?? null,
+            'duration_minutes' => $validated['duration_minutes'],
+            'homework_assigned' => $validated['homework_assigned'] ?? false,
+            'homework_description' => $validated['homework_description'] ?? null,
+            'homework_file' => $homeworkFilePath,
+            'meeting_auto_generated' => true,
+        ]);
+
+        return redirect()
+            ->route('teacher.interactive-sessions.show', ['subdomain' => $academy->subdomain, 'session' => $session->id])
+            ->with('success', __('teacher.session_form.created_success'));
+    }
+
+    /**
+     * Show form to edit an interactive course session
+     */
+    public function editSession($subdomain, $sessionId): View
+    {
+        $user = Auth::user();
+        $academy = current_academy() ?? $user->academy;
+
+        if (! $academy) {
+            abort(404, __('errors.academy_not_found'));
+        }
+
+        $teacherProfile = $user->academicTeacherProfile;
+        if (! $teacherProfile) {
+            abort(404, __('errors.teacher_profile_not_found'));
+        }
+
+        $session = InteractiveCourseSession::where('id', $sessionId)
+            ->whereHas('course', function ($query) use ($teacherProfile, $academy) {
+                $query->where('assigned_teacher_id', $teacherProfile->id)
+                    ->where('academy_id', $academy->id);
+            })
+            ->with('course')
+            ->firstOrFail();
+
+        // Only SCHEDULED sessions can be edited
+        if ($session->status !== SessionStatus::SCHEDULED) {
+            return redirect()
+                ->route('teacher.interactive-sessions.show', ['subdomain' => $academy->subdomain, 'session' => $session->id])
+                ->with('error', __('teacher.session_form.only_scheduled_editable'));
+        }
+
+        $isEdit = true;
+
+        // Get teacher's interactive courses
+        $courses = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academy->id)
+            ->orderBy('title')
+            ->get(['id', 'title', 'session_duration_minutes', 'total_sessions']);
+
+        return view('teacher.sessions.interactive-form', compact(
+            'session', 'isEdit', 'academy', 'courses', 'teacherProfile'
+        ));
+    }
+
+    /**
+     * Update an interactive course session
+     */
+    public function updateSession(Request $request, $subdomain, $sessionId): RedirectResponse
+    {
+        $user = Auth::user();
+        $academy = current_academy() ?? $user->academy;
+
+        if (! $academy) {
+            abort(404, __('errors.academy_not_found'));
+        }
+
+        $teacherProfile = $user->academicTeacherProfile;
+        if (! $teacherProfile) {
+            abort(404, __('errors.teacher_profile_not_found'));
+        }
+
+        $session = InteractiveCourseSession::where('id', $sessionId)
+            ->whereHas('course', function ($query) use ($teacherProfile, $academy) {
+                $query->where('assigned_teacher_id', $teacherProfile->id)
+                    ->where('academy_id', $academy->id);
+            })
+            ->firstOrFail();
+
+        // Only SCHEDULED sessions can be edited
+        if ($session->status !== SessionStatus::SCHEDULED) {
+            return redirect()
+                ->route('teacher.interactive-sessions.show', ['subdomain' => $academy->subdomain, 'session' => $session->id])
+                ->with('error', __('teacher.session_form.only_scheduled_editable'));
+        }
+
+        $validated = $request->validate([
+            'session_number' => 'nullable|integer|min:1',
+            'scheduled_at' => 'required|date|after:now',
+            'duration_minutes' => 'required|integer|min:15|max:180',
+            'title' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:2000',
+            'lesson_content' => 'nullable|string|max:5000',
+            'homework_assigned' => 'nullable|boolean',
+            'homework_description' => 'nullable|string|max:2000',
+            'homework_file' => 'nullable|file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png',
+        ]);
+
+        // Handle homework file upload
+        $homeworkFilePath = $session->homework_file;
+        if ($request->hasFile('homework_file')) {
+            if ($session->homework_file) {
+                Storage::disk('public')->delete($session->homework_file);
+            }
+            $homeworkFilePath = $request->file('homework_file')->store(
+                "tenants/{$academy->id}/interactive-homework",
+                'public'
+            );
+        }
+
+        // Convert scheduled_at from academy timezone to UTC
+        $scheduledAt = Carbon::parse($validated['scheduled_at'], AcademyContextService::getTimezone());
+
+        $session->update([
+            'session_number' => $validated['session_number'] ?? $session->session_number,
+            'scheduled_at' => AcademyContextService::toUtcForStorage($scheduledAt),
+            'title' => $validated['title'] ?? $session->title,
+            'description' => $validated['description'] ?? $session->description,
+            'lesson_content' => $validated['lesson_content'] ?? $session->lesson_content,
+            'duration_minutes' => $validated['duration_minutes'],
+            'homework_assigned' => $validated['homework_assigned'] ?? false,
+            'homework_description' => $validated['homework_description'] ?? $session->homework_description,
+            'homework_file' => $homeworkFilePath,
+        ]);
+
+        return redirect()
+            ->route('teacher.interactive-sessions.show', ['subdomain' => $academy->subdomain, 'session' => $session->id])
+            ->with('success', __('teacher.session_form.updated_success'));
     }
 }

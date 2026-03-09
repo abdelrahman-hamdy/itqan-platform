@@ -14,10 +14,14 @@ use App\Http\Requests\UpdateAcademicHomeworkRequest;
 use App\Http\Requests\UpdateAcademicSessionEvaluationRequest;
 use App\Http\Requests\UpdateAcademicSessionStatusRequest;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use App\Models\AcademicSubscription;
+use App\Models\User;
+use App\Services\AcademyContextService;
 use App\Services\Attendance\AcademicReportService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -548,5 +552,125 @@ class AcademicSessionController extends Controller
             'attendance',
             'progress'
         ));
+    }
+
+    /**
+     * Show form to create a new academic session
+     */
+    public function create($subdomain): View
+    {
+        $user = Auth::user();
+        $academy = current_academy() ?? $user->academy;
+
+        if (! $academy) {
+            abort(404, __('errors.academy_not_found'));
+        }
+
+        $teacherProfile = $user->academicTeacherProfile;
+        if (! $teacherProfile) {
+            abort(404, __('errors.teacher_profile_not_found'));
+        }
+
+        $session = null;
+        $isEdit = false;
+
+        // Get students scoped to academy
+        $students = User::where('academy_id', $academy->id)
+            ->where('user_type', 'student')
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
+        // Get teacher's individual lessons for linking
+        $lessons = AcademicIndividualLesson::where('academic_teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academy->id)
+            ->with('student')
+            ->get();
+
+        return view('teacher.sessions.academic-form', compact(
+            'session', 'isEdit', 'academy', 'students', 'lessons', 'teacherProfile'
+        ));
+    }
+
+    /**
+     * Store a new academic session
+     */
+    public function storeSession(Request $request, $subdomain): RedirectResponse
+    {
+        $user = Auth::user();
+        $academy = current_academy() ?? $user->academy;
+
+        if (! $academy) {
+            abort(404, __('errors.academy_not_found'));
+        }
+
+        $teacherProfile = $user->academicTeacherProfile;
+        if (! $teacherProfile) {
+            abort(404, __('errors.teacher_profile_not_found'));
+        }
+
+        $validated = $request->validate([
+            'student_id' => 'required|exists:users,id',
+            'academic_individual_lesson_id' => 'nullable|exists:academic_individual_lessons,id',
+            'scheduled_at' => 'required|date|after:now',
+            'title' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:2000',
+            'lesson_content' => 'nullable|string|max:5000',
+            'duration_minutes' => 'required|integer|min:15|max:180',
+            'homework_assigned' => 'nullable|boolean',
+            'homework_description' => 'nullable|string|max:2000',
+            'homework_file' => 'nullable|file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png',
+        ]);
+
+        // Verify student belongs to academy
+        $student = User::where('id', $validated['student_id'])
+            ->where('academy_id', $academy->id)
+            ->firstOrFail();
+
+        // Verify lesson belongs to this teacher if provided
+        $lesson = null;
+        $subscriptionId = null;
+        if (! empty($validated['academic_individual_lesson_id'])) {
+            $lesson = AcademicIndividualLesson::where('id', $validated['academic_individual_lesson_id'])
+                ->where('academic_teacher_id', $teacherProfile->id)
+                ->where('academy_id', $academy->id)
+                ->firstOrFail();
+
+            $subscriptionId = $lesson->academic_subscription_id;
+        }
+
+        // Handle homework file upload
+        $homeworkFilePath = null;
+        if ($request->hasFile('homework_file')) {
+            $homeworkFilePath = $request->file('homework_file')->store(
+                "tenants/{$academy->id}/academic-homework",
+                'public'
+            );
+        }
+
+        // Convert scheduled_at from academy timezone to UTC
+        $scheduledAt = Carbon::parse($validated['scheduled_at'], AcademyContextService::getTimezone());
+
+        $session = AcademicSession::create([
+            'academy_id' => $academy->id,
+            'academic_teacher_id' => $teacherProfile->id,
+            'student_id' => $validated['student_id'],
+            'academic_individual_lesson_id' => $validated['academic_individual_lesson_id'] ?? null,
+            'academic_subscription_id' => $subscriptionId,
+            'session_type' => 'individual',
+            'status' => SessionStatus::SCHEDULED,
+            'scheduled_at' => AcademyContextService::toUtcForStorage($scheduledAt),
+            'title' => $validated['title'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'lesson_content' => $validated['lesson_content'] ?? null,
+            'duration_minutes' => $validated['duration_minutes'],
+            'homework_assigned' => $validated['homework_assigned'] ?? false,
+            'homework_description' => $validated['homework_description'] ?? null,
+            'homework_file' => $homeworkFilePath,
+            'meeting_auto_generated' => true,
+        ]);
+
+        return redirect()
+            ->route('teacher.academic-sessions.show', ['subdomain' => $academy->subdomain, 'session' => $session->id])
+            ->with('success', __('teacher.session_form.created_success'));
     }
 }

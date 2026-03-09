@@ -1,6 +1,15 @@
 <?php
 
 return [
+    'sidebar' => [
+        'supervisor' => 'Supervisor',
+        'supervisor_panel_description' => 'Supervisor Control Panel',
+        'navigation_label' => 'Supervisor Navigation',
+        'overview' => 'Overview',
+        'supervision' => 'Supervision',
+        'reports' => 'Reports & Analytics',
+    ],
+
     'observation' => [
         // Page & Banner
         'observer_mode' => 'Observer Mode',
