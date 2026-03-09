@@ -5,7 +5,6 @@ namespace App\Services\Reports;
 use Carbon\Carbon;
 use App\DTOs\Reports\AttendanceDTO;
 use App\DTOs\Reports\PerformanceDTO;
-use App\DTOs\Reports\ProgressDTO;
 use App\DTOs\Reports\StatDTO;
 use App\DTOs\Reports\TrendDataDTO;
 use App\Enums\AttendanceStatus;
@@ -52,12 +51,12 @@ class QuranReportService extends BaseReportService implements QuranReportService
             ->where('student_id', $student->id)
             ->get();
 
-        // Calculate all metrics using DTOs
+        // Calculate all metrics using DTOs (progress returns array, not DTO)
         $attendanceDTO = $this->calculateQuranAttendance($completedSessions, $sessionReports);
         $performanceDTO = $this->calculateQuranPerformance($circle, $completedSessions, $sessionReports);
-        $progressDTO = $this->calculateQuranProgress($circle, $completedSessions, $sessionReports);
+        $progressArray = $this->calculateQuranProgress($circle, $completedSessions, $sessionReports);
         $trendsDTO = $this->generateQuranTrendData($completedSessions, $sessionReports);
-        $statsCards = $this->generateIndividualStatsCards($circle, $attendanceDTO, $performanceDTO, $progressDTO);
+        $statsCards = $this->generateIndividualStatsCards($circle, $attendanceDTO, $performanceDTO, $progressArray);
 
         return [
             'circle' => $circle,
@@ -65,10 +64,10 @@ class QuranReportService extends BaseReportService implements QuranReportService
             'subscription' => $circle->subscription,
             'teacher' => $circle->quranTeacher,
 
-            // DTOs
+            // DTOs (progress is array with keys matching Blade view expectations)
             'attendance' => $attendanceDTO,
             'performance' => $performanceDTO,
-            'progress' => $progressDTO,
+            'progress' => $progressArray,
             'trends' => $trendsDTO,
             'statsCards' => $statsCards,
 
@@ -178,9 +177,10 @@ class QuranReportService extends BaseReportService implements QuranReportService
             ->where('student_id', $student->id)
             ->get();
 
-        // Calculate metrics using DTOs
+        // Calculate metrics using DTOs (progress returns array, not DTO)
         $attendanceDTO = $this->calculateQuranAttendance($completedSessions, $sessionReports);
         $performanceDTO = $this->calculateGroupStudentPerformance($student, $completedSessions, $sessionReports);
+        $progressArray = $this->calculateGroupStudentProgress($completedSessions, $sessionReports);
         $trendsDTO = $this->generateQuranTrendData($completedSessions, $sessionReports);
 
         return [
@@ -192,9 +192,10 @@ class QuranReportService extends BaseReportService implements QuranReportService
                 'missed_sessions' => $enrolledStudent?->pivot?->missed_sessions ?? 0,
             ],
 
-            // DTOs
+            // DTOs (progress is array with keys matching Blade view expectations)
             'attendance' => $attendanceDTO,
             'performance' => $performanceDTO,
+            'progress' => $progressArray,
             'trends' => $trendsDTO,
         ];
     }
@@ -322,18 +323,97 @@ class QuranReportService extends BaseReportService implements QuranReportService
     }
 
     /**
+     * Calculate progress for a student in a group circle
+     *
+     * Returns a rich array with the same keys as calculateQuranProgress()
+     * so the Blade view can use them consistently.
+     */
+    protected function calculateGroupStudentProgress(
+        Collection $completedSessions,
+        Collection $sessionReports
+    ): array {
+        // Average memorization/reservation from reports
+        $avgMemorization = $sessionReports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?? 0;
+        $avgReservation = $sessionReports->whereNotNull('reservation_degree')->avg('reservation_degree') ?? 0;
+
+        // Estimate pages memorized from session count and average memorization degree
+        $sessionsWithMemorization = $sessionReports->whereNotNull('new_memorization_degree')
+            ->filter(fn ($r) => $r->new_memorization_degree > 0)->count();
+        $estimatedPagesMemorized = $sessionsWithMemorization * 2;
+
+        // Estimate pages reviewed from sessions with review work
+        $sessionsWithReview = $sessionReports->whereNotNull('reservation_degree')
+            ->filter(fn ($r) => $r->reservation_degree > 0)->count();
+        $estimatedPagesReviewed = $sessionsWithReview * 3;
+
+        // Overall assessment: average of all non-zero grades
+        $totalGrades = [];
+        foreach ($sessionReports as $report) {
+            if ($report->new_memorization_degree > 0) {
+                $totalGrades[] = $report->new_memorization_degree;
+            }
+            if ($report->reservation_degree > 0) {
+                $totalGrades[] = $report->reservation_degree;
+            }
+        }
+        $overallAssessment = count($totalGrades) > 0 ? round(array_sum($totalGrades) / count($totalGrades), 1) : 0;
+
+        return [
+            'pages_memorized' => $estimatedPagesMemorized,
+            'pages_reviewed' => $estimatedPagesReviewed,
+            'progress_percentage' => 0,
+            'average_memorization_degree' => round($avgMemorization, 1),
+            'average_reservation_degree' => round($avgReservation, 1),
+            'overall_assessment' => $overallAssessment,
+            'sessions_evaluated' => $sessionReports->whereNotNull('new_memorization_degree')->count(),
+        ];
+    }
+
+    /**
      * Calculate Quran progress for individual circle
+     *
+     * Returns a rich array (not DTO) with all fields the Blade view expects:
+     * pages_memorized, pages_reviewed, overall_assessment, etc.
      */
     protected function calculateQuranProgress(
         QuranIndividualCircle $circle,
         Collection $completedSessions,
         Collection $sessionReports
-    ): ProgressDTO {
+    ): array {
         // Pages memorized from circle model
         $papersMemorized = $circle->papers_memorized_precise ?? $circle->papers_memorized ?? 0;
         $pagesMemorized = $papersMemorized > 0 ? $papersMemorized / 2 : 0;
 
-        return ProgressDTO::forQuranProgress($pagesMemorized, 604);
+        // Average memorization/reservation from reports
+        $avgMemorization = $sessionReports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?? 0;
+        $avgReservation = $sessionReports->whereNotNull('reservation_degree')->avg('reservation_degree') ?? 0;
+
+        // Estimate pages reviewed from sessions with review work
+        $sessionsWithReview = $sessionReports->whereNotNull('reservation_degree')
+            ->filter(fn ($r) => $r->reservation_degree > 0)->count();
+        $estimatedPagesReviewed = $sessionsWithReview * 3;
+
+        // Overall assessment: average of all non-zero grades
+        $totalGrades = [];
+        foreach ($sessionReports as $report) {
+            if ($report->new_memorization_degree > 0) {
+                $totalGrades[] = $report->new_memorization_degree;
+            }
+            if ($report->reservation_degree > 0) {
+                $totalGrades[] = $report->reservation_degree;
+            }
+        }
+        $overallAssessment = count($totalGrades) > 0 ? round(array_sum($totalGrades) / count($totalGrades), 1) : 0;
+
+        return [
+            'pages_memorized' => round($pagesMemorized, 1),
+            'pages_reviewed' => $estimatedPagesReviewed,
+            'progress_percentage' => $circle->progress_percentage ?? 0,
+            'average_memorization_degree' => round($avgMemorization, 1),
+            'average_reservation_degree' => round($avgReservation, 1),
+            'overall_assessment' => $overallAssessment,
+            'sessions_evaluated' => $sessionReports->whereNotNull('new_memorization_degree')->count(),
+        ];
     }
 
     /**
@@ -380,13 +460,14 @@ class QuranReportService extends BaseReportService implements QuranReportService
     /**
      * Generate stats cards for individual circle
      *
+     * @param  array  $progress  Progress array from calculateQuranProgress()
      * @return array Array of StatDTO
      */
     protected function generateIndividualStatsCards(
         QuranIndividualCircle $circle,
         AttendanceDTO $attendance,
         PerformanceDTO $performance,
-        ProgressDTO $progress
+        array $progress
     ): array {
         return [
             new StatDTO(
@@ -397,7 +478,7 @@ class QuranReportService extends BaseReportService implements QuranReportService
             ),
             new StatDTO(
                 label: 'الصفحات المحفوظة',
-                value: number_format($progress->currentValue, 1),
+                value: number_format($progress['pages_memorized'] ?? 0, 1),
                 color: 'purple',
                 icon: 'ri-book-open-line'
             ),
