@@ -541,7 +541,7 @@
 
                 <!-- Quran Homework Form -->
                 <template x-if="session && (session.source === 'quran_session' || session.source === 'circle_session')">
-                    <div class="p-5 space-y-4">
+                    <div class="p-5 space-y-4" @click="surahDropdownOpen = false">
                         <!-- New Memorization -->
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" x-model="hwData.has_new_memorization" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
@@ -596,7 +596,7 @@
                                     </template>
                                 </div>
                                 {{-- Search input --}}
-                                <div class="relative" @click.outside="surahDropdownOpen = false">
+                                <div class="relative" @click.stop>
                                     <input type="text" x-model="surahSearch"
                                            @focus="surahDropdownOpen = true"
                                            @click.stop
