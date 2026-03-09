@@ -2,32 +2,31 @@
 
 namespace App\Filament\Shared\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Forms\Components\DatePicker;
-use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
-use Filament\Actions\ViewAction;
-use Illuminate\Database\Eloquent\Model;
 use App\Constants\DefaultAcademy;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
 use App\Filament\Resources\BaseResource;
 use App\Models\Certificate;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -40,7 +39,7 @@ abstract class BaseCertificateResource extends BaseResource
 {
     protected static ?string $model = Certificate::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $navigationLabel = 'الشهادات الصادرة';
 
@@ -48,9 +47,19 @@ abstract class BaseCertificateResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'الشهادات';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'الشهادات';
+    protected static string|\UnitEnum|null $navigationGroup = 'الشهادات';
 
     protected static ?int $navigationSort = 1;
+
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getEloquentQuery()->count();
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'primary';
+    }
 
     /**
      * Get the base query filtered by teacher.
@@ -127,6 +136,12 @@ abstract class BaseCertificateResource extends BaseResource
             ->columns([
                 static::getAcademyColumn(),
 
+                ImageColumn::make('student.avatar')
+                    ->label('الطالب')
+                    ->circular()
+                    ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->student?->name ?? 'N/A').'&background=4169E1&color=fff')
+                    ->toggleable(),
+
                 TextColumn::make('certificate_number')
                     ->label('رقم الشهادة')
                     ->searchable()
@@ -134,12 +149,6 @@ abstract class BaseCertificateResource extends BaseResource
                     ->copyMessage('تم نسخ رقم الشهادة')
                     ->fontFamily('mono')
                     ->size('sm'),
-
-                TextColumn::make('student.name')
-                    ->label('الطالب')
-                    ->default('-')
-                    ->searchable()
-                    ->sortable(),
 
                 TextColumn::make('certificate_type')
                     ->label('النوع')
@@ -175,9 +184,21 @@ abstract class BaseCertificateResource extends BaseResource
             ])
             ->defaultSort('issued_at', 'desc')
             ->filters([
+                SelectFilter::make('student_id')
+                    ->label('الطالب')
+                    ->relationship('student', 'first_name', fn (Builder $query) => $query->where('user_type', 'student'))
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->first_name ?? 'طالب #'.$record->id)
+                    ->searchable()
+                    ->preload(),
+
                 SelectFilter::make('certificate_type')
                     ->label('نوع الشهادة')
                     ->options(CertificateType::class)
+                    ->multiple(),
+
+                SelectFilter::make('template_style')
+                    ->label('التصميم')
+                    ->options(CertificateTemplateStyle::class)
                     ->multiple(),
 
                 TernaryFilter::make('is_manual')
@@ -209,7 +230,7 @@ abstract class BaseCertificateResource extends BaseResource
                     }),
             ])
             ->filtersLayout(FiltersLayout::AboveContent)
-            ->filtersFormColumns(4)
+            ->filtersFormColumns(6)
             ->deferFilters(false)
             ->deferColumnManager(false)
             ->recordActions([
