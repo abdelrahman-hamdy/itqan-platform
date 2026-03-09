@@ -33,10 +33,14 @@
     {{-- Scheduling Panel (full width, above calendar)                    --}}
     {{-- ================================================================ --}}
     <div class="mb-6" x-data="schedulingPanel()">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6"
+             :class="{ 'cursor-pointer': !panelOpen }"
+             @click="if (!panelOpen) { panelOpen = true; $event.stopPropagation(); }">
 
             <!-- Panel Header + Collapse Toggle -->
-            <div class="flex items-center justify-between cursor-pointer" @click="panelOpen = !panelOpen">
+            <div class="flex items-center justify-between cursor-pointer select-none"
+                 @click.stop="panelOpen = !panelOpen"
+                 role="button" tabindex="0" @keydown.enter="panelOpen = !panelOpen">
                 <div>
                     <h2 class="text-lg font-bold text-gray-900 mb-0.5">
                         <template x-if="teacherType === 'quran_teacher'">
@@ -106,8 +110,8 @@
 
                         <!-- Empty State -->
                         <template x-if="!loading && items.length === 0">
-                            <div class="text-center py-6">
-                                <i class="ri-inbox-line text-3xl text-gray-300 mb-2"></i>
+                            <div class="flex flex-col items-center justify-center text-center py-12">
+                                <i class="ri-inbox-line text-4xl text-gray-300 mb-3"></i>
                                 <p class="text-sm font-semibold text-gray-600" x-text="getEmptyTitle()"></p>
                                 <p class="text-xs text-gray-400 mt-1" x-text="getEmptyDescription()"></p>
                             </div>
@@ -352,8 +356,8 @@
     {{-- ================================================================ --}}
     {{-- FullCalendar (full width)                                        --}}
     {{-- ================================================================ --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-        <div id="fullcalendar"></div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 w-full overflow-x-auto">
+        <div id="fullcalendar" class="w-full min-w-0"></div>
     </div>
 
     <!-- Session Detail Modal -->
@@ -362,7 +366,7 @@
         <div x-show="open" class="fixed inset-0 bg-black/50 z-40" @click="close()"></div>
 
         <!-- Modal -->
-        <div x-show="open" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div x-show="open" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="close()">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" @click.stop>
                 <!-- Header -->
                 <div class="relative p-5 rounded-t-xl" :class="{
@@ -373,7 +377,7 @@
                     'bg-gradient-to-br from-red-500 to-red-600': session?.status === 'cancelled',
                     'bg-gradient-to-br from-gray-500 to-gray-600': !session?.status
                 }">
-                    <button @click="close()" class="absolute top-3 rtl:left-3 ltr:right-3 text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10">
+                    <button @click="close()" class="absolute top-3 rtl:left-3 ltr:right-3 text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer">
                         <i class="ri-close-line text-xl"></i>
                     </button>
                     <div class="flex items-center gap-2 mb-2">
@@ -463,16 +467,16 @@
 
                         <!-- Action buttons -->
                         <div class="flex flex-col gap-2 pt-2 border-t border-gray-100">
-                            <a :href="session.detail_url || '#'" class="w-full text-center px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                            <a :href="session.detail_url || '#'" class="w-full text-center px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
                                 <i class="ri-external-link-line me-1"></i> {{ __('teacher.calendar.view_full_session') }}
                             </a>
                             <div class="grid grid-cols-2 gap-2">
                                 <template x-if="session.can_edit">
-                                    <button @click="editData = { scheduled_at: session.scheduled_at ? session.scheduled_at.substring(0,16) : '', duration_minutes: session.duration_minutes || 60, teacher_notes: session.teacher_notes || '' }; editMode = true" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                                    <button @click="editData = { scheduled_at: session.scheduled_at ? session.scheduled_at.substring(0,16) : '', duration_minutes: session.duration_minutes || 60, teacher_notes: session.teacher_notes || '' }; editMode = true" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
                                         <i class="ri-edit-line me-1"></i> {{ __('teacher.calendar.edit_session') }}
                                     </button>
                                 </template>
-                                <button @click="openHomeworkModal()" class="px-4 py-2 bg-amber-50 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-100 border border-amber-200 transition-colors">
+                                <button @click="openHomeworkModal()" class="px-4 py-2 bg-amber-50 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-100 border border-amber-200 transition-colors cursor-pointer">
                                     <i class="ri-task-line me-1"></i> {{ __('teacher.calendar.manage_homework') }}
                                 </button>
                             </div>
@@ -515,11 +519,11 @@
                         <!-- Save / Cancel -->
                         <div class="flex gap-2 pt-2">
                             <button @click="saveEdit()" :disabled="saving"
-                                    class="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                                    class="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors cursor-pointer">
                                 <template x-if="saving"><span class="animate-spin inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full me-1"></span></template>
                                 {{ __('teacher.calendar.save_changes') }}
                             </button>
-                            <button @click="editMode = false" class="px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                            <button @click="editMode = false" class="px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
                                 {{ __('teacher.calendar.cancel_edit') }}
                             </button>
                         </div>
@@ -530,11 +534,11 @@
 
         <!-- Homework Modal -->
         <div x-show="homeworkOpen" class="fixed inset-0 bg-black/50 z-[60]" @click="homeworkOpen = false"></div>
-        <div x-show="homeworkOpen" x-transition class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div x-show="homeworkOpen" x-transition class="fixed inset-0 z-[70] flex items-center justify-center p-4" @click.self="homeworkOpen = false">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" @click.stop>
                 <div class="p-5 border-b border-gray-200 flex items-center justify-between">
                     <h3 class="text-sm font-bold text-gray-900"><i class="ri-task-line me-1 text-amber-600"></i>{{ __('teacher.calendar.manage_homework') }}</h3>
-                    <button @click="homeworkOpen = false" class="text-gray-400 hover:text-gray-600"><i class="ri-close-line text-xl"></i></button>
+                    <button @click="homeworkOpen = false" class="text-gray-400 hover:text-gray-600 cursor-pointer"><i class="ri-close-line text-xl"></i></button>
                 </div>
 
                 <!-- Quran Homework Form -->
@@ -582,13 +586,43 @@
                             <span class="text-sm font-medium text-gray-700">{{ __('teacher.calendar.hw_comprehensive_review') }}</span>
                         </label>
                         <template x-if="hwData.has_comprehensive_review">
-                            <div class="ps-6">
-                                <select x-model="hwData.comprehensive_review_surahs" multiple class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" size="5">
-                                    <template x-for="s in surahList" :key="s.value">
-                                        <option :value="s.value" x-text="s.label"></option>
+                            <div class="ps-6" x-data="{ surahSearch: '', surahDropdownOpen: false }" @click.outside="surahDropdownOpen = false">
+                                {{-- Selected tags --}}
+                                <div class="flex flex-wrap gap-1 mb-2" x-show="hwData.comprehensive_review_surahs.length > 0">
+                                    <template x-for="sv in hwData.comprehensive_review_surahs" :key="sv">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                            <span x-text="surahList.find(s => s.value == sv)?.label || sv"></span>
+                                            <button type="button" @click="hwData.comprehensive_review_surahs = hwData.comprehensive_review_surahs.filter(v => v !== sv)"
+                                                    class="text-blue-600 hover:text-blue-800 cursor-pointer">&times;</button>
+                                        </span>
                                     </template>
-                                </select>
-                                <p class="text-[10px] text-gray-400 mt-1">{{ __('teacher.calendar.hw_multi_select_hint') }}</p>
+                                </div>
+                                {{-- Search input --}}
+                                <div class="relative">
+                                    <input type="text" x-model="surahSearch" @focus="surahDropdownOpen = true"
+                                           placeholder="{{ __('teacher.calendar.hw_search_surah') }}"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                                    {{-- Dropdown list --}}
+                                    <div x-show="surahDropdownOpen" x-transition
+                                         class="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg">
+                                        <template x-for="s in surahList.filter(s => !surahSearch || s.label.includes(surahSearch) || s.value.toString().includes(surahSearch))" :key="s.value">
+                                            <button type="button"
+                                                    @click="if (hwData.comprehensive_review_surahs.includes(s.value)) { hwData.comprehensive_review_surahs = hwData.comprehensive_review_surahs.filter(v => v !== s.value); } else { hwData.comprehensive_review_surahs.push(s.value); }"
+                                                    class="w-full text-start px-3 py-1.5 text-sm hover:bg-blue-50 cursor-pointer flex items-center justify-between"
+                                                    :class="hwData.comprehensive_review_surahs.includes(s.value) ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">
+                                                <span x-text="s.label"></span>
+                                                <svg x-show="hwData.comprehensive_review_surahs.includes(s.value)" class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                                </svg>
+                                            </button>
+                                        </template>
+                                        <div x-show="surahList.filter(s => !surahSearch || s.label.includes(surahSearch) || s.value.toString().includes(surahSearch)).length === 0"
+                                             class="px-3 py-2 text-sm text-gray-400">{{ __('teacher.calendar.hw_no_results') }}</div>
+                                    </div>
+                                </div>
+                                <p class="text-[10px] text-gray-400 mt-1">
+                                    <span x-text="hwData.comprehensive_review_surahs.length"></span> {{ __('teacher.calendar.hw_selected_count') }}
+                                </p>
                             </div>
                         </template>
 
@@ -601,7 +635,7 @@
 
                         <!-- Save -->
                         <button @click="saveQuranHomework()" :disabled="hwSaving"
-                                class="w-full px-4 py-2.5 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 transition-colors">
+                                class="w-full px-4 py-2.5 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 transition-colors cursor-pointer">
                             <template x-if="hwSaving"><span class="animate-spin inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full me-1"></span></template>
                             {{ __('teacher.calendar.hw_save') }}
                         </button>
@@ -618,7 +652,7 @@
                                       placeholder="{{ __('teacher.calendar.hw_description_placeholder') }}"></textarea>
                         </div>
                         <button @click="saveAcademicHomework()" :disabled="hwSaving || !hwData.homework_description"
-                                class="w-full px-4 py-2.5 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 transition-colors">
+                                class="w-full px-4 py-2.5 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 transition-colors cursor-pointer">
                             <template x-if="hwSaving"><span class="animate-spin inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full me-1"></span></template>
                             {{ __('teacher.calendar.hw_save') }}
                         </button>
@@ -721,7 +755,17 @@
         .fc .fc-highlight {
             background-color: rgba(59, 130, 246, 0.1) !important;
         }
-        /* Responsive */
+        /* Responsive — ensure calendar fills all available width */
+        .fc {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        .fc .fc-view-harness {
+            width: 100% !important;
+        }
+        .fc table {
+            width: 100% !important;
+        }
         @media (max-width: 640px) {
             .fc .fc-toolbar {
                 flex-direction: column;
@@ -987,6 +1031,22 @@
                 this.homeworkOpen = false;
             },
 
+            async refreshSession() {
+                if (!this.session) return;
+                try {
+                    const response = await fetch(
+                        `{{ $sessionDetailRoute }}?source=${this.session.source}&session_id=${this.session.id}`,
+                        { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } }
+                    );
+                    const data = await response.json();
+                    if (data.success) {
+                        this.session = data.session;
+                    }
+                } catch (e) {
+                    // Silently fail
+                }
+            },
+
             getSourceLabel(source) {
                 const labels = {
                     'quran_session': @js(__('student.calendar.quran_individual_session')),
@@ -1059,7 +1119,7 @@
                         if (window.toast) window.toast.success(data.message);
                         this.editMode = false;
                         if (window.teacherCalendar) window.teacherCalendar.refetchEvents();
-                        this.close();
+                        await this.refreshSession();
                     } else {
                         if (window.toast) window.toast.error(data.message);
                     }
@@ -1090,6 +1150,7 @@
                     if (data.success) {
                         if (window.toast) window.toast.success(data.message);
                         this.homeworkOpen = false;
+                        await this.refreshSession();
                     } else {
                         if (window.toast) window.toast.error(data.message);
                     }
@@ -1121,6 +1182,7 @@
                     if (data.success) {
                         if (window.toast) window.toast.success(data.message);
                         this.homeworkOpen = false;
+                        await this.refreshSession();
                     } else {
                         if (window.toast) window.toast.error(data.message);
                     }
