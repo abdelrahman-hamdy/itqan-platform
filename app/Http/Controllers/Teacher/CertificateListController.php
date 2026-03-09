@@ -23,7 +23,7 @@ class CertificateListController extends Controller
         $user = Auth::user();
 
         $query = Certificate::query()
-            ->with(['student:id,first_name,last_name,name', 'certificateable']);
+            ->with(['student', 'certificateable']);
 
         if ($user->isQuranTeacher()) {
             // Certificates where teacher_id matches, or certificateable is a circle/individual the teacher owns
@@ -58,9 +58,38 @@ class CertificateListController extends Controller
             });
         }
 
-        // Filter by certificate type
+        // Get students list for filter dropdown (before applying filters)
+        $students = (clone $query)->with('student')
+            ->get()
+            ->pluck('student.name', 'student_id')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->toArray();
+
+        // Apply filters
         if ($request->filled('certificate_type')) {
             $query->where('certificate_type', $request->certificate_type);
+        }
+
+        if ($request->filled('template_style')) {
+            $query->where('template_style', $request->template_style);
+        }
+
+        if ($request->filled('is_manual')) {
+            $query->where('is_manual', $request->is_manual);
+        }
+
+        if ($request->filled('student_id')) {
+            $query->where('student_id', $request->student_id);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('issued_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('issued_at', '<=', $request->date_to);
         }
 
         $certificates = $query->latest('issued_at')->paginate(15)->withQueryString();
@@ -70,6 +99,7 @@ class CertificateListController extends Controller
         return view('teacher.certificates.index', compact(
             'certificates',
             'totalCertificates',
+            'students',
         ));
     }
 }
