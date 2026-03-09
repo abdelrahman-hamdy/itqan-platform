@@ -5,10 +5,10 @@
 
 @auth
   @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupervisor())
-    {{-- Show public layout for admin/superadmin/supervisor --}}
-    <x-layouts.public-layout :title="$pageTitle" :academy="$academy" :description="$pageDescription">
+    {{-- Show supervisor layout for admin/superadmin/supervisor (with sidebar) --}}
+    <x-layouts.supervisor :title="$pageTitle" :description="$pageDescription">
       @include('student.partials.quran-circles-content')
-    </x-layouts.public-layout>
+    </x-layouts.supervisor>
   @elseif(auth()->user()->isParent())
     {{-- Show parent layout for parents --}}
     <x-layouts.parent-layout :title="$pageTitle">

@@ -21,9 +21,9 @@
     if ($user->isTeacher()) {
         $profileRoute = route('teacher.profile', ['subdomain' => $subdomain]);
     } elseif ($user->isSupervisor() || $user->isSuperAdmin()) {
-        $profileRoute = route('supervisor.dashboard', ['subdomain' => $subdomain]);
+        $profileRoute = route('manage.dashboard', ['subdomain' => $subdomain]);
     } elseif ($user->isAdmin() || $user->isAcademyAdmin()) {
-        $profileRoute = route('supervisor.dashboard', ['subdomain' => $subdomain]);
+        $profileRoute = route('manage.dashboard', ['subdomain' => $subdomain]);
     } elseif ($user->isParent()) {
         $profileRoute = route('parent.profile', ['subdomain' => $subdomain]);
     } else {
@@ -78,7 +78,7 @@
                role="menuitem">
                 @if($isAdminOrSuperAdminOrSupervisor)
                     <i class="ri-dashboard-line ms-2"></i>
-                    {{ __('supervisor.sidebar.dashboard') }}
+                    {{ __('supervisor.sidebar.manage_frontend') }}
                 @else
                     <i class="ri-user-line ms-2"></i>
                     {{ __('academy.user.profile') }}
@@ -92,7 +92,7 @@
                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                    role="menuitem">
                     <i class="ri-settings-3-line ms-2"></i>
-                    {{ __('components.navigation.public.dashboard') }}
+                    {{ __('supervisor.sidebar.admin_panel') }}
                     <i class="ri-external-link-line text-gray-400 ms-auto text-xs"></i>
                 </a>
             @endif

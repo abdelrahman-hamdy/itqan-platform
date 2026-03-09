@@ -21,7 +21,7 @@
 
     <x-ui.breadcrumb
         :items="[
-            ['label' => __('supervisor.trial_sessions.breadcrumb'), 'route' => route('supervisor.trial-sessions.index', ['subdomain' => $subdomain])],
+            ['label' => __('supervisor.trial_sessions.breadcrumb'), 'route' => route('manage.trial-sessions.index', ['subdomain' => $subdomain])],
             ['label' => $trialRequest->student?->name ?? $trialRequest->student_name ?? '', 'truncate' => true],
         ]"
         view-type="supervisor"
@@ -86,7 +86,7 @@
         <div class="lg:col-span-1 space-y-4 md:space-y-6">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
                 <h3 class="text-sm font-bold text-gray-900 mb-3">{{ __('supervisor.dashboard.quick_actions') }}</h3>
-                <a href="{{ route('supervisor.trial-sessions.index', ['subdomain' => $subdomain]) }}"
+                <a href="{{ route('manage.trial-sessions.index', ['subdomain' => $subdomain]) }}"
                    class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
                     <i class="ri-arrow-right-line"></i>
                     {{ __('supervisor.common.back_to_list') }}

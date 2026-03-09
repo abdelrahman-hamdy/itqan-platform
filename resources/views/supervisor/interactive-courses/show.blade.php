@@ -11,7 +11,7 @@
 
     <x-ui.breadcrumb
         :items="[
-            ['label' => __('supervisor.interactive_courses.breadcrumb'), 'route' => route('supervisor.interactive-courses.index', ['subdomain' => $subdomain])],
+            ['label' => __('supervisor.interactive_courses.breadcrumb'), 'route' => route('manage.interactive-courses.index', ['subdomain' => $subdomain])],
             ['label' => $course->title, 'truncate' => true],
         ]"
         view-type="supervisor"

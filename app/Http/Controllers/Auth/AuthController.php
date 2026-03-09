@@ -930,12 +930,12 @@ class AuthController extends Controller
     {
         if ($user->isSuperAdmin()) {
             $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? DefaultAcademy::subdomain());
-            return redirect()->route('supervisor.dashboard', ['subdomain' => $subdomain]);
+            return redirect()->route('manage.dashboard', ['subdomain' => $subdomain]);
         }
 
         if ($user->isAcademyAdmin()) {
             $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? DefaultAcademy::subdomain());
-            return redirect()->route('supervisor.dashboard', ['subdomain' => $subdomain]);
+            return redirect()->route('manage.dashboard', ['subdomain' => $subdomain]);
         }
 
         if ($user->isQuranTeacher() || $user->isAcademicTeacher()) {
@@ -945,10 +945,10 @@ class AuthController extends Controller
         }
 
         if ($user->isSupervisor()) {
-            // Supervisors go to supervisor dashboard
+            // Supervisors go to manage dashboard
             $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? DefaultAcademy::subdomain());
 
-            return redirect()->route('supervisor.dashboard', ['subdomain' => $subdomain]);
+            return redirect()->route('manage.dashboard', ['subdomain' => $subdomain]);
         }
 
         // Students and parents go to profile page (no dashboard)

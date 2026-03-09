@@ -66,9 +66,13 @@
     $parentNavItems[] = ['route' => 'parent.reports.progress', 'label' => __('components.navigation.app.parent_nav.reports'), 'icon' => 'ri-bar-chart-line', 'activeRoutes' => ['parent.reports.*']];
   }
 
+  // Supervisor/Admin navigation items - same resource browsing links as student
+  $supervisorNavItems = $studentNavItems;
+
   $navItems = match($role) {
     'teacher' => $teacherNavItems,
     'parent' => $parentNavItems,
+    'supervisor' => $supervisorNavItems,
     default => $studentNavItems,
   };
 
@@ -84,6 +88,12 @@
     $displayName = $profile ? $profile->getFullNameAttribute() : ($user ? $user->name : __('components.navigation.app.parent_user'));
     $roleLabel = __('components.navigation.app.roles.parent');
     $userAvatarType = 'parent';
+    $userGender = $profile?->gender ?? $user?->gender ?? 'male';
+  } elseif ($role === 'supervisor') {
+    $profile = $user ? $user->supervisorProfile : null;
+    $displayName = $profile ? ($profile->full_name ?? $user->name) : ($user ? $user->name : __('supervisor.sidebar.supervisor'));
+    $roleLabel = $user ? $user->getUserTypeLabel() : __('supervisor.sidebar.supervisor');
+    $userAvatarType = 'supervisor';
     $userGender = $profile?->gender ?? $user?->gender ?? 'male';
   } else {
     $profile = $user && $user->isQuranTeacher()
@@ -436,11 +446,11 @@
                 $isAdminOrSuperAdminOrSupervisor = $user && ($user->isAdmin() || $user->isSuperAdmin() || $user->isSupervisor());
               @endphp
               @if($isAdminOrSuperAdminOrSupervisor)
-              <a href="{{ route('supervisor.dashboard', ['subdomain' => $subdomain]) }}"
+              <a href="{{ route('manage.dashboard', ['subdomain' => $subdomain]) }}"
                  class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
                  role="menuitem">
                 <i class="ri-dashboard-line text-gray-400"></i>
-                {{ __('supervisor.sidebar.dashboard') }}
+                {{ __('supervisor.sidebar.manage_frontend') }}
               </a>
               <div class="border-t border-gray-100"></div>
               @else

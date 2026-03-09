@@ -7,7 +7,7 @@
 <div>
     <x-ui.breadcrumb
         :items="[
-            ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('supervisor.dashboard', ['subdomain' => $subdomain])],
+            ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('manage.dashboard', ['subdomain' => $subdomain])],
             ['label' => __('supervisor.profile.page_title')],
         ]"
         view-type="supervisor"
@@ -123,7 +123,7 @@
                 </div>
             @endif
 
-            <a href="{{ route('supervisor.dashboard', ['subdomain' => $subdomain]) }}"
+            <a href="{{ route('manage.dashboard', ['subdomain' => $subdomain]) }}"
                class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
                 <i class="ri-arrow-right-line"></i>
                 {{ __('supervisor.profile.back_to_dashboard') }}

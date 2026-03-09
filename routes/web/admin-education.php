@@ -4,14 +4,6 @@
 |--------------------------------------------------------------------------
 | Admin Education Routes
 |--------------------------------------------------------------------------
-| Routes for the admin education management frontend.
-| Prefix: /manage, Middleware: auth, role:admin,super_admin
+| DEPRECATED: Routes consolidated into supervisor-education.php with prefix /manage.
+| This file is kept empty to avoid breaking route file loading.
 */
-
-use Illuminate\Support\Facades\Route;
-
-Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
-    Route::middleware(['auth', 'role:admin,super_admin'])->prefix('manage')->name('manage.')->group(function () {
-        // Admin education routes will be added here
-    });
-});

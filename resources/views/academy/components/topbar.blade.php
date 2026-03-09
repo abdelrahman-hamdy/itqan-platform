@@ -155,7 +155,7 @@
           if ($mobileUser->isTeacher()) {
               $mobileProfileRoute = route('teacher.profile', ['subdomain' => $mobileSubdomain]);
           } elseif ($mobileUser->isSupervisor() || $mobileUser->isSuperAdmin() || $mobileUser->isAdmin() || $mobileUser->isAcademyAdmin()) {
-              $mobileProfileRoute = route('supervisor.dashboard', ['subdomain' => $mobileSubdomain]);
+              $mobileProfileRoute = route('manage.dashboard', ['subdomain' => $mobileSubdomain]);
           } elseif ($mobileUser->isParent()) {
               $mobileProfileRoute = route('parent.profile', ['subdomain' => $mobileSubdomain]);
           } else {
@@ -167,7 +167,7 @@
         <a href="{{ $mobileProfileRoute }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium">
           @if($mobileIsAdminOrSuperAdminOrSupervisor)
             <i class="ri-dashboard-line ms-2"></i>
-            {{ __('supervisor.sidebar.dashboard') }}
+            {{ __('supervisor.sidebar.manage_frontend') }}
           @else
             <i class="ri-user-line ms-2"></i>
             {{ __('academy.user.profile') }}

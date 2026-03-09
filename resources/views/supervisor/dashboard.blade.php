@@ -140,25 +140,25 @@
             </h2>
 
             <div class="space-y-2.5">
-                <a href="{{ route('supervisor.teachers.index', ['subdomain' => $subdomain]) }}"
+                <a href="{{ route('manage.teachers.index', ['subdomain' => $subdomain]) }}"
                    class="flex items-center gap-3 p-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-colors">
                     <i class="ri-team-line text-lg"></i>
                     <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_teachers') }}</span>
                 </a>
 
-                <a href="{{ route('supervisor.calendar.index', ['subdomain' => $subdomain]) }}"
+                <a href="{{ route('manage.calendar.index', ['subdomain' => $subdomain]) }}"
                    class="flex items-center gap-3 p-3 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 transition-colors">
                     <i class="ri-calendar-schedule-line text-lg"></i>
                     <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_calendar') }}</span>
                 </a>
 
-                <a href="{{ route('supervisor.sessions-monitoring.index', ['subdomain' => $subdomain]) }}"
+                <a href="{{ route('manage.sessions-monitoring.index', ['subdomain' => $subdomain]) }}"
                    class="flex items-center gap-3 p-3 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors">
                     <i class="ri-live-line text-lg"></i>
                     <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_monitoring') }}</span>
                 </a>
 
-                <a href="{{ route('supervisor.session-reports.index', ['subdomain' => $subdomain]) }}"
+                <a href="{{ route('manage.session-reports.index', ['subdomain' => $subdomain]) }}"
                    class="flex items-center gap-3 p-3 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 transition-colors">
                     <i class="ri-file-chart-line text-lg"></i>
                     <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_reports') }}</span>

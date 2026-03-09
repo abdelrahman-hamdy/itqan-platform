@@ -5,7 +5,7 @@
 | Supervisor Education Routes
 |--------------------------------------------------------------------------
 | Routes for the supervisor education frontend.
-| Prefix: /supervisor, Middleware: auth, role:supervisor,super_admin
+| Prefix: /manage, Middleware: auth, role:supervisor,super_admin,admin
 */
 
 use App\Http\Controllers\SessionsMonitoringController;
@@ -24,7 +24,7 @@ use App\Http\Controllers\Supervisor\SupervisorTrialSessionsController;
 use Illuminate\Support\Facades\Route;
 
 Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
-    Route::middleware(['auth', 'role:supervisor,super_admin,admin'])->prefix('supervisor')->name('supervisor.')->group(function () {
+    Route::middleware(['auth', 'role:supervisor,super_admin,admin'])->prefix('manage')->name('manage.')->group(function () {
 
         // Dashboard
         Route::get('/dashboard', [SupervisorDashboardController::class, 'index'])->name('dashboard');

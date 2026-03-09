@@ -7,7 +7,7 @@
 <div>
     <x-ui.breadcrumb
         :items="[
-            ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('supervisor.dashboard', ['subdomain' => $subdomain])],
+            ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('manage.dashboard', ['subdomain' => $subdomain])],
             ['label' => __('supervisor.quizzes.page_title')],
         ]"
         view-type="supervisor"
@@ -74,7 +74,7 @@
                             <span class="text-xs px-2.5 py-1 rounded-full {{ $quiz->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600' }}">
                                 {{ $quiz->is_active ? __('teacher.circles_list.group.status_active') : __('teacher.circles_list.group.status_closed') }}
                             </span>
-                            <a href="{{ route('supervisor.quizzes.show', ['subdomain' => $subdomain, 'quiz' => $quiz->id]) }}"
+                            <a href="{{ route('manage.quizzes.show', ['subdomain' => $subdomain, 'quiz' => $quiz->id]) }}"
                                class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">
                                 <i class="ri-eye-line"></i>
                                 {{ __('supervisor.common.view') }}

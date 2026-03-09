@@ -25,6 +25,8 @@ return [
         'session_reports' => 'Session Reports',
         'certificates' => 'Certificates',
         'profile' => 'Profile',
+        'manage_frontend' => 'Management Panel',
+        'admin_panel' => 'Admin Panel',
     ],
 
     'dashboard' => [

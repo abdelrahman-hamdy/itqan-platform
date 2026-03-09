@@ -22,9 +22,16 @@ class StudentProfileController extends Controller
         protected StudentAcademicService $academicService
     ) {}
 
-    public function index(): View
+    public function index(): View|RedirectResponse
     {
         $user = Auth::user();
+
+        // Non-student roles should not access student profile (super_admin bypasses RoleMiddleware)
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isAcademyAdmin() || $user->isSupervisor()) {
+            $subdomain = $user->academy->subdomain ?? DefaultAcademy::subdomain();
+
+            return redirect()->route('manage.dashboard', ['subdomain' => $subdomain]);
+        }
 
         // Load dashboard data using service
         $dashboardData = $this->dashboardService->loadDashboardData($user);

@@ -4,7 +4,7 @@
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
 
     $breadcrumbs = [
-        ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('supervisor.dashboard', ['subdomain' => $subdomain])],
+        ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('manage.dashboard', ['subdomain' => $subdomain])],
         ['label' => __('supervisor.interactive_courses.page_title')],
     ];
 
@@ -37,7 +37,7 @@
     empty-icon="ri-book-open-line"
     :empty-title="__('supervisor.common.no_data')"
     :empty-description="__('supervisor.interactive_courses.page_subtitle')"
-    :clear-filter-route="route('supervisor.interactive-courses.index', ['subdomain' => $subdomain])"
+    :clear-filter-route="route('manage.interactive-courses.index', ['subdomain' => $subdomain])"
     :clear-filter-text="__('supervisor.common.back_to_list')"
 >
     @foreach($courses as $course)
@@ -61,7 +61,7 @@
 
             $actions = [
                 [
-                    'href' => route('supervisor.interactive-courses.show', ['subdomain' => $subdomain, 'course' => $course->id]),
+                    'href' => route('manage.interactive-courses.show', ['subdomain' => $subdomain, 'course' => $course->id]),
                     'icon' => 'ri-eye-line',
                     'label' => __('supervisor.common.view_details'),
                     'shortLabel' => __('supervisor.common.view'),

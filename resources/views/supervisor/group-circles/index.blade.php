@@ -4,7 +4,7 @@
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
 
     $breadcrumbs = [
-        ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('supervisor.dashboard', ['subdomain' => $subdomain])],
+        ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('manage.dashboard', ['subdomain' => $subdomain])],
         ['label' => __('supervisor.group_circles.page_title')],
     ];
 
@@ -38,7 +38,7 @@
     empty-icon="ri-group-line"
     :empty-title="__('supervisor.common.no_data')"
     :empty-description="__('supervisor.group_circles.page_subtitle')"
-    :clear-filter-route="route('supervisor.group-circles.index', ['subdomain' => $subdomain])"
+    :clear-filter-route="route('manage.group-circles.index', ['subdomain' => $subdomain])"
     :clear-filter-text="__('supervisor.common.back_to_list')"
 >
     @foreach($circles as $circle)
@@ -73,7 +73,7 @@
 
             $actions = [
                 [
-                    'href' => route('supervisor.group-circles.show', ['subdomain' => $subdomain, 'circle' => $circle->id]),
+                    'href' => route('manage.group-circles.show', ['subdomain' => $subdomain, 'circle' => $circle->id]),
                     'icon' => 'ri-eye-line',
                     'label' => __('supervisor.common.view_details'),
                     'shortLabel' => __('supervisor.common.view'),

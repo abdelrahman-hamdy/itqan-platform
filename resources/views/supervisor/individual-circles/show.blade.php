@@ -11,7 +11,7 @@
 
     <x-ui.breadcrumb
         :items="[
-            ['label' => __('supervisor.individual_circles.breadcrumb'), 'route' => route('supervisor.individual-circles.index', ['subdomain' => $subdomain])],
+            ['label' => __('supervisor.individual_circles.breadcrumb'), 'route' => route('manage.individual-circles.index', ['subdomain' => $subdomain])],
             ['label' => $circle->student->name ?? '', 'truncate' => true],
         ]"
         view-type="supervisor"

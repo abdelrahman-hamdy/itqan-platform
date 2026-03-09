@@ -13,7 +13,7 @@
     <!-- Breadcrumb -->
     <x-ui.breadcrumb
         :items="[
-            ['label' => __('supervisor.group_circles.breadcrumb'), 'route' => route('supervisor.group-circles.index', ['subdomain' => $subdomain])],
+            ['label' => __('supervisor.group_circles.breadcrumb'), 'route' => route('manage.group-circles.index', ['subdomain' => $subdomain])],
             ['label' => $circle->name, 'truncate' => true],
         ]"
         view-type="supervisor"

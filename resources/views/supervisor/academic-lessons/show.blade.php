@@ -12,7 +12,7 @@
 
     <x-ui.breadcrumb
         :items="[
-            ['label' => __('supervisor.academic_lessons.breadcrumb'), 'route' => route('supervisor.academic-lessons.index', ['subdomain' => $subdomain])],
+            ['label' => __('supervisor.academic_lessons.breadcrumb'), 'route' => route('manage.academic-lessons.index', ['subdomain' => $subdomain])],
             ['label' => $subscription->student->name ?? '', 'truncate' => true],
         ]"
         view-type="supervisor"

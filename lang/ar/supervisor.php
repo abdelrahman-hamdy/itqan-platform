@@ -25,6 +25,8 @@ return [
         'session_reports' => 'تقارير الجلسات',
         'certificates' => 'الشهادات',
         'profile' => 'الملف الشخصي',
+        'manage_frontend' => 'لوحة الإدارة',
+        'admin_panel' => 'لوحة التحكم',
     ],
 
     'dashboard' => [

@@ -7,7 +7,7 @@
 <div>
     <x-ui.breadcrumb
         :items="[
-            ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('supervisor.dashboard', ['subdomain' => $subdomain])],
+            ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('manage.dashboard', ['subdomain' => $subdomain])],
             ['label' => __('supervisor.calendar.page_title')],
         ]"
         view-type="supervisor"
@@ -66,7 +66,7 @@
                     {{ __('supervisor.calendar.select_teacher_description') }}
                 </p>
                 <div id="supervisor-calendar-container" class="min-h-[500px]"
-                     data-events-url="{{ route('supervisor.calendar.events', ['subdomain' => $subdomain]) }}"
+                     data-events-url="{{ route('manage.calendar.events', ['subdomain' => $subdomain]) }}"
                      data-teacher-id="{{ $selectedTeacherId }}">
                     <!-- FullCalendar will be initialized here via JS if available -->
                     <p class="text-sm text-gray-500 italic">

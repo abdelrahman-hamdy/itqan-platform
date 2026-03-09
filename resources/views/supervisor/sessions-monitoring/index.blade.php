@@ -7,7 +7,7 @@
 <div>
     <x-ui.breadcrumb
         :items="[
-            ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('supervisor.dashboard', ['subdomain' => $subdomain])],
+            ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('manage.dashboard', ['subdomain' => $subdomain])],
             ['label' => __('supervisor.observation.sessions_monitoring')],
         ]"
         view-type="supervisor"
@@ -21,14 +21,14 @@
     <!-- Tabs -->
     <div class="mb-6 border-b border-gray-200">
         <nav class="-mb-px flex gap-4 md:gap-6 overflow-x-auto" aria-label="Tabs">
-            <a href="{{ route('supervisor.sessions-monitoring.index', ['subdomain' => $subdomain, 'tab' => 'quran', 'date' => $dateFilter]) }}"
+            <a href="{{ route('manage.sessions-monitoring.index', ['subdomain' => $subdomain, 'tab' => 'quran', 'date' => $dateFilter]) }}"
                class="whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium transition-colors flex items-center gap-1.5
                    {{ $tab === 'quran' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' }}">
                 <i class="ri-book-read-line"></i>
                 {{ __('supervisor.observation.quran_sessions') }}
                 <span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">{{ $quranSessions->count() }}</span>
             </a>
-            <a href="{{ route('supervisor.sessions-monitoring.index', ['subdomain' => $subdomain, 'tab' => 'academic', 'date' => $dateFilter]) }}"
+            <a href="{{ route('manage.sessions-monitoring.index', ['subdomain' => $subdomain, 'tab' => 'academic', 'date' => $dateFilter]) }}"
                class="whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium transition-colors flex items-center gap-1.5
                    {{ $tab === 'academic' ? 'border-violet-500 text-violet-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' }}">
                 <i class="ri-graduation-cap-line"></i>
@@ -41,7 +41,7 @@
     <!-- Date Filters -->
     <div class="flex gap-2 mb-6">
         @foreach(['all' => __('supervisor.observation.filter_all'), 'today' => __('supervisor.observation.filter_today'), 'week' => __('supervisor.observation.filter_week')] as $value => $label)
-            <a href="{{ route('supervisor.sessions-monitoring.index', ['subdomain' => $subdomain, 'tab' => $tab, 'date' => $value]) }}"
+            <a href="{{ route('manage.sessions-monitoring.index', ['subdomain' => $subdomain, 'tab' => $tab, 'date' => $value]) }}"
                class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors
                    {{ $dateFilter === $value ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
                 {{ $label }}

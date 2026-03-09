@@ -145,12 +145,12 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         })->name('academy.admin.dashboard');
     });
 
-    // Supervisor routes (dashboard access) — redirects to new supervisor frontend
+    // Supervisor routes (dashboard access) — redirects to manage frontend
     Route::middleware(['auth', 'role:supervisor'])->prefix('supervisor')->group(function () {
         Route::get('/', function () {
             $subdomain = request()->route('subdomain') ?? \App\Constants\DefaultAcademy::subdomain();
-            return redirect()->route('supervisor.dashboard', ['subdomain' => $subdomain]);
-        })->name('supervisor.home');
+            return redirect()->route('manage.dashboard', ['subdomain' => $subdomain]);
+        })->name('manage.home');
     });
 
     // Teacher routes (profile-based with dashboard access)
