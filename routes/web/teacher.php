@@ -17,6 +17,7 @@ use App\Http\Controllers\QuranSessionController;
 use App\Http\Controllers\StudentInteractiveCourseController;
 use App\Http\Controllers\StudentReportController;
 use App\Http\Controllers\Teacher\CalendarController;
+use App\Http\Controllers\Teacher\QuizManagementController;
 use App\Http\Controllers\Teacher\GroupCircleReportController;
 use App\Http\Controllers\Teacher\HomeworkGradingController;
 use App\Http\Controllers\Teacher\IndividualCircleReportController;
@@ -58,6 +59,25 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/calendar/schedulable-items', [CalendarController::class, 'getSchedulableItems'])->name('calendar.schedulable-items');
         Route::post('/calendar/schedule', [CalendarController::class, 'createSchedule'])->name('calendar.schedule');
         Route::post('/calendar/check-conflicts', [CalendarController::class, 'checkConflicts'])->name('calendar.check-conflicts');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Teacher Quiz Management Routes (All Teachers)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::middleware(['auth', 'role:quran_teacher,academic_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        Route::get('/quizzes', [QuizManagementController::class, 'index'])->name('quizzes.index');
+        Route::get('/quizzes/create', [QuizManagementController::class, 'create'])->name('quizzes.create');
+        Route::post('/quizzes', [QuizManagementController::class, 'store'])->name('quizzes.store');
+        Route::get('/quizzes/assignable-options', [QuizManagementController::class, 'getAssignableOptions'])->name('quizzes.assignable-options');
+        Route::get('/quizzes/{quiz}', [QuizManagementController::class, 'show'])->name('quizzes.show');
+        Route::get('/quizzes/{quiz}/edit', [QuizManagementController::class, 'edit'])->name('quizzes.edit');
+        Route::put('/quizzes/{quiz}', [QuizManagementController::class, 'update'])->name('quizzes.update');
+        Route::delete('/quizzes/{quiz}', [QuizManagementController::class, 'destroy'])->name('quizzes.destroy');
+        Route::post('/quizzes/{quiz}/assign', [QuizManagementController::class, 'assign'])->name('quizzes.assign');
+        Route::delete('/quizzes/assignments/{assignment}', [QuizManagementController::class, 'revokeAssignment'])->name('quizzes.revoke-assignment');
     });
 
     Route::middleware(['auth', 'role:quran_teacher,academic_teacher'])->group(function () {

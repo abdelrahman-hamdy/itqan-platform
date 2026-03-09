@@ -83,6 +83,15 @@
         @endif
       </x-sidebar.nav-section>
 
+      <!-- Quiz Management -->
+      <x-sidebar.nav-section :title="__('teacher.sidebar.quiz_management')">
+        <x-sidebar.nav-item
+          :href="route('teacher.quizzes.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
+          :label="__('teacher.sidebar.quizzes')"
+          icon="ri-questionnaire-line"
+          :active="request()->routeIs('teacher.quizzes.*')" />
+      </x-sidebar.nav-section>
+
       <!-- Financial Management -->
       <x-sidebar.nav-section :title="__('teacher.sidebar.financial_management')">
         <x-sidebar.nav-item
