@@ -73,7 +73,7 @@ class TeacherStudentOverviewService
             }
 
             $groupCircles = QuranCircle::where('quran_teacher_id', $user->id)
-                ->where('is_active', true)
+                ->active()
                 ->get(['id', 'name']);
 
             foreach ($groupCircles as $circle) {
@@ -170,7 +170,7 @@ class TeacherStudentOverviewService
     private function getQuranGroupRows(User $user, ?int $entityId, ?string $studentSearch): Collection
     {
         $query = QuranCircle::where('quran_teacher_id', $user->id)
-            ->where('is_active', true)
+            ->active()
             ->with('students:id,first_name,last_name,name,avatar');
 
         if ($entityId) {
@@ -248,7 +248,7 @@ class TeacherStudentOverviewService
             $reports = AcademicSessionReport::whereHas(
                 'session',
                 fn ($q) => $q->where('academic_individual_lesson_id', $lesson->id)
-            )->get(['attendance_status', 'overall_performance']);
+            )->get();
 
             $totalSessions = $reports->count();
             $attendedCount = $reports->whereIn('attendance_status', [
