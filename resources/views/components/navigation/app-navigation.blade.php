@@ -435,7 +435,15 @@
                 $logoutRoute = Route::has('logout') ? route('logout', ['subdomain' => $subdomain]) : '/logout';
                 $isAdminOrSuperAdminOrSupervisor = $user && ($user->isAdmin() || $user->isSuperAdmin() || $user->isSupervisor());
               @endphp
-              @if(!$isAdminOrSuperAdminOrSupervisor)
+              @if($isAdminOrSuperAdminOrSupervisor)
+              <a href="{{ route('supervisor.dashboard', ['subdomain' => $subdomain]) }}"
+                 class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                 role="menuitem">
+                <i class="ri-dashboard-line text-gray-400"></i>
+                {{ __('supervisor.sidebar.dashboard') }}
+              </a>
+              <div class="border-t border-gray-100"></div>
+              @else
               <a href="{{ $profileRoute }}"
                  class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
                  role="menuitem">

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicTeacherProfile;
 use App\Models\SupervisorProfile;
+use App\Models\User;
 use App\Services\AcademyContextService;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,12 +16,29 @@ use Illuminate\Support\Facades\Auth;
  * Provides helper methods that mirror the scoping logic in
  * App\Filament\Supervisor\Resources\BaseSupervisorResource so that
  * the web frontend and Filament panel share identical data boundaries.
+ *
+ * For super_admin and admin roles, returns ALL teachers/data in the academy
+ * (no supervisor-based scoping). For supervisors, scopes to assigned teachers.
  */
 abstract class BaseSupervisorWebController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:supervisor,super_admin']);
+        $this->middleware(['auth', 'role:supervisor,super_admin,admin']);
+    }
+
+    // ========================================================================
+    // Role check helpers
+    // ========================================================================
+
+    /**
+     * Check if current user is an admin/super_admin (sees all academy data).
+     */
+    protected function isAdminUser(): bool
+    {
+        $user = Auth::user();
+
+        return $user && ($user->isSuperAdmin() || $user->isAdmin() || $user->isAcademyAdmin());
     }
 
     // ========================================================================
@@ -49,12 +68,20 @@ abstract class BaseSupervisorWebController extends Controller
     // ========================================================================
 
     /**
-     * Get the user IDs of Quran teachers assigned to this supervisor.
+     * Get the user IDs of Quran teachers.
+     * Admin/SuperAdmin: returns ALL quran teachers in the academy.
+     * Supervisor: returns only assigned quran teachers.
      *
      * @return int[]
      */
     protected function getAssignedQuranTeacherIds(): array
     {
+        if ($this->isAdminUser()) {
+            return User::where('user_type', UserType::QURAN_TEACHER->value)
+                ->pluck('id')
+                ->toArray();
+        }
+
         $profile = $this->getCurrentSupervisorProfile();
 
         return $profile?->getAssignedQuranTeacherIds() ?? [];
@@ -65,19 +92,27 @@ abstract class BaseSupervisorWebController extends Controller
     // ========================================================================
 
     /**
-     * Get the user IDs of Academic teachers assigned to this supervisor.
+     * Get the user IDs of Academic teachers.
+     * Admin/SuperAdmin: returns ALL academic teachers in the academy.
+     * Supervisor: returns only assigned academic teachers.
      *
      * @return int[]
      */
     protected function getAssignedAcademicTeacherIds(): array
     {
+        if ($this->isAdminUser()) {
+            return User::where('user_type', UserType::ACADEMIC_TEACHER->value)
+                ->pluck('id')
+                ->toArray();
+        }
+
         $profile = $this->getCurrentSupervisorProfile();
 
         return $profile?->getAssignedAcademicTeacherIds() ?? [];
     }
 
     /**
-     * Get the AcademicTeacherProfile IDs for assigned academic teachers.
+     * Get the AcademicTeacherProfile IDs for academic teachers.
      * Needed when filtering resources that reference the profile ID rather
      * than the user ID (e.g. AcademicSession.academic_teacher_id).
      *
@@ -85,6 +120,10 @@ abstract class BaseSupervisorWebController extends Controller
      */
     protected function getAssignedAcademicTeacherProfileIds(): array
     {
+        if ($this->isAdminUser()) {
+            return AcademicTeacherProfile::pluck('id')->toArray();
+        }
+
         $userIds = $this->getAssignedAcademicTeacherIds();
 
         if (empty($userIds)) {
@@ -101,22 +140,33 @@ abstract class BaseSupervisorWebController extends Controller
     // ========================================================================
 
     /**
-     * Get all assigned teacher IDs (both Quran and Academic user IDs).
+     * Get all teacher IDs (both Quran and Academic user IDs).
      *
      * @return int[]
      */
     protected function getAllAssignedTeacherIds(): array
     {
+        if ($this->isAdminUser()) {
+            return User::whereIn('user_type', [
+                UserType::QURAN_TEACHER->value,
+                UserType::ACADEMIC_TEACHER->value,
+            ])->pluck('id')->toArray();
+        }
+
         $profile = $this->getCurrentSupervisorProfile();
 
         return $profile?->getAllAssignedTeacherIds() ?? [];
     }
 
     /**
-     * Check if the supervisor has any assigned teachers at all.
+     * Check if there are any teachers to display.
      */
     protected function hasAssignedTeachers(): bool
     {
+        if ($this->isAdminUser()) {
+            return true;
+        }
+
         return ! empty($this->getAllAssignedTeacherIds());
     }
 
@@ -131,18 +181,26 @@ abstract class BaseSupervisorWebController extends Controller
      */
     protected function getResponsibleResourceIds(string $modelClass): array
     {
+        if ($this->isAdminUser()) {
+            return $modelClass::pluck('id')->toArray();
+        }
+
         $profile = $this->getCurrentSupervisorProfile();
 
         return $profile?->getResponsibilityIds($modelClass) ?? [];
     }
 
     /**
-     * Get interactive course IDs derived from assigned academic teachers.
+     * Get interactive course IDs derived from academic teachers.
      *
      * @return int[]
      */
     protected function getDerivedInteractiveCourseIds(): array
     {
+        if ($this->isAdminUser()) {
+            return []; // Admin already gets all via getResponsibleResourceIds
+        }
+
         $profile = $this->getCurrentSupervisorProfile();
 
         return $profile?->getDerivedInteractiveCourseIds() ?? [];

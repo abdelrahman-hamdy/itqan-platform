@@ -24,7 +24,7 @@ use App\Http\Controllers\Supervisor\SupervisorTrialSessionsController;
 use Illuminate\Support\Facades\Route;
 
 Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
-    Route::middleware(['auth', 'role:supervisor,super_admin'])->prefix('supervisor')->name('supervisor.')->group(function () {
+    Route::middleware(['auth', 'role:supervisor,super_admin,admin'])->prefix('supervisor')->name('supervisor.')->group(function () {
 
         // Dashboard
         Route::get('/dashboard', [SupervisorDashboardController::class, 'index'])->name('dashboard');

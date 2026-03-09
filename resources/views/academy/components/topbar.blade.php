@@ -148,36 +148,31 @@
     <div class="border-t border-gray-200 pt-2 mt-2">
       @auth
         @php
-          $mobileProfileRouteName = auth()->user()->isTeacher() ? 'teacher.profile' : 'student.profile';
-          $mobileIsAdminOrSuperAdminOrSupervisor = auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupervisor();
-        @endphp
-        {{-- Sessions Monitoring Link for Supervisors & SuperAdmins (Mobile) --}}
-        @if(auth()->user()->isSupervisor() || auth()->user()->isSuperAdmin())
-        <a href="{{ route('sessions.monitoring', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('supervisor.observation.sessions_monitoring') }}">
-          <i class="ri-eye-line ms-2"></i>
-          {{ __('supervisor.observation.sessions_monitoring') }}
-        </a>
-        @endif
+          $mobileUser = auth()->user();
+          $mobileSubdomain = $academy->subdomain ?? 'itqan-academy';
+          $mobileIsAdminOrSuperAdminOrSupervisor = $mobileUser->isAdmin() || $mobileUser->isSuperAdmin() || $mobileUser->isSupervisor();
 
-        {{-- Chat Link for Supervisors (Mobile) --}}
-        @if(auth()->user()->user_type === 'supervisor')
-        <a href="{{ route('chats', ['subdomain' => $academy->subdomain]) }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('chat.messages') }}">
-          <i class="ri-message-3-line ms-2"></i>
-          {{ __('chat.messages') }}
-          @php $mobileUnreadCount = auth()->user()->unreadMessagesCount(); @endphp
-          @if($mobileUnreadCount > 0)
-          <span class="ms-auto inline-flex items-center justify-center min-w-[20px] h-5 text-xs font-bold text-white bg-red-500 rounded-full px-1">
-            {{ $mobileUnreadCount > 99 ? '99+' : $mobileUnreadCount }}
-          </span>
+          if ($mobileUser->isTeacher()) {
+              $mobileProfileRoute = route('teacher.profile', ['subdomain' => $mobileSubdomain]);
+          } elseif ($mobileUser->isSupervisor() || $mobileUser->isSuperAdmin() || $mobileUser->isAdmin() || $mobileUser->isAcademyAdmin()) {
+              $mobileProfileRoute = route('supervisor.dashboard', ['subdomain' => $mobileSubdomain]);
+          } elseif ($mobileUser->isParent()) {
+              $mobileProfileRoute = route('parent.profile', ['subdomain' => $mobileSubdomain]);
+          } else {
+              $mobileProfileRoute = route('student.profile', ['subdomain' => $mobileSubdomain]);
+          }
+        @endphp
+
+        {{-- Dashboard/Profile link for all roles --}}
+        <a href="{{ $mobileProfileRoute }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium">
+          @if($mobileIsAdminOrSuperAdminOrSupervisor)
+            <i class="ri-dashboard-line ms-2"></i>
+            {{ __('supervisor.sidebar.dashboard') }}
+          @else
+            <i class="ri-user-line ms-2"></i>
+            {{ __('academy.user.profile') }}
           @endif
         </a>
-        @endif
-        @if(!$mobileIsAdminOrSuperAdminOrSupervisor)
-        <a href="{{ route($mobileProfileRouteName, ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('academy.user.profile') }}">
-          <i class="ri-user-line ms-2"></i>
-          {{ __('academy.user.profile') }}
-        </a>
-        @endif
         <form method="POST" action="{{ route('logout', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="block">
           @csrf
           <button type="submit" @click="mobileMenuOpen = false" class="flex items-center w-full px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('academy.user.logout') }}">

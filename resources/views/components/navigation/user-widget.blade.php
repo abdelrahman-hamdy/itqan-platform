@@ -14,44 +14,30 @@
 @auth
 @php
     $user = auth()->user();
+    $subdomain = $academy->subdomain ?? 'itqan-academy';
     $isAdminOrSuperAdminOrSupervisor = $user->isAdmin() || $user->isSuperAdmin() || $user->isSupervisor();
-    $profileRouteName = $user->isTeacher() ? 'teacher.profile' : 'student.profile';
 
-    // Dashboard route for admin roles
-    $dashboardRoute = match($user->user_type) {
+    // Determine profile/dashboard route based on role
+    if ($user->isTeacher()) {
+        $profileRoute = route('teacher.profile', ['subdomain' => $subdomain]);
+    } elseif ($user->isSupervisor() || $user->isSuperAdmin()) {
+        $profileRoute = route('supervisor.dashboard', ['subdomain' => $subdomain]);
+    } elseif ($user->isAdmin() || $user->isAcademyAdmin()) {
+        $profileRoute = route('supervisor.dashboard', ['subdomain' => $subdomain]);
+    } elseif ($user->isParent()) {
+        $profileRoute = route('parent.profile', ['subdomain' => $subdomain]);
+    } else {
+        $profileRoute = route('student.profile', ['subdomain' => $subdomain]);
+    }
+
+    // Filament panel route for admin roles
+    $filamentRoute = match($user->user_type) {
         'supervisor' => route('filament.supervisor.pages.dashboard'),
         'admin' => '/panel',
         'super_admin' => route('filament.admin.pages.dashboard'),
-        default => '/panel'
+        default => null,
     };
 @endphp
-
-{{-- Sessions Monitoring Icon for Supervisors & SuperAdmins (Desktop) --}}
-@if($user->isSupervisor() || $user->isSuperAdmin())
-<a href="{{ route('sessions.monitoring', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"
-   class="relative hidden md:flex items-center justify-center {{ $height }} px-3 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors duration-200"
-   aria-label="{{ __('supervisor.observation.sessions_monitoring') }}">
-    <i class="ri-eye-line text-xl"></i>
-</a>
-@endif
-
-{{-- Chat Icon for Supervisors (Desktop) --}}
-@if($user->user_type === 'supervisor')
-<a href="{{ route('chats', ['subdomain' => $academy->subdomain]) }}"
-   class="relative hidden md:flex items-center justify-center {{ $height }} px-3 text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors duration-200"
-   aria-label="{{ __('chat.messages') }}">
-    <i class="ri-message-3-line text-xl"></i>
-    {{-- Unread badge --}}
-    @php
-        $unreadCount = $user->unreadMessagesCount();
-    @endphp
-    @if($unreadCount > 0)
-        <span class="absolute top-4 -end-1 flex items-center justify-center min-w-[18px] h-[18px] text-xs font-bold text-white bg-red-500 rounded-full px-1">
-            {{ $unreadCount > 99 ? '99+' : $unreadCount }}
-        </span>
-    @endif
-</a>
-@endif
 
 {{-- Desktop User Dropdown --}}
 <div class="relative {{ $height }} hidden md:flex items-center" x-data="{ open: false }">
@@ -86,31 +72,35 @@
                 @endif
             </div>
 
-            @if($isAdminOrSuperAdminOrSupervisor)
-                {{-- Dashboard Link (opens in new tab) for Admin/SuperAdmin/Supervisor --}}
-                <a href="{{ $dashboardRoute }}"
+            {{-- Main frontend link for all roles --}}
+            <a href="{{ $profileRoute }}"
+               class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+               role="menuitem">
+                @if($isAdminOrSuperAdminOrSupervisor)
+                    <i class="ri-dashboard-line ms-2"></i>
+                    {{ __('supervisor.sidebar.dashboard') }}
+                @else
+                    <i class="ri-user-line ms-2"></i>
+                    {{ __('academy.user.profile') }}
+                @endif
+            </a>
+
+            {{-- Filament Admin Panel link for admin roles --}}
+            @if($filamentRoute)
+                <a href="{{ $filamentRoute }}"
                    target="_blank"
                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                    role="menuitem">
-                    <i class="ri-dashboard-line ms-2"></i>
+                    <i class="ri-settings-3-line ms-2"></i>
                     {{ __('components.navigation.public.dashboard') }}
                     <i class="ri-external-link-line text-gray-400 ms-auto text-xs"></i>
-                </a>
-
-            @else
-                {{-- Profile Link for Students/Teachers --}}
-                <a href="{{ route($profileRouteName, ['subdomain' => $academy->subdomain ?? 'test-academy']) }}"
-                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-                   role="menuitem">
-                    <i class="ri-user-line ms-2"></i>
-                    {{ __('academy.user.profile') }}
                 </a>
             @endif
 
             <div class="border-t border-gray-100"></div>
 
             {{-- Logout --}}
-            <form method="POST" action="{{ route('logout', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="block">
+            <form method="POST" action="{{ route('logout', ['subdomain' => $subdomain]) }}" class="block">
                 @csrf
                 <button type="submit"
                         class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"

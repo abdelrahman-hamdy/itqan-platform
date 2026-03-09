@@ -929,11 +929,13 @@ class AuthController extends Controller
     private function redirectBasedOnUserType(User $user, ?Academy $academy)
     {
         if ($user->isSuperAdmin()) {
-            return redirect('/admin');
+            $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? DefaultAcademy::subdomain());
+            return redirect()->route('supervisor.dashboard', ['subdomain' => $subdomain]);
         }
 
         if ($user->isAcademyAdmin()) {
-            return redirect('/panel');
+            $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? DefaultAcademy::subdomain());
+            return redirect()->route('supervisor.dashboard', ['subdomain' => $subdomain]);
         }
 
         if ($user->isQuranTeacher() || $user->isAcademicTeacher()) {

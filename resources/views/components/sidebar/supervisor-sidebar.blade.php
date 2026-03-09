@@ -1,12 +1,14 @@
 @php
     $user = auth()->user();
     $subdomain = $user->academy->subdomain ?? 'itqan-academy';
-    $displayName = $user->supervisorProfile->full_name ?? $user->name;
-    $roleLabel = $user->supervisorProfile->supervisor_code ?? __('supervisor.sidebar.supervisor');
+    $isAdmin = $user->isSuperAdmin() || $user->isAdmin() || $user->isAcademyAdmin();
+    $displayName = $user->supervisorProfile?->full_name ?? $user->name;
+    $roleLabel = $isAdmin ? $user->getUserTypeLabel() : ($user->supervisorProfile?->supervisor_code ?? __('supervisor.sidebar.supervisor'));
     $supervisorGender = $user->supervisorProfile?->gender ?? $user->gender ?? 'male';
 
-    $hasQuranTeachers = !empty($user->supervisorProfile?->getAssignedQuranTeacherIds());
-    $hasAcademicTeachers = !empty($user->supervisorProfile?->getAssignedAcademicTeacherIds());
+    // Admins see all sections; supervisors see only their assigned teacher types
+    $hasQuranTeachers = $isAdmin || !empty($user->supervisorProfile?->getAssignedQuranTeacherIds());
+    $hasAcademicTeachers = $isAdmin || !empty($user->supervisorProfile?->getAssignedAcademicTeacherIds());
 @endphp
 
 <x-sidebar.container sidebar-id="supervisor-sidebar" storage-key="supervisorSidebarCollapsed">
