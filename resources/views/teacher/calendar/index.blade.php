@@ -665,15 +665,19 @@
                     return;
                 }
 
-                const newStart = event.start;
-                const newDateStr = newStart.toLocaleDateString('ar-SA', {
+                // Capture values BEFORE revert — info.revert() mutates event.start
+                const newStartISO = event.start.toISOString();
+                const newDateStr = event.start.toLocaleDateString('ar-SA', {
                     timeZone: academyTimezone,
                     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
                 });
-                const newTimeStr = newStart.toLocaleTimeString('ar-SA', {
+                const newTimeStr = event.start.toLocaleTimeString('ar-SA', {
                     timeZone: academyTimezone,
                     hour: '2-digit', minute: '2-digit', hour12: true
                 });
+
+                // Revert drag immediately — we'll refetch on success
+                info.revert();
 
                 const confirmMsg = event.title + '\n' + newDateStr + ' ' + newTimeStr;
 
@@ -695,14 +699,13 @@
                             body: JSON.stringify({
                                 source: source,
                                 session_id: sessionId,
-                                scheduled_at: newStart.toISOString(),
+                                scheduled_at: newStartISO,
                             })
                         })
                         .then(r => r.json().then(data => ({ ok: r.ok, data })))
                         .then(({ ok, data }) => {
                             if (ok) {
                                 if (window.toast) window.toast.success(data.message || @js(__('teacher.calendar.reschedule_success')));
-                                // Refresh calendar to show updated position
                                 if (window.teacherCalendar) window.teacherCalendar.refetchEvents();
                             } else {
                                 if (window.toast) window.toast.error(data.message || @js(__('teacher.calendar.reschedule_error')));
@@ -713,9 +716,6 @@
                         });
                     }
                 });
-
-                // Always revert the drag — on confirm success we refetch events from server
-                info.revert();
             },
 
             // Resize → revert (duration API not implemented)
