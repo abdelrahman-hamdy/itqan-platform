@@ -295,7 +295,7 @@
           </x-tabs.panel>
 
           <x-tabs.panel id="quizzes">
-            <livewire:quizzes-widget :assignable="$course" />
+            <livewire:teacher-quizzes-widget :assignable="$course" />
           </x-tabs.panel>
 
           <x-tabs.panel id="certificates">

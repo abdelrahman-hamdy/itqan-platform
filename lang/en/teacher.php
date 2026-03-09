@@ -251,6 +251,7 @@ return [
         'tabs' => [
             'sessions' => 'Sessions',
             'students' => 'Students',
+            'quizzes' => 'Quizzes',
             'certificates' => 'Certificates',
         ],
         'status' => [
@@ -1406,6 +1407,22 @@ return [
         'action_add_quiz' => 'Add Quiz',
         'action_view' => 'View',
         'type_recorded_course' => 'Recorded Course',
+        // Teacher quizzes widget keys
+        'no_assignments_title' => 'No quizzes assigned',
+        'no_assignments_desc' => 'No quizzes have been assigned to this item yet. You can create and assign quizzes from the quizzes page.',
+        'go_to_quizzes' => 'Manage Quizzes',
+        'manage_all_quizzes' => 'Manage All Quizzes',
+        'questions_count_label' => 'questions',
+        'passing_score_label' => 'Passing score',
+        'widget_status_active' => 'Available',
+        'widget_status_inactive' => 'Unavailable',
+        'status_hidden' => 'Hidden',
+        'stat_completed' => 'Completed',
+        'stat_passed' => 'Passed',
+        'stat_avg_score' => 'Avg Score',
+        'stat_max_attempts' => 'Max Attempts',
+        'from_date' => 'From',
+        'until_date' => 'Until',
     ],
     'quiz_assignments' => [
         'nav_label' => 'Quiz Assignments',

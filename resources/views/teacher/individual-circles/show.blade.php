@@ -28,6 +28,11 @@
                         :badge="$circle->sessions->count()"
                     />
                     <x-tabs.tab
+                        id="quizzes"
+                        :label="__('teacher.circles.tabs.quizzes')"
+                        icon="ri-file-list-3-line"
+                    />
+                    <x-tabs.tab
                         id="certificate"
                         :label="__('teacher.circles.individual.certificate_tab')"
                         icon="ri-award-line"
@@ -42,6 +47,10 @@
                             :circle="$circle"
                             :show-tabs="false"
                             :empty-message="__('teacher.circles.individual.no_sessions_yet')" />
+                    </x-tabs.panel>
+
+                    <x-tabs.panel id="quizzes">
+                        <livewire:teacher-quizzes-widget :assignable="$circle" />
                     </x-tabs.panel>
 
                     <x-tabs.panel id="certificate">

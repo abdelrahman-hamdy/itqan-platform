@@ -27,13 +27,18 @@
                 <x-slot name="tabs">
                     <x-tabs.tab
                         id="sessions"
-                        label="الجلسات"
+                        :label="__('teacher.circles.tabs.sessions')"
                         icon="ri-calendar-line"
                         :badge="$allSessions->count()"
                     />
                     <x-tabs.tab
+                        id="quizzes"
+                        :label="__('teacher.circles.tabs.quizzes')"
+                        icon="ri-file-list-3-line"
+                    />
+                    <x-tabs.tab
                         id="certificate"
-                        label="الشهادة"
+                        :label="__('teacher.circles.tabs.certificates')"
                         icon="ri-award-line"
                     />
                 </x-slot>
@@ -46,6 +51,22 @@
                             :circle="$subscription"
                             :show-tabs="false"
                             empty-message="لا توجد جلسات مجدولة بعد" />
+                    </x-tabs.panel>
+
+                    <x-tabs.panel id="quizzes">
+                        @if($subscription->lesson)
+                            <livewire:teacher-quizzes-widget :assignable="$subscription->lesson" />
+                        @else
+                            <div class="bg-gray-50 rounded-xl py-12 text-center">
+                                <div class="max-w-md mx-auto px-4">
+                                    <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="ri-file-list-3-line text-3xl text-blue-400"></i>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ __('teacher.quizzes.no_assignments_title') }}</h3>
+                                    <p class="text-sm text-gray-600">{{ __('teacher.quizzes.no_assignments_desc') }}</p>
+                                </div>
+                            </div>
+                        @endif
                     </x-tabs.panel>
 
                     <x-tabs.panel id="certificate">

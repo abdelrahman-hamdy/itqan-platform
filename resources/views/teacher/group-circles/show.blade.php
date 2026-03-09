@@ -63,6 +63,11 @@
                         :badge="$totalStudents"
                     />
                     <x-tabs.tab
+                        id="quizzes"
+                        :label="__('teacher.circles.tabs.quizzes')"
+                        icon="ri-file-list-3-line"
+                    />
+                    <x-tabs.tab
                         id="certificates"
                         :label="__('teacher.circles.tabs.certificates')"
                         icon="ri-award-line"
@@ -81,6 +86,10 @@
 
                     <x-tabs.panel id="students">
                         <x-circle.group-students-list :circle="$circle" view-type="teacher" />
+                    </x-tabs.panel>
+
+                    <x-tabs.panel id="quizzes">
+                        <livewire:teacher-quizzes-widget :assignable="$circle" />
                     </x-tabs.panel>
 
                     <x-tabs.panel id="certificates">
