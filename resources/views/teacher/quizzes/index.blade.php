@@ -87,12 +87,12 @@
         @foreach($quizzes as $quiz)
             @php
                 $metadata = [
-                    ['icon' => 'ri-question-line', 'text' => $quiz->questions_count . ' ' . __('teacher.quizzes.questions')],
-                    ['icon' => 'ri-links-line', 'text' => ($quiz->assignments_count ?? $quiz->assignments->count()) . ' ' . __('teacher.quizzes.assignments')],
-                    ['icon' => 'ri-percent-line', 'text' => __('teacher.quizzes.passing_score') . ': ' . $quiz->passing_score . '%'],
+                    ['icon' => 'ri-question-line', 'iconColor' => 'text-blue-500', 'text' => $quiz->questions_count . ' ' . __('teacher.quizzes.questions')],
+                    ['icon' => 'ri-links-line', 'iconColor' => 'text-purple-500', 'text' => ($quiz->assignments_count ?? $quiz->assignments->count()) . ' ' . __('teacher.quizzes.assignments')],
+                    ['icon' => 'ri-percent-line', 'iconColor' => 'text-green-500', 'text' => __('teacher.quizzes.passing_score') . ': ' . $quiz->passing_score . '%'],
                 ];
                 if ($quiz->duration_minutes) {
-                    $metadata[] = ['icon' => 'ri-time-line', 'text' => $quiz->duration_minutes . ' ' . __('teacher.quizzes.minutes')];
+                    $metadata[] = ['icon' => 'ri-time-line', 'iconColor' => 'text-amber-500', 'text' => $quiz->duration_minutes . ' ' . __('teacher.quizzes.minutes')];
                 }
 
                 $actions = [

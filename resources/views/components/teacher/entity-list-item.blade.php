@@ -41,9 +41,9 @@
                 @if(count($metadata) > 0)
                     <div class="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-600">
                         @foreach($metadata as $item)
-                            <span class="flex items-center {{ $item['class'] ?? '' }}">
+                            <span class="flex items-center gap-1 {{ $item['class'] ?? '' }}">
                                 @if(isset($item['icon']))
-                                    <i class="{{ $item['icon'] }} ms-1"></i>
+                                    <i class="{{ $item['icon'] }} {{ $item['iconColor'] ?? 'text-blue-500' }}"></i>
                                 @endif
                                 {{ $item['text'] }}
                             </span>
