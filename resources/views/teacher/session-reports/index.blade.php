@@ -1,18 +1,13 @@
 <x-layouts.teacher :title="__('teacher.reports.page_title') . ' - ' . config('app.name')">
 @php
-    use App\Enums\AttendanceStatus;
-    use App\Models\StudentSessionReport;
-    use App\Models\AcademicSessionReport;
-    use App\Models\InteractiveSessionReport;
-
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
 
     $filterOptions = [
         '' => __('teacher.reports.all_statuses'),
-        AttendanceStatus::ATTENDED->value => __('teacher.reports.status_attended'),
-        AttendanceStatus::LATE->value => __('teacher.reports.status_late'),
-        AttendanceStatus::ABSENT->value => __('teacher.reports.status_absent'),
-        AttendanceStatus::LEFT->value => __('teacher.reports.status_left'),
+        \App\Enums\AttendanceStatus::ATTENDED->value => __('teacher.reports.status_attended'),
+        \App\Enums\AttendanceStatus::LATE->value => __('teacher.reports.status_late'),
+        \App\Enums\AttendanceStatus::ABSENT->value => __('teacher.reports.status_absent'),
+        \App\Enums\AttendanceStatus::LEFT->value => __('teacher.reports.status_left'),
     ];
 
     $stats = [
@@ -97,20 +92,20 @@
         @foreach($paginatedReports as $report)
             @php
                 $attendanceConfig = match($report->attendance_status) {
-                    AttendanceStatus::ATTENDED => ['class' => 'bg-green-100 text-green-700', 'text' => __('teacher.reports.status_attended')],
-                    AttendanceStatus::LATE => ['class' => 'bg-amber-100 text-amber-700', 'text' => __('teacher.reports.status_late')],
-                    AttendanceStatus::LEFT => ['class' => 'bg-orange-100 text-orange-700', 'text' => __('teacher.reports.status_left')],
-                    AttendanceStatus::ABSENT => ['class' => 'bg-red-100 text-red-700', 'text' => __('teacher.reports.status_absent')],
+                    \App\Enums\AttendanceStatus::ATTENDED => ['class' => 'bg-green-100 text-green-700', 'text' => __('teacher.reports.status_attended')],
+                    \App\Enums\AttendanceStatus::LATE => ['class' => 'bg-amber-100 text-amber-700', 'text' => __('teacher.reports.status_late')],
+                    \App\Enums\AttendanceStatus::LEFT => ['class' => 'bg-orange-100 text-orange-700', 'text' => __('teacher.reports.status_left')],
+                    \App\Enums\AttendanceStatus::ABSENT => ['class' => 'bg-red-100 text-red-700', 'text' => __('teacher.reports.status_absent')],
                     default => ['class' => 'bg-gray-100 text-gray-500', 'text' => __('teacher.reports.status_unknown')],
                 };
 
                 // Determine report type label and icon
-                if ($report instanceof StudentSessionReport) {
+                if ($report instanceof \App\Models\StudentSessionReport) {
                     $typeLabel = __('teacher.reports.type_quran');
                     $typeIcon = 'ri-book-open-line';
                     $iconBg = 'bg-gradient-to-br from-green-500 to-green-600';
                     $sessionTitle = $report->session?->title ?? __('teacher.reports.quran_session');
-                } elseif ($report instanceof AcademicSessionReport) {
+                } elseif ($report instanceof \App\Models\AcademicSessionReport) {
                     $typeLabel = __('teacher.reports.type_academic');
                     $typeIcon = 'ri-graduation-cap-line';
                     $iconBg = 'bg-gradient-to-br from-violet-500 to-violet-600';

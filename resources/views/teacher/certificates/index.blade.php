@@ -1,13 +1,11 @@
 <x-layouts.teacher :title="__('teacher.certificates.page_title') . ' - ' . config('app.name')">
 @php
-    use App\Enums\CertificateType;
-
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
 
     $filterOptions = [
         '' => __('teacher.certificates.all_types'),
     ];
-    foreach (CertificateType::cases() as $type) {
+    foreach (\App\Enums\CertificateType::cases() as $type) {
         $filterOptions[$type->value] = $type->label();
     }
 
@@ -42,8 +40,8 @@
         @foreach($certificates as $certificate)
             @php
                 $certType = $certificate->certificate_type;
-                $typeBadgeClass = $certType instanceof CertificateType ? $certType->badgeClass() : 'bg-gray-100 text-gray-800';
-                $typeLabel = $certType instanceof CertificateType ? $certType->label() : __('teacher.certificates.unknown_type');
+                $typeBadgeClass = $certType instanceof \App\Enums\CertificateType ? $certType->badgeClass() : 'bg-gray-100 text-gray-800';
+                $typeLabel = $certType instanceof \App\Enums\CertificateType ? $certType->label() : __('teacher.certificates.unknown_type');
 
                 // Determine entity name
                 $entityName = '';
@@ -57,7 +55,7 @@
                 ];
 
                 if ($entityName) {
-                    $certTypeIcon = $certType instanceof CertificateType ? $certType->icon() : 'ri-file-line';
+                    $certTypeIcon = $certType instanceof \App\Enums\CertificateType ? $certType->icon() : 'ri-file-line';
                     $metadata[] = ['icon' => $certTypeIcon, 'text' => $entityName];
                 }
 
