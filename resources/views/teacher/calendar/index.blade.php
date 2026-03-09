@@ -94,8 +94,17 @@
                     </template>
                 </div>
 
+                <!-- Empty State (full width when no items) -->
+                <template x-if="!loading && items.length === 0">
+                    <div class="mt-4 flex flex-col items-center justify-center text-center py-12">
+                        <i class="ri-inbox-line text-4xl text-gray-300 mb-3"></i>
+                        <p class="text-sm font-semibold text-gray-600" x-text="getEmptyTitle()"></p>
+                        <p class="text-xs text-gray-400 mt-1" x-text="getEmptyDescription()"></p>
+                    </div>
+                </template>
+
                 <!-- Content: Items Grid + Scheduling Form side by side -->
-                <div class="mt-4 flex flex-col lg:flex-row gap-6">
+                <div class="mt-4 flex flex-col lg:flex-row gap-6" x-show="loading || items.length > 0">
 
                     <!-- Items List (left side) -->
                     <div class="w-full lg:w-1/2 min-h-[200px] flex flex-col">
@@ -103,15 +112,6 @@
                         <template x-if="loading">
                             <div class="flex items-center justify-center py-8">
                                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                            </div>
-                        </template>
-
-                        <!-- Empty State -->
-                        <template x-if="!loading && items.length === 0">
-                            <div class="flex-1 flex flex-col items-center justify-center text-center py-12">
-                                <i class="ri-inbox-line text-4xl text-gray-300 mb-3"></i>
-                                <p class="text-sm font-semibold text-gray-600" x-text="getEmptyTitle()"></p>
-                                <p class="text-xs text-gray-400 mt-1" x-text="getEmptyDescription()"></p>
                             </div>
                         </template>
 
