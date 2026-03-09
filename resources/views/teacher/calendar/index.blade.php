@@ -667,6 +667,18 @@
 
                 // Capture values BEFORE revert — info.revert() mutates event.start
                 const newStartISO = event.start.toISOString();
+                const oldStartISO = info.oldEvent ? info.oldEvent.start.toISOString() : 'N/A';
+
+                console.log('[Calendar Reschedule Debug]', {
+                    eventId: eventId,
+                    source: source,
+                    sessionId: sessionId,
+                    newStartISO: newStartISO,
+                    oldStartISO: oldStartISO,
+                    delta: info.delta,
+                    sameDate: newStartISO === oldStartISO,
+                });
+
                 const newDateStr = event.start.toLocaleDateString('ar-SA', {
                     timeZone: academyTimezone,
                     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
@@ -689,6 +701,7 @@
                     icon: 'ri-calendar-schedule-line',
                     isDangerous: false,
                     onConfirm: () => {
+                        console.log('[Calendar Reschedule] Sending:', { source, session_id: sessionId, scheduled_at: newStartISO, url: rescheduleRoute });
                         fetch(rescheduleRoute, {
                             method: 'PUT',
                             headers: {
@@ -702,8 +715,12 @@
                                 scheduled_at: newStartISO,
                             })
                         })
-                        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+                        .then(r => {
+                            console.log('[Calendar Reschedule] Response status:', r.status);
+                            return r.json().then(data => ({ ok: r.ok, data }));
+                        })
                         .then(({ ok, data }) => {
+                            console.log('[Calendar Reschedule] Response data:', data);
                             if (ok) {
                                 if (window.toast) window.toast.success(data.message || @js(__('teacher.calendar.reschedule_success')));
                                 if (window.teacherCalendar) window.teacherCalendar.refetchEvents();
