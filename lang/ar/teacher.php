@@ -37,7 +37,7 @@ return [
         'calendar' => 'التقويم',
         'quiz_management' => 'إدارة الاختبارات',
         'quizzes' => 'الاختبارات',
-        'session_reports' => 'تقارير الجلسات',
+        'session_reports' => 'التقارير',
         'recordings' => 'التسجيلات',
         'certificates' => 'الشهادات',
         'financial_management' => 'الإدارة المالية',
@@ -1685,10 +1685,10 @@ return [
     // Session Reports (A4)
     // ========================================
     'reports' => [
-        'page_title' => 'تقارير الجلسات',
+        'page_title' => 'التقارير',
         'page_description' => 'عرض تقارير الحضور والأداء لجميع الجلسات',
-        'breadcrumb' => 'تقارير الجلسات',
-        'list_title' => 'قائمة التقارير',
+        'breadcrumb' => 'التقارير',
+        'list_title' => 'تقارير الجلسات',
         'empty_title' => 'لا توجد تقارير',
         'empty_description' => 'لم يتم إنشاء أي تقارير بعد',
         'empty_filter_description' => 'لا توجد تقارير تطابق معايير التصفية',

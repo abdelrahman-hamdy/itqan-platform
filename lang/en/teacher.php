@@ -37,7 +37,7 @@ return [
         'calendar' => 'Calendar',
         'quiz_management' => 'Quiz Management',
         'quizzes' => 'Quizzes',
-        'session_reports' => 'Session Reports',
+        'session_reports' => 'Reports',
         'recordings' => 'Recordings',
         'certificates' => 'Certificates',
         'financial_management' => 'Financial Management',
@@ -1685,10 +1685,10 @@ return [
     // Session Reports (A4)
     // ========================================
     'reports' => [
-        'page_title' => 'Session Reports',
+        'page_title' => 'Reports',
         'page_description' => 'View attendance and performance reports for all sessions',
-        'breadcrumb' => 'Session Reports',
-        'list_title' => 'Reports List',
+        'breadcrumb' => 'Reports',
+        'list_title' => 'Session Reports',
         'empty_title' => 'No Reports',
         'empty_description' => 'No reports have been generated yet',
         'empty_filter_description' => 'No reports match the selected filters',
