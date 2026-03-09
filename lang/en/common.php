@@ -15,6 +15,14 @@ return [
     'na' => 'N/A',
     'example' => 'Example',
 
+    // Flat action aliases (used by blade views as __('common.edit'), etc.)
+    'edit' => 'Edit',
+    'cancel' => 'Cancel',
+    'view' => 'View',
+    'save' => 'Save',
+    'delete' => 'Delete',
+    'unknown' => 'Unknown',
+
     // Navigation
     'navigation' => [
         'home' => 'Home',

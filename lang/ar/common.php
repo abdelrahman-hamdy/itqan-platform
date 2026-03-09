@@ -15,6 +15,14 @@ return [
     'na' => 'غير متوفر',
     'example' => 'مثال',
 
+    // Flat action aliases (used by blade views as __('common.edit'), etc.)
+    'edit' => 'تعديل',
+    'cancel' => 'إلغاء',
+    'view' => 'عرض',
+    'save' => 'حفظ',
+    'delete' => 'حذف',
+    'unknown' => 'غير معروف',
+
     // Navigation
     'navigation' => [
         'home' => 'الرئيسية',
