@@ -64,6 +64,11 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/calendar/schedulable-items', [CalendarController::class, 'getSchedulableItems'])->name('calendar.schedulable-items');
         Route::post('/calendar/schedule', [CalendarController::class, 'createSchedule'])->name('calendar.schedule');
         Route::post('/calendar/check-conflicts', [CalendarController::class, 'checkConflicts'])->name('calendar.check-conflicts');
+        Route::get('/calendar/recommendations', [CalendarController::class, 'getRecommendations'])->name('calendar.recommendations');
+        Route::get('/calendar/session-detail', [CalendarController::class, 'getSessionDetail'])->name('calendar.session-detail');
+        Route::put('/calendar/update-session', [CalendarController::class, 'updateSession'])->name('calendar.update-session');
+        Route::post('/calendar/quran-homework', [CalendarController::class, 'saveQuranHomework'])->name('calendar.quran-homework');
+        Route::post('/calendar/academic-homework', [CalendarController::class, 'saveAcademicHomework'])->name('calendar.academic-homework');
         Route::put('/calendar/reschedule', [CalendarController::class, 'rescheduleEvent'])->name('calendar.reschedule');
     });
 

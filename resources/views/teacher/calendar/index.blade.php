@@ -4,6 +4,11 @@
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
     $eventsRoute = route('teacher.calendar.events', ['subdomain' => $subdomain]);
     $rescheduleRoute = route('teacher.calendar.reschedule', ['subdomain' => $subdomain]);
+    $recommendationsRoute = route('teacher.calendar.recommendations', ['subdomain' => $subdomain]);
+    $sessionDetailRoute = route('teacher.calendar.session-detail', ['subdomain' => $subdomain]);
+    $updateSessionRoute = route('teacher.calendar.update-session', ['subdomain' => $subdomain]);
+    $quranHomeworkRoute = route('teacher.calendar.quran-homework', ['subdomain' => $subdomain]);
+    $academicHomeworkRoute = route('teacher.calendar.academic-homework', ['subdomain' => $subdomain]);
 @endphp
 
     <!-- Page Header -->
@@ -110,32 +115,108 @@
 
                         <!-- Items -->
                         <template x-if="!loading && items.length > 0">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pe-1">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pe-1">
                                 <template x-for="item in items" :key="item.id">
                                     <div @click="selectItem(item)"
                                          :class="selectedItem?.id === item.id
                                              ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200'
                                              : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'"
                                          class="border rounded-lg p-3 cursor-pointer transition-all">
-                                        <div class="flex items-start gap-2">
+                                        <!-- Header: Name + Status Badge -->
+                                        <div class="flex items-start gap-2 mb-2">
                                             <div class="flex-1 min-w-0">
                                                 <p class="text-sm font-semibold text-gray-900 truncate" x-text="item.name || item.title"></p>
-                                                <p class="text-xs text-gray-500 mt-0.5" x-text="item.subtitle || ''"></p>
                                             </div>
-                                            <template x-if="item.scheduling_status">
-                                                <span :class="{
-                                                    'bg-green-100 text-green-700': item.scheduling_status === 'fully_scheduled',
-                                                    'bg-amber-100 text-amber-700': item.scheduling_status === 'partially_scheduled',
-                                                    'bg-gray-100 text-gray-600': item.scheduling_status === 'unscheduled'
-                                                }" class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0"
-                                                   x-text="getSchedulingStatusLabel(item.scheduling_status)">
-                                                </span>
-                                            </template>
+                                            <span :class="{
+                                                'bg-green-100 text-green-700': item.status === 'fully_scheduled' || item.status === 'scheduled',
+                                                'bg-amber-100 text-amber-700': item.status === 'partially_scheduled',
+                                                'bg-gray-100 text-gray-600': item.status === 'not_scheduled' || item.status === 'unscheduled'
+                                            }" class="text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0"
+                                               x-text="getSchedulingStatusLabel(item.status)">
+                                            </span>
                                         </div>
-                                        <template x-if="item.remaining_sessions !== undefined">
-                                            <p class="text-xs text-blue-600 mt-1.5">
+
+                                        <!-- Type-specific info rows -->
+                                        {{-- Group Circle --}}
+                                        <template x-if="item.type === 'group'">
+                                            <div class="space-y-1 text-xs text-gray-600">
+                                                <p><i class="ri-group-line me-1 text-gray-400"></i> {{ __('teacher.calendar.students_count') }} <span class="font-medium text-gray-800" x-text="(item.students_count || 0) + '/' + (item.max_students || '∞')"></span></p>
+                                                <p><i class="ri-calendar-2-line me-1 text-gray-400"></i> {{ __('teacher.calendar.monthly_sessions') }} <span class="font-medium text-gray-800" x-text="item.monthly_sessions || '-'"></span></p>
+                                                <p><i class="ri-time-line me-1 text-gray-400"></i> <span class="font-medium text-gray-800" x-text="(item.session_duration_minutes || 60) + ' {{ __('teacher.calendar.minutes_short') }}'"></span></p>
+                                            </div>
+                                        </template>
+
+                                        {{-- Individual Circle --}}
+                                        <template x-if="item.type === 'individual'">
+                                            <div class="space-y-1 text-xs text-gray-600">
+                                                <p><i class="ri-user-line me-1 text-gray-400"></i> {{ __('teacher.calendar.student_label') }} <span class="font-medium text-gray-800" x-text="item.student_name || '-'"></span></p>
+                                                <p><i class="ri-calendar-check-line me-1 text-gray-400"></i> {{ __('teacher.calendar.sessions_progress') }}: <span class="font-medium text-gray-800" x-text="(item.sessions_scheduled || 0) + '/' + (item.sessions_count || 0)"></span></p>
+                                                <template x-if="item.subscription_start || item.subscription_end">
+                                                    <p><i class="ri-calendar-line me-1 text-gray-400"></i> <span class="font-medium text-gray-800" x-text="formatDate(item.subscription_start) + ' → ' + formatDate(item.subscription_end)"></span></p>
+                                                </template>
+                                            </div>
+                                        </template>
+
+                                        {{-- Trial Request --}}
+                                        <template x-if="item.type === 'trial'">
+                                            <div class="space-y-1 text-xs text-gray-600">
+                                                <p><i class="ri-user-line me-1 text-gray-400"></i> {{ __('teacher.calendar.student_label') }} <span class="font-medium text-gray-800" x-text="item.student_name || '-'"></span></p>
+                                                <template x-if="item.level_label">
+                                                    <p><i class="ri-bar-chart-line me-1 text-gray-400"></i> {{ __('teacher.calendar.level_label') }} <span class="font-medium text-gray-800" x-text="item.level_label"></span></p>
+                                                </template>
+                                                <template x-if="item.preferred_time_label">
+                                                    <p><i class="ri-time-line me-1 text-gray-400"></i> {{ __('teacher.calendar.preferred_time') }} <span class="font-medium text-gray-800" x-text="item.preferred_time_label"></span></p>
+                                                </template>
+                                                <template x-if="item.status_arabic">
+                                                    <p><i class="ri-information-line me-1 text-gray-400"></i> <span class="font-medium text-gray-800" x-text="item.status_arabic"></span></p>
+                                                </template>
+                                            </div>
+                                        </template>
+
+                                        {{-- Private Lesson --}}
+                                        <template x-if="item.type === 'private_lesson'">
+                                            <div class="space-y-1 text-xs text-gray-600">
+                                                <p><i class="ri-user-line me-1 text-gray-400"></i> {{ __('teacher.calendar.student_label') }} <span class="font-medium text-gray-800" x-text="item.student_name || '-'"></span></p>
+                                                <p><i class="ri-book-line me-1 text-gray-400"></i> {{ __('teacher.calendar.subject_label') }} <span class="font-medium text-gray-800" x-text="item.subject_name || '-'"></span></p>
+                                                <p><i class="ri-calendar-check-line me-1 text-gray-400"></i> {{ __('teacher.calendar.sessions_progress') }}: <span class="font-medium text-gray-800" x-text="(item.sessions_scheduled || 0) + '/' + (item.total_sessions || 0)"></span></p>
+                                            </div>
+                                        </template>
+
+                                        {{-- Interactive Course --}}
+                                        <template x-if="item.type === 'interactive_course'">
+                                            <div class="space-y-1 text-xs text-gray-600">
+                                                <p><i class="ri-book-open-line me-1 text-gray-400"></i> {{ __('teacher.calendar.subject_label') }} <span class="font-medium text-gray-800" x-text="item.subject_name || '-'"></span></p>
+                                                <p><i class="ri-group-line me-1 text-gray-400"></i> {{ __('teacher.calendar.students_enrolled') }} <span class="font-medium text-gray-800" x-text="(item.enrolled_students || 0) + '/' + (item.max_students || '∞')"></span></p>
+                                                <p><i class="ri-calendar-check-line me-1 text-gray-400"></i> {{ __('teacher.calendar.sessions_progress') }}: <span class="font-medium text-gray-800" x-text="(item.sessions_scheduled || 0) + '/' + (item.total_sessions || 0)"></span></p>
+                                                <template x-if="item.start_date || item.end_date">
+                                                    <p><i class="ri-calendar-line me-1 text-gray-400"></i> <span class="font-medium text-gray-800" x-text="(item.start_date || '?') + ' → ' + (item.end_date || '?')"></span></p>
+                                                </template>
+                                            </div>
+                                        </template>
+
+                                        <!-- Session progress bar (for types with remaining sessions) -->
+                                        <template x-if="item.sessions_scheduled !== undefined && (item.sessions_count || item.total_sessions)">
+                                            <div class="mt-2">
+                                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                                    <div class="bg-blue-500 h-1.5 rounded-full transition-all" :style="'width: ' + Math.min(100, Math.round(((item.sessions_scheduled || 0) / (item.sessions_count || item.total_sessions || 1)) * 100)) + '%'"></div>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Cannot schedule badge -->
+                                        <template x-if="item.can_schedule === false">
+                                            <div class="mt-2">
+                                                <span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
+                                                    <i class="ri-forbid-line"></i> {{ __('teacher.calendar.cannot_schedule') }}
+                                                </span>
+                                            </div>
+                                        </template>
+
+                                        <!-- Remaining sessions count -->
+                                        <template x-if="item.can_schedule !== false && (item.sessions_remaining !== undefined || item.remaining_sessions !== undefined)">
+                                            <p class="text-xs text-blue-600 mt-1.5 font-medium">
                                                 <i class="ri-calendar-todo-line me-0.5"></i>
-                                                {{ __('teacher.calendar.remaining') }}: <span x-text="item.remaining_sessions"></span>
+                                                {{ __('teacher.calendar.remaining') }}: <span x-text="item.sessions_remaining ?? item.remaining_sessions"></span>
                                             </p>
                                         </template>
                                     </div>
@@ -179,53 +260,88 @@
                                         </button>
                                     @endforeach
                                 </div>
+                                <!-- Recommendations hint -->
+                                <template x-if="recommendations">
+                                    <p class="mt-1.5 text-xs text-blue-600 bg-blue-50 rounded-lg px-3 py-1.5">
+                                        <i class="ri-lightbulb-line me-1"></i>
+                                        {{ __('teacher.calendar.recommended') }}: <span x-text="recommendations.recommended_days"></span> {{ __('teacher.calendar.days_per_week') }}
+                                        <template x-if="recommendations.reason">
+                                            <span class="text-gray-500"> — <span x-text="recommendations.reason"></span></span>
+                                        </template>
+                                    </p>
+                                </template>
                             </div>
 
-                            <!-- Start Date + Time + Session Count -->
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                            <!-- Start Date + Time Fields -->
+                            <div class="grid grid-cols-2 gap-3 mb-3">
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.start_date') }}</label>
                                     <input type="date" x-model="scheduleStartDate"
                                            class="w-full min-h-[36px] px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.time') }}</label>
-                                    <div class="flex gap-1">
-                                        <select x-model="scheduleHour" class="flex-1 min-h-[36px] px-1 py-1 border border-gray-300 rounded-lg text-sm">
-                                            <template x-for="h in 12" :key="h">
-                                                <option :value="h" x-text="h"></option>
-                                            </template>
-                                        </select>
-                                        <select x-model="scheduleMinute" class="w-14 min-h-[36px] px-1 py-1 border border-gray-300 rounded-lg text-sm">
-                                            <option value="00">00</option>
-                                            <option value="15">15</option>
-                                            <option value="30">30</option>
-                                            <option value="45">45</option>
-                                        </select>
-                                        <select x-model="schedulePeriod" class="w-14 min-h-[36px] px-1 py-1 border border-gray-300 rounded-lg text-sm">
-                                            <option value="AM">{{ __('teacher.calendar.am') }}</option>
-                                            <option value="PM">{{ __('teacher.calendar.pm') }}</option>
-                                        </select>
-                                    </div>
+                                    <p class="text-[10px] text-gray-400 mt-0.5">{{ __('teacher.calendar.start_date_hint') }}</p>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.session_count') }}</label>
                                     <input type="number" x-model.number="sessionCount" min="1" max="50"
                                            class="w-full min-h-[36px] px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 </div>
-                                <div class="flex items-end">
-                                    <button @click="submitSchedule()" :disabled="submitting || scheduleDays.length === 0 || !scheduleStartDate"
-                                            class="w-full min-h-[36px] inline-flex items-center justify-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                                        <template x-if="submitting">
-                                            <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                                        </template>
-                                        <template x-if="!submitting">
-                                            <i class="ri-calendar-check-line"></i>
-                                        </template>
-                                        <span x-text="submitting ? '{{ __('teacher.calendar.scheduling') }}' : '{{ __('teacher.calendar.schedule_button') }}'"></span>
-                                    </button>
+                            </div>
+
+                            <!-- Time Fields with Labels -->
+                            <div class="mb-3">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.time') }}</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="block text-[10px] text-gray-500 mb-0.5">{{ __('teacher.calendar.hour_label') }}</label>
+                                        <select x-model="scheduleHour" class="w-full min-h-[36px] px-2 py-1 border border-gray-300 rounded-lg text-sm">
+                                            <template x-for="h in 12" :key="h">
+                                                <option :value="h" x-text="h"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] text-gray-500 mb-0.5">{{ __('teacher.calendar.minute_label') }}</label>
+                                        <select x-model="scheduleMinute" class="w-full min-h-[36px] px-2 py-1 border border-gray-300 rounded-lg text-sm">
+                                            <option value="00">00</option>
+                                            <option value="15">15</option>
+                                            <option value="30">30</option>
+                                            <option value="45">45</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] text-gray-500 mb-0.5">{{ __('teacher.calendar.period_label') }}</label>
+                                        <select x-model="schedulePeriod" class="w-full min-h-[36px] px-2 py-1 border border-gray-300 rounded-lg text-sm">
+                                            <option value="AM">{{ __('teacher.calendar.am') }}</option>
+                                            <option value="PM">{{ __('teacher.calendar.pm') }}</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
+
+                            <!-- Preview Box -->
+                            <template x-if="scheduleDays.length > 0">
+                                <div class="mb-3 bg-white border border-gray-200 rounded-lg p-3">
+                                    <p class="text-[10px] font-semibold text-gray-500 uppercase mb-1.5">{{ __('teacher.calendar.schedule_preview') }}</p>
+                                    <div class="space-y-1 text-xs text-gray-700">
+                                        <p><span class="font-medium">{{ __('teacher.calendar.preview_sessions') }}:</span> <span x-text="sessionCount"></span></p>
+                                        <p><span class="font-medium">{{ __('teacher.calendar.preview_days') }}:</span> <span x-text="scheduleDays.map(d => getDayLabel(d)).join('، ')"></span></p>
+                                        <p><span class="font-medium">{{ __('teacher.calendar.preview_start') }}:</span> <span x-text="scheduleStartDate ? formatDate(scheduleStartDate) : '{{ __('teacher.calendar.today') }}'"></span></p>
+                                        <p><span class="font-medium">{{ __('teacher.calendar.preview_time') }}:</span> <span x-text="scheduleHour + ':' + scheduleMinute + ' ' + schedulePeriod"></span></p>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Submit Button (full width) -->
+                            <button @click="submitSchedule()" :disabled="submitting || scheduleDays.length === 0 || sessionCount < 1"
+                                    class="w-full min-h-[40px] inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                <template x-if="submitting">
+                                    <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                </template>
+                                <template x-if="!submitting">
+                                    <i class="ri-calendar-check-line"></i>
+                                </template>
+                                <span x-text="submitting ? '{{ __('teacher.calendar.scheduling') }}' : '{{ __('teacher.calendar.schedule_button') }}'"></span>
+                            </button>
                         </div>
                     </template>
                 </div>
@@ -240,8 +356,277 @@
         <div id="fullcalendar"></div>
     </div>
 
-    <!-- Event Details Modal -->
-    <x-calendar.event-modal />
+    <!-- Session Detail Modal -->
+    <div x-data="sessionDetailModal()" x-cloak>
+        <!-- Backdrop -->
+        <div x-show="open" class="fixed inset-0 bg-black/50 z-40" @click="close()"></div>
+
+        <!-- Modal -->
+        <div x-show="open" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" @click.stop>
+                <!-- Header -->
+                <div class="relative p-5 rounded-t-xl" :class="{
+                    'bg-gradient-to-br from-blue-500 to-blue-600': session?.status === 'scheduled',
+                    'bg-gradient-to-br from-indigo-500 to-indigo-600': session?.status === 'ready',
+                    'bg-gradient-to-br from-amber-500 to-amber-600': session?.status === 'ongoing' || session?.status === 'live',
+                    'bg-gradient-to-br from-green-500 to-green-600': session?.status === 'completed',
+                    'bg-gradient-to-br from-red-500 to-red-600': session?.status === 'cancelled',
+                    'bg-gradient-to-br from-gray-500 to-gray-600': !session?.status
+                }">
+                    <button @click="close()" class="absolute top-3 rtl:left-3 ltr:right-3 text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10">
+                        <i class="ri-close-line text-xl"></i>
+                    </button>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-white/20 text-white" x-text="session?.status_label || ''"></span>
+                        <span class="text-xs px-2.5 py-1 rounded-full bg-white/10 text-white/90" x-text="getSourceLabel(session?.source)"></span>
+                    </div>
+                    <h3 class="text-lg font-bold text-white leading-tight" x-text="session?.title || ''"></h3>
+                </div>
+
+                <!-- Loading -->
+                <template x-if="loading">
+                    <div class="flex items-center justify-center py-12">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                </template>
+
+                <!-- Content (view mode) -->
+                <template x-if="!loading && session && !editMode">
+                    <div class="p-5 space-y-4">
+                        <!-- Date/Time -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                                <p class="text-[10px] font-semibold text-blue-600 uppercase mb-1"><i class="ri-calendar-event-line me-1"></i>{{ __('teacher.calendar.modal_date') }}</p>
+                                <p class="text-sm font-bold text-gray-900" x-text="formatModalDate(session.scheduled_at)"></p>
+                            </div>
+                            <div class="bg-green-50 border border-green-100 rounded-lg p-3">
+                                <p class="text-[10px] font-semibold text-green-600 uppercase mb-1"><i class="ri-time-line me-1"></i>{{ __('teacher.calendar.modal_time') }}</p>
+                                <p class="text-sm font-bold text-gray-900" x-text="formatModalTime(session.scheduled_at)"></p>
+                            </div>
+                        </div>
+
+                        <!-- Duration -->
+                        <div class="bg-purple-50 border border-purple-100 rounded-lg p-3 flex items-center justify-between">
+                            <span class="text-xs font-semibold text-purple-600"><i class="ri-hourglass-line me-1"></i>{{ __('teacher.calendar.modal_duration') }}</span>
+                            <span class="text-sm font-bold text-gray-900" x-text="(session.duration_minutes || 60) + ' {{ __('teacher.calendar.minutes_short') }}'"></span>
+                        </div>
+
+                        <!-- Info rows -->
+                        <div class="space-y-2">
+                            <template x-if="session.student_name">
+                                <div class="flex items-center gap-2 text-sm">
+                                    <i class="ri-user-line text-gray-400 w-5"></i>
+                                    <span class="text-gray-500">{{ __('teacher.calendar.student_label') }}</span>
+                                    <span class="font-medium text-gray-900" x-text="session.student_name"></span>
+                                </div>
+                            </template>
+                            <template x-if="session.circle_name">
+                                <div class="flex items-center gap-2 text-sm">
+                                    <i class="ri-group-line text-gray-400 w-5"></i>
+                                    <span class="text-gray-500">{{ __('teacher.calendar.circle_label') }}</span>
+                                    <span class="font-medium text-gray-900" x-text="session.circle_name"></span>
+                                </div>
+                            </template>
+                            <template x-if="session.subject_name">
+                                <div class="flex items-center gap-2 text-sm">
+                                    <i class="ri-book-line text-gray-400 w-5"></i>
+                                    <span class="text-gray-500">{{ __('teacher.calendar.subject_label') }}</span>
+                                    <span class="font-medium text-gray-900" x-text="session.subject_name"></span>
+                                </div>
+                            </template>
+                            <template x-if="session.course_title">
+                                <div class="flex items-center gap-2 text-sm">
+                                    <i class="ri-presentation-line text-gray-400 w-5"></i>
+                                    <span class="text-gray-500">{{ __('teacher.calendar.course_label') }}</span>
+                                    <span class="font-medium text-gray-900" x-text="session.course_title"></span>
+                                </div>
+                            </template>
+                            <template x-if="session.meeting_link">
+                                <div class="flex items-center gap-2 text-sm">
+                                    <i class="ri-video-line text-gray-400 w-5"></i>
+                                    <a :href="session.meeting_link" target="_blank" class="text-blue-600 hover:underline text-sm">{{ __('teacher.calendar.join_meeting') }}</a>
+                                </div>
+                            </template>
+                            <template x-if="session.teacher_notes">
+                                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2">
+                                    <p class="text-[10px] font-semibold text-gray-500 uppercase mb-1">{{ __('teacher.calendar.notes_label') }}</p>
+                                    <p class="text-sm text-gray-700" x-text="session.teacher_notes"></p>
+                                </div>
+                            </template>
+                            <template x-if="session.has_homework">
+                                <div class="flex items-center gap-2 text-sm">
+                                    <i class="ri-task-line text-green-500 w-5"></i>
+                                    <span class="text-green-600 font-medium">{{ __('teacher.calendar.has_homework') }}</span>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Action buttons -->
+                        <div class="flex flex-col gap-2 pt-2 border-t border-gray-100">
+                            <a :href="session.detail_url || '#'" class="w-full text-center px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="ri-external-link-line me-1"></i> {{ __('teacher.calendar.view_full_session') }}
+                            </a>
+                            <div class="grid grid-cols-2 gap-2">
+                                <template x-if="session.can_edit">
+                                    <button @click="editData = { scheduled_at: session.scheduled_at ? session.scheduled_at.substring(0,16) : '', duration_minutes: session.duration_minutes || 60, teacher_notes: session.teacher_notes || '' }; editMode = true" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                                        <i class="ri-edit-line me-1"></i> {{ __('teacher.calendar.edit_session') }}
+                                    </button>
+                                </template>
+                                <button @click="openHomeworkModal()" class="px-4 py-2 bg-amber-50 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-100 border border-amber-200 transition-colors">
+                                    <i class="ri-task-line me-1"></i> {{ __('teacher.calendar.manage_homework') }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Content (edit mode) -->
+                <template x-if="!loading && session && editMode">
+                    <div class="p-5 space-y-4">
+                        <h4 class="text-sm font-bold text-gray-900 mb-3"><i class="ri-edit-line me-1 text-blue-600"></i>{{ __('teacher.calendar.edit_session') }}</h4>
+
+                        <!-- Date/Time -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.modal_date') }} + {{ __('teacher.calendar.modal_time') }}</label>
+                            <input type="datetime-local" x-model="editData.scheduled_at"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <!-- Duration -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.modal_duration') }}</label>
+                            <select x-model="editData.duration_minutes" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <option value="30">30 {{ __('teacher.calendar.minutes_short') }}</option>
+                                <option value="45">45 {{ __('teacher.calendar.minutes_short') }}</option>
+                                <option value="60">60 {{ __('teacher.calendar.minutes_short') }}</option>
+                                <option value="90">90 {{ __('teacher.calendar.minutes_short') }}</option>
+                                <option value="120">120 {{ __('teacher.calendar.minutes_short') }}</option>
+                            </select>
+                        </div>
+
+                        <!-- Notes -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.notes_label') }}</label>
+                            <textarea x-model="editData.teacher_notes" rows="3" maxlength="1000"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="{{ __('teacher.calendar.notes_placeholder') }}"></textarea>
+                        </div>
+
+                        <!-- Save / Cancel -->
+                        <div class="flex gap-2 pt-2">
+                            <button @click="saveEdit()" :disabled="saving"
+                                    class="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                                <template x-if="saving"><span class="animate-spin inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full me-1"></span></template>
+                                {{ __('teacher.calendar.save_changes') }}
+                            </button>
+                            <button @click="editMode = false" class="px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                                {{ __('teacher.calendar.cancel_edit') }}
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Homework Modal -->
+        <div x-show="homeworkOpen" class="fixed inset-0 bg-black/50 z-[60]" @click="homeworkOpen = false"></div>
+        <div x-show="homeworkOpen" x-transition class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" @click.stop>
+                <div class="p-5 border-b border-gray-200 flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-gray-900"><i class="ri-task-line me-1 text-amber-600"></i>{{ __('teacher.calendar.manage_homework') }}</h3>
+                    <button @click="homeworkOpen = false" class="text-gray-400 hover:text-gray-600"><i class="ri-close-line text-xl"></i></button>
+                </div>
+
+                <!-- Quran Homework Form -->
+                <template x-if="session && (session.source === 'quran_session' || session.source === 'circle_session')">
+                    <div class="p-5 space-y-4">
+                        <!-- New Memorization -->
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" x-model="hwData.has_new_memorization" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">{{ __('teacher.calendar.hw_new_memorization') }}</span>
+                        </label>
+                        <template x-if="hwData.has_new_memorization">
+                            <div class="ps-6 space-y-2">
+                                <select x-model="hwData.new_memorization_surah" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="">{{ __('teacher.calendar.hw_select_surah') }}</option>
+                                    <template x-for="s in surahList" :key="s.value">
+                                        <option :value="s.value" x-text="s.label"></option>
+                                    </template>
+                                </select>
+                                <input type="number" x-model.number="hwData.new_memorization_pages" min="1" placeholder="{{ __('teacher.calendar.hw_pages') }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            </div>
+                        </template>
+
+                        <!-- Review -->
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" x-model="hwData.has_review" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">{{ __('teacher.calendar.hw_review') }}</span>
+                        </label>
+                        <template x-if="hwData.has_review">
+                            <div class="ps-6 space-y-2">
+                                <select x-model="hwData.review_surah" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="">{{ __('teacher.calendar.hw_select_surah') }}</option>
+                                    <template x-for="s in surahList" :key="s.value">
+                                        <option :value="s.value" x-text="s.label"></option>
+                                    </template>
+                                </select>
+                                <input type="number" x-model.number="hwData.review_pages" min="1" placeholder="{{ __('teacher.calendar.hw_pages') }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            </div>
+                        </template>
+
+                        <!-- Comprehensive Review -->
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" x-model="hwData.has_comprehensive_review" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">{{ __('teacher.calendar.hw_comprehensive_review') }}</span>
+                        </label>
+                        <template x-if="hwData.has_comprehensive_review">
+                            <div class="ps-6">
+                                <select x-model="hwData.comprehensive_review_surahs" multiple class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" size="5">
+                                    <template x-for="s in surahList" :key="s.value">
+                                        <option :value="s.value" x-text="s.label"></option>
+                                    </template>
+                                </select>
+                                <p class="text-[10px] text-gray-400 mt-1">{{ __('teacher.calendar.hw_multi_select_hint') }}</p>
+                            </div>
+                        </template>
+
+                        <!-- Additional instructions -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.hw_instructions') }}</label>
+                            <textarea x-model="hwData.additional_instructions" rows="2" maxlength="2000"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
+                        </div>
+
+                        <!-- Save -->
+                        <button @click="saveQuranHomework()" :disabled="hwSaving"
+                                class="w-full px-4 py-2.5 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 transition-colors">
+                            <template x-if="hwSaving"><span class="animate-spin inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full me-1"></span></template>
+                            {{ __('teacher.calendar.hw_save') }}
+                        </button>
+                    </div>
+                </template>
+
+                <!-- Academic Homework Form -->
+                <template x-if="session && (session.source === 'academic_session' || session.source === 'course_session')">
+                    <div class="p-5 space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.hw_description') }}</label>
+                            <textarea x-model="hwData.homework_description" rows="4" maxlength="5000"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                      placeholder="{{ __('teacher.calendar.hw_description_placeholder') }}"></textarea>
+                        </div>
+                        <button @click="saveAcademicHomework()" :disabled="hwSaving || !hwData.homework_description"
+                                class="w-full px-4 py-2.5 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 transition-colors">
+                            <template x-if="hwSaving"><span class="animate-spin inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full me-1"></span></template>
+                            {{ __('teacher.calendar.hw_save') }}
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
 
 <x-slot:head>
     {{-- FullCalendar CSS --}}
@@ -375,6 +760,7 @@
             sessionCount: 4,
             error: null,
             success: null,
+            recommendations: null,
 
             init() {
                 const tabKeys = Object.keys(this.tabs);
@@ -409,6 +795,25 @@
                 this.sessionCount = item.type === 'trial' ? 1 : 4;
                 this.error = null;
                 this.success = null;
+                this.recommendations = null;
+                this.fetchRecommendations(item);
+            },
+
+            async fetchRecommendations(item) {
+                try {
+                    const response = await fetch(
+                        `{{ $recommendationsRoute }}?item_id=${item.id}&item_type=${item.type}`,
+                        { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } }
+                    );
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            this.recommendations = data.recommendations;
+                        }
+                    }
+                } catch (e) {
+                    // Silently fail - recommendations are optional
+                }
             },
 
             get scheduleTime() {
@@ -437,7 +842,7 @@
                             item_type: this.selectedItem.type,
                             schedule_days: this.scheduleDays,
                             schedule_time: this.scheduleTime,
-                            schedule_start_date: this.scheduleStartDate,
+                            schedule_start_date: this.scheduleStartDate || new Date().toISOString().split('T')[0],
                             session_count: this.sessionCount,
                         })
                     });
@@ -489,7 +894,30 @@
                     'private_lessons': @js(__('teacher.calendar.no_private_lessons')),
                     'interactive_courses': @js(__('teacher.calendar.no_interactive_courses'))
                 };
-                return titles[this.activeTab] || @js(__('teacher.calendar.no_group_circles'));
+                return titles[this.activeTab] || @js(__('teacher.calendar.no_items'));
+            },
+
+            getDayLabel(day) {
+                const labels = {
+                    'Saturday': @js(__('teacher.calendar.day_sat')),
+                    'Sunday': @js(__('teacher.calendar.day_sun')),
+                    'Monday': @js(__('teacher.calendar.day_mon')),
+                    'Tuesday': @js(__('teacher.calendar.day_tue')),
+                    'Wednesday': @js(__('teacher.calendar.day_wed')),
+                    'Thursday': @js(__('teacher.calendar.day_thu')),
+                    'Friday': @js(__('teacher.calendar.day_fri'))
+                };
+                return labels[day] || day;
+            },
+
+            formatDate(dateStr) {
+                if (!dateStr) return '?';
+                try {
+                    const d = new Date(dateStr);
+                    return d.toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' });
+                } catch (e) {
+                    return String(dateStr).substring(0, 10);
+                }
             },
 
             getEmptyDescription() {
@@ -500,9 +928,209 @@
                     'private_lessons': @js(__('teacher.calendar.no_private_lessons_desc')),
                     'interactive_courses': @js(__('teacher.calendar.no_interactive_courses_desc'))
                 };
-                return descriptions[this.activeTab] || @js(__('teacher.calendar.no_group_circles_desc'));
+                return descriptions[this.activeTab] || @js(__('teacher.calendar.no_items_desc'));
             }
         }
+    }
+
+    // ================================================================
+    // Session Detail Modal Alpine.js Component
+    // ================================================================
+    function sessionDetailModal() {
+        return {
+            open: false,
+            loading: false,
+            session: null,
+            editMode: false,
+            saving: false,
+            editData: {},
+            homeworkOpen: false,
+            hwSaving: false,
+            hwData: {},
+            surahList: @js(collect(\App\Enums\QuranSurah::cases())->map(fn($s) => ['value' => $s->value, 'label' => $s->getNumber() . '. ' . $s->value])->values()),
+
+            async show(eventData) {
+                this.open = true;
+                this.loading = true;
+                this.editMode = false;
+                this.session = null;
+
+                const eventId = eventData.id || '';
+                const idParts = eventId.split('_');
+                const sessionId = parseInt(idParts[idParts.length - 1]);
+                const source = eventData.source;
+
+                if (!sessionId || !source) {
+                    this.loading = false;
+                    return;
+                }
+
+                try {
+                    const response = await fetch(
+                        `{{ $sessionDetailRoute }}?source=${source}&session_id=${sessionId}`,
+                        { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } }
+                    );
+                    const data = await response.json();
+                    if (data.success) {
+                        this.session = data.session;
+                    }
+                } catch (e) {
+                    // Failed to load
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            close() {
+                this.open = false;
+                this.editMode = false;
+                this.homeworkOpen = false;
+            },
+
+            getSourceLabel(source) {
+                const labels = {
+                    'quran_session': @js(__('student.calendar.quran_individual_session')),
+                    'circle_session': @js(__('student.calendar.quran_circle_session')),
+                    'course_session': @js(__('student.calendar.course_session')),
+                    'academic_session': @js(__('student.calendar.academic_session'))
+                };
+                return labels[source] || source;
+            },
+
+            formatModalDate(isoStr) {
+                if (!isoStr) return '-';
+                return new Date(isoStr).toLocaleDateString('ar-SA', {
+                    timeZone: @js(\App\Services\AcademyContextService::getTimezone()),
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                });
+            },
+
+            formatModalTime(isoStr) {
+                if (!isoStr) return '-';
+                return new Date(isoStr).toLocaleTimeString('ar-SA', {
+                    timeZone: @js(\App\Services\AcademyContextService::getTimezone()),
+                    hour: '2-digit', minute: '2-digit', hour12: true
+                });
+            },
+
+            openHomeworkModal() {
+                this.homeworkOpen = true;
+                // Pre-fill homework data from session
+                if (this.session?.homework_data) {
+                    this.hwData = { ...this.session.homework_data };
+                } else {
+                    this.hwData = {
+                        has_new_memorization: false,
+                        has_review: false,
+                        has_comprehensive_review: false,
+                        new_memorization_surah: '',
+                        new_memorization_pages: null,
+                        review_surah: '',
+                        review_pages: null,
+                        comprehensive_review_surahs: [],
+                        additional_instructions: '',
+                        homework_description: '',
+                    };
+                }
+            },
+
+            async saveEdit() {
+                this.saving = true;
+                try {
+                    const body = {
+                        source: this.session.source,
+                        session_id: this.session.id,
+                    };
+                    if (this.editData.scheduled_at) body.scheduled_at = this.editData.scheduled_at;
+                    if (this.editData.duration_minutes) body.duration_minutes = parseInt(this.editData.duration_minutes);
+                    if (this.editData.teacher_notes !== undefined) body.teacher_notes = this.editData.teacher_notes;
+
+                    const response = await fetch(@js(route('teacher.calendar.update-session', ['subdomain' => $subdomain])), {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': @js(csrf_token()),
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(body)
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        if (window.toast) window.toast.success(data.message);
+                        this.editMode = false;
+                        if (window.teacherCalendar) window.teacherCalendar.refetchEvents();
+                        this.close();
+                    } else {
+                        if (window.toast) window.toast.error(data.message);
+                    }
+                } catch (e) {
+                    if (window.toast) window.toast.error(@js(__('teacher.calendar.schedule_error')));
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            async saveQuranHomework() {
+                this.hwSaving = true;
+                try {
+                    const body = {
+                        session_id: this.session.id,
+                        ...this.hwData
+                    };
+                    const response = await fetch(@js(route('teacher.calendar.quran-homework', ['subdomain' => $subdomain])), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': @js(csrf_token()),
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(body)
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        if (window.toast) window.toast.success(data.message);
+                        this.homeworkOpen = false;
+                    } else {
+                        if (window.toast) window.toast.error(data.message);
+                    }
+                } catch (e) {
+                    if (window.toast) window.toast.error(@js(__('teacher.calendar.schedule_error')));
+                } finally {
+                    this.hwSaving = false;
+                }
+            },
+
+            async saveAcademicHomework() {
+                this.hwSaving = true;
+                try {
+                    const body = {
+                        session_id: this.session.id,
+                        source: this.session.source,
+                        homework_description: this.hwData.homework_description,
+                    };
+                    const response = await fetch(@js(route('teacher.calendar.academic-homework', ['subdomain' => $subdomain])), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': @js(csrf_token()),
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(body)
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        if (window.toast) window.toast.success(data.message);
+                        this.homeworkOpen = false;
+                    } else {
+                        if (window.toast) window.toast.error(data.message);
+                    }
+                } catch (e) {
+                    if (window.toast) window.toast.error(@js(__('teacher.calendar.schedule_error')));
+                } finally {
+                    this.hwSaving = false;
+                }
+            }
+        };
     }
 
     // ================================================================
@@ -622,22 +1250,26 @@
                 .catch(() => failureCallback());
             },
 
-            // Click event → show modal
+            // Click event → show session detail modal
             eventClick: function(info) {
                 info.jsEvent.preventDefault();
                 const event = info.event;
                 const props = event.extendedProps;
-                showEventModal(props.originalEvent || {
-                    title: event.title,
-                    start_time: event.startStr,
-                    end_time: event.endStr,
-                    status: props.status,
+                const eventData = props.originalEvent || {
+                    id: event.id,
                     source: props.source,
-                    description: props.description,
-                    duration_minutes: props.duration_minutes,
-                    participants: props.participants,
-                    url: props.url
-                });
+                };
+                // Find the sessionDetailModal Alpine component and call show()
+                const modalEl = document.querySelector('[x-data="sessionDetailModal()"]');
+                if (modalEl && modalEl.__x) {
+                    modalEl.__x.$data.show(eventData);
+                } else if (modalEl) {
+                    // Alpine 3 - use $data on the Alpine instance
+                    const alpineData = Alpine.$data(modalEl);
+                    if (alpineData) {
+                        alpineData.show(eventData);
+                    }
+                }
             },
 
             // Drag & drop → reschedule session
