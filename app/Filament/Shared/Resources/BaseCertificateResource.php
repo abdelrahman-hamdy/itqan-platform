@@ -51,16 +51,6 @@ abstract class BaseCertificateResource extends BaseResource
 
     protected static ?int $navigationSort = 1;
 
-    public static function getNavigationBadge(): ?string
-    {
-        return (string) static::getEloquentQuery()->count();
-    }
-
-    public static function getNavigationBadgeColor(): string|array|null
-    {
-        return 'primary';
-    }
-
     /**
      * Get the base query filtered by teacher.
      * Subclasses can override to add additional filtering.
@@ -130,14 +120,21 @@ abstract class BaseCertificateResource extends BaseResource
             ]);
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getEloquentQuery()->count();
+    }
+
     public static function table(Table $table): Table
     {
+        $user = Auth::user();
+
         return $table
             ->columns([
                 static::getAcademyColumn(),
 
                 ImageColumn::make('student.avatar')
-                    ->label('الطالب')
+                    ->label('الصورة')
                     ->circular()
                     ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->student?->name ?? 'N/A').'&background=4169E1&color=fff')
                     ->toggleable(),
@@ -183,13 +180,23 @@ abstract class BaseCertificateResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('issued_at', 'desc')
+            ->searchable()
             ->filters([
                 SelectFilter::make('student_id')
                     ->label('الطالب')
-                    ->relationship('student', 'first_name', fn (Builder $query) => $query->where('user_type', 'student'))
-                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->first_name ?? 'طالب #'.$record->id)
+                    ->options(function () use ($user) {
+                        return Certificate::query()
+                            ->where('teacher_id', $user->id)
+                            ->with('student')
+                            ->get()
+                            ->pluck('student.name', 'student_id')
+                            ->filter()
+                            ->unique()
+                            ->toArray();
+                    })
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder('جميع الطلاب'),
 
                 SelectFilter::make('certificate_type')
                     ->label('نوع الشهادة')
@@ -197,7 +204,7 @@ abstract class BaseCertificateResource extends BaseResource
                     ->multiple(),
 
                 SelectFilter::make('template_style')
-                    ->label('التصميم')
+                    ->label('تصميم الشهادة')
                     ->options(CertificateTemplateStyle::class)
                     ->multiple(),
 
@@ -230,7 +237,7 @@ abstract class BaseCertificateResource extends BaseResource
                     }),
             ])
             ->filtersLayout(FiltersLayout::AboveContent)
-            ->filtersFormColumns(6)
+            ->filtersFormColumns(3)
             ->deferFilters(false)
             ->deferColumnManager(false)
             ->recordActions([

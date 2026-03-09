@@ -14,10 +14,10 @@ class ListCertificates extends ListRecords
         return [];
     }
 
-    public function getSubHeading(): string
+    public function getHeading(): string
     {
         $count = static::getResource()::getEloquentQuery()->count();
 
-        return "إجمالي الشهادات: {$count}";
+        return 'الشهادات الصادرة ('.$count.')';
     }
 }
