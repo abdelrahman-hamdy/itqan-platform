@@ -1423,6 +1423,15 @@ return [
         'stat_max_attempts' => 'Max Attempts',
         'from_date' => 'From',
         'until_date' => 'Until',
+        // Widget assignment form keys
+        'assigned_quizzes_label' => 'Assigned Quizzes',
+        'select_quiz_label' => 'Select Quiz',
+        'select_quiz_placeholder' => '-- Select a quiz --',
+        'error_select_quiz' => 'Please select a quiz',
+        'already_assigned' => 'This quiz is already assigned to this item',
+        'assignment_not_found' => 'Assignment not found or you don\'t have access',
+        'cannot_revoke_completed' => 'Cannot revoke assignment because it has completed attempts',
+        'assignment_revoked' => 'Assignment revoked successfully',
     ],
     'quiz_assignments' => [
         'nav_label' => 'Quiz Assignments',

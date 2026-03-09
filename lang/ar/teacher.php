@@ -1193,6 +1193,15 @@ return [
         'stat_max_attempts' => 'الحد الأقصى',
         'from_date' => 'من',
         'until_date' => 'حتى',
+        // Widget assignment form keys
+        'assigned_quizzes_label' => 'الاختبارات المعينة',
+        'select_quiz_label' => 'اختر الاختبار',
+        'select_quiz_placeholder' => '-- اختر اختباراً --',
+        'error_select_quiz' => 'يرجى اختيار اختبار',
+        'already_assigned' => 'هذا الاختبار معين بالفعل لهذا العنصر',
+        'assignment_not_found' => 'التعيين غير موجود أو ليس لديك صلاحية الوصول',
+        'cannot_revoke_completed' => 'لا يمكن إلغاء التعيين لأنه يحتوي على محاولات مكتملة',
+        'assignment_revoked' => 'تم إلغاء التعيين بنجاح',
     ],
     'quiz_assignments' => [
         'nav_label' => 'تعيينات الاختبارات',
