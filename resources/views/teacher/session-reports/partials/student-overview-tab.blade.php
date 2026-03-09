@@ -175,6 +175,7 @@
                     :status-class="$badge['class']"
                     :metadata="$metadata"
                     :actions="$actions"
+                    :avatar="$row->student"
                     icon="{{ $badge['icon'] }}"
                     icon-bg-class="{{ $badge['iconBg'] }}"
                 />

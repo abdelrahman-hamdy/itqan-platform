@@ -194,19 +194,26 @@
                     };
 
                     if ($report instanceof \App\Models\StudentSessionReport) {
-                        $typeLabel = __('teacher.reports.type_quran');
-                        $typeIcon = 'ri-book-open-line';
-                        $iconBg = 'bg-gradient-to-br from-green-500 to-green-600';
+                        $isIndividual = $report->session?->individual_circle_id !== null;
+                        if ($isIndividual) {
+                            $typeLabel = __('teacher.reports.type_quran_individual');
+                            $typeIcon = 'ri-user-star-line';
+                            $iconBg = 'bg-yellow-500';
+                        } else {
+                            $typeLabel = __('teacher.reports.type_quran_group');
+                            $typeIcon = 'ri-group-line';
+                            $iconBg = 'bg-green-500';
+                        }
                         $sessionTitle = $report->session?->title ?? __('teacher.reports.quran_session');
                     } elseif ($report instanceof \App\Models\AcademicSessionReport) {
-                        $typeLabel = __('teacher.reports.type_academic');
-                        $typeIcon = 'ri-graduation-cap-line';
-                        $iconBg = 'bg-gradient-to-br from-violet-500 to-violet-600';
+                        $typeLabel = __('teacher.reports.type_academic_lesson');
+                        $typeIcon = 'ri-user-3-line';
+                        $iconBg = 'bg-orange-500';
                         $sessionTitle = $report->session?->title ?? __('teacher.reports.academic_session');
                     } else {
-                        $typeLabel = __('teacher.reports.type_interactive');
-                        $typeIcon = 'ri-live-line';
-                        $iconBg = 'bg-gradient-to-br from-purple-500 to-purple-600';
+                        $typeLabel = __('teacher.reports.type_interactive_course');
+                        $typeIcon = 'ri-book-open-line';
+                        $iconBg = 'bg-blue-500';
                         $sessionTitle = $report->session?->course?->title ?? $report->session?->title ?? __('teacher.reports.interactive_session');
                     }
 
