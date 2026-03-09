@@ -7,7 +7,6 @@
 <div>
     <x-ui.breadcrumb
         :items="[
-            ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('manage.dashboard', ['subdomain' => $subdomain])],
             ['label' => __('supervisor.observation.sessions_monitoring')],
         ]"
         view-type="supervisor"

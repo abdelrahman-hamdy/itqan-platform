@@ -4,7 +4,6 @@
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
 
     $breadcrumbs = [
-        ['label' => __('supervisor.sidebar.dashboard'), 'route' => route('manage.dashboard', ['subdomain' => $subdomain])],
         ['label' => __('supervisor.interactive_courses.page_title')],
     ];
 

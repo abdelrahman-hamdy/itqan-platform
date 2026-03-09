@@ -2,7 +2,7 @@
     'items' => [],
     'homeRoute' => null, // Optional custom home route
     'showProfile' => true, // Always show profile as first item (default true)
-    'viewType' => 'student', // student, teacher, academic_teacher, parent
+    'viewType' => 'student', // student, teacher, academic_teacher, parent, supervisor
 ])
 
 @php
@@ -14,10 +14,18 @@
         'teacher' => 'teacher.profile',
         'academic_teacher' => 'academic-teacher.profile',
         'parent' => 'parent.profile',
+        'supervisor' => 'manage.dashboard',
     ];
 
     $profileRoute = $profileRoutes[$viewType] ?? 'student.profile';
-    $profileLabel = __('components.ui.breadcrumb.profile');
+
+    // Supervisor/admin home link shows "Dashboard" instead of "Profile"
+    $profileLabel = $viewType === 'supervisor'
+        ? __('supervisor.sidebar.dashboard')
+        : __('components.ui.breadcrumb.profile');
+
+    // Use dashboard icon for supervisor
+    $profileIcon = $viewType === 'supervisor' ? 'ri-dashboard-line' : 'ri-user-line';
 @endphp
 
 <nav class="mb-4 md:mb-6 lg:mb-8 overflow-x-auto" aria-label="Breadcrumb">
@@ -27,7 +35,7 @@
         <li>
             <a href="{{ route($profileRoute, ['subdomain' => $subdomain]) }}"
                class="hover:text-primary transition-colors min-h-[44px] inline-flex items-center gap-1">
-                <i class="ri-user-line text-sm hidden sm:inline"></i>
+                <i class="{{ $profileIcon }} text-sm hidden sm:inline"></i>
                 <span>{{ $profileLabel }}</span>
             </a>
         </li>
