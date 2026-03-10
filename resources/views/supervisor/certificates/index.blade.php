@@ -18,7 +18,7 @@
     <x-certificate.certificate-list
         :certificates="$certificates"
         :totalCertificates="$totalCertificates"
-        :filterRoute="route('supervisor.certificates.index', ['subdomain' => $subdomain])"
+        :filterRoute="route('manage.certificates.index', ['subdomain' => $subdomain])"
         :subdomain="$subdomain"
         :students="$students ?? []"
         :teachers="$teachers"
