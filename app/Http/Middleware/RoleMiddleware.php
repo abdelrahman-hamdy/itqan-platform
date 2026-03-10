@@ -35,11 +35,6 @@ class RoleMiddleware
             return redirect()->route('login', ['subdomain' => $subdomain])->withErrors(['email' => __('auth.account_inactive')]);
         }
 
-        // Super admins can access all routes
-        if ($user->isSuperAdmin()) {
-            return $next($request);
-        }
-
         // Roles can be passed as variadic args (role:role1,role2) or as a single comma-separated string
         // Flatten all roles into a single array
         $roleArray = [];
@@ -47,6 +42,17 @@ class RoleMiddleware
             // Handle both comma-separated strings and single roles
             $roleArray = array_merge($roleArray, array_map('trim', explode(',', $roleParam)));
         }
+
+        // Super admins can access routes that include an admin-level role.
+        // They should NOT bypass into teacher-only or student-only routes,
+        // as those have their own layouts and cause problems for admin users.
+        $adminRoles = ['super_admin', 'admin', 'supervisor', 'staff'];
+        $routeIncludesAdminRole = ! empty(array_intersect($roleArray, $adminRoles));
+
+        if ($user->isSuperAdmin() && $routeIncludesAdminRole) {
+            return $next($request);
+        }
+
         $hasRole = false;
 
         foreach ($roleArray as $role) {
