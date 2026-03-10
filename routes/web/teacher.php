@@ -11,6 +11,7 @@
 use App\Http\Controllers\AcademicIndividualLessonController;
 use App\Http\Controllers\AcademicSessionController;
 use App\Http\Controllers\LiveKitMeetingController;
+use App\Http\Controllers\SessionReportShowController;
 use App\Http\Controllers\QuranGroupCircleScheduleController;
 use App\Http\Controllers\QuranIndividualCircleController;
 use App\Http\Controllers\QuranSessionController;
@@ -99,6 +100,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     Route::middleware(['auth', 'role:quran_teacher,academic_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
         Route::get('/session-reports', [SessionReportListController::class, 'index'])->name('session-reports.index');
+        Route::get('/session-reports/{type}/{id}', [SessionReportShowController::class, 'show'])->name('session-reports.show')->whereIn('type', ['quran', 'academic', 'interactive']);
         Route::get('/certificates', [CertificateListController::class, 'index'])->name('certificates.index');
     });
 

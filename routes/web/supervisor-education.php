@@ -8,6 +8,7 @@
 | Prefix: /manage, Middleware: auth, role:supervisor,super_admin,admin
 */
 
+use App\Http\Controllers\SessionReportShowController;
 use App\Http\Controllers\SessionsMonitoringController;
 use App\Http\Controllers\Supervisor\SupervisorAcademicLessonsController;
 use App\Http\Controllers\Supervisor\SupervisorSessionsController;
@@ -89,6 +90,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Session Reports
         Route::get('/session-reports', [SupervisorSessionReportsController::class, 'index'])->name('session-reports.index');
+        Route::get('/session-reports/{type}/{id}', [SessionReportShowController::class, 'show'])->name('session-reports.show')->whereIn('type', ['quran', 'academic', 'interactive']);
 
         // Report Detail Pages (reuse teacher report controllers with supervisor layout)
         Route::get('/individual-circles/{circle}/report', [IndividualCircleReportController::class, 'show'])->name('individual-circles.report');

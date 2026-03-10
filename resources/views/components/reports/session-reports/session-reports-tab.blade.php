@@ -204,6 +204,7 @@
                     };
 
                     if ($report instanceof \App\Models\StudentSessionReport) {
+                        $reportTypeSlug = 'quran';
                         $isIndividual = $report->session?->individual_circle_id !== null;
                         if ($isIndividual) {
                             $typeLabel = __('reports.type_quran_individual');
@@ -216,16 +217,22 @@
                         }
                         $sessionTitle = $report->session?->title ?? __('reports.quran_session');
                     } elseif ($report instanceof \App\Models\AcademicSessionReport) {
+                        $reportTypeSlug = 'academic';
                         $typeLabel = __('reports.type_academic_lesson');
                         $typeIcon = 'ri-user-3-line';
                         $iconBg = 'bg-orange-500';
                         $sessionTitle = $report->session?->title ?? __('reports.academic_session');
                     } else {
+                        $reportTypeSlug = 'interactive';
                         $typeLabel = __('reports.type_interactive_course');
                         $typeIcon = 'ri-book-open-line';
                         $iconBg = 'bg-blue-500';
                         $sessionTitle = $report->session?->course?->title ?? $report->session?->title ?? __('reports.interactive_session');
                     }
+
+                    // Build show route using the same route prefix as the index route
+                    $showRouteName = str_replace('.index', '.show', $indexRoute);
+                    $showRoute = route($showRouteName, array_merge($routeParams, ['type' => $reportTypeSlug, 'id' => $report->id]));
 
                     $metadata = [
                         ['icon' => 'ri-user-line', 'text' => $report->student?->name ?? __('reports.unknown_student')],
@@ -260,6 +267,14 @@
                     :description="$report->notes"
                     icon="{{ $typeIcon }}"
                     icon-bg-class="{{ $iconBg }}"
+                    :actions="[
+                        [
+                            'href' => $showRoute,
+                            'label' => __('reports.view_details'),
+                            'icon' => 'ri-eye-line',
+                            'class' => 'bg-indigo-600 hover:bg-indigo-700 text-white',
+                        ],
+                    ]"
                 />
             @endforeach
         </div>
