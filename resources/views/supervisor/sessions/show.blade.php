@@ -76,12 +76,12 @@
             @if($canObserve && $isLive)
                 <div class="flex items-center bg-gray-100 rounded-lg p-1">
                     <a href="{{ route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id, 'mode' => 'observer']) }}"
-                       class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {{ $mode === 'observer' ? 'bg-white shadow text-indigo-700' : 'text-gray-600 hover:text-gray-800' }}">
+                       class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer {{ $mode === 'observer' ? 'bg-white shadow text-indigo-700' : 'text-gray-600 hover:text-gray-800' }}">
                         <i class="ri-eye-line me-1"></i>
                         {{ __('supervisor.observation.observer_mode') }}
                     </a>
                     <a href="{{ route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id, 'mode' => 'participant']) }}"
-                       class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {{ $mode === 'participant' ? 'bg-white shadow text-indigo-700' : 'text-gray-600 hover:text-gray-800' }}">
+                       class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer {{ $mode === 'participant' ? 'bg-white shadow text-indigo-700' : 'text-gray-600 hover:text-gray-800' }}">
                         <i class="ri-video-chat-line me-1"></i>
                         {{ __('supervisor.observation.participant_mode') }}
                     </a>
@@ -90,7 +90,7 @@
 
             {{-- Cancel button --}}
             @if($status->canCancel())
-                <button @click="showCancelModal = true" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors">
+                <button @click="showCancelModal = true" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer">
                     <i class="ri-close-circle-line"></i>
                     {{ __($t.'cancel_session') }}
                 </button>
@@ -98,7 +98,7 @@
 
             {{-- View in Panel --}}
             @if($filamentUrl)
-                <a href="{{ $filamentUrl }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors ms-auto">
+                <a href="{{ $filamentUrl }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer ms-auto">
                     <i class="ri-external-link-line"></i>
                     {{ __($t.'view_in_panel') }}
                 </a>
@@ -174,7 +174,7 @@
 
                     {{-- Show more/less toggle for large lists --}}
                     @if($studentUsers->count() > 10)
-                        <button @click="showAll = !showAll" class="w-full text-center py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
+                        <button @click="showAll = !showAll" class="w-full text-center py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer">
                             <span x-show="!showAll"><i class="ri-arrow-down-s-line"></i> {{ __($t.'show_more') }} ({{ $studentUsers->count() - 10 }})</span>
                             <span x-show="showAll" x-cloak><i class="ri-arrow-up-s-line"></i> {{ __($t.'show_less') }}</span>
                         </button>
@@ -258,19 +258,7 @@
                             {{ __($t.'meeting_not_started') }}
                         </div>
                         @if($session->scheduled_at)
-                            <div x-data="{ remaining: '' }" x-init="
-                                const target = new Date(@json($session->scheduled_at->toIso8601String()));
-                                function update() {
-                                    const diff = target - Date.now();
-                                    if (diff <= 0) { remaining = '{{ __($t.'session_starting_soon') }}'; return; }
-                                    const h = Math.floor(diff / 3600000);
-                                    const m = Math.floor((diff % 3600000) / 60000);
-                                    const s = Math.floor((diff % 60000) / 1000);
-                                    remaining = (h > 0 ? h + ' {{ __($t.'hours_short') }} ' : '') + m + ' {{ __($t.'minutes_short') }} ' + s + ' {{ __($t.'seconds_short') }}';
-                                }
-                                update();
-                                setInterval(update, 1000);
-                            ">
+                            <div x-data="sessionCountdown(@json($session->scheduled_at->toIso8601String()))">
                                 <p class="text-sm text-amber-600 font-medium">
                                     <i class="ri-timer-line me-1"></i>
                                     {{ __($t.'starts_in') }}: <span x-text="remaining"></span>
@@ -305,7 +293,7 @@
                     {{-- Save button --}}
                     <div class="flex items-center justify-between">
                         <button @click="saveNotes()" :disabled="savingNotes"
-                            class="px-4 py-2 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-50">
+                            class="px-4 py-2 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-50 cursor-pointer">
                             <span x-show="!savingNotes">{{ __($t.'save_notes') }}</span>
                             <span x-show="savingNotes" x-cloak>{{ __('supervisor.observation.saving') }}...</span>
                         </button>
@@ -367,6 +355,29 @@
 @endphp
 
 <script>
+function sessionCountdown(targetIso) {
+    return {
+        remaining: '',
+        init() {
+            const target = new Date(targetIso);
+            const soonText = @json(__($t.'session_starting_soon'));
+            const hLabel = @json(__($t.'hours_short'));
+            const mLabel = @json(__($t.'minutes_short'));
+            const sLabel = @json(__($t.'seconds_short'));
+            const update = () => {
+                const diff = target - Date.now();
+                if (diff <= 0) { this.remaining = soonText; return; }
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                this.remaining = (h > 0 ? h + ' ' + hLabel + ' ' : '') + m + ' ' + mLabel + ' ' + s + ' ' + sLabel;
+            };
+            update();
+            setInterval(update, 1000);
+        }
+    };
+}
+
 function sessionDetail() {
     return {
         showCancelModal: false,
