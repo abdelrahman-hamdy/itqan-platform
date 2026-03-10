@@ -4,6 +4,7 @@ namespace App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages
 
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource;
 use App\Filament\Pages\BaseCreateRecord as CreateRecord;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 class CreateInteractiveCourse extends CreateRecord
@@ -20,7 +21,6 @@ class CreateInteractiveCourse extends CreateRecord
         $user = Auth::user();
         $teacherProfile = $user->academicTeacherProfile;
 
-        $data['academy_id'] = $teacherProfile->academy_id;
         $data['assigned_teacher_id'] = $teacherProfile->id;
         $data['created_by'] = $user->id;
 
@@ -30,6 +30,17 @@ class CreateInteractiveCourse extends CreateRecord
         }
 
         return $data;
+    }
+
+    protected function handleRecordCreation(array $data): Model
+    {
+        $user = Auth::user();
+
+        $record = new (static::getModel())($data);
+        $record->academy_id = $user->academicTeacherProfile->academy_id;
+        $record->save();
+
+        return $record;
     }
 
     protected function getRedirectUrl(): string

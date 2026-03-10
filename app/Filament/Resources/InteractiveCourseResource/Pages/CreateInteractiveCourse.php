@@ -6,6 +6,7 @@ use Exception;
 use App\Filament\Resources\InteractiveCourseResource;
 use App\Services\AcademyContextService;
 use App\Filament\Pages\BaseCreateRecord as CreateRecord;
+use Illuminate\Database\Eloquent\Model;
 
 class CreateInteractiveCourse extends CreateRecord
 {
@@ -18,13 +19,6 @@ class CreateInteractiveCourse extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $academyId = AcademyContextService::getCurrentAcademyId();
-
-        if (! $academyId) {
-            throw new Exception('No academy context available. Please select an academy first.');
-        }
-
-        $data['academy_id'] = $academyId;
         $data['created_by'] = auth()->id();
 
         // Calculate total sessions
@@ -33,6 +27,21 @@ class CreateInteractiveCourse extends CreateRecord
         }
 
         return $data;
+    }
+
+    protected function handleRecordCreation(array $data): Model
+    {
+        $academyId = AcademyContextService::getCurrentAcademyId();
+
+        if (! $academyId) {
+            throw new Exception('No academy context available. Please select an academy first.');
+        }
+
+        $record = new (static::getModel())($data);
+        $record->academy_id = $academyId;
+        $record->save();
+
+        return $record;
     }
 
     protected function getRedirectUrl(): string
