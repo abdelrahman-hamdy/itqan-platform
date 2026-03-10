@@ -154,7 +154,7 @@
                             </div>
                         </div>
                         @if($isSupervisor && $teacherUser)
-                            <a href="{{ route('chats', ['subdomain' => $subdomain]) }}" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer">
+                            <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $teacherUser->id]) }}" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer">
                                 <i class="ri-message-3-line"></i>
                                 {{ __($t.'message') }}
                             </a>
@@ -178,18 +178,18 @@
                                 @endphp
                                 @if($studentReport)
                                     <a href="{{ route('manage.session-reports.show', ['subdomain' => $subdomain, 'type' => $reportTypeSlug, 'id' => $studentReport->id]) }}"
-                                       class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer">
+                                       class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors cursor-pointer">
                                         <i class="ri-file-list-3-line"></i>
                                         {{ __($t.'view_report') }}
                                     </a>
                                 @else
-                                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-gray-50 text-gray-400 cursor-default">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-gray-200 text-gray-500 cursor-default">
                                         <i class="ri-file-list-3-line"></i>
                                         {{ __('reports.no_report_available') }}
                                     </span>
                                 @endif
                                 @if($isSupervisor)
-                                    <a href="{{ route('chats', ['subdomain' => $subdomain]) }}" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer">
+                                    <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $studentUser->id]) }}" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer">
                                         <i class="ri-message-3-line"></i>
                                         {{ __($t.'message') }}
                                     </a>
