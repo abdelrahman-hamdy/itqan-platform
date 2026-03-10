@@ -169,6 +169,7 @@ class RecordedCourseController extends Controller
             ->firstOrFail();
 
         $course->load([
+            'media',
             'subject',
             'gradeLevel',
             'academy',

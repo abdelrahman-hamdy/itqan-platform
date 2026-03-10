@@ -34,26 +34,16 @@
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       <!-- Featured Image/Video -->
       @if($course->getFirstMediaUrl('thumbnails'))
-      <div class="aspect-video bg-gray-200 relative">
-        <img src="{{ $course->getFirstMediaUrl('thumbnails') }}" 
-             alt="{{ $course->title }}" 
+      <div class="aspect-video bg-gray-200">
+        <img src="{{ $course->getFirstMediaUrl('thumbnails') }}"
+             alt="{{ $course->title }}"
              class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-          <div class="w-20 h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center cursor-pointer hover:bg-opacity-100 transition-all duration-200">
-            <i class="ri-play-fill text-3xl text-primary"></i>
-          </div>
-        </div>
       </div>
       @elseif($course->thumbnail_url)
-      <div class="aspect-video bg-gray-200 relative">
-        <img src="{{ $course->thumbnail_url }}" 
-             alt="{{ $course->title }}" 
+      <div class="aspect-video bg-gray-200">
+        <img src="{{ $course->thumbnail_url }}"
+             alt="{{ $course->title }}"
              class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-          <div class="w-20 h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center cursor-pointer hover:bg-opacity-100 transition-all duration-200">
-            <i class="ri-play-fill text-3xl text-primary"></i>
-          </div>
-        </div>
       </div>
       @else
       <div class="aspect-video bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
