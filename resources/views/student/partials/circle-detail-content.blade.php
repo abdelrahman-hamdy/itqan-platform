@@ -136,15 +136,15 @@
 
                 <!-- Subscription/Enrollment Section -->
                 @if(!isset($subscription) || !$subscription)
-                    @if($canEnroll)
+                    @if($canEnroll || !$isStudent)
                         <!-- Enrollment Card - Show price/spots for all, button only for students -->
                         <x-student.subscription-enrollment-widget
                             type="quran_circle"
                             :is-enrolled="false"
                             :enrollable="$circle"
-                            :can-enroll="$canEnroll"
+                            :can-enroll="true"
                         >
-                            @if($isStudent)
+                            @if($isStudent && $canEnroll)
                             <button onclick="showEnrollModal({{ $circle->id }})"
                                     class="min-h-[48px] w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 md:py-4 px-4 md:px-6 rounded-xl font-bold text-base md:text-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
                                 <i class="ri-user-add-line text-xl md:text-2xl"></i>
