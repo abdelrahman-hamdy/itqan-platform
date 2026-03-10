@@ -397,6 +397,15 @@
     </div>
 </div>
 
+@php
+    $updateUrl = route('manage.sessions.update', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]);
+    $cancelUrl = route('manage.sessions.cancel', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]);
+    $initialNotes = $session->supervisor_notes ?? '';
+    $initialStatus = $session->status->value;
+    $initialScheduledAt = $session->scheduled_at ? toAcademyTimezone($session->scheduled_at)->format('Y-m-d\TH:i') : '';
+    $initialDuration = $session->duration_minutes ?? '';
+@endphp
+
 <script>
 function sessionDetail() {
     return {
@@ -406,20 +415,20 @@ function sessionDetail() {
         submittingCancel: false,
         savingNotes: false,
         notesSaved: false,
-        supervisorNotes: @json($session->supervisor_notes ?? ''),
+        supervisorNotes: @json($initialNotes),
         cancellationReason: '',
 
         editForm: {
-            status: @json($session->status->value),
-            scheduled_at: @json($session->scheduled_at ? toAcademyTimezone($session->scheduled_at)->format('Y-m-d\TH:i') : ''),
-            duration_minutes: @json($session->duration_minutes ?? ''),
-            supervisor_notes: @json($session->supervisor_notes ?? ''),
+            status: @json($initialStatus),
+            scheduled_at: @json($initialScheduledAt),
+            duration_minutes: @json($initialDuration),
+            supervisor_notes: @json($initialNotes),
         },
 
         async submitEdit() {
             this.submittingEdit = true;
             try {
-                const response = await fetch(@json(route('manage.sessions.update', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id])), {
+                const response = await fetch(@json($updateUrl), {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
@@ -445,7 +454,7 @@ function sessionDetail() {
             if (!this.cancellationReason.trim()) return;
             this.submittingCancel = true;
             try {
-                const response = await fetch(@json(route('manage.sessions.cancel', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id])), {
+                const response = await fetch(@json($cancelUrl), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -471,7 +480,7 @@ function sessionDetail() {
             this.savingNotes = true;
             this.notesSaved = false;
             try {
-                const response = await fetch(@json(route('manage.sessions.update', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id])), {
+                const response = await fetch(@json($updateUrl), {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
