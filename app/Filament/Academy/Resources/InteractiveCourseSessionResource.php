@@ -128,20 +128,21 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
      */
     protected static function getNotesFormSection(): Section
     {
-        return Section::make('ملاحظات')
+        return Section::make('الملاحظات')
             ->schema([
                 Grid::make(2)
                     ->schema([
-                        Textarea::make('session_notes')
-                            ->label('ملاحظات الجلسة')
+                        Textarea::make('admin_notes')
+                            ->label('ملاحظات الإدارة')
                             ->rows(3)
-                            ->maxLength(1000)
+                            ->maxLength(2000)
                             ->helperText('ملاحظات داخلية للإدارة'),
 
                         Textarea::make('supervisor_notes')
                             ->label('ملاحظات المشرف')
                             ->rows(3)
                             ->maxLength(2000)
+                            ->disabled()
                             ->helperText('ملاحظات مرئية للمشرف والإدارة فقط'),
                     ]),
             ])

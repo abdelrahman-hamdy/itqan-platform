@@ -134,6 +134,11 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             $updated[] = 'supervisor_notes';
         }
 
+        if (array_key_exists('admin_notes', $validated) && auth()->user()->isAdmin()) {
+            $session->admin_notes = $validated['admin_notes'];
+            $updated[] = 'admin_notes';
+        }
+
         if (! empty($updated)) {
             $session->save();
         }

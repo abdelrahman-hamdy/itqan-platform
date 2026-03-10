@@ -28,6 +28,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Schemas\Components\Grid;
+use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -128,6 +129,29 @@ class QuranSessionResource extends BaseQuranSessionResource
                         }
                     }),
             ]),
+        ];
+    }
+
+    // ========================================
+    // Additional Form Sections (Teacher-specific)
+    // ========================================
+
+    /**
+     * Show supervisor notes as read-only for teachers.
+     */
+    protected static function getAdditionalFormSections(): array
+    {
+        return [
+            Section::make('الملاحظات')
+                ->schema([
+                    Textarea::make('supervisor_notes')
+                        ->label('ملاحظات المشرف')
+                        ->rows(3)
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->helperText('ملاحظات من المشرف (للقراءة فقط)')
+                        ->columnSpanFull(),
+                ]),
         ];
     }
 

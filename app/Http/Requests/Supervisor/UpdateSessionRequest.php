@@ -24,6 +24,7 @@ class UpdateSessionRequest extends FormRequest
             'scheduled_at' => ['nullable', 'date'],
             'duration_minutes' => ['nullable', 'integer', 'min:15', 'max:300'],
             'supervisor_notes' => ['nullable', 'string', 'max:2000'],
+            'admin_notes' => ['nullable', 'string', 'max:2000'],
             'cancellation_reason' => ['nullable', 'string', 'max:500'],
         ];
     }

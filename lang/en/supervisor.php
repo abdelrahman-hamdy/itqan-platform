@@ -269,7 +269,11 @@ return [
         // Detail page
         'session_info' => 'Session Info',
         'meeting_info' => 'Meeting Info',
+        'notes_section' => 'Notes',
         'supervisor_notes' => 'Supervisor Notes',
+        'supervisor_notes_label' => 'Supervisor Notes',
+        'admin_notes_label' => 'Admin Notes',
+        'admin_notes_placeholder' => 'Write admin notes here...',
         'notes_placeholder' => 'Write your notes about the session here...',
         'save_notes' => 'Save Notes',
         'notes_saved' => 'Notes saved',

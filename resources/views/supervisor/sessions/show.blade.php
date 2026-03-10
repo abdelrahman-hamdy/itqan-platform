@@ -286,27 +286,46 @@
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                 <h3 class="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                     <i class="ri-sticky-note-line text-gray-400"></i>
-                    {{ __($t.'supervisor_notes') }}
+                    {{ __($t.'notes_section') }}
                 </h3>
                 <div class="space-y-4">
                     {{-- Supervisor Notes --}}
                     <div>
-                        <textarea x-model="editForm.supervisor_notes" rows="3"
-                            placeholder="{{ __($t.'notes_placeholder') }}"
-                            class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 resize-none"></textarea>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __($t.'supervisor_notes_label') }}</label>
+                        @if($isSupervisor && !$isAdmin)
+                            <textarea x-model="editForm.supervisor_notes" rows="3"
+                                placeholder="{{ __($t.'notes_placeholder') }}"
+                                class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 resize-none"></textarea>
+                        @else
+                            <p class="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 min-h-[3rem]">{{ $session->supervisor_notes ?: '-' }}</p>
+                        @endif
                     </div>
 
-                    {{-- Save button --}}
-                    <div class="flex items-center justify-between">
-                        <button @click="saveNotes()" :disabled="savingNotes"
-                            class="px-4 py-2 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-50 cursor-pointer">
-                            <span x-show="!savingNotes">{{ __($t.'save_notes') }}</span>
-                            <span x-show="savingNotes" x-cloak>{{ __('supervisor.observation.saving') }}...</span>
-                        </button>
-                        <span x-show="notesSaved" x-transition x-cloak class="text-xs text-green-600">
-                            <i class="ri-check-line"></i> {{ __($t.'notes_saved') }}
-                        </span>
+                    {{-- Admin Notes --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __($t.'admin_notes_label') }}</label>
+                        @if($isAdmin)
+                            <textarea x-model="editForm.admin_notes" rows="3"
+                                placeholder="{{ __($t.'admin_notes_placeholder') }}"
+                                class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 resize-none"></textarea>
+                        @else
+                            <p class="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 min-h-[3rem]">{{ $session->admin_notes ?: '-' }}</p>
+                        @endif
                     </div>
+
+                    {{-- Save button (only if user can edit at least one field) --}}
+                    @if($isSupervisor || $isAdmin)
+                        <div class="flex items-center justify-between">
+                            <button @click="saveNotes()" :disabled="savingNotes"
+                                class="px-4 py-2 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-50 cursor-pointer">
+                                <span x-show="!savingNotes">{{ __($t.'save_notes') }}</span>
+                                <span x-show="savingNotes" x-cloak>{{ __('supervisor.observation.saving') }}...</span>
+                            </button>
+                            <span x-show="notesSaved" x-transition x-cloak class="text-xs text-green-600">
+                                <i class="ri-check-line"></i> {{ __($t.'notes_saved') }}
+                            </span>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -358,6 +377,7 @@
     $updateUrl = route('manage.sessions.update', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]);
     $cancelUrl = route('manage.sessions.cancel', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]);
     $initialNotes = $session->supervisor_notes ?? '';
+    $initialAdminNotes = $session->admin_notes ?? '';
     $countdownLabels = [
         'soon' => __('supervisor.sessions.session_starting_soon'),
         'h' => __('supervisor.sessions.hours_short'),
@@ -398,6 +418,7 @@ function sessionDetail() {
 
         editForm: {
             supervisor_notes: @json($initialNotes),
+            admin_notes: @json($initialAdminNotes),
         },
 
         async saveNotes() {
@@ -411,7 +432,10 @@ function sessionDetail() {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                         'Accept': 'application/json',
                     },
-                    body: JSON.stringify({ supervisor_notes: this.editForm.supervisor_notes }),
+                    body: JSON.stringify({
+                        supervisor_notes: this.editForm.supervisor_notes,
+                        admin_notes: this.editForm.admin_notes,
+                    }),
                 });
                 if (response.ok) {
                     this.notesSaved = true;

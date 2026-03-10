@@ -269,7 +269,11 @@ return [
         // Detail page
         'session_info' => 'معلومات الجلسة',
         'meeting_info' => 'معلومات الاجتماع',
+        'notes_section' => 'الملاحظات',
         'supervisor_notes' => 'ملاحظات المشرف',
+        'supervisor_notes_label' => 'ملاحظات المشرف',
+        'admin_notes_label' => 'ملاحظات الإدارة',
+        'admin_notes_placeholder' => 'اكتب ملاحظات الإدارة هنا...',
         'notes_placeholder' => 'اكتب ملاحظاتك حول الجلسة هنا...',
         'save_notes' => 'حفظ الملاحظات',
         'notes_saved' => 'تم حفظ الملاحظات',

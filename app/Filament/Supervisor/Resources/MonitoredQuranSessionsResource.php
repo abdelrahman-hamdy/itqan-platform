@@ -89,12 +89,21 @@ class MonitoredQuranSessionsResource extends BaseSupervisorResource
                             ->required(),
                     ])->columns(2),
 
-                Section::make('ملاحظات المشرف')
+                Section::make('الملاحظات')
                     ->schema([
                         Textarea::make('supervisor_notes')
                             ->label('ملاحظات المشرف')
                             ->rows(4)
+                            ->maxLength(2000)
                             ->helperText('ملاحظات من المشرف بعد المراجعة')
+                            ->columnSpanFull(),
+
+                        Textarea::make('admin_notes')
+                            ->label('ملاحظات الإدارة')
+                            ->rows(3)
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->helperText('ملاحظات من الإدارة (للقراءة فقط)')
                             ->columnSpanFull(),
                     ]),
             ]);

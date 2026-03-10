@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -154,6 +155,29 @@ class AcademicSessionResource extends BaseAcademicSessionResource
     public static function canDeleteAny(): bool
     {
         return false;
+    }
+
+    // ========================================
+    // Additional Form Sections (Teacher-specific)
+    // ========================================
+
+    /**
+     * Show supervisor notes as read-only for teachers.
+     */
+    protected static function getAdditionalFormSections(): array
+    {
+        return [
+            Section::make('الملاحظات')
+                ->schema([
+                    Textarea::make('supervisor_notes')
+                        ->label('ملاحظات المشرف')
+                        ->rows(3)
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->helperText('ملاحظات من المشرف (للقراءة فقط)')
+                        ->columnSpanFull(),
+                ]),
+        ];
     }
 
     // ========================================

@@ -161,6 +161,7 @@ abstract class BaseSession extends Model implements MeetingCapable
         // Feedback fields
         'session_notes',
         'supervisor_notes',
+        'admin_notes',
         'teacher_feedback',
 
         // Cancellation fields (includes cancellation_type used by CountsTowardsSubscription trait)
