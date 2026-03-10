@@ -327,6 +327,11 @@ class AcademicSessionResource extends BaseAcademicSessionResource
     // Authorization Overrides
     // ========================================
 
+    public static function canCreate(): bool
+    {
+        return true;
+    }
+
     public static function canEdit(Model $record): bool
     {
         return true;
