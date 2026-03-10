@@ -939,6 +939,7 @@
                     'fully_scheduled': @js(__('teacher.calendar.status_fully_scheduled')),
                     'partially_scheduled': @js(__('teacher.calendar.status_partially_scheduled')),
                     'unscheduled': @js(__('teacher.calendar.status_unscheduled')),
+                    'not_scheduled': @js(__('teacher.calendar.status_unscheduled')),
                     'scheduled': @js(__('teacher.calendar.status_scheduled'))
                 };
                 return labels[status] || status;

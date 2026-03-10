@@ -65,9 +65,6 @@
     </div>
 
     @if($selectedTeacher)
-        <!-- Teacher Info Banner -->
-        <x-supervisor.teacher-info-banner :teacher="$selectedTeacher" :type="$teacherType === 'quran_teacher' ? 'quran' : 'academic'" />
-
         <!-- Stats Cards -->
         <x-calendar.stats-cards />
 
@@ -975,6 +972,7 @@
                     'fully_scheduled': @js(__('teacher.calendar.status_fully_scheduled')),
                     'partially_scheduled': @js(__('teacher.calendar.status_partially_scheduled')),
                     'unscheduled': @js(__('teacher.calendar.status_unscheduled')),
+                    'not_scheduled': @js(__('teacher.calendar.status_unscheduled')),
                     'scheduled': @js(__('teacher.calendar.status_scheduled'))
                 };
                 return labels[status] || status;
