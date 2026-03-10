@@ -299,6 +299,7 @@
                         @else
                             <p class="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 min-h-[3rem]">{{ $session->supervisor_notes ?: '-' }}</p>
                         @endif
+                        <p class="text-xs text-gray-400 mt-1"><i class="ri-eye-line me-0.5"></i> {{ __($t.'supervisor_notes_hint') }}</p>
                     </div>
 
                     {{-- Admin Notes --}}
@@ -311,6 +312,7 @@
                         @else
                             <p class="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 min-h-[3rem]">{{ $session->admin_notes ?: '-' }}</p>
                         @endif
+                        <p class="text-xs text-gray-400 mt-1"><i class="ri-eye-line me-0.5"></i> {{ __($t.'admin_notes_hint') }}</p>
                     </div>
 
                     {{-- Save button (only if user can edit at least one field) --}}

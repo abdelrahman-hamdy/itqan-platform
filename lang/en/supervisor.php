@@ -274,6 +274,8 @@ return [
         'supervisor_notes_label' => 'Supervisor Notes',
         'admin_notes_label' => 'Admin Notes',
         'admin_notes_placeholder' => 'Write admin notes here...',
+        'supervisor_notes_hint' => 'Visible to supervisors, teachers, and admins',
+        'admin_notes_hint' => 'Visible to admins and supervisors only — not visible to teachers',
         'notes_placeholder' => 'Write your notes about the session here...',
         'save_notes' => 'Save Notes',
         'notes_saved' => 'Notes saved',

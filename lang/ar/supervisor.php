@@ -274,6 +274,8 @@ return [
         'supervisor_notes_label' => 'ملاحظات المشرف',
         'admin_notes_label' => 'ملاحظات الإدارة',
         'admin_notes_placeholder' => 'اكتب ملاحظات الإدارة هنا...',
+        'supervisor_notes_hint' => 'مرئية للمشرفين والمعلمين والإدارة',
+        'admin_notes_hint' => 'مرئية للإدارة والمشرفين فقط — غير مرئية للمعلمين',
         'notes_placeholder' => 'اكتب ملاحظاتك حول الجلسة هنا...',
         'save_notes' => 'حفظ الملاحظات',
         'notes_saved' => 'تم حفظ الملاحظات',
