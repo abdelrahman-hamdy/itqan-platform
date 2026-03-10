@@ -261,8 +261,10 @@ class SupervisorCalendarController extends BaseSupervisorWebController
 
         $teacher = $this->verifyTeacherAccess($request);
 
-        $startTime = Carbon::parse($validated['date'])
+        $academyTz = AcademyContextService::getTimezone();
+        $startTime = Carbon::parse($validated['date'], $academyTz)
             ->setTimeFromTimeString($validated['time']);
+        $startTime = AcademyContextService::toUtcForStorage($startTime);
         $endTime = $startTime->copy()->addMinutes($validated['duration_minutes']);
 
         $conflicts = $this->calendarService->checkConflicts($teacher, $startTime, $endTime);
@@ -304,7 +306,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
         }
 
         $oldScheduledAt = $session->scheduled_at;
-        $newScheduledAt = Carbon::parse($validated['scheduled_at']);
+        $newScheduledAt = Carbon::parse($validated['scheduled_at'])->utc();
 
         $session->update([
             'scheduled_at' => $newScheduledAt,
@@ -426,7 +428,9 @@ class SupervisorCalendarController extends BaseSupervisorWebController
         $updateData = [];
 
         if (isset($validated['scheduled_at'])) {
-            $updateData['scheduled_at'] = Carbon::parse($validated['scheduled_at']);
+            $updateData['scheduled_at'] = AcademyContextService::toUtcForStorage(
+                AcademyContextService::parseInAcademyTimezone($validated['scheduled_at'])
+            );
         }
         if (isset($validated['duration_minutes'])) {
             $updateData['duration_minutes'] = $validated['duration_minutes'];

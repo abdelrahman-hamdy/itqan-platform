@@ -130,7 +130,7 @@
                         </a>
                         <div class="grid grid-cols-2 gap-2">
                             <template x-if="session.can_edit">
-                                <button @click="editData = { scheduled_at: session.scheduled_at ? session.scheduled_at.substring(0,16) : '', duration_minutes: session.duration_minutes || 60, teacher_notes: session.teacher_notes || '' }; editMode = true" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
+                                <button @click="editData = { scheduled_at: utcToAcademyLocal(session.scheduled_at), duration_minutes: session.duration_minutes || 60, teacher_notes: session.teacher_notes || '' }; editMode = true" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
                                     <i class="ri-edit-line me-1"></i> {{ __('teacher.calendar.edit_session') }}
                                 </button>
                             </template>
@@ -411,6 +411,20 @@ function sessionDetailModal() {
                 'academic_session': @js(__('student.calendar.academic_session'))
             };
             return labels[source] || source;
+        },
+
+        utcToAcademyLocal(isoStr) {
+            if (!isoStr) return '';
+            const academyTz = @js(\App\Services\AcademyContextService::getTimezone());
+            const d = new Date(isoStr);
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: academyTz,
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', hour12: false
+            }).formatToParts(d);
+            const get = type => parts.find(p => p.type === type)?.value || '';
+            const hour = get('hour') === '24' ? '00' : get('hour');
+            return `${get('year')}-${get('month')}-${get('day')}T${hour}:${get('minute')}`;
         },
 
         formatModalDate(isoStr) {
