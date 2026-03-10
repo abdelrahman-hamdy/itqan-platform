@@ -137,27 +137,27 @@
                 <!-- Subscription/Enrollment Section -->
                 @if(!isset($subscription) || !$subscription)
                     @if($canEnroll)
-                        @if($isStudent)
-                        <!-- Enrollment Card - Show for students who can enroll -->
+                        <!-- Enrollment Card - Show price/spots for all, button only for students -->
                         <x-student.subscription-enrollment-widget
                             type="quran_circle"
                             :is-enrolled="false"
                             :enrollable="$circle"
                             :can-enroll="$canEnroll"
                         >
+                            @if($isStudent)
                             <button onclick="showEnrollModal({{ $circle->id }})"
                                     class="min-h-[48px] w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 md:py-4 px-4 md:px-6 rounded-xl font-bold text-base md:text-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
                                 <i class="ri-user-add-line text-xl md:text-2xl"></i>
                                 {{ __('student.group_circle.enroll_button') }}
                             </button>
+                            @else
+                            {{-- Non-student users see disabled button --}}
+                            <span class="flex items-center justify-center gap-2 w-full min-h-[48px] bg-gray-300 text-gray-500 text-center font-medium py-3 md:py-4 px-4 md:px-6 rounded-xl cursor-not-allowed">
+                                <i class="ri-lock-line text-xl md:text-2xl"></i>
+                                {{ __('courses.show.students_only') }}
+                            </span>
+                            @endif
                         </x-student.subscription-enrollment-widget>
-                        @else
-                        {{-- Non-student users see disabled state --}}
-                        <span class="flex items-center justify-center gap-2 w-full min-h-[48px] bg-gray-300 text-gray-500 text-center font-medium py-3 rounded-xl cursor-not-allowed">
-                            <i class="ri-lock-line"></i>
-                            {{ __('courses.show.students_only') }}
-                        </span>
-                        @endif
                     @elseif($isEnrolled)
                         {{-- Already enrolled but no subscription yet --}}
                     @endif
