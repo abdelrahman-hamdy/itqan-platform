@@ -374,6 +374,11 @@ class QuranSessionResource extends BaseQuranSessionResource
     // Authorization Overrides
     // ========================================
 
+    public static function canEdit(Model $record): bool
+    {
+        return true;
+    }
+
     public static function canDelete(Model $record): bool
     {
         $status = $record->status instanceof \App\Enums\SessionStatus
