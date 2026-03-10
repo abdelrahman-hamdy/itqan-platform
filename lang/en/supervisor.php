@@ -13,7 +13,7 @@ return [
         'quran_programs' => 'Quran Programs',
         'group_circles' => 'Group Circles',
         'individual_circles' => 'Individual Circles',
-        'trial_sessions' => 'Trial Sessions',
+        'trial_sessions' => 'Trial Session Requests',
         'academic_programs' => 'Academic Programs',
         'academic_lessons' => 'Private Lessons',
         'interactive_courses' => 'Interactive Courses',

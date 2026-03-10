@@ -13,7 +13,7 @@ return [
         'quran_programs' => 'برامج القرآن',
         'group_circles' => 'الحلقات الجماعية',
         'individual_circles' => 'الحلقات الفردية',
-        'trial_sessions' => 'الجلسات التجريبية',
+        'trial_sessions' => 'طلبات الجلسات التجريبية',
         'academic_programs' => 'البرامج الأكاديمية',
         'academic_lessons' => 'الدروس الخصوصية',
         'interactive_courses' => 'الدورات التفاعلية',
