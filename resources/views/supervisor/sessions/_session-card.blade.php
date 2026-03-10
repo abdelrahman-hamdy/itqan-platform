@@ -24,7 +24,7 @@
     $showUrl = route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
 @endphp
 
-<a href="{{ $showUrl }}" class="block bg-white rounded-xl shadow-sm border border-gray-200 p-4 transition-all hover:shadow-md {{ $isLive ? 'ring-2 ring-green-200' : '' }}">
+<div onclick="window.location.href='{{ $showUrl }}'" class="block bg-white rounded-xl shadow-sm border border-gray-200 p-4 transition-all hover:shadow-md cursor-pointer {{ $isLive ? 'ring-2 ring-green-200' : '' }}">
     {{-- Header --}}
     <div class="flex items-start justify-between gap-2 mb-3">
         <div class="flex items-center gap-2 min-w-0">
@@ -73,7 +73,7 @@
 
     {{-- Quick Actions --}}
     @if($isLive || $status->canCancel())
-    <div class="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-1.5" onclick="event.preventDefault(); event.stopPropagation();">
+    <div class="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-1.5" onclick="event.stopPropagation();">
         @if($isLive)
             <a href="{{ $showUrl }}?mode=observer"
                class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">
@@ -95,4 +95,4 @@
         @endif
     </div>
     @endif
-</a>
+</div>
