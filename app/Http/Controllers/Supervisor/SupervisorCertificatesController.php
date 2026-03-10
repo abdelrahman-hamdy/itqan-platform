@@ -16,18 +16,22 @@ class SupervisorCertificatesController extends BaseSupervisorWebController
         $query = Certificate::whereIn('teacher_id', $allTeacherIds)
             ->with(['student', 'teacher', 'certificateable']);
 
-        if ($request->teacher_id) {
+        if ($request->filled('teacher_id')) {
             $query->where('teacher_id', $request->teacher_id);
         }
 
-        if ($request->certificate_type) {
+        if ($request->filled('student_id')) {
+            $query->where('student_id', $request->student_id);
+        }
+
+        if ($request->filled('certificate_type')) {
             $query->where('certificate_type', $request->certificate_type);
         }
 
-        if ($request->date_from) {
+        if ($request->filled('date_from')) {
             $query->whereDate('issued_at', '>=', $request->date_from);
         }
-        if ($request->date_to) {
+        if ($request->filled('date_to')) {
             $query->whereDate('issued_at', '<=', $request->date_to);
         }
 
@@ -40,6 +44,16 @@ class SupervisorCertificatesController extends BaseSupervisorWebController
             'name' => $u->name,
         ])->toArray();
 
-        return view('supervisor.certificates.index', compact('certificates', 'teachers', 'totalCertificates'));
+        $students = Certificate::whereIn('teacher_id', $allTeacherIds)
+            ->whereNotNull('student_id')
+            ->with('student:id,name')
+            ->get()
+            ->pluck('student.name', 'student_id')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->toArray();
+
+        return view('supervisor.certificates.index', compact('certificates', 'teachers', 'totalCertificates', 'students'));
     }
 }
