@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Supervisor;
 use App\Http\Controllers\SessionsMonitoringController;
 use App\Models\User;
 use App\Services\CalendarService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -64,8 +65,8 @@ class SupervisorCalendarController extends BaseSupervisorWebController
 
         $events = $calendarService->getUserCalendar(
             $teacher,
-            $request->input('start'),
-            $request->input('end')
+            Carbon::parse($request->input('start')),
+            Carbon::parse($request->input('end'))
         );
 
         return response()->json($events);
