@@ -20,6 +20,7 @@ return [
         'calendar_monitoring' => 'Calendar & Monitoring',
         'calendar' => 'Calendar',
         'sessions_monitoring' => 'Sessions Monitoring',
+        'sessions_management' => 'Sessions Management',
         'management' => 'Management',
         'quizzes' => 'Quizzes',
         'session_reports' => 'Session Reports',
@@ -193,6 +194,99 @@ return [
         'interactive_courses' => 'Interactive Courses',
         'performance_rating' => 'Performance Rating',
         'back_to_dashboard' => 'Back to Dashboard',
+    ],
+
+    'sessions' => [
+        // Page
+        'page_title' => 'Sessions Management',
+        'page_subtitle' => 'Browse and manage all sessions and join meetings',
+        'breadcrumb' => 'Sessions Management',
+
+        // Stats
+        'stat_total' => 'Total Sessions',
+        'stat_live' => 'Live Now',
+        'stat_scheduled_today' => 'Scheduled Today',
+        'stat_completed_week' => 'Completed This Week',
+
+        // Tabs
+        'tab_all' => 'All',
+        'tab_quran' => 'Quran',
+        'tab_academic' => 'Academic',
+        'tab_interactive' => 'Interactive Courses',
+
+        // Filters
+        'filter_date_all' => 'All',
+        'filter_date_today' => 'Today',
+        'filter_date_week' => 'This Week',
+        'filter_date_month' => 'This Month',
+        'filter_status' => 'Status',
+        'filter_teacher' => 'Teacher',
+        'search_placeholder' => 'Search by session code, teacher or student name...',
+        'clear_filters' => 'Clear Filters',
+
+        // Table columns
+        'col_status' => 'Status',
+        'col_session_code' => 'Session Code',
+        'col_type' => 'Type',
+        'col_teacher' => 'Teacher',
+        'col_student' => 'Student / Group',
+        'col_scheduled' => 'Scheduled',
+        'col_duration' => 'Duration',
+        'col_actions' => 'Actions',
+
+        // Types
+        'type_quran' => 'Quran',
+        'type_academic' => 'Academic',
+        'type_interactive' => 'Interactive Course',
+        'type_individual' => 'Individual',
+        'type_group' => 'Group',
+        'type_trial' => 'Trial',
+
+        // Actions
+        'view_details' => 'View Details',
+        'join_meeting' => 'Join Meeting',
+        'observe_meeting' => 'Observe Meeting',
+        'edit_session' => 'Edit Session',
+        'cancel_session' => 'Cancel Session',
+        'view_in_panel' => 'View in Panel',
+
+        // Edit modal
+        'edit_modal_title' => 'Edit Session',
+        'edit_status' => 'Status',
+        'edit_scheduled_at' => 'Scheduled At',
+        'edit_duration' => 'Duration (minutes)',
+        'edit_notes' => 'Supervisor Notes',
+        'edit_save' => 'Save Changes',
+        'edit_success' => 'Session updated successfully',
+
+        // Cancel
+        'cancel_confirm_title' => 'Confirm Session Cancellation',
+        'cancel_confirm_message' => 'Are you sure you want to cancel this session? This action cannot be undone.',
+        'cancel_reason_label' => 'Cancellation Reason',
+        'cancel_success' => 'Session cancelled successfully',
+
+        // Detail page
+        'session_info' => 'Session Info',
+        'meeting_info' => 'Meeting Info',
+        'supervisor_notes' => 'Supervisor Notes',
+        'notes_placeholder' => 'Write your notes about the session here...',
+        'save_notes' => 'Save Notes',
+        'notes_saved' => 'Notes saved',
+        'participants' => 'Participants',
+        'session_content' => 'Session Content',
+        'learning_outcomes' => 'Learning Outcomes',
+
+        // Empty state
+        'no_sessions' => 'No Sessions Found',
+        'no_sessions_description' => 'No matching sessions found. Try changing the filters.',
+
+        // Meeting status
+        'meeting_active' => 'Active Meeting',
+        'meeting_ended' => 'Meeting Ended',
+        'meeting_not_started' => 'Meeting Not Started',
+
+        // Duration
+        'duration_minutes' => ':count min',
     ],
 
     'observation' => [

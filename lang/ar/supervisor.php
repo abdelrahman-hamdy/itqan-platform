@@ -20,6 +20,7 @@ return [
         'calendar_monitoring' => 'التقويم والمراقبة',
         'calendar' => 'التقويم',
         'sessions_monitoring' => 'مراقبة الجلسات',
+        'sessions_management' => 'إدارة الجلسات',
         'management' => 'الإدارة',
         'quizzes' => 'الاختبارات',
         'session_reports' => 'تقارير الجلسات',
@@ -193,6 +194,99 @@ return [
         'interactive_courses' => 'الدورات التفاعلية',
         'performance_rating' => 'تقييم الأداء',
         'back_to_dashboard' => 'العودة للوحة التحكم',
+    ],
+
+    'sessions' => [
+        // Page
+        'page_title' => 'إدارة الجلسات',
+        'page_subtitle' => 'تصفح وإدارة جميع الجلسات وانضم للاجتماعات',
+        'breadcrumb' => 'إدارة الجلسات',
+
+        // Stats
+        'stat_total' => 'إجمالي الجلسات',
+        'stat_live' => 'جلسات مباشرة',
+        'stat_scheduled_today' => 'مجدولة اليوم',
+        'stat_completed_week' => 'مكتملة هذا الأسبوع',
+
+        // Tabs
+        'tab_all' => 'الكل',
+        'tab_quran' => 'القرآن',
+        'tab_academic' => 'أكاديمي',
+        'tab_interactive' => 'الدورات التفاعلية',
+
+        // Filters
+        'filter_date_all' => 'الكل',
+        'filter_date_today' => 'اليوم',
+        'filter_date_week' => 'هذا الأسبوع',
+        'filter_date_month' => 'هذا الشهر',
+        'filter_status' => 'الحالة',
+        'filter_teacher' => 'المعلم',
+        'search_placeholder' => 'بحث بكود الجلسة أو اسم المعلم أو الطالب...',
+        'clear_filters' => 'مسح الفلاتر',
+
+        // Table columns
+        'col_status' => 'الحالة',
+        'col_session_code' => 'كود الجلسة',
+        'col_type' => 'النوع',
+        'col_teacher' => 'المعلم',
+        'col_student' => 'الطالب / المجموعة',
+        'col_scheduled' => 'الموعد',
+        'col_duration' => 'المدة',
+        'col_actions' => 'الإجراءات',
+
+        // Types
+        'type_quran' => 'قرآن',
+        'type_academic' => 'أكاديمي',
+        'type_interactive' => 'دورة تفاعلية',
+        'type_individual' => 'فردية',
+        'type_group' => 'جماعية',
+        'type_trial' => 'تجريبية',
+
+        // Actions
+        'view_details' => 'عرض التفاصيل',
+        'join_meeting' => 'انضم للاجتماع',
+        'observe_meeting' => 'مراقبة الاجتماع',
+        'edit_session' => 'تعديل الجلسة',
+        'cancel_session' => 'إلغاء الجلسة',
+        'view_in_panel' => 'عرض في لوحة التحكم',
+
+        // Edit modal
+        'edit_modal_title' => 'تعديل الجلسة',
+        'edit_status' => 'الحالة',
+        'edit_scheduled_at' => 'الموعد المحدد',
+        'edit_duration' => 'المدة (بالدقائق)',
+        'edit_notes' => 'ملاحظات المشرف',
+        'edit_save' => 'حفظ التعديلات',
+        'edit_success' => 'تم تحديث الجلسة بنجاح',
+
+        // Cancel
+        'cancel_confirm_title' => 'تأكيد إلغاء الجلسة',
+        'cancel_confirm_message' => 'هل أنت متأكد من إلغاء هذه الجلسة؟ لا يمكن التراجع عن هذا الإجراء.',
+        'cancel_reason_label' => 'سبب الإلغاء',
+        'cancel_success' => 'تم إلغاء الجلسة بنجاح',
+
+        // Detail page
+        'session_info' => 'معلومات الجلسة',
+        'meeting_info' => 'معلومات الاجتماع',
+        'supervisor_notes' => 'ملاحظات المشرف',
+        'notes_placeholder' => 'اكتب ملاحظاتك حول الجلسة هنا...',
+        'save_notes' => 'حفظ الملاحظات',
+        'notes_saved' => 'تم حفظ الملاحظات',
+        'participants' => 'المشاركون',
+        'session_content' => 'محتوى الجلسة',
+        'learning_outcomes' => 'مخرجات التعلم',
+
+        // Empty state
+        'no_sessions' => 'لا توجد جلسات',
+        'no_sessions_description' => 'لم يتم العثور على جلسات مطابقة. حاول تغيير الفلاتر.',
+
+        // Meeting status
+        'meeting_active' => 'اجتماع نشط',
+        'meeting_ended' => 'انتهى الاجتماع',
+        'meeting_not_started' => 'لم يبدأ الاجتماع',
+
+        // Duration
+        'duration_minutes' => ':count دقيقة',
     ],
 
     'observation' => [

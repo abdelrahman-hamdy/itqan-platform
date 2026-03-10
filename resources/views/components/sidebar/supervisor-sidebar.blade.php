@@ -90,10 +90,10 @@
           :active="request()->routeIs('manage.calendar.*')" />
 
         <x-sidebar.nav-item
-          :href="route('manage.sessions-monitoring.index', ['subdomain' => $subdomain])"
-          :label="__('supervisor.sidebar.sessions_monitoring')"
-          icon="ri-live-line"
-          :active="request()->routeIs('manage.sessions-monitoring.*')" />
+          :href="route('manage.sessions.index', ['subdomain' => $subdomain])"
+          :label="__('supervisor.sidebar.sessions_management')"
+          icon="ri-calendar-check-line"
+          :active="request()->routeIs('manage.sessions.*')" />
       </x-sidebar.nav-section>
 
       <!-- Management -->

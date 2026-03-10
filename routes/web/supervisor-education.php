@@ -10,6 +10,7 @@
 
 use App\Http\Controllers\SessionsMonitoringController;
 use App\Http\Controllers\Supervisor\SupervisorAcademicLessonsController;
+use App\Http\Controllers\Supervisor\SupervisorSessionsController;
 use App\Http\Controllers\Supervisor\SupervisorCalendarController;
 use App\Http\Controllers\Supervisor\SupervisorCertificatesController;
 use App\Http\Controllers\Supervisor\SupervisorDashboardController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\Supervisor\SupervisorQuizzesController;
 use App\Http\Controllers\Supervisor\SupervisorSessionReportsController;
 use App\Http\Controllers\Supervisor\SupervisorTeachersController;
 use App\Http\Controllers\Supervisor\SupervisorTrialSessionsController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
@@ -56,8 +58,17 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/calendar', [SupervisorCalendarController::class, 'index'])->name('calendar.index');
         Route::get('/calendar/events', [SupervisorCalendarController::class, 'getEvents'])->name('calendar.events');
 
-        // Sessions Monitoring
-        Route::get('/sessions-monitoring', [SupervisorCalendarController::class, 'monitoring'])->name('sessions-monitoring.index');
+        // Sessions Management
+        Route::get('/sessions', [SupervisorSessionsController::class, 'index'])->name('sessions.index');
+        Route::get('/sessions/{sessionType}/{sessionId}', [SupervisorSessionsController::class, 'show'])
+            ->name('sessions.show')->whereIn('sessionType', ['quran', 'academic', 'interactive']);
+        Route::patch('/sessions/{sessionType}/{sessionId}', [SupervisorSessionsController::class, 'update'])
+            ->name('sessions.update')->whereIn('sessionType', ['quran', 'academic', 'interactive']);
+        Route::post('/sessions/{sessionType}/{sessionId}/cancel', [SupervisorSessionsController::class, 'cancel'])
+            ->name('sessions.cancel')->whereIn('sessionType', ['quran', 'academic', 'interactive']);
+
+        // Redirect old monitoring route
+        Route::get('/sessions-monitoring', fn (Request $request, $subdomain) => redirect()->route('manage.sessions.index', ['subdomain' => $subdomain] + $request->query()))->name('sessions-monitoring.index');
 
         // Quizzes
         Route::get('/quizzes', [SupervisorQuizzesController::class, 'index'])->name('quizzes.index');
