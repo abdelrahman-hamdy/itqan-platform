@@ -23,6 +23,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use App\Filament\Pages\BaseCreateRecord as CreateRecord;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -496,11 +497,17 @@ class CreateRecordedCourse extends CreateRecord
         return $this->getResource()::getUrl('index');
     }
 
+    protected function handleRecordCreation(array $data): Model
+    {
+        $record = new (static::getModel())($data);
+        $record->academy_id = Auth::user()->academy_id;
+        $record->save();
+
+        return $record;
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Set the academy_id to the current user's academy
-        $data['academy_id'] = Auth::user()->academy_id;
-
         // Set the created_by to the current user
         $data['created_by'] = Auth::user()->id;
 

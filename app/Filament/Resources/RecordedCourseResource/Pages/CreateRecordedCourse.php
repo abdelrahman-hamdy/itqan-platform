@@ -6,20 +6,26 @@ use App\Filament\Resources\RecordedCourseResource;
 use App\Models\RecordedCourse;
 use App\Services\AcademyContextService;
 use App\Filament\Pages\BaseCreateRecord as CreateRecord;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class CreateRecordedCourse extends CreateRecord
 {
     protected static string $resource = RecordedCourseResource::class;
 
+    protected function handleRecordCreation(array $data): Model
+    {
+        $academyId = AcademyContextService::getCurrentAcademyId();
+
+        $record = new (static::getModel())($data);
+        $record->academy_id = $academyId;
+        $record->save();
+
+        return $record;
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $currentAcademy = AcademyContextService::getCurrentAcademy();
-
-        if ($currentAcademy) {
-            $data['academy_id'] = $currentAcademy->id;
-        }
-
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
 
