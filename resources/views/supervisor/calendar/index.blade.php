@@ -28,13 +28,12 @@
             <select
                 id="calendar-teacher-select"
                 onchange="
-                    const url = new URL(window.location.href);
+                    var base = window.location.pathname;
                     if (this.value) {
-                        url.searchParams.set('teacher_id', this.value);
+                        window.location.href = base + '?teacher_id=' + this.value;
                     } else {
-                        url.searchParams.delete('teacher_id');
+                        window.location.href = base;
                     }
-                    window.location.href = url.toString();
                 "
                 class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500 min-w-[250px]"
             >
