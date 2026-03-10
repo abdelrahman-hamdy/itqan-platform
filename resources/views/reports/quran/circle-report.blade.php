@@ -1,5 +1,5 @@
 @props([
-    'layoutType' => 'student', // student, teacher
+    'layoutType' => 'student', // student, teacher, supervisor
     'circle' => null,
     'circleType' => 'individual', // individual, group
     'student' => null,
@@ -16,7 +16,7 @@
 
 @php
 $isStudent = $layoutType === 'student';
-$isTeacher = $layoutType === 'teacher';
+$isTeacher = in_array($layoutType, ['teacher', 'supervisor']);
 $isIndividual = $circleType === 'individual';
 $isGroup = $circleType === 'group';
 

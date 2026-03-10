@@ -487,6 +487,8 @@ class AcademicSessionController extends Controller
         $attendance = $reportService->calculateAttendance($subscription);
         $progress = $reportService->calculateProgress($subscription);
 
+        $layoutType = str_starts_with(request()->route()->getName(), 'manage.') ? 'supervisor' : 'teacher';
+
         return view('reports.academic.subscription-report-teacher', [
             'subscription' => $subscription,
             'student' => $student->user ?? $student,
@@ -494,6 +496,7 @@ class AcademicSessionController extends Controller
             'performance' => $performance,
             'attendance' => $attendance,
             'progress' => $progress,
+            'layoutType' => $layoutType,
         ]);
     }
 

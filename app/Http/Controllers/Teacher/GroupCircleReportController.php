@@ -52,11 +52,13 @@ class GroupCircleReportController extends Controller
         // Generate student-specific report with date filter
         $reportData = $this->reportService->getStudentReportInGroupCircle($circle, $student, $dateRange);
 
+        $layoutType = str_starts_with(request()->route()->getName(), 'manage.') ? 'supervisor' : 'teacher';
+
         return view('reports.quran.circle-report', array_merge(
             $reportData,
             $this->getDateRangeViewData($request),
             [
-                'layoutType' => 'teacher',
+                'layoutType' => $layoutType,
                 'circle' => $circle,
                 'circleType' => 'group',
             ]

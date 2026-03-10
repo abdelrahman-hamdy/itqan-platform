@@ -13,39 +13,61 @@ use App\Models\StudentSessionReport;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
-class TeacherStudentOverviewService
+class StudentOverviewService
 {
     /**
-     * Get student overview rows for a teacher with aggregate stats.
+     * Resolve teacher ID arrays from a User model (teacher context).
      *
-     * @return Collection<int, object>
+     * @return array{0: int[], 1: int[]} [$quranTeacherIds, $academicProfileIds]
      */
-    public function getStudentOverviewForTeacher(
-        User $user,
-        ?string $type = null,
-        ?int $entityId = null,
-        ?string $studentSearch = null
-    ): Collection {
-        $rows = collect();
+    public function forTeacher(User $user): array
+    {
+        $quranTeacherIds = $user->isQuranTeacher() ? [$user->id] : [];
 
-        if ($user->isQuranTeacher()) {
-            if (! $type || $type === 'quran_individual') {
-                $rows = $rows->merge($this->getQuranIndividualRows($user, $entityId, $studentSearch));
-            }
-            if (! $type || $type === 'quran_group') {
-                $rows = $rows->merge($this->getQuranGroupRows($user, $entityId, $studentSearch));
-            }
-        }
-
+        $academicProfileIds = [];
         if ($user->isAcademicTeacher()) {
             $profileId = $user->academicTeacherProfile?->id;
             if ($profileId) {
-                if (! $type || $type === 'academic') {
-                    $rows = $rows->merge($this->getAcademicRows($profileId, $entityId, $studentSearch));
-                }
-                if (! $type || $type === 'interactive') {
-                    $rows = $rows->merge($this->getInteractiveRows($profileId, $entityId, $studentSearch));
-                }
+                $academicProfileIds = [$profileId];
+            }
+        }
+
+        return [$quranTeacherIds, $academicProfileIds];
+    }
+
+    /**
+     * Get student overview rows with aggregate stats.
+     *
+     * @param  int[]  $quranTeacherIds
+     * @param  int[]  $academicProfileIds
+     * @param  string  $routePrefix  'teacher' or 'manage'
+     * @return Collection<int, object>
+     */
+    public function getStudentOverview(
+        array $quranTeacherIds,
+        array $academicProfileIds,
+        ?string $type = null,
+        ?int $entityId = null,
+        ?string $studentSearch = null,
+        string $routePrefix = 'teacher',
+    ): Collection {
+        $rows = collect();
+
+        if (! empty($quranTeacherIds)) {
+            if (! $type || $type === 'quran_individual') {
+                $rows = $rows->merge($this->getQuranIndividualRows($quranTeacherIds, $entityId, $studentSearch, $routePrefix));
+            }
+            if (! $type || $type === 'quran_group') {
+                $rows = $rows->merge($this->getQuranGroupRows($quranTeacherIds, $entityId, $studentSearch, $routePrefix));
+            }
+        }
+
+        if (! empty($academicProfileIds)) {
+            if (! $type || $type === 'academic') {
+                $rows = $rows->merge($this->getAcademicRows($academicProfileIds, $entityId, $studentSearch, $routePrefix));
+            }
+            if (! $type || $type === 'interactive') {
+                $rows = $rows->merge($this->getInteractiveRows($academicProfileIds, $entityId, $studentSearch, $routePrefix));
             }
         }
 
@@ -54,13 +76,16 @@ class TeacherStudentOverviewService
 
     /**
      * Build entity dropdown options grouped by type.
+     *
+     * @param  int[]  $quranTeacherIds
+     * @param  int[]  $academicProfileIds
      */
-    public function buildEntityOptions(User $user): array
+    public function buildEntityOptions(array $quranTeacherIds, array $academicProfileIds): array
     {
         $options = [];
 
-        if ($user->isQuranTeacher()) {
-            $individualCircles = QuranIndividualCircle::where('quran_teacher_id', $user->id)
+        if (! empty($quranTeacherIds)) {
+            $individualCircles = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->where('is_active', true)
                 ->with('student:id,first_name,last_name,name')
                 ->get();
@@ -68,11 +93,11 @@ class TeacherStudentOverviewService
             foreach ($individualCircles as $circle) {
                 $options['quran_individual'][] = [
                     'id' => $circle->id,
-                    'name' => $circle->name ?: ($circle->student?->name ?? __('teacher.reports.unknown_student')),
+                    'name' => $circle->name ?: ($circle->student?->name ?? __('reports.unknown_student')),
                 ];
             }
 
-            $groupCircles = QuranCircle::where('quran_teacher_id', $user->id)
+            $groupCircles = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->active()
                 ->get(['id', 'name']);
 
@@ -84,29 +109,26 @@ class TeacherStudentOverviewService
             }
         }
 
-        if ($user->isAcademicTeacher()) {
-            $profileId = $user->academicTeacherProfile?->id;
-            if ($profileId) {
-                $lessons = AcademicIndividualLesson::where('academic_teacher_id', $profileId)
-                    ->with('student:id,first_name,last_name,name')
-                    ->get(['id', 'name', 'student_id']);
+        if (! empty($academicProfileIds)) {
+            $lessons = AcademicIndividualLesson::whereIn('academic_teacher_id', $academicProfileIds)
+                ->with('student:id,first_name,last_name,name')
+                ->get(['id', 'name', 'student_id', 'academic_teacher_id']);
 
-                foreach ($lessons as $lesson) {
-                    $options['academic'][] = [
-                        'id' => $lesson->id,
-                        'name' => $lesson->name ?: ($lesson->student?->name ?? __('teacher.reports.unknown_student')),
-                    ];
-                }
+            foreach ($lessons as $lesson) {
+                $options['academic'][] = [
+                    'id' => $lesson->id,
+                    'name' => $lesson->name ?: ($lesson->student?->name ?? __('reports.unknown_student')),
+                ];
+            }
 
-                $courses = InteractiveCourse::where('assigned_teacher_id', $profileId)
-                    ->get(['id', 'title']);
+            $courses = InteractiveCourse::whereIn('assigned_teacher_id', $academicProfileIds)
+                ->get(['id', 'title']);
 
-                foreach ($courses as $course) {
-                    $options['interactive'][] = [
-                        'id' => $course->id,
-                        'name' => $course->title,
-                    ];
-                }
+            foreach ($courses as $course) {
+                $options['interactive'][] = [
+                    'id' => $course->id,
+                    'name' => $course->title,
+                ];
             }
         }
 
@@ -116,11 +138,11 @@ class TeacherStudentOverviewService
     /**
      * Quran Individual Circles: 1 student per circle.
      */
-    private function getQuranIndividualRows(User $user, ?int $entityId, ?string $studentSearch): Collection
+    private function getQuranIndividualRows(array $teacherIds, ?int $entityId, ?string $studentSearch, string $routePrefix): Collection
     {
-        $query = QuranIndividualCircle::where('quran_teacher_id', $user->id)
+        $query = QuranIndividualCircle::whereIn('quran_teacher_id', $teacherIds)
             ->where('is_active', true)
-            ->with('student:id,first_name,last_name,name,avatar');
+            ->with(['student:id,first_name,last_name,name,avatar', 'quranTeacher:id,first_name,last_name,name']);
 
         if ($entityId) {
             $query->where('id', $entityId);
@@ -135,8 +157,8 @@ class TeacherStudentOverviewService
             ));
         }
 
-        return $circles->map(function ($circle) use ($user) {
-            $reports = StudentSessionReport::where('teacher_id', $user->id)
+        return $circles->map(function ($circle) use ($routePrefix) {
+            $reports = StudentSessionReport::whereIn('teacher_id', [$circle->quran_teacher_id])
                 ->whereHas('session', fn ($q) => $q->where('individual_circle_id', $circle->id))
                 ->get();
 
@@ -151,14 +173,15 @@ class TeacherStudentOverviewService
 
             return (object) [
                 'entity_type' => 'quran_individual',
-                'entity_name' => $circle->name ?: ($circle->student?->name ?? __('teacher.reports.unknown_student')),
+                'entity_name' => $circle->name ?: ($circle->student?->name ?? __('reports.unknown_student')),
                 'student_id' => $circle->student_id,
-                'student_name' => $circle->student?->name ?? __('teacher.reports.unknown_student'),
+                'student_name' => $circle->student?->name ?? __('reports.unknown_student'),
                 'student' => $circle->student,
+                'teacher_name' => $circle->quranTeacher?->name ?? '',
                 'attendance_rate' => $attendanceRate,
                 'sessions_completed' => $totalSessions,
                 'avg_performance' => $avgPerformance ? round($avgPerformance, 1) : null,
-                'report_route' => 'teacher.individual-circles.report',
+                'report_route' => $routePrefix.'.individual-circles.report',
                 'report_params' => ['circle' => $circle->id],
             ];
         })->values();
@@ -167,11 +190,11 @@ class TeacherStudentOverviewService
     /**
      * Quran Group Circles: multiple students per circle.
      */
-    private function getQuranGroupRows(User $user, ?int $entityId, ?string $studentSearch): Collection
+    private function getQuranGroupRows(array $teacherIds, ?int $entityId, ?string $studentSearch, string $routePrefix): Collection
     {
-        $query = QuranCircle::where('quran_teacher_id', $user->id)
+        $query = QuranCircle::whereIn('quran_teacher_id', $teacherIds)
             ->active()
-            ->with('students:id,first_name,last_name,name,avatar');
+            ->with(['students:id,first_name,last_name,name,avatar', 'quranTeacher:id,first_name,last_name,name']);
 
         if ($entityId) {
             $query->where('id', $entityId);
@@ -191,7 +214,7 @@ class TeacherStudentOverviewService
             }
 
             foreach ($students as $student) {
-                $reports = StudentSessionReport::where('teacher_id', $user->id)
+                $reports = StudentSessionReport::where('teacher_id', $circle->quran_teacher_id)
                     ->where('student_id', $student->id)
                     ->whereHas('session', fn ($q) => $q->where('circle_id', $circle->id))
                     ->get();
@@ -211,10 +234,11 @@ class TeacherStudentOverviewService
                     'student_id' => $student->id,
                     'student_name' => $student->name,
                     'student' => $student,
+                    'teacher_name' => $circle->quranTeacher?->name ?? '',
                     'attendance_rate' => $attendanceRate,
                     'sessions_completed' => $totalSessions,
                     'avg_performance' => $avgPerformance ? round($avgPerformance, 1) : null,
-                    'report_route' => 'teacher.group-circles.student-report',
+                    'report_route' => $routePrefix.'.group-circles.student-report',
                     'report_params' => ['circle' => $circle->id, 'student' => $student->id],
                 ]);
             }
@@ -226,10 +250,10 @@ class TeacherStudentOverviewService
     /**
      * Academic Individual Lessons: 1 student per lesson.
      */
-    private function getAcademicRows(int $profileId, ?int $entityId, ?string $studentSearch): Collection
+    private function getAcademicRows(array $profileIds, ?int $entityId, ?string $studentSearch, string $routePrefix): Collection
     {
-        $query = AcademicIndividualLesson::where('academic_teacher_id', $profileId)
-            ->with(['student:id,first_name,last_name,name,avatar', 'academicSubscription:id']);
+        $query = AcademicIndividualLesson::whereIn('academic_teacher_id', $profileIds)
+            ->with(['student:id,first_name,last_name,name,avatar', 'academicSubscription:id', 'academicTeacher.user:id,first_name,last_name,name']);
 
         if ($entityId) {
             $query->where('id', $entityId);
@@ -244,7 +268,7 @@ class TeacherStudentOverviewService
             ));
         }
 
-        return $lessons->map(function ($lesson) {
+        return $lessons->map(function ($lesson) use ($routePrefix) {
             $reports = AcademicSessionReport::whereHas(
                 'session',
                 fn ($q) => $q->where('academic_individual_lesson_id', $lesson->id)
@@ -259,19 +283,19 @@ class TeacherStudentOverviewService
             $attendanceRate = $totalSessions > 0 ? round(($attendedCount / $totalSessions) * 100) : 0;
             $avgPerformance = $reports->whereNotNull('overall_performance')->avg('overall_performance');
 
-            // Academic report route uses subscription ID
             $subscriptionId = $lesson->academicSubscription?->id;
 
             return (object) [
                 'entity_type' => 'academic',
-                'entity_name' => $lesson->name ?: ($lesson->student?->name ?? __('teacher.reports.unknown_student')),
+                'entity_name' => $lesson->name ?: ($lesson->student?->name ?? __('reports.unknown_student')),
                 'student_id' => $lesson->student_id,
-                'student_name' => $lesson->student?->name ?? __('teacher.reports.unknown_student'),
+                'student_name' => $lesson->student?->name ?? __('reports.unknown_student'),
                 'student' => $lesson->student,
+                'teacher_name' => $lesson->academicTeacher?->user?->name ?? '',
                 'attendance_rate' => $attendanceRate,
                 'sessions_completed' => $totalSessions,
                 'avg_performance' => $avgPerformance ? round($avgPerformance, 1) : null,
-                'report_route' => $subscriptionId ? 'teacher.academic-subscriptions.report' : null,
+                'report_route' => $subscriptionId ? $routePrefix.'.academic-subscriptions.report' : null,
                 'report_params' => $subscriptionId ? ['subscription' => $subscriptionId] : [],
             ];
         })->values();
@@ -280,10 +304,10 @@ class TeacherStudentOverviewService
     /**
      * Interactive Courses: multiple students via enrollments.
      */
-    private function getInteractiveRows(int $profileId, ?int $entityId, ?string $studentSearch): Collection
+    private function getInteractiveRows(array $profileIds, ?int $entityId, ?string $studentSearch, string $routePrefix): Collection
     {
-        $query = InteractiveCourse::where('assigned_teacher_id', $profileId)
-            ->with(['enrolledStudents.student.user:id,first_name,last_name,name,avatar']);
+        $query = InteractiveCourse::whereIn('assigned_teacher_id', $profileIds)
+            ->with(['enrolledStudents.student.user:id,first_name,last_name,name,avatar', 'assignedTeacher.user:id,first_name,last_name,name']);
 
         if ($entityId) {
             $query->where('id', $entityId);
@@ -325,10 +349,11 @@ class TeacherStudentOverviewService
                     'student_id' => $studentUser->id,
                     'student_name' => $studentUser->name,
                     'student' => $studentUser,
+                    'teacher_name' => $course->assignedTeacher?->user?->name ?? '',
                     'attendance_rate' => $attendanceRate,
                     'sessions_completed' => $totalSessions,
                     'avg_performance' => $avgPerformance ? round($avgPerformance, 1) : null,
-                    'report_route' => 'teacher.interactive-courses.student-report',
+                    'report_route' => $routePrefix.'.interactive-courses.student-report',
                     'report_params' => ['course' => $course->id, 'student' => $studentUser->id],
                 ]);
             }

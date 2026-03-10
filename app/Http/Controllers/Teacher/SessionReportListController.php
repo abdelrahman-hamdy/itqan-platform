@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers\Teacher;
 
-use App\Enums\AttendanceStatus;
 use App\Http\Controllers\Controller;
-use App\Models\AcademicSessionReport;
-use App\Models\InteractiveSessionReport;
-use App\Models\StudentSessionReport;
-use App\Services\Reports\TeacherStudentOverviewService;
+use App\Services\Reports\SessionReportsQueryService;
+use App\Services\Reports\StudentOverviewService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +13,8 @@ use Illuminate\View\View;
 class SessionReportListController extends Controller
 {
     public function __construct(
-        private TeacherStudentOverviewService $overviewService,
+        private StudentOverviewService $overviewService,
+        private SessionReportsQueryService $sessionReportsService,
     ) {
         $this->middleware('auth');
     }
@@ -45,8 +43,18 @@ class SessionReportListController extends Controller
         $entityId = $request->input('entity_id') ? (int) $request->input('entity_id') : null;
         $studentSearch = $request->input('student_search');
 
-        $rows = $this->overviewService->getStudentOverviewForTeacher($user, $type, $entityId, $studentSearch);
-        $entityOptions = $this->overviewService->buildEntityOptions($user);
+        [$quranTeacherIds, $academicProfileIds] = $this->overviewService->forTeacher($user);
+
+        $rows = $this->overviewService->getStudentOverview(
+            $quranTeacherIds,
+            $academicProfileIds,
+            $type,
+            $entityId,
+            $studentSearch,
+            'teacher',
+        );
+
+        $entityOptions = $this->overviewService->buildEntityOptions($quranTeacherIds, $academicProfileIds);
 
         // Stats
         $totalStudents = $rows->count();
@@ -79,129 +87,37 @@ class SessionReportListController extends Controller
      */
     private function sessionReportsTab(Request $request, $user): View
     {
-        $reportType = $request->input('report_type');
-        $entityId = $request->input('entity_id') ? (int) $request->input('entity_id') : null;
-        $studentSearch = $request->input('student_search');
+        [$quranTeacherIds, $academicProfileIds] = $this->overviewService->forTeacher($user);
 
-        $quranReports = collect();
-        $academicReports = collect();
-        $interactiveReports = collect();
-
-        // Only query relevant report types when a type filter is selected
-        $shouldQueryQuran = $user->isQuranTeacher() && (! $reportType || $reportType === 'quran');
-        $shouldQueryAcademic = $user->isAcademicTeacher() && (! $reportType || $reportType === 'academic');
-        $shouldQueryInteractive = $user->isAcademicTeacher() && (! $reportType || $reportType === 'interactive');
-
-        if ($shouldQueryQuran) {
-            $quranQuery = StudentSessionReport::query()
-                ->with(['student:id,first_name,last_name,name', 'session'])
-                ->where('teacher_id', $user->id);
-
-            if ($entityId) {
-                $quranQuery->whereHas('session', fn ($q) => $q->where('individual_circle_id', $entityId)
-                    ->orWhere('circle_id', $entityId));
-            }
-
-            if ($studentSearch) {
-                $quranQuery->whereHas('student', fn ($q) => $q->where('name', 'like', "%{$studentSearch}%"));
-            }
-
-            $this->applyCommonFilters($quranQuery, $request);
-            $quranReports = $quranQuery->latest()->get();
-        }
-
-        if ($shouldQueryAcademic || $shouldQueryInteractive) {
-            $profileId = $user->academicTeacherProfile?->id;
-
-            if ($profileId) {
-                if ($shouldQueryAcademic) {
-                    $academicQuery = AcademicSessionReport::query()
-                        ->with(['student:id,first_name,last_name,name', 'session'])
-                        ->whereHas('session', fn ($q) => $q->where('academic_teacher_id', $profileId));
-
-                    if ($entityId) {
-                        $academicQuery->whereHas('session', fn ($q) => $q->where('academic_individual_lesson_id', $entityId));
-                    }
-
-                    if ($studentSearch) {
-                        $academicQuery->whereHas('student', fn ($q) => $q->where('name', 'like', "%{$studentSearch}%"));
-                    }
-
-                    $this->applyCommonFilters($academicQuery, $request);
-                    $academicReports = $academicQuery->latest()->get();
-                }
-
-                if ($shouldQueryInteractive) {
-                    $interactiveQuery = InteractiveSessionReport::query()
-                        ->with(['student:id,first_name,last_name,name', 'session.course'])
-                        ->whereHas('session.course', fn ($q) => $q->where('assigned_teacher_id', $profileId));
-
-                    if ($entityId) {
-                        $interactiveQuery->whereHas('session', fn ($q) => $q->where('interactive_course_id', $entityId));
-                    }
-
-                    if ($studentSearch) {
-                        $interactiveQuery->whereHas('student', fn ($q) => $q->where('name', 'like', "%{$studentSearch}%"));
-                    }
-
-                    $this->applyCommonFilters($interactiveQuery, $request);
-                    $interactiveReports = $interactiveQuery->latest()->get();
-                }
-            }
-        }
-
-        $allReports = $quranReports
-            ->merge($academicReports)
-            ->merge($interactiveReports)
-            ->sortByDesc('created_at');
+        $result = $this->sessionReportsService->getSessionReports(
+            $quranTeacherIds,
+            $academicProfileIds,
+            $request,
+        );
 
         // Manual pagination
         $page = $request->input('page', 1);
         $perPage = 15;
-        $total = $allReports->count();
+        $allReports = $result['reports'];
         $paginatedReports = new LengthAwarePaginator(
             $allReports->forPage($page, $perPage)->values(),
-            $total,
+            $allReports->count(),
             $perPage,
             $page,
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        // Stats
-        $totalReports = $total;
-        $presentCount = $allReports->where('attendance_status', AttendanceStatus::ATTENDED)->count();
-        $absentCount = $allReports->where('attendance_status', AttendanceStatus::ABSENT)->count();
-        $lateCount = $allReports->where('attendance_status', AttendanceStatus::LATE)->count();
-
         // Entity options for the cascading filter
-        $entityOptions = $this->overviewService->buildEntityOptions($user);
+        $entityOptions = $this->overviewService->buildEntityOptions($quranTeacherIds, $academicProfileIds);
 
         return view('teacher.session-reports.index', [
             'activeTab' => 'sessions',
             'paginatedReports' => $paginatedReports,
-            'totalReports' => $totalReports,
-            'presentCount' => $presentCount,
-            'absentCount' => $absentCount,
-            'lateCount' => $lateCount,
+            'totalReports' => $result['totalReports'],
+            'presentCount' => $result['presentCount'],
+            'absentCount' => $result['absentCount'],
+            'lateCount' => $result['lateCount'],
             'entityOptions' => $entityOptions,
         ]);
-    }
-
-    /**
-     * Apply common filters to a report query.
-     */
-    private function applyCommonFilters($query, Request $request): void
-    {
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-
-        if ($request->filled('attendance_status')) {
-            $query->where('attendance_status', $request->attendance_status);
-        }
     }
 }

@@ -292,8 +292,9 @@ class StudentInteractiveCourseController extends Controller
             return redirect()->route('login');
         }
 
-        // Verify user is an academic teacher
-        if (! $user->isAcademicTeacher()) {
+        // Verify user is an academic teacher, supervisor, or admin
+        $isSupervisorOrAdmin = $user->isSuperAdmin() || $user->isAdmin() || $user->isAcademyAdmin() || $user->isSupervisor();
+        if (! $user->isAcademicTeacher() && ! $isSupervisorOrAdmin) {
             $this->authorize('create', InteractiveCourse::class);
         }
 
@@ -317,8 +318,10 @@ class StudentInteractiveCourseController extends Controller
             'sessions.studentReports',
         ])->findOrFail($courseId);
 
-        // Authorize viewing the course (includes assigned teacher check)
-        $this->authorize('view', $course);
+        // Authorize viewing the course (supervisors/admins can view all courses)
+        if (! $isSupervisorOrAdmin) {
+            $this->authorize('view', $course);
+        }
 
         // Get student
         $student = User::findOrFail($studentId);
@@ -356,6 +359,8 @@ class StudentInteractiveCourseController extends Controller
         $progress['homework_submitted'] = $homeworkSubmitted;
         $progress['homework_completion_rate'] = $homeworkCompletionRate;
 
+        $layoutType = str_starts_with(request()->route()->getName(), 'manage.') ? 'supervisor' : 'teacher';
+
         return view('reports.interactive-course.teacher-student-report', [
             'course' => $course,
             'student' => $student,
@@ -363,6 +368,7 @@ class StudentInteractiveCourseController extends Controller
             'performance' => $performance,
             'attendance' => $attendance,
             'progress' => $progress,
+            'layoutType' => $layoutType,
         ]);
     }
 

@@ -2,87 +2,121 @@
 
 namespace App\Http\Controllers\Supervisor;
 
-use App\Models\AcademicSessionReport;
-use App\Models\StudentSessionReport;
-use App\Models\User;
+use App\Services\Reports\SessionReportsQueryService;
+use App\Services\Reports\StudentOverviewService;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
 
 class SupervisorSessionReportsController extends BaseSupervisorWebController
 {
+    public function __construct(
+        private StudentOverviewService $overviewService,
+        private SessionReportsQueryService $sessionReportsService,
+    ) {
+        parent::__construct();
+    }
+
+    /**
+     * Display session reports with tab routing (mirrors teacher reports page).
+     */
     public function index(Request $request, $subdomain = null): View
     {
+        $tab = $request->input('tab', 'students');
+
+        if ($tab === 'sessions') {
+            return $this->sessionReportsTab($request);
+        }
+
+        return $this->studentOverviewTab($request);
+    }
+
+    /**
+     * Tab 1: Student overview with aggregate stats per entity.
+     */
+    private function studentOverviewTab(Request $request): View
+    {
+        $type = $request->input('type');
+        $entityId = $request->input('entity_id') ? (int) $request->input('entity_id') : null;
+        $studentSearch = $request->input('student_search');
+
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        $academicTeacherProfileIds = $this->getAssignedAcademicTeacherProfileIds();
+        $academicProfileIds = $this->getAssignedAcademicTeacherProfileIds();
 
-        $sessionId = $request->query('session_id');
-        $reports = collect();
+        $rows = $this->overviewService->getStudentOverview(
+            $quranTeacherIds,
+            $academicProfileIds,
+            $type,
+            $entityId,
+            $studentSearch,
+            'manage',
+        );
 
-        // Quran session reports
-        if (!empty($quranTeacherIds)) {
-            $quranReports = StudentSessionReport::whereHas('session', function ($q) use ($quranTeacherIds) {
-                $q->whereIn('quran_teacher_id', $quranTeacherIds);
-            })->with(['session.quranTeacher', 'student'])
-              ->when($sessionId, fn ($q) => $q->where('session_id', $sessionId))
-              ->when($request->date_from, fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
-              ->when($request->date_to, fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
-              ->when($request->attendance_status, fn ($q) => $q->where('attendance_status', $request->attendance_status))
-              ->latest()
-              ->limit(100)
-              ->get()
-              ->map(fn ($r) => [
-                  'id' => $r->id,
-                  'type' => 'quran',
-                  'student_name' => $r->student?->name ?? '',
-                  'teacher_name' => $r->session?->quranTeacher?->name ?? '',
-                  'attendance_status' => $r->attendance_status,
-                  'created_at' => $r->created_at,
-                  'session_date' => $r->session?->scheduled_at,
-              ]);
-            $reports = $reports->merge($quranReports);
-        }
-
-        // Academic session reports
-        if (!empty($academicTeacherProfileIds)) {
-            $academicReports = AcademicSessionReport::whereHas('session', function ($q) use ($academicTeacherProfileIds) {
-                $q->whereIn('academic_teacher_id', $academicTeacherProfileIds);
-            })->with(['session.academicTeacher.user', 'student'])
-              ->when($sessionId, fn ($q) => $q->where('session_id', $sessionId))
-              ->when($request->date_from, fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
-              ->when($request->date_to, fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
-              ->when($request->attendance_status, fn ($q) => $q->where('attendance_status', $request->attendance_status))
-              ->latest()
-              ->limit(100)
-              ->get()
-              ->map(fn ($r) => [
-                  'id' => $r->id,
-                  'type' => 'academic',
-                  'student_name' => $r->student?->name ?? '',
-                  'teacher_name' => $r->session?->academicTeacher?->user?->name ?? '',
-                  'attendance_status' => $r->attendance_status,
-                  'created_at' => $r->created_at,
-                  'session_date' => $r->session?->scheduled_at,
-              ]);
-            $reports = $reports->merge($academicReports);
-        }
-
-        $reports = $reports->sortByDesc('created_at')->values();
+        $entityOptions = $this->overviewService->buildEntityOptions($quranTeacherIds, $academicProfileIds);
 
         // Stats
-        $totalReports = $reports->count();
-        $presentCount = $reports->where('attendance_status', 'present')->count();
-        $absentCount = $reports->where('attendance_status', 'absent')->count();
-        $lateCount = $reports->where('attendance_status', 'late')->count();
+        $totalStudents = $rows->count();
+        $totalEntities = $rows->unique(fn ($r) => $r->entity_type.'_'.$r->entity_name)->count();
+        $avgAttendance = $totalStudents > 0 ? round($rows->avg('attendance_rate')) : 0;
 
-        // Teacher filter
-        $allTeacherIds = $this->getAllAssignedTeacherIds();
-        $teachers = User::whereIn('id', $allTeacherIds)->get()->map(fn ($u) => [
-            'id' => $u->id,
-            'name' => $u->name,
-        ])->toArray();
+        // Paginate
+        $page = $request->input('page', 1);
+        $perPage = 15;
+        $paginatedRows = new LengthAwarePaginator(
+            $rows->forPage($page, $perPage)->values(),
+            $rows->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
-        return view('supervisor.session-reports.index', compact(
-            'reports', 'teachers', 'totalReports', 'presentCount', 'absentCount', 'lateCount'
-        ));
+        return view('supervisor.session-reports.index', [
+            'activeTab' => 'students',
+            'paginatedRows' => $paginatedRows,
+            'entityOptions' => $entityOptions,
+            'totalStudents' => $totalStudents,
+            'totalEntities' => $totalEntities,
+            'avgAttendance' => $avgAttendance,
+        ]);
+    }
+
+    /**
+     * Tab 2: Session reports with filters and stats.
+     */
+    private function sessionReportsTab(Request $request): View
+    {
+        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
+        $academicProfileIds = $this->getAssignedAcademicTeacherProfileIds();
+
+        $result = $this->sessionReportsService->getSessionReports(
+            $quranTeacherIds,
+            $academicProfileIds,
+            $request,
+        );
+
+        // Manual pagination
+        $page = $request->input('page', 1);
+        $perPage = 15;
+        $allReports = $result['reports'];
+        $paginatedReports = new LengthAwarePaginator(
+            $allReports->forPage($page, $perPage)->values(),
+            $allReports->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        // Entity options for the cascading filter
+        $entityOptions = $this->overviewService->buildEntityOptions($quranTeacherIds, $academicProfileIds);
+
+        return view('supervisor.session-reports.index', [
+            'activeTab' => 'sessions',
+            'paginatedReports' => $paginatedReports,
+            'totalReports' => $result['totalReports'],
+            'presentCount' => $result['presentCount'],
+            'absentCount' => $result['absentCount'],
+            'lateCount' => $result['lateCount'],
+            'entityOptions' => $entityOptions,
+        ]);
     }
 }

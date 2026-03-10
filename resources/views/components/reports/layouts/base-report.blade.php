@@ -1,13 +1,14 @@
 @props([
     'title' => '',
     'description' => '',
-    'layoutType' => 'student', // student, teacher, parent
+    'layoutType' => 'student', // student, teacher, parent, supervisor
 ])
 
 @php
 // Determine which layout component to use based on user role
 $layoutComponent = match($layoutType) {
     'teacher' => 'layouts.teacher',
+    'supervisor' => 'layouts.supervisor',
     'parent' => 'layouts.parent-layout',
     default => 'layouts.student',
 };

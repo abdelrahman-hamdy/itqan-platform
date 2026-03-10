@@ -62,7 +62,7 @@ $statsGridData = [
 <x-reports.layouts.base-report
     :title="__('components.reports.common.student_report') . ' - ' . config('app.name', __('components.reports.common.app_name'))"
     :description="__('components.reports.common.comprehensive_report')"
-    layoutType="teacher">
+    :layoutType="$layoutType ?? 'teacher'">
 
 <div>
     <!-- Report Header -->

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Supervisor;
 
 use App\Models\Quiz;
+use App\Models\QuizAssignment;
+use App\Models\QuizAttempt;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -29,16 +31,26 @@ class SupervisorQuizzesController extends BaseSupervisorWebController
             $query->where('title', 'like', '%' . $request->search . '%');
         }
 
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
         $quizzes = $query->latest()->paginate(15)->withQueryString();
 
         // Stats
         $totalQuizzes = Quiz::whereIn('created_by', $allTeacherIds)->count();
         $activeQuizzes = Quiz::whereIn('created_by', $allTeacherIds)->where('is_active', true)->count();
+        $totalAssignments = QuizAssignment::whereHas('quiz', fn ($q) => $q->whereIn('created_by', $allTeacherIds))->count();
+        $totalAttempts = QuizAttempt::whereHas('assignment.quiz', fn ($q) => $q->whereIn('created_by', $allTeacherIds))->count();
 
         // Teacher filter dropdown
         $teachers = $this->getTeachersForFilter($allTeacherIds);
 
-        return view('supervisor.quizzes.index', compact('quizzes', 'teachers', 'totalQuizzes', 'activeQuizzes'));
+        return view('supervisor.quizzes.index', compact('quizzes', 'teachers', 'totalQuizzes', 'activeQuizzes', 'totalAssignments', 'totalAttempts'));
     }
 
     public function show($subdomain, $quizId): View

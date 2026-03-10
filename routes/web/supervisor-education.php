@@ -21,6 +21,10 @@ use App\Http\Controllers\Supervisor\SupervisorProfileController;
 use App\Http\Controllers\Supervisor\SupervisorQuizzesController;
 use App\Http\Controllers\Supervisor\SupervisorSessionReportsController;
 use App\Http\Controllers\Supervisor\SupervisorTeachersController;
+use App\Http\Controllers\Teacher\IndividualCircleReportController;
+use App\Http\Controllers\Teacher\GroupCircleReportController;
+use App\Http\Controllers\AcademicSessionController;
+use App\Http\Controllers\StudentInteractiveCourseController;
 use App\Http\Controllers\Supervisor\SupervisorTrialSessionsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -85,6 +89,12 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Session Reports
         Route::get('/session-reports', [SupervisorSessionReportsController::class, 'index'])->name('session-reports.index');
+
+        // Report Detail Pages (reuse teacher report controllers with supervisor layout)
+        Route::get('/individual-circles/{circle}/report', [IndividualCircleReportController::class, 'show'])->name('individual-circles.report');
+        Route::get('/group-circles/{circle}/students/{student}/report', [GroupCircleReportController::class, 'studentReport'])->name('group-circles.student-report');
+        Route::get('/academic-subscriptions/{subscription}/report', [AcademicSessionController::class, 'subscriptionReport'])->name('academic-subscriptions.report');
+        Route::get('/interactive-courses/{course}/students/{student}/report', [StudentInteractiveCourseController::class, 'interactiveCourseStudentReport'])->name('interactive-courses.student-report');
 
         // Certificates
         Route::get('/certificates', [SupervisorCertificatesController::class, 'index'])->name('certificates.index');

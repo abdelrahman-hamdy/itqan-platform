@@ -149,13 +149,14 @@ return [
     ],
 
     'session_reports' => [
-        'page_title' => 'تقارير الجلسات',
-        'page_subtitle' => 'تقارير جلسات المعلمين المُعينين',
+        'page_title' => 'التقارير',
+        'page_subtitle' => 'عرض تقارير الحضور والأداء للمعلمين المُعينين',
+        'page_description' => 'عرض تقارير الحضور والأداء للمعلمين المُعينين',
         'total_reports' => 'إجمالي التقارير',
         'present_count' => 'حاضر',
         'absent_count' => 'غائب',
         'late_count' => 'متأخر',
-        'breadcrumb' => 'تقارير الجلسات',
+        'breadcrumb' => 'التقارير',
     ],
 
     'certificates' => [

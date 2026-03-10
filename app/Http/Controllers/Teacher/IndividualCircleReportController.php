@@ -33,11 +33,13 @@ class IndividualCircleReportController extends Controller
         // Generate report data with date filter
         $reportData = $this->reportService->getIndividualCircleReport($circle, $dateRange);
 
+        $layoutType = str_starts_with(request()->route()->getName(), 'manage.') ? 'supervisor' : 'teacher';
+
         return view('reports.quran.circle-report', array_merge(
             $reportData,
             $this->getDateRangeViewData($request),
             [
-                'layoutType' => 'teacher',
+                'layoutType' => $layoutType,
                 'circleType' => 'individual',
             ]
         ));

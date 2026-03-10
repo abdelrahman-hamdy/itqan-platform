@@ -90,7 +90,7 @@ if (isset($progress['homework_completion_rate'])) {
 <x-reports.layouts.base-report
     :title="__('teacher.interactive_reports.student_report_title', ['course' => $course?->title]) . ' - ' . config('app.name', __('teacher.interactive_reports.platform_name'))"
     :description="__('teacher.interactive_reports.student_report_description')"
-    layoutType="teacher">
+    :layoutType="$layoutType ?? 'teacher'">
 
 <div>
     <!-- Report Header with Breadcrumbs -->

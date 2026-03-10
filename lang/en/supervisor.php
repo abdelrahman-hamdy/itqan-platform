@@ -149,13 +149,14 @@ return [
     ],
 
     'session_reports' => [
-        'page_title' => 'Session Reports',
-        'page_subtitle' => 'Reports from assigned teachers\' sessions',
+        'page_title' => 'Reports',
+        'page_subtitle' => 'View attendance and performance reports for assigned teachers',
+        'page_description' => 'View attendance and performance reports for assigned teachers',
         'total_reports' => 'Total Reports',
         'present_count' => 'Present',
         'absent_count' => 'Absent',
         'late_count' => 'Late',
-        'breadcrumb' => 'Session Reports',
+        'breadcrumb' => 'Reports',
     ],
 
     'certificates' => [
