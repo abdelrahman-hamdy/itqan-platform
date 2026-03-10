@@ -46,9 +46,12 @@
         </div>
     </td>
 
-    {{-- Session Code --}}
+    {{-- Session Title + Duration --}}
     <td class="px-4 py-3">
-        <span class="text-sm font-mono text-gray-700">{{ $session->session_code ?? '-' }}</span>
+        <p class="text-sm font-medium text-gray-900">{{ $session->title ?: ($session->session_code ?? '-') }}</p>
+        @if($session->duration_minutes)
+            <p class="text-xs text-gray-400">{{ __('supervisor.sessions.duration_minutes', ['count' => $session->duration_minutes]) }}</p>
+        @endif
     </td>
 
     {{-- Type --}}
@@ -82,46 +85,29 @@
         @endif
     </td>
 
-    {{-- Duration --}}
-    <td class="px-4 py-3">
-        <span class="text-sm text-gray-700">{{ $session->duration_minutes ? __('supervisor.sessions.duration_minutes', ['count' => $session->duration_minutes]) : '-' }}</span>
-    </td>
-
-    {{-- Actions --}}
+    {{-- Actions (inline buttons) --}}
     <td class="px-4 py-3" onclick="event.stopPropagation()">
-        <div class="relative" x-data="{ open: false }">
-            <button @click="open = !open" class="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500">
-                <i class="ri-more-2-fill"></i>
-            </button>
-            <div x-show="open" @click.outside="open = false" x-transition
-                class="absolute end-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20 py-1">
-                <a href="{{ $showUrl }}" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    <i class="ri-eye-line text-gray-400"></i>
-                    {{ __('supervisor.sessions.view_details') }}
+        <div class="flex items-center gap-1">
+            <a href="{{ $showUrl }}" title="{{ __('supervisor.sessions.view_details') }}"
+               class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors">
+                <i class="ri-eye-line text-base"></i>
+            </a>
+            @if($isLive)
+                <a href="{{ $showUrl }}?mode=observer" title="{{ __('supervisor.sessions.observe_meeting') }}"
+                   class="p-1.5 rounded-lg hover:bg-indigo-50 text-indigo-500 hover:text-indigo-700 transition-colors">
+                    <i class="ri-eye-2-line text-base"></i>
                 </a>
-                @if($isLive)
-                    <a href="{{ $showUrl }}?mode=observer" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                        <i class="ri-eye-2-line text-gray-400"></i>
-                        {{ __('supervisor.sessions.observe_meeting') }}
-                    </a>
-                    <a href="{{ $showUrl }}?mode=participant" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                        <i class="ri-video-chat-line text-gray-400"></i>
-                        {{ __('supervisor.sessions.join_meeting') }}
-                    </a>
-                @endif
-                @if(!$status->isFinal())
-                    <a href="{{ $showUrl }}#edit" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                        <i class="ri-edit-line text-gray-400"></i>
-                        {{ __('supervisor.sessions.edit_session') }}
-                    </a>
-                @endif
-                @if($status->canCancel())
-                    <a href="{{ $showUrl }}#cancel" class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50">
-                        <i class="ri-close-circle-line text-red-400"></i>
-                        {{ __('supervisor.sessions.cancel_session') }}
-                    </a>
-                @endif
-            </div>
+                <a href="{{ $showUrl }}?mode=participant" title="{{ __('supervisor.sessions.join_meeting') }}"
+                   class="p-1.5 rounded-lg hover:bg-green-50 text-green-500 hover:text-green-700 transition-colors">
+                    <i class="ri-video-chat-line text-base"></i>
+                </a>
+            @endif
+            @if($status->canCancel())
+                <a href="{{ $showUrl }}#cancel" title="{{ __('supervisor.sessions.cancel_session') }}"
+                   class="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors">
+                    <i class="ri-close-circle-line text-base"></i>
+                </a>
+            @endif
         </div>
     </td>
 </tr>

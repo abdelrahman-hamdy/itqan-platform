@@ -111,36 +111,26 @@
                 @endforeach
             </div>
 
-            {{-- Status filter pills --}}
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="text-xs font-medium text-gray-500">{{ __($t.'filter_status') }}:</span>
-                @php
-                    $activeStatuses = $statusFilter ? array_filter(explode(',', $statusFilter)) : [];
-                @endphp
-                @foreach(\App\Enums\SessionStatus::cases() as $statusEnum)
-                    @php
-                        $isActive = in_array($statusEnum->value, $activeStatuses);
-                        if ($isActive) {
-                            $newStatuses = array_diff($activeStatuses, [$statusEnum->value]);
-                        } else {
-                            $newStatuses = array_merge($activeStatuses, [$statusEnum->value]);
-                        }
-                        $newStatusStr = implode(',', $newStatuses) ?: null;
-                    @endphp
-                    <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $newStatusStr, 'teacher_id' => $teacherId, 'search' => $search]) }}"
-                       class="px-2.5 py-1 text-xs font-medium rounded-full border transition-colors
-                           {{ $isActive ? 'bg-indigo-50 text-indigo-700 border-indigo-300' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
-                        <i class="{{ $statusEnum->icon() }} text-[10px] me-0.5"></i>
-                        {{ $statusEnum->label() }}
-                    </a>
-                @endforeach
-            </div>
-
-            {{-- Teacher + Search Row --}}
+            {{-- Status + Teacher + Search Row --}}
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                {{-- Status dropdown --}}
+                <select onchange="if(this.value !== '') { window.location.href = this.value; }"
+                    class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:w-44">
+                    <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'teacher_id' => $teacherId, 'search' => $search]) }}"
+                        {{ !$statusFilter ? 'selected' : '' }}>
+                        {{ __($t.'filter_status') }}: {{ __($t.'filter_date_all') }}
+                    </option>
+                    @foreach(\App\Enums\SessionStatus::cases() as $statusEnum)
+                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusEnum->value, 'teacher_id' => $teacherId, 'search' => $search]) }}"
+                            {{ $statusFilter === $statusEnum->value ? 'selected' : '' }}>
+                            {{ $statusEnum->label() }}
+                        </option>
+                    @endforeach
+                </select>
+
                 {{-- Teacher dropdown --}}
                 @if(!empty($teachers))
-                <select onchange="if(this.value) { window.location.href = this.value; }"
+                <select onchange="if(this.value !== '') { window.location.href = this.value; }"
                     class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:w-48">
                     <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'search' => $search]) }}"
                         {{ !$teacherId ? 'selected' : '' }}>
@@ -192,12 +182,11 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_status') }}</th>
-                        <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_session_code') }}</th>
+                        <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'session_info') }}</th>
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_type') }}</th>
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_teacher') }}</th>
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_student') }}</th>
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_scheduled') }}</th>
-                        <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_duration') }}</th>
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_actions') }}</th>
                     </tr>
                 </thead>
