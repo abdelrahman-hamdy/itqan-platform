@@ -162,7 +162,7 @@
                   <div class="flex-1">
                     <h4 class="font-medium text-gray-900 mb-1 group-hover:text-primary transition-colors">{{ $lesson->title }}</h4>
                     @if($lesson->description)
-                      <p class="text-sm text-gray-600">{{ Str::limit(html_entity_decode(strip_tags($lesson->description)), 120) }}</p>
+                      <p class="text-sm text-gray-600">{!! Str::limit(strip_tags($lesson->description), 120) !!}</p>
                     @endif
 
                     <!-- Lesson Meta -->
@@ -205,13 +205,15 @@
         </div>
       </div>
     @else
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="text-center py-8">
-          <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="ri-video-line text-2xl text-gray-400"></i>
+      <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+        <div class="flex items-center gap-3 text-center justify-center py-3">
+          <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="ri-video-line text-lg text-gray-400"></i>
           </div>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('courses.show.no_lessons') }}</h3>
-          <p class="text-gray-600">{{ __('courses.show.lessons_coming_soon') }}</p>
+          <div>
+            <p class="text-sm font-medium text-gray-500">{{ __('courses.show.no_lessons') }}</p>
+            <p class="text-xs text-gray-400">{{ __('courses.show.lessons_coming_soon') }}</p>
+          </div>
         </div>
       </div>
     @endif
