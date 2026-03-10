@@ -72,18 +72,27 @@
     </div>
 
     {{-- Quick Actions --}}
-    @if($isLive)
-    <div class="mt-3 pt-3 border-t border-gray-100 flex gap-2" onclick="event.preventDefault(); event.stopPropagation();">
-        <a href="{{ $showUrl }}?mode=observer"
-           class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">
-            <i class="ri-eye-line"></i>
-            {{ __('supervisor.sessions.observe_meeting') }}
-        </a>
-        <a href="{{ $showUrl }}?mode=participant"
-           class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
-            <i class="ri-video-chat-line"></i>
-            {{ __('supervisor.sessions.join_meeting') }}
-        </a>
+    @if($isLive || $status->canCancel())
+    <div class="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-2" onclick="event.preventDefault(); event.stopPropagation();">
+        @if($isLive)
+            <a href="{{ $showUrl }}?mode=observer"
+               class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">
+                <i class="ri-eye-2-line"></i>
+                {{ __('supervisor.sessions.observe_meeting') }}
+            </a>
+            <a href="{{ $showUrl }}?mode=participant"
+               class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors">
+                <i class="ri-video-chat-line"></i>
+                {{ __('supervisor.sessions.join_meeting') }}
+            </a>
+        @endif
+        @if($status->canCancel())
+            <a href="{{ $showUrl }}#cancel"
+               class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors">
+                <i class="ri-close-circle-line"></i>
+                {{ __('supervisor.sessions.cancel_session') }}
+            </a>
+        @endif
     </div>
     @endif
 </a>

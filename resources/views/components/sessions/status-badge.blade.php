@@ -77,10 +77,10 @@
         };
     }
 
-    $finalClasses = "inline-flex items-center rounded-lg font-semibold shadow-sm {$sizeClasses} {$statusConfig['classes']}";
+    $finalClasses = "inline-flex items-center gap-1 rounded-lg font-semibold shadow-sm {$sizeClasses} {$statusConfig['classes']}";
 @endphp
 
 <span {{ $attributes->merge(['class' => $finalClasses]) }}>
-    <i class="{{ $statusConfig['icon'] }} ms-0.5 md:ms-1 rtl:ms-0.5 rtl:md:ms-1 ltr:me-0.5 ltr:md:me-1"></i>
+    <i class="{{ $statusConfig['icon'] }}"></i>
     <span class="whitespace-nowrap">{{ $statusConfig['label'] }}</span>
 </span>

@@ -88,11 +88,6 @@
     {{-- Actions (inline buttons) --}}
     <td class="px-4 py-3" onclick="event.stopPropagation()">
         <div class="flex items-center gap-1.5">
-            <a href="{{ $showUrl }}"
-               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-600 hover:bg-gray-700 text-white transition-colors">
-                <i class="ri-eye-line"></i>
-                {{ __('supervisor.sessions.view_details') }}
-            </a>
             @if($isLive)
                 <a href="{{ $showUrl }}?mode=observer"
                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">
