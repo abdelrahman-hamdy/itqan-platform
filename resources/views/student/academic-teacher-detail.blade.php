@@ -1,12 +1,11 @@
 @auth
   @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupervisor())
-    {{-- Show public layout for admin/superadmin/supervisor --}}
-    <x-layouts.public-layout
+    {{-- Show supervisor layout for admin/superadmin/supervisor (with sidebar) --}}
+    <x-layouts.supervisor
       title="{{ __('student.teacher_detail.academic_teacher_title') }} - {{ $teacher->user->name }}"
-      description="{{ __('student.teacher_detail.academic_teacher_description') }} {{ $teacher->user->name }} - {{ __('student.teacher_detail.academic_teacher_certified') }} {{ $academy->name ?? __('student.common.academy_default') }}"
-      :academy="$academy">
+      description="{{ __('student.teacher_detail.academic_teacher_description') }} {{ $teacher->user->name }} - {{ __('student.teacher_detail.academic_teacher_certified') }} {{ $academy->name ?? __('student.common.academy_default') }}">
       @include('student.partials.academic-teacher-detail-content')
-    </x-layouts.public-layout>
+    </x-layouts.supervisor>
   @elseif(auth()->user()->isParent())
     {{-- Show parent layout for parents --}}
     <x-layouts.parent-layout title="{{ __('student.teacher_detail.academic_teacher_title') }} - {{ $teacher->user->name }}">

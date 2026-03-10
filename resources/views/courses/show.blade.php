@@ -1,12 +1,11 @@
 @auth
   @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupervisor())
-    {{-- Show public layout for admin/superadmin/supervisor --}}
-    <x-layouts.public-layout
+    {{-- Show supervisor layout for admin/superadmin/supervisor (with sidebar) --}}
+    <x-layouts.supervisor
       :title="$course->title . ' - ' . $academy->name"
-      :description="$course->description"
-      :academy="$academy">
+      :description="$course->description">
       @include('courses.partials.show-content')
-    </x-layouts.public-layout>
+    </x-layouts.supervisor>
   @else
     {{-- Show student layout for regular users --}}
     <x-layouts.student

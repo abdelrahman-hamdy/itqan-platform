@@ -4,13 +4,12 @@
 
 @auth
   @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupervisor())
-    {{-- Show public layout for admin/superadmin/supervisor --}}
-    <x-layouts.public-layout
+    {{-- Show supervisor layout for admin/superadmin/supervisor (with sidebar) --}}
+    <x-layouts.supervisor
         :title="$pageTitle"
-        :description="$course->description"
-        :academy="$academy">
+        :description="$course->description">
         @include('student.partials.interactive-course-detail-content')
-    </x-layouts.public-layout>
+    </x-layouts.supervisor>
   @elseif(auth()->user()->isParent())
     {{-- Show parent layout for parents --}}
     <x-layouts.parent-layout :title="$pageTitle">
