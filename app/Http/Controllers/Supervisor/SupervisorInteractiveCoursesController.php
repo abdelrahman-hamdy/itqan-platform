@@ -60,7 +60,7 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
             'subject',
             'gradeLevel',
             'enrollments.student',
-            'sessions' => fn ($q) => $q->orderBy('scheduled_date')->orderBy('scheduled_time'),
+            'sessions' => fn ($q) => $q->orderBy('scheduled_at'),
         ])->findOrFail($courseId);
 
         $teacher = $course->assignedTeacher?->user;
