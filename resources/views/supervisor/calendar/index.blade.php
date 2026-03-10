@@ -169,11 +169,26 @@
             return div.innerHTML;
         }
 
+        // Convert UTC ISO string to offset-less academy-local string for FullCalendar
+        // FC CDN doesn't support named timezones, so we pre-convert and use timeZone:'UTC'
+        function utcToAcademyLocal(isoStr) {
+            if (!isoStr) return isoStr;
+            const d = new Date(isoStr);
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: academyTimezone,
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+            }).formatToParts(d);
+            const get = type => parts.find(p => p.type === type)?.value || '';
+            const hour = get('hour') === '24' ? '00' : get('hour');
+            return `${get('year')}-${get('month')}-${get('day')}T${hour}:${get('minute')}:${get('second')}`;
+        }
+
         // Initialize FullCalendar
         const calendar = new FullCalendar.Calendar(calendarEl, {
             direction: 'rtl',
             locale: 'ar',
-            timeZone: academyTimezone,
+            timeZone: 'UTC',
             initialView: 'dayGridMonth',
             headerToolbar: {
                 start: 'prev,next today',
@@ -209,8 +224,8 @@
                     const events = (Array.isArray(data) ? data : []).map(event => ({
                         id: event.id,
                         title: event.title,
-                        start: event.start_time,
-                        end: event.end_time,
+                        start: utcToAcademyLocal(event.start_time),
+                        end: utcToAcademyLocal(event.end_time),
                         backgroundColor: statusColors[event.status] || event.color || '#3b82f6',
                         borderColor: 'transparent',
                         classNames: ['fc-event-' + (event.status || 'scheduled')],
@@ -271,13 +286,16 @@
                     return;
                 }
 
-                const newStartISO = event.start.toISOString();
-                const newDateStr = event.start.toLocaleDateString('ar-SA', {
-                    timeZone: academyTimezone,
+                // FC is in UTC mode — event.start UTC components = academy local time
+                const d = event.start;
+                const pad = n => String(n).padStart(2, '0');
+                const newStartLocal = `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:00`;
+                const newDateStr = d.toLocaleDateString('ar-SA', {
+                    timeZone: 'UTC',
                     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
                 });
-                const newTimeStr = event.start.toLocaleTimeString('ar-SA', {
-                    timeZone: academyTimezone,
+                const newTimeStr = d.toLocaleTimeString('ar-SA', {
+                    timeZone: 'UTC',
                     hour: '2-digit', minute: '2-digit', hour12: true
                 });
 
@@ -303,7 +321,7 @@
                             body: JSON.stringify({
                                 source: source,
                                 session_id: sessionId,
-                                scheduled_at: newStartISO,
+                                scheduled_at: newStartLocal,
                                 teacher_id: teacherId,
                             })
                         })

@@ -306,7 +306,9 @@ class SupervisorCalendarController extends BaseSupervisorWebController
         }
 
         $oldScheduledAt = $session->scheduled_at;
-        $newScheduledAt = Carbon::parse($validated['scheduled_at'])->utc();
+        $newScheduledAt = AcademyContextService::toUtcForStorage(
+            AcademyContextService::parseInAcademyTimezone($validated['scheduled_at'])
+        );
 
         $session->update([
             'scheduled_at' => $newScheduledAt,
