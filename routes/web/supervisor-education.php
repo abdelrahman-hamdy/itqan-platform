@@ -57,6 +57,15 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Calendar
         Route::get('/calendar', [SupervisorCalendarController::class, 'index'])->name('calendar.index');
         Route::get('/calendar/events', [SupervisorCalendarController::class, 'getEvents'])->name('calendar.events');
+        Route::get('/calendar/schedulable-items', [SupervisorCalendarController::class, 'getSchedulableItems'])->name('calendar.schedulable-items');
+        Route::get('/calendar/recommendations', [SupervisorCalendarController::class, 'getRecommendations'])->name('calendar.recommendations');
+        Route::post('/calendar/schedule', [SupervisorCalendarController::class, 'createSchedule'])->name('calendar.schedule');
+        Route::post('/calendar/check-conflicts', [SupervisorCalendarController::class, 'checkConflicts'])->name('calendar.check-conflicts');
+        Route::put('/calendar/reschedule', [SupervisorCalendarController::class, 'rescheduleEvent'])->name('calendar.reschedule');
+        Route::get('/calendar/session-detail', [SupervisorCalendarController::class, 'getSessionDetail'])->name('calendar.session-detail');
+        Route::put('/calendar/update-session', [SupervisorCalendarController::class, 'updateSession'])->name('calendar.update-session');
+        Route::post('/calendar/quran-homework', [SupervisorCalendarController::class, 'saveQuranHomework'])->name('calendar.quran-homework');
+        Route::post('/calendar/academic-homework', [SupervisorCalendarController::class, 'saveAcademicHomework'])->name('calendar.academic-homework');
 
         // Sessions Management
         Route::get('/sessions', [SupervisorSessionsController::class, 'index'])->name('sessions.index');
