@@ -64,7 +64,7 @@
                             <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ $lesson->title }}</h1>
                             @if($lesson->description)
                                 <div class="text-gray-600 prose prose-sm max-w-none">
-                                    {!! nl2br(e($lesson->description)) !!}
+                                    {!! strip_tags($lesson->description, '<p><br><ul><ol><li><strong><em><a>') !!}
                                 </div>
                             @endif
                         </div>

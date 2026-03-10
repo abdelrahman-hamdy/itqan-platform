@@ -74,9 +74,9 @@
         
         <!-- Course Description -->
         @if($course->description)
-        <p class="text-gray-600 text-lg leading-relaxed mb-8">
-          {{ $course->description }}
-        </p>
+        <div class="text-gray-600 text-lg leading-relaxed mb-8 prose prose-lg max-w-none">
+          {!! strip_tags($course->description, '<p><br><ul><ol><li><strong><em><a>') !!}
+        </div>
         @endif
         
         <!-- Action Button and Price -->
