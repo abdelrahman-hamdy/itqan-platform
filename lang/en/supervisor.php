@@ -300,6 +300,20 @@ return [
         'session_settings' => 'Session Settings',
         'save_changes' => 'Save Changes',
         'changes_saved' => 'Changes saved',
+
+        // Cancel modal
+        'cancel_modal_close' => 'Close',
+
+        // Meeting card
+        'join_meeting_btn' => 'Join Meeting',
+        'observe_silently' => 'Observe Silently',
+        'starts_in' => 'Starts in',
+        'session_not_started_yet' => 'Session not started yet',
+        'session_cancelled_text' => 'Session cancelled',
+        'session_starting_soon' => 'Starting soon',
+        'hours_short' => 'h',
+        'minutes_short' => 'm',
+        'seconds_short' => 's',
     ],
 
     'observation' => [

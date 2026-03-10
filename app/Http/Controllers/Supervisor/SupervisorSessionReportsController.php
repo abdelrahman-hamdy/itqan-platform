@@ -15,6 +15,7 @@ class SupervisorSessionReportsController extends BaseSupervisorWebController
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
         $academicTeacherProfileIds = $this->getAssignedAcademicTeacherProfileIds();
 
+        $sessionId = $request->query('session_id');
         $reports = collect();
 
         // Quran session reports
@@ -22,6 +23,7 @@ class SupervisorSessionReportsController extends BaseSupervisorWebController
             $quranReports = StudentSessionReport::whereHas('session', function ($q) use ($quranTeacherIds) {
                 $q->whereIn('quran_teacher_id', $quranTeacherIds);
             })->with(['session.quranTeacher', 'student'])
+              ->when($sessionId, fn ($q) => $q->where('session_id', $sessionId))
               ->when($request->date_from, fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
               ->when($request->date_to, fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
               ->when($request->attendance_status, fn ($q) => $q->where('attendance_status', $request->attendance_status))
@@ -45,6 +47,7 @@ class SupervisorSessionReportsController extends BaseSupervisorWebController
             $academicReports = AcademicSessionReport::whereHas('session', function ($q) use ($academicTeacherProfileIds) {
                 $q->whereIn('academic_teacher_id', $academicTeacherProfileIds);
             })->with(['session.academicTeacher.user', 'student'])
+              ->when($sessionId, fn ($q) => $q->where('session_id', $sessionId))
               ->when($request->date_from, fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
               ->when($request->date_to, fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
               ->when($request->attendance_status, fn ($q) => $q->where('attendance_status', $request->attendance_status))

@@ -138,7 +138,7 @@
                             </div>
                         </div>
                         @if($isSupervisor && $teacherUser)
-                            <a href="{{ route('chats', ['subdomain' => $subdomain]) }}" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors">
+                            <a href="{{ route('chats', ['subdomain' => $subdomain]) }}" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer">
                                 <i class="ri-message-3-line"></i>
                                 {{ __($t.'message') }}
                             </a>
@@ -157,13 +157,13 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <a href="{{ url('/panel/student-session-reports?tableFilters[session_id][value]=' . $session->id) }}"
-                                   class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+                                <a href="{{ route('manage.session-reports.index', ['subdomain' => $subdomain, 'session_id' => $session->id]) }}"
+                                   class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer">
                                     <i class="ri-file-list-3-line"></i>
                                     {{ __($t.'view_report') }}
                                 </a>
                                 @if($isSupervisor)
-                                    <a href="{{ route('chats', ['subdomain' => $subdomain]) }}" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors">
+                                    <a href="{{ route('chats', ['subdomain' => $subdomain]) }}" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer">
                                         <i class="ri-message-3-line"></i>
                                         {{ __($t.'message') }}
                                     </a>
@@ -216,6 +216,78 @@
 
         {{-- Sidebar (1/3) --}}
         <div class="space-y-6">
+            {{-- Meeting Info (moved above notes) --}}
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                <h3 class="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <i class="ri-video-line text-gray-400"></i>
+                    {{ __($t.'meeting_info') }}
+                </h3>
+                <div class="space-y-3 text-sm">
+                    @if($isLive)
+                        <div class="flex items-center gap-2 text-green-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            {{ __($t.'meeting_active') }}
+                        </div>
+                        <div class="space-y-2">
+                            <a href="#" onclick="document.querySelector('.bg-white.rounded-xl.border.border-gray-200.shadow-sm.overflow-hidden')?.scrollIntoView({behavior:'smooth'}); return false;"
+                               class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors cursor-pointer">
+                                <i class="ri-video-chat-line"></i>
+                                {{ __($t.'join_meeting_btn') }}
+                            </a>
+                            @if($canObserve)
+                                <a href="{{ route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id, 'mode' => 'observer']) }}"
+                                   class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-colors cursor-pointer">
+                                    <i class="ri-eye-line"></i>
+                                    {{ __($t.'observe_silently') }}
+                                </a>
+                            @endif
+                        </div>
+                    @elseif($isFinal)
+                        <div class="flex items-center gap-2 text-gray-500">
+                            <i class="ri-stop-circle-line"></i>
+                            @if($status === \App\Enums\SessionStatus::CANCELLED)
+                                {{ __($t.'session_cancelled_text') }}
+                            @else
+                                {{ __($t.'meeting_ended') }}
+                            @endif
+                        </div>
+                    @else
+                        {{-- Scheduled / not started --}}
+                        <div class="flex items-center gap-2 text-gray-500">
+                            <i class="ri-time-line"></i>
+                            {{ __($t.'meeting_not_started') }}
+                        </div>
+                        @if($session->scheduled_at)
+                            <div x-data="{ remaining: '' }" x-init="
+                                const target = new Date(@json($session->scheduled_at->toIso8601String()));
+                                function update() {
+                                    const diff = target - Date.now();
+                                    if (diff <= 0) { remaining = '{{ __($t.'session_starting_soon') }}'; return; }
+                                    const h = Math.floor(diff / 3600000);
+                                    const m = Math.floor((diff % 3600000) / 60000);
+                                    const s = Math.floor((diff % 60000) / 1000);
+                                    remaining = (h > 0 ? h + ' {{ __($t.'hours_short') }} ' : '') + m + ' {{ __($t.'minutes_short') }} ' + s + ' {{ __($t.'seconds_short') }}';
+                                }
+                                update();
+                                setInterval(update, 1000);
+                            ">
+                                <p class="text-sm text-amber-600 font-medium">
+                                    <i class="ri-timer-line me-1"></i>
+                                    {{ __($t.'starts_in') }}: <span x-text="remaining"></span>
+                                </p>
+                            </div>
+                        @endif
+                        <button disabled class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed">
+                            <i class="ri-video-chat-line"></i>
+                            {{ __($t.'session_not_started_yet') }}
+                        </button>
+                    @endif
+                    @if($session->meeting_room_name)
+                        <p class="text-xs text-gray-400 font-mono">{{ $session->meeting_room_name }}</p>
+                    @endif
+                </div>
+            </div>
+
             {{-- Notes --}}
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                 <h3 class="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -241,35 +313,6 @@
                             <i class="ri-check-line"></i> {{ __($t.'notes_saved') }}
                         </span>
                     </div>
-                </div>
-            </div>
-
-            {{-- Meeting Info --}}
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h3 class="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <i class="ri-video-line text-gray-400"></i>
-                    {{ __($t.'meeting_info') }}
-                </h3>
-                <div class="space-y-2 text-sm">
-                    @if($isLive)
-                        <div class="flex items-center gap-2 text-green-600">
-                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                            {{ __($t.'meeting_active') }}
-                        </div>
-                    @elseif($isFinal)
-                        <div class="flex items-center gap-2 text-gray-500">
-                            <i class="ri-stop-circle-line"></i>
-                            {{ __($t.'meeting_ended') }}
-                        </div>
-                    @else
-                        <div class="flex items-center gap-2 text-gray-500">
-                            <i class="ri-time-line"></i>
-                            {{ __($t.'meeting_not_started') }}
-                        </div>
-                    @endif
-                    @if($session->meeting_room_name)
-                        <p class="text-xs text-gray-400 font-mono">{{ $session->meeting_room_name }}</p>
-                    @endif
                 </div>
             </div>
         </div>
@@ -303,11 +346,11 @@
 
                 <div class="flex justify-end gap-3">
                     <button @click="showCancelModal = false"
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-                        {{ __('supervisor.common.back_to_list') }}
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer">
+                        {{ __($t.'cancel_modal_close') }}
                     </button>
                     <button @click="submitCancel()" :disabled="submittingCancel || !cancellationReason.trim()"
-                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50">
+                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 cursor-pointer">
                         <span x-show="!submittingCancel">{{ __($t.'cancel_session') }}</span>
                         <span x-show="submittingCancel" x-cloak>{{ __('supervisor.observation.saving') }}...</span>
                     </button>

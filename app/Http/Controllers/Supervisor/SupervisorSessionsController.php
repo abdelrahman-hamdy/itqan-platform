@@ -467,16 +467,12 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     }
 
     /**
-     * Get Filament panel URL for a session.
-     */
-    /**
      * Get Filament panel URL for a session (only for admin/super_admin).
      */
     private function getFilamentUrl(string $type, string $id): ?string
     {
         $user = auth()->user();
 
-        // Only admins and super_admins get Filament panel links
         if (! $user->isAdmin()) {
             return null;
         }
@@ -487,16 +483,15 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             default => 'quran-sessions',
         };
 
-        // Academy panel is tenant-scoped: /{tenant_subdomain}/panel/{resource}/{id}
-        $tenantSlug = $user->academy?->subdomain;
-        if (! $tenantSlug) {
+        if ($user->isSuperAdmin()) {
+            return url("/admin/{$resource}/{$id}");
+        }
+
+        $academyId = $user->academy?->id;
+        if (! $academyId) {
             return null;
         }
 
-        try {
-            return url("/{$tenantSlug}/panel/{$resource}/{$id}");
-        } catch (\Exception) {
-            return null;
-        }
+        return url("/panel/{$academyId}/{$resource}/{$id}");
     }
 }

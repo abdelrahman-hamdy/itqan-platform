@@ -300,6 +300,20 @@ return [
         'session_settings' => 'إعدادات الجلسة',
         'save_changes' => 'حفظ التعديلات',
         'changes_saved' => 'تم حفظ التعديلات',
+
+        // Cancel modal
+        'cancel_modal_close' => 'إغلاق',
+
+        // Meeting card
+        'join_meeting_btn' => 'انضم للاجتماع',
+        'observe_silently' => 'مراقبة بصمت',
+        'starts_in' => 'تبدأ خلال',
+        'session_not_started_yet' => 'الجلسة لم تبدأ بعد',
+        'session_cancelled_text' => 'تم إلغاء الجلسة',
+        'session_starting_soon' => 'ستبدأ قريباً',
+        'hours_short' => 'س',
+        'minutes_short' => 'د',
+        'seconds_short' => 'ث',
     ],
 
     'observation' => [
