@@ -34,6 +34,22 @@
         $studentUsers = collect([$session->student])->filter();
     }
 
+    // Build student_id → report map for direct links
+    $reportsByStudent = collect();
+    if ($sessionType === 'quran') {
+        $reportsByStudent = ($session->studentReports ?? collect())->keyBy('student_id');
+    } elseif ($sessionType === 'academic') {
+        $reportsByStudent = ($session->sessionReports ?? collect())->keyBy('student_id');
+    } elseif ($sessionType === 'interactive') {
+        $reportsByStudent = ($session->studentReports ?? collect())->keyBy('student_id');
+    }
+
+    $reportTypeSlug = match($sessionType) {
+        'academic' => 'academic',
+        'interactive' => 'interactive',
+        default => 'quran',
+    };
+
     // Check user roles
     $currentUser = auth()->user();
     $isSupervisor = $currentUser->hasRole('supervisor');
@@ -157,11 +173,21 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <a href="{{ route('manage.session-reports.index', ['subdomain' => $subdomain, 'session_id' => $session->id]) }}"
-                                   class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer">
-                                    <i class="ri-file-list-3-line"></i>
-                                    {{ __($t.'view_report') }}
-                                </a>
+                                @php
+                                    $studentReport = $reportsByStudent->get($studentUser->id);
+                                @endphp
+                                @if($studentReport)
+                                    <a href="{{ route('manage.session-reports.show', ['subdomain' => $subdomain, 'type' => $reportTypeSlug, 'id' => $studentReport->id]) }}"
+                                       class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer">
+                                        <i class="ri-file-list-3-line"></i>
+                                        {{ __($t.'view_report') }}
+                                    </a>
+                                @else
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-gray-50 text-gray-400 cursor-default">
+                                        <i class="ri-file-list-3-line"></i>
+                                        {{ __('reports.no_report_available') }}
+                                    </span>
+                                @endif
                                 @if($isSupervisor)
                                     <a href="{{ route('chats', ['subdomain' => $subdomain]) }}" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer">
                                         <i class="ri-message-3-line"></i>
