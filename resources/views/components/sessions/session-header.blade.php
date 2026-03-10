@@ -88,7 +88,7 @@ use App\Enums\SessionStatus;
                     <i class="ri-time-line ms-1"></i>
                     {{ formatTimeArabic($session->scheduled_at) }}
                     @if($timezoneLabel)
-                        <span class="text-green-500 text-xs me-1">({{ $timezoneLabel }})</span>
+                        <span class="text-green-500 text-xs me-1">{{ $timezoneLabel }}</span>
                     @endif
                 </span>
                 @endif
