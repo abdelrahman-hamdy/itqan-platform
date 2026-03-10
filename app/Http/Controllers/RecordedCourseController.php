@@ -211,7 +211,7 @@ class RecordedCourseController extends Controller
             ->where('id', '!=', $course->id)
             ->where(function ($query) use ($course) {
                 $query->where('subject_id', $course->subject_id)
-                    ->orWhere('category', $course->category)
+                    ->orWhere('grade_level_id', $course->grade_level_id)
                     ->orWhere('difficulty_level', $course->difficulty_level);
             })
             ->published()
