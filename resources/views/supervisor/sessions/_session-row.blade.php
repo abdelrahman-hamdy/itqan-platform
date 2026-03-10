@@ -87,25 +87,29 @@
 
     {{-- Actions (inline buttons) --}}
     <td class="px-4 py-3" onclick="event.stopPropagation()">
-        <div class="flex items-center gap-1">
-            <a href="{{ $showUrl }}" title="{{ __('supervisor.sessions.view_details') }}"
-               class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors">
-                <i class="ri-eye-line text-base"></i>
+        <div class="flex items-center gap-1.5">
+            <a href="{{ $showUrl }}"
+               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-600 hover:bg-gray-700 text-white transition-colors">
+                <i class="ri-eye-line"></i>
+                {{ __('supervisor.sessions.view_details') }}
             </a>
             @if($isLive)
-                <a href="{{ $showUrl }}?mode=observer" title="{{ __('supervisor.sessions.observe_meeting') }}"
-                   class="p-1.5 rounded-lg hover:bg-indigo-50 text-indigo-500 hover:text-indigo-700 transition-colors">
-                    <i class="ri-eye-2-line text-base"></i>
+                <a href="{{ $showUrl }}?mode=observer"
+                   class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">
+                    <i class="ri-eye-2-line"></i>
+                    {{ __('supervisor.sessions.observe_meeting') }}
                 </a>
-                <a href="{{ $showUrl }}?mode=participant" title="{{ __('supervisor.sessions.join_meeting') }}"
-                   class="p-1.5 rounded-lg hover:bg-green-50 text-green-500 hover:text-green-700 transition-colors">
-                    <i class="ri-video-chat-line text-base"></i>
+                <a href="{{ $showUrl }}?mode=participant"
+                   class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors">
+                    <i class="ri-video-chat-line"></i>
+                    {{ __('supervisor.sessions.join_meeting') }}
                 </a>
             @endif
             @if($status->canCancel())
-                <a href="{{ $showUrl }}#cancel" title="{{ __('supervisor.sessions.cancel_session') }}"
-                   class="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors">
-                    <i class="ri-close-circle-line text-base"></i>
+                <a href="{{ $showUrl }}#cancel"
+                   class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors">
+                    <i class="ri-close-circle-line"></i>
+                    {{ __('supervisor.sessions.cancel_session') }}
                 </a>
             @endif
         </div>
