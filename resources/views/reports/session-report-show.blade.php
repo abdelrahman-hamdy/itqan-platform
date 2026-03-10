@@ -11,6 +11,7 @@
 
     $session = $report->session;
     $student = $report->student;
+    $teacher = $report->teacher;
 
     // Type config
     if ($isQuran) {
@@ -19,7 +20,8 @@
         $typeIcon = $isIndividual ? 'ri-user-star-line' : 'ri-group-line';
         $typeColor = 'green';
         $sessionTitle = $session?->title ?? __('reports.quran_session');
-        $teacherName = $session?->quranTeacher?->name ?? $report->teacher?->name ?? '';
+        $teacherName = $session?->quranTeacher?->name ?? $teacher?->name ?? '';
+        $teacherUser = $session?->quranTeacher ?? $teacher;
         $entityName = $isIndividual
             ? ($session?->individualCircle?->name ?? $student?->name ?? '')
             : ($session?->circle?->name ?? '');
@@ -28,20 +30,22 @@
         $typeIcon = 'ri-graduation-cap-line';
         $typeColor = 'violet';
         $sessionTitle = $session?->title ?? __('reports.academic_session');
-        $teacherName = $session?->academicTeacher?->user?->name ?? $report->teacher?->name ?? '';
+        $teacherName = $session?->academicTeacher?->user?->name ?? $teacher?->name ?? '';
+        $teacherUser = $session?->academicTeacher?->user ?? $teacher;
         $entityName = $session?->academicIndividualLesson?->name ?? '';
     } else {
         $typeLabel = __('reports.type_interactive_course');
         $typeIcon = 'ri-live-line';
         $typeColor = 'purple';
         $sessionTitle = $session?->course?->title ?? $session?->title ?? __('reports.interactive_session');
-        $teacherName = $session?->course?->assignedTeacher?->user?->name ?? $report->teacher?->name ?? '';
+        $teacherName = $session?->course?->assignedTeacher?->user?->name ?? $teacher?->name ?? '';
+        $teacherUser = $session?->course?->assignedTeacher?->user ?? $teacher;
         $entityName = $session?->course?->title ?? '';
     }
 
     // Attendance config
     $attendanceBadge = match($report->attendance_status) {
-        AttendanceStatus::ATTENDED => ['class' => 'bg-green-100 text-green-700 border-green-200', 'icon' => 'ri-check-line', 'iconColor' => 'text-green-500'],
+        AttendanceStatus::ATTENDED => ['class' => 'bg-emerald-100 text-emerald-700 border-emerald-200', 'icon' => 'ri-check-line', 'iconColor' => 'text-emerald-500'],
         AttendanceStatus::LATE => ['class' => 'bg-amber-100 text-amber-700 border-amber-200', 'icon' => 'ri-time-line', 'iconColor' => 'text-amber-500'],
         AttendanceStatus::LEFT => ['class' => 'bg-orange-100 text-orange-700 border-orange-200', 'icon' => 'ri-logout-box-line', 'iconColor' => 'text-orange-500'],
         AttendanceStatus::ABSENT => ['class' => 'bg-red-100 text-red-700 border-red-200', 'icon' => 'ri-close-line', 'iconColor' => 'text-red-500'],
@@ -53,16 +57,33 @@
     $performanceLevel = $report->performance_level_enum;
     $performanceLevelLabel = $report->performance_level;
     $performanceColorMap = [
-        'success' => 'text-green-600 bg-green-100 border-green-200',
-        'info' => 'text-blue-600 bg-blue-100 border-blue-200',
+        'success' => 'text-emerald-600 bg-emerald-100 border-emerald-200',
+        'info' => 'text-sky-600 bg-sky-100 border-sky-200',
         'primary' => 'text-indigo-600 bg-indigo-100 border-indigo-200',
         'warning' => 'text-amber-600 bg-amber-100 border-amber-200',
-        'danger' => 'text-red-600 bg-red-100 border-red-200',
+        'danger' => 'text-rose-600 bg-rose-100 border-rose-200',
     ];
     $performanceClass = $performanceLevel ? ($performanceColorMap[$performanceLevel->color()] ?? 'text-gray-600 bg-gray-100 border-gray-200') : 'text-gray-400 bg-gray-50 border-gray-200';
 
     // Breadcrumb
     $breadcrumbLabel = $layoutType === 'supervisor' ? __('supervisor.session_reports.breadcrumb') : __('teacher.reports.breadcrumb');
+
+    // Session date in academy timezone
+    $sessionDateFormatted = null;
+    $sessionDateDay = null;
+    $sessionDateTime = null;
+    if ($session?->scheduled_at) {
+        $scheduledInTz = toAcademyTimezone($session->scheduled_at);
+        $sessionDateFormatted = $scheduledInTz->format('Y/m/d');
+        $sessionDateDay = $scheduledInTz->translatedFormat('l');
+        $sessionDateTime = $scheduledInTz->format('h:i A');
+    }
+
+    // Evaluated at in academy timezone
+    $evaluatedAtFormatted = null;
+    if ($report->evaluated_at) {
+        $evaluatedAtFormatted = toAcademyTimezone($report->evaluated_at)->format('Y/m/d h:i A');
+    }
 @endphp
 
 <x-reports.layouts.base-report
@@ -72,18 +93,14 @@
     {{-- Breadcrumbs --}}
     <x-ui.breadcrumb
         :items="[
-            ['label' => $breadcrumbLabel, 'url' => $backRoute],
-            ['label' => __('reports.detail_title')],
+            ['label' => $breadcrumbLabel, 'route' => $backRoute],
+            ['label' => $sessionTitle, 'truncate' => true],
         ]"
         :view-type="$layoutType === 'supervisor' ? 'supervisor' : 'teacher'"
     />
 
-    {{-- Back Button + Page Header --}}
+    {{-- Page Header --}}
     <div class="mb-6 md:mb-8">
-        <a href="{{ $backRoute }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-indigo-600 transition-colors mb-3">
-            <i class="ri-arrow-right-line rtl:rotate-180 ltr:rotate-180"></i>
-            {{ __('reports.back_to_list') }}
-        </a>
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
                 <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ $sessionTitle }}</h1>
@@ -92,12 +109,6 @@
                         <i class="{{ $typeIcon }} text-xs"></i>
                         {{ $typeLabel }}
                     </span>
-                    @if($report->created_at)
-                        <span class="text-sm text-gray-500">
-                            <i class="ri-calendar-line text-gray-400 me-0.5"></i>
-                            {{ $report->created_at->format('Y/m/d H:i') }}
-                        </span>
-                    @endif
                 </div>
             </div>
             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border {{ $attendanceBadge['class'] }}">
@@ -112,8 +123,8 @@
         {{-- Performance Score --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 {{ $performanceClass }}">
-                    <i class="ri-bar-chart-line text-lg"></i>
+                <div class="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 bg-indigo-100">
+                    <i class="ri-bar-chart-line text-lg text-indigo-600"></i>
                 </div>
                 <div>
                     <p class="text-xl font-bold text-gray-900">
@@ -127,8 +138,8 @@
         {{-- Attendance Duration --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <div class="flex items-center gap-3">
-                <div class="w-11 h-11 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-timer-line text-lg text-blue-600"></i>
+                <div class="w-11 h-11 bg-sky-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-timer-line text-lg text-sky-600"></i>
                 </div>
                 <div>
                     <p class="text-xl font-bold text-gray-900">
@@ -142,8 +153,8 @@
         {{-- Attendance Percentage --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <div class="flex items-center gap-3">
-                <div class="w-11 h-11 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-pie-chart-line text-lg text-indigo-600"></i>
+                <div class="w-11 h-11 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-pie-chart-line text-lg text-teal-600"></i>
                 </div>
                 <div>
                     <p class="text-xl font-bold text-gray-900">
@@ -157,8 +168,8 @@
         {{-- Performance Level --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 {{ $performanceClass }}">
-                    <i class="ri-award-line text-lg"></i>
+                <div class="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 bg-amber-100">
+                    <i class="ri-award-line text-lg text-amber-600"></i>
                 </div>
                 <div>
                     <p class="text-base font-bold text-gray-900 truncate">{{ $performanceLevelLabel }}</p>
@@ -181,43 +192,74 @@
                     </h2>
                 </div>
                 <div class="px-4 md:px-6 py-4">
-                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-2 gap-x-6 gap-y-4">
+                        {{-- Student --}}
                         <div>
-                            <dt class="text-sm font-medium text-gray-500">{{ __('reports.student_name') }}</dt>
-                            <dd class="mt-1 flex items-center gap-2">
+                            <dt class="text-sm font-medium text-gray-500 mb-1.5">{{ __('reports.student_name') }}</dt>
+                            <dd class="flex items-center gap-2.5">
                                 @if($student)
                                     <x-avatar :user="$student" size="xs" />
                                 @endif
                                 <span class="text-sm font-semibold text-gray-900">{{ $student?->name ?? __('reports.unknown_student') }}</span>
                             </dd>
                         </div>
+
+                        {{-- Teacher --}}
                         <div>
-                            <dt class="text-sm font-medium text-gray-500">{{ __('reports.teacher_name') }}</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $teacherName ?: __('reports.not_available') }}</dd>
+                            <dt class="text-sm font-medium text-gray-500 mb-1.5">{{ __('reports.teacher_name') }}</dt>
+                            <dd class="flex items-center gap-2.5">
+                                @if($teacherUser)
+                                    <x-avatar :user="$teacherUser" size="xs" />
+                                @endif
+                                <span class="text-sm font-semibold text-gray-900">{{ $teacherName ?: __('reports.not_available') }}</span>
+                            </dd>
                         </div>
+
+                        {{-- Session Title --}}
                         <div>
-                            <dt class="text-sm font-medium text-gray-500">{{ __('reports.session_title') }}</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $sessionTitle }}</dd>
+                            <dt class="text-sm font-medium text-gray-500 mb-1.5">{{ __('reports.session_title') }}</dt>
+                            <dd class="text-sm text-gray-900">{{ $sessionTitle }}</dd>
                         </div>
+
+                        {{-- Entity --}}
                         @if($entityName)
                             <div>
-                                <dt class="text-sm font-medium text-gray-500">{{ __('reports.entity_label') }}</dt>
-                                <dd class="mt-1 text-sm text-gray-900">{{ $entityName }}</dd>
+                                <dt class="text-sm font-medium text-gray-500 mb-1.5">{{ __('reports.entity_label') }}</dt>
+                                <dd class="text-sm text-gray-900">{{ $entityName }}</dd>
                             </div>
                         @endif
+
+                        {{-- Session Date --}}
                         <div>
-                            <dt class="text-sm font-medium text-gray-500">{{ __('reports.session_date') }}</dt>
-                            <dd class="mt-1 text-sm text-gray-900">
-                                {{ $session?->scheduled_at ? $session->scheduled_at->format('Y/m/d H:i') : __('reports.not_available') }}
+                            <dt class="text-sm font-medium text-gray-500 mb-1.5">{{ __('reports.session_date') }}</dt>
+                            <dd>
+                                @if($sessionDateFormatted)
+                                    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg">
+                                        <i class="ri-calendar-event-line text-indigo-500"></i>
+                                        <span class="text-sm font-medium text-indigo-700">{{ $sessionDateDay }} {{ $sessionDateFormatted }}</span>
+                                        <span class="text-xs text-indigo-500">{{ $sessionDateTime }}</span>
+                                    </div>
+                                @else
+                                    <span class="text-sm text-gray-400">{{ __('reports.not_available') }}</span>
+                                @endif
                             </dd>
                         </div>
+
+                        {{-- Session Duration --}}
                         <div>
-                            <dt class="text-sm font-medium text-gray-500">{{ __('reports.session_duration') }}</dt>
-                            <dd class="mt-1 text-sm text-gray-900">
-                                {{ $session?->duration_minutes ? $session->duration_minutes . ' ' . __('reports.minutes_unit') : __('reports.not_available') }}
+                            <dt class="text-sm font-medium text-gray-500 mb-1.5">{{ __('reports.session_duration') }}</dt>
+                            <dd>
+                                @if($session?->duration_minutes)
+                                    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 border border-sky-100 rounded-lg">
+                                        <i class="ri-time-line text-sky-500"></i>
+                                        <span class="text-sm font-medium text-sky-700">{{ $session->duration_minutes }} {{ __('reports.minutes_unit') }}</span>
+                                    </div>
+                                @else
+                                    <span class="text-sm text-gray-400">{{ __('reports.not_available') }}</span>
+                                @endif
                             </dd>
                         </div>
-                    </dl>
+                    </div>
                 </div>
             </div>
 
@@ -225,64 +267,75 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200">
                 <div class="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
                     <h2 class="text-base md:text-lg font-semibold text-gray-900 flex items-center gap-2">
-                        <i class="ri-user-follow-line text-green-500"></i>
+                        <i class="ri-user-follow-line text-emerald-500"></i>
                         {{ __('reports.attendance_info') }}
                     </h2>
                 </div>
                 <div class="px-4 md:px-6 py-4">
-                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                    <div class="grid grid-cols-2 gap-x-6 gap-y-4">
+                        {{-- Attendance Status --}}
                         <div>
-                            <dt class="text-sm font-medium text-gray-500">{{ __('reports.attendance_status_label') }}</dt>
-                            <dd class="mt-1">
+                            <dt class="text-sm font-medium text-gray-500 mb-1.5">{{ __('reports.attendance_status_label') }}</dt>
+                            <dd>
                                 <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium {{ $attendanceBadge['class'] }}">
                                     <i class="{{ $attendanceBadge['icon'] }} text-xs"></i>
                                     {{ $report->attendance_status?->label() ?? __('reports.status_unknown') }}
                                 </span>
                             </dd>
                         </div>
+
+                        {{-- Attendance Duration --}}
                         <div>
-                            <dt class="text-sm font-medium text-gray-500">{{ __('reports.attendance_duration') }}</dt>
-                            <dd class="mt-1 text-sm text-gray-900">
+                            <dt class="text-sm font-medium text-gray-500 mb-1.5">{{ __('reports.attendance_duration') }}</dt>
+                            <dd class="text-sm text-gray-900">
                                 {{ $report->actual_attendance_minutes ? $report->actual_attendance_minutes . ' ' . __('reports.minutes_unit') : __('reports.not_available') }}
                             </dd>
                         </div>
+
+                        {{-- Join Time --}}
                         <div>
-                            <dt class="text-sm font-medium text-gray-500">{{ __('reports.join_time') }}</dt>
-                            <dd class="mt-1 text-sm text-gray-900">
-                                {{ $report->meeting_enter_time ? $report->meeting_enter_time->format('H:i:s') : __('reports.not_available') }}
+                            <dt class="text-sm font-medium text-gray-500 mb-1.5">{{ __('reports.join_time') }}</dt>
+                            <dd class="text-sm text-gray-900">
+                                {{ $report->meeting_enter_time ? toAcademyTimezone($report->meeting_enter_time)->format('h:i:s A') : __('reports.not_available') }}
                             </dd>
                         </div>
+
+                        {{-- Leave Time --}}
                         <div>
-                            <dt class="text-sm font-medium text-gray-500">{{ __('reports.leave_time') }}</dt>
-                            <dd class="mt-1 text-sm text-gray-900">
-                                {{ $report->meeting_leave_time ? $report->meeting_leave_time->format('H:i:s') : __('reports.not_available') }}
+                            <dt class="text-sm font-medium text-gray-500 mb-1.5">{{ __('reports.leave_time') }}</dt>
+                            <dd class="text-sm text-gray-900">
+                                {{ $report->meeting_leave_time ? toAcademyTimezone($report->meeting_leave_time)->format('h:i:s A') : __('reports.not_available') }}
                             </dd>
                         </div>
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">{{ __('reports.attendance_percentage') }}</dt>
-                            <dd class="mt-1">
+
+                        {{-- Late By --}}
+                        @if($report->is_late && $report->late_minutes)
+                            <div class="col-span-2 sm:col-span-1">
+                                <dt class="text-sm font-medium text-gray-500 mb-1.5">{{ __('reports.late_by') }}</dt>
+                                <dd class="text-sm text-amber-600 font-medium">
+                                    {{ $report->late_minutes }} {{ __('reports.minutes_unit') }}
+                                </dd>
+                            </div>
+                        @endif
+
+                        {{-- Attendance Percentage (full width) --}}
+                        <div class="col-span-2">
+                            <dt class="text-sm font-medium text-gray-500 mb-1.5">{{ __('reports.attendance_percentage') }}</dt>
+                            <dd>
                                 @if($report->attendance_percentage !== null)
-                                    <div class="flex items-center gap-2">
-                                        <div class="flex-1 bg-gray-200 rounded-full h-2 max-w-[120px]">
-                                            <div class="h-2 rounded-full {{ $report->attendance_percentage >= 80 ? 'bg-green-500' : ($report->attendance_percentage >= 50 ? 'bg-amber-500' : 'bg-red-500') }}"
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex-1 bg-gray-200 rounded-full h-2.5">
+                                            <div class="h-2.5 rounded-full {{ $report->attendance_percentage >= 80 ? 'bg-emerald-500' : ($report->attendance_percentage >= 50 ? 'bg-amber-500' : 'bg-rose-500') }}"
                                                  style="width: {{ min(100, round($report->attendance_percentage)) }}%"></div>
                                         </div>
-                                        <span class="text-sm font-medium text-gray-900">{{ round($report->attendance_percentage) }}%</span>
+                                        <span class="text-sm font-bold text-gray-900 flex-shrink-0">{{ round($report->attendance_percentage) }}%</span>
                                     </div>
                                 @else
                                     <span class="text-sm text-gray-400">{{ __('reports.not_available') }}</span>
                                 @endif
                             </dd>
                         </div>
-                        @if($report->is_late && $report->late_minutes)
-                            <div>
-                                <dt class="text-sm font-medium text-gray-500">{{ __('reports.late_by') }}</dt>
-                                <dd class="mt-1 text-sm text-amber-600 font-medium">
-                                    {{ $report->late_minutes }} {{ __('reports.minutes_unit') }}
-                                </dd>
-                            </div>
-                        @endif
-                    </dl>
+                    </div>
                 </div>
             </div>
 
@@ -291,7 +344,7 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200">
                     <div class="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
                         <h2 class="text-base md:text-lg font-semibold text-gray-900 flex items-center gap-2">
-                            <i class="ri-history-line text-blue-500"></i>
+                            <i class="ri-history-line text-sky-500"></i>
                             {{ __('reports.meeting_timeline') }}
                         </h2>
                     </div>
@@ -305,14 +358,14 @@
                                         $eventTime = $event['time'] ?? $event['timestamp'] ?? $event['at'] ?? null;
                                     @endphp
                                     <div class="relative flex items-start gap-3 ps-10">
-                                        <div class="absolute start-2.5 w-3 h-3 rounded-full border-2 border-white {{ $isJoin ? 'bg-green-500' : 'bg-red-500' }}"></div>
+                                        <div class="absolute start-2.5 w-3 h-3 rounded-full border-2 border-white {{ $isJoin ? 'bg-emerald-500' : 'bg-rose-500' }}"></div>
                                         <div>
-                                            <span class="text-sm font-medium {{ $isJoin ? 'text-green-700' : 'text-red-700' }}">
+                                            <span class="text-sm font-medium {{ $isJoin ? 'text-emerald-700' : 'text-rose-700' }}">
                                                 {{ $isJoin ? __('reports.join_event') : __('reports.leave_event') }}
                                             </span>
                                             @if($eventTime)
                                                 <span class="text-xs text-gray-500 ms-2">
-                                                    {{ \Carbon\Carbon::parse($eventTime)->format('H:i:s') }}
+                                                    {{ toAcademyTimezone(\Carbon\Carbon::parse($eventTime))->format('h:i:s A') }}
                                                 </span>
                                             @endif
                                         </div>
@@ -362,7 +415,7 @@
                             </div>
                             @if($report->new_memorization_degree !== null)
                                 <div class="bg-gray-200 rounded-full h-2">
-                                    <div class="h-2 rounded-full bg-green-500" style="width: {{ min(100, ($report->new_memorization_degree / 10) * 100) }}%"></div>
+                                    <div class="h-2 rounded-full bg-emerald-500" style="width: {{ min(100, ($report->new_memorization_degree / 10) * 100) }}%"></div>
                                 </div>
                             @endif
                             <div class="flex items-center justify-between">
@@ -373,7 +426,7 @@
                             </div>
                             @if($report->reservation_degree !== null)
                                 <div class="bg-gray-200 rounded-full h-2">
-                                    <div class="h-2 rounded-full bg-emerald-500" style="width: {{ min(100, ($report->reservation_degree / 10) * 100) }}%"></div>
+                                    <div class="h-2 rounded-full bg-teal-500" style="width: {{ min(100, ($report->reservation_degree / 10) * 100) }}%"></div>
                                 </div>
                             @endif
                         </div>
@@ -394,27 +447,26 @@
                     @endif
 
                     {{-- Evaluation metadata --}}
-                    <div class="pt-3 border-t border-gray-100 space-y-2">
-                        @if($report->evaluated_at)
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-gray-500">{{ __('reports.evaluated_at') }}</span>
-                                <span class="text-gray-700">{{ $report->evaluated_at->format('Y/m/d H:i') }}</span>
+                    <div class="pt-3 border-t border-gray-100 space-y-3">
+                        @if($evaluatedAtFormatted)
+                            <div class="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg">
+                                <i class="ri-calendar-check-line text-indigo-500"></i>
+                                <div>
+                                    <p class="text-xs text-indigo-500">{{ __('reports.evaluated_at') }}</p>
+                                    <p class="text-sm font-medium text-indigo-700">{{ $evaluatedAtFormatted }}</p>
+                                </div>
                             </div>
                         @endif
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="text-gray-500">{{ __('reports.report_created_at') }}</span>
-                            <span class="text-gray-700">{{ $report->created_at?->format('Y/m/d H:i') ?? __('reports.not_available') }}</span>
-                        </div>
                         @if($report->manually_evaluated)
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                                <i class="ri-edit-line text-xs"></i>
-                                {{ __('reports.manually_evaluated') }}
-                            </span>
+                            <div class="flex items-center gap-2 px-3 py-2 bg-sky-50 border border-sky-100 rounded-lg">
+                                <i class="ri-edit-2-line text-sky-500"></i>
+                                <span class="text-sm font-medium text-sky-700">{{ __('reports.manually_evaluated') }}</span>
+                            </div>
                         @elseif($report->is_calculated)
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                <i class="ri-cpu-line text-xs"></i>
-                                {{ __('reports.auto_calculated') }}
-                            </span>
+                            <div class="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                                <i class="ri-robot-2-line text-gray-500"></i>
+                                <span class="text-sm font-medium text-gray-600">{{ __('reports.auto_calculated') }}</span>
+                            </div>
                         @endif
                     </div>
                 </div>
