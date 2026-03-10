@@ -241,6 +241,9 @@ return [
         'type_individual' => 'فردية',
         'type_group' => 'جماعية',
         'type_trial' => 'تجريبية',
+        'type_quran_individual' => 'قرآن فردي',
+        'type_quran_group' => 'قرآن جماعي',
+        'type_private_lesson' => 'درس خاص',
 
         // Actions
         'view_details' => 'عرض التفاصيل',

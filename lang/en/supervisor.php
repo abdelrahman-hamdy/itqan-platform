@@ -241,6 +241,9 @@ return [
         'type_individual' => 'Individual',
         'type_group' => 'Group',
         'type_trial' => 'Trial',
+        'type_quran_individual' => 'Quran Individual',
+        'type_quran_group' => 'Quran Group',
+        'type_private_lesson' => 'Private Lesson',
 
         // Actions
         'view_details' => 'View Details',

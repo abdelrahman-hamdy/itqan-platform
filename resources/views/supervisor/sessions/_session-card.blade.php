@@ -16,9 +16,11 @@
     };
 
     $typeConfig = match($type) {
-        'academic' => ['label' => __('supervisor.sessions.type_academic'), 'icon' => 'ri-graduation-cap-line', 'bg' => 'bg-violet-50', 'text' => 'text-violet-600'],
+        'academic' => ['label' => __('supervisor.sessions.type_private_lesson'), 'icon' => 'ri-graduation-cap-line', 'bg' => 'bg-violet-50', 'text' => 'text-violet-600'],
         'interactive' => ['label' => __('supervisor.sessions.type_interactive'), 'icon' => 'ri-video-chat-line', 'bg' => 'bg-blue-50', 'text' => 'text-blue-600'],
-        default => ['label' => __('supervisor.sessions.type_quran'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
+        default => $session->circle
+            ? ['label' => __('supervisor.sessions.type_quran_group'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600']
+            : ['label' => __('supervisor.sessions.type_quran_individual'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
     };
 
     $showUrl = route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
@@ -57,12 +59,6 @@
             <i class="ri-calendar-line"></i>
             <span>{{ $session->scheduled_at ? toAcademyTimezone($session->scheduled_at)->translatedFormat('d M - h:i A') : '-' }}</span>
         </div>
-        @if($session->session_code)
-        <div class="flex items-center gap-1 text-gray-500">
-            <i class="ri-hashtag"></i>
-            <span class="font-mono">{{ $session->session_code }}</span>
-        </div>
-        @endif
         @if($session->duration_minutes)
         <div class="flex items-center gap-1 text-gray-500">
             <i class="ri-time-line"></i>
