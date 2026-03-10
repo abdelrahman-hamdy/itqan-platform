@@ -264,21 +264,11 @@
                             }
                         @endphp
                         @if($scheduledAt)
-                            <div class="bg-amber-50 rounded-lg p-3 space-y-1.5">
-                                <p class="text-sm text-gray-700 font-medium">
-                                    <i class="ri-calendar-line me-1 text-gray-400"></i>
-                                    {{ toAcademyTimezone($scheduledAt)->translatedFormat('l d M Y') }}
+                            <div x-data="sessionCountdown({{ $scheduledAt->getTimestampMs() }})">
+                                <p class="text-sm text-amber-600 font-medium">
+                                    <i class="ri-timer-line me-1"></i>
+                                    {{ __($t.'starts_in') }}: <span x-text="remaining"></span>
                                 </p>
-                                <p class="text-sm text-gray-700 font-medium">
-                                    <i class="ri-time-line me-1 text-gray-400"></i>
-                                    {{ toAcademyTimezone($scheduledAt)->translatedFormat('h:i A') }}
-                                </p>
-                                <div x-data="sessionCountdown({{ $scheduledAt->getTimestampMs() }})">
-                                    <p class="text-sm text-amber-600 font-medium">
-                                        <i class="ri-timer-line me-1"></i>
-                                        {{ __($t.'starts_in') }}: <span x-text="remaining"></span>
-                                    </p>
-                                </div>
                             </div>
                         @endif
                         <button disabled class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed">
