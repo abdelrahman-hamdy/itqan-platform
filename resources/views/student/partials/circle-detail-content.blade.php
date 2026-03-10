@@ -1,5 +1,6 @@
 @php
     $isTeacher = auth()->check() && (auth()->user()->isQuranTeacher() || auth()->user()->isAcademicTeacher());
+    $isStudent = auth()->check() && auth()->user()->isStudent();
     $viewType = $isTeacher ? 'teacher' : 'student';
 @endphp
 
@@ -136,6 +137,7 @@
                 <!-- Subscription/Enrollment Section -->
                 @if(!isset($subscription) || !$subscription)
                     @if($canEnroll)
+                        @if($isStudent)
                         <!-- Enrollment Card - Show for students who can enroll -->
                         <x-student.subscription-enrollment-widget
                             type="quran_circle"
@@ -149,6 +151,13 @@
                                 {{ __('student.group_circle.enroll_button') }}
                             </button>
                         </x-student.subscription-enrollment-widget>
+                        @else
+                        {{-- Non-student users see disabled state --}}
+                        <span class="flex items-center justify-center gap-2 w-full min-h-[48px] bg-gray-300 text-gray-500 text-center font-medium py-3 rounded-xl cursor-not-allowed">
+                            <i class="ri-lock-line"></i>
+                            {{ __('courses.show.students_only') }}
+                        </span>
+                        @endif
                     @elseif($isEnrolled)
                         {{-- Already enrolled but no subscription yet --}}
                     @endif
