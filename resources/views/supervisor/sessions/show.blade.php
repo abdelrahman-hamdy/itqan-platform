@@ -257,12 +257,28 @@
                             <i class="ri-time-line"></i>
                             {{ __($t.'meeting_not_started') }}
                         </div>
-                        @if($session->scheduled_at)
-                            <div x-data="sessionCountdown(@json($session->scheduled_at->toIso8601String()))">
-                                <p class="text-sm text-amber-600 font-medium">
-                                    <i class="ri-timer-line me-1"></i>
-                                    {{ __($t.'starts_in') }}: <span x-text="remaining"></span>
+                        @php
+                            $scheduledAt = $session->scheduled_at;
+                            if (! $scheduledAt && $sessionType === 'interactive' && $session->scheduled_date) {
+                                $scheduledAt = \Carbon\Carbon::parse($session->scheduled_date . ' ' . ($session->scheduled_time ?? '00:00'));
+                            }
+                        @endphp
+                        @if($scheduledAt)
+                            <div class="bg-amber-50 rounded-lg p-3 space-y-1.5">
+                                <p class="text-sm text-gray-700 font-medium">
+                                    <i class="ri-calendar-line me-1 text-gray-400"></i>
+                                    {{ toAcademyTimezone($scheduledAt)->translatedFormat('l d M Y') }}
                                 </p>
+                                <p class="text-sm text-gray-700 font-medium">
+                                    <i class="ri-time-line me-1 text-gray-400"></i>
+                                    {{ toAcademyTimezone($scheduledAt)->translatedFormat('h:i A') }}
+                                </p>
+                                <div x-data="sessionCountdown({{ $scheduledAt->getTimestampMs() }})">
+                                    <p class="text-sm text-amber-600 font-medium">
+                                        <i class="ri-timer-line me-1"></i>
+                                        {{ __($t.'starts_in') }}: <span x-text="remaining"></span>
+                                    </p>
+                                </div>
                             </div>
                         @endif
                         <button disabled class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed">
@@ -352,25 +368,29 @@
     $updateUrl = route('manage.sessions.update', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]);
     $cancelUrl = route('manage.sessions.cancel', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]);
     $initialNotes = $session->supervisor_notes ?? '';
+    $countdownLabels = [
+        'soon' => __('supervisor.sessions.session_starting_soon'),
+        'h' => __('supervisor.sessions.hours_short'),
+        'm' => __('supervisor.sessions.minutes_short'),
+        's' => __('supervisor.sessions.seconds_short'),
+    ];
 @endphp
 
 <script>
-function sessionCountdown(targetIso) {
+var _countdownLabels = @json($countdownLabels);
+
+function sessionCountdown(targetMs) {
     return {
         remaining: '',
         init() {
-            const target = new Date(targetIso);
-            const soonText = @json(__($t.'session_starting_soon'));
-            const hLabel = @json(__($t.'hours_short'));
-            const mLabel = @json(__($t.'minutes_short'));
-            const sLabel = @json(__($t.'seconds_short'));
+            const labels = _countdownLabels;
             const update = () => {
-                const diff = target - Date.now();
-                if (diff <= 0) { this.remaining = soonText; return; }
+                const diff = targetMs - Date.now();
+                if (diff <= 0) { this.remaining = labels.soon; return; }
                 const h = Math.floor(diff / 3600000);
                 const m = Math.floor((diff % 3600000) / 60000);
                 const s = Math.floor((diff % 60000) / 1000);
-                this.remaining = (h > 0 ? h + ' ' + hLabel + ' ' : '') + m + ' ' + mLabel + ' ' + s + ' ' + sLabel;
+                this.remaining = (h > 0 ? h + ' ' + labels.h + ' ' : '') + m + ' ' + labels.m + ' ' + s + ' ' + labels.s;
             };
             update();
             setInterval(update, 1000);
