@@ -471,12 +471,6 @@ class SupervisorSessionsController extends BaseSupervisorWebController
      */
     private function getFilamentUrl(string $type, string $id): ?string
     {
-        $panel = match ($type) {
-            'academic' => 'academy',
-            'interactive' => 'academy',
-            default => 'academy',
-        };
-
         $resource = match ($type) {
             'academic' => 'academic-sessions',
             'interactive' => 'interactive-course-sessions',
@@ -484,7 +478,8 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         };
 
         try {
-            return url("/{$panel}/resources/{$resource}/{$id}");
+            // Academy panel path is '/panel' (from AcademyPanelProvider)
+            return url("/panel/{$resource}/{$id}");
         } catch (\Exception) {
             return null;
         }

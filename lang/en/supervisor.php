@@ -287,6 +287,18 @@ return [
 
         // Duration
         'duration_minutes' => ':count min',
+
+        // Participant actions
+        'view_report' => 'View Report',
+        'message' => 'Message',
+        'show_more' => 'Show More',
+        'show_less' => 'Show Less',
+        'participants_count' => ':count participants',
+
+        // Inline edit (session settings)
+        'session_settings' => 'Session Settings',
+        'save_changes' => 'Save Changes',
+        'changes_saved' => 'Changes saved',
     ],
 
     'observation' => [

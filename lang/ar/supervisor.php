@@ -287,6 +287,18 @@ return [
 
         // Duration
         'duration_minutes' => ':count دقيقة',
+
+        // Participant actions
+        'view_report' => 'عرض التقرير',
+        'message' => 'رسالة',
+        'show_more' => 'عرض المزيد',
+        'show_less' => 'عرض أقل',
+        'participants_count' => ':count مشارك',
+
+        // Inline edit (session settings)
+        'session_settings' => 'إعدادات الجلسة',
+        'save_changes' => 'حفظ التعديلات',
+        'changes_saved' => 'تم حفظ التعديلات',
     ],
 
     'observation' => [

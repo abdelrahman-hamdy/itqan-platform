@@ -14,19 +14,28 @@
         default => ['label' => __($t.'type_quran'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
     };
 
-    // Teacher name
-    $teacherName = match($sessionType) {
-        'academic' => $session->academicTeacher?->user?->name ?? '-',
-        'interactive' => $session->course?->assignedTeacher?->user?->name ?? '-',
-        default => $session->quranTeacher?->name ?? '-',
+    // Resolve teacher User object
+    $teacherUser = match($sessionType) {
+        'academic' => $session->academicTeacher?->user,
+        'interactive' => $session->course?->assignedTeacher?->user,
+        default => $session->quranTeacher,
     };
+    $teacherName = $teacherUser?->name ?? '-';
 
-    // Student / group name
-    $studentName = match($sessionType) {
-        'academic' => $session->student?->name ?? '-',
-        'interactive' => $session->course?->title ?? '-',
-        default => $session->circle?->name ?? $session->student?->name ?? '-',
-    };
+    // Collect student User objects for participants list
+    $studentUsers = collect();
+    if ($sessionType === 'interactive' && $session->course?->enrolledStudents) {
+        $studentUsers = $session->course->enrolledStudents->map(fn ($enrollment) => $enrollment->student?->user)->filter();
+    } elseif ($sessionType === 'quran' && $session->circle) {
+        $studentUsers = collect($session->circle->students ?? []);
+    } elseif ($sessionType === 'academic') {
+        $studentUsers = collect([$session->student])->filter();
+    } else {
+        $studentUsers = collect([$session->student])->filter();
+    }
+
+    // Check if current user is a supervisor (not just admin)
+    $isSupervisor = auth()->user()->hasRole('supervisor');
 @endphp
 
 <div x-data="sessionDetail()" class="space-y-6">
@@ -59,14 +68,6 @@
                         {{ __('supervisor.observation.participant_mode') }}
                     </a>
                 </div>
-            @endif
-
-            {{-- Edit button --}}
-            @if(!$isFinal)
-                <button @click="showEditModal = true" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
-                    <i class="ri-edit-line"></i>
-                    {{ __($t.'edit_session') }}
-                </button>
             @endif
 
             {{-- Cancel button --}}
@@ -103,58 +104,63 @@
         {{-- Main Content (2/3) --}}
         <div class="lg:col-span-2 space-y-6">
             {{-- Participants --}}
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5" x-data="{ showAll: false }">
                 <h3 class="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                     <i class="ri-group-line text-gray-400"></i>
                     {{ __($t.'participants') }}
+                    <span class="text-xs text-gray-400 font-normal">({{ 1 + $studentUsers->count() }})</span>
                 </h3>
                 <div class="space-y-3">
                     {{-- Teacher --}}
-                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                            <i class="ri-user-star-line text-indigo-600"></i>
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <x-avatar :user="$teacherUser" size="md" :show-badge="true" />
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ $teacherName }}</p>
+                                <p class="text-xs text-gray-500">{{ __('supervisor.observation.role_teacher') }}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">{{ $teacherName }}</p>
-                            <p class="text-xs text-gray-500">{{ __('supervisor.observation.role_teacher') }}</p>
-                        </div>
+                        @if($isSupervisor && $teacherUser)
+                            <a href="{{ route('chats', ['subdomain' => $subdomain]) }}" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors">
+                                <i class="ri-message-3-line"></i>
+                                {{ __($t.'message') }}
+                            </a>
+                        @endif
                     </div>
 
                     {{-- Students --}}
-                    @if($sessionType === 'interactive' && $session->course?->enrolledStudents)
-                        @foreach($session->course->enrolledStudents as $enrollment)
-                            <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                    <i class="ri-user-line text-blue-600"></i>
-                                </div>
+                    @foreach($studentUsers as $index => $studentUser)
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                             x-show="showAll || {{ $index }} < 10" x-transition>
+                            <div class="flex items-center gap-3">
+                                <x-avatar :user="$studentUser" size="md" :show-badge="true" />
                                 <div>
-                                    <p class="text-sm font-medium text-gray-900">{{ $enrollment->student?->user?->name ?? '-' }}</p>
+                                    <p class="text-sm font-medium text-gray-900">{{ $studentUser->name ?? '-' }}</p>
                                     <p class="text-xs text-gray-500">{{ __('supervisor.observation.role_student') }}</p>
                                 </div>
                             </div>
-                        @endforeach
-                    @elseif($sessionType === 'quran' && $session->circle)
-                        @foreach($session->circle->students ?? [] as $student)
-                            <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                    <i class="ri-user-line text-blue-600"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">{{ $student->name ?? '-' }}</p>
-                                    <p class="text-xs text-gray-500">{{ __('supervisor.observation.role_student') }}</p>
-                                </div>
-                            </div>
-                        @endforeach
-                    @else
-                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                <i class="ri-user-line text-blue-600"></i>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-gray-900">{{ $studentName }}</p>
-                                <p class="text-xs text-gray-500">{{ __('supervisor.observation.role_student') }}</p>
+                            <div class="flex items-center gap-2">
+                                <a href="{{ url('/panel/student-session-reports?tableFilters[session_id][value]=' . $session->id) }}"
+                                   class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+                                    <i class="ri-file-list-3-line"></i>
+                                    {{ __($t.'view_report') }}
+                                </a>
+                                @if($isSupervisor)
+                                    <a href="{{ route('chats', ['subdomain' => $subdomain]) }}" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors">
+                                        <i class="ri-message-3-line"></i>
+                                        {{ __($t.'message') }}
+                                    </a>
+                                @endif
                             </div>
                         </div>
+                    @endforeach
+
+                    {{-- Show more/less toggle for large lists --}}
+                    @if($studentUsers->count() > 10)
+                        <button @click="showAll = !showAll" class="w-full text-center py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
+                            <span x-show="!showAll"><i class="ri-arrow-down-s-line"></i> {{ __($t.'show_more') }} ({{ $studentUsers->count() - 10 }})</span>
+                            <span x-show="showAll" x-cloak><i class="ri-arrow-up-s-line"></i> {{ __($t.'show_less') }}</span>
+                        </button>
                     @endif
                 </div>
             </div>
@@ -193,78 +199,57 @@
 
         {{-- Sidebar (1/3) --}}
         <div class="space-y-6">
-            {{-- Session Details Card --}}
+            {{-- Session Settings (inline edit replacing modal + session info + notes) --}}
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                 <h3 class="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <i class="ri-information-line text-gray-400"></i>
-                    {{ __($t.'session_info') }}
+                    <i class="ri-settings-3-line text-gray-400"></i>
+                    {{ __($t.'session_settings') }}
                 </h3>
-                <dl class="space-y-3">
-                    <div class="flex justify-between items-center">
-                        <dt class="text-xs text-gray-500">{{ __($t.'col_status') }}</dt>
-                        <dd><x-sessions.status-badge :status="$status" size="sm" /></dd>
+                <div class="space-y-4">
+                    {{-- Status --}}
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __($t.'edit_status') }}</label>
+                        <select x-model="editForm.status" {{ $isFinal ? 'disabled' : '' }}
+                            class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500">
+                            @foreach(\App\Enums\SessionStatus::cases() as $statusEnum)
+                                <option value="{{ $statusEnum->value }}">{{ $statusEnum->label() }}</option>
+                            @endforeach
+                        </select>
                     </div>
-                    @if($session->session_code)
-                    <div class="flex justify-between items-center">
-                        <dt class="text-xs text-gray-500">{{ __($t.'col_session_code') }}</dt>
-                        <dd class="text-sm font-mono text-gray-700">{{ $session->session_code }}</dd>
-                    </div>
-                    @endif
-                    <div class="flex justify-between items-center">
-                        <dt class="text-xs text-gray-500">{{ __($t.'col_type') }}</dt>
-                        <dd class="flex items-center gap-1">
-                            <i class="{{ $typeConfig['icon'] }} text-xs {{ $typeConfig['text'] }}"></i>
-                            <span class="text-sm text-gray-700">{{ $typeConfig['label'] }}</span>
-                        </dd>
-                    </div>
-                    @if($session->scheduled_at)
-                    <div class="flex justify-between items-center">
-                        <dt class="text-xs text-gray-500">{{ __($t.'col_scheduled') }}</dt>
-                        <dd class="text-sm text-gray-700">{{ toAcademyTimezone($session->scheduled_at)->translatedFormat('d M Y - h:i A') }}</dd>
-                    </div>
-                    @endif
-                    @if($session->duration_minutes)
-                    <div class="flex justify-between items-center">
-                        <dt class="text-xs text-gray-500">{{ __($t.'col_duration') }}</dt>
-                        <dd class="text-sm text-gray-700">{{ __($t.'duration_minutes', ['count' => $session->duration_minutes]) }}</dd>
-                    </div>
-                    @endif
-                    @if($session->started_at)
-                    <div class="flex justify-between items-center">
-                        <dt class="text-xs text-gray-500">{{ __('enums.session_status.ongoing') }}</dt>
-                        <dd class="text-sm text-gray-700">{{ toAcademyTimezone($session->started_at)->translatedFormat('h:i A') }}</dd>
-                    </div>
-                    @endif
-                    @if($session->ended_at)
-                    <div class="flex justify-between items-center">
-                        <dt class="text-xs text-gray-500">{{ __('enums.session_status.completed') }}</dt>
-                        <dd class="text-sm text-gray-700">{{ toAcademyTimezone($session->ended_at)->translatedFormat('h:i A') }}</dd>
-                    </div>
-                    @endif
-                </dl>
-            </div>
 
-            {{-- Supervisor Notes --}}
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h3 class="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <i class="ri-sticky-note-line text-gray-400"></i>
-                    {{ __($t.'supervisor_notes') }}
-                </h3>
-                <textarea
-                    x-model="supervisorNotes"
-                    rows="4"
-                    placeholder="{{ __($t.'notes_placeholder') }}"
-                    class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 resize-none"
-                ></textarea>
-                <div class="mt-2 flex items-center justify-between">
-                    <button @click="saveNotes()" :disabled="savingNotes"
-                        class="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-50">
-                        <span x-show="!savingNotes">{{ __($t.'save_notes') }}</span>
-                        <span x-show="savingNotes" x-cloak>{{ __('supervisor.observation.saving') }}...</span>
-                    </button>
-                    <span x-show="notesSaved" x-transition x-cloak class="text-xs text-green-600">
-                        <i class="ri-check-line"></i> {{ __($t.'notes_saved') }}
-                    </span>
+                    {{-- Scheduled At --}}
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __($t.'edit_scheduled_at') }}</label>
+                        <input type="datetime-local" x-model="editForm.scheduled_at" {{ $isFinal ? 'disabled' : '' }}
+                            class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500">
+                    </div>
+
+                    {{-- Duration --}}
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __($t.'edit_duration') }}</label>
+                        <input type="number" x-model="editForm.duration_minutes" min="15" max="300" {{ $isFinal ? 'disabled' : '' }}
+                            class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500">
+                    </div>
+
+                    {{-- Supervisor Notes --}}
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __($t.'supervisor_notes') }}</label>
+                        <textarea x-model="editForm.supervisor_notes" rows="3"
+                            placeholder="{{ __($t.'notes_placeholder') }}"
+                            class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 resize-none"></textarea>
+                    </div>
+
+                    {{-- Save button --}}
+                    <div class="flex items-center justify-between">
+                        <button @click="submitEdit()" :disabled="submittingEdit"
+                            class="px-4 py-2 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-50">
+                            <span x-show="!submittingEdit">{{ __($t.'save_changes') }}</span>
+                            <span x-show="submittingEdit" x-cloak>{{ __('supervisor.observation.saving') }}...</span>
+                        </button>
+                        <span x-show="editSaved" x-transition x-cloak class="text-xs text-green-600">
+                            <i class="ri-check-line"></i> {{ __($t.'changes_saved') }}
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -295,66 +280,6 @@
                         <p class="text-xs text-gray-400 font-mono">{{ $session->meeting_room_name }}</p>
                     @endif
                 </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Edit Modal --}}
-    <div x-show="showEditModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div x-show="showEditModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-                 x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 bg-black/50" @click="showEditModal = false"></div>
-
-            <div x-show="showEditModal" x-transition class="relative bg-white rounded-xl shadow-xl max-w-lg w-full p-6 z-10">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __($t.'edit_modal_title') }}</h3>
-
-                <form @submit.prevent="submitEdit()">
-                    <div class="space-y-4">
-                        {{-- Status --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __($t.'edit_status') }}</label>
-                            <select x-model="editForm.status" class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                @foreach(\App\Enums\SessionStatus::cases() as $statusEnum)
-                                    <option value="{{ $statusEnum->value }}">{{ $statusEnum->label() }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        {{-- Scheduled At --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __($t.'edit_scheduled_at') }}</label>
-                            <input type="datetime-local" x-model="editForm.scheduled_at"
-                                class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-
-                        {{-- Duration --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __($t.'edit_duration') }}</label>
-                            <input type="number" x-model="editForm.duration_minutes" min="15" max="300"
-                                class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-
-                        {{-- Notes --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __($t.'edit_notes') }}</label>
-                            <textarea x-model="editForm.supervisor_notes" rows="3"
-                                class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 resize-none"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 flex justify-end gap-3">
-                        <button type="button" @click="showEditModal = false"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-                            {{ __('supervisor.common.back_to_list') }}
-                        </button>
-                        <button type="submit" :disabled="submittingEdit"
-                            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50">
-                            <span x-show="!submittingEdit">{{ __($t.'edit_save') }}</span>
-                            <span x-show="submittingEdit" x-cloak>{{ __('supervisor.observation.saving') }}...</span>
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
@@ -409,13 +334,10 @@
 <script>
 function sessionDetail() {
     return {
-        showEditModal: false,
         showCancelModal: false,
         submittingEdit: false,
         submittingCancel: false,
-        savingNotes: false,
-        notesSaved: false,
-        supervisorNotes: @json($initialNotes),
+        editSaved: false,
         cancellationReason: '',
 
         editForm: {
@@ -427,6 +349,7 @@ function sessionDetail() {
 
         async submitEdit() {
             this.submittingEdit = true;
+            this.editSaved = false;
             try {
                 const response = await fetch(@json($updateUrl), {
                     method: 'PATCH',
@@ -439,7 +362,8 @@ function sessionDetail() {
                 });
                 const data = await response.json();
                 if (response.ok) {
-                    window.location.reload();
+                    this.editSaved = true;
+                    setTimeout(() => this.editSaved = false, 3000);
                 } else {
                     alert(data.message || 'Error');
                 }
@@ -476,35 +400,7 @@ function sessionDetail() {
             }
         },
 
-        async saveNotes() {
-            this.savingNotes = true;
-            this.notesSaved = false;
-            try {
-                const response = await fetch(@json($updateUrl), {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ supervisor_notes: this.supervisorNotes }),
-                });
-                if (response.ok) {
-                    this.notesSaved = true;
-                    setTimeout(() => this.notesSaved = false, 3000);
-                }
-            } catch (e) {
-                alert('Error: ' + e.message);
-            } finally {
-                this.savingNotes = false;
-            }
-        },
-
         init() {
-            // Open edit modal if hash is #edit
-            if (window.location.hash === '#edit') {
-                this.showEditModal = true;
-            }
             if (window.location.hash === '#cancel') {
                 this.showCancelModal = true;
             }

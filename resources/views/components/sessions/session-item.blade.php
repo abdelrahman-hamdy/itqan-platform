@@ -28,21 +28,35 @@ use App\Enums\SessionStatus;
     // Different session types have different routes to prevent ID collision issues
     $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
 
-    if ($session instanceof \App\Models\InteractiveCourseSession) {
-        // Interactive course sessions use 'session' parameter
-        $sessionUrl = $viewType === 'student'
-            ? route('student.interactive-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
-            : route('teacher.interactive-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id]);
-    } elseif ($session instanceof \App\Models\AcademicSession) {
-        // Academic sessions use 'session' parameter
-        $sessionUrl = $viewType === 'student'
-            ? route('student.academic-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
-            : route('teacher.academic-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id]);
+    if ($viewType === 'supervisor') {
+        // Supervisor/admin routes go to manage.sessions.show
+        $sessionTypeSlug = match(true) {
+            $session instanceof \App\Models\InteractiveCourseSession => 'interactive',
+            $session instanceof \App\Models\AcademicSession => 'academic',
+            default => 'quran',
+        };
+        $sessionUrl = route('manage.sessions.show', [
+            'subdomain' => $subdomain,
+            'sessionType' => $sessionTypeSlug,
+            'sessionId' => $session->id,
+        ]);
+    } elseif ($viewType === 'student') {
+        if ($session instanceof \App\Models\InteractiveCourseSession) {
+            $sessionUrl = route('student.interactive-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id]);
+        } elseif ($session instanceof \App\Models\AcademicSession) {
+            $sessionUrl = route('student.academic-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id]);
+        } else {
+            $sessionUrl = route('student.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id]);
+        }
     } else {
-        // Default: QuranSession - uses 'sessionId' parameter
-        $sessionUrl = $viewType === 'student'
-            ? route('student.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id])
-            : route('teacher.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id]);
+        // Teacher routes
+        if ($session instanceof \App\Models\InteractiveCourseSession) {
+            $sessionUrl = route('teacher.interactive-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id]);
+        } elseif ($session instanceof \App\Models\AcademicSession) {
+            $sessionUrl = route('teacher.academic-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id]);
+        } else {
+            $sessionUrl = route('teacher.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id]);
+        }
     }
 @endphp
 
