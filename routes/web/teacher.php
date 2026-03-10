@@ -249,7 +249,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::middleware(['auth', 'role:quran_teacher,admin,super_admin'])->prefix('teacher')->name('teacher.')->group(function () {
+    Route::middleware(['auth', 'role:quran_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
         // Group Circles Management
         Route::get('/group-circles', [QuranGroupCircleScheduleController::class, 'index'])->name('group-circles.index');
 
