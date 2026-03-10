@@ -37,7 +37,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                         'type_label' => __('supervisor.teachers.teacher_type_quran'),
                         'code' => $user->quranTeacherProfile?->teacher_code ?? '',
                         'active_entities' => $activeCircles + $activeIndividual,
-                        'entity_route' => 'supervisor.group-circles.index',
+                        'entity_route' => 'manage.group-circles.index',
                     ];
                 });
             $teachers = $teachers->merge($quranTeachers);
@@ -61,7 +61,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                         'type_label' => __('supervisor.teachers.teacher_type_academic'),
                         'code' => $user->academicTeacherProfile?->teacher_code ?? '',
                         'active_entities' => $activeLessons,
-                        'entity_route' => 'supervisor.academic-lessons.index',
+                        'entity_route' => 'manage.academic-lessons.index',
                     ];
                 });
             $teachers = $teachers->merge($academicTeachers);
