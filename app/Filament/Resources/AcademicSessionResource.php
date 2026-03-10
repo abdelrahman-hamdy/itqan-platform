@@ -37,6 +37,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Academic Session Resource for SuperAdmin Panel
@@ -320,6 +321,24 @@ class AcademicSessionResource extends BaseAcademicSessionResource
         }
 
         return $result;
+    }
+
+    // ========================================
+    // Authorization Overrides
+    // ========================================
+
+    public static function canEdit(Model $record): bool
+    {
+        return true;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        $status = $record->status instanceof \App\Enums\SessionStatus
+            ? $record->status
+            : \App\Enums\SessionStatus::tryFrom($record->status);
+
+        return $status === \App\Enums\SessionStatus::SCHEDULED;
     }
 
     // ========================================
