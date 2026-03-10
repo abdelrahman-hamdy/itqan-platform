@@ -317,6 +317,7 @@ class RecordedCourse extends Model implements HasMedia
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
 
         $this->addMediaCollection('materials')
+            ->useDisk('public')
             ->acceptsMimeTypes([
                 'application/pdf',
                 'application/msword',
@@ -331,6 +332,7 @@ class RecordedCourse extends Model implements HasMedia
             ]);
 
         $this->addMediaCollection('videos')
+            ->useDisk('public')
             ->singleFile()
             ->acceptsMimeTypes([
                 'video/mp4',
