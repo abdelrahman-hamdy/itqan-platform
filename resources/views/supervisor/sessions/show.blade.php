@@ -34,8 +34,10 @@
         $studentUsers = collect([$session->student])->filter();
     }
 
-    // Check if current user is a supervisor (not just admin)
-    $isSupervisor = auth()->user()->hasRole('supervisor');
+    // Check user roles
+    $currentUser = auth()->user();
+    $isSupervisor = $currentUser->hasRole('supervisor');
+    $isAdmin = $currentUser->isAdmin(); // admin or super_admin
 @endphp
 
 <div x-data="sessionDetail()" class="space-y-6">
@@ -50,6 +52,22 @@
 
     {{-- Session Header --}}
     <x-sessions.session-header :session="$session" view-type="supervisor" />
+
+    {{-- Cancellation Reason (shown when session is cancelled) --}}
+    @if($session->status === \App\Enums\SessionStatus::CANCELLED && $session->cancellation_reason)
+        <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+            <div class="flex items-start gap-3">
+                <i class="ri-error-warning-line text-red-500 text-lg mt-0.5"></i>
+                <div>
+                    <p class="text-sm font-semibold text-red-900">{{ __($t.'cancel_reason_label') }}</p>
+                    <p class="text-sm text-red-800 mt-1">{{ $session->cancellation_reason }}</p>
+                    @if($session->cancelledBy)
+                        <p class="text-xs text-red-500 mt-1">{{ $session->cancelledBy->name }} &middot; {{ toAcademyTimezone($session->cancelled_at)->translatedFormat('d M Y - h:i A') }}</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- Action Bar --}}
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
@@ -105,8 +123,7 @@
         <div class="lg:col-span-2 space-y-6">
             {{-- Participants --}}
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5" x-data="{ showAll: false }">
-                <h3 class="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <i class="ri-group-line text-gray-400"></i>
+                <h3 class="text-base font-semibold text-gray-900 mb-4">
                     {{ __($t.'participants') }}
                     <span class="text-xs text-gray-400 font-normal">({{ 1 + $studentUsers->count() }})</span>
                 </h3>
@@ -114,7 +131,7 @@
                     {{-- Teacher --}}
                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div class="flex items-center gap-3">
-                            <x-avatar :user="$teacherUser" size="md" :show-badge="true" />
+                            <x-avatar :user="$teacherUser" size="xs" />
                             <div>
                                 <p class="text-sm font-medium text-gray-900">{{ $teacherName }}</p>
                                 <p class="text-xs text-gray-500">{{ __('supervisor.observation.role_teacher') }}</p>
@@ -133,7 +150,7 @@
                         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                              x-show="showAll || {{ $index }} < 10" x-transition>
                             <div class="flex items-center gap-3">
-                                <x-avatar :user="$studentUser" size="md" :show-badge="true" />
+                                <x-avatar :user="$studentUser" size="xs" />
                                 <div>
                                     <p class="text-sm font-medium text-gray-900">{{ $studentUser->name ?? '-' }}</p>
                                     <p class="text-xs text-gray-500">{{ __('supervisor.observation.role_student') }}</p>
@@ -199,41 +216,15 @@
 
         {{-- Sidebar (1/3) --}}
         <div class="space-y-6">
-            {{-- Session Settings (inline edit replacing modal + session info + notes) --}}
+            {{-- Notes --}}
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                 <h3 class="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <i class="ri-settings-3-line text-gray-400"></i>
-                    {{ __($t.'session_settings') }}
+                    <i class="ri-sticky-note-line text-gray-400"></i>
+                    {{ __($t.'supervisor_notes') }}
                 </h3>
                 <div class="space-y-4">
-                    {{-- Status --}}
-                    <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __($t.'edit_status') }}</label>
-                        <select x-model="editForm.status" {{ $isFinal ? 'disabled' : '' }}
-                            class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500">
-                            @foreach(\App\Enums\SessionStatus::cases() as $statusEnum)
-                                <option value="{{ $statusEnum->value }}">{{ $statusEnum->label() }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    {{-- Scheduled At --}}
-                    <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __($t.'edit_scheduled_at') }}</label>
-                        <input type="datetime-local" x-model="editForm.scheduled_at" {{ $isFinal ? 'disabled' : '' }}
-                            class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500">
-                    </div>
-
-                    {{-- Duration --}}
-                    <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __($t.'edit_duration') }}</label>
-                        <input type="number" x-model="editForm.duration_minutes" min="15" max="300" {{ $isFinal ? 'disabled' : '' }}
-                            class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500">
-                    </div>
-
                     {{-- Supervisor Notes --}}
                     <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __($t.'supervisor_notes') }}</label>
                         <textarea x-model="editForm.supervisor_notes" rows="3"
                             placeholder="{{ __($t.'notes_placeholder') }}"
                             class="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 resize-none"></textarea>
@@ -241,13 +232,13 @@
 
                     {{-- Save button --}}
                     <div class="flex items-center justify-between">
-                        <button @click="submitEdit()" :disabled="submittingEdit"
+                        <button @click="saveNotes()" :disabled="savingNotes"
                             class="px-4 py-2 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-50">
-                            <span x-show="!submittingEdit">{{ __($t.'save_changes') }}</span>
-                            <span x-show="submittingEdit" x-cloak>{{ __('supervisor.observation.saving') }}...</span>
+                            <span x-show="!savingNotes">{{ __($t.'save_notes') }}</span>
+                            <span x-show="savingNotes" x-cloak>{{ __('supervisor.observation.saving') }}...</span>
                         </button>
-                        <span x-show="editSaved" x-transition x-cloak class="text-xs text-green-600">
-                            <i class="ri-check-line"></i> {{ __($t.'changes_saved') }}
+                        <span x-show="notesSaved" x-transition x-cloak class="text-xs text-green-600">
+                            <i class="ri-check-line"></i> {{ __($t.'notes_saved') }}
                         </span>
                     </div>
                 </div>
@@ -304,6 +295,10 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __($t.'cancel_reason_label') }}</label>
                     <textarea x-model="cancellationReason" rows="3" required
                         class="w-full text-sm rounded-lg border-gray-300 focus:border-red-500 focus:ring-red-500 resize-none"></textarea>
+                    <p class="text-xs text-gray-500 mt-1.5">
+                        <i class="ri-information-line"></i>
+                        {{ __($t.'cancel_reason_note') }}
+                    </p>
                 </div>
 
                 <div class="flex justify-end gap-3">
@@ -326,30 +321,24 @@
     $updateUrl = route('manage.sessions.update', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]);
     $cancelUrl = route('manage.sessions.cancel', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]);
     $initialNotes = $session->supervisor_notes ?? '';
-    $initialStatus = $session->status->value;
-    $initialScheduledAt = $session->scheduled_at ? toAcademyTimezone($session->scheduled_at)->format('Y-m-d\TH:i') : '';
-    $initialDuration = $session->duration_minutes ?? '';
 @endphp
 
 <script>
 function sessionDetail() {
     return {
         showCancelModal: false,
-        submittingEdit: false,
+        savingNotes: false,
+        notesSaved: false,
         submittingCancel: false,
-        editSaved: false,
         cancellationReason: '',
 
         editForm: {
-            status: @json($initialStatus),
-            scheduled_at: @json($initialScheduledAt),
-            duration_minutes: @json($initialDuration),
             supervisor_notes: @json($initialNotes),
         },
 
-        async submitEdit() {
-            this.submittingEdit = true;
-            this.editSaved = false;
+        async saveNotes() {
+            this.savingNotes = true;
+            this.notesSaved = false;
             try {
                 const response = await fetch(@json($updateUrl), {
                     method: 'PATCH',
@@ -358,19 +347,19 @@ function sessionDetail() {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                         'Accept': 'application/json',
                     },
-                    body: JSON.stringify(this.editForm),
+                    body: JSON.stringify({ supervisor_notes: this.editForm.supervisor_notes }),
                 });
-                const data = await response.json();
                 if (response.ok) {
-                    this.editSaved = true;
-                    setTimeout(() => this.editSaved = false, 3000);
+                    this.notesSaved = true;
+                    setTimeout(() => this.notesSaved = false, 3000);
                 } else {
+                    const data = await response.json();
                     alert(data.message || 'Error');
                 }
             } catch (e) {
                 alert('Error: ' + e.message);
             } finally {
-                this.submittingEdit = false;
+                this.savingNotes = false;
             }
         },
 

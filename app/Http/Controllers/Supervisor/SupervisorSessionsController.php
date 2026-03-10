@@ -452,14 +452,14 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     {
         $query = match ($type) {
             'academic' => $this->getAcademicQuery()->with([
-                'homeworkAssignments', 'homeworkSubmissions', 'sessionReports',
+                'homeworkAssignments', 'homeworkSubmissions', 'sessionReports', 'cancelledBy',
             ]),
             'interactive' => $this->getInteractiveQuery()->with([
-                'course.enrolledStudents.student.user', 'homework', 'studentReports',
+                'course.enrolledStudents.student.user', 'homework', 'studentReports', 'cancelledBy',
             ]),
             default => $this->getQuranQuery()->with([
                 'circle.students', 'individualCircle.subscription.package',
-                'sessionHomework', 'studentReports',
+                'sessionHomework', 'studentReports', 'cancelledBy',
             ]),
         };
 
@@ -469,17 +469,32 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     /**
      * Get Filament panel URL for a session.
      */
+    /**
+     * Get Filament panel URL for a session (only for admin/super_admin).
+     */
     private function getFilamentUrl(string $type, string $id): ?string
     {
+        $user = auth()->user();
+
+        // Only admins and super_admins get Filament panel links
+        if (! $user->isAdmin()) {
+            return null;
+        }
+
         $resource = match ($type) {
             'academic' => 'academic-sessions',
             'interactive' => 'interactive-course-sessions',
             default => 'quran-sessions',
         };
 
+        // Academy panel is tenant-scoped: /{tenant_subdomain}/panel/{resource}/{id}
+        $tenantSlug = $user->academy?->subdomain;
+        if (! $tenantSlug) {
+            return null;
+        }
+
         try {
-            // Academy panel path is '/panel' (from AcademyPanelProvider)
-            return url("/panel/{$resource}/{$id}");
+            return url("/{$tenantSlug}/panel/{$resource}/{$id}");
         } catch (\Exception) {
             return null;
         }

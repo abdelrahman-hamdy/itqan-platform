@@ -264,6 +264,7 @@ return [
         'cancel_confirm_message' => 'Are you sure you want to cancel this session? This action cannot be undone.',
         'cancel_reason_label' => 'Cancellation Reason',
         'cancel_success' => 'Session cancelled successfully',
+        'cancel_reason_note' => 'The cancellation reason will be visible to all users who have access to this session.',
 
         // Detail page
         'session_info' => 'Session Info',
