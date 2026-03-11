@@ -31,7 +31,7 @@
     <!-- Stats -->
     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6">
         {{-- Total Teachers --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
+        <div class="col-span-2 md:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <i class="ri-team-line text-blue-600"></i>
