@@ -10,7 +10,5 @@ interface QuranReportServiceInterface
 {
     public function getIndividualCircleReport(QuranIndividualCircle $circle, ?array $dateRange = null): array;
 
-    public function getGroupCircleReport(QuranCircle $circle): array;
-
     public function getStudentReportInGroupCircle(QuranCircle $circle, User $student, ?array $dateRange = null): array;
 }

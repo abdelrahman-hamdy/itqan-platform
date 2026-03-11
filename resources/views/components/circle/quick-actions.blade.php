@@ -82,7 +82,7 @@
                     {{ __('components.circle.quick_actions.view_detailed_report') }}
                 </a>
             @elseif($isGroup)
-                <a href="{{ route('teacher.group-circles.report', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
+                <a href="{{ route('teacher.group-circles.show', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
                    class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
                     <i class="ri-file-chart-line ms-2 rtl:ms-2 ltr:me-2"></i>
                     {{ __('components.circle.quick_actions.view_full_report') }}

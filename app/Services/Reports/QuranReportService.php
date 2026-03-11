@@ -2,7 +2,7 @@
 
 namespace App\Services\Reports;
 
-use Carbon\Carbon;
+use App\Contracts\QuranReportServiceInterface;
 use App\DTOs\Reports\AttendanceDTO;
 use App\DTOs\Reports\PerformanceDTO;
 use App\DTOs\Reports\StatDTO;
@@ -13,7 +13,7 @@ use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\StudentSessionReport;
 use App\Models\User;
-use App\Contracts\QuranReportServiceInterface;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -78,67 +78,6 @@ class QuranReportService extends BaseReportService implements QuranReportService
                 'sessions_completed' => $circle->sessions_completed,
                 'sessions_remaining' => $circle->sessions_remaining,
                 'progress_percentage' => $circle->progress_percentage ?? 0,
-            ],
-        ];
-    }
-
-    /**
-     * Generate comprehensive report for group circle (all students)
-     *
-     * @return array Report data with aggregate statistics
-     */
-    public function getGroupCircleReport(QuranCircle $circle): array
-    {
-        $students = $circle->students;
-        $sessions = $circle->sessions()->orderBy('scheduled_at', 'desc')->get();
-
-        // Generate individual reports for each student
-        $studentReports = [];
-        $aggregateStats = [
-            'total_students' => $students->count(),
-            'total_sessions' => $sessions->count(),
-            'total_attendance_rate' => 0,
-            'total_average_performance' => 0,
-            'students_with_reports' => 0,
-        ];
-
-        foreach ($students as $student) {
-            $report = $this->getStudentReportInGroupCircle($circle, $student);
-            $studentReports[$student->id] = $report;
-
-            // Aggregate for overall stats
-            if ($report['attendance']->totalSessions > 0) {
-                $aggregateStats['total_attendance_rate'] += $report['attendance']->attendanceRate;
-                $aggregateStats['students_with_reports']++;
-            }
-
-            if ($report['performance']->averageOverall > 0) {
-                $aggregateStats['total_average_performance'] += $report['performance']->averageOverall;
-            }
-        }
-
-        // Calculate averages
-        if ($aggregateStats['students_with_reports'] > 0) {
-            $aggregateStats['average_attendance_rate'] = round($aggregateStats['total_attendance_rate'] / $aggregateStats['students_with_reports'], 1);
-            $aggregateStats['average_performance'] = round($aggregateStats['total_average_performance'] / $aggregateStats['students_with_reports'], 1);
-        } else {
-            $aggregateStats['average_attendance_rate'] = 0;
-            $aggregateStats['average_performance'] = 0;
-        }
-
-        return [
-            'circle' => $circle,
-            'students' => $students,
-            'sessions' => $sessions,
-            'student_reports' => $studentReports,
-            'aggregate_stats' => $aggregateStats,
-
-            // Overall circle info
-            'overall' => [
-                'created_at' => $circle->created_at,
-                'sessions_completed' => $circle->sessions_completed ?? $sessions->whereIn('status', [SessionStatus::COMPLETED->value])->count(),
-                'enrolled_students' => $students->count(),
-                'max_students' => $circle->max_students,
             ],
         ];
     }

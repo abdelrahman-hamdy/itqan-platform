@@ -11,20 +11,20 @@
 use App\Http\Controllers\AcademicIndividualLessonController;
 use App\Http\Controllers\AcademicSessionController;
 use App\Http\Controllers\LiveKitMeetingController;
-use App\Http\Controllers\SessionReportShowController;
 use App\Http\Controllers\QuranGroupCircleScheduleController;
 use App\Http\Controllers\QuranIndividualCircleController;
 use App\Http\Controllers\QuranSessionController;
+use App\Http\Controllers\SessionReportShowController;
 use App\Http\Controllers\StudentInteractiveCourseController;
 use App\Http\Controllers\StudentReportController;
 use App\Http\Controllers\Teacher\AcademicLessonController;
 use App\Http\Controllers\Teacher\CalendarController;
 use App\Http\Controllers\Teacher\CertificateListController;
 use App\Http\Controllers\Teacher\GroupCircleController;
-use App\Http\Controllers\Teacher\QuizManagementController;
 use App\Http\Controllers\Teacher\GroupCircleReportController;
 use App\Http\Controllers\Teacher\HomeworkGradingController;
 use App\Http\Controllers\Teacher\IndividualCircleReportController;
+use App\Http\Controllers\Teacher\QuizManagementController;
 use App\Http\Controllers\Teacher\RecordingListController;
 use App\Http\Controllers\Teacher\SessionHomeworkController;
 use App\Http\Controllers\Teacher\SessionReportListController;
@@ -266,7 +266,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/group-circles/{circle}/students/{student}/progress', [QuranGroupCircleScheduleController::class, 'studentProgressReport'])->name('group-circles.student-progress');
 
         // Group Circle Reports
-        Route::get('/group-circles/{circle}/report', [GroupCircleReportController::class, 'show'])->name('group-circles.report');
         Route::get('/group-circles/{circle}/students/{student}/report', [GroupCircleReportController::class, 'studentReport'])->name('group-circles.student-report');
 
         // Session create/store (MUST come before {sessionId} route)

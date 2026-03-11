@@ -114,6 +114,6 @@ class StudentSessionReportObserver
      */
     protected function updateCircleProgress(StudentSessionReport $report): void
     {
-        // Progress tracking is now handled by QuranCircleReportService
+        // Progress tracking is now handled by QuranReportService
     }
 }

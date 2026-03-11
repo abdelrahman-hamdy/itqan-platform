@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Academy;
-use Exception;
+use App\Contracts\QuranReportServiceInterface;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Http\Requests\GetAvailableTimeSlotsRequest;
 use App\Http\Requests\UpdateIndividualCircleSettingsRequest;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\Academy;
 use App\Models\QuranIndividualCircle;
-use App\Services\QuranCircleReportService;
 use App\Services\QuranSessionSchedulingService;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,11 +24,11 @@ class QuranIndividualCircleController extends Controller
 
     private QuranSessionSchedulingService $schedulingService;
 
-    private QuranCircleReportService $reportService;
+    private QuranReportServiceInterface $reportService;
 
     public function __construct(
         QuranSessionSchedulingService $schedulingService,
-        QuranCircleReportService $reportService
+        QuranReportServiceInterface $reportService
     ) {
         $this->schedulingService = $schedulingService;
         $this->reportService = $reportService;
@@ -68,7 +68,7 @@ class QuranIndividualCircleController extends Controller
         }
         if ($request->filled('search')) {
             $query->whereHas('student', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%');
+                $q->where('name', 'like', '%'.$request->search.'%');
             });
         }
         if ($request->filled('date_from')) {
@@ -251,13 +251,16 @@ class QuranIndividualCircleController extends Controller
             'homework',
         ]);
 
-        // Get comprehensive report data using the QuranCircleReportService
+        // Get comprehensive report data using the QuranReportService (DTO-based)
         $reportData = $this->reportService->getIndividualCircleReport($circleModel);
 
         // Extract stats for view compatibility
         $stats = $reportData['progress'];
-        $stats['attendance'] = $reportData['attendance'];
-        $stats['trends'] = $reportData['trends'];
+        $stats['total_sessions'] = $circleModel->total_sessions ?? 0;
+        $stats['completed_sessions'] = $circleModel->sessions_completed ?? 0;
+        $stats['remaining_sessions'] = $circleModel->sessions_remaining ?? 0;
+        $stats['scheduled_sessions'] = max(0, $stats['total_sessions'] - $stats['completed_sessions']);
+        $stats['attendance_rate'] = $reportData['attendance']->attendanceRate;
 
         // Rename for view consistency
         $circle = $circleModel;

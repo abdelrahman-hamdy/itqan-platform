@@ -22,19 +22,6 @@ class GroupCircleReportController extends Controller
     }
 
     /**
-     * Display comprehensive report for group circle (all students)
-     */
-    public function show(Request $request, $subdomain, QuranCircle $circle): View
-    {
-        $this->authorize('view', $circle);
-
-        // Generate report data
-        $reportData = $this->reportService->getGroupCircleReport($circle);
-
-        return view('teacher.group-circles.report', $reportData);
-    }
-
-    /**
      * Display detailed report for specific student in group circle
      */
     public function studentReport(Request $request, $subdomain, QuranCircle $circle, User $student): View
