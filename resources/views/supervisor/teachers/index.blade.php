@@ -310,12 +310,12 @@
                                             {{ __('supervisor.teachers.view_circles') }}
                                         </a>
                                         <a href="{{ route('manage.individual-circles.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
-                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors">
+                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition-colors">
                                             <i class="ri-user-line"></i>
                                             {{ __('supervisor.teachers.view_individual_circles') }}
                                         </a>
                                         <a href="{{ route('manage.trial-sessions.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
-                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-colors">
+                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-colors">
                                             <i class="ri-gift-line"></i>
                                             {{ __('supervisor.teachers.view_trial_sessions') }}
                                         </a>
@@ -339,14 +339,14 @@
                                         {{ __('supervisor.teachers.view_sessions') }}
                                     </a>
                                     <a href="{{ route('manage.session-reports.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
-                                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors">
+                                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-fuchsia-600 hover:bg-fuchsia-700 text-white transition-colors">
                                         <i class="ri-file-chart-line"></i>
                                         {{ __('supervisor.teachers.view_reports') }}
                                     </a>
 
                                     {{-- Message --}}
                                     <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $teacherId]) }}"
-                                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors">
+                                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors">
                                         <i class="ri-message-3-line"></i>
                                         {{ __('supervisor.teachers.message_teacher') }}
                                     </a>

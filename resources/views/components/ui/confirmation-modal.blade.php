@@ -63,7 +63,8 @@
          class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
 
     {{-- Modal Container - Bottom sheet on mobile, centered on desktop --}}
-    <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+    <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4"
+         @click="close()"
         {{-- Modal Content --}}
         <div
             @click.stop
@@ -113,7 +114,7 @@
                 <button
                     @click="close()"
                     type="button"
-                    class="inline-flex items-center justify-center min-h-[48px] md:min-h-[44px] px-6 py-3 md:py-2.5 text-base md:text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                    class="cursor-pointer inline-flex items-center justify-center min-h-[48px] md:min-h-[44px] px-6 py-3 md:py-2.5 text-base md:text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400">
                     <span x-text="cancelText"></span>
                 </button>
 
@@ -121,7 +122,7 @@
                 <button
                     @click="confirm()"
                     type="button"
-                    class="inline-flex items-center justify-center min-h-[48px] md:min-h-[44px] px-6 py-3 md:py-2.5 text-base md:text-sm font-semibold text-white rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 shadow-md"
+                    class="cursor-pointer inline-flex items-center justify-center min-h-[48px] md:min-h-[44px] px-6 py-3 md:py-2.5 text-base md:text-sm font-semibold text-white rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 shadow-md"
                     :class="isDangerous
                         ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
                         : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'">
