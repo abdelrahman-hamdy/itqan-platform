@@ -83,23 +83,24 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
         ));
     }
 
-    public function show(Payment $payment, $subdomain = null): View
+    public function show(Request $request, $subdomain = null, $payment = null): View
     {
         if (! $this->isAdminUser()) {
             abort(403);
         }
 
-        $payment->load(['user', 'payable', 'academy']);
+        $payment = Payment::with(['user', 'payable'])->findOrFail($payment);
 
         return view('supervisor.payments.show', compact('payment'));
     }
 
-    public function markCompleted(Payment $payment, $subdomain = null)
+    public function markCompleted(Request $request, $subdomain = null, $payment = null)
     {
         if (! $this->isAdminUser()) {
             abort(403);
         }
 
+        $payment = Payment::findOrFail($payment);
         $payment->markAsCompleted();
 
         return redirect()->back()->with('success', __('supervisor.payments.marked_completed'));

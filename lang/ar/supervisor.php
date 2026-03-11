@@ -897,6 +897,13 @@ return [
         'updated_successfully' => 'تم تحديث الاشتراك بنجاح',
         'status_updated' => 'تم تحديث حالة الاشتراك',
         'extended_successfully' => 'تم تمديد الاشتراك بنجاح',
+        'filter_search' => 'بحث',
+        'col_student' => 'الطالب',
+        'col_teacher' => 'المعلم',
+        'col_type' => 'النوع',
+        'col_status' => 'الحالة',
+        'col_actions' => 'الإجراءات',
+        'session_date' => 'التاريخ',
     ],
 
     'payments' => [
@@ -972,6 +979,10 @@ return [
         'id' => 'المعرّف',
         'no_related_entity' => 'لا يوجد كيان مرتبط',
         'notes' => 'ملاحظات',
+        'sort_newest' => 'الأحدث',
+        'sort_oldest' => 'الأقدم',
+        'clear_filters' => 'مسح الفلاتر',
+        'created_at' => 'تاريخ الإنشاء',
     ],
 
     'homework' => [
