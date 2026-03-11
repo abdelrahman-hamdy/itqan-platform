@@ -29,6 +29,7 @@ use App\Http\Controllers\Teacher\IndividualCircleReportController;
 use App\Http\Controllers\Teacher\GroupCircleReportController;
 use App\Http\Controllers\AcademicSessionController;
 use App\Http\Controllers\StudentInteractiveCourseController;
+use App\Http\Controllers\Supervisor\SupervisorSupervisorsController;
 use App\Http\Controllers\Supervisor\SupervisorTrialSessionsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -62,6 +63,16 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/parents/{parent}/toggle-status', [SupervisorParentsController::class, 'toggleStatus'])->name('parents.toggle-status');
         Route::post('/parents/{parent}/reset-password', [SupervisorParentsController::class, 'resetPassword'])->name('parents.reset-password');
         Route::delete('/parents/{parent}', [SupervisorParentsController::class, 'destroy'])->name('parents.destroy');
+
+        // Supervisors (admin-only management)
+        Route::get('/supervisors', [SupervisorSupervisorsController::class, 'index'])->name('supervisors.index');
+        Route::get('/supervisors/create', [SupervisorSupervisorsController::class, 'create'])->name('supervisors.create');
+        Route::post('/supervisors', [SupervisorSupervisorsController::class, 'store'])->name('supervisors.store');
+        Route::get('/supervisors/{supervisor}/edit', [SupervisorSupervisorsController::class, 'edit'])->name('supervisors.edit');
+        Route::put('/supervisors/{supervisor}', [SupervisorSupervisorsController::class, 'update'])->name('supervisors.update');
+        Route::post('/supervisors/{supervisor}/toggle-status', [SupervisorSupervisorsController::class, 'toggleStatus'])->name('supervisors.toggle-status');
+        Route::post('/supervisors/{supervisor}/reset-password', [SupervisorSupervisorsController::class, 'resetPassword'])->name('supervisors.reset-password');
+        Route::delete('/supervisors/{supervisor}', [SupervisorSupervisorsController::class, 'destroy'])->name('supervisors.destroy');
 
         // Teacher Earnings
         Route::get('/teacher-earnings', [SupervisorTeacherEarningsController::class, 'index'])->name('teacher-earnings.index');

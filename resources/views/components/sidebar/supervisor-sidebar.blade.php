@@ -51,6 +51,14 @@
           :label="__('supervisor.sidebar.my_parents')"
           icon="ri-parent-line"
           :active="request()->routeIs('manage.parents.*')" />
+
+        @if($isAdmin)
+        <x-sidebar.nav-item
+          :href="route('manage.supervisors.index', ['subdomain' => $subdomain])"
+          :label="__('supervisor.sidebar.my_supervisors')"
+          icon="ri-user-settings-line"
+          :active="request()->routeIs('manage.supervisors.*')" />
+        @endif
       </x-sidebar.nav-section>
 
       <!-- Quran Programs -->
