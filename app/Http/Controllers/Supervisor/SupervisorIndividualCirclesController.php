@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Supervisor;
 
 use App\Models\QuranIndividualCircle;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -70,7 +71,40 @@ class SupervisorIndividualCirclesController extends BaseSupervisorWebController
             ->findOrFail($circleId);
 
         $teacher = User::find($circle->quran_teacher_id);
+        $isAdmin = $this->isAdminUser();
 
-        return view('supervisor.individual-circles.show', compact('circle', 'teacher'));
+        // Get available quran teachers for reassignment
+        $availableTeachers = $isAdmin
+            ? User::whereIn('id', $quranTeacherIds)->get()
+            : collect();
+
+        return view('supervisor.individual-circles.show', compact('circle', 'teacher', 'isAdmin', 'availableTeachers'));
+    }
+
+    public function update(Request $request, $subdomain, $circleId): RedirectResponse
+    {
+        if (! $this->isAdminUser()) {
+            abort(403);
+        }
+
+        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
+        $circle = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)->findOrFail($circleId);
+
+        $validated = $request->validate([
+            'is_active' => 'required|boolean',
+            'quran_teacher_id' => 'nullable|exists:users,id',
+        ]);
+
+        $updateData = ['is_active' => $validated['is_active']];
+        if (! empty($validated['quran_teacher_id'])) {
+            // Verify teacher is in scope
+            if (in_array((int) $validated['quran_teacher_id'], $quranTeacherIds)) {
+                $updateData['quran_teacher_id'] = $validated['quran_teacher_id'];
+            }
+        }
+
+        $circle->update($updateData);
+
+        return redirect()->back()->with('success', __('supervisor.common.updated_successfully'));
     }
 }

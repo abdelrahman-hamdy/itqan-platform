@@ -2,13 +2,21 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Enums\AttendanceStatus;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicIndividualLesson;
+use App\Models\AcademicSession;
+use App\Models\AcademicSessionAttendance;
+use App\Models\AcademicSubscription;
+use App\Models\Certificate;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleEnrollment;
 use App\Models\QuranIndividualCircle;
+use App\Models\QuranSession;
+use App\Models\QuranSessionAttendance;
+use App\Models\QuranSubscription;
 use App\Models\StudentProfile;
 use App\Models\User;
 use App\Services\AcademyContextService;
@@ -378,6 +386,89 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 
         return redirect()->route('manage.students.index', ['subdomain' => $subdomain])
             ->with('success', __('supervisor.students.student_created'));
+    }
+
+    public function show($subdomain, User $student): View
+    {
+        $this->ensureStudentBelongsToScope($student);
+
+        $student->load('studentProfile.gradeLevel');
+
+        // Get quran subscriptions
+        $quranSubscriptions = QuranSubscription::where('student_id', $student->id)
+            ->with(['individualCircle.quranTeacher', 'package'])
+            ->latest()
+            ->get();
+
+        // Get academic subscriptions
+        $academicSubscriptions = AcademicSubscription::where('student_id', $student->id)
+            ->with(['lesson.academicTeacher.user', 'lesson.subject'])
+            ->latest()
+            ->get();
+
+        // Get certificates
+        $certificates = Certificate::where('student_id', $student->id)->latest('issued_at')->get();
+
+        // Attendance stats
+        $quranAttendance = QuranSessionAttendance::where('student_id', $student->id)->get();
+        $academicAttendance = AcademicSessionAttendance::where('student_id', $student->id)->get();
+        $allAttendance = $quranAttendance->merge($academicAttendance);
+
+        $totalAttendanceRecords = $allAttendance->count();
+        $presentCount = $allAttendance->where('attendance_status', AttendanceStatus::ATTENDED->value)->count();
+        $attendanceRate = $totalAttendanceRecords > 0 ? round(($presentCount / $totalAttendanceRecords) * 100) : 0;
+
+        // Recent sessions (last 10)
+        $recentQuranSessions = QuranSession::where('student_id', $student->id)
+            ->with('quranTeacher')
+            ->latest('scheduled_at')
+            ->limit(10)
+            ->get()
+            ->map(fn ($s) => [
+                'type' => 'quran',
+                'date' => $s->scheduled_at,
+                'teacher_name' => $s->quranTeacher?->name ?? '',
+                'status' => $s->status,
+                'title' => $s->title ?? __('supervisor.students.quran_session'),
+            ]);
+
+        $recentAcademicSessions = AcademicSession::where('student_id', $student->id)
+            ->with('academicTeacher.user')
+            ->latest('scheduled_at')
+            ->limit(10)
+            ->get()
+            ->map(fn ($s) => [
+                'type' => 'academic',
+                'date' => $s->scheduled_at,
+                'teacher_name' => $s->academicTeacher?->user?->name ?? '',
+                'status' => $s->status,
+                'title' => $s->title ?? __('supervisor.students.academic_session'),
+            ]);
+
+        $recentSessions = $recentQuranSessions->merge($recentAcademicSessions)
+            ->sortByDesc('date')
+            ->take(10)
+            ->values();
+
+        // Completed sessions count
+        $completedQuran = QuranSession::where('student_id', $student->id)
+            ->where('status', 'completed')->count();
+        $completedAcademic = AcademicSession::where('student_id', $student->id)
+            ->where('status', 'completed')->count();
+        $completedSessions = $completedQuran + $completedAcademic;
+
+        $isAdmin = $this->isAdminUser();
+
+        return view('supervisor.students.show', [
+            'student' => $student,
+            'quranSubscriptions' => $quranSubscriptions,
+            'academicSubscriptions' => $academicSubscriptions,
+            'certificates' => $certificates,
+            'attendanceRate' => $attendanceRate,
+            'completedSessions' => $completedSessions,
+            'recentSessions' => $recentSessions,
+            'isAdmin' => $isAdmin,
+        ]);
     }
 
     private function ensureStudentBelongsToScope(User $student): void

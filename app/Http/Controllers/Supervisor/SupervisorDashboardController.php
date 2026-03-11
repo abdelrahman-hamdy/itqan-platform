@@ -2,13 +2,23 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Enums\HomeworkStatus;
+use App\Enums\PaymentStatus;
+use App\Enums\SessionSubscriptionStatus;
+use App\Enums\UserType;
+use App\Models\AcademicHomework;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
+use App\Models\AcademicSubscription;
+use App\Models\CourseSubscription;
 use App\Models\InteractiveCourse;
+use App\Models\InteractiveCourseEnrollment;
 use App\Models\InteractiveCourseSession;
+use App\Models\Payment;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
+use App\Models\QuranSubscription;
 use App\Models\User;
 use Illuminate\View\View;
 
@@ -18,17 +28,87 @@ class SupervisorDashboardController extends BaseSupervisorWebController
     {
         $user = auth()->user();
         $profile = $this->getCurrentSupervisorProfile();
+        $isAdmin = $this->isAdminUser();
 
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
         $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
         $academicTeacherProfileIds = $this->getAssignedAcademicTeacherProfileIds();
 
-        // Teacher counts
+        // ====================================================================
+        // Row 1 — Users
+        // ====================================================================
         $quranTeachersCount = count($quranTeacherIds);
         $academicTeachersCount = count($academicTeacherIds);
         $totalTeachers = $quranTeachersCount + $academicTeachersCount;
 
+        $totalStudents = User::where('user_type', UserType::STUDENT->value)
+            ->where('active_status', true)->count();
+
+        $totalSupervisors = $isAdmin
+            ? User::where('user_type', UserType::SUPERVISOR->value)->count()
+            : null;
+
+        $totalParents = User::where('user_type', UserType::PARENT->value)->count();
+
+        // ====================================================================
+        // Row 2 — Programs
+        // ====================================================================
+        $activeQuranSubscriptions = QuranSubscription::where('status', SessionSubscriptionStatus::ACTIVE)->count();
+        $activeAcademicSubscriptions = AcademicSubscription::where('status', SessionSubscriptionStatus::ACTIVE)->count();
+        $interactiveCourseEnrollments = InteractiveCourseEnrollment::count();
+        $recordedCourseEnrollments = CourseSubscription::count();
+
+        // ====================================================================
+        // Row 3 — This Month
+        // ====================================================================
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+
+        $completedThisMonth = 0;
+        $totalThisMonth = 0;
+
+        if (!empty($quranTeacherIds)) {
+            $completedThisMonth += QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
+                ->whereBetween('scheduled_at', [$startOfMonth, $endOfMonth])
+                ->where('status', 'completed')->count();
+            $totalThisMonth += QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
+                ->whereBetween('scheduled_at', [$startOfMonth, $endOfMonth])->count();
+        }
+        if (!empty($academicTeacherProfileIds)) {
+            $completedThisMonth += AcademicSession::whereIn('academic_teacher_id', $academicTeacherProfileIds)
+                ->whereBetween('scheduled_at', [$startOfMonth, $endOfMonth])
+                ->where('status', 'completed')->count();
+            $totalThisMonth += AcademicSession::whereIn('academic_teacher_id', $academicTeacherProfileIds)
+                ->whereBetween('scheduled_at', [$startOfMonth, $endOfMonth])->count();
+        }
+
+        $completionRate = $totalThisMonth > 0
+            ? round(($completedThisMonth / $totalThisMonth) * 100, 1)
+            : 0;
+
+        $revenueThisMonth = Payment::where('status', PaymentStatus::COMPLETED)
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->sum('amount');
+
+        $newRegistrations = User::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
+
+        $pendingPayments = Payment::where('status', PaymentStatus::PENDING)->count();
+        $pendingItems = $pendingPayments;
+
+        // ====================================================================
+        // Alerts
+        // ====================================================================
+        $expiringSubscriptions = QuranSubscription::where('status', SessionSubscriptionStatus::ACTIVE)
+            ->whereBetween('ends_at', [now(), now()->addDays(7)])->count()
+            + AcademicSubscription::where('status', SessionSubscriptionStatus::ACTIVE)
+            ->whereBetween('ends_at', [now(), now()->addDays(7)])->count();
+
+        $overdueHomework = AcademicHomework::where('due_date', '<', now())
+            ->where('status', HomeworkStatus::PUBLISHED)->count();
+
+        // ====================================================================
         // Active entities
+        // ====================================================================
         $activeCircles = 0;
         $activeLessons = 0;
 
@@ -44,7 +124,9 @@ class SupervisorDashboardController extends BaseSupervisorWebController
                 ->where('status', 'active')->count();
         }
 
-        // Sessions today
+        // ====================================================================
+        // Sessions today / this week
+        // ====================================================================
         $today = now()->startOfDay();
         $endOfDay = now()->endOfDay();
         $sessionsToday = 0;
@@ -58,7 +140,6 @@ class SupervisorDashboardController extends BaseSupervisorWebController
                 ->whereBetween('scheduled_at', [$today, $endOfDay])->count();
         }
 
-        // Sessions this week
         $startOfWeek = now()->startOfWeek();
         $endOfWeek = now()->endOfWeek();
         $sessionsThisWeek = 0;
@@ -72,7 +153,9 @@ class SupervisorDashboardController extends BaseSupervisorWebController
                 ->whereBetween('scheduled_at', [$startOfWeek, $endOfWeek])->count();
         }
 
+        // ====================================================================
         // Upcoming sessions (next 5)
+        // ====================================================================
         $upcomingSessions = collect();
 
         if (!empty($quranTeacherIds)) {
@@ -114,9 +197,26 @@ class SupervisorDashboardController extends BaseSupervisorWebController
         return view('supervisor.dashboard', compact(
             'user',
             'profile',
+            'isAdmin',
             'totalTeachers',
             'quranTeachersCount',
             'academicTeachersCount',
+            'totalStudents',
+            'totalSupervisors',
+            'totalParents',
+            'activeQuranSubscriptions',
+            'activeAcademicSubscriptions',
+            'interactiveCourseEnrollments',
+            'recordedCourseEnrollments',
+            'completedThisMonth',
+            'totalThisMonth',
+            'completionRate',
+            'revenueThisMonth',
+            'newRegistrations',
+            'pendingItems',
+            'pendingPayments',
+            'expiringSubscriptions',
+            'overdueHomework',
             'activeCircles',
             'activeLessons',
             'sessionsToday',

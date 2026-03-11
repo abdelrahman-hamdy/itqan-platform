@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Supervisor;
 
 use App\Models\QuranCircle;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -61,8 +62,30 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
             ->findOrFail($circleId);
 
         $teacher = User::find($circle->quran_teacher_id);
+        $isAdmin = $this->isAdminUser();
 
-        return view('supervisor.group-circles.show', compact('circle', 'teacher'));
+        return view('supervisor.group-circles.show', compact('circle', 'teacher', 'isAdmin'));
+    }
+
+    public function update(Request $request, $subdomain, $circleId): RedirectResponse
+    {
+        if (! $this->isAdminUser()) {
+            abort(403);
+        }
+
+        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
+        $circle = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)->findOrFail($circleId);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'capacity' => 'required|integer|min:1|max:100',
+            'status' => 'required|in:active,inactive,full',
+            'description' => 'nullable|string|max:1000',
+        ]);
+
+        $circle->update($validated);
+
+        return redirect()->back()->with('success', __('supervisor.common.updated_successfully'));
     }
 
     private function getTeachersForFilter(string $type): array

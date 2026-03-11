@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Supervisor;
 
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicIndividualLesson;
+use App\Models\AcademicSession;
 use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
+use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
+use App\Models\QuranSession;
 use App\Models\QuranTeacherProfile;
 use App\Models\User;
 use App\Services\AcademyContextService;
@@ -356,6 +359,154 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
         return redirect()->route('manage.teachers.index', ['subdomain' => $subdomain])
             ->with('success', __('supervisor.teachers.teacher_created'));
+    }
+
+    public function show($subdomain, User $teacher): View
+    {
+        $this->ensureTeacherBelongsToScope($teacher);
+
+        $teacher->load(['quranTeacherProfile', 'academicTeacherProfile']);
+
+        $isQuranTeacher = $teacher->user_type === 'quran_teacher';
+        $isAcademicTeacher = $teacher->user_type === 'academic_teacher';
+
+        // Assigned entities
+        $assignedCircles = collect();
+        $assignedIndividuals = collect();
+        $assignedLessons = collect();
+        $assignedCourses = collect();
+
+        if ($isQuranTeacher) {
+            $assignedCircles = QuranCircle::where('quran_teacher_id', $teacher->id)
+                ->withCount('students')
+                ->get();
+            $assignedIndividuals = QuranIndividualCircle::where('quran_teacher_id', $teacher->id)
+                ->where('is_active', true)
+                ->with('student')
+                ->get();
+        }
+
+        if ($isAcademicTeacher) {
+            $profileId = $teacher->academicTeacherProfile?->id;
+            if ($profileId) {
+                $assignedLessons = AcademicIndividualLesson::where('academic_teacher_id', $profileId)
+                    ->where('status', 'active')
+                    ->with(['student', 'subject'])
+                    ->get();
+                $assignedCourses = InteractiveCourse::where('assigned_teacher_id', $profileId)
+                    ->with(['subject', 'enrollments'])
+                    ->get();
+            }
+        }
+
+        // Session stats this month
+        $monthStart = now()->startOfMonth();
+        $monthEnd = now()->endOfMonth();
+
+        $sessionsThisMonth = 0;
+        $completedThisMonth = 0;
+        $cancelledThisMonth = 0;
+
+        if ($isQuranTeacher) {
+            $sessionsThisMonth = QuranSession::where('quran_teacher_id', $teacher->id)
+                ->whereBetween('scheduled_at', [$monthStart, $monthEnd])->count();
+            $completedThisMonth = QuranSession::where('quran_teacher_id', $teacher->id)
+                ->whereBetween('scheduled_at', [$monthStart, $monthEnd])
+                ->where('status', 'completed')->count();
+            $cancelledThisMonth = QuranSession::where('quran_teacher_id', $teacher->id)
+                ->whereBetween('scheduled_at', [$monthStart, $monthEnd])
+                ->where('status', 'cancelled')->count();
+        }
+
+        if ($isAcademicTeacher && $teacher->academicTeacherProfile) {
+            $profileId = $teacher->academicTeacherProfile->id;
+            $academicSessionsMonth = AcademicSession::where('academic_teacher_id', $profileId)
+                ->whereBetween('scheduled_at', [$monthStart, $monthEnd])->count();
+            $academicCompletedMonth = AcademicSession::where('academic_teacher_id', $profileId)
+                ->whereBetween('scheduled_at', [$monthStart, $monthEnd])
+                ->where('status', 'completed')->count();
+            $academicCancelledMonth = AcademicSession::where('academic_teacher_id', $profileId)
+                ->whereBetween('scheduled_at', [$monthStart, $monthEnd])
+                ->where('status', 'cancelled')->count();
+
+            $sessionsThisMonth += $academicSessionsMonth;
+            $completedThisMonth += $academicCompletedMonth;
+            $cancelledThisMonth += $academicCancelledMonth;
+        }
+
+        $completionRate = $sessionsThisMonth > 0
+            ? round(($completedThisMonth / $sessionsThisMonth) * 100)
+            : 0;
+
+        // Total students count
+        $totalStudents = 0;
+        if ($isQuranTeacher) {
+            $individualStudents = QuranIndividualCircle::where('quran_teacher_id', $teacher->id)
+                ->where('is_active', true)->count();
+            $circleStudents = QuranCircle::where('quran_teacher_id', $teacher->id)
+                ->where('status', true)->sum('enrolled_students');
+            $totalStudents = $individualStudents + $circleStudents;
+        }
+        if ($isAcademicTeacher && $teacher->academicTeacherProfile) {
+            $totalStudents += AcademicIndividualLesson::where('academic_teacher_id', $teacher->academicTeacherProfile->id)
+                ->where('status', 'active')->count();
+        }
+
+        // Recent sessions (last 10)
+        $recentSessions = collect();
+
+        if ($isQuranTeacher) {
+            $recentQuran = QuranSession::where('quran_teacher_id', $teacher->id)
+                ->with('student')
+                ->latest('scheduled_at')
+                ->limit(10)
+                ->get()
+                ->map(fn ($s) => [
+                    'type' => 'quran',
+                    'date' => $s->scheduled_at,
+                    'student_name' => $s->student?->name ?? '',
+                    'status' => $s->status,
+                    'title' => $s->title ?? __('supervisor.teachers.quran_session'),
+                ]);
+            $recentSessions = $recentSessions->merge($recentQuran);
+        }
+
+        if ($isAcademicTeacher && $teacher->academicTeacherProfile) {
+            $recentAcademic = AcademicSession::where('academic_teacher_id', $teacher->academicTeacherProfile->id)
+                ->with('student')
+                ->latest('scheduled_at')
+                ->limit(10)
+                ->get()
+                ->map(fn ($s) => [
+                    'type' => 'academic',
+                    'date' => $s->scheduled_at,
+                    'student_name' => $s->student?->name ?? '',
+                    'status' => $s->status,
+                    'title' => $s->title ?? __('supervisor.teachers.academic_session'),
+                ]);
+            $recentSessions = $recentSessions->merge($recentAcademic);
+        }
+
+        $recentSessions = $recentSessions->sortByDesc('date')->take(10)->values();
+
+        $isAdmin = $this->isAdminUser();
+
+        return view('supervisor.teachers.show', [
+            'teacher' => $teacher,
+            'isQuranTeacher' => $isQuranTeacher,
+            'isAcademicTeacher' => $isAcademicTeacher,
+            'assignedCircles' => $assignedCircles,
+            'assignedIndividuals' => $assignedIndividuals,
+            'assignedLessons' => $assignedLessons,
+            'assignedCourses' => $assignedCourses,
+            'sessionsThisMonth' => $sessionsThisMonth,
+            'completedThisMonth' => $completedThisMonth,
+            'cancelledThisMonth' => $cancelledThisMonth,
+            'completionRate' => $completionRate,
+            'totalStudents' => $totalStudents,
+            'recentSessions' => $recentSessions,
+            'isAdmin' => $isAdmin,
+        ]);
     }
 
     private function ensureTeacherBelongsToScope(User $teacher): void

@@ -11,7 +11,12 @@
 use App\Http\Controllers\SessionReportShowController;
 use App\Http\Controllers\SessionsMonitoringController;
 use App\Http\Controllers\Supervisor\SupervisorAcademicLessonsController;
+use App\Http\Controllers\Supervisor\SupervisorAttendanceController;
+use App\Http\Controllers\Supervisor\SupervisorHomeworkController;
+use App\Http\Controllers\Supervisor\SupervisorPaymentsController;
+use App\Http\Controllers\Supervisor\SupervisorRecordedCoursesController;
 use App\Http\Controllers\Supervisor\SupervisorSessionsController;
+use App\Http\Controllers\Supervisor\SupervisorSubscriptionsController;
 use App\Http\Controllers\Supervisor\SupervisorCalendarController;
 use App\Http\Controllers\Supervisor\SupervisorCertificatesController;
 use App\Http\Controllers\Supervisor\SupervisorDashboardController;
@@ -44,6 +49,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/teachers', [SupervisorTeachersController::class, 'index'])->name('teachers.index');
         Route::get('/teachers/create', [SupervisorTeachersController::class, 'create'])->name('teachers.create');
         Route::post('/teachers', [SupervisorTeachersController::class, 'store'])->name('teachers.store');
+        Route::get('/teachers/{teacher}', [SupervisorTeachersController::class, 'show'])->name('teachers.show');
         Route::post('/teachers/{teacher}/toggle-status', [SupervisorTeachersController::class, 'toggleStatus'])->name('teachers.toggle-status');
         Route::post('/teachers/{teacher}/reset-password', [SupervisorTeachersController::class, 'resetPassword'])->name('teachers.reset-password');
         Route::delete('/teachers/{teacher}', [SupervisorTeachersController::class, 'destroy'])->name('teachers.destroy');
@@ -52,6 +58,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/students', [SupervisorStudentsController::class, 'index'])->name('students.index');
         Route::get('/students/create', [SupervisorStudentsController::class, 'create'])->name('students.create');
         Route::post('/students', [SupervisorStudentsController::class, 'store'])->name('students.store');
+        Route::get('/students/{student}', [SupervisorStudentsController::class, 'show'])->name('students.show');
         Route::post('/students/{student}/toggle-status', [SupervisorStudentsController::class, 'toggleStatus'])->name('students.toggle-status');
         Route::post('/students/{student}/reset-password', [SupervisorStudentsController::class, 'resetPassword'])->name('students.reset-password');
         Route::delete('/students/{student}', [SupervisorStudentsController::class, 'destroy'])->name('students.destroy');
@@ -80,10 +87,12 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Group Circles
         Route::get('/group-circles', [SupervisorGroupCirclesController::class, 'index'])->name('group-circles.index');
         Route::get('/group-circles/{circle}', [SupervisorGroupCirclesController::class, 'show'])->name('group-circles.show');
+        Route::put('/group-circles/{circle}', [SupervisorGroupCirclesController::class, 'update'])->name('group-circles.update');
 
         // Individual Circles
         Route::get('/individual-circles', [SupervisorIndividualCirclesController::class, 'index'])->name('individual-circles.index');
         Route::get('/individual-circles/{circle}', [SupervisorIndividualCirclesController::class, 'show'])->name('individual-circles.show');
+        Route::put('/individual-circles/{circle}', [SupervisorIndividualCirclesController::class, 'update'])->name('individual-circles.update');
 
         // Trial Sessions
         Route::get('/trial-sessions', [SupervisorTrialSessionsController::class, 'index'])->name('trial-sessions.index');
@@ -92,10 +101,39 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Academic Lessons
         Route::get('/academic-lessons', [SupervisorAcademicLessonsController::class, 'index'])->name('academic-lessons.index');
         Route::get('/academic-lessons/{subscription}', [SupervisorAcademicLessonsController::class, 'show'])->name('academic-lessons.show');
+        Route::put('/academic-lessons/{subscription}', [SupervisorAcademicLessonsController::class, 'update'])->name('academic-lessons.update');
 
         // Interactive Courses
         Route::get('/interactive-courses', [SupervisorInteractiveCoursesController::class, 'index'])->name('interactive-courses.index');
         Route::get('/interactive-courses/{course}', [SupervisorInteractiveCoursesController::class, 'show'])->name('interactive-courses.show');
+        Route::post('/interactive-courses/{course}/enrollments', [SupervisorInteractiveCoursesController::class, 'addEnrollment'])->name('interactive-courses.add-enrollment');
+        Route::delete('/interactive-courses/{course}/enrollments/{enrollment}', [SupervisorInteractiveCoursesController::class, 'removeEnrollment'])->name('interactive-courses.remove-enrollment');
+
+        // Subscriptions
+        Route::get('/subscriptions', [SupervisorSubscriptionsController::class, 'index'])->name('subscriptions.index');
+        Route::get('/subscriptions/create', [SupervisorSubscriptionsController::class, 'create'])->name('subscriptions.create');
+        Route::post('/subscriptions', [SupervisorSubscriptionsController::class, 'store'])->name('subscriptions.store');
+        Route::get('/subscriptions/{type}/{subscription}', [SupervisorSubscriptionsController::class, 'show'])->name('subscriptions.show')->whereIn('type', ['quran', 'academic']);
+        Route::get('/subscriptions/{type}/{subscription}/edit', [SupervisorSubscriptionsController::class, 'edit'])->name('subscriptions.edit')->whereIn('type', ['quran', 'academic']);
+        Route::put('/subscriptions/{type}/{subscription}', [SupervisorSubscriptionsController::class, 'update'])->name('subscriptions.update')->whereIn('type', ['quran', 'academic']);
+        Route::post('/subscriptions/{type}/{subscription}/activate', [SupervisorSubscriptionsController::class, 'activate'])->name('subscriptions.activate')->whereIn('type', ['quran', 'academic']);
+        Route::post('/subscriptions/{type}/{subscription}/pause', [SupervisorSubscriptionsController::class, 'pause'])->name('subscriptions.pause')->whereIn('type', ['quran', 'academic']);
+        Route::post('/subscriptions/{type}/{subscription}/resume', [SupervisorSubscriptionsController::class, 'resume'])->name('subscriptions.resume')->whereIn('type', ['quran', 'academic']);
+        Route::post('/subscriptions/{type}/{subscription}/extend', [SupervisorSubscriptionsController::class, 'extend'])->name('subscriptions.extend')->whereIn('type', ['quran', 'academic']);
+        Route::post('/subscriptions/{type}/{subscription}/cancel', [SupervisorSubscriptionsController::class, 'cancel'])->name('subscriptions.cancel')->whereIn('type', ['quran', 'academic']);
+
+        // Payments (admin-only)
+        Route::get('/payments', [SupervisorPaymentsController::class, 'index'])->name('payments.index');
+        Route::get('/payments/{payment}', [SupervisorPaymentsController::class, 'show'])->name('payments.show');
+        Route::post('/payments/{payment}/mark-completed', [SupervisorPaymentsController::class, 'markCompleted'])->name('payments.mark-completed');
+
+        // Homework
+        Route::get('/homework', [SupervisorHomeworkController::class, 'index'])->name('homework.index');
+        Route::get('/homework/{type}/{id}/submissions', [SupervisorHomeworkController::class, 'submissions'])->name('homework.submissions');
+        Route::post('/homework/submissions/{submission}/grade', [SupervisorHomeworkController::class, 'grade'])->name('homework.grade');
+
+        // Attendance
+        Route::get('/attendance', [SupervisorAttendanceController::class, 'index'])->name('attendance.index');
 
         // Calendar
         Route::get('/calendar', [SupervisorCalendarController::class, 'index'])->name('calendar.index');
@@ -136,8 +174,16 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/academic-subscriptions/{subscription}/report', [AcademicSessionController::class, 'subscriptionReport'])->name('academic-subscriptions.report');
         Route::get('/interactive-courses/{course}/students/{student}/report', [StudentInteractiveCourseController::class, 'interactiveCourseStudentReport'])->name('interactive-courses.student-report');
 
+        // Recorded Courses (admin-only)
+        Route::get('/recorded-courses', [SupervisorRecordedCoursesController::class, 'index'])->name('recorded-courses.index');
+        Route::get('/recorded-courses/{course}', [SupervisorRecordedCoursesController::class, 'show'])->name('recorded-courses.show');
+        Route::post('/recorded-courses/{course}/toggle-publish', [SupervisorRecordedCoursesController::class, 'togglePublish'])->name('recorded-courses.toggle-publish');
+
         // Certificates
         Route::get('/certificates', [SupervisorCertificatesController::class, 'index'])->name('certificates.index');
+        Route::get('/certificates/issue', [SupervisorCertificatesController::class, 'issue'])->name('certificates.issue');
+        Route::post('/certificates', [SupervisorCertificatesController::class, 'store'])->name('certificates.store');
+        Route::get('/certificates/{certificate}', [SupervisorCertificatesController::class, 'show'])->name('certificates.show');
 
         // Profile
         Route::get('/profile', [SupervisorProfileController::class, 'index'])->name('profile');

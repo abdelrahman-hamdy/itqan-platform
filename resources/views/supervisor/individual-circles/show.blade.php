@@ -82,6 +82,39 @@
         <div class="lg:col-span-1 space-y-4 md:space-y-6">
             <x-circle.info-sidebar :circle="$circle" view-type="supervisor" context="individual" />
             <x-circle.subscription-details :subscription="$circle->subscription" view-type="supervisor" />
+
+            @if(isset($isAdmin) && $isAdmin)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-sm font-bold text-gray-900 mb-4">{{ __('supervisor.common.edit_details') }}</h3>
+                <form method="POST" action="{{ route('manage.individual-circles.update', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
+                    @csrf
+                    @method('PUT')
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.common.status') }}</label>
+                            <select name="is_active" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="1" {{ $circle->is_active ? 'selected' : '' }}>{{ __('supervisor.common.active') }}</option>
+                                <option value="0" {{ !$circle->is_active ? 'selected' : '' }}>{{ __('supervisor.common.inactive') }}</option>
+                            </select>
+                        </div>
+                        @if(isset($availableTeachers) && $availableTeachers->isNotEmpty())
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.teacher') }}</label>
+                            <select name="quran_teacher_id" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                @foreach($availableTeachers as $t)
+                                    <option value="{{ $t->id }}" {{ $circle->quran_teacher_id == $t->id ? 'selected' : '' }}>{{ $t->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endif
+                        <button type="submit"
+                                class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                            {{ __('supervisor.common.save') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+            @endif
         </div>
     </div>
 </div>

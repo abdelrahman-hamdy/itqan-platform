@@ -90,6 +90,23 @@
                     </x-tabs.panel>
 
                     <x-tabs.panel id="students">
+                        @if(isset($isAdmin) && $isAdmin && isset($availableStudents) && $availableStudents->isNotEmpty())
+                            <div class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                <form method="POST" action="{{ route('manage.interactive-courses.add-enrollment', ['subdomain' => $subdomain, 'course' => $course->id]) }}" class="flex items-center gap-2">
+                                    @csrf
+                                    <select name="student_id" required class="flex-1 rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <option value="">{{ __('supervisor.interactive_courses.select_student') }}</option>
+                                        @foreach($availableStudents as $s)
+                                            <option value="{{ $s->studentProfile?->id }}">{{ $s->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap">
+                                        <i class="ri-user-add-line"></i> {{ __('supervisor.interactive_courses.add_student') }}
+                                    </button>
+                                </form>
+                            </div>
+                        @endif
+
                         @if($course->enrollments->isNotEmpty())
                             <div class="space-y-3">
                                 @foreach($course->enrollments as $enrollment)
@@ -103,6 +120,16 @@
                                         <span class="text-xs px-2 py-1 rounded-full {{ $enrollStatus === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
                                             {{ $enrollStatus }}
                                         </span>
+                                        @if(isset($isAdmin) && $isAdmin)
+                                            <form method="POST" action="{{ route('manage.interactive-courses.remove-enrollment', ['subdomain' => $subdomain, 'course' => $course->id, 'enrollment' => $enrollment->id]) }}"
+                                                  onsubmit="return confirm('{{ __('supervisor.interactive_courses.confirm_remove') }}')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-500 hover:text-red-700 p-1">
+                                                    <i class="ri-delete-bin-line text-sm"></i>
+                                                </button>
+                                            </form>
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>

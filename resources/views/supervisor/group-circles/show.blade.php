@@ -120,6 +120,46 @@
         <div class="lg:col-span-1" data-sticky-sidebar>
             <div class="space-y-4 md:space-y-6">
                 <x-circle.info-sidebar :circle="$circle" view-type="supervisor" />
+
+                @if(isset($isAdmin) && $isAdmin)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-sm font-bold text-gray-900 mb-4">{{ __('supervisor.common.edit_details') }}</h3>
+                    <form method="POST" action="{{ route('manage.group-circles.update', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
+                        @csrf
+                        @method('PUT')
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.name') }}</label>
+                                <input type="text" name="name" value="{{ old('name', $circle->name) }}"
+                                       class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.capacity') }}</label>
+                                <input type="number" name="capacity" value="{{ old('capacity', $circle->capacity) }}" min="1" max="100"
+                                       class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.common.status') }}</label>
+                                <select name="status" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                    @php $currentStatus = is_object($circle->status) ? $circle->status->value : $circle->status; @endphp
+                                    <option value="active" {{ $currentStatus == 'active' || $currentStatus == '1' ? 'selected' : '' }}>{{ __('supervisor.common.active') }}</option>
+                                    <option value="inactive" {{ $currentStatus == 'inactive' || $currentStatus == '0' ? 'selected' : '' }}>{{ __('supervisor.common.inactive') }}</option>
+                                    <option value="full" {{ $currentStatus == 'full' ? 'selected' : '' }}>{{ __('supervisor.group_circles.full') }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.description') }}</label>
+                                <textarea name="description" rows="3"
+                                          class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">{{ old('description', $circle->description) }}</textarea>
+                            </div>
+                            <button type="submit"
+                                    class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                {{ __('supervisor.common.save') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                @endif
             </div>
         </div>
     </div>

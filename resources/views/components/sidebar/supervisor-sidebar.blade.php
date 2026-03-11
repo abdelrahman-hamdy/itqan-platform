@@ -98,6 +98,14 @@
           :label="__('supervisor.sidebar.interactive_courses')"
           icon="ri-book-open-line"
           :active="request()->routeIs('manage.interactive-courses.*')" />
+
+        @if($isAdmin)
+        <x-sidebar.nav-item
+          :href="route('manage.recorded-courses.index', ['subdomain' => $subdomain])"
+          :label="__('supervisor.sidebar.recorded_courses')"
+          icon="ri-video-line"
+          :active="request()->routeIs('manage.recorded-courses.*')" />
+        @endif
       </x-sidebar.nav-section>
       @endif
 
@@ -114,10 +122,36 @@
           :label="__('supervisor.sidebar.sessions_management')"
           icon="ri-calendar-check-line"
           :active="request()->routeIs('manage.sessions.*')" />
+
+        <x-sidebar.nav-item
+          :href="route('manage.attendance.index', ['subdomain' => $subdomain])"
+          :label="__('supervisor.sidebar.attendance')"
+          icon="ri-user-follow-line"
+          :active="request()->routeIs('manage.attendance.*')" />
       </x-sidebar.nav-section>
 
       <!-- Management -->
       <x-sidebar.nav-section :title="__('supervisor.sidebar.management')">
+        <x-sidebar.nav-item
+          :href="route('manage.subscriptions.index', ['subdomain' => $subdomain])"
+          :label="__('supervisor.sidebar.subscriptions')"
+          icon="ri-vip-crown-line"
+          :active="request()->routeIs('manage.subscriptions.*')" />
+
+        @if($isAdmin)
+        <x-sidebar.nav-item
+          :href="route('manage.payments.index', ['subdomain' => $subdomain])"
+          :label="__('supervisor.sidebar.payments')"
+          icon="ri-bank-card-line"
+          :active="request()->routeIs('manage.payments.*')" />
+        @endif
+
+        <x-sidebar.nav-item
+          :href="route('manage.homework.index', ['subdomain' => $subdomain])"
+          :label="__('supervisor.sidebar.homework')"
+          icon="ri-book-mark-line"
+          :active="request()->routeIs('manage.homework.*')" />
+
         <x-sidebar.nav-item
           :href="route('manage.teacher-earnings.index', ['subdomain' => $subdomain])"
           :label="__('supervisor.sidebar.teacher_earnings')"

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Supervisor;
 
 use App\Models\AcademicSubscription;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -63,7 +64,29 @@ class SupervisorAcademicLessonsController extends BaseSupervisorWebController
             : collect();
 
         $teacher = $subscription->lesson?->academicTeacher?->user;
+        $isAdmin = $this->isAdminUser();
 
-        return view('supervisor.academic-lessons.show', compact('subscription', 'upcomingSessions', 'pastSessions', 'teacher'));
+        return view('supervisor.academic-lessons.show', compact('subscription', 'upcomingSessions', 'pastSessions', 'teacher', 'isAdmin'));
+    }
+
+    public function update(Request $request, $subdomain, $subscriptionId): RedirectResponse
+    {
+        if (! $this->isAdminUser()) {
+            abort(403);
+        }
+
+        $academicTeacherProfileIds = $this->getAssignedAcademicTeacherProfileIds();
+
+        $subscription = AcademicSubscription::whereHas('lesson', function ($q) use ($academicTeacherProfileIds) {
+            $q->whereIn('academic_teacher_id', $academicTeacherProfileIds);
+        })->findOrFail($subscriptionId);
+
+        $validated = $request->validate([
+            'status' => 'required|in:active,paused,completed,cancelled',
+        ]);
+
+        $subscription->update($validated);
+
+        return redirect()->back()->with('success', __('supervisor.common.updated_successfully'));
     }
 }

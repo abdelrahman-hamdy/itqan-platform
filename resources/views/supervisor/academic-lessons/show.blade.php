@@ -93,6 +93,32 @@
             <div class="space-y-4 md:space-y-6">
                 <x-academic.lesson-info-sidebar :subscription="$subscription" viewType="supervisor" />
                 <x-circle.subscription-details :subscription="$subscription" viewType="supervisor" />
+
+                @if(isset($isAdmin) && $isAdmin)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-sm font-bold text-gray-900 mb-4">{{ __('supervisor.common.edit_details') }}</h3>
+                    <form method="POST" action="{{ route('manage.academic-lessons.update', ['subdomain' => $subdomain, 'subscription' => $subscription->id]) }}">
+                        @csrf
+                        @method('PUT')
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.common.status') }}</label>
+                                <select name="status" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                    @php $subStatus = is_object($subscription->status) ? $subscription->status->value : $subscription->status; @endphp
+                                    <option value="active" {{ $subStatus === 'active' ? 'selected' : '' }}>{{ __('supervisor.common.active') }}</option>
+                                    <option value="paused" {{ $subStatus === 'paused' ? 'selected' : '' }}>{{ __('supervisor.academic_lessons.paused') }}</option>
+                                    <option value="completed" {{ $subStatus === 'completed' ? 'selected' : '' }}>{{ __('supervisor.academic_lessons.completed') }}</option>
+                                    <option value="cancelled" {{ $subStatus === 'cancelled' ? 'selected' : '' }}>{{ __('supervisor.academic_lessons.cancelled') }}</option>
+                                </select>
+                            </div>
+                            <button type="submit"
+                                    class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                {{ __('supervisor.common.save') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                @endif
             </div>
         </div>
     </div>
