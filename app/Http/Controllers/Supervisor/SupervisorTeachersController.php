@@ -80,8 +80,18 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
         // Stats from unfiltered set
         $totalTeachers = $teachers->count();
-        $quranCount = $teachers->where('type', 'quran')->count();
-        $academicCount = $teachers->where('type', 'academic')->count();
+        $activeCount = $teachers->where('is_active', true)->count();
+        $inactiveCount = $totalTeachers - $activeCount;
+
+        $quranTeachers = $teachers->where('type', 'quran');
+        $quranCount = $quranTeachers->count();
+        $quranMale = $quranTeachers->where('gender', 'male')->count();
+        $quranFemale = $quranTeachers->where('gender', 'female')->count();
+
+        $academicTeachersCol = $teachers->where('type', 'academic');
+        $academicCount = $academicTeachersCol->count();
+        $academicMale = $academicTeachersCol->where('gender', 'male')->count();
+        $academicFemale = $academicTeachersCol->where('gender', 'female')->count();
 
         // Apply filters
         $filtered = $teachers;
@@ -138,8 +148,14 @@ class SupervisorTeachersController extends BaseSupervisorWebController
         return view('supervisor.teachers.index', [
             'teachers' => $paginated,
             'totalTeachers' => $totalTeachers,
+            'activeCount' => $activeCount,
+            'inactiveCount' => $inactiveCount,
             'quranCount' => $quranCount,
+            'quranMale' => $quranMale,
+            'quranFemale' => $quranFemale,
             'academicCount' => $academicCount,
+            'academicMale' => $academicMale,
+            'academicFemale' => $academicFemale,
             'filteredCount' => $filteredValues->count(),
             'isAdmin' => $isAdmin,
         ]);

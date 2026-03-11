@@ -29,32 +29,73 @@
     </div>
 
     <!-- Stats -->
-    <div class="grid grid-cols-3 gap-3 md:gap-4 mb-6">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4 flex items-center gap-3">
-            <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <i class="ri-team-line text-indigo-600"></i>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-6">
+        {{-- Total Teachers --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-team-line text-blue-600"></i>
+                </div>
+                <div>
+                    <p class="text-xl font-bold text-gray-900">{{ $totalTeachers }}</p>
+                    <p class="text-xs text-gray-600">{{ __('supervisor.teachers.total_teachers') }}</p>
+                </div>
             </div>
-            <div>
-                <p class="text-lg md:text-xl font-bold text-gray-900">{{ $totalTeachers }}</p>
-                <p class="text-xs text-gray-600">{{ __('supervisor.teachers.total_teachers') }}</p>
+            <div class="flex items-center gap-4 text-xs text-gray-500 border-t border-gray-100 pt-2.5">
+                <span class="flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    {{ __('supervisor.teachers.active') }}: <strong class="text-gray-700">{{ $activeCount }}</strong>
+                </span>
+                <span class="flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-red-400"></span>
+                    {{ __('supervisor.teachers.inactive') }}: <strong class="text-gray-700">{{ $inactiveCount }}</strong>
+                </span>
             </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4 flex items-center gap-3">
-            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <i class="ri-book-read-line text-green-600"></i>
+
+        {{-- Quran Teachers --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-book-read-line text-amber-600"></i>
+                </div>
+                <div>
+                    <p class="text-xl font-bold text-gray-900">{{ $quranCount }}</p>
+                    <p class="text-xs text-gray-600">{{ __('supervisor.dashboard.quran_teachers') }}</p>
+                </div>
             </div>
-            <div>
-                <p class="text-lg md:text-xl font-bold text-gray-900">{{ $quranCount }}</p>
-                <p class="text-xs text-gray-600">{{ __('supervisor.dashboard.quran_teachers') }}</p>
+            <div class="flex items-center gap-4 text-xs text-gray-500 border-t border-gray-100 pt-2.5">
+                <span class="flex items-center gap-1">
+                    <i class="ri-men-line text-blue-500"></i>
+                    {{ __('supervisor.teachers.male') }}: <strong class="text-gray-700">{{ $quranMale }}</strong>
+                </span>
+                <span class="flex items-center gap-1">
+                    <i class="ri-women-line text-pink-500"></i>
+                    {{ __('supervisor.teachers.female') }}: <strong class="text-gray-700">{{ $quranFemale }}</strong>
+                </span>
             </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4 flex items-center gap-3">
-            <div class="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <i class="ri-graduation-cap-line text-violet-600"></i>
+
+        {{-- Academic Teachers --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-graduation-cap-line text-violet-600"></i>
+                </div>
+                <div>
+                    <p class="text-xl font-bold text-gray-900">{{ $academicCount }}</p>
+                    <p class="text-xs text-gray-600">{{ __('supervisor.dashboard.academic_teachers') }}</p>
+                </div>
             </div>
-            <div>
-                <p class="text-lg md:text-xl font-bold text-gray-900">{{ $academicCount }}</p>
-                <p class="text-xs text-gray-600">{{ __('supervisor.dashboard.academic_teachers') }}</p>
+            <div class="flex items-center gap-4 text-xs text-gray-500 border-t border-gray-100 pt-2.5">
+                <span class="flex items-center gap-1">
+                    <i class="ri-men-line text-blue-500"></i>
+                    {{ __('supervisor.teachers.male') }}: <strong class="text-gray-700">{{ $academicMale }}</strong>
+                </span>
+                <span class="flex items-center gap-1">
+                    <i class="ri-women-line text-pink-500"></i>
+                    {{ __('supervisor.teachers.female') }}: <strong class="text-gray-700">{{ $academicFemale }}</strong>
+                </span>
             </div>
         </div>
     </div>
