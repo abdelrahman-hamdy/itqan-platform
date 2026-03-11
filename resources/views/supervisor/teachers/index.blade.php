@@ -259,7 +259,7 @@
                             <x-avatar :user="$teacher['user']" size="md" :user-type="$isQuran ? 'quran_teacher' : 'academic_teacher'" />
                             <div class="flex-1 min-w-0">
                                 <div class="flex flex-wrap items-center gap-2 mb-1">
-                                    <h3 class="text-base md:text-lg font-bold text-gray-900 truncate">{{ $teacher['user']->name }}</h3>
+                                    <a href="{{ route('manage.teachers.show', ['subdomain' => $subdomain, 'teacher' => $teacher['user']->id]) }}" class="text-base md:text-lg font-bold text-gray-900 hover:text-blue-600 truncate transition-colors">{{ $teacher['user']->name }}</a>
                                     <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full
                                         {{ $isQuran ? 'bg-green-100 text-green-700' : 'bg-violet-100 text-violet-700' }}">
                                         <i class="{{ $isQuran ? 'ri-book-read-line' : 'ri-graduation-cap-line' }}"></i>

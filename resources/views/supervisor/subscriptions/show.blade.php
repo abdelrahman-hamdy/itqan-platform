@@ -30,7 +30,7 @@
         </div>
         @if($isAdmin)
             <div class="flex gap-2 flex-wrap">
-                <a href="{{ route('manage.subscriptions.edit', ['subdomain' => $subdomain, 'type' => $type, 'id' => $subscription->id]) }}"
+                <a href="{{ route('manage.subscriptions.edit', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}"
                    class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors">
                     <i class="ri-edit-line"></i>{{ __('supervisor.subscriptions.action_edit') }}
                 </a>
@@ -70,7 +70,7 @@
             <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ __('supervisor.subscriptions.quick_actions') }}</h3>
             <div class="flex flex-wrap gap-2">
                 @if($subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE)
-                    <form method="POST" action="{{ route('manage.subscriptions.pause', ['subdomain' => $subdomain, 'type' => $type, 'id' => $subscription->id]) }}">
+                    <form method="POST" action="{{ route('manage.subscriptions.pause', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
                         @csrf
                         <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-sm hover:bg-amber-200 transition-colors">
                             <i class="ri-pause-circle-line"></i>{{ __('supervisor.subscriptions.action_pause') }}
@@ -78,7 +78,7 @@
                     </form>
                 @endif
                 @if($subscription->status === \App\Enums\SessionSubscriptionStatus::PAUSED)
-                    <form method="POST" action="{{ route('manage.subscriptions.resume', ['subdomain' => $subdomain, 'type' => $type, 'id' => $subscription->id]) }}">
+                    <form method="POST" action="{{ route('manage.subscriptions.resume', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
                         @csrf
                         <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition-colors">
                             <i class="ri-play-circle-line"></i>{{ __('supervisor.subscriptions.action_resume') }}
@@ -86,7 +86,7 @@
                     </form>
                 @endif
                 @if($subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED)
-                    <form method="POST" action="{{ route('manage.subscriptions.activate', ['subdomain' => $subdomain, 'type' => $type, 'id' => $subscription->id]) }}">
+                    <form method="POST" action="{{ route('manage.subscriptions.activate', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
                         @csrf
                         <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200 transition-colors">
                             <i class="ri-checkbox-circle-line"></i>{{ __('supervisor.subscriptions.action_activate') }}
@@ -94,7 +94,7 @@
                     </form>
                 @endif
                 @if($subscription->status->canCancel())
-                    <form method="POST" action="{{ route('manage.subscriptions.cancel', ['subdomain' => $subdomain, 'type' => $type, 'id' => $subscription->id]) }}">
+                    <form method="POST" action="{{ route('manage.subscriptions.cancel', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
                         @csrf
                         <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition-colors">
                             <i class="ri-close-circle-line"></i>{{ __('supervisor.subscriptions.action_cancel') }}
@@ -103,7 +103,7 @@
                 @endif
 
                 {{-- Extend form --}}
-                <form method="POST" action="{{ route('manage.subscriptions.extend', ['subdomain' => $subdomain, 'type' => $type, 'id' => $subscription->id]) }}" class="inline-flex items-center gap-2">
+                <form method="POST" action="{{ route('manage.subscriptions.extend', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}" class="inline-flex items-center gap-2">
                     @csrf
                     <input type="number" name="extend_days" value="30" min="1" max="365" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm">
                     <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg text-sm hover:bg-indigo-200 transition-colors">

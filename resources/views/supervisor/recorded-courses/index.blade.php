@@ -129,7 +129,7 @@
                                 </div>
                             </td>
                             <td class="px-4 md:px-6 py-4 hidden md:table-cell">
-                                <span class="text-sm text-gray-600">{{ $course->instructor?->name ?? '-' }}</span>
+                                <span class="text-sm text-gray-600">{{ '-' }}</span>
                             </td>
                             <td class="px-4 md:px-6 py-4 text-center hidden lg:table-cell">
                                 <span class="text-sm text-gray-600">{{ $course->sections_count }}</span>

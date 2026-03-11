@@ -181,7 +181,7 @@
                 <div class="space-y-3 text-sm text-gray-600">
                     <div class="flex items-center gap-2">
                         <i class="ri-user-line text-gray-400"></i>
-                        <span>{{ __('supervisor.recorded_courses.instructor') }}: {{ $course->instructor?->name ?? '-' }}</span>
+                        <span>{{ __('supervisor.recorded_courses.instructor') }}: {{ '-' }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <i class="ri-money-dollar-circle-line text-gray-400"></i>

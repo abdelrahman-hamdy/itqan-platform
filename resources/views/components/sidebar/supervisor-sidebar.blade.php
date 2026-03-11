@@ -149,7 +149,7 @@
         <x-sidebar.nav-item
           :href="route('manage.homework.index', ['subdomain' => $subdomain])"
           :label="__('supervisor.sidebar.homework')"
-          icon="ri-book-mark-line"
+          icon="ri-todo-line"
           :active="request()->routeIs('manage.homework.*')" />
 
         <x-sidebar.nav-item

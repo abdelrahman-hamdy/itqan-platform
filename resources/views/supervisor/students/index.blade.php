@@ -221,7 +221,7 @@
                             <x-avatar :user="$student['user']" size="md" user-type="student" />
                             <div class="flex-1 min-w-0">
                                 <div class="flex flex-wrap items-center gap-2 mb-1">
-                                    <h3 class="text-base md:text-lg font-bold text-gray-900 truncate">{{ $student['user']->name }}</h3>
+                                    <a href="{{ route('manage.students.show', ['subdomain' => $subdomain, 'student' => $student['user']->id]) }}" class="text-base md:text-lg font-bold text-gray-900 hover:text-blue-600 truncate transition-colors">{{ $student['user']->name }}</a>
                                     @foreach($programs as $program)
                                         <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full
                                             {{ $program === 'quran' ? 'bg-green-100 text-green-700' : ($program === 'academic' ? 'bg-violet-100 text-violet-700' : 'bg-purple-100 text-purple-700') }}">

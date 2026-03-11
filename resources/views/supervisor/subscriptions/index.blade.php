@@ -158,17 +158,17 @@
                                     </button>
                                     <div x-show="open" @click.outside="open = false" x-transition
                                          class="absolute left-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1">
-                                        <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $sub['type'], 'id' => $sub['id']]) }}"
+                                        <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}"
                                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                             <i class="ri-eye-line me-1.5"></i>{{ __('supervisor.subscriptions.action_view') }}
                                         </a>
                                         @if($isAdmin)
-                                            <a href="{{ route('manage.subscriptions.edit', ['subdomain' => $subdomain, 'type' => $sub['type'], 'id' => $sub['id']]) }}"
+                                            <a href="{{ route('manage.subscriptions.edit', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}"
                                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                                 <i class="ri-edit-line me-1.5"></i>{{ __('supervisor.subscriptions.action_edit') }}
                                             </a>
                                             @if($sub['status'] === \App\Enums\SessionSubscriptionStatus::PAUSED)
-                                                <form method="POST" action="{{ route('manage.subscriptions.resume', ['subdomain' => $subdomain, 'type' => $sub['type'], 'id' => $sub['id']]) }}">
+                                                <form method="POST" action="{{ route('manage.subscriptions.resume', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">
                                                     @csrf
                                                     <button type="submit" class="block w-full text-start px-4 py-2 text-sm text-blue-600 hover:bg-blue-50">
                                                         <i class="ri-play-circle-line me-1.5"></i>{{ __('supervisor.subscriptions.action_resume') }}
@@ -176,7 +176,7 @@
                                                 </form>
                                             @endif
                                             @if($sub['status'] === \App\Enums\SessionSubscriptionStatus::ACTIVE)
-                                                <form method="POST" action="{{ route('manage.subscriptions.pause', ['subdomain' => $subdomain, 'type' => $sub['type'], 'id' => $sub['id']]) }}">
+                                                <form method="POST" action="{{ route('manage.subscriptions.pause', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">
                                                     @csrf
                                                     <button type="submit" class="block w-full text-start px-4 py-2 text-sm text-amber-600 hover:bg-amber-50">
                                                         <i class="ri-pause-circle-line me-1.5"></i>{{ __('supervisor.subscriptions.action_pause') }}
@@ -184,7 +184,7 @@
                                                 </form>
                                             @endif
                                             @if($sub['status']->canCancel())
-                                                <form method="POST" action="{{ route('manage.subscriptions.cancel', ['subdomain' => $subdomain, 'type' => $sub['type'], 'id' => $sub['id']]) }}">
+                                                <form method="POST" action="{{ route('manage.subscriptions.cancel', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">
                                                     @csrf
                                                     <button type="submit" class="block w-full text-start px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                                                         <i class="ri-close-circle-line me-1.5"></i>{{ __('supervisor.subscriptions.action_cancel') }}

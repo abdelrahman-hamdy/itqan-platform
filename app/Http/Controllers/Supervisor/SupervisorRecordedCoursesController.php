@@ -14,8 +14,7 @@ class SupervisorRecordedCoursesController extends BaseSupervisorWebController
             abort(403);
         }
 
-        $query = RecordedCourse::with(['instructor'])
-            ->withCount(['sections', 'lessons', 'enrollments']);
+        $query = RecordedCourse::withCount(['sections', 'enrollments']);
 
         if ($request->filled('status')) {
             if ($request->status === 'published') {
@@ -30,26 +29,14 @@ class SupervisorRecordedCoursesController extends BaseSupervisorWebController
             $query->where('title', 'like', "%{$search}%");
         }
 
-        if ($request->filled('instructor_id')) {
-            $query->where('created_by', $request->instructor_id);
-        }
-
         $courses = $query->latest()->paginate(15)->withQueryString();
 
         $totalCourses = RecordedCourse::count();
         $publishedCount = RecordedCourse::where('is_published', true)->count();
         $draftCount = RecordedCourse::where('is_published', false)->count();
-        $totalEnrollments = RecordedCourse::withCount('enrollments')->get()->sum('enrollments_count');
+        $totalEnrollments = RecordedCourse::sum('total_enrollments');
 
-        $instructors = RecordedCourse::whereNotNull('created_by')
-            ->with('instructor:id,name')
-            ->get()
-            ->pluck('instructor')
-            ->filter()
-            ->unique('id')
-            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name])
-            ->values()
-            ->toArray();
+        $instructors = [];
 
         return view('supervisor.recorded-courses.index', compact(
             'courses',
@@ -68,7 +55,6 @@ class SupervisorRecordedCoursesController extends BaseSupervisorWebController
         }
 
         $course = RecordedCourse::with([
-            'instructor',
             'sections.lessons',
             'enrollments.student',
         ])->findOrFail($course);

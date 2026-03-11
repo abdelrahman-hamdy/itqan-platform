@@ -10,7 +10,7 @@
     <x-ui.breadcrumb
         :items="[
             ['label' => __('supervisor.subscriptions.page_title'), 'url' => route('manage.subscriptions.index', ['subdomain' => $subdomain])],
-            ['label' => $studentName, 'url' => route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $type, 'id' => $subscription->id])],
+            ['label' => $studentName, 'url' => route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id])],
             ['label' => __('supervisor.subscriptions.edit_title')],
         ]"
         view-type="supervisor"
@@ -27,7 +27,7 @@
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <form method="POST" action="{{ route('manage.subscriptions.update', ['subdomain' => $subdomain, 'type' => $type, 'id' => $subscription->id]) }}">
+        <form method="POST" action="{{ route('manage.subscriptions.update', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
             @csrf
             @method('PUT')
 
@@ -68,7 +68,7 @@
                         class="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                     {{ __('supervisor.subscriptions.btn_save') }}
                 </button>
-                <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $type, 'id' => $subscription->id]) }}"
+                <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}"
                    class="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
                     {{ __('supervisor.subscriptions.btn_cancel') }}
                 </a>

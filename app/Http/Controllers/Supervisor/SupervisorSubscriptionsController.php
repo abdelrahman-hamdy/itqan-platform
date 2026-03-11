@@ -263,7 +263,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'notes' => $request->notes,
         ]);
 
-        return redirect()->route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $type, 'id' => $id])
+        return redirect()->route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $id])
             ->with('success', __('supervisor.subscriptions.updated_successfully'));
     }
 
