@@ -1,5 +1,5 @@
 <x-layouts.teacher
-    :title="__('teacher.progress.report_title_individual') . ' - ' . $circle->student->name . ' - ' . config('app.name', __('teacher.panel.academy_default'))"
+    :title="__('teacher.progress.report_title_individual') . ' - ' . $circle->student->name"
     :description="__('teacher.progress.report_title_individual') . ': ' . $circle->student->name">
 
 <!-- Custom Progress Page Styles -->

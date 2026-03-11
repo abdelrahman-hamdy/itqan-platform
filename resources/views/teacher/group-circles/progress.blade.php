@@ -1,5 +1,5 @@
 <x-layouts.teacher
-    :title="__('teacher.progress.report_title_group') . ' - ' . $circle->name . ' - ' . config('app.name', __('teacher.panel.academy_default'))"
+    :title="__('teacher.progress.report_title_group') . ' - ' . $circle->name"
     :description="__('teacher.progress.report_title_group') . ': ' . $circle->name">
 
 <!-- Progress page CSS is loaded via resources/css/progress.css through Vite -->

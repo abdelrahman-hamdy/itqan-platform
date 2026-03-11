@@ -61,7 +61,7 @@ $statsGridData = [
 @endphp
 
 <x-reports.layouts.base-report
-    :title="__('components.reports.common.my_report') . ' - ' . config('app.name', __('components.reports.common.app_name'))"
+    :title="__('components.reports.common.my_report')"
     :description="__('components.reports.academic.my_comprehensive_report')"
     layoutType="student">
 

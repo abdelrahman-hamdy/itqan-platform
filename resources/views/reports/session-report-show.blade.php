@@ -87,7 +87,7 @@
 @endphp
 
 <x-reports.layouts.base-report
-    :title="__('reports.detail_title') . ' - ' . config('app.name')"
+    :title="__('reports.detail_title')"
     :layoutType="$layoutType">
 
     {{-- Breadcrumbs --}}

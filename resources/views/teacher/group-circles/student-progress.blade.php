@@ -1,5 +1,5 @@
 <x-layouts.teacher
-    :title="__('teacher.progress.report_title_student', ['name' => $student->name, 'circle' => $circle->name]) . ' - ' . config('app.name', __('teacher.panel.academy_default'))"
+    :title="__('teacher.progress.report_title_student', ['name' => $student->name, 'circle' => $circle->name])"
     :description="__('teacher.progress.report_title_student', ['name' => $student->name, 'circle' => $circle->name])">
 
 <!-- Custom Styles -->

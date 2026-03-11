@@ -73,7 +73,7 @@ $statsGridData = [
 @endphp
 
 <x-reports.layouts.base-report
-    :title="__('teacher.interactive_reports.my_report_title', ['course' => $course?->title]) . ' - ' . config('app.name', __('teacher.interactive_reports.platform_name'))"
+    :title="__('teacher.interactive_reports.my_report_title', ['course' => $course?->title])"
     :description="__('teacher.interactive_reports.my_report_description')"
     layoutType="student">
 
