@@ -22,6 +22,7 @@ use App\Http\Controllers\Supervisor\SupervisorProfileController;
 use App\Http\Controllers\Supervisor\SupervisorQuizzesController;
 use App\Http\Controllers\Supervisor\SupervisorSessionReportsController;
 use App\Http\Controllers\Supervisor\SupervisorTeacherEarningsController;
+use App\Http\Controllers\Supervisor\SupervisorParentsController;
 use App\Http\Controllers\Supervisor\SupervisorStudentsController;
 use App\Http\Controllers\Supervisor\SupervisorTeachersController;
 use App\Http\Controllers\Teacher\IndividualCircleReportController;
@@ -53,6 +54,14 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/students/{student}/toggle-status', [SupervisorStudentsController::class, 'toggleStatus'])->name('students.toggle-status');
         Route::post('/students/{student}/reset-password', [SupervisorStudentsController::class, 'resetPassword'])->name('students.reset-password');
         Route::delete('/students/{student}', [SupervisorStudentsController::class, 'destroy'])->name('students.destroy');
+
+        // Parents
+        Route::get('/parents', [SupervisorParentsController::class, 'index'])->name('parents.index');
+        Route::get('/parents/create', [SupervisorParentsController::class, 'create'])->name('parents.create');
+        Route::post('/parents', [SupervisorParentsController::class, 'store'])->name('parents.store');
+        Route::post('/parents/{parent}/toggle-status', [SupervisorParentsController::class, 'toggleStatus'])->name('parents.toggle-status');
+        Route::post('/parents/{parent}/reset-password', [SupervisorParentsController::class, 'resetPassword'])->name('parents.reset-password');
+        Route::delete('/parents/{parent}', [SupervisorParentsController::class, 'destroy'])->name('parents.destroy');
 
         // Teacher Earnings
         Route::get('/teacher-earnings', [SupervisorTeacherEarningsController::class, 'index'])->name('teacher-earnings.index');

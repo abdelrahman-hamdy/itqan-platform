@@ -45,6 +45,12 @@
           :label="__('supervisor.sidebar.my_students')"
           icon="ri-group-2-line"
           :active="request()->routeIs('manage.students.*')" />
+
+        <x-sidebar.nav-item
+          :href="route('manage.parents.index', ['subdomain' => $subdomain])"
+          :label="__('supervisor.sidebar.my_parents')"
+          icon="ri-parent-line"
+          :active="request()->routeIs('manage.parents.*')" />
       </x-sidebar.nav-section>
 
       <!-- Quran Programs -->
