@@ -64,7 +64,8 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
         return $schema->components([
             Section::make('المعلومات الأساسية')->schema([
                 Grid::make(2)->schema([
-                    TextInput::make('email')->label('البريد الإلكتروني')->email()->required()->unique(ignoreRecord: true),
+                    TextInput::make('email')->label('البريد الإلكتروني')->email()->required()
+                        ->unique(table: 'users', column: 'email', ignorable: fn ($record) => $record?->user),
                     TextInput::make('teacher_code')->label('رمز المعلم')->disabled()->dehydrated(false)->visible(fn (string $operation) => $operation !== 'create'),
                     TextInput::make('first_name')->label('الاسم الأول')->required()->maxLength(255),
                     TextInput::make('last_name')->label('اسم العائلة')->required()->maxLength(255),
