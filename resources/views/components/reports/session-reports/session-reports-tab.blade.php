@@ -3,6 +3,7 @@
     'routeParams' => [],
     'paginatedReports',
     'entityOptions' => [],
+    'teacherOptions' => [],
     'totalReports' => 0,
     'presentCount' => 0,
     'absentCount' => 0,
@@ -26,7 +27,7 @@
         'interactive' => __('reports.type_interactive'),
     ];
 
-    $hasActiveFilters = request('report_type') || request('entity_id') || request('student_search') || request('date_from') || request('date_to') || request('attendance_status');
+    $hasActiveFilters = request('report_type') || request('entity_id') || request('student_search') || request('date_from') || request('date_to') || request('attendance_status') || request('teacher_id');
 @endphp
 
 {{-- Stats Cards --}}
@@ -105,7 +106,7 @@
                 @if($hasActiveFilters)
                     @php
                         $filterCount = (request('report_type') ? 1 : 0) + (request('entity_id') ? 1 : 0) + (request('student_search') ? 1 : 0)
-                            + (request('date_from') ? 1 : 0) + (request('date_to') ? 1 : 0) + (request('attendance_status') ? 1 : 0);
+                            + (request('date_from') ? 1 : 0) + (request('date_to') ? 1 : 0) + (request('attendance_status') ? 1 : 0) + (request('teacher_id') ? 1 : 0);
                     @endphp
                     <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-indigo-500 rounded-full">{{ $filterCount }}</span>
                 @endif
@@ -172,6 +173,20 @@
                             @endforeach
                         </select>
                     </div>
+
+                    {{-- Teacher Filter --}}
+                    @if(!empty($teacherOptions))
+                        <div>
+                            <label for="teacher_id" class="block text-sm font-medium text-gray-700 mb-1">{{ __('reports.teacher_name') }}</label>
+                            <select name="teacher_id" id="teacher_id"
+                                    class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">{{ __('reports.all_teachers') }}</option>
+                                @foreach($teacherOptions as $id => $name)
+                                    <option value="{{ $id }}" {{ request('teacher_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
                 </div>
                 <div class="flex flex-wrap items-center gap-3 mt-4">
                     <button type="submit" class="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">

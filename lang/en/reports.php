@@ -70,6 +70,7 @@ return [
     // Misc
     'unknown_student' => 'Unknown Student',
     'teacher_name' => 'Teacher',
+    'all_teachers' => 'All Teachers',
 
     // Detail page
     'detail_title' => 'Session Report Details',

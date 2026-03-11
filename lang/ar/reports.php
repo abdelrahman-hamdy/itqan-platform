@@ -70,6 +70,7 @@ return [
     // Misc
     'unknown_student' => 'طالب غير محدد',
     'teacher_name' => 'المعلم',
+    'all_teachers' => 'جميع المعلمين',
 
     // Detail page
     'detail_title' => 'تفاصيل تقرير الجلسة',

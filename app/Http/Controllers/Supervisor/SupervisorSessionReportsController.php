@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Models\User;
 use App\Services\Reports\SessionReportsQueryService;
 use App\Services\Reports\StudentOverviewService;
 use Illuminate\Http\Request;
@@ -53,6 +54,7 @@ class SupervisorSessionReportsController extends BaseSupervisorWebController
         );
 
         $entityOptions = $this->overviewService->buildEntityOptions($quranTeacherIds, $academicProfileIds);
+        $teacherOptions = $this->buildTeacherOptions($quranTeacherIds, $academicProfileIds);
 
         // Stats
         $totalStudents = $rows->count();
@@ -74,6 +76,7 @@ class SupervisorSessionReportsController extends BaseSupervisorWebController
             'activeTab' => 'students',
             'paginatedRows' => $paginatedRows,
             'entityOptions' => $entityOptions,
+            'teacherOptions' => $teacherOptions,
             'totalStudents' => $totalStudents,
             'totalEntities' => $totalEntities,
             'avgAttendance' => $avgAttendance,
@@ -108,6 +111,7 @@ class SupervisorSessionReportsController extends BaseSupervisorWebController
 
         // Entity options for the cascading filter
         $entityOptions = $this->overviewService->buildEntityOptions($quranTeacherIds, $academicProfileIds);
+        $teacherOptions = $this->buildTeacherOptions($quranTeacherIds, $academicProfileIds);
 
         return view('supervisor.session-reports.index', [
             'activeTab' => 'sessions',
@@ -117,6 +121,34 @@ class SupervisorSessionReportsController extends BaseSupervisorWebController
             'absentCount' => $result['absentCount'],
             'lateCount' => $result['lateCount'],
             'entityOptions' => $entityOptions,
+            'teacherOptions' => $teacherOptions,
         ]);
+    }
+
+    /**
+     * Build teacher options for the filter dropdown.
+     *
+     * @return array<int, string>  [user_id => name]
+     */
+    private function buildTeacherOptions(array $quranTeacherIds, array $academicProfileIds): array
+    {
+        $allTeacherUserIds = collect($quranTeacherIds);
+
+        if (! empty($academicProfileIds)) {
+            $academicUserIds = \App\Models\AcademicTeacherProfile::whereIn('id', $academicProfileIds)
+                ->pluck('user_id');
+            $allTeacherUserIds = $allTeacherUserIds->merge($academicUserIds);
+        }
+
+        $allTeacherUserIds = $allTeacherUserIds->unique()->filter()->values();
+
+        if ($allTeacherUserIds->isEmpty()) {
+            return [];
+        }
+
+        return User::whereIn('id', $allTeacherUserIds)
+            ->get()
+            ->mapWithKeys(fn ($u) => [$u->id => $u->name ?? $u->first_name.' '.$u->last_name])
+            ->toArray();
     }
 }

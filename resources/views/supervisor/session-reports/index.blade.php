@@ -39,6 +39,7 @@
             :routeParams="['subdomain' => $subdomain]"
             :paginatedReports="$paginatedReports"
             :entityOptions="$entityOptions"
+            :teacherOptions="$teacherOptions ?? []"
             :totalReports="$totalReports ?? 0"
             :presentCount="$presentCount ?? 0"
             :absentCount="$absentCount ?? 0"

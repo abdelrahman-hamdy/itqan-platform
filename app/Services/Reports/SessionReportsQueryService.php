@@ -137,5 +137,9 @@ class SessionReportsQueryService
         if ($request->filled('attendance_status')) {
             $query->where('attendance_status', $request->attendance_status);
         }
+
+        if ($request->filled('teacher_id')) {
+            $query->where('teacher_id', (int) $request->teacher_id);
+        }
     }
 }
