@@ -129,6 +129,10 @@ return [
         'professional_info' => 'Professional Information',
         'academic_details' => 'Academic Details',
         'security_info' => 'Password',
+        'gender_label' => 'Gender',
+        'gender_placeholder' => 'Select gender',
+        'gender_male_teacher' => 'Male Teacher',
+        'gender_female_teacher' => 'Female Teacher',
         'teacher_created' => 'Teacher added successfully',
         'create_error' => 'An error occurred while creating the teacher. Please try again.',
     ],
@@ -148,6 +152,8 @@ return [
         'created_at' => 'Created At',
         'students_count' => ':count students',
         'sessions_count' => ':count sessions',
+        'filter_search' => 'Search',
+        'filter_status' => 'Status',
     ],
 
     'group_circles' => [
@@ -158,6 +164,7 @@ return [
         'total_students' => 'Total Students',
         'full_capacity' => 'Full Capacity',
         'breadcrumb' => 'Group Circles',
+        'search_placeholder' => 'Search by circle name...',
     ],
 
     'individual_circles' => [
@@ -168,6 +175,7 @@ return [
         'paused_circles' => 'Paused',
         'completed_circles' => 'Completed',
         'breadcrumb' => 'Individual Circles',
+        'search_placeholder' => 'Search by student name...',
     ],
 
     'trial_sessions' => [
@@ -178,6 +186,7 @@ return [
         'scheduled_requests' => 'Scheduled',
         'completed_requests' => 'Completed',
         'breadcrumb' => 'Trial Sessions',
+        'search_placeholder' => 'Search by student name...',
     ],
 
     'academic_lessons' => [

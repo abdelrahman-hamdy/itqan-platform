@@ -59,7 +59,7 @@
           @submit="loading = true">
         @csrf
 
-        <div class="max-w-3xl space-y-6">
+        <div class="max-w-3xl mx-auto space-y-6">
 
             <!-- Teacher Type Selection -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
@@ -151,27 +151,29 @@
 
                     {{-- Phone --}}
                     <div>
-                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
-                            {{ __('auth.register.teacher.step2.phone') }} <span class="text-red-600">*</span>
-                        </label>
-                        <input type="text" name="phone" id="phone" value="{{ old('phone') }}" required
-                               class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('phone') border-red-500 @enderror"
-                               placeholder="{{ __('auth.register.teacher.step2.phone_placeholder') }}">
-                        @error('phone')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <x-forms.phone-input
+                            name="phone"
+                            label="{{ __('auth.register.teacher.step2.phone') }}"
+                            :required="true"
+                            countryCodeField="phone_country_code"
+                            countryField="phone_country"
+                            initialCountry="sa"
+                            placeholder="{{ __('auth.register.teacher.step2.phone_placeholder') }}"
+                            :value="old('phone')"
+                            :error="$errors->first('phone')"
+                        />
                     </div>
 
                     {{-- Gender --}}
                     <div>
                         <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">
-                            {{ __('auth.register.teacher.step2.gender') }} <span class="text-red-600">*</span>
+                            {{ __('supervisor.teachers.gender_label') }} <span class="text-red-600">*</span>
                         </label>
                         <select name="gender" id="gender" required
                                 class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('gender') border-red-500 @enderror">
-                            <option value="">{{ __('auth.register.teacher.step2.gender_placeholder') }}</option>
-                            <option value="male" {{ old('gender') === 'male' ? 'selected' : '' }}>{{ __('auth.register.teacher.step2.gender_male') }}</option>
-                            <option value="female" {{ old('gender') === 'female' ? 'selected' : '' }}>{{ __('auth.register.teacher.step2.gender_female') }}</option>
+                            <option value="">{{ __('supervisor.teachers.gender_placeholder') }}</option>
+                            <option value="male" {{ old('gender') === 'male' ? 'selected' : '' }}>{{ __('supervisor.teachers.gender_male_teacher') }}</option>
+                            <option value="female" {{ old('gender') === 'female' ? 'selected' : '' }}>{{ __('supervisor.teachers.gender_female_teacher') }}</option>
                         </select>
                         @error('gender')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

@@ -129,6 +129,10 @@ return [
         'professional_info' => 'المعلومات المهنية',
         'academic_details' => 'التفاصيل الأكاديمية',
         'security_info' => 'كلمة المرور',
+        'gender_label' => 'الجنس',
+        'gender_placeholder' => 'اختر الجنس',
+        'gender_male_teacher' => 'معلم',
+        'gender_female_teacher' => 'معلمة',
         'teacher_created' => 'تم إضافة المعلم بنجاح',
         'create_error' => 'حدث خطأ في إنشاء المعلم. يرجى المحاولة مرة أخرى.',
     ],
@@ -148,6 +152,8 @@ return [
         'created_at' => 'تاريخ الإنشاء',
         'students_count' => ':count طالب',
         'sessions_count' => ':count جلسة',
+        'filter_search' => 'البحث',
+        'filter_status' => 'الحالة',
     ],
 
     'group_circles' => [
@@ -158,6 +164,7 @@ return [
         'total_students' => 'إجمالي الطلاب',
         'full_capacity' => 'مكتملة السعة',
         'breadcrumb' => 'الحلقات الجماعية',
+        'search_placeholder' => 'ابحث باسم الحلقة...',
     ],
 
     'individual_circles' => [
@@ -168,6 +175,7 @@ return [
         'paused_circles' => 'متوقفة مؤقتاً',
         'completed_circles' => 'مكتملة',
         'breadcrumb' => 'الحلقات الفردية',
+        'search_placeholder' => 'ابحث باسم الطالب...',
     ],
 
     'trial_sessions' => [
@@ -178,6 +186,7 @@ return [
         'scheduled_requests' => 'مجدولة',
         'completed_requests' => 'مكتملة',
         'breadcrumb' => 'الجلسات التجريبية',
+        'search_placeholder' => 'ابحث باسم الطالب...',
     ],
 
     'academic_lessons' => [
