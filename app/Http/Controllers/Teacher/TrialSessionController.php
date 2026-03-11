@@ -30,16 +30,39 @@ class TrialSessionController extends Controller
             abort(404, 'Teacher profile not found');
         }
 
-        $trialRequests = QuranTrialRequest::where('teacher_id', $teacherProfile->id)
-            ->where('academy_id', $user->academy_id)
-            ->with(['student', 'academy', 'trialSession.meeting'])
-            ->when($request->status, function ($query, $status) {
-                return $query->where('status', $status);
-            })
-            ->latest()
-            ->paginate(15);
+        $baseQuery = QuranTrialRequest::where('teacher_id', $teacherProfile->id)
+            ->where('academy_id', $user->academy_id);
 
-        return view('teacher.trial-sessions.index', compact('trialRequests'));
+        $stats = [
+            'total' => (clone $baseQuery)->count(),
+            'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
+            'scheduled' => (clone $baseQuery)->where('status', 'scheduled')->count(),
+            'completed' => (clone $baseQuery)->where('status', 'completed')->count(),
+        ];
+
+        $query = clone $baseQuery;
+        $query->with(['student', 'academy', 'trialSession.meeting']);
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->whereHas('student', function ($sq) use ($request) {
+                    $sq->where('name', 'like', '%' . $request->search . '%');
+                })->orWhere('student_name', 'like', '%' . $request->search . '%');
+            });
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $trialRequests = $query->latest()->paginate(15)->withQueryString();
+
+        return view('teacher.trial-sessions.index', compact('trialRequests', 'stats'));
     }
 
     /**

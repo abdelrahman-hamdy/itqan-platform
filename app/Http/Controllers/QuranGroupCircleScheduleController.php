@@ -41,15 +41,34 @@ class QuranGroupCircleScheduleController extends Controller
 
         $user = Auth::user();
 
-        $circles = QuranCircle::where('quran_teacher_id', $user->id)
-            ->with(['schedule', 'academy'])
-            ->when($request->status, function ($query, $status) {
-                return $query->where('status', $status);
-            })
-            ->latest()
-            ->paginate(15);
+        $baseQuery = QuranCircle::where('quran_teacher_id', $user->id);
 
-        return view('teacher.group-circles.index', compact('circles'));
+        $stats = [
+            'total' => (clone $baseQuery)->count(),
+            'active' => (clone $baseQuery)->where('status', 'active')->count(),
+            'full' => (clone $baseQuery)->where('status', 'full')->count(),
+            'totalStudents' => (int) (clone $baseQuery)->sum('enrolled_students'),
+        ];
+
+        $query = clone $baseQuery;
+        $query->with(['schedule', 'academy']);
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $circles = $query->latest()->paginate(15)->withQueryString();
+
+        return view('teacher.group-circles.index', compact('circles', 'stats'));
     }
 
     /**

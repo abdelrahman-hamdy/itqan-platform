@@ -45,16 +45,42 @@ class QuranIndividualCircleController extends Controller
         // Authorize viewing circles
         $this->authorize('viewAny', QuranIndividualCircle::class);
 
-        $circles = QuranIndividualCircle::where('quran_teacher_id', $user->id)
-            ->where('academy_id', $user->academy_id)
-            ->with(['student', 'subscription.package'])
-            ->when($request->status, function ($query, $status) {
-                return $query->where('status', $status);
-            })
-            ->latest()
-            ->paginate(15);
+        $baseQuery = QuranIndividualCircle::where('quran_teacher_id', $user->id)
+            ->where('academy_id', $user->academy_id);
 
-        return view('teacher.individual-circles.index', compact('circles'));
+        $stats = [
+            'total' => (clone $baseQuery)->count(),
+            'active' => (clone $baseQuery)->where('is_active', true)->whereNull('completed_at')->count(),
+            'paused' => (clone $baseQuery)->where('is_active', false)->whereNull('completed_at')->count(),
+            'completed' => (clone $baseQuery)->whereNotNull('completed_at')->count(),
+        ];
+
+        $query = clone $baseQuery;
+        $query->with(['student', 'subscription.package'])->withCount('sessions');
+
+        if ($request->status) {
+            match ($request->status) {
+                'active' => $query->where('is_active', true)->whereNull('completed_at'),
+                'paused' => $query->where('is_active', false)->whereNull('completed_at'),
+                'completed' => $query->whereNotNull('completed_at'),
+                default => null,
+            };
+        }
+        if ($request->filled('search')) {
+            $query->whereHas('student', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%');
+            });
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $circles = $query->latest()->paginate(15)->withQueryString();
+
+        return view('teacher.individual-circles.index', compact('circles', 'stats'));
     }
 
     /**

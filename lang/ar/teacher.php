@@ -1346,6 +1346,7 @@ return [
         'message_student' => 'راسل الطالب',
         'message_short' => 'راسل',
         'unknown_student' => 'طالب غير محدد',
+        'search_placeholder' => 'ابحث باسم الطالب...',
     ],
     'circles_list' => [
         'group' => [
@@ -1379,6 +1380,7 @@ return [
             'status_full' => 'مكتملة العدد',
             'status_paused' => 'متوقفة',
             'status_closed' => 'مغلقة',
+            'search_placeholder' => 'ابحث باسم الحلقة...',
             'status_unspecified' => 'غير محدد',
             'show' => [
                 'page_title' => 'الحلقة الجماعية',
@@ -1468,6 +1470,7 @@ return [
         'view_details' => 'عرض التفاصيل',
         'view_short' => 'تفاصيل',
         'unknown_student' => 'طالب غير محدد',
+        'search_placeholder' => 'ابحث باسم الطالب...',
     ],
     'trial_sessions' => [
         'page_title' => 'تفاصيل الحصة التجريبية',

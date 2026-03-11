@@ -805,6 +805,7 @@ return [
             'status_full' => 'Full Capacity',
             'status_paused' => 'Paused',
             'status_closed' => 'Closed',
+            'search_placeholder' => 'Search by circle name...',
             'status_unspecified' => 'Unspecified',
             'show' => [
                 'page_title' => 'Group Circle',
@@ -1576,6 +1577,7 @@ return [
         'message_student' => 'Message Student',
         'message_short' => 'Message',
         'unknown_student' => 'Unknown Student',
+        'search_placeholder' => 'Search by student name...',
     ],
     'trial_sessions_list' => [
         'page_title' => 'Trial Sessions',
@@ -1613,6 +1615,7 @@ return [
         'view_details' => 'View Details',
         'view_short' => 'Details',
         'unknown_student' => 'Unknown Student',
+        'search_placeholder' => 'Search by student name...',
     ],
     'trial_sessions' => [
         'page_title' => 'Trial Session Details',
