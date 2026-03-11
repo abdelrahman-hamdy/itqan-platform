@@ -76,6 +76,8 @@ return [
         'all_statuses' => 'All Statuses',
         'male' => 'Male',
         'female' => 'Female',
+        'male_teacher' => 'Male',
+        'female_teacher' => 'Female',
         'active' => 'Active',
         'inactive' => 'Inactive',
         'sort_name_asc' => 'Name (A-Z)',

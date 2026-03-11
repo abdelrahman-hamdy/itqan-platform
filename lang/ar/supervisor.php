@@ -76,6 +76,8 @@ return [
         'all_statuses' => 'جميع الحالات',
         'male' => 'ذكر',
         'female' => 'أنثى',
+        'male_teacher' => 'معلم',
+        'female_teacher' => 'معلمة',
         'active' => 'نشط',
         'inactive' => 'غير نشط',
         'sort_name_asc' => 'الاسم (أ-ي)',
