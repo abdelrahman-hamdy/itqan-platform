@@ -41,7 +41,7 @@
                     <p class="text-xs text-gray-600">{{ __('supervisor.teachers.total_teachers') }}</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4 text-xs text-gray-500 border-t border-gray-100 pt-2.5">
+            <div class="flex items-center gap-4 text-xs text-gray-500 pt-1">
                 <span class="flex items-center gap-1">
                     <span class="w-2 h-2 rounded-full bg-green-500"></span>
                     {{ __('supervisor.teachers.active') }}: <strong class="text-gray-700">{{ $activeCount }}</strong>
@@ -64,7 +64,7 @@
                     <p class="text-xs text-gray-600">{{ __('supervisor.dashboard.quran_teachers') }}</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4 text-xs text-gray-500 border-t border-gray-100 pt-2.5">
+            <div class="flex items-center gap-4 text-xs text-gray-500 pt-1">
                 <span class="flex items-center gap-1">
                     <i class="ri-men-line text-blue-500"></i>
                     {{ __('supervisor.teachers.male') }}: <strong class="text-gray-700">{{ $quranMale }}</strong>
@@ -87,7 +87,7 @@
                     <p class="text-xs text-gray-600">{{ __('supervisor.dashboard.academic_teachers') }}</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4 text-xs text-gray-500 border-t border-gray-100 pt-2.5">
+            <div class="flex items-center gap-4 text-xs text-gray-500 pt-1">
                 <span class="flex items-center gap-1">
                     <i class="ri-men-line text-blue-500"></i>
                     {{ __('supervisor.teachers.male') }}: <strong class="text-gray-700">{{ $academicMale }}</strong>
