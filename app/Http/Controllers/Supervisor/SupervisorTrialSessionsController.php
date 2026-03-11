@@ -17,16 +17,40 @@ class SupervisorTrialSessionsController extends BaseSupervisorWebController
         // Trial requests reference teacher_id as QuranTeacherProfile.id
         $profileIds = QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->pluck('id')->toArray();
 
-        $query = QuranTrialRequest::whereIn('teacher_id', $profileIds)
-            ->with(['student', 'academy', 'trialSession.meeting']);
+        $baseQuery = QuranTrialRequest::whereIn('teacher_id', $profileIds);
 
         if ($request->teacher_id) {
             $filterProfileIds = QuranTeacherProfile::where('user_id', $request->teacher_id)->pluck('id')->toArray();
-            $query->whereIn('teacher_id', $filterProfileIds);
+            $baseQuery->whereIn('teacher_id', $filterProfileIds);
         }
+
+        // Stats from DB (before search/status/date filters)
+        $stats = [
+            'total' => (clone $baseQuery)->count(),
+            'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
+            'scheduled' => (clone $baseQuery)->where('status', 'scheduled')->count(),
+            'completed' => (clone $baseQuery)->where('status', 'completed')->count(),
+        ];
+
+        // Apply filters
+        $query = clone $baseQuery;
+        $query->with(['student', 'academy', 'trialSession.meeting', 'teacher.user']);
 
         if ($request->status) {
             $query->where('status', $request->status);
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('student', fn ($sq) => $sq->where('name', 'like', "%{$search}%"))
+                    ->orWhere('student_name', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
         }
 
         $trialRequests = $query->latest()->paginate(15)->withQueryString();
@@ -37,7 +61,7 @@ class SupervisorTrialSessionsController extends BaseSupervisorWebController
             'type_label' => __('supervisor.teachers.teacher_type_quran'),
         ])->toArray();
 
-        return view('supervisor.trial-sessions.index', compact('trialRequests', 'teachers'));
+        return view('supervisor.trial-sessions.index', compact('trialRequests', 'teachers', 'stats'));
     }
 
     public function show($subdomain, $trialRequestId): View

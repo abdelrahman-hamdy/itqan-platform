@@ -13,21 +13,41 @@ class SupervisorIndividualCirclesController extends BaseSupervisorWebController
     {
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
 
-        $query = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)
-            ->with(['quranTeacher', 'student', 'subscription.package'])
-            ->withCount('sessions');
+        $baseQuery = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds);
 
         if ($request->teacher_id) {
-            $query->where('quran_teacher_id', $request->teacher_id);
+            $baseQuery->where('quran_teacher_id', $request->teacher_id);
         }
+
+        // Stats from DB (before search/status/date filters)
+        $stats = [
+            'total' => (clone $baseQuery)->count(),
+            'active' => (clone $baseQuery)->where('is_active', true)->whereNull('completed_at')->count(),
+            'paused' => (clone $baseQuery)->where('is_active', false)->whereNull('completed_at')->count(),
+            'completed' => (clone $baseQuery)->whereNotNull('completed_at')->count(),
+        ];
+
+        // Apply filters
+        $query = clone $baseQuery;
+        $query->with(['quranTeacher', 'student', 'subscription.package'])->withCount('sessions');
 
         if ($request->status) {
             match ($request->status) {
-                'active' => $query->where('is_active', true),
+                'active' => $query->where('is_active', true)->whereNull('completed_at'),
                 'paused' => $query->where('is_active', false)->whereNull('completed_at'),
                 'completed' => $query->whereNotNull('completed_at'),
                 default => null,
             };
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('student', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
         }
 
         $circles = $query->latest()->paginate(15)->withQueryString();
@@ -38,7 +58,7 @@ class SupervisorIndividualCirclesController extends BaseSupervisorWebController
             'type_label' => __('supervisor.teachers.teacher_type_quran'),
         ])->toArray();
 
-        return view('supervisor.individual-circles.index', compact('circles', 'teachers'));
+        return view('supervisor.individual-circles.index', compact('circles', 'teachers', 'stats'));
     }
 
     public function show($subdomain, $circleId): View
