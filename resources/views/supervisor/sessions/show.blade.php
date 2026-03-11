@@ -86,6 +86,7 @@
     @endif
 
     {{-- Action Bar --}}
+    @if(($canObserve && $isLive) || $status->canCancel() || $filamentUrl)
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
         <div class="flex flex-wrap items-center gap-3">
             {{-- Observer / Participant Mode Toggle --}}
@@ -121,6 +122,7 @@
             @endif
         </div>
     </div>
+    @endif
 
     {{-- Meeting Interface --}}
     @if($isLive)
