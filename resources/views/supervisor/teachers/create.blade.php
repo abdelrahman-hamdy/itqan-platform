@@ -38,6 +38,7 @@
 
     <form method="POST"
           action="{{ route('manage.teachers.store', ['subdomain' => $subdomain]) }}"
+          enctype="multipart/form-data"
           x-data="{
               teacherType: '{{ old('teacher_type', 'quran_teacher') }}',
               certifications: @js(old('certifications', [])),
@@ -98,6 +99,15 @@
                 @error('teacher_type')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                 @enderror
+            </div>
+
+            <!-- Profile Photo -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+                <x-profile.picture-upload
+                    :currentAvatar="null"
+                    userName=""
+                    :user="null"
+                    :userType="null" />
             </div>
 
             <!-- Personal Information -->

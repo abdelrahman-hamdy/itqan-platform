@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRules;
@@ -245,6 +246,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
         $rules = [
             'teacher_type' => 'required|in:quran_teacher,academic_teacher',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -300,6 +302,15 @@ class SupervisorTeachersController extends BaseSupervisorWebController
         $user->active_status = true; // Admin-created teachers are activated immediately
         $user->save();
 
+        // Handle avatar upload
+        $avatarPath = null;
+        if ($request->hasFile('avatar')) {
+            $directory = $teacherType === 'quran_teacher' ? 'avatars/quran-teachers' : 'avatars/academic-teachers';
+            $avatarPath = $request->file('avatar')->store($directory, 'public');
+            $user->avatar = $avatarPath;
+            $user->save();
+        }
+
         try {
             if ($teacherType === 'quran_teacher') {
                 QuranTeacherProfile::create([
@@ -310,6 +321,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                     'teaching_experience_years' => $request->years_experience,
                     'is_active' => true,
                     'certifications' => $request->certifications ?? [],
+                    'avatar' => $avatarPath,
                 ]);
             } else {
                 AcademicTeacherProfile::create([
@@ -324,6 +336,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                     'available_days' => $request->available_days ?? [],
                     'certifications' => [],
                     'is_active' => true,
+                    'avatar' => $avatarPath,
                 ]);
             }
         } catch (QueryException $e) {
@@ -333,6 +346,9 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                 'teacher_type' => $teacherType,
             ]);
 
+            if ($avatarPath) {
+                Storage::disk('public')->delete($avatarPath);
+            }
             $user->delete();
 
             return back()->withErrors(['error' => __('supervisor.teachers.create_error')])->withInput();
