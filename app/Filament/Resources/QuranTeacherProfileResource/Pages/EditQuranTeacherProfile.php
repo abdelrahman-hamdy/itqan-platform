@@ -22,34 +22,28 @@ class EditQuranTeacherProfile extends EditRecord
         ];
     }
 
-    /**
-     * Hydrate user data fields from the linked User record
-     */
     protected function mutateFormDataBeforeFill(array $data): array
     {
         if ($this->record->user) {
-            $data['user_first_name'] = $this->record->user->first_name;
-            $data['user_last_name'] = $this->record->user->last_name;
-            $data['user_email'] = $this->record->user->email;
-            $data['user_phone'] = $this->record->user->phone;
+            $data['first_name'] = $this->record->user->first_name;
+            $data['last_name'] = $this->record->user->last_name;
+            $data['email'] = $this->record->user->email;
+            $data['phone'] = $this->record->user->phone;
         }
 
         return $data;
     }
 
-    /**
-     * Save user data fields to the linked User record
-     */
     protected function afterSave(): void
     {
         $data = $this->form->getRawState();
 
-        if ($this->record->user_id && isset($data['user_first_name'])) {
+        if ($this->record->user_id && isset($data['first_name'])) {
             $this->record->user->update([
-                'first_name' => $data['user_first_name'],
-                'last_name' => $data['user_last_name'],
-                'email' => $data['user_email'],
-                'phone' => $data['user_phone'] ?? null,
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'] ?? null,
             ]);
         }
     }

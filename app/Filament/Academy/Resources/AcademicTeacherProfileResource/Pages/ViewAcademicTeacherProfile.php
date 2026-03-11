@@ -13,6 +13,18 @@ class ViewAcademicTeacherProfile extends ViewRecord
 {
     protected static string $resource = AcademicTeacherProfileResource::class;
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        if ($this->record->user) {
+            $data['first_name'] = $this->record->user->first_name;
+            $data['last_name'] = $this->record->user->last_name;
+            $data['email'] = $this->record->user->email;
+            $data['phone'] = $this->record->user->phone;
+        }
+
+        return $data;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
