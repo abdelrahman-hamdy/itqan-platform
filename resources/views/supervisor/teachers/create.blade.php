@@ -41,11 +41,44 @@
           enctype="multipart/form-data"
           x-data="{
               teacherType: '{{ old('teacher_type', 'quran_teacher') }}',
+              gender: '{{ old('gender', '') }}',
               certifications: @js(old('certifications', [])),
               newCert: '',
               showPass: false,
               showConfirm: false,
               loading: false,
+              previewUrl: '',
+              fileName: '',
+              hasImage: false,
+              assetBase: '{{ asset('app-design-assets') }}',
+              get defaultAvatarUrl() {
+                  const g = this.gender === 'female' ? 'female' : 'male';
+                  const t = this.teacherType === 'quran_teacher' ? 'quran-teacher' : 'academic-teacher';
+                  return this.assetBase + '/' + g + '-' + t + '-avatar.png';
+              },
+              get avatarBgClass() {
+                  return this.teacherType === 'quran_teacher' ? 'bg-yellow-100' : 'bg-violet-100';
+              },
+              handleFileSelect(event) {
+                  const file = event.target.files[0];
+                  if (!file) return;
+                  if (!file.type.startsWith('image/')) return;
+                  if (file.size > 2 * 1024 * 1024) {
+                      window.toast?.warning('{{ __('common.profile.image_size_warning') }}');
+                      return;
+                  }
+                  this.fileName = file.name;
+                  this.hasImage = true;
+                  const reader = new FileReader();
+                  reader.onload = (e) => { this.previewUrl = e.target.result; };
+                  reader.readAsDataURL(file);
+              },
+              removeImage() {
+                  this.previewUrl = '';
+                  this.fileName = '';
+                  this.hasImage = false;
+                  document.getElementById('avatar').value = '';
+              },
               addCertification() {
                   const cert = this.newCert.trim();
                   if (cert && !this.certifications.includes(cert)) {
@@ -101,15 +134,6 @@
                 @enderror
             </div>
 
-            <!-- Profile Photo -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-                <x-profile.picture-upload
-                    :currentAvatar="null"
-                    userName=""
-                    :user="null"
-                    :userType="null" />
-            </div>
-
             <!-- Personal Information -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
                 <div class="flex items-center gap-3 mb-4">
@@ -117,6 +141,58 @@
                         <i class="ri-user-line text-blue-600"></i>
                     </div>
                     <h3 class="text-lg font-semibold text-gray-900">{{ __('supervisor.teachers.personal_info') }}</h3>
+                </div>
+
+                <!-- Avatar Upload -->
+                <div class="mb-6 pb-6 border-b border-gray-200 flex justify-center">
+                    <div class="flex flex-col items-center text-center">
+                        <div class="relative inline-block">
+                            <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg ring-2 ring-primary/20 relative"
+                                 :class="avatarBgClass">
+                                <!-- Preview image (user-selected file) -->
+                                <img :src="previewUrl" alt="" class="w-full h-full object-cover relative z-10" x-show="previewUrl" x-cloak>
+                                <!-- Default avatar (dynamic based on type + gender) -->
+                                <div x-show="!previewUrl" class="absolute inset-0">
+                                    <img :src="defaultAvatarUrl" alt=""
+                                         class="absolute object-cover"
+                                         style="width: 120%; height: 120%; top: 0; left: 50%; transform: translateX(-50%);">
+                                </div>
+                            </div>
+                            <div class="absolute bottom-1 w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center shadow-lg z-20" style="inset-inline-end: 0.25rem;">
+                                <i class="ri-camera-line text-lg"></i>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <input type="file" id="avatar" name="avatar" accept="image/*" class="hidden" @change="handleFileSelect">
+                            <label for="avatar"
+                                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-medium rounded-lg cursor-pointer hover:bg-primary-600 transition-all duration-200 text-sm">
+                                <i class="ri-upload-2-line"></i>
+                                <span x-text="hasImage ? '{{ __('common.profile.change_image') }}' : '{{ __('common.profile.add_image') }}'"></span>
+                            </label>
+                        </div>
+
+                        <div x-show="fileName" class="mt-2 text-sm text-gray-600">
+                            <i class="ri-file-image-line me-1"></i>
+                            <span x-text="fileName"></span>
+                        </div>
+
+                        <div x-show="previewUrl" class="mt-2" x-cloak>
+                            <button type="button" @click="removeImage" class="cursor-pointer text-sm text-red-600 hover:text-red-700 font-medium">
+                                <i class="ri-delete-bin-line me-1"></i>
+                                {{ __('common.profile.remove_image') }}
+                            </button>
+                        </div>
+
+                        @error('avatar')
+                            <div class="mt-2 text-sm text-red-600 bg-red-50 px-4 py-2 rounded-lg">
+                                <i class="ri-error-warning-line me-1"></i>
+                                {{ $message }}
+                            </div>
+                        @enderror
+
+                        <p class="mt-2 text-xs text-gray-500">{{ __('common.profile.image_hint') }}</p>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -179,11 +255,11 @@
                         <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">
                             {{ __('supervisor.teachers.gender_label') }} <span class="text-red-600">*</span>
                         </label>
-                        <select name="gender" id="gender" required
+                        <select name="gender" id="gender" required x-model="gender"
                                 class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('gender') border-red-500 @enderror">
                             <option value="">{{ __('supervisor.teachers.gender_placeholder') }}</option>
-                            <option value="male" {{ old('gender') === 'male' ? 'selected' : '' }}>{{ __('supervisor.teachers.gender_male_teacher') }}</option>
-                            <option value="female" {{ old('gender') === 'female' ? 'selected' : '' }}>{{ __('supervisor.teachers.gender_female_teacher') }}</option>
+                            <option value="male">{{ __('supervisor.teachers.gender_male_teacher') }}</option>
+                            <option value="female">{{ __('supervisor.teachers.gender_female_teacher') }}</option>
                         </select>
                         @error('gender')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
