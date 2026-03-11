@@ -109,6 +109,11 @@ return [
         'view_individual_circles' => 'الحلقات الفردية',
         'view_trial_sessions' => 'الجلسات التجريبية',
         'view_interactive_courses' => 'الدورات التفاعلية',
+        'actions' => 'الإجراءات',
+        'sort_rating_desc' => 'الأعلى تقييماً',
+        'sort_rating_asc' => 'الأقل تقييماً',
+        'sort_newest' => 'الأحدث',
+        'sort_oldest' => 'الأقدم',
     ],
 
     'common' => [

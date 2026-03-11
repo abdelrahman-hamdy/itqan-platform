@@ -44,7 +44,8 @@
          class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
 
     <!-- Modal Container -->
-    <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+    <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4"
+         @if($closeOnBackdrop) @click="open = false" @endif>
         <!-- Modal Panel -->
         <div x-show="open"
              x-transition:enter="transition ease-out duration-300"

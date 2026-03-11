@@ -75,6 +75,10 @@
                             @case('name_desc') {{ __('supervisor.teachers.sort_name_desc') }} @break
                             @case('entities_desc') {{ __('supervisor.teachers.sort_entities_desc') }} @break
                             @case('entities_asc') {{ __('supervisor.teachers.sort_entities_asc') }} @break
+                            @case('rating_desc') {{ __('supervisor.teachers.sort_rating_desc') }} @break
+                            @case('rating_asc') {{ __('supervisor.teachers.sort_rating_asc') }} @break
+                            @case('newest') {{ __('supervisor.teachers.sort_newest') }} @break
+                            @case('oldest') {{ __('supervisor.teachers.sort_oldest') }} @break
                             @default {{ __('supervisor.teachers.sort_name_asc') }}
                         @endswitch
                     </span>
@@ -82,7 +86,7 @@
                 </button>
                 <div x-show="open" @click.away="open = false" x-transition
                     class="absolute start-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                    @foreach(['name_asc', 'name_desc', 'entities_desc', 'entities_asc'] as $sortOption)
+                    @foreach(['name_asc', 'name_desc', 'entities_desc', 'entities_asc', 'rating_desc', 'rating_asc', 'newest', 'oldest'] as $sortOption)
                         <a href="{{ request()->fullUrlWithQuery(['sort' => $sortOption, 'page' => 1]) }}"
                            class="block px-4 py-2 text-sm cursor-pointer {{ $currentSort === $sortOption ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                             {{ __('supervisor.teachers.sort_' . $sortOption) }}
@@ -200,6 +204,10 @@
                                         {{ __('supervisor.teachers.active_entities') }}: <strong>{{ $teacher['active_entities'] }}</strong>
                                     </span>
                                     <span class="flex items-center gap-1">
+                                        <i class="ri-star-fill text-amber-400"></i>
+                                        {{ number_format($teacher['rating'], 1) }}
+                                    </span>
+                                    <span class="flex items-center gap-1">
                                         <i class="ri-mail-line text-gray-400"></i>
                                         {{ $teacher['user']->email }}
                                     </span>
@@ -213,111 +221,121 @@
                             </div>
                         </div>
 
-                        <!-- Action Buttons -->
-                        <div class="ms-0 md:ms-14 flex flex-wrap items-center gap-2">
-                            {{-- Primary: View Entities --}}
-                            @if($isQuran)
-                                <a href="{{ route('manage.group-circles.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
-                                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors">
-                                    <i class="ri-team-line"></i>
-                                    {{ __('supervisor.teachers.view_circles') }}
-                                </a>
-                                <a href="{{ route('manage.individual-circles.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
-                                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors">
-                                    <i class="ri-user-line"></i>
-                                    {{ __('supervisor.teachers.view_individual_circles') }}
-                                </a>
-                                <a href="{{ route('manage.trial-sessions.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
-                                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-colors">
-                                    <i class="ri-test-tube-line"></i>
-                                    {{ __('supervisor.teachers.view_trial_sessions') }}
-                                </a>
-                            @else
-                                <a href="{{ route('manage.academic-lessons.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
-                                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-violet-600 hover:bg-violet-700 text-white transition-colors">
-                                    <i class="ri-graduation-cap-line"></i>
-                                    {{ __('supervisor.teachers.view_lessons') }}
-                                </a>
-                                <a href="{{ route('manage.interactive-courses.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
-                                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-colors">
-                                    <i class="ri-live-line"></i>
-                                    {{ __('supervisor.teachers.view_interactive_courses') }}
-                                </a>
-                            @endif
+                        <!-- Collapsible Action Buttons -->
+                        <div x-data="{ expanded: false }" class="ms-0 md:ms-14">
+                            <button @click="expanded = !expanded" type="button"
+                                class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs md:text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors mb-2">
+                                <i class="ri-apps-line"></i>
+                                {{ __('supervisor.teachers.actions') }}
+                                <i class="ri-arrow-down-s-line transition-transform" :class="{ 'rotate-180': expanded }"></i>
+                            </button>
+                            <div x-show="expanded" x-collapse>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    {{-- Primary: View Entities --}}
+                                    @if($isQuran)
+                                        <a href="{{ route('manage.group-circles.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
+                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors">
+                                            <i class="ri-team-line"></i>
+                                            {{ __('supervisor.teachers.view_circles') }}
+                                        </a>
+                                        <a href="{{ route('manage.individual-circles.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
+                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors">
+                                            <i class="ri-user-line"></i>
+                                            {{ __('supervisor.teachers.view_individual_circles') }}
+                                        </a>
+                                        <a href="{{ route('manage.trial-sessions.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
+                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-colors">
+                                            <i class="ri-gift-line"></i>
+                                            {{ __('supervisor.teachers.view_trial_sessions') }}
+                                        </a>
+                                    @else
+                                        <a href="{{ route('manage.academic-lessons.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
+                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-violet-600 hover:bg-violet-700 text-white transition-colors">
+                                            <i class="ri-graduation-cap-line"></i>
+                                            {{ __('supervisor.teachers.view_lessons') }}
+                                        </a>
+                                        <a href="{{ route('manage.interactive-courses.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
+                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-colors">
+                                            <i class="ri-live-line"></i>
+                                            {{ __('supervisor.teachers.view_interactive_courses') }}
+                                        </a>
+                                    @endif
 
-                            {{-- Sessions & Reports --}}
-                            <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
-                               class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
-                                <i class="ri-calendar-event-line"></i>
-                                {{ __('supervisor.teachers.view_sessions') }}
-                            </a>
-                            <a href="{{ route('manage.session-reports.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
-                               class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors">
-                                <i class="ri-file-chart-line"></i>
-                                {{ __('supervisor.teachers.view_reports') }}
-                            </a>
+                                    {{-- Sessions & Reports --}}
+                                    <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
+                                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                                        <i class="ri-calendar-event-line"></i>
+                                        {{ __('supervisor.teachers.view_sessions') }}
+                                    </a>
+                                    <a href="{{ route('manage.session-reports.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
+                                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors">
+                                        <i class="ri-file-chart-line"></i>
+                                        {{ __('supervisor.teachers.view_reports') }}
+                                    </a>
 
-                            {{-- Message --}}
-                            <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $teacherId]) }}"
-                               class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
-                                <i class="ri-message-3-line"></i>
-                                {{ __('supervisor.teachers.message_teacher') }}
-                            </a>
+                                    {{-- Message --}}
+                                    <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $teacherId]) }}"
+                                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors">
+                                        <i class="ri-message-3-line"></i>
+                                        {{ __('supervisor.teachers.message_teacher') }}
+                                    </a>
 
-                            {{-- Admin-only actions --}}
-                            @if($isAdmin)
-                                <span class="hidden md:inline text-gray-300 mx-0.5">|</span>
+                                    {{-- Admin-only actions --}}
+                                    @if($isAdmin)
+                                        <span class="hidden md:inline text-gray-300 mx-0.5">|</span>
 
-                                {{-- Toggle Status --}}
-                                <form id="toggle-form-{{ $teacherId }}" method="POST"
-                                      action="{{ route('manage.teachers.toggle-status', ['subdomain' => $subdomain, 'teacher' => $teacherId]) }}">
-                                    @csrf
-                                </form>
-                                <button type="button"
-                                    onclick="window.confirmAction({
-                                        title: @js($teacher['is_active'] ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate')),
-                                        message: @js($teacher['is_active'] ? __('supervisor.teachers.confirm_deactivate') : __('supervisor.teachers.confirm_activate')),
-                                        confirmText: @js($teacher['is_active'] ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate')),
-                                        isDangerous: {{ $teacher['is_active'] ? 'true' : 'false' }},
-                                        icon: '{{ $teacher['is_active'] ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}',
-                                        onConfirm: () => document.getElementById('toggle-form-{{ $teacherId }}').submit()
-                                    })"
-                                    class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg transition-colors
-                                        {{ $teacher['is_active']
-                                            ? 'bg-orange-50 text-orange-700 hover:bg-orange-100'
-                                            : 'bg-green-50 text-green-700 hover:bg-green-100' }}">
-                                    <i class="{{ $teacher['is_active'] ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}"></i>
-                                    {{ $teacher['is_active'] ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate') }}
-                                </button>
+                                        {{-- Toggle Status --}}
+                                        <form id="toggle-form-{{ $teacherId }}" method="POST"
+                                              action="{{ route('manage.teachers.toggle-status', ['subdomain' => $subdomain, 'teacher' => $teacherId]) }}">
+                                            @csrf
+                                        </form>
+                                        <button type="button"
+                                            onclick="window.confirmAction({
+                                                title: @js($teacher['is_active'] ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate')),
+                                                message: @js($teacher['is_active'] ? __('supervisor.teachers.confirm_deactivate') : __('supervisor.teachers.confirm_activate')),
+                                                confirmText: @js($teacher['is_active'] ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate')),
+                                                isDangerous: {{ $teacher['is_active'] ? 'true' : 'false' }},
+                                                icon: '{{ $teacher['is_active'] ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}',
+                                                onConfirm: () => document.getElementById('toggle-form-{{ $teacherId }}').submit()
+                                            })"
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg transition-colors
+                                                {{ $teacher['is_active']
+                                                    ? 'bg-orange-50 text-orange-700 hover:bg-orange-100'
+                                                    : 'bg-green-50 text-green-700 hover:bg-green-100' }}">
+                                            <i class="{{ $teacher['is_active'] ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}"></i>
+                                            {{ $teacher['is_active'] ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate') }}
+                                        </button>
 
-                                {{-- Reset Password --}}
-                                <button type="button"
-                                    onclick="window.dispatchEvent(new CustomEvent('open-modal-reset-password-{{ $teacherId }}'))"
-                                    class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors">
-                                    <i class="ri-lock-password-line"></i>
-                                    {{ __('supervisor.teachers.reset_password') }}
-                                </button>
+                                        {{-- Reset Password --}}
+                                        <button type="button"
+                                            onclick="window.dispatchEvent(new CustomEvent('open-modal-reset-password-{{ $teacherId }}'))"
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors">
+                                            <i class="ri-lock-password-line"></i>
+                                            {{ __('supervisor.teachers.reset_password') }}
+                                        </button>
 
-                                {{-- Delete --}}
-                                <form id="delete-form-{{ $teacherId }}" method="POST"
-                                      action="{{ route('manage.teachers.destroy', ['subdomain' => $subdomain, 'teacher' => $teacherId]) }}">
-                                    @csrf
-                                    @method('DELETE')
-                                </form>
-                                <button type="button"
-                                    onclick="window.confirmAction({
-                                        title: @js(__('supervisor.teachers.delete_teacher')),
-                                        message: @js(__('supervisor.teachers.confirm_delete')),
-                                        confirmText: @js(__('supervisor.teachers.delete_teacher')),
-                                        isDangerous: true,
-                                        icon: 'ri-delete-bin-line',
-                                        onConfirm: () => document.getElementById('delete-form-{{ $teacherId }}').submit()
-                                    })"
-                                    class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
-                                    <i class="ri-delete-bin-line"></i>
-                                    {{ __('supervisor.teachers.delete_teacher') }}
-                                </button>
-                            @endif
+                                        {{-- Delete --}}
+                                        <form id="delete-form-{{ $teacherId }}" method="POST"
+                                              action="{{ route('manage.teachers.destroy', ['subdomain' => $subdomain, 'teacher' => $teacherId]) }}">
+                                            @csrf
+                                            @method('DELETE')
+                                        </form>
+                                        <button type="button"
+                                            onclick="window.confirmAction({
+                                                title: @js(__('supervisor.teachers.delete_teacher')),
+                                                message: @js(__('supervisor.teachers.confirm_delete')),
+                                                confirmText: @js(__('supervisor.teachers.delete_teacher')),
+                                                isDangerous: true,
+                                                icon: 'ri-delete-bin-line',
+                                                onConfirm: () => document.getElementById('delete-form-{{ $teacherId }}').submit()
+                                            })"
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
+                                            <i class="ri-delete-bin-line"></i>
+                                            {{ __('supervisor.teachers.delete_teacher') }}
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
                     </div>
 

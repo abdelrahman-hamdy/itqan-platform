@@ -109,6 +109,11 @@ return [
         'view_individual_circles' => 'Individual Circles',
         'view_trial_sessions' => 'Trial Sessions',
         'view_interactive_courses' => 'Interactive Courses',
+        'actions' => 'Actions',
+        'sort_rating_desc' => 'Highest Rated',
+        'sort_rating_asc' => 'Lowest Rated',
+        'sort_newest' => 'Newest',
+        'sort_oldest' => 'Oldest',
     ],
 
     'common' => [

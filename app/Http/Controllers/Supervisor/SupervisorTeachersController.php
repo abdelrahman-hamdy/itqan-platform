@@ -43,6 +43,8 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                         'gender' => $user->quranTeacherProfile?->gender ?? null,
                         'phone' => $user->phone ?? '',
                         'is_active' => (bool) ($user->active_status ?? false),
+                        'rating' => (float) ($user->quranTeacherProfile?->rating ?? 0),
+                        'created_at' => $user->created_at,
                     ];
                 });
             $teachers = $teachers->merge($quranTeachers);
@@ -69,6 +71,8 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                         'gender' => $user->academicTeacherProfile?->gender ?? null,
                         'phone' => $user->phone ?? '',
                         'is_active' => (bool) ($user->active_status ?? false),
+                        'rating' => (float) ($user->academicTeacherProfile?->rating ?? 0),
+                        'created_at' => $user->created_at,
                     ];
                 });
             $teachers = $teachers->merge($academicTeachers);
@@ -110,6 +114,10 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'name_desc' => $filtered->sortByDesc(fn ($t) => $t['user']->name),
             'entities_desc' => $filtered->sortByDesc('active_entities'),
             'entities_asc' => $filtered->sortBy('active_entities'),
+            'rating_desc' => $filtered->sortByDesc('rating'),
+            'rating_asc' => $filtered->sortBy('rating'),
+            'newest' => $filtered->sortByDesc('created_at'),
+            'oldest' => $filtered->sortBy('created_at'),
             default => $filtered->sortBy(fn ($t) => $t['user']->name),
         };
 
