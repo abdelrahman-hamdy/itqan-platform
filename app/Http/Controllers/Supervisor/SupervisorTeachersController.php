@@ -2,16 +2,24 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Models\AcademicGradeLevel;
 use App\Models\AcademicIndividualLesson;
+use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
+use App\Models\QuranTeacherProfile;
 use App\Models\User;
+use App\Services\AcademyContextService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as PasswordRules;
 use Illuminate\View\View;
 
 class SupervisorTeachersController extends BaseSupervisorWebController
@@ -212,6 +220,126 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
         return redirect()->route('manage.teachers.index', ['subdomain' => $subdomain])
             ->with('success', __('supervisor.teachers.teacher_deleted'));
+    }
+
+    public function create(Request $request, $subdomain = null): View
+    {
+        if (!$this->isAdminUser()) {
+            abort(403);
+        }
+
+        $academy = AcademyContextService::getCurrentAcademy();
+        $subjects = AcademicSubject::where('academy_id', $academy->id)->where('is_active', true)->orderBy('name')->get();
+        $gradeLevels = AcademicGradeLevel::where('academy_id', $academy->id)->where('is_active', true)->orderBy('name')->get();
+
+        return view('supervisor.teachers.create', compact('academy', 'subjects', 'gradeLevels'));
+    }
+
+    public function store(Request $request, $subdomain = null): RedirectResponse
+    {
+        if (!$this->isAdminUser()) {
+            abort(403);
+        }
+
+        $teacherType = $request->input('teacher_type', 'quran_teacher');
+
+        $rules = [
+            'teacher_type' => 'required|in:quran_teacher,academic_teacher',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'required|string|max:20',
+            'gender' => 'required|in:male,female',
+            'password' => PasswordRules::min(6)->letters()->numbers(),
+            'password_confirmation' => 'required|same:password',
+            'education_level' => 'required|in:diploma,bachelor,master,phd,other',
+            'university' => 'required|string|max:255',
+            'years_experience' => 'required|integer|min:0|max:50',
+        ];
+
+        if ($teacherType === 'academic_teacher') {
+            $rules['subjects'] = 'required|array|min:1';
+            $rules['grade_levels'] = 'required|array|min:1';
+            $rules['available_days'] = 'required|array|min:1';
+        }
+
+        if ($teacherType === 'quran_teacher') {
+            $rules['certifications'] = 'nullable|array';
+            $rules['certifications.*'] = 'string|max:255';
+        }
+
+        $validator = Validator::make($request->all(), $rules, [
+            'first_name.required' => __('auth.register.teacher.step2.validation.first_name_required', [], 'ar'),
+            'last_name.required' => __('auth.register.teacher.step2.validation.last_name_required', [], 'ar'),
+            'email.required' => __('auth.register.teacher.step2.validation.email_required', [], 'ar'),
+            'email.unique' => __('auth.register.teacher.step2.validation.email_unique', [], 'ar'),
+            'phone.required' => __('auth.register.teacher.step2.validation.phone_required', [], 'ar'),
+            'gender.required' => __('auth.register.teacher.step2.validation.gender_required', [], 'ar'),
+            'password.min' => __('supervisor.teachers.password_too_short'),
+            'password_confirmation.same' => __('supervisor.teachers.passwords_dont_match'),
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $academy = AcademyContextService::getCurrentAcademy();
+
+        $user = new User([
+            'academy_id' => $academy->id,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'password' => Hash::make($request->password),
+            'education_level' => $request->education_level,
+            'university' => $request->university,
+            'years_experience' => $request->years_experience,
+        ]);
+        $user->user_type = $teacherType;
+        $user->active_status = true; // Admin-created teachers are activated immediately
+        $user->save();
+
+        try {
+            if ($teacherType === 'quran_teacher') {
+                QuranTeacherProfile::create([
+                    'user_id' => $user->id,
+                    'academy_id' => $academy->id,
+                    'gender' => $request->gender,
+                    'educational_qualification' => $request->education_level,
+                    'teaching_experience_years' => $request->years_experience,
+                    'is_active' => true,
+                    'certifications' => $request->certifications ?? [],
+                ]);
+            } else {
+                AcademicTeacherProfile::create([
+                    'user_id' => $user->id,
+                    'academy_id' => $academy->id,
+                    'gender' => $request->gender,
+                    'education_level' => $request->education_level,
+                    'university' => $request->university,
+                    'teaching_experience_years' => $request->years_experience,
+                    'subject_ids' => $request->subjects ?? [],
+                    'grade_level_ids' => $request->grade_levels ?? [],
+                    'available_days' => $request->available_days ?? [],
+                    'certifications' => [],
+                    'is_active' => true,
+                ]);
+            }
+        } catch (QueryException $e) {
+            Log::error('Teacher creation failed: '.$e->getMessage(), [
+                'user_id' => $user->id,
+                'academy_id' => $academy->id,
+                'teacher_type' => $teacherType,
+            ]);
+
+            $user->delete();
+
+            return back()->withErrors(['error' => __('supervisor.teachers.create_error')])->withInput();
+        }
+
+        return redirect()->route('manage.teachers.index', ['subdomain' => $subdomain])
+            ->with('success', __('supervisor.teachers.teacher_created'));
     }
 
     private function ensureTeacherBelongsToScope(User $teacher): void

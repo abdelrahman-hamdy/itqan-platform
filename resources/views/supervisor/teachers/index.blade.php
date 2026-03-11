@@ -23,9 +23,18 @@
     />
 
     <!-- Page Header -->
-    <div class="mb-6 md:mb-8">
-        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.teachers.page_title') }}</h1>
-        <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.teachers.page_subtitle') }}</p>
+    <div class="mb-6 md:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.teachers.page_title') }}</h1>
+            <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.teachers.page_subtitle') }}</p>
+        </div>
+        @if($isAdmin)
+            <a href="{{ route('manage.teachers.create', ['subdomain' => $subdomain]) }}"
+               class="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap cursor-pointer">
+                <i class="ri-add-line"></i>
+                {{ __('supervisor.teachers.add_teacher') }}
+            </a>
+        @endif
     </div>
 
     <!-- Stats -->
@@ -342,6 +351,13 @@
                                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-fuchsia-600 hover:bg-fuchsia-700 text-white transition-colors">
                                         <i class="ri-file-chart-line"></i>
                                         {{ __('supervisor.teachers.view_reports') }}
+                                    </a>
+
+                                    {{-- Earnings --}}
+                                    <a href="{{ route('manage.teacher-earnings.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
+                                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors">
+                                        <i class="ri-money-dollar-circle-line"></i>
+                                        {{ __('supervisor.teachers.view_earnings') }}
                                     </a>
 
                                     {{-- Message --}}

@@ -21,6 +21,7 @@ use App\Http\Controllers\Supervisor\SupervisorInteractiveCoursesController;
 use App\Http\Controllers\Supervisor\SupervisorProfileController;
 use App\Http\Controllers\Supervisor\SupervisorQuizzesController;
 use App\Http\Controllers\Supervisor\SupervisorSessionReportsController;
+use App\Http\Controllers\Supervisor\SupervisorTeacherEarningsController;
 use App\Http\Controllers\Supervisor\SupervisorTeachersController;
 use App\Http\Controllers\Teacher\IndividualCircleReportController;
 use App\Http\Controllers\Teacher\GroupCircleReportController;
@@ -38,9 +39,14 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Teachers
         Route::get('/teachers', [SupervisorTeachersController::class, 'index'])->name('teachers.index');
+        Route::get('/teachers/create', [SupervisorTeachersController::class, 'create'])->name('teachers.create');
+        Route::post('/teachers', [SupervisorTeachersController::class, 'store'])->name('teachers.store');
         Route::post('/teachers/{teacher}/toggle-status', [SupervisorTeachersController::class, 'toggleStatus'])->name('teachers.toggle-status');
         Route::post('/teachers/{teacher}/reset-password', [SupervisorTeachersController::class, 'resetPassword'])->name('teachers.reset-password');
         Route::delete('/teachers/{teacher}', [SupervisorTeachersController::class, 'destroy'])->name('teachers.destroy');
+
+        // Teacher Earnings
+        Route::get('/teacher-earnings', [SupervisorTeacherEarningsController::class, 'index'])->name('teacher-earnings.index');
 
         // Group Circles
         Route::get('/group-circles', [SupervisorGroupCirclesController::class, 'index'])->name('group-circles.index');

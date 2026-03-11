@@ -99,6 +99,12 @@
       <!-- Management -->
       <x-sidebar.nav-section :title="__('supervisor.sidebar.management')">
         <x-sidebar.nav-item
+          :href="route('manage.teacher-earnings.index', ['subdomain' => $subdomain])"
+          :label="__('supervisor.sidebar.teacher_earnings')"
+          icon="ri-money-dollar-circle-line"
+          :active="request()->routeIs('manage.teacher-earnings.*')" />
+
+        <x-sidebar.nav-item
           :href="route('manage.quizzes.index', ['subdomain' => $subdomain])"
           :label="__('supervisor.sidebar.quizzes')"
           icon="ri-questionnaire-line"
