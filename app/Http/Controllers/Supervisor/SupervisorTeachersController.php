@@ -40,10 +40,9 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                         'type_label' => __('supervisor.teachers.teacher_type_quran'),
                         'code' => $user->quranTeacherProfile?->teacher_code ?? '',
                         'active_entities' => $activeCircles + $activeIndividual,
-                        'entity_route' => 'manage.group-circles.index',
                         'gender' => $user->quranTeacherProfile?->gender ?? null,
                         'phone' => $user->phone ?? '',
-                        'is_active' => (bool) ($user->quranTeacherProfile?->is_approved ?? true),
+                        'is_active' => (bool) ($user->active_status ?? false),
                     ];
                 });
             $teachers = $teachers->merge($quranTeachers);
@@ -67,10 +66,9 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                         'type_label' => __('supervisor.teachers.teacher_type_academic'),
                         'code' => $user->academicTeacherProfile?->teacher_code ?? '',
                         'active_entities' => $activeLessons,
-                        'entity_route' => 'manage.academic-lessons.index',
                         'gender' => $user->academicTeacherProfile?->gender ?? null,
                         'phone' => $user->phone ?? '',
-                        'is_active' => (bool) ($user->is_active ?? true),
+                        'is_active' => (bool) ($user->active_status ?? false),
                     ];
                 });
             $teachers = $teachers->merge($academicTeachers);
@@ -147,17 +145,8 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
         $this->ensureTeacherBelongsToScope($teacher);
 
-        if ($teacher->quranTeacherProfile) {
-            $profile = $teacher->quranTeacherProfile;
-            $profile->is_approved = !$profile->is_approved;
-            $profile->save();
-        }
-
-        // For academic teachers, toggle user-level is_active if it exists
-        if ($teacher->academicTeacherProfile) {
-            $teacher->is_active = !$teacher->is_active;
-            $teacher->save();
-        }
+        $teacher->active_status = !$teacher->active_status;
+        $teacher->save();
 
         return redirect()->back()->with('success', __('supervisor.teachers.status_updated'));
     }
@@ -170,11 +159,15 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
         $this->ensureTeacherBelongsToScope($teacher);
 
-        $newPassword = Str::random(10);
+        $newPassword = $request->input('new_password');
+        if (!$newPassword || mb_strlen($newPassword) < 6) {
+            return redirect()->back()->with('error', __('supervisor.teachers.password_too_short'));
+        }
+
         $teacher->password = Hash::make($newPassword);
         $teacher->save();
 
-        return redirect()->back()->with('success', __('supervisor.teachers.password_reset_success') . ': ' . $newPassword);
+        return redirect()->back()->with('success', __('supervisor.teachers.password_reset_success'));
     }
 
     public function destroy(Request $request, $subdomain, User $teacher): RedirectResponse
