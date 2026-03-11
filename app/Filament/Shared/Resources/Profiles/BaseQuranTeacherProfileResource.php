@@ -69,7 +69,7 @@ abstract class BaseQuranTeacherProfileResource extends Resource
                     Select::make('gender')->label('الجنس')->options(Gender::options())->default(Gender::MALE->value)->required(),
                 ]),
                 FileUpload::make('avatar')->label('الصورة الشخصية')->image()->imageEditor()->circleCropper()
-                    ->directory(static::getTenantDirectoryLazy('avatars/quran_teachers'))->maxSize(2048),
+                    ->disk('public')->directory(static::getTenantDirectoryLazy('avatars/quran-teachers'))->maxSize(2048),
             ]),
 
             Section::make('المؤهلات والخبرة')->schema([

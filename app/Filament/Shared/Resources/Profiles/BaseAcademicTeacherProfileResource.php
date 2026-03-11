@@ -72,7 +72,7 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
                     Select::make('gender')->label('الجنس')->options(Gender::options())->default(Gender::MALE->value)->required(),
                 ]),
                 FileUpload::make('avatar')->label('الصورة الشخصية')->image()->imageEditor()->circleCropper()
-                    ->directory(static::getTenantDirectoryLazy('avatars/academic_teachers'))->maxSize(2048),
+                    ->disk('public')->directory(static::getTenantDirectoryLazy('avatars/academic-teachers'))->maxSize(2048),
             ]),
 
             Section::make('المؤهلات والخبرة')->schema([
