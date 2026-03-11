@@ -142,16 +142,8 @@ class SupervisorStudentsController extends BaseSupervisorWebController
         $totalStudents = $students->count();
         $activeCount = $students->where('is_active', true)->count();
         $inactiveCount = $totalStudents - $activeCount;
-
-        $quranStudents = $students->filter(fn ($s) => in_array('quran', $s['programs']));
-        $quranCount = $quranStudents->count();
-        $quranMale = $quranStudents->where('gender', 'male')->count();
-        $quranFemale = $quranStudents->where('gender', 'female')->count();
-
-        $academicStudents = $students->filter(fn ($s) => in_array('academic', $s['programs']));
-        $academicCount = $academicStudents->count();
-        $academicMale = $academicStudents->where('gender', 'male')->count();
-        $academicFemale = $academicStudents->where('gender', 'female')->count();
+        $maleCount = $students->where('gender', 'male')->count();
+        $femaleCount = $students->where('gender', 'female')->count();
 
         // Apply filters
         $filtered = $students;
@@ -214,12 +206,8 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             'totalStudents' => $totalStudents,
             'activeCount' => $activeCount,
             'inactiveCount' => $inactiveCount,
-            'quranCount' => $quranCount,
-            'quranMale' => $quranMale,
-            'quranFemale' => $quranFemale,
-            'academicCount' => $academicCount,
-            'academicMale' => $academicMale,
-            'academicFemale' => $academicFemale,
+            'maleCount' => $maleCount,
+            'femaleCount' => $femaleCount,
             'filteredCount' => $filteredValues->count(),
             'isAdmin' => $isAdmin,
             'gradeLevels' => $gradeLevels,

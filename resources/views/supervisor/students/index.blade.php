@@ -40,9 +40,9 @@
     </div>
 
     <!-- Stats -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 mb-6">
         {{-- Total Students --}}
-        <div class="col-span-2 sm:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <i class="ri-group-line text-blue-600"></i>
@@ -51,92 +51,45 @@
                     <p class="text-xl font-bold text-gray-900">{{ $totalStudents }}</p>
                     <p class="text-xs text-gray-600">{{ __('supervisor.students.total_students') }}</p>
                 </div>
-                <div class="hidden md:flex flex-col gap-1 text-xs text-gray-500">
-                    <span class="flex items-center gap-1">
-                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                        {{ __('supervisor.teachers.active') }}: <strong class="text-gray-700">{{ $activeCount }}</strong>
-                    </span>
-                    <span class="flex items-center gap-1">
-                        <span class="w-2 h-2 rounded-full bg-red-400"></span>
-                        {{ __('supervisor.teachers.inactive') }}: <strong class="text-gray-700">{{ $inactiveCount }}</strong>
-                    </span>
-                </div>
-            </div>
-            <div class="flex items-center gap-4 text-xs text-gray-500 pt-2 md:hidden">
-                <span class="flex items-center gap-1">
-                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                    {{ __('supervisor.teachers.active') }}: <strong class="text-gray-700">{{ $activeCount }}</strong>
-                </span>
-                <span class="flex items-center gap-1">
-                    <span class="w-2 h-2 rounded-full bg-red-400"></span>
-                    {{ __('supervisor.teachers.inactive') }}: <strong class="text-gray-700">{{ $inactiveCount }}</strong>
-                </span>
             </div>
         </div>
 
-        {{-- Quran Students --}}
+        {{-- Active Students --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-book-read-line text-green-600"></i>
+                    <i class="ri-checkbox-circle-line text-green-600"></i>
                 </div>
                 <div class="flex-1">
-                    <p class="text-xl font-bold text-gray-900">{{ $quranCount }}</p>
-                    <p class="text-xs text-gray-600">{{ __('supervisor.students.quran_students') }}</p>
+                    <p class="text-xl font-bold text-gray-900">{{ $activeCount }}</p>
+                    <p class="text-xs text-gray-600">{{ __('supervisor.students.active_students') }}</p>
                 </div>
-                <div class="hidden md:flex flex-col gap-1 text-xs text-gray-500">
-                    <span class="flex items-center gap-1">
-                        <i class="ri-men-line text-blue-500"></i>
-                        {{ __('supervisor.students.male_student') }}: <strong class="text-gray-700">{{ $quranMale }}</strong>
-                    </span>
-                    <span class="flex items-center gap-1">
-                        <i class="ri-women-line text-pink-500"></i>
-                        {{ __('supervisor.students.female_student') }}: <strong class="text-gray-700">{{ $quranFemale }}</strong>
-                    </span>
-                </div>
-            </div>
-            <div class="flex items-center gap-4 text-xs text-gray-500 pt-2 md:hidden">
-                <span class="flex items-center gap-1">
-                    <i class="ri-men-line text-blue-500"></i>
-                    {{ __('supervisor.students.male_student') }}: <strong class="text-gray-700">{{ $quranMale }}</strong>
-                </span>
-                <span class="flex items-center gap-1">
-                    <i class="ri-women-line text-pink-500"></i>
-                    {{ __('supervisor.students.female_student') }}: <strong class="text-gray-700">{{ $quranFemale }}</strong>
-                </span>
             </div>
         </div>
 
-        {{-- Academic Students --}}
+        {{-- Male Students --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-graduation-cap-line text-violet-600"></i>
+                <div class="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-men-line text-sky-600"></i>
                 </div>
                 <div class="flex-1">
-                    <p class="text-xl font-bold text-gray-900">{{ $academicCount }}</p>
-                    <p class="text-xs text-gray-600">{{ __('supervisor.students.academic_students') }}</p>
-                </div>
-                <div class="hidden md:flex flex-col gap-1 text-xs text-gray-500">
-                    <span class="flex items-center gap-1">
-                        <i class="ri-men-line text-blue-500"></i>
-                        {{ __('supervisor.students.male_student') }}: <strong class="text-gray-700">{{ $academicMale }}</strong>
-                    </span>
-                    <span class="flex items-center gap-1">
-                        <i class="ri-women-line text-pink-500"></i>
-                        {{ __('supervisor.students.female_student') }}: <strong class="text-gray-700">{{ $academicFemale }}</strong>
-                    </span>
+                    <p class="text-xl font-bold text-gray-900">{{ $maleCount }}</p>
+                    <p class="text-xs text-gray-600">{{ __('supervisor.students.male_students') }}</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4 text-xs text-gray-500 pt-2 md:hidden">
-                <span class="flex items-center gap-1">
-                    <i class="ri-men-line text-blue-500"></i>
-                    {{ __('supervisor.students.male_student') }}: <strong class="text-gray-700">{{ $academicMale }}</strong>
-                </span>
-                <span class="flex items-center gap-1">
-                    <i class="ri-women-line text-pink-500"></i>
-                    {{ __('supervisor.students.female_student') }}: <strong class="text-gray-700">{{ $academicFemale }}</strong>
-                </span>
+        </div>
+
+        {{-- Female Students --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-women-line text-pink-600"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-xl font-bold text-gray-900">{{ $femaleCount }}</p>
+                    <p class="text-xs text-gray-600">{{ __('supervisor.students.female_students') }}</p>
+                </div>
             </div>
         </div>
     </div>
