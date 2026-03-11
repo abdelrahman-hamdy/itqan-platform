@@ -38,6 +38,9 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Teachers
         Route::get('/teachers', [SupervisorTeachersController::class, 'index'])->name('teachers.index');
+        Route::post('/teachers/{teacher}/toggle-status', [SupervisorTeachersController::class, 'toggleStatus'])->name('teachers.toggle-status');
+        Route::post('/teachers/{teacher}/reset-password', [SupervisorTeachersController::class, 'resetPassword'])->name('teachers.reset-password');
+        Route::delete('/teachers/{teacher}', [SupervisorTeachersController::class, 'destroy'])->name('teachers.destroy');
 
         // Group Circles
         Route::get('/group-circles', [SupervisorGroupCirclesController::class, 'index'])->name('group-circles.index');
