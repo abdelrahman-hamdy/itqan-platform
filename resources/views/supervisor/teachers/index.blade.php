@@ -310,7 +310,7 @@
                                             {{ __('supervisor.teachers.view_circles') }}
                                         </a>
                                         <a href="{{ route('manage.individual-circles.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
-                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition-colors">
+                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-yellow-600 hover:bg-yellow-700 text-white transition-colors">
                                             <i class="ri-user-line"></i>
                                             {{ __('supervisor.teachers.view_individual_circles') }}
                                         </a>
