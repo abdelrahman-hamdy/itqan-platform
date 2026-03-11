@@ -54,7 +54,7 @@ return [
     ],
 
     'teachers' => [
-        'page_title' => 'المعلمون المُعينون',
+        'page_title' => 'المعلمون',
         'page_subtitle' => 'قائمة المعلمين الذين تشرف عليهم',
         'teacher_type_quran' => 'معلم قرآن',
         'teacher_type_academic' => 'معلم أكاديمي',
