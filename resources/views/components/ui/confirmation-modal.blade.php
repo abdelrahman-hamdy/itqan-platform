@@ -64,7 +64,7 @@
 
     {{-- Modal Container - Bottom sheet on mobile, centered on desktop --}}
     <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4"
-         @click="close()"
+         @click="close()">
         {{-- Modal Content --}}
         <div
             @click.stop
