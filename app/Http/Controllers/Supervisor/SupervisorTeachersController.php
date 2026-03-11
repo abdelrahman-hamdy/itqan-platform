@@ -184,8 +184,14 @@ class SupervisorTeachersController extends BaseSupervisorWebController
         $this->ensureTeacherBelongsToScope($teacher);
 
         $newPassword = $request->input('new_password');
+        $confirmation = $request->input('new_password_confirmation');
+
         if (!$newPassword || mb_strlen($newPassword) < 6) {
             return redirect()->back()->with('error', __('supervisor.teachers.password_too_short'));
+        }
+
+        if ($newPassword !== $confirmation) {
+            return redirect()->back()->with('error', __('supervisor.teachers.passwords_dont_match'));
         }
 
         $teacher->password = Hash::make($newPassword);

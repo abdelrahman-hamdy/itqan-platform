@@ -413,16 +413,36 @@
                     {{-- Password Reset Modal --}}
                     @if($isAdmin)
                         <x-responsive.modal id="reset-password-{{ $teacherId }}" :title="__('supervisor.teachers.reset_password')" size="sm">
-                            <form method="POST" action="{{ route('manage.teachers.reset-password', ['subdomain' => $subdomain, 'teacher' => $teacherId]) }}">
+                            <form method="POST" action="{{ route('manage.teachers.reset-password', ['subdomain' => $subdomain, 'teacher' => $teacherId]) }}"
+                                  x-data="{ showPass: false, showConfirm: false }">
                                 @csrf
                                 <div class="space-y-4">
                                     <p class="text-sm text-gray-600">{{ __('supervisor.teachers.reset_password_description', ['name' => $teacher['user']->name]) }}</p>
                                     <div>
                                         <label for="new_password_{{ $teacherId }}" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teachers.new_password') }}</label>
-                                        <input type="text" name="new_password" id="new_password_{{ $teacherId }}"
-                                               class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                                               placeholder="{{ __('supervisor.teachers.new_password_placeholder') }}"
-                                               required minlength="6">
+                                        <div class="relative">
+                                            <input :type="showPass ? 'text' : 'password'" name="new_password" id="new_password_{{ $teacherId }}"
+                                                   class="min-h-[44px] w-full px-3 py-2 pe-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                                                   placeholder="{{ __('supervisor.teachers.new_password_placeholder') }}"
+                                                   required minlength="6">
+                                            <button type="button" @click="showPass = !showPass"
+                                                class="cursor-pointer absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600">
+                                                <i :class="showPass ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="new_password_confirmation_{{ $teacherId }}" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teachers.confirm_password') }}</label>
+                                        <div class="relative">
+                                            <input :type="showConfirm ? 'text' : 'password'" name="new_password_confirmation" id="new_password_confirmation_{{ $teacherId }}"
+                                                   class="min-h-[44px] w-full px-3 py-2 pe-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                                                   placeholder="{{ __('supervisor.teachers.confirm_password_placeholder') }}"
+                                                   required minlength="6">
+                                            <button type="button" @click="showConfirm = !showConfirm"
+                                                class="cursor-pointer absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600">
+                                                <i :class="showConfirm ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 <x-slot:footer>
