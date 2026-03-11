@@ -310,6 +310,13 @@ abstract class BaseAcademicSessionReportResource extends BaseResource
                 ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->first_name ?? 'طالب #'.$record->id)
                 ->searchable()
                 ->preload(),
+
+            SelectFilter::make('teacher_id')
+                ->label('المعلم')
+                ->relationship('teacher', 'first_name', fn (Builder $query) => $query->where('user_type', 'teacher'))
+                ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->first_name ?? 'معلم #'.$record->id)
+                ->searchable()
+                ->preload(),
         ];
     }
 
