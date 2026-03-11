@@ -61,7 +61,7 @@
     <x-ui.breadcrumb
         :items="[
             ['label' => __($t.'breadcrumb'), 'route' => route('manage.sessions.index', ['subdomain' => $subdomain])],
-            ['label' => $session->session_code ?? $typeConfig['label']],
+            ['label' => $session->title ?? $session->session_code ?? $typeConfig['label'], 'truncate' => true],
         ]"
         view-type="supervisor"
     />
