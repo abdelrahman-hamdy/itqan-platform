@@ -3,6 +3,7 @@
     'routeParams' => [],
     'paginatedRows',
     'entityOptions' => [],
+    'teacherOptions' => [],
     'totalStudents' => 0,
     'totalEntities' => 0,
     'avgAttendance' => 0,
@@ -18,7 +19,7 @@
         'interactive' => __('reports.type_interactive_course'),
     ];
 
-    $hasActiveFilters = request('type') || request('entity_id') || request('student_search');
+    $hasActiveFilters = request('type') || request('entity_id') || request('student_search') || request('teacher_id');
 
     $typeBadgeConfig = [
         'quran_individual' => ['class' => 'bg-green-100 text-green-700', 'text' => __('reports.type_quran_individual'), 'icon' => 'ri-book-open-line', 'iconBg' => 'bg-gradient-to-br from-green-500 to-green-600'],
@@ -88,7 +89,7 @@
                 {{ __('reports.filter') }}
                 @if($hasActiveFilters)
                     @php
-                        $filterCount = (request('type') ? 1 : 0) + (request('entity_id') ? 1 : 0) + (request('student_search') ? 1 : 0);
+                        $filterCount = (request('type') ? 1 : 0) + (request('entity_id') ? 1 : 0) + (request('student_search') ? 1 : 0) + (request('teacher_id') ? 1 : 0);
                     @endphp
                     <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-indigo-500 rounded-full">{{ $filterCount }}</span>
                 @endif
@@ -130,6 +131,20 @@
                                placeholder="{{ __('reports.search_student_placeholder') }}"
                                class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
+
+                    {{-- Teacher Filter --}}
+                    @if(!empty($teacherOptions))
+                        <div>
+                            <label for="overview_teacher_id" class="block text-sm font-medium text-gray-700 mb-1">{{ __('reports.teacher_name') }}</label>
+                            <select name="teacher_id" id="overview_teacher_id"
+                                    class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">{{ __('reports.all_teachers') }}</option>
+                                @foreach($teacherOptions as $id => $name)
+                                    <option value="{{ $id }}" {{ request('teacher_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
                 </div>
                 <div class="flex flex-wrap items-center gap-3 mt-4">
                     <button type="submit" class="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">

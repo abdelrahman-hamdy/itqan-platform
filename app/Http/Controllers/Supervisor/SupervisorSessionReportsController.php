@@ -40,13 +40,28 @@ class SupervisorSessionReportsController extends BaseSupervisorWebController
         $type = $request->input('type');
         $entityId = $request->input('entity_id') ? (int) $request->input('entity_id') : null;
         $studentSearch = $request->input('student_search');
+        $teacherIdFilter = $request->input('teacher_id') ? (int) $request->input('teacher_id') : null;
 
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
         $academicProfileIds = $this->getAssignedAcademicTeacherProfileIds();
 
+        // Build teacher options from full list before filtering
+        $teacherOptions = $this->buildTeacherOptions($quranTeacherIds, $academicProfileIds);
+
+        // Narrow teacher arrays when filtering by a specific teacher
+        $filteredQuranTeacherIds = $quranTeacherIds;
+        $filteredAcademicProfileIds = $academicProfileIds;
+        if ($teacherIdFilter) {
+            $filteredQuranTeacherIds = in_array($teacherIdFilter, $quranTeacherIds) ? [$teacherIdFilter] : [];
+            $filteredAcademicProfileIds = \App\Models\AcademicTeacherProfile::whereIn('id', $academicProfileIds)
+                ->where('user_id', $teacherIdFilter)
+                ->pluck('id')
+                ->toArray();
+        }
+
         $rows = $this->overviewService->getStudentOverview(
-            $quranTeacherIds,
-            $academicProfileIds,
+            $filteredQuranTeacherIds,
+            $filteredAcademicProfileIds,
             $type,
             $entityId,
             $studentSearch,
@@ -54,7 +69,6 @@ class SupervisorSessionReportsController extends BaseSupervisorWebController
         );
 
         $entityOptions = $this->overviewService->buildEntityOptions($quranTeacherIds, $academicProfileIds);
-        $teacherOptions = $this->buildTeacherOptions($quranTeacherIds, $academicProfileIds);
 
         // Stats
         $totalStudents = $rows->count();
