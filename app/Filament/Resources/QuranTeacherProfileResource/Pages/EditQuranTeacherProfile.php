@@ -38,13 +38,23 @@ class EditQuranTeacherProfile extends EditRecord
     {
         $data = $this->form->getRawState();
 
-        if ($this->record->user_id && isset($data['first_name'])) {
-            $this->record->user->update([
-                'first_name' => $data['first_name'],
-                'last_name' => $data['last_name'],
-                'email' => $data['email'],
+        if ($this->record->user_id && $this->record->user) {
+            $userData = [
+                'first_name' => $data['first_name'] ?? $this->record->user->first_name,
+                'last_name' => $data['last_name'] ?? $this->record->user->last_name,
+                'email' => $data['email'] ?? $this->record->user->email,
                 'phone' => $data['phone'] ?? null,
-            ]);
+            ];
+
+            if (! empty($data['password'])) {
+                $userData['password'] = $data['password'];
+            }
+
+            if (array_key_exists('user_active_status', $data)) {
+                $userData['active_status'] = (bool) $data['user_active_status'];
+            }
+
+            $this->record->user->update($userData);
         }
     }
 }

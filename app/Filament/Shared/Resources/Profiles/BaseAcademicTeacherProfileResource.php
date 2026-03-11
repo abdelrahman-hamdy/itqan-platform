@@ -2,17 +2,25 @@
 
 namespace App\Filament\Shared\Resources\Profiles;
 
+use App\Enums\EducationalQualification;
 use App\Enums\Gender;
+use App\Enums\TeachingLanguage;
+use App\Enums\WeekDays;
 use App\Filament\Concerns\TenantAwareFileUpload;
+use App\Models\AcademicGradeLevel;
+use App\Models\AcademicPackage;
 use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
 use App\Rules\PasswordRules;
 use App\Services\AcademyContextService;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
@@ -66,6 +74,53 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
                 FileUpload::make('avatar')->label('الصورة الشخصية')->image()->imageEditor()->circleCropper()
                     ->directory(static::getTenantDirectoryLazy('avatars/academic_teachers'))->maxSize(2048),
             ]),
+
+            Section::make('المؤهلات والخبرة')->schema([
+                Grid::make(2)->schema([
+                    Select::make('education_level')->label('المؤهل العلمي')
+                        ->options(EducationalQualification::options()),
+                    TextInput::make('university')->label('الجامعة')->maxLength(255),
+                    TextInput::make('teaching_experience_years')->label('سنوات الخبرة في التدريس')
+                        ->numeric()->minValue(0)->maxValue(50),
+                ]),
+                TagsInput::make('certifications')->label('الشهادات'),
+                CheckboxList::make('languages')->label('لغات التدريس')
+                    ->options(TeachingLanguage::toArray())->columns(4),
+            ]),
+
+            Section::make('التخصصات')->schema([
+                Select::make('subject_ids')->label('المواد الدراسية')
+                    ->multiple()->searchable()
+                    ->options(fn () => AcademicSubject::pluck('name', 'id')->toArray()),
+                Select::make('grade_level_ids')->label('المراحل الدراسية')
+                    ->multiple()->searchable()
+                    ->options(fn () => AcademicGradeLevel::pluck('name', 'id')->toArray()),
+                Select::make('package_ids')->label('الباقات')
+                    ->multiple()->searchable()
+                    ->options(fn () => AcademicPackage::pluck('name', 'id')->toArray()),
+            ]),
+
+            Section::make('الجدول والتوفر')->schema([
+                CheckboxList::make('available_days')->label('أيام التوفر')
+                    ->options(WeekDays::options())->columns(4),
+                Grid::make(2)->schema([
+                    TimePicker::make('available_time_start')->label('وقت البداية'),
+                    TimePicker::make('available_time_end')->label('وقت النهاية'),
+                ]),
+            ]),
+
+            Section::make('التسعير')->schema([
+                TextInput::make('session_price_individual')->label('سعر الجلسة الفردية')
+                    ->numeric()->prefix('ر.س')->minValue(0),
+            ]),
+
+            Section::make('المحتوى التعريفي')->schema([
+                Textarea::make('bio_arabic')->label('نبذة مختصرة (عربي)')->rows(3)->maxLength(1000),
+                Textarea::make('bio_english')->label('نبذة مختصرة (إنجليزي)')->rows(3)->maxLength(1000),
+                TextInput::make('preview_video')->label('رابط فيديو تعريفي')->url(),
+                Textarea::make('notes')->label('ملاحظات')->rows(3),
+            ]),
+
             Section::make('معلومات الحساب')->schema([
                 Grid::make(2)->schema([
                     TextInput::make('password')->label('كلمة المرور')->password()->revealable()
@@ -80,7 +135,6 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
                             $component->state($record->user->active_status);
                         }
                     })->dehydrated(false),
-                Textarea::make('bio')->label('نبذة مختصرة')->rows(3)->maxLength(500),
             ]),
         ]);
     }
