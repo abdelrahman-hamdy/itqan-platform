@@ -2,27 +2,24 @@
 
 namespace App\Filament\Shared\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Actions\Action;
-use Filament\Actions\BulkAction;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
 use App\Models\TeacherEarning;
-use Filament\Forms;
+use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -39,7 +36,7 @@ abstract class BaseTeacherEarningResource extends Resource
 {
     protected static ?string $model = TeacherEarning::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-currency-dollar';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-currency-dollar';
 
     protected static ?string $navigationLabel = 'أرباح المعلمين';
 
@@ -368,22 +365,6 @@ abstract class BaseTeacherEarningResource extends Resource
     /**
      * Get finalize action for earnings.
      */
-    protected static function getFinalizeAction(): Action
-    {
-        return Action::make('finalize')
-            ->label('تأكيد')
-            ->icon('heroicon-o-check-circle')
-            ->color('success')
-            ->visible(fn ($record) => ! $record->is_finalized && ! $record->is_disputed)
-            ->requiresConfirmation()
-            ->modalHeading('تأكيد الربح')
-            ->modalDescription('هل أنت متأكد من تأكيد هذا الربح؟')
-            ->action(fn ($record) => $record->update(['is_finalized' => true]));
-    }
-
-    /**
-     * Get dispute action for earnings.
-     */
     protected static function getDisputeAction(): Action
     {
         return Action::make('dispute')
@@ -452,17 +433,6 @@ abstract class BaseTeacherEarningResource extends Resource
     /**
      * Get finalize bulk action.
      */
-    protected static function getFinalizeBulkAction(): BulkAction
-    {
-        return BulkAction::make('finalize_selected')
-            ->label('تأكيد المحدد')
-            ->icon('heroicon-o-check-circle')
-            ->color('success')
-            ->requiresConfirmation()
-            ->action(function ($records) {
-                $records->each(fn ($record) => $record->update(['is_finalized' => true]));
-            });
-    }
 
     // ========================================
     // Utility Methods

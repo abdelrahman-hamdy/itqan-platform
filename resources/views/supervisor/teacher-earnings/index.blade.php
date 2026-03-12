@@ -67,15 +67,15 @@
             </div>
         </div>
 
-        {{-- Pending --}}
+        {{-- Disputed --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-time-line text-amber-600"></i>
+                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-error-warning-line text-red-600"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-lg md:text-xl font-bold text-gray-900">{{ number_format($stats['pendingAmount'], 2) }}</p>
-                    <p class="text-xs text-gray-600 truncate">{{ __('supervisor.teacher_earnings.pending_earnings') }}</p>
+                    <p class="text-lg md:text-xl font-bold text-gray-900">{{ number_format($stats['disputedAmount'], 2) }}</p>
+                    <p class="text-xs text-gray-600 truncate">{{ __('supervisor.teacher_earnings.status_disputed') }}</p>
                 </div>
             </div>
         </div>
@@ -101,27 +101,6 @@
             <h2 class="text-base md:text-lg font-semibold text-gray-900">
                 {{ __('supervisor.teacher_earnings.list_title') }} ({{ $earnings->total() }})
             </h2>
-
-            {{-- Finalize All Pending Button --}}
-            @if($pendingCount > 0)
-                <form id="finalize-all-form" method="POST" action="{{ route('manage.teacher-earnings.finalize-all', ['subdomain' => $subdomain]) }}" class="hidden">
-                    @csrf
-                </form>
-                <button type="button"
-                    onclick="window.confirmAction({
-                        title: @js(__('supervisor.teacher_earnings.action_finalize_all')),
-                        message: @js(__('supervisor.teacher_earnings.confirm_finalize_all') . ' (' . __('supervisor.teacher_earnings.pending_earnings_count', ['count' => $pendingCount]) . ')'),
-                        confirmText: @js(__('supervisor.teacher_earnings.action_finalize_all')),
-                        isDangerous: false,
-                        icon: 'ri-checkbox-circle-line',
-                        onConfirm: () => document.getElementById('finalize-all-form').submit()
-                    })"
-                    class="cursor-pointer min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-xs font-medium">
-                    <i class="ri-checkbox-circle-line"></i>
-                    {{ __('supervisor.teacher_earnings.action_finalize_all') }}
-                    <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-green-500 rounded-full">{{ $pendingCount }}</span>
-                </button>
-            @endif
         </div>
 
         <!-- Collapsible Filters -->
@@ -235,8 +214,8 @@
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-amber-100 text-amber-700');
 
-                        $isPending = !$earning->is_finalized && !$earning->is_disputed;
                         $isDisputed = $earning->is_disputed;
+                        $canDispute = !$earning->is_disputed;
                     @endphp
 
                     <div class="px-4 md:px-6 py-4 md:py-5 hover:bg-gray-50/50 transition-colors">
@@ -299,25 +278,7 @@
 
                             {{-- Action Buttons --}}
                             <div class="flex items-center gap-2 flex-shrink-0">
-                                @if($isPending)
-                                    {{-- Finalize Button --}}
-                                    <form id="finalize-form-{{ $earning->id }}" method="POST" action="{{ route('manage.teacher-earnings.finalize', ['subdomain' => $subdomain, 'earning' => $earning->id]) }}" class="hidden">
-                                        @csrf
-                                    </form>
-                                    <button type="button"
-                                        onclick="window.confirmAction({
-                                            title: @js(__('supervisor.teacher_earnings.action_finalize')),
-                                            message: @js(__('supervisor.teacher_earnings.confirm_finalize')),
-                                            confirmText: @js(__('supervisor.teacher_earnings.action_finalize')),
-                                            isDangerous: false,
-                                            icon: 'ri-checkbox-circle-line',
-                                            onConfirm: () => document.getElementById('finalize-form-{{ $earning->id }}').submit()
-                                        })"
-                                        class="cursor-pointer min-h-[32px] inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors text-xs font-medium border border-green-200">
-                                        <i class="ri-checkbox-circle-line"></i>
-                                        <span class="hidden sm:inline">{{ __('supervisor.teacher_earnings.action_finalize') }}</span>
-                                    </button>
-
+                                @if($canDispute)
                                     {{-- Dispute Button --}}
                                     <button type="button"
                                         onclick="document.getElementById('dispute-modal-{{ $earning->id }}').classList.remove('hidden')"
@@ -339,7 +300,7 @@
                     </div>
 
                     {{-- Dispute Modal --}}
-                    @if($isPending)
+                    @if($canDispute)
                         <div id="dispute-modal-{{ $earning->id }}" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
                             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
                             <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">

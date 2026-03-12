@@ -2,9 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Database\QueryException;
-use InvalidArgumentException;
-use Throwable;
 use App\Contracts\EarningsCalculationServiceInterface;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
@@ -14,9 +11,12 @@ use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\TeacherEarning;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
+use Throwable;
 
 /**
  * Unified Earnings Calculation Service
@@ -105,7 +105,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
                     'earning_month' => $this->getEarningMonth($session),
                     'session_completed_at' => $session->ended_at ?? $session->scheduled_at,
                     'calculated_at' => now(),
-                    'is_finalized' => false,
+                    'is_finalized' => true,
                     'is_disputed' => false,
                 ]);
 

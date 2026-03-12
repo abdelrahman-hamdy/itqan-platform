@@ -9,15 +9,14 @@ use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
 use DB;
 use Filament\Actions\ActionGroup;
-use Filament\Actions\BulkActionGroup;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Filament\Forms\Components\TextInput;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -91,7 +90,6 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
             ActionGroup::make([
                 ViewAction::make()
                     ->label('عرض'),
-                static::getFinalizeAction(),
                 static::getDisputeAction(),
                 static::getResolveDisputeAction(),
             ]),
@@ -103,11 +101,7 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
      */
     protected static function getTableBulkActions(): array
     {
-        return [
-            BulkActionGroup::make([
-                static::getFinalizeBulkAction(),
-            ]),
-        ];
+        return [];
     }
 
     // ========================================

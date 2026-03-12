@@ -94,15 +94,15 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         $now = Carbon::now();
         $totalEarningsThisMonth = (clone $statsBase)->forMonth($now->year, $now->month)->sum('amount');
         $totalEarningsAllTime = (clone $statsBase)->sum('amount');
-        $pendingAmount = (clone $statsBase)->unpaid()->sum('amount');
         $finalizedAmount = (clone $statsBase)->finalized()->sum('amount');
+        $disputedAmount = (clone $statsBase)->disputed()->sum('amount');
         $sessionsCount = (clone $statsBase)->count();
 
         $stats = [
             'totalEarningsThisMonth' => $totalEarningsThisMonth,
             'totalEarningsAllTime' => $totalEarningsAllTime,
-            'pendingAmount' => $pendingAmount,
             'finalizedAmount' => $finalizedAmount,
+            'disputedAmount' => $disputedAmount,
             'sessionsCount' => $sessionsCount,
         ];
 
@@ -158,12 +158,6 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             ])
             ->toArray();
 
-        // Count pending earnings for the bulk finalize button
-        $pendingCount = TeacherEarning::where('academy_id', $academyId)
-            ->where($scopeQuery)
-            ->unpaid()
-            ->count();
-
         return view('supervisor.teacher-earnings.index', [
             'earnings' => $earnings,
             'stats' => $stats,
@@ -173,22 +167,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             'currentTeacherId' => $currentTeacherId,
             'currentMonth' => $currentMonth,
             'currentStatus' => $currentStatus,
-            'pendingCount' => $pendingCount,
         ]);
-    }
-
-    public function finalize(Request $request, $subdomain, TeacherEarning $earning): RedirectResponse
-    {
-        $this->authorize('update', $earning);
-        $this->validateEarningBelongsToAssignedTeachers($earning);
-
-        if ($earning->is_finalized || $earning->is_disputed) {
-            return back()->with('error', __('supervisor.teacher_earnings.cannot_finalize'));
-        }
-
-        $earning->update(['is_finalized' => true]);
-
-        return back()->with('success', __('supervisor.teacher_earnings.finalized_success'));
     }
 
     public function dispute(Request $request, $subdomain, TeacherEarning $earning): RedirectResponse
@@ -240,43 +219,6 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         ]);
 
         return back()->with('success', __('supervisor.teacher_earnings.resolved_success'));
-    }
-
-    public function finalizeAll(Request $request, $subdomain): RedirectResponse
-    {
-        $academyId = $this->getAcademyId();
-        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
-
-        $quranProfileIds = ! empty($quranTeacherIds)
-            ? QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->pluck('id')->toArray()
-            : [];
-        $academicProfileIds = ! empty($academicTeacherIds)
-            ? AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->pluck('id')->toArray()
-            : [];
-
-        $count = TeacherEarning::where('academy_id', $academyId)
-            ->where(function ($query) use ($quranProfileIds, $academicProfileIds) {
-                if (! empty($quranProfileIds)) {
-                    $query->orWhere(function ($sub) use ($quranProfileIds) {
-                        $sub->where('teacher_type', 'quran_teacher')
-                            ->whereIn('teacher_id', $quranProfileIds);
-                    });
-                }
-                if (! empty($academicProfileIds)) {
-                    $query->orWhere(function ($sub) use ($academicProfileIds) {
-                        $sub->where('teacher_type', 'academic_teacher')
-                            ->whereIn('teacher_id', $academicProfileIds);
-                    });
-                }
-                if (empty($quranProfileIds) && empty($academicProfileIds)) {
-                    $query->whereRaw('1 = 0');
-                }
-            })
-            ->unpaid()
-            ->update(['is_finalized' => true]);
-
-        return back()->with('success', __('supervisor.teacher_earnings.finalized_all_success', ['count' => $count]));
     }
 
     private function validateEarningBelongsToAssignedTeachers(TeacherEarning $earning): void

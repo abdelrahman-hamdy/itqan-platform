@@ -8,7 +8,6 @@ use App\Filament\Resources\TeacherEarningResource\Pages\ViewTeacherEarning;
 use App\Filament\Shared\Resources\BaseTeacherEarningResource;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
-use DB;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -73,7 +72,6 @@ class TeacherEarningResource extends BaseTeacherEarningResource
         return [
             ActionGroup::make([
                 ViewAction::make()->label('عرض'),
-                static::getFinalizeAction(),
                 static::getDisputeAction(),
                 static::getResolveDisputeAction(),
                 DeleteAction::make()->label('حذف'),
@@ -90,7 +88,6 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     {
         return [
             BulkActionGroup::make([
-                static::getFinalizeBulkAction(),
                 DeleteBulkAction::make(),
                 RestoreBulkAction::make()
                     ->label(__('filament.actions.restore_selected')),

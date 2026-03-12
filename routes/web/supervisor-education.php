@@ -83,10 +83,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Teacher Earnings
         Route::get('/teacher-earnings', [SupervisorTeacherEarningsController::class, 'index'])->name('teacher-earnings.index');
-        Route::post('/teacher-earnings/{earning}/finalize', [SupervisorTeacherEarningsController::class, 'finalize'])->name('teacher-earnings.finalize');
         Route::post('/teacher-earnings/{earning}/dispute', [SupervisorTeacherEarningsController::class, 'dispute'])->name('teacher-earnings.dispute');
         Route::post('/teacher-earnings/{earning}/resolve', [SupervisorTeacherEarningsController::class, 'resolve'])->name('teacher-earnings.resolve');
-        Route::post('/teacher-earnings/finalize-all', [SupervisorTeacherEarningsController::class, 'finalizeAll'])->name('teacher-earnings.finalize-all');
 
         // Group Circles
         Route::get('/group-circles', [SupervisorGroupCirclesController::class, 'index'])->name('group-circles.index');
