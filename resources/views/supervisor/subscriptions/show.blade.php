@@ -33,14 +33,6 @@
                 </span>
             </p>
         </div>
-        @if($isAdmin)
-            <div class="flex gap-2 flex-wrap">
-                <a href="{{ route('manage.subscriptions.edit', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}"
-                   class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700 transition-colors">
-                    <i class="ri-edit-line"></i>{{ __('supervisor.subscriptions.action_edit') }}
-                </a>
-            </div>
-        @endif
     </div>
 
     <!-- Info Card -->

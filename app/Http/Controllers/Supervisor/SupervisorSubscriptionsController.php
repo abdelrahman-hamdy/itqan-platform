@@ -147,52 +147,6 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         ]);
     }
 
-    public function edit(Request $request, $subdomain, string $type, $id): View
-    {
-        if (!$this->isAdminUser()) {
-            abort(403);
-        }
-
-        $subscription = $this->resolveSubscription($type, $id);
-        $this->ensureSubscriptionInScope($subscription, $type);
-
-        return view('supervisor.subscriptions.edit', [
-            'subscription' => $subscription,
-            'type' => $type,
-        ]);
-    }
-
-    public function update(Request $request, $subdomain, string $type, $id): RedirectResponse
-    {
-        if (!$this->isAdminUser()) {
-            abort(403);
-        }
-
-        $subscription = $this->resolveSubscription($type, $id);
-        $this->ensureSubscriptionInScope($subscription, $type);
-
-        $validator = Validator::make($request->all(), [
-            'total_sessions' => 'required|integer|min:1',
-            'starts_at' => 'required|date',
-            'ends_at' => 'required|date|after:starts_at',
-            'notes' => 'nullable|string|max:1000',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $subscription->update([
-            'total_sessions' => $request->total_sessions,
-            'starts_at' => $request->starts_at,
-            'ends_at' => $request->ends_at,
-            'notes' => $request->notes,
-        ]);
-
-        return redirect()->route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $id])
-            ->with('success', __('supervisor.subscriptions.updated_successfully'));
-    }
-
     // ========================================================================
     // Quick Actions (all POST, admin-only)
     // ========================================================================

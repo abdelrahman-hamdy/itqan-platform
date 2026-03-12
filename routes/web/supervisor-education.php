@@ -112,8 +112,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Subscriptions
         Route::get('/subscriptions', [SupervisorSubscriptionsController::class, 'index'])->name('subscriptions.index');
         Route::get('/subscriptions/{type}/{subscription}', [SupervisorSubscriptionsController::class, 'show'])->name('subscriptions.show')->whereIn('type', ['quran', 'academic']);
-        Route::get('/subscriptions/{type}/{subscription}/edit', [SupervisorSubscriptionsController::class, 'edit'])->name('subscriptions.edit')->whereIn('type', ['quran', 'academic']);
-        Route::put('/subscriptions/{type}/{subscription}', [SupervisorSubscriptionsController::class, 'update'])->name('subscriptions.update')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/activate', [SupervisorSubscriptionsController::class, 'activate'])->name('subscriptions.activate')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/pause', [SupervisorSubscriptionsController::class, 'pause'])->name('subscriptions.pause')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/resume', [SupervisorSubscriptionsController::class, 'resume'])->name('subscriptions.resume')->whereIn('type', ['quran', 'academic']);

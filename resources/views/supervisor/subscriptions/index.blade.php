@@ -271,12 +271,6 @@
                                     {{ __('supervisor.subscriptions.action_view') }}
                                 </a>
                                 @if($isAdmin)
-                                    <a href="{{ route('manage.subscriptions.edit', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}"
-                                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors">
-                                        <i class="ri-edit-line"></i>
-                                        {{ __('supervisor.subscriptions.action_edit') }}
-                                    </a>
-
                                     @if($sub['status'] === \App\Enums\SessionSubscriptionStatus::PAUSED)
                                         <form id="resume-form-{{ $sub['id'] }}" method="POST"
                                               action="{{ route('manage.subscriptions.resume', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">
