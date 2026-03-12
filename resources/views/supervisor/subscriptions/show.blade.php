@@ -23,6 +23,11 @@
     <!-- Header -->
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
+            <a href="{{ route('manage.subscriptions.index', ['subdomain' => $subdomain]) }}"
+               class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-2">
+                <i class="ri-arrow-right-line"></i>
+                {{ __('supervisor.subscriptions.page_title') }}
+            </a>
             <h1 class="text-xl sm:text-2xl font-bold text-gray-900">{{ __('supervisor.subscriptions.show_title') }}</h1>
             <p class="mt-1 text-sm text-gray-600">
                 <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $type === 'quran' ? 'bg-green-100 text-green-700' : 'bg-violet-100 text-violet-700' }}">
