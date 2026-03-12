@@ -919,6 +919,8 @@ return [
         'extend_title' => 'تمديد الاشتراك',
         'extend_message' => 'تمديد اشتراك الطالب :name',
         'current_end_date' => 'تاريخ الانتهاء الحالي',
+        'extended_for_days' => 'ممتد لـ :days يوم',
+        'grace_period_until' => 'فترة السماح حتى :date',
     ],
 
     'payments' => [

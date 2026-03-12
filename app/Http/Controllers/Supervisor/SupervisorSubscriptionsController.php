@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Supervisor;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -178,16 +179,45 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         $this->ensureSubscriptionInScope($subscription, $type);
 
         $validator = Validator::make($request->all(), [
-            'extend_days' => 'required|integer|min:1|max:7',
+            'extend_days' => 'required|integer|min:1|max:30',
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        $subscription->update([
-            'ends_at' => ($subscription->ends_at ?? now())->addDays((int) $request->extend_days),
-        ]);
+        $graceDays = (int) $request->extend_days;
+        $metadata = $subscription->metadata ?? [];
+
+        // Calculate grace_period_ends_at: stack on existing grace period or start from ends_at
+        $baseDate = isset($metadata['grace_period_ends_at'])
+            ? Carbon::parse($metadata['grace_period_ends_at'])
+            : ($subscription->ends_at ?? now());
+
+        $gracePeriodEndsAt = $baseDate->copy()->addDays($graceDays);
+        $metadata['grace_period_ends_at'] = $gracePeriodEndsAt->toDateTimeString();
+
+        // Log extension in metadata (same format as Filament action)
+        $metadata['extensions'] = $metadata['extensions'] ?? [];
+        $metadata['extensions'][] = [
+            'type' => 'grace_period',
+            'grace_days' => $graceDays,
+            'extended_by' => auth()->id(),
+            'extended_by_name' => auth()->user()->name,
+            'ends_at_at_time' => ($subscription->ends_at ?? now())->toDateTimeString(),
+            'grace_period_ends_at' => $gracePeriodEndsAt->toDateTimeString(),
+            'extended_at' => now()->toDateTimeString(),
+        ];
+
+        $updateData = ['metadata' => $metadata];
+
+        // If subscription is EXPIRED or SUSPENDED, transition to ACTIVE so the student regains access
+        if (in_array($subscription->status, [SessionSubscriptionStatus::EXPIRED, SessionSubscriptionStatus::SUSPENDED])) {
+            $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
+        }
+
+        // Only update metadata (+ status if needed) — do NOT change ends_at
+        $subscription->update($updateData);
 
         return redirect()->back()->with('success', __('supervisor.subscriptions.extended_successfully'));
     }

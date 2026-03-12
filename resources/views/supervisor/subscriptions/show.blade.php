@@ -82,6 +82,20 @@
                 <p class="text-sm font-semibold text-gray-900">{{ $subscription->starts_at?->format('Y-m-d') ?? '-' }}</p>
                 <p class="text-xs text-gray-500">{{ __('supervisor.subscriptions.to') }} {{ $subscription->ends_at?->format('Y-m-d') ?? '-' }}</p>
             </div>
+            @if($subscription->isInGracePeriod())
+                @php
+                    $graceMeta = $subscription->metadata ?? [];
+                    $graceEnd = \Carbon\Carbon::parse($graceMeta['grace_period_ends_at']);
+                    $graceDaysLeft = (int) now()->diffInDays($graceEnd, false);
+                @endphp
+                <div>
+                    <p class="text-xs text-gray-500 mb-1">{{ __('supervisor.subscriptions.grace_period_until', ['date' => $graceEnd->format('Y-m-d')]) }}</p>
+                    <p class="text-sm font-semibold text-orange-600">
+                        <i class="ri-timer-line"></i>
+                        {{ __('supervisor.subscriptions.extended_for_days', ['days' => max(0, $graceDaysLeft)]) }}
+                    </p>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -241,8 +255,8 @@
                     <p class="text-center text-gray-600 text-sm mb-4">{{ __('supervisor.subscriptions.extend_message', ['name' => $studentName]) }}</p>
                     <form method="POST" action="{{ route('manage.subscriptions.extend', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}" id="show-extend-form">
                         @csrf
-                        <label for="show_extend_days" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.subscriptions.extend_days') }} ({{ __('supervisor.subscriptions.extend_max_days', ['max' => 7]) }})</label>
-                        <input type="number" name="extend_days" id="show_extend_days" min="1" max="7" value="3" required
+                        <label for="show_extend_days" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.subscriptions.extend_days') }} ({{ __('supervisor.subscriptions.extend_max_days', ['max' => 30]) }})</label>
+                        <input type="number" name="extend_days" id="show_extend_days" min="1" max="30" value="3" required
                                class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
                         @if($subscription->ends_at)
                             <p class="text-xs text-gray-500 mt-1">{{ __('supervisor.subscriptions.current_end_date') }}: {{ $subscription->ends_at->format('Y-m-d') }}</p>

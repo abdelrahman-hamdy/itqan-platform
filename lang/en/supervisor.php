@@ -919,6 +919,8 @@ return [
         'extend_title' => 'Extend Subscription',
         'extend_message' => 'Extend subscription for :name',
         'current_end_date' => 'Current end date',
+        'extended_for_days' => 'Extended for :days days',
+        'grace_period_until' => 'Grace period until :date',
     ],
 
     'payments' => [

@@ -419,8 +419,18 @@ trait HasSubscriptionActions
                     'extended_at' => now()->toDateTimeString(),
                 ];
 
-                // Only update metadata — do NOT change ends_at or payment_status
-                $record->update(['metadata' => $metadata]);
+                $updateData = ['metadata' => $metadata];
+
+                // If subscription is EXPIRED or SUSPENDED, transition to ACTIVE
+                if (in_array($record->status, [
+                    SessionSubscriptionStatus::EXPIRED,
+                    SessionSubscriptionStatus::SUSPENDED,
+                ])) {
+                    $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
+                }
+
+                // Update metadata (+ status if needed) — do NOT change ends_at or payment_status
+                $record->update($updateData);
 
                 Notification::make()
                     ->success()
@@ -431,6 +441,8 @@ trait HasSubscriptionActions
             ->visible(fn (BaseSubscription $record) => in_array($record->status, [
                 SessionSubscriptionStatus::ACTIVE,
                 SessionSubscriptionStatus::PAUSED,
+                SessionSubscriptionStatus::EXPIRED,
+                SessionSubscriptionStatus::SUSPENDED,
             ]) && auth()->user()->hasRole(['super_admin', 'admin']));
     }
 
