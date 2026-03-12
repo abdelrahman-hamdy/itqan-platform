@@ -893,6 +893,7 @@ return [
         'session_duration' => 'مدة الجلسة',
         'minutes' => 'دقيقة',
         'extend_days' => 'عدد أيام التمديد',
+        'extend_max_days' => 'الحد الأقصى :max أيام',
         'created_successfully' => 'تم إنشاء الاشتراك بنجاح',
         'updated_successfully' => 'تم تحديث الاشتراك بنجاح',
         'status_updated' => 'تم تحديث حالة الاشتراك',

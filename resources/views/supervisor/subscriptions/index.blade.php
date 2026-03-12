@@ -364,8 +364,8 @@
                                         <p class="text-center text-gray-600 text-sm mb-4">{{ __('supervisor.subscriptions.extend_message', ['name' => $sub['student_name']]) }}</p>
                                         <form method="POST" action="{{ route('manage.subscriptions.extend', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}" id="extend-form-{{ $sub['id'] }}">
                                             @csrf
-                                            <label for="extend_days_{{ $sub['id'] }}" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.subscriptions.extend_days') }}</label>
-                                            <input type="number" name="extend_days" id="extend_days_{{ $sub['id'] }}" min="1" max="365" value="30" required
+                                            <label for="extend_days_{{ $sub['id'] }}" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.subscriptions.extend_days') }} ({{ __('supervisor.subscriptions.extend_max_days', ['max' => 7]) }})</label>
+                                            <input type="number" name="extend_days" id="extend_days_{{ $sub['id'] }}" min="1" max="7" value="3" required
                                                    class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
                                             @if($sub['end_date'])
                                                 <p class="text-xs text-gray-500 mt-1">{{ __('supervisor.subscriptions.current_end_date') }}: {{ $sub['end_date']->format('Y-m-d') }}</p>

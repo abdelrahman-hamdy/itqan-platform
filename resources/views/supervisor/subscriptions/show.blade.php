@@ -4,6 +4,11 @@
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
     $studentName = $type === 'quran' ? ($subscription->student?->name ?? '-') : ($subscription->student?->name ?? '-');
     $teacherName = $type === 'quran' ? ($subscription->quranTeacherUser?->name ?? '-') : ($subscription->teacher?->user?->name ?? '-');
+
+    $sessionsUsed = $subscription->sessions_used ?? 0;
+    $sessionsTotal = $subscription->total_sessions ?? 0;
+    $sessionsRemaining = $subscription->sessions_remaining ?? ($sessionsTotal - $sessionsUsed);
+    $progressPct = $sessionsTotal > 0 ? min(100, round(($sessionsUsed / $sessionsTotal) * 100)) : 0;
 @endphp
 
 <div class="max-w-5xl mx-auto">
@@ -31,7 +36,7 @@
         @if($isAdmin)
             <div class="flex gap-2 flex-wrap">
                 <a href="{{ route('manage.subscriptions.edit', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}"
-                   class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors">
+                   class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700 transition-colors">
                     <i class="ri-edit-line"></i>{{ __('supervisor.subscriptions.action_edit') }}
                 </a>
             </div>
@@ -52,9 +57,13 @@
             <div>
                 <p class="text-xs text-gray-500 mb-1">{{ __('supervisor.subscriptions.col_sessions') }}</p>
                 <p class="text-sm font-semibold text-gray-900">
-                    {{ $subscription->total_sessions_completed ?? 0 }} / {{ $subscription->total_sessions ?? 0 }}
-                    <span class="text-xs text-gray-500 font-normal">({{ __('supervisor.subscriptions.remaining') }}: {{ $subscription->sessions_remaining ?? (($subscription->total_sessions ?? 0) - ($subscription->total_sessions_completed ?? 0)) }})</span>
+                    {{ $sessionsUsed }} / {{ $sessionsTotal }}
+                    <span class="text-xs text-gray-500 font-normal">({{ __('supervisor.subscriptions.remaining') }}: {{ $sessionsRemaining }})</span>
                 </p>
+                <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                    <div class="h-1.5 rounded-full transition-all {{ $progressPct >= 80 ? 'bg-red-500' : ($progressPct >= 50 ? 'bg-amber-500' : 'bg-blue-500') }}"
+                         style="width: {{ $progressPct }}%"></div>
+                </div>
             </div>
             <div>
                 <p class="text-xs text-gray-500 mb-1">{{ __('supervisor.subscriptions.col_dates') }}</p>
@@ -70,46 +79,80 @@
             <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ __('supervisor.subscriptions.quick_actions') }}</h3>
             <div class="flex flex-wrap gap-2">
                 @if($subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE)
-                    <form method="POST" action="{{ route('manage.subscriptions.pause', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
+                    <form id="show-pause-form" method="POST" action="{{ route('manage.subscriptions.pause', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
                         @csrf
-                        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-sm hover:bg-amber-200 transition-colors">
-                            <i class="ri-pause-circle-line"></i>{{ __('supervisor.subscriptions.action_pause') }}
-                        </button>
                     </form>
+                    <button type="button"
+                        onclick="window.confirmAction({
+                            title: @js(__('supervisor.subscriptions.action_pause')),
+                            message: @js(__('supervisor.subscriptions.confirm_pause')),
+                            confirmText: @js(__('supervisor.subscriptions.action_pause')),
+                            isDangerous: false,
+                            icon: 'ri-pause-circle-line',
+                            onConfirm: () => document.getElementById('show-pause-form').submit()
+                        })"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600 transition-colors cursor-pointer">
+                        <i class="ri-pause-circle-line"></i>{{ __('supervisor.subscriptions.action_pause') }}
+                    </button>
                 @endif
                 @if($subscription->status === \App\Enums\SessionSubscriptionStatus::PAUSED)
-                    <form method="POST" action="{{ route('manage.subscriptions.resume', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
+                    <form id="show-resume-form" method="POST" action="{{ route('manage.subscriptions.resume', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
                         @csrf
-                        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition-colors">
-                            <i class="ri-play-circle-line"></i>{{ __('supervisor.subscriptions.action_resume') }}
-                        </button>
                     </form>
+                    <button type="button"
+                        onclick="window.confirmAction({
+                            title: @js(__('supervisor.subscriptions.action_resume')),
+                            message: @js(__('supervisor.subscriptions.confirm_resume')),
+                            confirmText: @js(__('supervisor.subscriptions.action_resume')),
+                            isDangerous: false,
+                            icon: 'ri-play-circle-line',
+                            onConfirm: () => document.getElementById('show-resume-form').submit()
+                        })"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors cursor-pointer">
+                        <i class="ri-play-circle-line"></i>{{ __('supervisor.subscriptions.action_resume') }}
+                    </button>
                 @endif
                 @if($subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED)
-                    <form method="POST" action="{{ route('manage.subscriptions.activate', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
+                    <form id="show-activate-form" method="POST" action="{{ route('manage.subscriptions.activate', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
                         @csrf
-                        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200 transition-colors">
-                            <i class="ri-checkbox-circle-line"></i>{{ __('supervisor.subscriptions.action_activate') }}
-                        </button>
                     </form>
+                    <button type="button"
+                        onclick="window.confirmAction({
+                            title: @js(__('supervisor.subscriptions.action_activate')),
+                            message: @js(__('supervisor.subscriptions.confirm_activate')),
+                            confirmText: @js(__('supervisor.subscriptions.action_activate')),
+                            isDangerous: false,
+                            icon: 'ri-checkbox-circle-line',
+                            onConfirm: () => document.getElementById('show-activate-form').submit()
+                        })"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors cursor-pointer">
+                        <i class="ri-checkbox-circle-line"></i>{{ __('supervisor.subscriptions.action_activate') }}
+                    </button>
                 @endif
                 @if($subscription->status->canCancel())
-                    <form method="POST" action="{{ route('manage.subscriptions.cancel', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
+                    <form id="show-cancel-form" method="POST" action="{{ route('manage.subscriptions.cancel', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
                         @csrf
-                        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition-colors">
-                            <i class="ri-close-circle-line"></i>{{ __('supervisor.subscriptions.action_cancel') }}
-                        </button>
                     </form>
+                    <button type="button"
+                        onclick="window.confirmAction({
+                            title: @js(__('supervisor.subscriptions.action_cancel')),
+                            message: @js(__('supervisor.subscriptions.confirm_cancel')),
+                            confirmText: @js(__('supervisor.subscriptions.action_cancel')),
+                            isDangerous: true,
+                            icon: 'ri-close-circle-line',
+                            onConfirm: () => document.getElementById('show-cancel-form').submit()
+                        })"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors cursor-pointer">
+                        <i class="ri-close-circle-line"></i>{{ __('supervisor.subscriptions.action_cancel') }}
+                    </button>
                 @endif
 
-                {{-- Extend form --}}
-                <form method="POST" action="{{ route('manage.subscriptions.extend', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}" class="inline-flex items-center gap-2">
-                    @csrf
-                    <input type="number" name="extend_days" value="30" min="1" max="365" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm">
-                    <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg text-sm hover:bg-indigo-200 transition-colors">
-                        <i class="ri-calendar-2-line"></i>{{ __('supervisor.subscriptions.action_extend') }}
-                    </button>
-                </form>
+                {{-- Extend button --}}
+                <button type="button"
+                    onclick="document.getElementById('show-extend-modal').classList.remove('hidden')"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors cursor-pointer">
+                    <i class="ri-calendar-check-line"></i>{{ __('supervisor.subscriptions.action_extend') }}
+                </button>
             </div>
         </div>
     @endif
@@ -170,5 +213,61 @@
         @endif
     </div>
 </div>
+
+{{-- Extend Modal --}}
+@if($isAdmin ?? false)
+    <div id="show-extend-modal" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
+        <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+            <div class="relative bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+                <div class="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-gray-300 z-10"></div>
+                <div class="p-6 pb-4 pt-8 md:pt-6">
+                    <div class="mx-auto flex items-center justify-center w-16 h-16 md:w-14 md:h-14 rounded-full bg-green-100 mb-4">
+                        <i class="ri-calendar-check-line text-3xl md:text-2xl text-green-600"></i>
+                    </div>
+                    <h3 class="text-lg md:text-xl font-bold text-center text-gray-900 mb-2">{{ __('supervisor.subscriptions.extend_title') }}</h3>
+                    <p class="text-center text-gray-600 text-sm mb-4">{{ __('supervisor.subscriptions.extend_message', ['name' => $studentName]) }}</p>
+                    <form method="POST" action="{{ route('manage.subscriptions.extend', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}" id="show-extend-form">
+                        @csrf
+                        <label for="show_extend_days" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.subscriptions.extend_days') }} ({{ __('supervisor.subscriptions.extend_max_days', ['max' => 7]) }})</label>
+                        <input type="number" name="extend_days" id="show_extend_days" min="1" max="7" value="3" required
+                               class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        @if($subscription->ends_at)
+                            <p class="text-xs text-gray-500 mt-1">{{ __('supervisor.subscriptions.current_end_date') }}: {{ $subscription->ends_at->format('Y-m-d') }}</p>
+                        @endif
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">
+                    <button type="button" onclick="document.getElementById('show-extend-modal').classList.add('hidden')"
+                        class="cursor-pointer inline-flex items-center justify-center min-h-[48px] md:min-h-[44px] px-6 py-3 md:py-2.5 text-base md:text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl transition-all">
+                        {{ __('common.cancel') }}
+                    </button>
+                    <button type="button" onclick="document.getElementById('show-extend-form').submit()"
+                        class="cursor-pointer inline-flex items-center justify-center min-h-[48px] md:min-h-[44px] px-6 py-3 md:py-2.5 text-base md:text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-all shadow-md">
+                        {{ __('supervisor.subscriptions.action_extend') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
+
+{{-- Flash Messages --}}
+@if(session('success'))
+    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
+        class="fixed bottom-4 start-4 z-50 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2">
+        <i class="ri-checkbox-circle-line"></i>
+        {{ session('success') }}
+        <button @click="show = false" class="cursor-pointer ms-2 hover:opacity-80"><i class="ri-close-line"></i></button>
+    </div>
+@endif
+@if(session('error'))
+    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
+        class="fixed bottom-4 start-4 z-50 bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2">
+        <i class="ri-error-warning-line"></i>
+        {{ session('error') }}
+        <button @click="show = false" class="cursor-pointer ms-2 hover:opacity-80"><i class="ri-close-line"></i></button>
+    </div>
+@endif
 
 </x-layouts.supervisor>

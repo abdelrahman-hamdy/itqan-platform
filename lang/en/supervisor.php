@@ -900,6 +900,7 @@ return [
         'session_duration' => 'Session Duration',
         'minutes' => 'minutes',
         'extend_days' => 'Extension Days',
+        'extend_max_days' => 'Maximum :max days',
         'created_successfully' => 'Subscription created successfully',
         'updated_successfully' => 'Subscription updated successfully',
         'status_updated' => 'Subscription status updated',

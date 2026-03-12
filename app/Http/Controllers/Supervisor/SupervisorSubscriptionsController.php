@@ -222,7 +222,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         $this->ensureSubscriptionInScope($subscription, $type);
 
         $validator = Validator::make($request->all(), [
-            'extend_days' => 'required|integer|min:1|max:365',
+            'extend_days' => 'required|integer|min:1|max:7',
         ]);
 
         if ($validator->fails()) {
