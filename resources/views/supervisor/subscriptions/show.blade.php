@@ -86,7 +86,7 @@
                 @php
                     $graceMeta = $subscription->metadata ?? [];
                     $graceEnd = \Carbon\Carbon::parse($graceMeta['grace_period_ends_at']);
-                    $graceDaysLeft = (int) now()->diffInDays($graceEnd, false);
+                    $graceDaysLeft = (int) ceil(now()->floatDiffInDays($graceEnd, false));
                 @endphp
                 <div>
                     <p class="text-xs text-gray-500 mb-1">{{ __('supervisor.subscriptions.grace_period_until', ['date' => $graceEnd->format('Y-m-d')]) }}</p>

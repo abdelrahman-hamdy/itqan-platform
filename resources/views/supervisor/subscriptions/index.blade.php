@@ -226,7 +226,7 @@
                                             @php
                                                 $graceMeta = $sub['model']->metadata ?? [];
                                                 $graceEnd = \Carbon\Carbon::parse($graceMeta['grace_period_ends_at']);
-                                                $graceDaysLeft = (int) now()->diffInDays($graceEnd, false);
+                                                $graceDaysLeft = (int) ceil(now()->floatDiffInDays($graceEnd, false));
                                             @endphp
                                             <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">
                                                 <i class="ri-timer-line"></i>
