@@ -184,7 +184,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         }
 
         $subscription->update([
-            'ends_at' => ($subscription->ends_at ?? now())->addDays($request->extend_days),
+            'ends_at' => ($subscription->ends_at ?? now())->addDays((int) $request->extend_days),
         ]);
 
         return redirect()->back()->with('success', __('supervisor.subscriptions.extended_successfully'));

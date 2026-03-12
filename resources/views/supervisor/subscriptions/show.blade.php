@@ -20,24 +20,39 @@
         view-type="supervisor"
     />
 
+    @php
+        // Type label matching index page
+        $subType = $type === 'quran' ? ($subscription->subscription_type ?? 'individual') : 'academic';
+        $typeLabel = match($subType) {
+            'individual' => __('supervisor.subscriptions.type_quran_individual'),
+            'group' => __('supervisor.subscriptions.type_quran_group'),
+            default => __('supervisor.subscriptions.type_academic'),
+        };
+        $typeColor = $type === 'quran' ? 'bg-green-100 text-green-700' : 'bg-violet-100 text-violet-700';
+        $typeIcon = match($subType) {
+            'individual' => 'ri-user-line',
+            'group' => 'ri-group-line',
+            default => 'ri-graduation-cap-line',
+        };
+    @endphp
+
     <!-- Header -->
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-            <a href="{{ route('manage.subscriptions.index', ['subdomain' => $subdomain]) }}"
-               class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-2">
-                <i class="ri-arrow-right-line"></i>
-                {{ __('supervisor.subscriptions.page_title') }}
-            </a>
+        <div class="flex items-center gap-3">
             <h1 class="text-xl sm:text-2xl font-bold text-gray-900">{{ __('supervisor.subscriptions.show_title') }}</h1>
-            <p class="mt-1 text-sm text-gray-600">
-                <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $type === 'quran' ? 'bg-green-100 text-green-700' : 'bg-violet-100 text-violet-700' }}">
-                    {{ $type === 'quran' ? __('supervisor.subscriptions.type_quran') : __('supervisor.subscriptions.type_academic') }}
-                </span>
-                <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $subscription->status->badgeClasses() }} ms-1">
-                    {{ $subscription->status->label() }}
-                </span>
-            </p>
+            <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full {{ $typeColor }}">
+                <i class="{{ $typeIcon }}"></i>
+                {{ $typeLabel }}
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $subscription->status->badgeClasses() }}">
+                {{ $subscription->status->label() }}
+            </span>
         </div>
+        <a href="{{ route('manage.subscriptions.index', ['subdomain' => $subdomain]) }}"
+           class="cursor-pointer min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium whitespace-nowrap">
+            <i class="ri-arrow-right-line"></i>
+            {{ __('supervisor.subscriptions.page_title') }}
+        </a>
     </div>
 
     <!-- Info Card -->
