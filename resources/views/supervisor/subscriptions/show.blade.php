@@ -86,13 +86,13 @@
                 @php
                     $graceMeta = $subscription->metadata ?? [];
                     $graceEnd = \Carbon\Carbon::parse($graceMeta['grace_period_ends_at']);
-                    $graceDaysLeft = (int) ceil(now()->floatDiffInDays($graceEnd, false));
+                    $extensionDays = (int) ($subscription->ends_at ?? now())->diffInDays($graceEnd, false);
                 @endphp
                 <div>
                     <p class="text-xs text-gray-500 mb-1">{{ __('supervisor.subscriptions.grace_period_until', ['date' => $graceEnd->format('Y-m-d')]) }}</p>
                     <p class="text-sm font-semibold text-orange-600">
                         <i class="ri-timer-line"></i>
-                        {{ __('supervisor.subscriptions.extended_for_days', ['days' => max(0, $graceDaysLeft)]) }}
+                        {{ __('supervisor.subscriptions.extended_for_days', ['days' => max(0, $extensionDays)]) }}
                     </p>
                 </div>
             @endif
