@@ -109,7 +109,16 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         // Filtered earnings list
         $earningsQuery = TeacherEarning::where('academy_id', $academyId)
             ->where($scopeQuery)
-            ->with(['teacher', 'session.individualCircle', 'session.circle', 'session.academicIndividualLesson', 'session.course']);
+            ->with([
+                'teacher',
+                'session' => function ($morphTo) {
+                    $morphTo->morphWith([
+                        \App\Models\QuranSession::class => ['individualCircle', 'circle'],
+                        \App\Models\AcademicSession::class => ['academicIndividualLesson'],
+                        \App\Models\InteractiveCourseSession::class => ['course'],
+                    ]);
+                },
+            ]);
 
         if ($currentMonth) {
             $parts = explode('-', $currentMonth);
