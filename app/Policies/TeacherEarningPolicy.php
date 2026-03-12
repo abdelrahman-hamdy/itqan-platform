@@ -80,8 +80,8 @@ class TeacherEarningPolicy
         }
 
         $expectedType = $teacherProfile instanceof \App\Models\QuranTeacherProfile
-            ? \App\Models\QuranTeacherProfile::class
-            : \App\Models\AcademicTeacherProfile::class;
+            ? 'quran_teacher'
+            : 'academic_teacher';
 
         return $earning->teacher_type === $expectedType && $earning->teacher_id === $teacherProfile->id;
     }

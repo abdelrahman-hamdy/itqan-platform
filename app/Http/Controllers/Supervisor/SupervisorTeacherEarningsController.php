@@ -6,8 +6,8 @@ use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
 use App\Models\TeacherEarning;
 use App\Models\User;
-use App\Services\AcademyContextService;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -49,7 +49,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         }
 
         // Build scope conditions for assigned teachers
-        $scopeQuery = function ($query) use ($quranProfileIds, $academicProfileIds, $currentTeacherId, $quranTeacherIds, $academicTeacherIds) {
+        $scopeQuery = function ($query) use ($quranProfileIds, $academicProfileIds, $currentTeacherId) {
             if ($currentTeacherId) {
                 // Filter to a specific teacher
                 $user = User::find($currentTeacherId);
@@ -133,13 +133,13 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         if (! empty($quranTeacherIds)) {
             $quranProfiles = QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->with('user')->get();
             foreach ($quranProfiles as $p) {
-                $profileUserMap['quran_teacher_' . $p->id] = $p->user;
+                $profileUserMap['quran_teacher_'.$p->id] = $p->user;
             }
         }
         if (! empty($academicTeacherIds)) {
             $academicProfiles = AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->with('user')->get();
             foreach ($academicProfiles as $p) {
-                $profileUserMap['academic_teacher_' . $p->id] = $p->user;
+                $profileUserMap['academic_teacher_'.$p->id] = $p->user;
             }
         }
 
@@ -158,6 +158,12 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             ])
             ->toArray();
 
+        // Count pending earnings for the bulk finalize button
+        $pendingCount = TeacherEarning::where('academy_id', $academyId)
+            ->where($scopeQuery)
+            ->unpaid()
+            ->count();
+
         return view('supervisor.teacher-earnings.index', [
             'earnings' => $earnings,
             'stats' => $stats,
@@ -167,6 +173,132 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             'currentTeacherId' => $currentTeacherId,
             'currentMonth' => $currentMonth,
             'currentStatus' => $currentStatus,
+            'pendingCount' => $pendingCount,
         ]);
+    }
+
+    public function finalize(Request $request, $subdomain, TeacherEarning $earning): RedirectResponse
+    {
+        $this->authorize('update', $earning);
+        $this->validateEarningBelongsToAssignedTeachers($earning);
+
+        if ($earning->is_finalized || $earning->is_disputed) {
+            return back()->with('error', __('supervisor.teacher_earnings.cannot_finalize'));
+        }
+
+        $earning->update(['is_finalized' => true]);
+
+        return back()->with('success', __('supervisor.teacher_earnings.finalized_success'));
+    }
+
+    public function dispute(Request $request, $subdomain, TeacherEarning $earning): RedirectResponse
+    {
+        $this->authorize('update', $earning);
+        $this->validateEarningBelongsToAssignedTeachers($earning);
+
+        $request->validate([
+            'dispute_notes' => 'required|string|max:1000',
+        ]);
+
+        if ($earning->is_disputed) {
+            return back()->with('error', __('supervisor.teacher_earnings.already_disputed'));
+        }
+
+        $earning->update([
+            'is_disputed' => true,
+            'dispute_notes' => $request->input('dispute_notes'),
+        ]);
+
+        return back()->with('success', __('supervisor.teacher_earnings.disputed_success'));
+    }
+
+    public function resolve(Request $request, $subdomain, TeacherEarning $earning): RedirectResponse
+    {
+        $this->authorize('update', $earning);
+        $this->validateEarningBelongsToAssignedTeachers($earning);
+
+        $request->validate([
+            'resolution_notes' => 'nullable|string|max:500',
+        ]);
+
+        if (! $earning->is_disputed) {
+            return back()->with('error', __('supervisor.teacher_earnings.not_disputed'));
+        }
+
+        $resolutionNote = $request->input('resolution_notes', '');
+        $previousNotes = $earning->dispute_notes ?? '';
+
+        $updatedNotes = $previousNotes;
+        if ($resolutionNote) {
+            $updatedNotes .= "\n\n--- ".__('supervisor.teacher_earnings.resolved_at', ['date' => now()->format('Y-m-d H:i')])." ---\n".$resolutionNote;
+        }
+
+        $earning->update([
+            'is_disputed' => false,
+            'is_finalized' => true,
+            'dispute_notes' => mb_substr($updatedNotes, 0, 2000),
+        ]);
+
+        return back()->with('success', __('supervisor.teacher_earnings.resolved_success'));
+    }
+
+    public function finalizeAll(Request $request, $subdomain): RedirectResponse
+    {
+        $academyId = $this->getAcademyId();
+        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
+        $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
+
+        $quranProfileIds = ! empty($quranTeacherIds)
+            ? QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->pluck('id')->toArray()
+            : [];
+        $academicProfileIds = ! empty($academicTeacherIds)
+            ? AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->pluck('id')->toArray()
+            : [];
+
+        $count = TeacherEarning::where('academy_id', $academyId)
+            ->where(function ($query) use ($quranProfileIds, $academicProfileIds) {
+                if (! empty($quranProfileIds)) {
+                    $query->orWhere(function ($sub) use ($quranProfileIds) {
+                        $sub->where('teacher_type', 'quran_teacher')
+                            ->whereIn('teacher_id', $quranProfileIds);
+                    });
+                }
+                if (! empty($academicProfileIds)) {
+                    $query->orWhere(function ($sub) use ($academicProfileIds) {
+                        $sub->where('teacher_type', 'academic_teacher')
+                            ->whereIn('teacher_id', $academicProfileIds);
+                    });
+                }
+                if (empty($quranProfileIds) && empty($academicProfileIds)) {
+                    $query->whereRaw('1 = 0');
+                }
+            })
+            ->unpaid()
+            ->update(['is_finalized' => true]);
+
+        return back()->with('success', __('supervisor.teacher_earnings.finalized_all_success', ['count' => $count]));
+    }
+
+    private function validateEarningBelongsToAssignedTeachers(TeacherEarning $earning): void
+    {
+        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
+        $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
+
+        $quranProfileIds = ! empty($quranTeacherIds)
+            ? QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->pluck('id')->toArray()
+            : [];
+        $academicProfileIds = ! empty($academicTeacherIds)
+            ? AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->pluck('id')->toArray()
+            : [];
+
+        $belongsToAssigned = false;
+        if ($earning->teacher_type === 'quran_teacher' && in_array($earning->teacher_id, $quranProfileIds)) {
+            $belongsToAssigned = true;
+        }
+        if ($earning->teacher_type === 'academic_teacher' && in_array($earning->teacher_id, $academicProfileIds)) {
+            $belongsToAssigned = true;
+        }
+
+        abort_unless($belongsToAssigned, 403);
     }
 }

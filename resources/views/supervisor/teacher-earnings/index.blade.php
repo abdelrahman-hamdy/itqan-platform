@@ -19,6 +19,20 @@
         view-type="supervisor"
     />
 
+    {{-- Flash Messages --}}
+    @if(session('success'))
+        <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-green-800 text-sm flex items-center gap-2">
+            <i class="ri-checkbox-circle-line text-green-600"></i>
+            {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm flex items-center gap-2">
+            <i class="ri-error-warning-line text-red-600"></i>
+            {{ session('error') }}
+        </div>
+    @endif
+
     <!-- Page Header -->
     <div class="mb-6 md:mb-8">
         <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.teacher_earnings.page_title') }}</h1>
@@ -87,6 +101,27 @@
             <h2 class="text-base md:text-lg font-semibold text-gray-900">
                 {{ __('supervisor.teacher_earnings.list_title') }} ({{ $earnings->total() }})
             </h2>
+
+            {{-- Finalize All Pending Button --}}
+            @if($pendingCount > 0)
+                <form id="finalize-all-form" method="POST" action="{{ route('manage.teacher-earnings.finalize-all', ['subdomain' => $subdomain]) }}" class="hidden">
+                    @csrf
+                </form>
+                <button type="button"
+                    onclick="window.confirmAction({
+                        title: @js(__('supervisor.teacher_earnings.action_finalize_all')),
+                        message: @js(__('supervisor.teacher_earnings.confirm_finalize_all') . ' (' . __('supervisor.teacher_earnings.pending_earnings_count', ['count' => $pendingCount]) . ')'),
+                        confirmText: @js(__('supervisor.teacher_earnings.action_finalize_all')),
+                        isDangerous: false,
+                        icon: 'ri-checkbox-circle-line',
+                        onConfirm: () => document.getElementById('finalize-all-form').submit()
+                    })"
+                    class="cursor-pointer min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-xs font-medium">
+                    <i class="ri-checkbox-circle-line"></i>
+                    {{ __('supervisor.teacher_earnings.action_finalize_all') }}
+                    <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-green-500 rounded-full">{{ $pendingCount }}</span>
+                </button>
+            @endif
         </div>
 
         <!-- Collapsible Filters -->
@@ -199,6 +234,9 @@
                             : ($earning->is_finalized
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-amber-100 text-amber-700');
+
+                        $isPending = !$earning->is_finalized && !$earning->is_disputed;
+                        $isDisputed = $earning->is_disputed;
                     @endphp
 
                     <div class="px-4 md:px-6 py-4 md:py-5 hover:bg-gray-50/50 transition-colors">
@@ -245,9 +283,152 @@
                                         </span>
                                     @endif
                                 </div>
+
+                                {{-- Dispute notes (shown when disputed) --}}
+                                @if($isDisputed && $earning->dispute_notes)
+                                    <div x-data="{ expanded: false }" class="mt-2">
+                                        <button @click="expanded = !expanded" type="button" class="cursor-pointer text-xs text-red-600 hover:text-red-700 flex items-center gap-1">
+                                            <i class="ri-chat-quote-line"></i>
+                                            {{ __('supervisor.teacher_earnings.current_dispute_notes') }}
+                                            <i class="ri-arrow-down-s-line transition-transform" :class="{ 'rotate-180': expanded }"></i>
+                                        </button>
+                                        <div x-show="expanded" x-collapse class="mt-1 p-2 bg-red-50 rounded-lg text-xs text-red-800 whitespace-pre-line">{{ $earning->dispute_notes }}</div>
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- Action Buttons --}}
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                @if($isPending)
+                                    {{-- Finalize Button --}}
+                                    <form id="finalize-form-{{ $earning->id }}" method="POST" action="{{ route('manage.teacher-earnings.finalize', ['subdomain' => $subdomain, 'earning' => $earning->id]) }}" class="hidden">
+                                        @csrf
+                                    </form>
+                                    <button type="button"
+                                        onclick="window.confirmAction({
+                                            title: @js(__('supervisor.teacher_earnings.action_finalize')),
+                                            message: @js(__('supervisor.teacher_earnings.confirm_finalize')),
+                                            confirmText: @js(__('supervisor.teacher_earnings.action_finalize')),
+                                            isDangerous: false,
+                                            icon: 'ri-checkbox-circle-line',
+                                            onConfirm: () => document.getElementById('finalize-form-{{ $earning->id }}').submit()
+                                        })"
+                                        class="cursor-pointer min-h-[32px] inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors text-xs font-medium border border-green-200">
+                                        <i class="ri-checkbox-circle-line"></i>
+                                        <span class="hidden sm:inline">{{ __('supervisor.teacher_earnings.action_finalize') }}</span>
+                                    </button>
+
+                                    {{-- Dispute Button --}}
+                                    <button type="button"
+                                        onclick="document.getElementById('dispute-modal-{{ $earning->id }}').classList.remove('hidden')"
+                                        class="cursor-pointer min-h-[32px] inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg transition-colors text-xs font-medium border border-amber-200">
+                                        <i class="ri-error-warning-line"></i>
+                                        <span class="hidden sm:inline">{{ __('supervisor.teacher_earnings.action_dispute') }}</span>
+                                    </button>
+                                @elseif($isDisputed)
+                                    {{-- Resolve Button --}}
+                                    <button type="button"
+                                        onclick="document.getElementById('resolve-modal-{{ $earning->id }}').classList.remove('hidden')"
+                                        class="cursor-pointer min-h-[32px] inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors text-xs font-medium border border-green-200">
+                                        <i class="ri-check-double-line"></i>
+                                        <span class="hidden sm:inline">{{ __('supervisor.teacher_earnings.action_resolve') }}</span>
+                                    </button>
+                                @endif
                             </div>
                         </div>
                     </div>
+
+                    {{-- Dispute Modal --}}
+                    @if($isPending)
+                        <div id="dispute-modal-{{ $earning->id }}" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
+                            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
+                            <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+                                <div class="relative bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+                                    <div class="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-gray-300 z-10"></div>
+                                    <div class="p-6 pb-4 pt-8 md:pt-6">
+                                        <div class="mx-auto flex items-center justify-center w-14 h-14 rounded-full bg-amber-100 mb-4">
+                                            <i class="ri-error-warning-line text-2xl text-amber-600"></i>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-center text-gray-900 mb-2">{{ __('supervisor.teacher_earnings.action_dispute') }}</h3>
+                                        <form method="POST" action="{{ route('manage.teacher-earnings.dispute', ['subdomain' => $subdomain, 'earning' => $earning->id]) }}">
+                                            @csrf
+                                            <div class="mb-4">
+                                                <label for="dispute_notes_{{ $earning->id }}" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teacher_earnings.dispute_notes_label') }} <span class="text-red-500">*</span></label>
+                                                <textarea
+                                                    name="dispute_notes"
+                                                    id="dispute_notes_{{ $earning->id }}"
+                                                    rows="3"
+                                                    required
+                                                    maxlength="1000"
+                                                    placeholder="{{ __('supervisor.teacher_earnings.dispute_notes_placeholder') }}"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none"></textarea>
+                                            </div>
+                                            <div class="flex flex-col-reverse md:flex-row gap-3 md:justify-end">
+                                                <button type="button" onclick="this.closest('[id^=dispute-modal]').classList.add('hidden')"
+                                                    class="cursor-pointer min-h-[44px] px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl transition-colors">
+                                                    {{ __('common.actions.cancel') }}
+                                                </button>
+                                                <button type="submit"
+                                                    class="cursor-pointer min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors">
+                                                    {{ __('supervisor.teacher_earnings.action_dispute') }}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Resolve Modal --}}
+                    @if($isDisputed)
+                        <div id="resolve-modal-{{ $earning->id }}" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
+                            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
+                            <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+                                <div class="relative bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+                                    <div class="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-gray-300 z-10"></div>
+                                    <div class="p-6 pb-4 pt-8 md:pt-6">
+                                        <div class="mx-auto flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4">
+                                            <i class="ri-check-double-line text-2xl text-green-600"></i>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-center text-gray-900 mb-2">{{ __('supervisor.teacher_earnings.action_resolve') }}</h3>
+                                        <p class="text-center text-gray-600 text-sm mb-4">{{ __('supervisor.teacher_earnings.confirm_resolve') }}</p>
+
+                                        @if($earning->dispute_notes)
+                                            <div class="mb-4 p-3 bg-red-50 rounded-lg border border-red-100">
+                                                <p class="text-xs font-medium text-red-700 mb-1">{{ __('supervisor.teacher_earnings.current_dispute_notes') }}:</p>
+                                                <p class="text-xs text-red-800 whitespace-pre-line">{{ $earning->dispute_notes }}</p>
+                                            </div>
+                                        @endif
+
+                                        <form method="POST" action="{{ route('manage.teacher-earnings.resolve', ['subdomain' => $subdomain, 'earning' => $earning->id]) }}">
+                                            @csrf
+                                            <div class="mb-4">
+                                                <label for="resolution_notes_{{ $earning->id }}" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teacher_earnings.resolution_notes_label') }}</label>
+                                                <textarea
+                                                    name="resolution_notes"
+                                                    id="resolution_notes_{{ $earning->id }}"
+                                                    rows="3"
+                                                    maxlength="500"
+                                                    placeholder="{{ __('supervisor.teacher_earnings.resolution_notes_placeholder') }}"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"></textarea>
+                                            </div>
+                                            <div class="flex flex-col-reverse md:flex-row gap-3 md:justify-end">
+                                                <button type="button" onclick="this.closest('[id^=resolve-modal]').classList.add('hidden')"
+                                                    class="cursor-pointer min-h-[44px] px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl transition-colors">
+                                                    {{ __('common.actions.cancel') }}
+                                                </button>
+                                                <button type="submit"
+                                                    class="cursor-pointer min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-colors">
+                                                    {{ __('supervisor.teacher_earnings.action_resolve') }}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 @endforeach
             </div>
 
