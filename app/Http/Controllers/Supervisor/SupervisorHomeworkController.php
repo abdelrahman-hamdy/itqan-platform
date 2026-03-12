@@ -67,7 +67,7 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
             $quranQuery->whereHas('session', fn ($q) => $q->whereDate('scheduled_at', '<=', $request->date_to));
         }
 
-        $quranHomework = $quranQuery->latest()->paginate(15, ['*'], 'page_quran')->withQueryString();
+        $quranHomework = $quranQuery->latest()->paginate(15, ['*'], 'page_quran')->withQueryString()->fragment('quran');
 
         // --- Academic homework ---
         $academicBaseQuery = AcademicHomework::whereIn('teacher_id', $academicTeacherIds);
@@ -103,7 +103,7 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
             $academicQuery->whereDate('assigned_at', '<=', $request->date_to);
         }
 
-        $academicHomework = $academicQuery->latest()->paginate(15, ['*'], 'page_academic')->withQueryString();
+        $academicHomework = $academicQuery->latest()->paginate(15, ['*'], 'page_academic')->withQueryString()->fragment('academic');
 
         // --- Interactive homework ---
         $interactiveBaseQuery = InteractiveCourseHomework::whereIn('teacher_id', $academicTeacherIds);
@@ -139,7 +139,7 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
             $interactiveQuery->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $interactiveHomework = $interactiveQuery->latest()->paginate(15, ['*'], 'page_interactive')->withQueryString();
+        $interactiveHomework = $interactiveQuery->latest()->paginate(15, ['*'], 'page_interactive')->withQueryString()->fragment('interactive');
 
         // Teachers for filter
         $allTeacherIds = $this->getAllAssignedTeacherIds();
