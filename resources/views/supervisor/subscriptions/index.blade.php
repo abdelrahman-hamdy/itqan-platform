@@ -25,7 +25,7 @@
     </div>
 
     <!-- Stats -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 md:gap-4 mb-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -67,6 +67,17 @@
                 <div class="flex-1">
                     <p class="text-xl font-bold text-gray-900">{{ $totalPaused }}</p>
                     <p class="text-xs text-gray-600">{{ __('supervisor.subscriptions.stat_paused') }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-time-line text-gray-600"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-xl font-bold text-gray-900">{{ $totalExpired }}</p>
+                    <p class="text-xs text-gray-600">{{ __('supervisor.subscriptions.stat_expired') }}</p>
                 </div>
             </div>
         </div>
@@ -271,6 +282,26 @@
                                     {{ __('supervisor.subscriptions.action_view') }}
                                 </a>
                                 @if($isAdmin)
+                                    @if($sub['status'] === \App\Enums\SessionSubscriptionStatus::EXPIRED)
+                                        <form id="activate-form-{{ $sub['id'] }}" method="POST"
+                                              action="{{ route('manage.subscriptions.activate', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">
+                                            @csrf
+                                        </form>
+                                        <button type="button"
+                                            onclick="window.confirmAction({
+                                                title: @js(__('supervisor.subscriptions.action_activate')),
+                                                message: @js(__('supervisor.subscriptions.confirm_activate')),
+                                                confirmText: @js(__('supervisor.subscriptions.action_activate')),
+                                                isDangerous: false,
+                                                icon: 'ri-checkbox-circle-line',
+                                                onConfirm: () => document.getElementById('activate-form-{{ $sub['id'] }}').submit()
+                                            })"
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors">
+                                            <i class="ri-checkbox-circle-line"></i>
+                                            {{ __('supervisor.subscriptions.action_activate') }}
+                                        </button>
+                                    @endif
+
                                     @if($sub['status'] === \App\Enums\SessionSubscriptionStatus::PAUSED)
                                         <form id="resume-form-{{ $sub['id'] }}" method="POST"
                                               action="{{ route('manage.subscriptions.resume', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">

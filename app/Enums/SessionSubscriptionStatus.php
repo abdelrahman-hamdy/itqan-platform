@@ -27,6 +27,7 @@ enum SessionSubscriptionStatus: string
     case PAUSED = 'paused';         // Temporarily stopped by user/admin
     case SUSPENDED = 'suspended';   // Grace period expired, awaiting payment
     case CANCELLED = 'cancelled';   // Terminated
+    case EXPIRED = 'expired';       // Subscription period ended
 
     /**
      * Get localized label
@@ -47,6 +48,7 @@ enum SessionSubscriptionStatus: string
             self::PAUSED => 'Paused',
             self::SUSPENDED => 'Suspended',
             self::CANCELLED => 'Cancelled',
+            self::EXPIRED => 'Expired',
         };
     }
 
@@ -61,6 +63,7 @@ enum SessionSubscriptionStatus: string
             self::PAUSED => 'info',
             self::SUSPENDED => 'danger',
             self::CANCELLED => 'danger',
+            self::EXPIRED => 'gray',
         };
     }
 
@@ -75,6 +78,7 @@ enum SessionSubscriptionStatus: string
             self::PAUSED => 'heroicon-o-pause-circle',
             self::SUSPENDED => 'heroicon-o-no-symbol',
             self::CANCELLED => 'heroicon-o-x-circle',
+            self::EXPIRED => 'heroicon-o-clock',
         };
     }
 
@@ -89,6 +93,7 @@ enum SessionSubscriptionStatus: string
             self::PAUSED => 'bg-blue-100 text-blue-800',
             self::SUSPENDED => 'bg-red-100 text-red-800',
             self::CANCELLED => 'bg-red-100 text-red-800',
+            self::EXPIRED => 'bg-gray-100 text-gray-800',
         };
     }
 
@@ -121,7 +126,7 @@ enum SessionSubscriptionStatus: string
      */
     public function canCancel(): bool
     {
-        return in_array($this, [self::PENDING, self::ACTIVE, self::PAUSED, self::SUSPENDED]);
+        return in_array($this, [self::PENDING, self::ACTIVE, self::PAUSED, self::SUSPENDED, self::EXPIRED]);
     }
 
     /**
@@ -129,7 +134,7 @@ enum SessionSubscriptionStatus: string
      */
     public function canRenew(): bool
     {
-        return in_array($this, [self::ACTIVE, self::PAUSED, self::SUSPENDED]);
+        return in_array($this, [self::ACTIVE, self::PAUSED, self::SUSPENDED, self::EXPIRED]);
     }
 
     /**
@@ -146,7 +151,7 @@ enum SessionSubscriptionStatus: string
      */
     public function canReactivate(): bool
     {
-        return $this === self::CANCELLED;
+        return in_array($this, [self::CANCELLED, self::EXPIRED]);
     }
 
     /**
@@ -168,6 +173,7 @@ enum SessionSubscriptionStatus: string
             self::PAUSED => [self::ACTIVE, self::CANCELLED],
             self::SUSPENDED => [self::ACTIVE, self::CANCELLED],
             self::CANCELLED => [self::ACTIVE], // Admin reactivation
+            self::EXPIRED => [self::ACTIVE, self::CANCELLED],
         };
     }
 

@@ -292,6 +292,14 @@ abstract class BaseSubscription extends Model
     }
 
     /**
+     * Scope: Get expired subscriptions
+     */
+    public function scopeExpired($query)
+    {
+        return $query->where('status', SessionSubscriptionStatus::EXPIRED);
+    }
+
+    /**
      * Scope: Get subscriptions expiring soon (within N days)
      */
     public function scopeExpiringSoon($query, int $days = 7)
@@ -390,14 +398,22 @@ abstract class BaseSubscription extends Model
     }
 
     /**
+     * Check if subscription is expired
+     */
+    public function isExpired(): bool
+    {
+        return $this->status === SessionSubscriptionStatus::EXPIRED;
+    }
+
+    /**
      * Check if subscription can be renewed
      */
     public function canRenew(): bool
     {
-        // Can renew if paused or active (near end)
         return in_array($this->status, [
             SessionSubscriptionStatus::ACTIVE,
             SessionSubscriptionStatus::PAUSED,
+            SessionSubscriptionStatus::EXPIRED,
         ]);
     }
 

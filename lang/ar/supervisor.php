@@ -864,6 +864,7 @@ return [
         'stat_expiring' => 'تنتهي قريباً',
         'stat_pending' => 'معلقة',
         'stat_paused' => 'متوقفة مؤقتاً',
+        'stat_expired' => 'منتهية',
         'filter_apply' => 'تطبيق',
         'filter_clear' => 'مسح الفلاتر',
         'col_sessions' => 'الجلسات',

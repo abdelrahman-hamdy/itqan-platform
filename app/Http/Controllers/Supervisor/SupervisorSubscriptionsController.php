@@ -21,7 +21,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         $subscriptions = collect();
 
         // Load Quran subscriptions
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $quranSubs = QuranSubscription::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->with(['student', 'quranTeacherUser'])
                 ->get()
@@ -45,7 +45,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         }
 
         // Load Academic subscriptions
-        if (!empty($academicTeacherProfileIds)) {
+        if (! empty($academicTeacherProfileIds)) {
             $academicSubs = AcademicSubscription::whereIn('teacher_id', $academicTeacherProfileIds)
                 ->with(['student', 'teacher.user'])
                 ->get()
@@ -77,6 +77,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         })->count();
         $totalPending = $subscriptions->filter(fn ($s) => $s['status'] === SessionSubscriptionStatus::PENDING)->count();
         $totalPaused = $subscriptions->filter(fn ($s) => $s['status'] === SessionSubscriptionStatus::PAUSED)->count();
+        $totalExpired = $subscriptions->filter(fn ($s) => $s['status'] === SessionSubscriptionStatus::EXPIRED)->count();
 
         // Apply filters
         $filtered = $subscriptions;
@@ -127,6 +128,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'expiringThisWeek' => $expiringThisWeek,
             'totalPending' => $totalPending,
             'totalPaused' => $totalPaused,
+            'totalExpired' => $totalExpired,
             'filteredCount' => $filteredValues->count(),
             'isAdmin' => $isAdmin,
         ]);
@@ -168,7 +170,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
     public function extend(Request $request, $subdomain, string $type, $id): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->isAdminUser()) {
             abort(403);
         }
 
@@ -201,7 +203,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
     private function changeStatus(string $subdomain, string $type, $id, SessionSubscriptionStatus $status): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->isAdminUser()) {
             abort(403);
         }
 
@@ -226,12 +228,12 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
     {
         if ($type === 'quran') {
             $ids = $this->getAssignedQuranTeacherIds();
-            if (!in_array($subscription->quran_teacher_id, $ids)) {
+            if (! in_array($subscription->quran_teacher_id, $ids)) {
                 abort(403);
             }
         } else {
             $ids = $this->getAssignedAcademicTeacherProfileIds();
-            if (!in_array($subscription->teacher_id, $ids)) {
+            if (! in_array($subscription->teacher_id, $ids)) {
                 abort(403);
             }
         }

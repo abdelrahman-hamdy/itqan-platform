@@ -42,6 +42,7 @@ return [
         'paused' => 'متوقف مؤقتاً',
         'suspended' => 'معلق',
         'cancelled' => 'ملغي',
+        'expired' => 'منتهي',
     ],
     'session_duration' => [
         'thirty_minutes' => '30 دقيقة',

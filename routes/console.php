@@ -125,6 +125,15 @@ Schedule::command('recordings:stop-expired')
 // SUBSCRIPTION MANAGEMENT
 // ════════════════════════════════════════════════════════════════
 
+// Expire active subscriptions past their end date
+// Runs hourly to transition ACTIVE → EXPIRED for subscriptions where ends_at < now()
+Schedule::command('subscriptions:expire-active --force')
+    ->name('expire-active-subscriptions')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Expire active subscriptions past their end date');
+
 // Send expiry reminders for subscriptions expiring in 7, 3, or 1 days
 // Runs daily at 08:00 AM Riyadh time
 Schedule::command('subscriptions:send-expiry-reminders')

@@ -124,7 +124,7 @@
                         <i class="ri-play-circle-line"></i>{{ __('supervisor.subscriptions.action_resume') }}
                     </button>
                 @endif
-                @if($subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED)
+                @if(in_array($subscription->status, [\App\Enums\SessionSubscriptionStatus::CANCELLED, \App\Enums\SessionSubscriptionStatus::EXPIRED]))
                     <form id="show-activate-form" method="POST" action="{{ route('manage.subscriptions.activate', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
                         @csrf
                     </form>

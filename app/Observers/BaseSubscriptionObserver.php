@@ -2,18 +2,18 @@
 
 namespace App\Observers;
 
-use Exception;
-use App\Models\Payment;
-use App\Enums\PaymentStatus;
-use App\Services\NotificationService;
-use App\Enums\NotificationType;
 use App\Constants\DefaultAcademy;
 use App\Enums\BillingCycle;
 use App\Enums\EnrollmentStatus;
+use App\Enums\NotificationType;
+use App\Enums\PaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\BaseSubscription;
+use App\Models\Payment;
+use App\Services\NotificationService;
 use App\Services\StudentDashboardService;
+use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -143,7 +143,7 @@ class BaseSubscriptionObserver
         // Update ended_at when status becomes cancelled
         if ($subscription->isDirty('status')) {
             $newStatus = $subscription->status;
-            if ($newStatus === SessionSubscriptionStatus::CANCELLED) {
+            if (in_array($newStatus, [SessionSubscriptionStatus::CANCELLED, SessionSubscriptionStatus::EXPIRED])) {
                 if (empty($subscription->ended_at)) {
                     $subscription->ended_at = now();
                 }
@@ -303,6 +303,10 @@ class BaseSubscriptionObserver
         if ($newStatus === SessionSubscriptionStatus::CANCELLED) {
             $this->handleCancellation($subscription);
         }
+
+        if ($newStatus === SessionSubscriptionStatus::EXPIRED) {
+            $this->handleExpiration($subscription);
+        }
     }
 
     /**
@@ -362,6 +366,31 @@ class BaseSubscriptionObserver
     }
 
     /**
+     * Handle subscription expiration
+     */
+    protected function handleExpiration(BaseSubscription $subscription): void
+    {
+        Log::info('Subscription expired', [
+            'subscription_id' => $subscription->id,
+            'student_id' => $subscription->student_id,
+            'ends_at' => $subscription->ends_at?->toDateTimeString(),
+        ]);
+
+        // Throttle: skip notification if one was already sent for this subscription in the last hour.
+        $cacheKey = "sub_expire_notif:{$subscription->id}";
+        if (cache()->has($cacheKey)) {
+            Log::info('Subscription expiration notification throttled', [
+                'subscription_id' => $subscription->id,
+            ]);
+
+            return;
+        }
+
+        $this->sendExpirationNotification($subscription);
+        cache()->put($cacheKey, true, now()->addHour());
+    }
+
+    /**
      * Broadcast status change for real-time updates
      */
     protected function broadcastStatusChange(
@@ -400,6 +429,7 @@ class BaseSubscriptionObserver
                     'payment_id' => $payment->id,
                     'sent_at' => $payment->subscription_notification_sent_at,
                 ]);
+
                 return;
             }
 

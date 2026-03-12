@@ -54,6 +54,7 @@ return [
         'paused' => 'Paused',
         'suspended' => 'Suspended',
         'cancelled' => 'Cancelled',
+        'expired' => 'Expired',
     ],
     'session_duration' => [
         'thirty_minutes' => '30 minutes',

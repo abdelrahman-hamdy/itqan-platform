@@ -864,6 +864,7 @@ return [
         'stat_expiring' => 'Expiring Soon',
         'stat_pending' => 'Pending',
         'stat_paused' => 'Paused',
+        'stat_expired' => 'Expired',
         'filter_apply' => 'Apply',
         'filter_clear' => 'Clear Filters',
         'filter_search' => 'Search',
