@@ -33,7 +33,7 @@ class TeacherEarning extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'rate_snapshot' => 'array',
+        'rate_snapshot' => 'decimal:2',
         'calculation_metadata' => 'array',
         'earning_month' => 'date',
         'session_completed_at' => 'datetime',
@@ -124,11 +124,15 @@ class TeacherEarning extends Model
      */
     public function getTeacherNameAttribute(): string
     {
-        if (! $this->teacher) {
+        $teacher = $this->teacher;
+        if (! $teacher) {
             return 'Unknown';
         }
 
-        return $this->teacher->first_name.' '.$this->teacher->last_name;
+        // Profile models have a user() relationship with first_name/last_name
+        $user = method_exists($teacher, 'user') ? $teacher->user : $teacher;
+
+        return $user?->name ?? 'Unknown';
     }
 
     /**

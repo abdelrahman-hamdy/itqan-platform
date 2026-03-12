@@ -6,6 +6,7 @@ use Exception;
 use App\Enums\SessionStatus;
 use App\Jobs\CalculateSessionEarningsJob;
 use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\TeacherEarning;
 use App\Services\CronJobLogger;
@@ -75,6 +76,8 @@ class CalculateMissedEarningsCommand extends Command
                 'quran_dispatched' => 0,
                 'academic_checked' => 0,
                 'academic_dispatched' => 0,
+                'interactive_checked' => 0,
+                'interactive_dispatched' => 0,
                 'errors' => [],
             ];
 
@@ -83,6 +86,9 @@ class CalculateMissedEarningsCommand extends Command
 
             // Process Academic sessions
             $this->processAcademicSessions($days, $isDryRun, $isVerbose, $results);
+
+            // Process Interactive Course sessions
+            $this->processInteractiveSessions($days, $isDryRun, $isVerbose, $results);
 
             $this->displayResults($results, $isDryRun);
 
@@ -210,6 +216,56 @@ class CalculateMissedEarningsCommand extends Command
     }
 
     /**
+     * Process Interactive Course sessions for missed earnings
+     */
+    private function processInteractiveSessions(int $days, bool $isDryRun, bool $isVerbose, array &$results): void
+    {
+        $cutoffDate = now()->subDays($days);
+
+        InteractiveCourseSession::where('status', SessionStatus::COMPLETED)
+            ->where('ended_at', '>=', $cutoffDate)
+            ->whereNotNull('ended_at')
+            ->chunkById(100, function ($sessions) use ($isDryRun, $isVerbose, &$results) {
+                foreach ($sessions as $session) {
+                    $results['interactive_checked']++;
+
+                    // Check if earnings already exist
+                    $hasEarning = TeacherEarning::forSession(
+                        InteractiveCourseSession::class,
+                        $session->id
+                    )->exists();
+
+                    if ($hasEarning) {
+                        if ($isVerbose) {
+                            $this->line("  Interactive session {$session->id}: Already has earnings");
+                        }
+
+                        continue;
+                    }
+
+                    if ($isVerbose) {
+                        $this->info("  Interactive session {$session->id}: Would dispatch earnings calculation");
+                    }
+
+                    if (! $isDryRun) {
+                        try {
+                            dispatch(new CalculateSessionEarningsJob($session));
+                            $results['interactive_dispatched']++;
+                        } catch (Exception $e) {
+                            $results['errors'][] = [
+                                'session_type' => 'interactive',
+                                'session_id' => $session->id,
+                                'error' => $e->getMessage(),
+                            ];
+                        }
+                    } else {
+                        $results['interactive_dispatched']++;
+                    }
+                }
+            });
+    }
+
+    /**
      * Display execution results
      */
     private function displayResults(array $results, bool $isDryRun): void
@@ -223,8 +279,10 @@ class CalculateMissedEarningsCommand extends Command
         $this->info("Quran sessions dispatched: {$results['quran_dispatched']}");
         $this->info("Academic sessions checked: {$results['academic_checked']}");
         $this->info("Academic sessions dispatched: {$results['academic_dispatched']}");
+        $this->info("Interactive sessions checked: {$results['interactive_checked']}");
+        $this->info("Interactive sessions dispatched: {$results['interactive_dispatched']}");
 
-        $totalDispatched = $results['quran_dispatched'] + $results['academic_dispatched'];
+        $totalDispatched = $results['quran_dispatched'] + $results['academic_dispatched'] + $results['interactive_dispatched'];
         $this->info("Total earnings jobs dispatched: {$totalDispatched}");
 
         if (! empty($results['errors'])) {

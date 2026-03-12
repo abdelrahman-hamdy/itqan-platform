@@ -166,11 +166,11 @@
                         $teacherUser = $profileUserMap[$profileKey] ?? null;
                         $teacherName = $teacherUser?->name ?? $earning->teacher_name;
 
-                        // Determine source type
-                        $sessionType = match (true) {
-                            str_contains($earning->session_type, 'QuranSession') => 'quran',
-                            str_contains($earning->session_type, 'AcademicSession') => 'academic',
-                            str_contains($earning->session_type, 'InteractiveCourseSession') => 'interactive',
+                        // Determine source type using class constants
+                        $sessionType = match ($earning->session_type) {
+                            \App\Models\QuranSession::class, 'quran_session' => 'quran',
+                            \App\Models\AcademicSession::class, 'academic_session' => 'academic',
+                            \App\Models\InteractiveCourseSession::class, 'interactive_course_session' => 'interactive',
                             default => 'other',
                         };
 

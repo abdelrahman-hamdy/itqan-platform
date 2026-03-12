@@ -55,10 +55,10 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
                 $user = User::find($currentTeacherId);
                 if ($user && $user->user_type === 'quran_teacher') {
                     $profileId = QuranTeacherProfile::where('user_id', $currentTeacherId)->value('id');
-                    $query->where('teacher_type', QuranTeacherProfile::class)->where('teacher_id', $profileId);
+                    $query->where('teacher_type', 'quran_teacher')->where('teacher_id', $profileId);
                 } elseif ($user && $user->user_type === 'academic_teacher') {
                     $profileId = AcademicTeacherProfile::where('user_id', $currentTeacherId)->value('id');
-                    $query->where('teacher_type', AcademicTeacherProfile::class)->where('teacher_id', $profileId);
+                    $query->where('teacher_type', 'academic_teacher')->where('teacher_id', $profileId);
                 } else {
                     $query->whereRaw('1 = 0'); // No results
                 }
@@ -67,13 +67,13 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
                 $query->where(function ($q) use ($quranProfileIds, $academicProfileIds) {
                     if (! empty($quranProfileIds)) {
                         $q->orWhere(function ($sub) use ($quranProfileIds) {
-                            $sub->where('teacher_type', QuranTeacherProfile::class)
+                            $sub->where('teacher_type', 'quran_teacher')
                                 ->whereIn('teacher_id', $quranProfileIds);
                         });
                     }
                     if (! empty($academicProfileIds)) {
                         $q->orWhere(function ($sub) use ($academicProfileIds) {
-                            $sub->where('teacher_type', AcademicTeacherProfile::class)
+                            $sub->where('teacher_type', 'academic_teacher')
                                 ->whereIn('teacher_id', $academicProfileIds);
                         });
                     }
@@ -133,13 +133,13 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         if (! empty($quranTeacherIds)) {
             $quranProfiles = QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->with('user')->get();
             foreach ($quranProfiles as $p) {
-                $profileUserMap[QuranTeacherProfile::class . '_' . $p->id] = $p->user;
+                $profileUserMap['quran_teacher_' . $p->id] = $p->user;
             }
         }
         if (! empty($academicTeacherIds)) {
             $academicProfiles = AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->with('user')->get();
             foreach ($academicProfiles as $p) {
-                $profileUserMap[AcademicTeacherProfile::class . '_' . $p->id] = $p->user;
+                $profileUserMap['academic_teacher_' . $p->id] = $p->user;
             }
         }
 
