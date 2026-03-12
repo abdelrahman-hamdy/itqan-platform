@@ -266,13 +266,13 @@
                         <div class="ms-0 md:ms-14 mt-3">
                             <div class="flex flex-wrap items-center gap-2">
                                 <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}"
-                                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+                                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
                                     <i class="ri-eye-line"></i>
                                     {{ __('supervisor.subscriptions.action_view') }}
                                 </a>
                                 @if($isAdmin)
                                     <a href="{{ route('manage.subscriptions.edit', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}"
-                                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors">
+                                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors">
                                         <i class="ri-edit-line"></i>
                                         {{ __('supervisor.subscriptions.action_edit') }}
                                     </a>
@@ -291,7 +291,7 @@
                                                 icon: 'ri-play-circle-line',
                                                 onConfirm: () => document.getElementById('resume-form-{{ $sub['id'] }}').submit()
                                             })"
-                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
                                             <i class="ri-play-circle-line"></i>
                                             {{ __('supervisor.subscriptions.action_resume') }}
                                         </button>
@@ -311,7 +311,7 @@
                                                 icon: 'ri-pause-circle-line',
                                                 onConfirm: () => document.getElementById('pause-form-{{ $sub['id'] }}').submit()
                                             })"
-                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors">
                                             <i class="ri-pause-circle-line"></i>
                                             {{ __('supervisor.subscriptions.action_pause') }}
                                         </button>
@@ -320,7 +320,7 @@
                                     {{-- Extend button --}}
                                     <button type="button"
                                         onclick="document.getElementById('extend-modal-{{ $sub['id'] }}').classList.remove('hidden')"
-                                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors">
+                                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors">
                                         <i class="ri-calendar-check-line"></i>
                                         {{ __('supervisor.subscriptions.action_extend') }}
                                     </button>
@@ -339,7 +339,7 @@
                                                 icon: 'ri-close-circle-line',
                                                 onConfirm: () => document.getElementById('cancel-form-{{ $sub['id'] }}').submit()
                                             })"
-                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors">
                                             <i class="ri-close-circle-line"></i>
                                             {{ __('supervisor.subscriptions.action_cancel') }}
                                         </button>
