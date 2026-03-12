@@ -21,36 +21,202 @@
                 <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ $sessionInfo }}</p>
             @endif
         </div>
-        <a href="{{ route('manage.homework.index', ['subdomain' => $subdomain]) }}"
+        <a href="{{ route('manage.homework.index', ['subdomain' => $subdomain]) }}#{{ $type }}"
            class="cursor-pointer min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">
             <i class="ri-arrow-right-line"></i>
             {{ __('supervisor.homework.back_to_list') }}
         </a>
     </div>
 
-    @if($type === 'quran' && $session)
-        {{-- Quran Homework Info (no formal submissions) --}}
+    @if($type === 'quran' && $homework)
+        {{-- ==================== QURAN HOMEWORK CONTENT CARD ==================== --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <i class="ri-book-read-line text-green-500"></i>
-                {{ __('supervisor.homework.quran_homework_details') }}
+                {{ __('supervisor.homework.homework_content') }}
             </h2>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {{-- Teacher --}}
                 <div>
                     <span class="text-sm text-gray-500">{{ __('supervisor.homework.teacher') }}</span>
-                    <p class="font-medium text-gray-900">{{ $session->quranTeacher?->name ?? '-' }}</p>
+                    <p class="font-medium text-gray-900">{{ $session?->quranTeacher?->name ?? '-' }}</p>
                 </div>
+                {{-- Student --}}
                 <div>
                     <span class="text-sm text-gray-500">{{ __('supervisor.homework.student') }}</span>
-                    <p class="font-medium text-gray-900">{{ $session->student?->name ?? '-' }}</p>
+                    <p class="font-medium text-gray-900">{{ $session?->student?->name ?? '-' }}</p>
                 </div>
-                @if($session->homework_details)
-                    <div class="sm:col-span-2">
-                        <span class="text-sm text-gray-500">{{ __('supervisor.homework.details') }}</span>
-                        <p class="text-gray-700 mt-1">{{ $session->homework_details }}</p>
+                {{-- Session Date --}}
+                <div>
+                    <span class="text-sm text-gray-500">{{ __('supervisor.homework.session_date') }}</span>
+                    <p class="font-medium text-gray-900">{{ $session?->scheduled_at?->format('Y-m-d H:i') ?? '-' }}</p>
+                </div>
+                {{-- Difficulty --}}
+                @if($homework->difficulty_level)
+                    <div>
+                        <span class="text-sm text-gray-500">{{ __('supervisor.homework.difficulty') }}</span>
+                        <p class="font-medium text-gray-900">
+                            <span class="px-2 py-0.5 text-xs rounded-full {{ match($homework->difficulty_level) {
+                                'easy' => 'bg-green-100 text-green-700',
+                                'hard' => 'bg-red-100 text-red-700',
+                                default => 'bg-yellow-100 text-yellow-700',
+                            } }}">{{ $homework->difficulty_level_arabic }}</span>
+                        </p>
                     </div>
                 @endif
             </div>
+
+            {{-- Homework Content Details --}}
+            <div class="mt-5 space-y-3 border-t border-gray-100 pt-4">
+                @if($homework->has_new_memorization)
+                    <div class="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                        <div class="p-1.5 bg-green-100 rounded-lg flex-shrink-0">
+                            <i class="ri-book-open-line text-green-600"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-green-800 text-sm">{{ __('supervisor.homework.new_memorization') }}</div>
+                            @if($homework->new_memorization_range)
+                                <div class="text-sm text-green-700 mt-0.5">{{ $homework->new_memorization_range }}</div>
+                            @endif
+                            @if($homework->new_memorization_pages)
+                                <div class="text-xs text-green-600 mt-0.5">{{ __('supervisor.homework.pages') }}: {{ $homework->new_memorization_pages }}</div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
+                @if($homework->has_review)
+                    <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                        <div class="p-1.5 bg-blue-100 rounded-lg flex-shrink-0">
+                            <i class="ri-refresh-line text-blue-600"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-blue-800 text-sm">{{ __('supervisor.homework.review') }}</div>
+                            @if($homework->review_range)
+                                <div class="text-sm text-blue-700 mt-0.5">{{ $homework->review_range }}</div>
+                            @endif
+                            @if($homework->review_pages)
+                                <div class="text-xs text-blue-600 mt-0.5">{{ __('supervisor.homework.pages') }}: {{ $homework->review_pages }}</div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
+                @if($homework->has_comprehensive_review && $homework->comprehensive_review_surahs_formatted)
+                    <div class="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
+                        <div class="p-1.5 bg-purple-100 rounded-lg flex-shrink-0">
+                            <i class="ri-stack-line text-purple-600"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-purple-800 text-sm">{{ __('supervisor.homework.comprehensive_review') }}</div>
+                            <div class="text-sm text-purple-700 mt-0.5">{{ $homework->comprehensive_review_surahs_formatted }}</div>
+                        </div>
+                    </div>
+                @endif
+
+                @if($homework->additional_instructions)
+                    <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                        <div class="p-1.5 bg-gray-100 rounded-lg flex-shrink-0">
+                            <i class="ri-file-text-line text-gray-600"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-800 text-sm">{{ __('supervisor.homework.additional_instructions') }}</div>
+                            <div class="text-sm text-gray-700 mt-0.5">{{ $homework->additional_instructions }}</div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- ==================== QURAN EVALUATION RESULTS ==================== --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+            <div class="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
+                <h2 class="text-base md:text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <i class="ri-bar-chart-line text-purple-500"></i>
+                    {{ __('supervisor.homework.evaluation_results') }}
+                </h2>
+            </div>
+
+            @if($reports->count() > 0)
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-gray-600">
+                            <tr>
+                                <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.homework.student') }}</th>
+                                <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.homework.memorization_degree') }}</th>
+                                <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.homework.reservation_degree') }}</th>
+                                <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.homework.average_degree') }}</th>
+                                <th class="px-4 md:px-6 py-3 text-start font-medium hidden md:table-cell">{{ __('supervisor.homework.evaluated_at') }}</th>
+                                <th class="px-4 md:px-6 py-3 text-start font-medium hidden lg:table-cell">{{ __('supervisor.homework.teacher_notes') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach($reports as $report)
+                                @php
+                                    $isEvaluated = $report->new_memorization_degree !== null || $report->reservation_degree !== null;
+                                @endphp
+                                <tr class="hover:bg-gray-50/50 transition-colors">
+                                    <td class="px-4 md:px-6 py-3">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">
+                                                {{ mb_substr($report->student?->name ?? '?', 0, 1) }}
+                                            </div>
+                                            <span class="font-medium text-gray-900">{{ $report->student?->name ?? '-' }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 md:px-6 py-3">
+                                        @if($report->new_memorization_degree !== null)
+                                            <span class="font-semibold text-gray-900">{{ number_format($report->new_memorization_degree, 1) }}</span>
+                                            <span class="text-xs text-gray-500">/10</span>
+                                        @elseif($isEvaluated)
+                                            <span class="text-gray-400">-</span>
+                                        @else
+                                            <span class="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700">{{ __('supervisor.homework.awaiting_evaluation') }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 md:px-6 py-3">
+                                        @if($report->reservation_degree !== null)
+                                            <span class="font-semibold text-gray-900">{{ number_format($report->reservation_degree, 1) }}</span>
+                                            <span class="text-xs text-gray-500">/10</span>
+                                        @elseif($isEvaluated)
+                                            <span class="text-gray-400">-</span>
+                                        @else
+                                            <span class="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700">{{ __('supervisor.homework.awaiting_evaluation') }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 md:px-6 py-3">
+                                        @if($report->overall_performance !== null)
+                                            <span class="font-semibold text-gray-900">{{ number_format($report->overall_performance, 1) }}</span>
+                                            <span class="text-xs text-gray-500">/10</span>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 md:px-6 py-3 hidden md:table-cell text-gray-600">
+                                        {{ $report->evaluated_at?->format('Y-m-d H:i') ?? '-' }}
+                                    </td>
+                                    <td class="px-4 md:px-6 py-3 hidden lg:table-cell">
+                                        @if($report->notes)
+                                            <span class="text-gray-600 max-w-[200px] truncate block">{{ $report->notes }}</span>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="px-4 md:px-6 py-8 text-center">
+                    <div class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="ri-bar-chart-line text-xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-base font-medium text-gray-900 mb-1">{{ __('supervisor.homework.awaiting_evaluation') }}</h3>
+                    <p class="text-sm text-gray-600">{{ __('supervisor.homework.no_submissions_description') }}</p>
+                </div>
+            @endif
         </div>
     @endif
 
@@ -94,7 +260,7 @@
         </div>
     @endif
 
-    {{-- Submissions Table --}}
+    {{-- Submissions Table (Academic / Interactive) --}}
     @if($submissions->count() > 0)
         <div class="bg-white rounded-xl shadow-sm border border-gray-200">
             <div class="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">

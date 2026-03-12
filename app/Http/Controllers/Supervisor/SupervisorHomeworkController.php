@@ -2,18 +2,13 @@
 
 namespace App\Http\Controllers\Supervisor;
 
-use App\Enums\HomeworkSubmissionStatus;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseHomeworkSubmission;
-use App\Models\QuranSession;
+use App\Models\QuranSessionHomework;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class SupervisorHomeworkController extends BaseSupervisorWebController
@@ -21,143 +16,121 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
     public function index(Request $request, $subdomain = null): View
     {
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        $academicTeacherProfileIds = $this->getAssignedAcademicTeacherProfileIds();
         $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
 
-        $items = collect();
+        // --- Quran homework ---
+        $quranBaseQuery = QuranSessionHomework::whereHas('session', fn ($q) =>
+            $q->whereIn('quran_teacher_id', $quranTeacherIds)
+        );
 
-        // 1. Quran homework: sessions with homework assigned (via relationship or legacy flag)
-        $quranQuery = QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
-            ->where(function ($q) {
-                $q->where('homework_assigned', true)
-                  ->orWhereHas('sessionHomework');
-            })
-            ->with(['quranTeacher', 'student', 'sessionHomework']);
+        // Stats (before filters)
+        $quranAllForStats = (clone $quranBaseQuery)
+            ->with(['session.studentReport'])
+            ->get();
 
-        if ($request->filled('teacher_id')) {
-            $quranQuery->where('quran_teacher_id', $request->teacher_id);
-        }
+        $quranStatsTotal = $quranAllForStats->count();
+        $quranEvaluatedCount = $quranAllForStats->filter(fn ($hw) =>
+            $hw->session?->studentReport &&
+            ($hw->session->studentReport->new_memorization_degree !== null || $hw->session->studentReport->reservation_degree !== null)
+        )->count();
+
+        $evaluatedReports = $quranAllForStats
+            ->map(fn ($hw) => $hw->session?->studentReport)
+            ->filter(fn ($r) => $r && ($r->new_memorization_degree !== null || $r->reservation_degree !== null));
+
+        $quranAvgScore = $evaluatedReports->count() > 0
+            ? round($evaluatedReports->avg(fn ($r) => $r->overall_performance), 1)
+            : null;
+
+        $quranStats = [
+            'total' => $quranStatsTotal,
+            'evaluated' => $quranEvaluatedCount,
+            'notEvaluated' => $quranStatsTotal - $quranEvaluatedCount,
+            'avgScore' => $quranAvgScore,
+        ];
+
+        // Filtered + paginated query
+        $quranQuery = QuranSessionHomework::whereHas('session', function ($q) use ($quranTeacherIds, $request) {
+            $q->whereIn('quran_teacher_id', $quranTeacherIds);
+            if ($request->filled('teacher_id')) {
+                $q->where('quran_teacher_id', $request->teacher_id);
+            }
+        })->with(['session.quranTeacher', 'session.student', 'session.studentReport']);
+
         if ($request->filled('date_from')) {
-            $quranQuery->whereDate('created_at', '>=', $request->date_from);
+            $quranQuery->whereHas('session', fn ($q) => $q->whereDate('scheduled_at', '>=', $request->date_from));
         }
         if ($request->filled('date_to')) {
-            $quranQuery->whereDate('created_at', '<=', $request->date_to);
+            $quranQuery->whereHas('session', fn ($q) => $q->whereDate('scheduled_at', '<=', $request->date_to));
         }
 
-        if (! $request->filled('type') || $request->type === 'quran') {
-            foreach ($quranQuery->get() as $session) {
-                $items->push([
-                    'id' => $session->id,
-                    'type' => 'quran',
-                    'type_label' => __('supervisor.homework.type_quran'),
-                    'session_info' => $session->title ?? __('supervisor.homework.quran_session') . ' #' . $session->id,
-                    'teacher_name' => $session->quranTeacher?->name ?? '-',
-                    'teacher_id' => $session->quran_teacher_id,
-                    'student_names' => $session->student?->name ?? '-',
-                    'assigned_date' => $session->updated_at,
-                    'due_date' => null,
-                    'status' => 'assigned',
-                    'status_label' => __('supervisor.homework.status_assigned'),
-                    'submissions_count' => 0,
-                    'has_submissions' => false,
-                ]);
-            }
+        $quranHomework = $quranQuery->latest()->paginate(15, ['*'], 'page_quran')->withQueryString();
+
+        // --- Academic homework ---
+        $academicBaseQuery = AcademicHomework::whereIn('teacher_id', $academicTeacherIds);
+
+        $academicAllForStats = (clone $academicBaseQuery)->with('submissions')->get();
+        $academicStats = [
+            'total' => $academicAllForStats->count(),
+            'pending' => $academicAllForStats->filter(fn ($hw) =>
+                $hw->submissions->isEmpty() || $hw->submissions->every(fn ($s) => $this->submissionIsPending($s))
+            )->count(),
+            'graded' => $academicAllForStats->filter(fn ($hw) =>
+                $hw->submissions->contains(fn ($s) => $s->score !== null)
+            )->count(),
+            'overdue' => $academicAllForStats->filter(fn ($hw) =>
+                $hw->due_date && $hw->due_date->isPast() &&
+                $hw->submissions->contains(fn ($s) => $s->score === null)
+            )->count(),
+        ];
+
+        $academicQuery = AcademicHomework::whereIn('teacher_id', $academicTeacherIds)
+            ->with(['session.academicTeacher.user', 'teacher', 'submissions.student']);
+
+        if ($request->filled('teacher_id')) {
+            $academicQuery->where('teacher_id', $request->teacher_id);
+        }
+        if ($request->filled('date_from')) {
+            $academicQuery->whereDate('assigned_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $academicQuery->whereDate('assigned_at', '<=', $request->date_to);
         }
 
-        // 2. Academic homework: formal AcademicHomework records
-        if (! $request->filled('type') || $request->type === 'academic') {
-            $academicQuery = AcademicHomework::whereIn('teacher_id', $academicTeacherIds)
-                ->with(['session.academicTeacher.user', 'teacher', 'submissions']);
+        $academicHomework = $academicQuery->latest()->paginate(15, ['*'], 'page_academic')->withQueryString();
 
-            if ($request->filled('teacher_id')) {
-                $academicQuery->where('teacher_id', $request->teacher_id);
-            }
-            if ($request->filled('date_from')) {
-                $academicQuery->whereDate('assigned_at', '>=', $request->date_from);
-            }
-            if ($request->filled('date_to')) {
-                $academicQuery->whereDate('assigned_at', '<=', $request->date_to);
-            }
+        // --- Interactive homework ---
+        $interactiveBaseQuery = InteractiveCourseHomework::whereIn('teacher_id', $academicTeacherIds);
 
-            foreach ($academicQuery->get() as $homework) {
-                $isOverdue = $homework->due_date && $homework->due_date->isPast() && $homework->graded_count < $homework->submitted_count;
-                $status = $homework->graded_count > 0 ? 'graded' : ($isOverdue ? 'overdue' : 'pending');
+        $interactiveAllForStats = (clone $interactiveBaseQuery)->with('submissions')->get();
+        $interactiveStats = [
+            'total' => $interactiveAllForStats->count(),
+            'pending' => $interactiveAllForStats->filter(fn ($hw) =>
+                $hw->submissions->isEmpty() || $hw->submissions->every(fn ($s) => $this->submissionIsPending($s))
+            )->count(),
+            'graded' => $interactiveAllForStats->filter(fn ($hw) =>
+                $hw->submissions->contains(fn ($s) => $s->score !== null)
+            )->count(),
+            'overdue' => $interactiveAllForStats->filter(fn ($hw) =>
+                $hw->due_date && $hw->due_date->isPast() &&
+                $hw->submissions->contains(fn ($s) => $s->score === null)
+            )->count(),
+        ];
 
-                $items->push([
-                    'id' => $homework->id,
-                    'type' => 'academic',
-                    'type_label' => __('supervisor.homework.type_academic'),
-                    'session_info' => $homework->title ?? __('supervisor.homework.academic_homework') . ' #' . $homework->id,
-                    'teacher_name' => $homework->teacher?->name ?? '-',
-                    'teacher_id' => $homework->teacher_id,
-                    'student_names' => $homework->submissions->pluck('student.name')->filter()->implode(', ') ?: '-',
-                    'assigned_date' => $homework->assigned_at ?? $homework->created_at,
-                    'due_date' => $homework->due_date,
-                    'status' => $status,
-                    'status_label' => __('supervisor.homework.status_' . $status),
-                    'submissions_count' => $homework->submitted_count ?? $homework->submissions->count(),
-                    'has_submissions' => true,
-                    'session_id' => $homework->academic_session_id,
-                ]);
-            }
+        $interactiveQuery = InteractiveCourseHomework::whereIn('teacher_id', $academicTeacherIds)
+            ->with(['session.course', 'teacher', 'submissions.student']);
+
+        if ($request->filled('teacher_id')) {
+            $interactiveQuery->where('teacher_id', $request->teacher_id);
+        }
+        if ($request->filled('date_from')) {
+            $interactiveQuery->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $interactiveQuery->whereDate('created_at', '<=', $request->date_to);
         }
 
-        // 3. Interactive course homework
-        if (! $request->filled('type') || $request->type === 'interactive') {
-            $interactiveQuery = InteractiveCourseHomework::whereIn('teacher_id', $academicTeacherIds)
-                ->with(['session.course', 'teacher', 'submissions']);
-
-            if ($request->filled('teacher_id')) {
-                $interactiveQuery->where('teacher_id', $request->teacher_id);
-            }
-            if ($request->filled('date_from')) {
-                $interactiveQuery->whereDate('created_at', '>=', $request->date_from);
-            }
-            if ($request->filled('date_to')) {
-                $interactiveQuery->whereDate('created_at', '<=', $request->date_to);
-            }
-
-            foreach ($interactiveQuery->get() as $homework) {
-                $isOverdue = $homework->due_date && $homework->due_date->isPast() && $homework->graded_count < $homework->submitted_count;
-                $status = $homework->graded_count > 0 ? 'graded' : ($isOverdue ? 'overdue' : 'pending');
-
-                $items->push([
-                    'id' => $homework->id,
-                    'type' => 'interactive',
-                    'type_label' => __('supervisor.homework.type_interactive'),
-                    'session_info' => $homework->title ?? ($homework->session?->course?->title ?? __('supervisor.homework.interactive_homework')) . ' #' . $homework->id,
-                    'teacher_name' => $homework->teacher?->name ?? '-',
-                    'teacher_id' => $homework->teacher_id,
-                    'student_names' => '-',
-                    'assigned_date' => $homework->created_at,
-                    'due_date' => $homework->due_date,
-                    'status' => $status,
-                    'status_label' => __('supervisor.homework.status_' . $status),
-                    'submissions_count' => $homework->submitted_count ?? $homework->submissions->count(),
-                    'has_submissions' => true,
-                ]);
-            }
-        }
-
-        // Sort by assigned_date descending
-        $items = $items->sortByDesc('assigned_date')->values();
-
-        // Stats
-        $totalAssigned = $items->count();
-        $pendingCount = $items->where('status', 'pending')->count();
-        $gradedCount = $items->where('status', 'graded')->count();
-        $overdueCount = $items->where('status', 'overdue')->count();
-
-        // Manual pagination
-        $page = $request->get('page', 1);
-        $perPage = 15;
-        $paginated = new LengthAwarePaginator(
-            $items->forPage($page, $perPage)->values(),
-            $items->count(),
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
+        $interactiveHomework = $interactiveQuery->latest()->paginate(15, ['*'], 'page_interactive')->withQueryString();
 
         // Teachers for filter
         $allTeacherIds = $this->getAllAssignedTeacherIds();
@@ -167,11 +140,12 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
         ])->toArray();
 
         return view('supervisor.homework.index', [
-            'homework' => $paginated,
-            'totalAssigned' => $totalAssigned,
-            'pendingCount' => $pendingCount,
-            'gradedCount' => $gradedCount,
-            'overdueCount' => $overdueCount,
+            'quranHomework' => $quranHomework,
+            'academicHomework' => $academicHomework,
+            'interactiveHomework' => $interactiveHomework,
+            'quranStats' => $quranStats,
+            'academicStats' => $academicStats,
+            'interactiveStats' => $interactiveStats,
             'teachers' => $teachers,
         ]);
     }
@@ -186,7 +160,19 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
                 ->get();
             $homeworkTitle = $homework->title ?? __('supervisor.homework.academic_homework');
             $sessionInfo = $homework->session?->session_code ?? '';
-        } elseif ($type === 'interactive') {
+
+            return view('supervisor.homework.submissions', [
+                'type' => $type,
+                'homework' => $homework,
+                'submissions' => $submissions,
+                'homeworkTitle' => $homeworkTitle,
+                'sessionInfo' => $sessionInfo,
+                'session' => null,
+                'reports' => collect(),
+            ]);
+        }
+
+        if ($type === 'interactive') {
             $homework = InteractiveCourseHomework::with(['teacher', 'session.course'])->findOrFail($id);
             $submissions = InteractiveCourseHomeworkSubmission::where('interactive_course_homework_id', $id)
                 ->with(['student', 'grader'])
@@ -194,25 +180,44 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
                 ->get();
             $homeworkTitle = $homework->title ?? __('supervisor.homework.interactive_homework');
             $sessionInfo = $homework->session?->course?->title ?? '';
-        } elseif ($type === 'quran') {
-            // Quran sessions don't have formal submissions — show session info
-            $session = QuranSession::with(['quranTeacher', 'student'])->findOrFail($id);
-            $submissions = collect();
-            $homework = null;
-            $homeworkTitle = $session->title ?? __('supervisor.homework.quran_session') . ' #' . $session->id;
-            $sessionInfo = $session->quranTeacher?->name ?? '';
-        } else {
-            abort(404);
+
+            return view('supervisor.homework.submissions', [
+                'type' => $type,
+                'homework' => $homework,
+                'submissions' => $submissions,
+                'homeworkTitle' => $homeworkTitle,
+                'sessionInfo' => $sessionInfo,
+                'session' => null,
+                'reports' => collect(),
+            ]);
         }
 
-        return view('supervisor.homework.submissions', [
-            'type' => $type,
-            'homework' => $homework,
-            'submissions' => $submissions,
-            'homeworkTitle' => $homeworkTitle,
-            'sessionInfo' => $sessionInfo,
-            'session' => $type === 'quran' ? ($session ?? null) : null,
-        ]);
+        if ($type === 'quran') {
+            $homework = QuranSessionHomework::with([
+                'session.quranTeacher',
+                'session.student',
+                'session.studentReports',
+            ])->findOrFail($id);
+
+            $session = $homework->session;
+            $reports = $session ? $session->studentReports : collect();
+            $homeworkTitle = $homework->new_memorization_range
+                ?? $homework->review_range
+                ?? __('supervisor.homework.quran_homework_details');
+            $sessionInfo = $session?->quranTeacher?->name ?? '';
+
+            return view('supervisor.homework.submissions', [
+                'type' => $type,
+                'homework' => $homework,
+                'submissions' => collect(),
+                'homeworkTitle' => $homeworkTitle,
+                'sessionInfo' => $sessionInfo,
+                'session' => $session,
+                'reports' => $reports,
+            ]);
+        }
+
+        abort(404);
     }
 
     public function grade(Request $request, $subdomain = null, $submissionId = null)
@@ -236,5 +241,14 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
         );
 
         return redirect()->back()->with('success', __('supervisor.homework.graded_successfully'));
+    }
+
+    private function submissionIsPending($submission): bool
+    {
+        $status = $submission->submission_status instanceof \App\Enums\HomeworkSubmissionStatus
+            ? $submission->submission_status->value
+            : $submission->submission_status;
+
+        return in_array($status, ['pending', 'draft']);
     }
 }
