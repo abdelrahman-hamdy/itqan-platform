@@ -179,6 +179,26 @@
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors cursor-pointer">
                     <i class="ri-calendar-check-line"></i>{{ __('supervisor.subscriptions.action_extend') }}
                 </button>
+
+                {{-- Cancel Extension button (only when in grace period) --}}
+                @if($subscription->isInGracePeriod())
+                    <form id="show-cancel-extension-form" method="POST"
+                          action="{{ route('manage.subscriptions.cancel-extension', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
+                        @csrf
+                    </form>
+                    <button type="button"
+                        onclick="window.confirmAction({
+                            title: @js(__('supervisor.subscriptions.action_cancel_extension')),
+                            message: @js(__('supervisor.subscriptions.confirm_cancel_extension')),
+                            confirmText: @js(__('supervisor.subscriptions.action_cancel_extension')),
+                            isDangerous: true,
+                            icon: 'ri-calendar-close-line',
+                            onConfirm: () => document.getElementById('show-cancel-extension-form').submit()
+                        })"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white rounded-lg text-sm hover:bg-orange-700 transition-colors cursor-pointer">
+                        <i class="ri-calendar-close-line"></i>{{ __('supervisor.subscriptions.action_cancel_extension') }}
+                    </button>
+                @endif
             </div>
         </div>
     @endif

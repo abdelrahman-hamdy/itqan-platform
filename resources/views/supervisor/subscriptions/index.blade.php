@@ -361,6 +361,27 @@
                                         {{ __('supervisor.subscriptions.action_extend') }}
                                     </button>
 
+                                    {{-- Cancel Extension button (only when in grace period) --}}
+                                    @if($sub['model']->isInGracePeriod())
+                                        <form id="cancel-extension-form-{{ $sub['id'] }}" method="POST"
+                                              action="{{ route('manage.subscriptions.cancel-extension', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">
+                                            @csrf
+                                        </form>
+                                        <button type="button"
+                                            onclick="window.confirmAction({
+                                                title: @js(__('supervisor.subscriptions.action_cancel_extension')),
+                                                message: @js(__('supervisor.subscriptions.confirm_cancel_extension')),
+                                                confirmText: @js(__('supervisor.subscriptions.action_cancel_extension')),
+                                                isDangerous: true,
+                                                icon: 'ri-calendar-close-line',
+                                                onConfirm: () => document.getElementById('cancel-extension-form-{{ $sub['id'] }}').submit()
+                                            })"
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors">
+                                            <i class="ri-calendar-close-line"></i>
+                                            {{ __('supervisor.subscriptions.action_cancel_extension') }}
+                                        </button>
+                                    @endif
+
                                     @if($sub['status']->canCancel())
                                         <form id="cancel-form-{{ $sub['id'] }}" method="POST"
                                               action="{{ route('manage.subscriptions.cancel', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">

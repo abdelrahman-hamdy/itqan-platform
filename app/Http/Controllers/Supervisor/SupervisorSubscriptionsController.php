@@ -222,6 +222,45 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         return redirect()->back()->with('success', __('supervisor.subscriptions.extended_successfully'));
     }
 
+    public function cancelExtension(Request $request, $subdomain, string $type, $id): RedirectResponse
+    {
+        if (! $this->isAdminUser()) {
+            abort(403);
+        }
+
+        $subscription = $this->resolveSubscription($type, $id);
+        $this->ensureSubscriptionInScope($subscription, $type);
+
+        $metadata = $subscription->metadata ?? [];
+
+        if (! isset($metadata['grace_period_ends_at'])) {
+            return redirect()->back()->with('error', __('supervisor.subscriptions.no_active_extension'));
+        }
+
+        // Remove grace period metadata
+        unset($metadata['grace_period_ends_at']);
+
+        // Log cancellation in extensions history
+        $metadata['extensions'] = $metadata['extensions'] ?? [];
+        $metadata['extensions'][] = [
+            'type' => 'grace_period_cancelled',
+            'cancelled_by' => auth()->id(),
+            'cancelled_by_name' => auth()->user()->name,
+            'cancelled_at' => now()->toDateTimeString(),
+        ];
+
+        $updateData = ['metadata' => $metadata ?: null];
+
+        // If subscription period has actually ended, revert to EXPIRED
+        if ($subscription->ends_at && $subscription->ends_at->isPast()) {
+            $updateData['status'] = SessionSubscriptionStatus::EXPIRED;
+        }
+
+        $subscription->update($updateData);
+
+        return redirect()->back()->with('success', __('supervisor.subscriptions.extension_cancelled'));
+    }
+
     public function cancel(Request $request, $subdomain, string $type, $id): RedirectResponse
     {
         return $this->changeStatus($subdomain, $type, $id, SessionSubscriptionStatus::CANCELLED);

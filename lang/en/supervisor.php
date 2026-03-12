@@ -725,6 +725,31 @@ return [
         'no_results_description' => 'Try changing your search or filter criteria.',
         'no_earnings' => 'No Earnings',
         'no_earnings_description' => 'No earnings have been recorded for the teachers yet.',
+        // Action buttons
+        'action_finalize' => 'Finalize',
+        'action_dispute' => 'Dispute',
+        'action_resolve' => 'Resolve Dispute',
+        'action_finalize_all' => 'Finalize All',
+        // Confirmation messages
+        'confirm_finalize' => 'Are you sure you want to finalize this earning?',
+        'confirm_finalize_all' => 'Are you sure you want to finalize all pending earnings?',
+        'dispute_notes_label' => 'Dispute Reason',
+        'dispute_notes_placeholder' => 'Enter the reason for dispute...',
+        'resolution_notes_label' => 'Resolution Notes',
+        'resolution_notes_placeholder' => 'Enter notes explaining how the dispute was resolved...',
+        'current_dispute_notes' => 'Current Dispute Reason',
+        'confirm_resolve' => 'Are you sure you want to resolve this dispute and finalize the earning?',
+        // Success messages
+        'finalized_success' => 'Earning finalized successfully.',
+        'disputed_success' => 'Dispute recorded successfully.',
+        'resolved_success' => 'Dispute resolved and earning finalized successfully.',
+        'finalized_all_success' => ':count earnings finalized successfully.',
+        'resolved_at' => 'Resolved on :date',
+        // Error messages
+        'cannot_finalize' => 'Cannot finalize this earning (already finalized or disputed).',
+        'already_disputed' => 'This earning is already disputed.',
+        'not_disputed' => 'This earning is not disputed.',
+        'pending_earnings_count' => ':count pending earnings',
     ],
 
     'supervisors' => [
@@ -921,6 +946,10 @@ return [
         'current_end_date' => 'Current end date',
         'extended_for_days' => 'Extended for :days days',
         'grace_period_until' => 'Grace period until :date',
+        'action_cancel_extension' => 'Cancel Extension',
+        'confirm_cancel_extension' => 'Are you sure you want to cancel the extension? The student will lose access if the original subscription period has ended.',
+        'extension_cancelled' => 'Extension cancelled successfully',
+        'no_active_extension' => 'No active extension for this subscription',
     ],
 
     'payments' => [

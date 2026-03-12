@@ -725,6 +725,31 @@ return [
         'no_results_description' => 'جرّب تغيير معايير البحث أو التصفية.',
         'no_earnings' => 'لا توجد أرباح',
         'no_earnings_description' => 'لم يتم تسجيل أي أرباح للمعلمين بعد.',
+        // Action buttons
+        'action_finalize' => 'تأكيد',
+        'action_dispute' => 'اعتراض',
+        'action_resolve' => 'حل الاعتراض',
+        'action_finalize_all' => 'تأكيد الكل',
+        // Confirmation messages
+        'confirm_finalize' => 'هل أنت متأكد من تأكيد هذا الربح؟',
+        'confirm_finalize_all' => 'هل أنت متأكد من تأكيد جميع الأرباح المعلقة؟',
+        'dispute_notes_label' => 'سبب الاعتراض',
+        'dispute_notes_placeholder' => 'أدخل سبب الاعتراض...',
+        'resolution_notes_label' => 'ملاحظات الحل',
+        'resolution_notes_placeholder' => 'أدخل ملاحظات توضح كيف تم حل الاعتراض...',
+        'current_dispute_notes' => 'سبب الاعتراض الحالي',
+        'confirm_resolve' => 'هل أنت متأكد من حل هذا الاعتراض وتأكيد الربح؟',
+        // Success messages
+        'finalized_success' => 'تم تأكيد الربح بنجاح.',
+        'disputed_success' => 'تم تسجيل الاعتراض بنجاح.',
+        'resolved_success' => 'تم حل الاعتراض وتأكيد الربح بنجاح.',
+        'finalized_all_success' => 'تم تأكيد :count ربح بنجاح.',
+        'resolved_at' => 'تم الحل بتاريخ :date',
+        // Error messages
+        'cannot_finalize' => 'لا يمكن تأكيد هذا الربح (مُعتمد بالفعل أو متنازع عليه).',
+        'already_disputed' => 'هذا الربح متنازع عليه بالفعل.',
+        'not_disputed' => 'هذا الربح غير متنازع عليه.',
+        'pending_earnings_count' => ':count ربح معلق',
     ],
 
     'supervisors' => [
@@ -921,6 +946,10 @@ return [
         'current_end_date' => 'تاريخ الانتهاء الحالي',
         'extended_for_days' => 'ممتد لـ :days يوم',
         'grace_period_until' => 'فترة السماح حتى :date',
+        'action_cancel_extension' => 'إلغاء التمديد',
+        'confirm_cancel_extension' => 'هل أنت متأكد من إلغاء التمديد؟ سيفقد الطالب الوصول إذا كانت فترة الاشتراك الأصلية قد انتهت.',
+        'extension_cancelled' => 'تم إلغاء التمديد بنجاح',
+        'no_active_extension' => 'لا يوجد تمديد نشط لهذا الاشتراك',
     ],
 
     'payments' => [
