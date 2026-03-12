@@ -26,10 +26,13 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
 
         $items = collect();
 
-        // 1. Quran homework: sessions with homework assigned
+        // 1. Quran homework: sessions with homework assigned (via relationship or legacy flag)
         $quranQuery = QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
-            ->where('homework_assigned', true)
-            ->with(['quranTeacher', 'student']);
+            ->where(function ($q) {
+                $q->where('homework_assigned', true)
+                  ->orWhereHas('sessionHomework');
+            })
+            ->with(['quranTeacher', 'student', 'sessionHomework']);
 
         if ($request->filled('teacher_id')) {
             $quranQuery->where('quran_teacher_id', $request->teacher_id);
