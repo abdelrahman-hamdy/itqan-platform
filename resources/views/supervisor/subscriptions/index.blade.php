@@ -195,71 +195,70 @@
                     @endphp
 
                     <div class="px-4 md:px-6 py-4 md:py-5 hover:bg-gray-50/50 transition-colors">
-                        <!-- Top: Avatar + Info + Badges -->
                         <div class="flex items-start gap-3 md:gap-4">
                             <x-avatar :user="$sub['student_user']" size="md" user-type="student" />
-                            <div class="flex-1 min-w-0">
-                                <div class="flex flex-wrap items-center gap-2 mb-1">
-                                    <span class="text-base md:text-lg font-bold text-gray-900 truncate">{{ $sub['student_name'] }}</span>
-                                    <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full {{ $typeColor }}">
-                                        <i class="{{ $typeIcon }}"></i>
-                                        {{ $typeLabel }}
-                                    </span>
-                                    <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $sub['status']->badgeClasses() }}">
-                                        {{ $sub['status']->label() }}
-                                    </span>
+
+                            <!-- Main content + right panel -->
+                            <div class="flex-1 min-w-0 flex flex-col md:flex-row md:items-start md:gap-6">
+                                <!-- Left: name, badges, metadata -->
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                                        <span class="text-base md:text-lg font-bold text-gray-900 truncate">{{ $sub['student_name'] }}</span>
+                                        <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full {{ $typeColor }}">
+                                            <i class="{{ $typeIcon }}"></i>
+                                            {{ $typeLabel }}
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $sub['status']->badgeClasses() }}">
+                                            {{ $sub['status']->label() }}
+                                        </span>
+                                        {{-- Expiry badge inline with name on desktop --}}
+                                        @if($daysLeft !== null)
+                                            @if($isExpired)
+                                                <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
+                                                    <i class="ri-error-warning-line"></i>
+                                                    {{ __('supervisor.subscriptions.ended_since', ['days' => abs($daysLeft)]) }}
+                                                </span>
+                                            @elseif($isExpiringSoon)
+                                                <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                                                    <i class="ri-alarm-warning-line"></i>
+                                                    {{ __('supervisor.subscriptions.ends_in', ['days' => $daysLeft]) }}
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                                                    <i class="ri-calendar-check-line"></i>
+                                                    {{ __('supervisor.subscriptions.ends_in', ['days' => $daysLeft]) }}
+                                                </span>
+                                            @endif
+                                        @endif
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs md:text-sm text-gray-600">
+                                        <span class="flex items-center gap-1">
+                                            <i class="ri-user-star-line text-gray-400"></i>
+                                            {{ $sub['teacher_name'] }}
+                                        </span>
+                                        <span class="flex items-center gap-1">
+                                            <i class="ri-calendar-line text-gray-400"></i>
+                                            {{ $sub['start_date']?->format('Y-m-d') ?? '-' }}
+                                            <span class="text-gray-400">{{ __('supervisor.subscriptions.to') }}</span>
+                                            {{ $sub['end_date']?->format('Y-m-d') ?? '-' }}
+                                        </span>
+                                    </div>
                                 </div>
 
-                                <!-- Metadata row -->
-                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs md:text-sm text-gray-600 mb-2">
-                                    <span class="flex items-center gap-1">
-                                        <i class="ri-user-star-line text-gray-400"></i>
-                                        {{ $sub['teacher_name'] }}
-                                    </span>
-                                    <span class="flex items-center gap-1">
-                                        <i class="ri-calendar-line text-gray-400"></i>
-                                        {{ $sub['start_date']?->format('Y-m-d') ?? '-' }}
-                                        <span class="text-gray-400">{{ __('supervisor.subscriptions.to') }}</span>
-                                        {{ $sub['end_date']?->format('Y-m-d') ?? '-' }}
-                                    </span>
-                                </div>
-
-                                <!-- Sessions Progress Bar -->
-                                <div class="flex items-center gap-3 mb-2">
-                                    <div class="flex-1 max-w-[200px]">
-                                        <div class="flex items-center justify-between text-xs mb-1">
-                                            <span class="text-gray-600">{{ __('supervisor.subscriptions.col_sessions') }}</span>
-                                            <span class="font-semibold text-gray-900">{{ $sessionsCompleted }}/{{ $sessionsTotal }}</span>
-                                        </div>
-                                        <div class="w-full bg-gray-200 rounded-full h-2">
-                                            <div class="h-2 rounded-full transition-all {{ $progressPct >= 80 ? 'bg-red-500' : ($progressPct >= 50 ? 'bg-amber-500' : 'bg-blue-500') }}"
-                                                 style="width: {{ $progressPct }}%"></div>
-                                        </div>
+                                <!-- Right: sessions progress (desktop: side panel, mobile: below) -->
+                                <div class="mt-2 md:mt-0 md:w-40 flex-shrink-0">
+                                    <div class="flex items-center justify-between text-xs mb-1">
+                                        <span class="text-gray-500">{{ __('supervisor.subscriptions.col_sessions') }}</span>
+                                        <span class="font-semibold text-gray-900">{{ $sessionsCompleted }}/{{ $sessionsTotal }}</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                        <div class="h-1.5 rounded-full transition-all {{ $progressPct >= 80 ? 'bg-red-500' : ($progressPct >= 50 ? 'bg-amber-500' : 'bg-blue-500') }}"
+                                             style="width: {{ $progressPct }}%"></div>
                                     </div>
                                     @if($sub['sessions_remaining'] <= 3 && $sub['sessions_remaining'] > 0)
-                                        <span class="text-xs text-amber-600 font-medium">({{ $sub['sessions_remaining'] }} {{ __('supervisor.subscriptions.remaining') }})</span>
+                                        <p class="text-xs text-amber-600 font-medium mt-0.5">{{ $sub['sessions_remaining'] }} {{ __('supervisor.subscriptions.remaining') }}</p>
                                     @endif
                                 </div>
-
-                                <!-- Expiry Info -->
-                                @if($daysLeft !== null)
-                                    @if($isExpired)
-                                        <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-red-100 text-red-700 font-medium">
-                                            <i class="ri-error-warning-line"></i>
-                                            {{ __('supervisor.subscriptions.ended_since', ['days' => abs($daysLeft)]) }}
-                                        </span>
-                                    @elseif($isExpiringSoon)
-                                        <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 font-medium">
-                                            <i class="ri-alarm-warning-line"></i>
-                                            {{ __('supervisor.subscriptions.ends_in', ['days' => $daysLeft]) }}
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-green-100 text-green-700">
-                                            <i class="ri-calendar-check-line"></i>
-                                            {{ __('supervisor.subscriptions.ends_in', ['days' => $daysLeft]) }}
-                                        </span>
-                                    @endif
-                                @endif
                             </div>
                         </div>
 
