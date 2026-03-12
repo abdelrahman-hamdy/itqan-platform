@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Supervisor;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -127,89 +126,6 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'filteredCount' => $filteredValues->count(),
             'isAdmin' => $isAdmin,
         ]);
-    }
-
-    public function create(Request $request, $subdomain = null): View
-    {
-        if (!$this->isAdminUser()) {
-            abort(403);
-        }
-
-        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
-
-        $quranTeachers = !empty($quranTeacherIds)
-            ? User::whereIn('id', $quranTeacherIds)->get()
-            : collect();
-
-        $academicTeachers = !empty($academicTeacherIds)
-            ? User::whereIn('id', $academicTeacherIds)->get()
-            : collect();
-
-        $students = User::where('user_type', 'student')->where('active_status', true)->get();
-
-        return view('supervisor.subscriptions.create', compact(
-            'quranTeachers',
-            'academicTeachers',
-            'students',
-        ));
-    }
-
-    public function store(Request $request, $subdomain = null): RedirectResponse
-    {
-        if (!$this->isAdminUser()) {
-            abort(403);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'type' => 'required|in:quran,academic',
-            'student_id' => 'required|exists:users,id',
-            'teacher_id' => 'required|integer',
-            'total_sessions' => 'required|integer|min:1',
-            'starts_at' => 'required|date',
-            'ends_at' => 'required|date|after:starts_at',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $academyId = $this->getAcademyId();
-
-        if ($request->type === 'quran') {
-            QuranSubscription::create([
-                'academy_id' => $academyId,
-                'student_id' => $request->student_id,
-                'quran_teacher_id' => $request->teacher_id,
-                'total_sessions' => $request->total_sessions,
-                'sessions_remaining' => $request->total_sessions,
-                'status' => SessionSubscriptionStatus::ACTIVE,
-                'payment_status' => 'paid',
-                'starts_at' => $request->starts_at,
-                'ends_at' => $request->ends_at,
-                'billing_cycle' => 'monthly',
-                'final_price' => 0,
-                'currency' => 'SAR',
-            ]);
-        } else {
-            AcademicSubscription::create([
-                'academy_id' => $academyId,
-                'student_id' => $request->student_id,
-                'teacher_id' => $request->teacher_id,
-                'total_sessions' => $request->total_sessions,
-                'sessions_remaining' => $request->total_sessions,
-                'status' => SessionSubscriptionStatus::ACTIVE,
-                'payment_status' => 'paid',
-                'starts_at' => $request->starts_at,
-                'ends_at' => $request->ends_at,
-                'billing_cycle' => 'monthly',
-                'final_price' => 0,
-                'currency' => 'SAR',
-            ]);
-        }
-
-        return redirect()->route('manage.subscriptions.index', ['subdomain' => $subdomain])
-            ->with('success', __('supervisor.subscriptions.created_successfully'));
     }
 
     public function show(Request $request, $subdomain, string $type, $id): View

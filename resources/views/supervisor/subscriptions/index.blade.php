@@ -19,18 +19,9 @@
     />
 
     <!-- Page Header -->
-    <div class="mb-6 md:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.subscriptions.page_title') }}</h1>
-            <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.subscriptions.page_subtitle') }}</p>
-        </div>
-        @if($isAdmin)
-            <a href="{{ route('manage.subscriptions.create', ['subdomain' => $subdomain]) }}"
-               class="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap cursor-pointer">
-                <i class="ri-add-line"></i>
-                {{ __('supervisor.subscriptions.add_subscription') }}
-            </a>
-        @endif
+    <div class="mb-6 md:mb-8">
+        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.subscriptions.page_title') }}</h1>
+        <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.subscriptions.page_subtitle') }}</p>
     </div>
 
     <!-- Stats -->
