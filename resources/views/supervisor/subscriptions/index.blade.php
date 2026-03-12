@@ -173,9 +173,7 @@
                     <div class="px-4 md:px-6 py-4 md:py-5 hover:bg-gray-50/50 transition-colors">
                         <!-- Top: Avatar + Info + Badges -->
                         <div class="flex items-start gap-3 md:gap-4 mb-3">
-                            <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold text-gray-600 flex-shrink-0">
-                                {{ mb_substr($sub['student_name'], 0, 1) }}
-                            </div>
+                            <x-avatar :user="$sub['student_user']" size="md" user-type="student" />
                             <div class="flex-1 min-w-0">
                                 <div class="flex flex-wrap items-center gap-2 mb-1">
                                     <span class="text-base md:text-lg font-bold text-gray-900 truncate">{{ $sub['student_name'] }}</span>
