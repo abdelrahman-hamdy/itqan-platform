@@ -107,9 +107,7 @@
                                 <tr class="hover:bg-gray-50/50 transition-colors">
                                     <td class="px-4 md:px-6 py-3">
                                         <div class="flex items-center gap-2">
-                                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">
-                                                {{ mb_substr($report->student?->name ?? '?', 0, 1) }}
-                                            </div>
+                                            <x-avatar :user="$report->student" size="xs" user-type="student" />
                                             <span class="font-medium text-gray-900">{{ $report->student?->name ?? '-' }}</span>
                                         </div>
                                     </td>

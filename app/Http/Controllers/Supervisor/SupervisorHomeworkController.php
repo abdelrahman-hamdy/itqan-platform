@@ -226,7 +226,7 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
             $homework = QuranSessionHomework::with([
                 'session.quranTeacher',
                 'session.student',
-                'session.studentReports',
+                'session.studentReports.student',
             ])->findOrFail($id);
 
             $session = $homework->session;
