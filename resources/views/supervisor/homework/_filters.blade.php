@@ -1,7 +1,7 @@
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
-    $hasActiveFilters = request('teacher_id') || request('date_from') || request('date_to');
-    $filterCount = (request('teacher_id') ? 1 : 0) + (request('date_from') ? 1 : 0) + (request('date_to') ? 1 : 0);
+    $hasActiveFilters = request('teacher_id') || request('student_id') || request('date_from') || request('date_to');
+    $filterCount = (request('teacher_id') ? 1 : 0) + (request('student_id') ? 1 : 0) + (request('date_from') ? 1 : 0) + (request('date_to') ? 1 : 0);
 @endphp
 
 <div x-data="{ open: {{ $hasActiveFilters ? 'true' : 'false' }} }" class="border-b border-gray-200">
@@ -18,7 +18,7 @@
     </button>
     <div x-show="open" x-collapse>
         <form method="GET" action="{{ route('manage.homework.index', ['subdomain' => $subdomain]) }}#{{ $tabType }}" class="px-4 md:px-6 pb-4">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 <div>
                     <label for="teacher_id_{{ $tabType }}" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.homework.filter_teacher') }}</label>
                     <select name="teacher_id" id="teacher_id_{{ $tabType }}" class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
@@ -26,6 +26,17 @@
                         @foreach($teachers as $teacher)
                             <option value="{{ $teacher['id'] }}" {{ request('teacher_id') == $teacher['id'] ? 'selected' : '' }}>
                                 {{ $teacher['name'] }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="student_id_{{ $tabType }}" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.homework.filter_student') }}</label>
+                    <select name="student_id" id="student_id_{{ $tabType }}" class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                        <option value="">{{ __('supervisor.homework.all_students') }}</option>
+                        @foreach($students as $student)
+                            <option value="{{ $student['id'] }}" {{ request('student_id') == $student['id'] ? 'selected' : '' }}>
+                                {{ $student['name'] }}
                             </option>
                         @endforeach
                     </select>

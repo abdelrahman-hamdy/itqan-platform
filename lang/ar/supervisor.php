@@ -1097,6 +1097,9 @@ return [
         'scores' => 'الدرجات',
         'evaluation' => 'التقييم',
         'grading_student' => 'تقييم الطالب: :name',
+        'filter_student' => 'الطالب',
+        'all_students' => 'جميع الطلاب',
+        'view_session' => 'عرض الجلسة',
     ],
 
     'attendance' => [

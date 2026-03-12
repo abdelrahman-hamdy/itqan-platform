@@ -55,6 +55,9 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
             if ($request->filled('teacher_id')) {
                 $q->where('quran_teacher_id', $request->teacher_id);
             }
+            if ($request->filled('student_id')) {
+                $q->where('student_id', $request->student_id);
+            }
         })->with(['session.quranTeacher', 'session.student', 'session.studentReport']);
 
         if ($request->filled('date_from')) {
@@ -90,6 +93,9 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
         if ($request->filled('teacher_id')) {
             $academicQuery->where('teacher_id', $request->teacher_id);
         }
+        if ($request->filled('student_id')) {
+            $academicQuery->whereHas('submissions', fn ($q) => $q->where('student_id', $request->student_id));
+        }
         if ($request->filled('date_from')) {
             $academicQuery->whereDate('assigned_at', '>=', $request->date_from);
         }
@@ -123,6 +129,9 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
         if ($request->filled('teacher_id')) {
             $interactiveQuery->where('teacher_id', $request->teacher_id);
         }
+        if ($request->filled('student_id')) {
+            $interactiveQuery->whereHas('submissions', fn ($q) => $q->where('student_id', $request->student_id));
+        }
         if ($request->filled('date_from')) {
             $interactiveQuery->whereDate('created_at', '>=', $request->date_from);
         }
@@ -139,6 +148,26 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
             'name' => $u->name,
         ])->toArray();
 
+        // Students for filter — collect unique students from all homework types
+        $studentIds = collect();
+        // Quran students
+        $studentIds = $studentIds->merge(
+            $quranAllForStats->map(fn ($hw) => $hw->session?->student_id)->filter()
+        );
+        // Academic students
+        $studentIds = $studentIds->merge(
+            $academicAllForStats->flatMap(fn ($hw) => $hw->submissions->pluck('student_id'))->filter()
+        );
+        // Interactive students
+        $studentIds = $studentIds->merge(
+            $interactiveAllForStats->flatMap(fn ($hw) => $hw->submissions->pluck('student_id'))->filter()
+        );
+
+        $students = User::whereIn('id', $studentIds->unique())->get()->map(fn ($u) => [
+            'id' => $u->id,
+            'name' => $u->name,
+        ])->toArray();
+
         return view('supervisor.homework.index', [
             'quranHomework' => $quranHomework,
             'academicHomework' => $academicHomework,
@@ -147,6 +176,7 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
             'academicStats' => $academicStats,
             'interactiveStats' => $interactiveStats,
             'teachers' => $teachers,
+            'students' => $students,
         ]);
     }
 
@@ -167,7 +197,7 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
                 'submissions' => $submissions,
                 'homeworkTitle' => $homeworkTitle,
                 'sessionInfo' => $sessionInfo,
-                'session' => null,
+                'session' => $homework->session,
                 'reports' => collect(),
             ]);
         }
@@ -187,7 +217,7 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
                 'submissions' => $submissions,
                 'homeworkTitle' => $homeworkTitle,
                 'sessionInfo' => $sessionInfo,
-                'session' => null,
+                'session' => $homework->session,
                 'reports' => collect(),
             ]);
         }

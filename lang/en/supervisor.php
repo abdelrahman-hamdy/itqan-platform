@@ -1097,6 +1097,9 @@ return [
         'scores' => 'Scores',
         'evaluation' => 'Evaluation',
         'grading_student' => 'Grading student: :name',
+        'filter_student' => 'Student',
+        'all_students' => 'All Students',
+        'view_session' => 'View Session',
     ],
 
     'attendance' => [

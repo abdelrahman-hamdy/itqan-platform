@@ -3,8 +3,8 @@
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
 
-    $hasActiveFilters = request('teacher_id') || request('date_from') || request('date_to');
-    $filterCount = (request('teacher_id') ? 1 : 0) + (request('date_from') ? 1 : 0) + (request('date_to') ? 1 : 0);
+    $hasActiveFilters = request('teacher_id') || request('student_id') || request('date_from') || request('date_to');
+    $filterCount = (request('teacher_id') ? 1 : 0) + (request('student_id') ? 1 : 0) + (request('date_from') ? 1 : 0) + (request('date_to') ? 1 : 0);
 @endphp
 
 <div>
@@ -141,9 +141,9 @@
                                             </td>
                                             <td class="px-4 md:px-6 py-3">
                                                 @if($isEvaluated)
-                                                    <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">{{ __('supervisor.homework.evaluated') }}</span>
+                                                    <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 whitespace-nowrap">{{ __('supervisor.homework.evaluated') }}</span>
                                                 @else
-                                                    <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700">{{ __('supervisor.homework.awaiting_evaluation') }}</span>
+                                                    <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 whitespace-nowrap">{{ __('supervisor.homework.awaiting_evaluation') }}</span>
                                                 @endif
                                             </td>
                                             <td class="px-4 md:px-6 py-3 hidden lg:table-cell text-gray-600">
@@ -162,7 +162,7 @@
                                             </td>
                                             <td class="px-4 md:px-6 py-3">
                                                 <a href="{{ route('manage.homework.submissions', ['subdomain' => $subdomain, 'type' => 'quran', 'id' => $hw->id]) }}"
-                                                   class="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+                                                   class="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">
                                                     <i class="ri-eye-line"></i>
                                                     {{ __('supervisor.homework.view_details') }}
                                                 </a>
@@ -273,8 +273,7 @@
                                                 @endif
                                             </td>
                                             <td class="px-4 md:px-6 py-3">
-                                                <span class="text-gray-700 font-medium">{{ $gradedCount }}/{{ $submittedCount }}</span>
-                                                <span class="text-xs text-gray-500">{{ __('supervisor.homework.submissions') }}</span>
+                                                <span class="whitespace-nowrap"><span class="text-gray-700 font-medium">{{ $gradedCount }}/{{ $submittedCount }}</span> <span class="text-xs text-gray-500">{{ __('supervisor.homework.submissions') }}</span></span>
                                             </td>
                                             <td class="px-4 md:px-6 py-3 hidden lg:table-cell text-gray-600">
                                                 @if($avgScore !== null)
@@ -284,13 +283,13 @@
                                                 @endif
                                             </td>
                                             <td class="px-4 md:px-6 py-3">
-                                                <span class="px-2 py-1 text-xs rounded-full {{ $statusBadges[$status] ?? 'bg-gray-100 text-gray-700' }}">
+                                                <span class="px-2 py-1 text-xs rounded-full whitespace-nowrap {{ $statusBadges[$status] ?? 'bg-gray-100 text-gray-700' }}">
                                                     {{ __('supervisor.homework.status_' . $status) }}
                                                 </span>
                                             </td>
                                             <td class="px-4 md:px-6 py-3">
                                                 <a href="{{ route('manage.homework.submissions', ['subdomain' => $subdomain, 'type' => 'academic', 'id' => $hw->id]) }}"
-                                                   class="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+                                                   class="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">
                                                     <i class="ri-eye-line"></i>
                                                     {{ __('supervisor.homework.view_submissions') }}
                                                 </a>
@@ -401,8 +400,7 @@
                                                 @endif
                                             </td>
                                             <td class="px-4 md:px-6 py-3">
-                                                <span class="text-gray-700 font-medium">{{ $gradedCount }}/{{ $submittedCount }}</span>
-                                                <span class="text-xs text-gray-500">{{ __('supervisor.homework.submissions') }}</span>
+                                                <span class="whitespace-nowrap"><span class="text-gray-700 font-medium">{{ $gradedCount }}/{{ $submittedCount }}</span> <span class="text-xs text-gray-500">{{ __('supervisor.homework.submissions') }}</span></span>
                                             </td>
                                             <td class="px-4 md:px-6 py-3 hidden lg:table-cell text-gray-600">
                                                 @if($avgScore !== null)
@@ -412,13 +410,13 @@
                                                 @endif
                                             </td>
                                             <td class="px-4 md:px-6 py-3">
-                                                <span class="px-2 py-1 text-xs rounded-full {{ $statusBadges[$status] ?? 'bg-gray-100 text-gray-700' }}">
+                                                <span class="px-2 py-1 text-xs rounded-full whitespace-nowrap {{ $statusBadges[$status] ?? 'bg-gray-100 text-gray-700' }}">
                                                     {{ __('supervisor.homework.status_' . $status) }}
                                                 </span>
                                             </td>
                                             <td class="px-4 md:px-6 py-3">
                                                 <a href="{{ route('manage.homework.submissions', ['subdomain' => $subdomain, 'type' => 'interactive', 'id' => $hw->id]) }}"
-                                                   class="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+                                                   class="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">
                                                     <i class="ri-eye-line"></i>
                                                     {{ __('supervisor.homework.view_submissions') }}
                                                 </a>

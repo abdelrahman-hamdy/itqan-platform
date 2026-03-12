@@ -21,38 +21,42 @@
                 <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ $sessionInfo }}</p>
             @endif
         </div>
-        <a href="{{ route('manage.homework.index', ['subdomain' => $subdomain]) }}#{{ $type }}"
-           class="cursor-pointer min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">
-            <i class="ri-arrow-right-line"></i>
-            {{ __('supervisor.homework.back_to_list') }}
-        </a>
+        <div class="flex flex-wrap items-center gap-2">
+            @if($session)
+                @php
+                    $sessionType = $type === 'quran' ? 'quran' : ($type === 'academic' ? 'academic' : 'interactive');
+                    $sessionId = $session->id;
+                @endphp
+                <a href="{{ route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $sessionId]) }}"
+                   class="cursor-pointer min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium whitespace-nowrap">
+                    <i class="ri-calendar-line"></i>
+                    {{ __('supervisor.homework.view_session') }}
+                </a>
+            @endif
+            <a href="{{ route('manage.homework.index', ['subdomain' => $subdomain]) }}#{{ $type }}"
+               class="cursor-pointer min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium whitespace-nowrap">
+                <i class="ri-arrow-right-line"></i>
+                {{ __('supervisor.homework.back_to_list') }}
+            </a>
+        </div>
     </div>
 
     @if($type === 'quran' && $homework)
-        {{-- ==================== QURAN HOMEWORK CONTENT CARD ==================== --}}
+        {{-- Session Info Card --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <i class="ri-book-read-line text-green-500"></i>
-                {{ __('supervisor.homework.homework_content') }}
-            </h2>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {{-- Teacher --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <span class="text-sm text-gray-500">{{ __('supervisor.homework.teacher') }}</span>
                     <p class="font-medium text-gray-900">{{ $session?->quranTeacher?->name ?? '-' }}</p>
                 </div>
-                {{-- Student --}}
                 <div>
                     <span class="text-sm text-gray-500">{{ __('supervisor.homework.student') }}</span>
                     <p class="font-medium text-gray-900">{{ $session?->student?->name ?? '-' }}</p>
                 </div>
-                {{-- Session Date --}}
                 <div>
                     <span class="text-sm text-gray-500">{{ __('supervisor.homework.session_date') }}</span>
                     <p class="font-medium text-gray-900">{{ $session?->scheduled_at?->format('Y-m-d H:i') ?? '-' }}</p>
                 </div>
-                {{-- Difficulty --}}
                 @if($homework->difficulty_level)
                     <div>
                         <span class="text-sm text-gray-500">{{ __('supervisor.homework.difficulty') }}</span>
@@ -66,67 +70,11 @@
                     </div>
                 @endif
             </div>
+        </div>
 
-            {{-- Homework Content Details --}}
-            <div class="mt-5 space-y-3 border-t border-gray-100 pt-4">
-                @if($homework->has_new_memorization)
-                    <div class="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
-                        <div class="p-1.5 bg-green-100 rounded-lg flex-shrink-0">
-                            <i class="ri-book-open-line text-green-600"></i>
-                        </div>
-                        <div>
-                            <div class="font-medium text-green-800 text-sm">{{ __('supervisor.homework.new_memorization') }}</div>
-                            @if($homework->new_memorization_range)
-                                <div class="text-sm text-green-700 mt-0.5">{{ $homework->new_memorization_range }}</div>
-                            @endif
-                            @if($homework->new_memorization_pages)
-                                <div class="text-xs text-green-600 mt-0.5">{{ __('supervisor.homework.pages') }}: {{ $homework->new_memorization_pages }}</div>
-                            @endif
-                        </div>
-                    </div>
-                @endif
-
-                @if($homework->has_review)
-                    <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-                        <div class="p-1.5 bg-blue-100 rounded-lg flex-shrink-0">
-                            <i class="ri-refresh-line text-blue-600"></i>
-                        </div>
-                        <div>
-                            <div class="font-medium text-blue-800 text-sm">{{ __('supervisor.homework.review') }}</div>
-                            @if($homework->review_range)
-                                <div class="text-sm text-blue-700 mt-0.5">{{ $homework->review_range }}</div>
-                            @endif
-                            @if($homework->review_pages)
-                                <div class="text-xs text-blue-600 mt-0.5">{{ __('supervisor.homework.pages') }}: {{ $homework->review_pages }}</div>
-                            @endif
-                        </div>
-                    </div>
-                @endif
-
-                @if($homework->has_comprehensive_review && $homework->comprehensive_review_surahs_formatted)
-                    <div class="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
-                        <div class="p-1.5 bg-purple-100 rounded-lg flex-shrink-0">
-                            <i class="ri-stack-line text-purple-600"></i>
-                        </div>
-                        <div>
-                            <div class="font-medium text-purple-800 text-sm">{{ __('supervisor.homework.comprehensive_review') }}</div>
-                            <div class="text-sm text-purple-700 mt-0.5">{{ $homework->comprehensive_review_surahs_formatted }}</div>
-                        </div>
-                    </div>
-                @endif
-
-                @if($homework->additional_instructions)
-                    <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div class="p-1.5 bg-gray-100 rounded-lg flex-shrink-0">
-                            <i class="ri-file-text-line text-gray-600"></i>
-                        </div>
-                        <div>
-                            <div class="font-medium text-gray-800 text-sm">{{ __('supervisor.homework.additional_instructions') }}</div>
-                            <div class="text-sm text-gray-700 mt-0.5">{{ $homework->additional_instructions }}</div>
-                        </div>
-                    </div>
-                @endif
-            </div>
+        {{-- Homework Content — uses same component as session page --}}
+        <div class="mb-6">
+            <x-sessions.homework-display :session="$session" :homework="$homework" view-type="supervisor" />
         </div>
 
         {{-- ==================== QURAN EVALUATION RESULTS ==================== --}}
