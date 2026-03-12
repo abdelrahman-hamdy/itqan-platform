@@ -904,6 +904,12 @@ return [
         'col_status' => 'الحالة',
         'col_actions' => 'الإجراءات',
         'session_date' => 'التاريخ',
+        'list_title' => 'قائمة الاشتراكات',
+        'view_all' => 'عرض الكل',
+        'sort_newest' => 'الأحدث',
+        'sort_oldest' => 'الأقدم',
+        'sort_expiring_soon' => 'تنتهي قريباً',
+        'sort_sessions_remaining' => 'الحصص المتبقية',
     ],
 
     'payments' => [

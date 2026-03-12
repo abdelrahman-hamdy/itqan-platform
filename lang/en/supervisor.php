@@ -904,6 +904,12 @@ return [
         'updated_successfully' => 'Subscription updated successfully',
         'status_updated' => 'Subscription status updated',
         'extended_successfully' => 'Subscription extended successfully',
+        'list_title' => 'Subscriptions List',
+        'view_all' => 'View All',
+        'sort_newest' => 'Newest',
+        'sort_oldest' => 'Oldest',
+        'sort_expiring_soon' => 'Expiring Soon',
+        'sort_sessions_remaining' => 'Sessions Remaining',
     ],
 
     'payments' => [

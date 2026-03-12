@@ -94,8 +94,14 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             });
         }
 
-        // Sort by newest
-        $filtered = $filtered->sortByDesc('created_at');
+        // Sort
+        $sort = $request->get('sort', 'newest');
+        $filtered = match ($sort) {
+            'oldest' => $filtered->sortBy('created_at'),
+            'expiring_soon' => $filtered->sortBy(fn ($s) => $s['end_date'] ?? now()->addYears(10)),
+            'sessions_remaining' => $filtered->sortBy('sessions_remaining'),
+            default => $filtered->sortByDesc('created_at'),
+        };
 
         // Paginate
         $perPage = 15;
