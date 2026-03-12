@@ -180,7 +180,8 @@
                         $teacherUser = $profileUserMap[$profileKey] ?? null;
                         $teacherName = $teacherUser?->name ?? $earning->teacher_name;
 
-                        // Determine source type using class constants
+                        // Determine source type and label
+                        $session = $earning->session;
                         $sessionType = match ($earning->session_type) {
                             \App\Models\QuranSession::class, 'quran_session' => 'quran',
                             \App\Models\AcademicSession::class, 'academic_session' => 'academic',
@@ -188,12 +189,19 @@
                             default => 'other',
                         };
 
-                        $sourceLabel = match ($sessionType) {
-                            'quran' => __('supervisor.teacher_earnings.source_quran'),
-                            'academic' => __('supervisor.teacher_earnings.source_academic'),
-                            'interactive' => __('supervisor.teacher_earnings.source_interactive'),
-                            default => __('supervisor.teacher_earnings.source_other'),
-                        };
+                        // Quran: distinguish individual vs group
+                        if ($sessionType === 'quran' && $session) {
+                            $isIndividualQuran = $session->session_type === 'individual';
+                            $sourceLabel = $isIndividualQuran
+                                ? __('supervisor.teacher_earnings.source_quran_individual')
+                                : __('supervisor.teacher_earnings.source_quran_group');
+                        } else {
+                            $sourceLabel = match ($sessionType) {
+                                'academic' => __('supervisor.teacher_earnings.source_academic'),
+                                'interactive' => __('supervisor.teacher_earnings.source_interactive'),
+                                default => __('supervisor.teacher_earnings.source_other'),
+                            };
+                        }
 
                         $sourceBadgeClass = match ($sessionType) {
                             'quran' => 'bg-green-100 text-green-700',
@@ -201,6 +209,20 @@
                             'interactive' => 'bg-blue-100 text-blue-700',
                             default => 'bg-gray-100 text-gray-700',
                         };
+
+                        // Get circle/lesson/course name
+                        $sourceName = null;
+                        if ($session) {
+                            if ($sessionType === 'quran') {
+                                $sourceName = ($session->session_type === 'individual')
+                                    ? $session->individualCircle?->name
+                                    : $session->circle?->name;
+                            } elseif ($sessionType === 'academic') {
+                                $sourceName = $session->academicIndividualLesson?->name;
+                            } elseif ($sessionType === 'interactive') {
+                                $sourceName = $session->course?->title;
+                            }
+                        }
 
                         $statusLabel = $earning->is_disputed
                             ? __('supervisor.teacher_earnings.status_disputed')
@@ -253,12 +275,20 @@
                                         <span class="flex items-center gap-1">
                                             <i class="ri-calendar-line text-gray-400"></i>
                                             {{ $earning->session_completed_at->format('Y-m-d') }}
+                                            @if($earning->earning_month && $earning->session_completed_at->format('Y-m') !== $earning->earning_month->format('Y-m'))
+                                                <span class="text-gray-400">({{ $earning->earning_month->locale('ar')->translatedFormat('F Y') }})</span>
+                                            @endif
+                                        </span>
+                                    @elseif($earning->earning_month)
+                                        <span class="flex items-center gap-1">
+                                            <i class="ri-calendar-line text-gray-400"></i>
+                                            {{ $earning->earning_month->locale('ar')->translatedFormat('F Y') }}
                                         </span>
                                     @endif
-                                    @if($earning->earning_month)
+                                    @if($sourceName)
                                         <span class="flex items-center gap-1">
-                                            <i class="ri-calendar-2-line text-gray-400"></i>
-                                            {{ $earning->earning_month->locale('ar')->translatedFormat('F Y') }}
+                                            <i class="ri-book-open-line text-gray-400"></i>
+                                            {{ $sourceName }}
                                         </span>
                                     @endif
                                 </div>
@@ -278,6 +308,13 @@
 
                             {{-- Action Buttons --}}
                             <div class="flex items-center gap-2 flex-shrink-0">
+                                @if($teacherUser)
+                                    <a href="{{ route('manage.teachers.show', ['subdomain' => $subdomain, 'teacher' => $teacherUser->id]) }}"
+                                       class="cursor-pointer min-h-[32px] inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg transition-colors text-xs font-medium border border-indigo-200">
+                                        <i class="ri-user-line"></i>
+                                        <span class="hidden sm:inline">{{ __('supervisor.teacher_earnings.view_teacher') }}</span>
+                                    </a>
+                                @endif
                                 @if($canDispute)
                                     {{-- Dispute Button --}}
                                     <button type="button"
