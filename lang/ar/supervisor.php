@@ -910,6 +910,13 @@ return [
         'sort_oldest' => 'الأقدم',
         'sort_expiring_soon' => 'تنتهي قريباً',
         'sort_sessions_remaining' => 'الحصص المتبقية',
+        'type_quran_individual' => 'قرآن فردي',
+        'type_quran_group' => 'قرآن جماعي',
+        'ends_in' => 'ينتهي خلال :days يوم',
+        'ended_since' => 'انتهى منذ :days يوم',
+        'extend_title' => 'تمديد الاشتراك',
+        'extend_message' => 'تمديد اشتراك الطالب :name',
+        'current_end_date' => 'تاريخ الانتهاء الحالي',
     ],
 
     'payments' => [

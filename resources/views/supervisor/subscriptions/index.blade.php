@@ -170,33 +170,51 @@
         @if($subscriptions->count() > 0)
             <div class="divide-y divide-gray-200">
                 @foreach($subscriptions as $sub)
+                    @php
+                        $endDate = $sub['end_date'];
+                        $daysLeft = $endDate ? (int) now()->diffInDays($endDate, false) : null;
+                        $isExpired = $daysLeft !== null && $daysLeft < 0;
+                        $isExpiringSoon = !$isExpired && $daysLeft !== null && $daysLeft <= 7;
+
+                        $sessionsTotal = $sub['sessions_total'];
+                        $sessionsCompleted = $sub['sessions_completed'];
+                        $progressPct = $sessionsTotal > 0 ? min(100, round(($sessionsCompleted / $sessionsTotal) * 100)) : 0;
+
+                        // Type label
+                        $typeLabel = match($sub['sub_type']) {
+                            'individual' => __('supervisor.subscriptions.type_quran_individual'),
+                            'group' => __('supervisor.subscriptions.type_quran_group'),
+                            default => __('supervisor.subscriptions.type_academic'),
+                        };
+                        $typeColor = $sub['type'] === 'quran' ? 'bg-green-100 text-green-700' : 'bg-violet-100 text-violet-700';
+                        $typeIcon = match($sub['sub_type']) {
+                            'individual' => 'ri-user-line',
+                            'group' => 'ri-group-line',
+                            default => 'ri-graduation-cap-line',
+                        };
+                    @endphp
+
                     <div class="px-4 md:px-6 py-4 md:py-5 hover:bg-gray-50/50 transition-colors">
                         <!-- Top: Avatar + Info + Badges -->
-                        <div class="flex items-start gap-3 md:gap-4 mb-3">
+                        <div class="flex items-start gap-3 md:gap-4">
                             <x-avatar :user="$sub['student_user']" size="md" user-type="student" />
                             <div class="flex-1 min-w-0">
                                 <div class="flex flex-wrap items-center gap-2 mb-1">
                                     <span class="text-base md:text-lg font-bold text-gray-900 truncate">{{ $sub['student_name'] }}</span>
-                                    <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full {{ $sub['type'] === 'quran' ? 'bg-green-100 text-green-700' : 'bg-violet-100 text-violet-700' }}">
-                                        <i class="{{ $sub['type'] === 'quran' ? 'ri-book-read-line' : 'ri-graduation-cap-line' }}"></i>
-                                        {{ $sub['type'] === 'quran' ? __('supervisor.subscriptions.type_quran') : __('supervisor.subscriptions.type_academic') }}
+                                    <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full {{ $typeColor }}">
+                                        <i class="{{ $typeIcon }}"></i>
+                                        {{ $typeLabel }}
                                     </span>
                                     <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $sub['status']->badgeClasses() }}">
                                         {{ $sub['status']->label() }}
                                     </span>
                                 </div>
+
                                 <!-- Metadata row -->
-                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs md:text-sm text-gray-600">
+                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs md:text-sm text-gray-600 mb-2">
                                     <span class="flex items-center gap-1">
                                         <i class="ri-user-star-line text-gray-400"></i>
                                         {{ $sub['teacher_name'] }}
-                                    </span>
-                                    <span class="flex items-center gap-1">
-                                        <i class="ri-book-open-line text-gray-400"></i>
-                                        {{ $sub['sessions_completed'] }}/{{ $sub['sessions_total'] }} {{ __('supervisor.subscriptions.col_sessions') }}
-                                        @if($sub['sessions_remaining'] <= 3 && $sub['sessions_remaining'] > 0)
-                                            <span class="text-amber-600 font-medium">({{ $sub['sessions_remaining'] }} {{ __('supervisor.subscriptions.remaining') }})</span>
-                                        @endif
                                     </span>
                                     <span class="flex items-center gap-1">
                                         <i class="ri-calendar-line text-gray-400"></i>
@@ -205,11 +223,48 @@
                                         {{ $sub['end_date']?->format('Y-m-d') ?? '-' }}
                                     </span>
                                 </div>
+
+                                <!-- Sessions Progress Bar -->
+                                <div class="flex items-center gap-3 mb-2">
+                                    <div class="flex-1 max-w-[200px]">
+                                        <div class="flex items-center justify-between text-xs mb-1">
+                                            <span class="text-gray-600">{{ __('supervisor.subscriptions.col_sessions') }}</span>
+                                            <span class="font-semibold text-gray-900">{{ $sessionsCompleted }}/{{ $sessionsTotal }}</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="h-2 rounded-full transition-all {{ $progressPct >= 80 ? 'bg-red-500' : ($progressPct >= 50 ? 'bg-amber-500' : 'bg-blue-500') }}"
+                                                 style="width: {{ $progressPct }}%"></div>
+                                        </div>
+                                    </div>
+                                    @if($sub['sessions_remaining'] <= 3 && $sub['sessions_remaining'] > 0)
+                                        <span class="text-xs text-amber-600 font-medium">({{ $sub['sessions_remaining'] }} {{ __('supervisor.subscriptions.remaining') }})</span>
+                                    @endif
+                                </div>
+
+                                <!-- Expiry Info -->
+                                @if($daysLeft !== null)
+                                    @if($isExpired)
+                                        <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-red-100 text-red-700 font-medium">
+                                            <i class="ri-error-warning-line"></i>
+                                            {{ __('supervisor.subscriptions.ended_since', ['days' => abs($daysLeft)]) }}
+                                        </span>
+                                    @elseif($isExpiringSoon)
+                                        <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 font-medium">
+                                            <i class="ri-alarm-warning-line"></i>
+                                            {{ __('supervisor.subscriptions.ends_in', ['days' => $daysLeft]) }}
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-green-100 text-green-700">
+                                            <i class="ri-calendar-check-line"></i>
+                                            {{ __('supervisor.subscriptions.ends_in', ['days' => $daysLeft]) }}
+                                        </span>
+                                    @endif
+                                @endif
                             </div>
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="ms-0 md:ms-14">
+                        <div class="ms-0 md:ms-14 mt-3">
                             <div class="flex flex-wrap items-center gap-2">
                                 <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}"
                                    class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
@@ -224,38 +279,114 @@
                                     </a>
 
                                     @if($sub['status'] === \App\Enums\SessionSubscriptionStatus::PAUSED)
-                                        <form method="POST" action="{{ route('manage.subscriptions.resume', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}" class="inline">
+                                        <form id="resume-form-{{ $sub['id'] }}" method="POST"
+                                              action="{{ route('manage.subscriptions.resume', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">
                                             @csrf
-                                            <button type="submit" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
-                                                <i class="ri-play-circle-line"></i>
-                                                {{ __('supervisor.subscriptions.action_resume') }}
-                                            </button>
                                         </form>
+                                        <button type="button"
+                                            onclick="window.confirmAction({
+                                                title: @js(__('supervisor.subscriptions.action_resume')),
+                                                message: @js(__('supervisor.subscriptions.confirm_resume')),
+                                                confirmText: @js(__('supervisor.subscriptions.action_resume')),
+                                                isDangerous: false,
+                                                icon: 'ri-play-circle-line',
+                                                onConfirm: () => document.getElementById('resume-form-{{ $sub['id'] }}').submit()
+                                            })"
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+                                            <i class="ri-play-circle-line"></i>
+                                            {{ __('supervisor.subscriptions.action_resume') }}
+                                        </button>
                                     @endif
 
                                     @if($sub['status'] === \App\Enums\SessionSubscriptionStatus::ACTIVE)
-                                        <form method="POST" action="{{ route('manage.subscriptions.pause', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}" class="inline">
+                                        <form id="pause-form-{{ $sub['id'] }}" method="POST"
+                                              action="{{ route('manage.subscriptions.pause', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">
                                             @csrf
-                                            <button type="submit" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">
-                                                <i class="ri-pause-circle-line"></i>
-                                                {{ __('supervisor.subscriptions.action_pause') }}
-                                            </button>
                                         </form>
+                                        <button type="button"
+                                            onclick="window.confirmAction({
+                                                title: @js(__('supervisor.subscriptions.action_pause')),
+                                                message: @js(__('supervisor.subscriptions.confirm_pause')),
+                                                confirmText: @js(__('supervisor.subscriptions.action_pause')),
+                                                isDangerous: false,
+                                                icon: 'ri-pause-circle-line',
+                                                onConfirm: () => document.getElementById('pause-form-{{ $sub['id'] }}').submit()
+                                            })"
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">
+                                            <i class="ri-pause-circle-line"></i>
+                                            {{ __('supervisor.subscriptions.action_pause') }}
+                                        </button>
                                     @endif
 
+                                    {{-- Extend button --}}
+                                    <button type="button"
+                                        onclick="document.getElementById('extend-modal-{{ $sub['id'] }}').classList.remove('hidden')"
+                                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors">
+                                        <i class="ri-calendar-check-line"></i>
+                                        {{ __('supervisor.subscriptions.action_extend') }}
+                                    </button>
+
                                     @if($sub['status']->canCancel())
-                                        <form method="POST" action="{{ route('manage.subscriptions.cancel', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}" class="inline">
+                                        <form id="cancel-form-{{ $sub['id'] }}" method="POST"
+                                              action="{{ route('manage.subscriptions.cancel', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">
                                             @csrf
-                                            <button type="submit" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
-                                                <i class="ri-close-circle-line"></i>
-                                                {{ __('supervisor.subscriptions.action_cancel') }}
-                                            </button>
                                         </form>
+                                        <button type="button"
+                                            onclick="window.confirmAction({
+                                                title: @js(__('supervisor.subscriptions.action_cancel')),
+                                                message: @js(__('supervisor.subscriptions.confirm_cancel')),
+                                                confirmText: @js(__('supervisor.subscriptions.action_cancel')),
+                                                isDangerous: true,
+                                                icon: 'ri-close-circle-line',
+                                                onConfirm: () => document.getElementById('cancel-form-{{ $sub['id'] }}').submit()
+                                            })"
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
+                                            <i class="ri-close-circle-line"></i>
+                                            {{ __('supervisor.subscriptions.action_cancel') }}
+                                        </button>
                                     @endif
                                 @endif
                             </div>
                         </div>
                     </div>
+
+                    {{-- Extend Modal --}}
+                    @if($isAdmin)
+                        <div id="extend-modal-{{ $sub['id'] }}" class="hidden fixed inset-0 z-[9999] overflow-y-auto" x-data>
+                            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
+                            <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+                                <div class="relative bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+                                    <div class="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-gray-300 z-10"></div>
+                                    <div class="p-6 pb-4 pt-8 md:pt-6">
+                                        <div class="mx-auto flex items-center justify-center w-16 h-16 md:w-14 md:h-14 rounded-full bg-green-100 mb-4">
+                                            <i class="ri-calendar-check-line text-3xl md:text-2xl text-green-600"></i>
+                                        </div>
+                                        <h3 class="text-lg md:text-xl font-bold text-center text-gray-900 mb-2">{{ __('supervisor.subscriptions.extend_title') }}</h3>
+                                        <p class="text-center text-gray-600 text-sm mb-4">{{ __('supervisor.subscriptions.extend_message', ['name' => $sub['student_name']]) }}</p>
+                                        <form method="POST" action="{{ route('manage.subscriptions.extend', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}" id="extend-form-{{ $sub['id'] }}">
+                                            @csrf
+                                            <label for="extend_days_{{ $sub['id'] }}" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.subscriptions.extend_days') }}</label>
+                                            <input type="number" name="extend_days" id="extend_days_{{ $sub['id'] }}" min="1" max="365" value="30" required
+                                                   class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                            @if($sub['end_date'])
+                                                <p class="text-xs text-gray-500 mt-1">{{ __('supervisor.subscriptions.current_end_date') }}: {{ $sub['end_date']->format('Y-m-d') }}</p>
+                                            @endif
+                                        </form>
+                                    </div>
+                                    <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">
+                                        <button type="button" onclick="this.closest('[id^=extend-modal]').classList.add('hidden')"
+                                            class="cursor-pointer inline-flex items-center justify-center min-h-[48px] md:min-h-[44px] px-6 py-3 md:py-2.5 text-base md:text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl transition-all">
+                                            {{ __('common.cancel') }}
+                                        </button>
+                                        <button type="button" onclick="document.getElementById('extend-form-{{ $sub['id'] }}').submit()"
+                                            class="cursor-pointer inline-flex items-center justify-center min-h-[48px] md:min-h-[44px] px-6 py-3 md:py-2.5 text-base md:text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-all shadow-md">
+                                            {{ __('supervisor.subscriptions.action_extend') }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 @endforeach
             </div>
 

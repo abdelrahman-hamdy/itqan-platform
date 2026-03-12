@@ -910,6 +910,13 @@ return [
         'sort_oldest' => 'Oldest',
         'sort_expiring_soon' => 'Expiring Soon',
         'sort_sessions_remaining' => 'Sessions Remaining',
+        'type_quran_individual' => 'Individual Quran',
+        'type_quran_group' => 'Group Quran',
+        'ends_in' => 'Ends in :days days',
+        'ended_since' => 'Ended :days days ago',
+        'extend_title' => 'Extend Subscription',
+        'extend_message' => 'Extend subscription for :name',
+        'current_end_date' => 'Current end date',
     ],
 
     'payments' => [
