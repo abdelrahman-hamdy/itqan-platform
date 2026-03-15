@@ -922,6 +922,8 @@ return [
         'stat_pending' => 'Pending',
         'stat_paused' => 'Paused',
         'stat_expired' => 'Expired',
+        'stat_extended' => 'Extended',
+        'filter_extended' => 'Extended',
         'filter_apply' => 'Apply',
         'filter_clear' => 'Clear Filters',
         'filter_search' => 'Search',

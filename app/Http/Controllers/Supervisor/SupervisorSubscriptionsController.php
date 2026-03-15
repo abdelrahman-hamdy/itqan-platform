@@ -40,6 +40,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
                     'sessions_remaining' => $sub->sessions_remaining ?? 0,
                     'start_date' => $sub->starts_at,
                     'end_date' => $sub->ends_at,
+                    'is_extended' => !empty($sub->metadata['extensions'] ?? []),
                     'created_at' => $sub->created_at,
                 ]);
             $subscriptions = $subscriptions->merge($quranSubs);
@@ -64,6 +65,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
                     'sessions_remaining' => $sub->sessions_remaining ?? 0,
                     'start_date' => $sub->starts_at,
                     'end_date' => $sub->ends_at,
+                    'is_extended' => !empty($sub->metadata['extensions'] ?? []),
                     'created_at' => $sub->created_at,
                 ]);
             $subscriptions = $subscriptions->merge($academicSubs);
@@ -79,6 +81,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         $totalPending = $subscriptions->filter(fn ($s) => $s['status'] === SessionSubscriptionStatus::PENDING)->count();
         $totalPaused = $subscriptions->filter(fn ($s) => $s['status'] === SessionSubscriptionStatus::PAUSED)->count();
         $totalExpired = $subscriptions->filter(fn ($s) => $s['status'] === SessionSubscriptionStatus::EXPIRED)->count();
+        $totalExtended = $subscriptions->filter(fn ($s) => $s['is_extended'])->count();
 
         // Apply filters
         $filtered = $subscriptions;
@@ -88,7 +91,11 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         }
 
         if ($status = $request->input('status')) {
-            $filtered = $filtered->filter(fn ($s) => $s['status']->value === $status);
+            if ($status === 'extended') {
+                $filtered = $filtered->filter(fn ($s) => $s['is_extended']);
+            } else {
+                $filtered = $filtered->filter(fn ($s) => $s['status']->value === $status);
+            }
         }
 
         if ($search = $request->input('search')) {
@@ -130,6 +137,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'totalPending' => $totalPending,
             'totalPaused' => $totalPaused,
             'totalExpired' => $totalExpired,
+            'totalExtended' => $totalExtended,
             'filteredCount' => $filteredValues->count(),
             'isAdmin' => $isAdmin,
         ]);

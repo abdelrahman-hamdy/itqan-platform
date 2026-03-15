@@ -922,6 +922,8 @@ return [
         'stat_pending' => 'معلقة',
         'stat_paused' => 'متوقفة مؤقتاً',
         'stat_expired' => 'منتهية',
+        'stat_extended' => 'ممددة',
+        'filter_extended' => 'ممددة (تم التمديد)',
         'filter_apply' => 'تطبيق',
         'filter_clear' => 'مسح الفلاتر',
         'col_sessions' => 'الجلسات',

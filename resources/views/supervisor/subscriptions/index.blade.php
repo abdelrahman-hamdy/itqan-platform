@@ -25,7 +25,7 @@
     </div>
 
     <!-- Stats -->
-    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 md:gap-4 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -78,6 +78,17 @@
                 <div class="flex-1">
                     <p class="text-xl font-bold text-gray-900">{{ $totalExpired }}</p>
                     <p class="text-xs text-gray-600">{{ __('supervisor.subscriptions.stat_expired') }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-add-circle-line text-indigo-600"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-xl font-bold text-gray-900">{{ $totalExtended }}</p>
+                    <p class="text-xs text-gray-600">{{ __('supervisor.subscriptions.stat_extended') }}</p>
                 </div>
             </div>
         </div>
@@ -156,6 +167,7 @@
                                 @foreach(\App\Enums\SessionSubscriptionStatus::cases() as $statusOption)
                                     <option value="{{ $statusOption->value }}" @selected(request('status') === $statusOption->value)>{{ $statusOption->label() }}</option>
                                 @endforeach
+                                <option value="extended" @selected(request('status') === 'extended')>{{ __('supervisor.subscriptions.filter_extended') }}</option>
                             </select>
                         </div>
                     </div>
