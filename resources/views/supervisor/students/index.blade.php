@@ -3,17 +3,17 @@
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
 
-    $hasActiveFilters = request('search')
-        || request('program')
-        || request('gender')
-        || request('grade_level')
-        || (request()->has('status') && request('status') !== '');
+    $hasActiveFilters = request()->filled('search')
+        || request()->filled('program')
+        || request()->filled('gender')
+        || request()->filled('grade_level')
+        || request()->filled('status');
 
-    $filterCount = (request('search') ? 1 : 0)
-        + (request('program') ? 1 : 0)
-        + (request('gender') ? 1 : 0)
-        + (request('grade_level') ? 1 : 0)
-        + (request()->has('status') && request('status') !== '' ? 1 : 0);
+    $filterCount = (request()->filled('search') ? 1 : 0)
+        + (request()->filled('program') ? 1 : 0)
+        + (request()->filled('gender') ? 1 : 0)
+        + (request()->filled('grade_level') ? 1 : 0)
+        + (request()->filled('status') ? 1 : 0);
 
     $currentSort = request('sort', 'name_asc');
 @endphp

@@ -183,35 +183,26 @@ class SupervisorStudentsController extends BaseSupervisorWebController
                 });
         }
 
-        // TEMP DEBUG - remove after fixing search issue
-        Log::error('SEARCH_DEBUG', [
-            'allStudentIds_count' => $allStudentIds->count(),
-            'search' => $request->input('search'),
-            'students_count' => $students->count(),
-            'program' => $request->input('program'),
-            'status' => $request->input('status'),
-            'gender' => $request->input('gender'),
-            'grade_level' => $request->input('grade_level'),
-            'all_query_params' => $request->query(),
-        ]);
-
         // Apply remaining filters (program, gender, status, grade level) at collection level
         $filtered = $students;
 
-        if ($program = $request->input('program')) {
+        if ($request->filled('program')) {
+            $program = $request->input('program');
             $filtered = $filtered->filter(fn ($s) => in_array($program, $s['programs']));
         }
 
-        if ($gender = $request->input('gender')) {
+        if ($request->filled('gender')) {
+            $gender = $request->input('gender');
             $filtered = $filtered->filter(fn ($s) => $s['gender'] === $gender);
         }
 
-        if ($request->has('status') && $request->input('status') !== '') {
+        if ($request->filled('status')) {
             $statusFilter = $request->input('status') === 'active';
             $filtered = $filtered->where('is_active', $statusFilter);
         }
 
-        if ($gradeLevel = $request->input('grade_level')) {
+        if ($request->filled('grade_level')) {
+            $gradeLevel = $request->input('grade_level');
             $filtered = $filtered->filter(fn ($s) => (string) $s['grade_level_id'] === (string) $gradeLevel);
         }
 
@@ -234,7 +225,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             $filteredValues->count(),
             $perPage,
             $page,
-            ['path' => $request->url(), 'query' => $request->query()]
+            ['path' => $request->url(), 'query' => $request->only(['search', 'program', 'gender', 'status', 'grade_level', 'sort'])]
         );
 
         $isAdmin = $this->isAdminUser();
