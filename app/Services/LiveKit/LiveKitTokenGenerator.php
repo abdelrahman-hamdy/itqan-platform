@@ -68,6 +68,11 @@ class LiveKitTokenGenerator
                 ->setCanPublish($permissions['can_publish'] ?? true)
                 ->setCanSubscribe($permissions['can_subscribe'] ?? true);
 
+            // Mark observer tokens as hidden so they don't appear in other participants' lists
+            if ($roleOverride === 'observer') {
+                $videoGrant->setHidden(true);
+            }
+
             // Additional permissions for teachers/admins (skip for observers)
             if ($roleOverride !== 'observer' && ($this->isTeacher($user) || $this->isAdmin($user))) {
                 $videoGrant->setRoomAdmin();

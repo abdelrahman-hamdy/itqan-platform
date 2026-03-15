@@ -7,26 +7,28 @@
     ]);
 @endphp
 
-{{-- Observer Mode Banner --}}
-<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3 mb-4">
-    <i class="ri-eye-line text-2xl text-blue-600 shrink-0"></i>
-    <div>
-        <h3 class="font-semibold text-blue-800">{{ __('supervisor.observation.observer_mode') }}</h3>
-        <p class="text-sm text-blue-600">{{ __('supervisor.observation.observer_description') }}</p>
-    </div>
-</div>
-
 {{-- Meeting Observer Container --}}
 <div id="observer-meeting-container" class="bg-gray-900 rounded-xl overflow-hidden" style="min-height: 500px;">
-    {{-- Connection State --}}
+
+    {{-- Connection State (idle / connecting / error) --}}
     <div id="observer-status" class="flex flex-col items-center justify-center h-full p-8 text-center" style="min-height: 500px;">
-        <div id="observer-connecting" class="hidden">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-400 mb-4 mx-auto"></div>
+
+        {{-- Connecting --}}
+        <div id="observer-connecting" class="hidden flex flex-col items-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mb-4 mx-auto"></div>
             <p class="text-gray-300 text-lg">{{ __('supervisor.observation.connecting') }}</p>
         </div>
+
+        {{-- Idle / Ready --}}
         <div id="observer-idle" class="flex flex-col items-center">
+            {{-- Observer badge --}}
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-600/80 text-white mb-6">
+                <i class="ri-eye-line text-sm"></i>
+                {{ __('supervisor.observation.observer_mode') }}
+            </span>
             <i class="ri-video-camera-line text-6xl text-gray-500 mb-4"></i>
             <p class="text-gray-400 mb-6 text-lg">{{ __('supervisor.observation.ready_to_observe') }}</p>
+            <p class="text-gray-500 text-sm mb-8">{{ __('supervisor.observation.observer_description') }}</p>
             <button
                 id="observer-join-btn"
                 class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
@@ -35,22 +37,27 @@
                 {{ __('supervisor.observation.start_observation') }}
             </button>
         </div>
-        <div id="observer-error" class="hidden">
+
+        {{-- Error --}}
+        <div id="observer-error" class="hidden flex flex-col items-center">
             <i class="ri-error-warning-line text-6xl text-red-400 mb-4"></i>
             <p class="text-red-300 text-lg mb-4" id="observer-error-message"></p>
             <button
                 id="observer-retry-btn"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
             >
+                <i class="ri-refresh-line"></i>
                 {{ __('supervisor.observation.retry') }}
             </button>
         </div>
+
     </div>
 
     {{-- Video Grid (hidden until connected) --}}
     <div id="observer-video-grid" class="hidden relative" style="min-height: 500px;">
-        {{-- Header Bar --}}
-        <div class="absolute top-0 inset-x-0 z-10 bg-gradient-to-b from-black/60 to-transparent p-4 flex items-center justify-between">
+
+        {{-- Header Bar (matches livekit-interface header style) --}}
+        <div class="absolute top-0 inset-x-0 z-10 bg-gradient-to-b from-black/70 to-transparent p-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-600/80 text-white">
                     <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
@@ -62,15 +69,16 @@
                 id="observer-leave-btn"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
-                <i class="ri-close-line"></i>
+                <i class="ri-door-open-line"></i>
                 {{ __('supervisor.observation.leave_observation') }}
             </button>
         </div>
 
         {{-- Video Tiles Container --}}
         <div id="observer-video-tiles" class="grid gap-2 p-2 pt-16" style="min-height: 500px;">
-            {{-- Video tiles will be dynamically added here --}}
+            {{-- Video tiles injected dynamically --}}
         </div>
+
     </div>
 </div>
 

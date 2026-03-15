@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Exception;
 use BackedEnum;
 use App\Contracts\MeetingCapable;
+use App\Contracts\MeetingObserverServiceInterface;
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
@@ -26,12 +28,16 @@ class UnifiedMeetingController extends Controller
 
     protected MeetingAttendanceService $attendanceService;
 
+    protected MeetingObserverServiceInterface $observerService;
+
     public function __construct(
         LiveKitService $liveKitService,
-        MeetingAttendanceService $attendanceService
+        MeetingAttendanceService $attendanceService,
+        MeetingObserverServiceInterface $observerService
     ) {
         $this->liveKitService = $liveKitService;
         $this->attendanceService = $attendanceService;
+        $this->observerService = $observerService;
     }
 
     /**
@@ -151,40 +157,62 @@ class UnifiedMeetingController extends Controller
 
             // Check if user can join this meeting
             if (! $session->canUserJoinMeeting($user)) {
-                // Log detailed info about why the user can't join
-                $now = now();
-                $academyTzRaw = $session->academy?->timezone;
-                // Handle timezone as enum or string
-                $academyTz = $academyTzRaw instanceof BackedEnum ? $academyTzRaw->value : ($academyTzRaw ?? 'Asia/Riyadh');
-                $nowInAcademyTz = $now->copy()->setTimezone($academyTz);
-                $scheduledAt = $session->scheduled_at;
-                $statusData = $session->getStatusDisplayData();
-                $prepMinutes = $statusData['preparation_minutes'] ?? 10;
-                $startWindow = $scheduledAt?->copy()->subMinutes($prepMinutes);
-                $endWindow = $scheduledAt?->copy()->addMinutes(($session->duration_minutes ?? 60) + 120);
-
-                Log::warning('User cannot join meeting - permission denied', [
-                    'user_id' => $user->id,
-                    'user_type' => $user->user_type,
-                    'session_id' => $session->id,
-                    'session_type' => $sessionType,
-                    'session_status' => $session->status instanceof BackedEnum ? $session->status->value : $session->status,
-                    'scheduled_at' => $scheduledAt?->toIso8601String(),
-                    'scheduled_at_tz' => $scheduledAt?->timezone->getName(),
-                    'now_utc' => $now->toIso8601String(),
-                    'now_academy_tz' => $nowInAcademyTz->toIso8601String(),
-                    'academy_timezone' => is_string($academyTz) ? $academyTz : (string) $academyTz,
-                    'prep_minutes' => $prepMinutes,
-                    'start_window' => $startWindow?->toIso8601String(),
-                    'end_window' => $endWindow?->toIso8601String(),
-                    'in_time_window' => $nowInAcademyTz->between($startWindow, $endWindow),
-                    'can_manage' => $session->canUserManageMeeting($user),
-                    'is_participant' => $session->isUserParticipant($user),
-                    'meeting_room_name' => $session->meeting_room_name,
-                    'quran_teacher_id' => $session->quran_teacher_id ?? null,
-                    'academic_teacher_id' => $session->academic_teacher_id ?? null,
+                // Supervisor/admin bypass: allow if they have observer access via monitoring system
+                $isSupervisorOrAdmin = in_array($user->user_type, [
+                    UserType::SUPERVISOR->value,
+                    UserType::ADMIN->value,
+                    UserType::SUPER_ADMIN->value,
                 ]);
-                return $this->forbidden(__('meetings.api.not_authorized_join'));
+
+                if ($isSupervisorOrAdmin && $this->observerService->canObserveSession($user, $session)) {
+                    Log::info('Supervisor/admin joining session in participant mode via monitoring bypass', [
+                        'user_id' => $user->id,
+                        'user_type' => $user->user_type,
+                        'session_id' => $session->id,
+                        'session_type' => $sessionType,
+                    ]);
+                    // Fall through to token generation below with no-publish permissions
+                    $request->merge(['permissions' => array_merge(
+                        $request->input('permissions', []),
+                        ['can_publish' => false, 'can_subscribe' => true]
+                    )]);
+                } else {
+                    // Log detailed info about why the user can't join
+                    $now = now();
+                    $academyTzRaw = $session->academy?->timezone;
+                    // Handle timezone as enum or string
+                    $academyTz = $academyTzRaw instanceof BackedEnum ? $academyTzRaw->value : ($academyTzRaw ?? 'Asia/Riyadh');
+                    $nowInAcademyTz = $now->copy()->setTimezone($academyTz);
+                    $scheduledAt = $session->scheduled_at;
+                    $statusData = $session->getStatusDisplayData();
+                    $prepMinutes = $statusData['preparation_minutes'] ?? 10;
+                    $startWindow = $scheduledAt?->copy()->subMinutes($prepMinutes);
+                    $endWindow = $scheduledAt?->copy()->addMinutes(($session->duration_minutes ?? 60) + 120);
+
+                    Log::warning('User cannot join meeting - permission denied', [
+                        'user_id' => $user->id,
+                        'user_type' => $user->user_type,
+                        'session_id' => $session->id,
+                        'session_type' => $sessionType,
+                        'session_status' => $session->status instanceof BackedEnum ? $session->status->value : $session->status,
+                        'scheduled_at' => $scheduledAt?->toIso8601String(),
+                        'scheduled_at_tz' => $scheduledAt?->timezone->getName(),
+                        'now_utc' => $now->toIso8601String(),
+                        'now_academy_tz' => $nowInAcademyTz->toIso8601String(),
+                        'academy_timezone' => is_string($academyTz) ? $academyTz : (string) $academyTz,
+                        'prep_minutes' => $prepMinutes,
+                        'start_window' => $startWindow?->toIso8601String(),
+                        'end_window' => $endWindow?->toIso8601String(),
+                        'in_time_window' => $nowInAcademyTz->between($startWindow, $endWindow),
+                        'can_manage' => $session->canUserManageMeeting($user),
+                        'is_participant' => $session->isUserParticipant($user),
+                        'meeting_room_name' => $session->meeting_room_name,
+                        'quran_teacher_id' => $session->quran_teacher_id ?? null,
+                        'academic_teacher_id' => $session->academic_teacher_id ?? null,
+                    ]);
+
+                    return $this->forbidden(__('meetings.api.not_authorized_join'));
+                }
             }
 
             // Check if meeting exists
