@@ -183,6 +183,18 @@ class SupervisorStudentsController extends BaseSupervisorWebController
                 });
         }
 
+        // TEMP DEBUG - remove after fixing search issue
+        Log::info('SEARCH_DEBUG', [
+            'allStudentIds_count' => $allStudentIds->count(),
+            'search' => $request->input('search'),
+            'students_count' => $students->count(),
+            'program' => $request->input('program'),
+            'status' => $request->input('status'),
+            'gender' => $request->input('gender'),
+            'grade_level' => $request->input('grade_level'),
+            'all_query_params' => $request->query(),
+        ]);
+
         // Apply remaining filters (program, gender, status, grade level) at collection level
         $filtered = $students;
 
