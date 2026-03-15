@@ -1009,6 +1009,8 @@ return [
         'filter' => 'Filter',
         'filter_search' => 'Search...',
         'quran_subscription' => 'Quran Subscription',
+        'quran_individual_subscription' => 'Individual Quran Subscription',
+        'quran_group_subscription' => 'Group Quran Subscription',
         'academic_subscription' => 'Academic Subscription',
         'course_subscription' => 'Course Subscription',
         'unknown' => 'Unknown',

@@ -1005,6 +1005,8 @@ return [
         'filter' => 'تصفية',
         'filter_search' => 'بحث...',
         'quran_subscription' => 'اشتراك قرآن',
+        'quran_individual_subscription' => 'اشتراك قرآن فردي',
+        'quran_group_subscription' => 'اشتراك قرآن جماعي',
         'academic_subscription' => 'اشتراك أكاديمي',
         'course_subscription' => 'اشتراك دورة',
         'unknown' => 'غير محدد',

@@ -16,7 +16,11 @@
     $payableLabel = '';
     if ($payment->payable) {
         $payableLabel = match (true) {
-            $payment->payable instanceof \App\Models\QuranSubscription => __('supervisor.payments.quran_subscription'),
+            $payment->payable instanceof \App\Models\QuranSubscription => (
+                $payment->payable->subscription_type === 'individual'
+                    ? __('supervisor.payments.quran_individual_subscription')
+                    : __('supervisor.payments.quran_group_subscription')
+            ),
             $payment->payable instanceof \App\Models\AcademicSubscription => __('supervisor.payments.academic_subscription'),
             $payment->payable instanceof \App\Models\CourseSubscription => __('supervisor.payments.course_subscription'),
             default => class_basename(get_class($payment->payable)),
@@ -195,21 +199,10 @@
                     {{ __('supervisor.payments.payer_info') }}
                 </h2>
                 @if($payment->user)
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-600">
-                            {{ mb_substr($payment->user->name, 0, 1) }}
-                        </div>
-                        <div>
-                            <p class="font-medium text-gray-900">{{ $payment->user->name }}</p>
-                            <p class="text-xs text-gray-500">{{ $payment->user->email }}</p>
-                        </div>
+                    <div class="flex items-center gap-3">
+                        <x-avatar :user="$payment->user" size="md" user-type="student" />
+                        <p class="font-medium text-gray-900">{{ $payment->user->name }}</p>
                     </div>
-                    @if($payment->user->phone)
-                        <p class="text-sm text-gray-600 flex items-center gap-1">
-                            <i class="ri-phone-line text-gray-400"></i>
-                            {{ $payment->user->phone }}
-                        </p>
-                    @endif
                 @else
                     <p class="text-sm text-gray-500">{{ __('supervisor.payments.unknown') }}</p>
                 @endif

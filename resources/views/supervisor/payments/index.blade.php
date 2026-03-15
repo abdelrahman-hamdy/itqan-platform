@@ -218,7 +218,11 @@
                                 if ($payment->payable) {
                                     $payableClass = get_class($payment->payable);
                                     $payableLabel = match (true) {
-                                        $payment->payable instanceof \App\Models\QuranSubscription => __('supervisor.payments.quran_subscription'),
+                                        $payment->payable instanceof \App\Models\QuranSubscription => (
+                                            $payment->payable->subscription_type === 'individual'
+                                                ? __('supervisor.payments.quran_individual_subscription')
+                                                : __('supervisor.payments.quran_group_subscription')
+                                        ),
                                         $payment->payable instanceof \App\Models\AcademicSubscription => __('supervisor.payments.academic_subscription'),
                                         $payment->payable instanceof \App\Models\CourseSubscription => __('supervisor.payments.course_subscription'),
                                         default => class_basename($payableClass),
@@ -228,9 +232,7 @@
                             <tr class="hover:bg-gray-50/50 transition-colors">
                                 <td class="px-4 md:px-6 py-3">
                                     <div class="flex items-center gap-2">
-                                        <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">
-                                            {{ mb_substr($payment->user?->name ?? '?', 0, 1) }}
-                                        </div>
+                                        <x-avatar :user="$payment->user" size="sm" user-type="student" />
                                         <div>
                                             <div class="font-medium text-gray-900">{{ $payment->user?->name ?? __('supervisor.payments.unknown') }}</div>
                                             <div class="text-xs text-gray-500 hidden sm:block">{{ $payment->payment_code }}</div>
