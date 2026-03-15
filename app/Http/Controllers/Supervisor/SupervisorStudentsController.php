@@ -452,6 +452,9 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 
         $profile = StudentProfile::where('user_id', $student->id)->first();
         $profileData = [
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'email' => $student->email,
             'gender' => $request->gender,
             'birth_date' => $request->birth_date,
             'nationality' => $request->nationality,
@@ -464,7 +467,6 @@ class SupervisorStudentsController extends BaseSupervisorWebController
         } else {
             StudentProfile::create(array_merge($profileData, [
                 'user_id' => $student->id,
-                'email' => $student->email,
             ]));
         }
 
