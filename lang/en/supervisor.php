@@ -177,6 +177,8 @@ return [
         'completion_rate' => 'Completion Rate',
         'total_students' => 'Total Students',
         'cancelled_this_month' => 'Cancelled This Month',
+        'cancelled' => 'Cancelled',
+        'breadcrumb' => 'Teachers',
         'assigned_entities' => 'Assigned Entities',
         'group_circle' => 'Group Circle',
         'individual_circle' => 'Individual Circle',
@@ -195,6 +197,7 @@ return [
     ],
 
     'students' => [
+        'breadcrumb' => 'Students',
         'page_title' => 'Students',
         'page_subtitle' => 'Academy students list',
         'add_student' => 'Add Student',
@@ -334,6 +337,9 @@ return [
     ],
 
     'common' => [
+        'active' => 'Active',
+        'inactive' => 'Inactive',
+        'edit_details' => 'Edit Details',
         'filter_by_teacher' => 'Filter by Teacher',
         'all_teachers' => 'All Teachers',
         'showing_for_teacher' => 'Showing data for teacher: :name',
@@ -369,6 +375,10 @@ return [
         'full_capacity' => 'Full Capacity',
         'breadcrumb' => 'Group Circles',
         'search_placeholder' => 'Search by circle name...',
+        'name' => 'Circle Name',
+        'capacity' => 'Capacity',
+        'full' => 'Full',
+        'description' => 'Description',
     ],
 
     'individual_circles' => [
@@ -380,6 +390,7 @@ return [
         'completed_circles' => 'Completed',
         'breadcrumb' => 'Individual Circles',
         'search_placeholder' => 'Search by student name...',
+        'teacher' => 'Teacher',
     ],
 
     'trial_sessions' => [
@@ -401,6 +412,9 @@ return [
         'pending_lessons' => 'Pending',
         'paused_lessons' => 'Paused',
         'breadcrumb' => 'Private Lessons',
+        'paused' => 'Paused',
+        'completed' => 'Completed',
+        'cancelled' => 'Cancelled',
     ],
 
     'interactive_courses' => [
@@ -411,6 +425,9 @@ return [
         'completed_courses' => 'Completed',
         'total_enrolled' => 'Total Enrolled',
         'breadcrumb' => 'Interactive Courses',
+        'select_student' => 'Select a student',
+        'add_student' => 'Add Student',
+        'confirm_remove' => 'Are you sure you want to remove this student from the course?',
     ],
 
     'quizzes' => [

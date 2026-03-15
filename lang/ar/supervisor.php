@@ -177,6 +177,8 @@ return [
         'completion_rate' => 'نسبة الإكمال',
         'total_students' => 'إجمالي الطلاب',
         'cancelled_this_month' => 'ملغاة هذا الشهر',
+        'cancelled' => 'ملغاة',
+        'breadcrumb' => 'المعلمون',
         'assigned_entities' => 'الكيانات المُعينة',
         'group_circle' => 'حلقة جماعية',
         'individual_circle' => 'حلقة فردية',
@@ -195,6 +197,7 @@ return [
     ],
 
     'students' => [
+        'breadcrumb' => 'الطلاب',
         'page_title' => 'الطلاب',
         'page_subtitle' => 'قائمة طلاب الأكاديمية',
         'add_student' => 'إضافة طالب',
@@ -334,6 +337,9 @@ return [
     ],
 
     'common' => [
+        'active' => 'نشط',
+        'inactive' => 'غير نشط',
+        'edit_details' => 'تعديل التفاصيل',
         'filter_by_teacher' => 'تصفية حسب المعلم',
         'all_teachers' => 'جميع المعلمين',
         'showing_for_teacher' => 'عرض بيانات المعلم: :name',
@@ -369,6 +375,10 @@ return [
         'full_capacity' => 'مكتملة السعة',
         'breadcrumb' => 'الحلقات الجماعية',
         'search_placeholder' => 'ابحث باسم الحلقة...',
+        'name' => 'اسم الحلقة',
+        'capacity' => 'السعة',
+        'full' => 'مكتملة',
+        'description' => 'الوصف',
     ],
 
     'individual_circles' => [
@@ -380,6 +390,7 @@ return [
         'completed_circles' => 'مكتملة',
         'breadcrumb' => 'الحلقات الفردية',
         'search_placeholder' => 'ابحث باسم الطالب...',
+        'teacher' => 'المعلم',
     ],
 
     'trial_sessions' => [
@@ -401,6 +412,9 @@ return [
         'pending_lessons' => 'في الانتظار',
         'paused_lessons' => 'متوقفة مؤقتاً',
         'breadcrumb' => 'الدروس الخصوصية',
+        'paused' => 'متوقف مؤقتاً',
+        'completed' => 'مكتمل',
+        'cancelled' => 'ملغي',
     ],
 
     'interactive_courses' => [
@@ -411,6 +425,9 @@ return [
         'completed_courses' => 'مكتملة',
         'total_enrolled' => 'إجمالي المسجلين',
         'breadcrumb' => 'الدورات التفاعلية',
+        'select_student' => 'اختر طالباً',
+        'add_student' => 'إضافة طالب',
+        'confirm_remove' => 'هل أنت متأكد من إزالة هذا الطالب من الدورة؟',
     ],
 
     'quizzes' => [
