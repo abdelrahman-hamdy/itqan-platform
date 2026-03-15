@@ -208,8 +208,37 @@
                     </template>
                 </div>
 
-                <!-- Schedule Form (right side, shown when item selected) -->
-                <template x-if="selectedItem">
+                <!-- Cannot-schedule info panel (shown when item is selected but not schedulable) -->
+                <template x-if="selectedItem && selectedItem.can_schedule === false">
+                    <div class="w-full lg:w-1/2 bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col gap-3">
+                        <h3 class="text-sm font-bold text-gray-900">
+                            <i class="ri-information-line me-1 text-gray-500"></i>
+                            <span x-text="selectedItem.name || selectedItem.title"></span>
+                        </h3>
+
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                            <p class="font-semibold mb-1">
+                                <i class="ri-forbid-line me-1"></i>
+                                {{ __('teacher.calendar.cannot_schedule') }}
+                            </p>
+                            <p x-text="selectedItem.status_arabic"></p>
+                        </div>
+
+                        <!-- Show scheduled time if already scheduled -->
+                        <template x-if="selectedItem.scheduled_at_formatted">
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
+                                <p class="font-semibold mb-1">
+                                    <i class="ri-calendar-check-line me-1"></i>
+                                    {{ __('teacher.calendar.already_scheduled') }}
+                                </p>
+                                <p x-text="selectedItem.scheduled_at_formatted"></p>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Schedule Form (right side, shown when item selected and schedulable) -->
+                <template x-if="selectedItem && selectedItem.can_schedule !== false">
                     <div class="w-full lg:w-1/2 bg-gray-50 border border-gray-200 rounded-xl p-4">
                         <h3 class="text-sm font-bold text-gray-900 mb-3">
                             <i class="ri-calendar-schedule-line me-1 text-blue-600"></i>

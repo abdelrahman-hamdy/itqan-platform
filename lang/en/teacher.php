@@ -1185,6 +1185,7 @@ return [
         'sessions_progress' => 'Sessions',
         'minutes_short' => 'min',
         'cannot_schedule' => 'Cannot schedule',
+        'already_scheduled' => 'Session already scheduled',
 
         // Schedule form improvements
         'start_date_hint' => 'Leave empty to start from today',

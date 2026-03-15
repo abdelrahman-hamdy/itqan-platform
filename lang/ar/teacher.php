@@ -954,6 +954,7 @@ return [
         'sessions_progress' => 'الجلسات',
         'minutes_short' => 'دقيقة',
         'cannot_schedule' => 'لا يمكن الجدولة',
+        'already_scheduled' => 'الجلسة مجدولة بالفعل',
 
         // Schedule form improvements
         'start_date_hint' => 'اتركه فارغاً للبدء من اليوم',
