@@ -28,6 +28,14 @@
                     </p>
                 @endif
                 <div class="flex flex-wrap gap-2 mt-2">
+                    @if($student->studentProfile?->student_code)
+                        <span x-data x-on:click="navigator.clipboard.writeText('{{ $student->studentProfile->student_code }}'); $el.querySelector('.copy-icon').classList.add('ri-check-line'); $el.querySelector('.copy-icon').classList.remove('ri-file-copy-line'); setTimeout(() => { $el.querySelector('.copy-icon').classList.remove('ri-check-line'); $el.querySelector('.copy-icon').classList.add('ri-file-copy-line'); }, 1500)"
+                              class="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors inline-flex items-center gap-1"
+                              title="{{ __('common.copy') }}">
+                            {{ $student->studentProfile->student_code }}
+                            <i class="copy-icon ri-file-copy-line text-gray-400 text-[10px]"></i>
+                        </span>
+                    @endif
                     @if($student->studentProfile?->gradeLevel)
                         <span class="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
                             {{ $student->studentProfile->gradeLevel->getDisplayName() }}
@@ -55,15 +63,9 @@
         @endif
 
         {{-- Student Info Grid (merged from sidebar) --}}
-        @if($student->studentProfile?->student_code || $student->studentProfile?->enrollment_date || $student->studentProfile?->birth_date || $student->studentProfile?->nationality)
+        @if($student->studentProfile?->enrollment_date || $student->studentProfile?->birth_date || $student->studentProfile?->nationality)
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    @if($student->studentProfile?->student_code)
-                        <div class="flex items-center gap-2 text-sm text-gray-600">
-                            <i class="ri-hashtag text-gray-400"></i>
-                            <span>{{ $student->studentProfile->student_code }}</span>
-                        </div>
-                    @endif
                     @if($student->studentProfile?->enrollment_date)
                         <div class="flex items-center gap-2 text-sm text-gray-600">
                             <i class="ri-calendar-line text-gray-400"></i>

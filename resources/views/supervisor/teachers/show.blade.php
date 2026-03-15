@@ -36,7 +36,12 @@
                         $teacherCode = $profile?->teacher_code ?? '';
                     @endphp
                     @if($teacherCode)
-                        <span class="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">{{ $teacherCode }}</span>
+                        <span x-data x-on:click="navigator.clipboard.writeText('{{ $teacherCode }}'); $el.querySelector('.copy-icon').classList.add('ri-check-line'); $el.querySelector('.copy-icon').classList.remove('ri-file-copy-line'); setTimeout(() => { $el.querySelector('.copy-icon').classList.remove('ri-check-line'); $el.querySelector('.copy-icon').classList.add('ri-file-copy-line'); }, 1500)"
+                              class="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors inline-flex items-center gap-1"
+                              title="{{ __('common.copy') }}">
+                            {{ $teacherCode }}
+                            <i class="copy-icon ri-file-copy-line text-gray-400 text-[10px]"></i>
+                        </span>
                     @endif
                     @if($profile?->rating)
                         <span class="text-xs px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">
@@ -57,7 +62,7 @@
                     @if($profile?->educational_qualification ?? $profile?->education_level)
                         <div class="flex items-center gap-2 text-sm text-gray-600">
                             <i class="ri-graduation-cap-line text-gray-400"></i>
-                            <span>{{ __('supervisor.teachers.qualification') }}: {{ $profile->educational_qualification ?? $profile->education_level }}</span>
+                            <span>{{ __('supervisor.teachers.qualification') }}: {{ \App\Enums\EducationalQualification::getLabel($profile->educational_qualification ?? $profile->education_level) }}</span>
                         </div>
                     @endif
                     @if($profile?->teaching_experience_years)
