@@ -159,9 +159,12 @@ class SupervisorStudentsController extends BaseSupervisorWebController
         if ($search = $request->input('search')) {
             $search = mb_strtolower($search);
             $filtered = $filtered->filter(function ($s) use ($search) {
-                return str_contains(mb_strtolower($s['user']->name), $search)
-                    || str_contains(mb_strtolower($s['user']->email), $search)
-                    || str_contains(mb_strtolower($s['student_code']), $search);
+                $fullName = mb_strtolower($s['user']->first_name . ' ' . $s['user']->last_name);
+                return str_contains($fullName, $search)
+                    || str_contains(mb_strtolower($s['user']->first_name ?? ''), $search)
+                    || str_contains(mb_strtolower($s['user']->last_name ?? ''), $search)
+                    || str_contains(mb_strtolower($s['user']->email ?? ''), $search)
+                    || str_contains(mb_strtolower($s['student_code'] ?? ''), $search);
             });
         }
 
