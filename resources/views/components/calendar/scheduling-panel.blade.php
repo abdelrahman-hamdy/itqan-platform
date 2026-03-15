@@ -314,7 +314,7 @@
                                 <p class="text-[10px] font-semibold text-gray-500 uppercase mb-1.5">{{ __('teacher.calendar.schedule_preview') }}</p>
                                 <div class="space-y-1 text-xs text-gray-700">
                                     <p><span class="font-medium">{{ __('teacher.calendar.preview_start') }}:</span> <span x-text="formatDate(scheduleStartDate)"></span></p>
-                                    <p><span class="font-medium">{{ __('teacher.calendar.preview_time') }}:</span> <span x-text="scheduleHour + ':' + scheduleMinute + ' ' + schedulePeriod"></span></p>
+                                    <p><span class="font-medium">{{ __('teacher.calendar.preview_time') }}:</span> <span x-text="scheduleHour + ':' + scheduleMinute + ' ' + (schedulePeriod === 'AM' ? @js(__('teacher.calendar.am')) : @js(__('teacher.calendar.pm')))"></span></p>
                                 </div>
                             </div>
                         </template>
@@ -327,7 +327,7 @@
                                     <p><span class="font-medium">{{ __('teacher.calendar.preview_sessions') }}:</span> <span x-text="sessionCount"></span></p>
                                     <p><span class="font-medium">{{ __('teacher.calendar.preview_days') }}:</span> <span x-text="scheduleDays.map(d => getDayLabel(d)).join('، ')"></span></p>
                                     <p><span class="font-medium">{{ __('teacher.calendar.preview_start') }}:</span> <span x-text="scheduleStartDate ? formatDate(scheduleStartDate) : '{{ __('teacher.calendar.today') }}'"></span></p>
-                                    <p><span class="font-medium">{{ __('teacher.calendar.preview_time') }}:</span> <span x-text="scheduleHour + ':' + scheduleMinute + ' ' + schedulePeriod"></span></p>
+                                    <p><span class="font-medium">{{ __('teacher.calendar.preview_time') }}:</span> <span x-text="scheduleHour + ':' + scheduleMinute + ' ' + (schedulePeriod === 'AM' ? @js(__('teacher.calendar.am')) : @js(__('teacher.calendar.pm')))"></span></p>
                                 </div>
                             </div>
                         </template>
