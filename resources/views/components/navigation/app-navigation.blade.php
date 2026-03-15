@@ -33,20 +33,20 @@
     $studentNavItems[] = ['route' => 'courses.index', 'label' => __('components.navigation.app.student_nav.recorded_courses'), 'activeRoutes' => ['courses.index', 'courses.show', 'courses.learn', 'lessons.show']];
   }
 
-  // Teacher navigation items - links to Filament dashboard resources
+  // Teacher navigation items - links to frontend teacher pages
   $teacherNavItems = [];
 
   if ($user && $user->isQuranTeacher()) {
     $teacherNavItems = [
-      ['route' => null, 'href' => '/teacher-panel/quran-sessions', 'label' => __('components.navigation.app.teacher_nav.sessions_schedule'), 'icon' => 'ri-calendar-schedule-line', 'activeRoutes' => []],
-      ['route' => null, 'href' => '/teacher-panel/quran-trial-requests', 'label' => __('components.navigation.app.teacher_nav.trial_sessions'), 'icon' => 'ri-user-add-line', 'activeRoutes' => []],
-      ['route' => null, 'href' => '/teacher-panel/student-session-reports', 'label' => __('components.navigation.app.teacher_nav.session_reports'), 'icon' => 'ri-file-chart-line', 'activeRoutes' => []],
+      ['route' => 'teacher.calendar.index', 'label' => __('components.navigation.app.teacher_nav.sessions_schedule'), 'icon' => 'ri-calendar-schedule-line', 'activeRoutes' => ['teacher.calendar.*']],
+      ['route' => 'teacher.trial-sessions.index', 'label' => __('components.navigation.app.teacher_nav.trial_sessions'), 'icon' => 'ri-user-add-line', 'activeRoutes' => ['teacher.trial-sessions.index', 'teacher.trial-sessions.show']],
+      ['route' => 'teacher.session-reports.index', 'label' => __('components.navigation.app.teacher_nav.session_reports'), 'icon' => 'ri-file-chart-line', 'activeRoutes' => ['teacher.session-reports.index', 'teacher.session-reports.show']],
     ];
   } elseif ($user && $user->isAcademicTeacher()) {
     $teacherNavItems = [
-      ['route' => null, 'href' => '/academic-teacher-panel/academic-sessions', 'label' => __('components.navigation.app.teacher_nav.sessions_schedule'), 'icon' => 'ri-calendar-schedule-line', 'activeRoutes' => []],
-      ['route' => null, 'href' => '/academic-teacher-panel/academic-individual-lessons', 'label' => __('components.navigation.app.teacher_nav.homework'), 'icon' => 'ri-file-list-3-line', 'activeRoutes' => []],
-      ['route' => null, 'href' => '/academic-teacher-panel/academic-session-reports', 'label' => __('components.navigation.app.teacher_nav.session_reports'), 'icon' => 'ri-file-chart-line', 'activeRoutes' => []],
+      ['route' => 'teacher.calendar.index', 'label' => __('components.navigation.app.teacher_nav.sessions_schedule'), 'icon' => 'ri-calendar-schedule-line', 'activeRoutes' => ['teacher.calendar.*']],
+      ['route' => 'teacher.homework.index', 'label' => __('components.navigation.app.teacher_nav.homework'), 'icon' => 'ri-file-list-3-line', 'activeRoutes' => ['teacher.homework.*']],
+      ['route' => 'teacher.session-reports.index', 'label' => __('components.navigation.app.teacher_nav.session_reports'), 'icon' => 'ri-file-chart-line', 'activeRoutes' => ['teacher.session-reports.index', 'teacher.session-reports.show']],
     ];
   }
 
@@ -236,21 +236,13 @@
           </div>
         @endif
 
-        <!-- Dashboard Link (Teacher only) -->
+        <!-- Calendar Link (Teacher only) -->
         @if($role === 'teacher')
-          @if($user && $user->isQuranTeacher())
-            <a href="/teacher-panel" target="_blank"
-               class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-              <i class="ri-apps-2-line"></i>
-              {{ __('components.navigation.app.teacher_nav.dashboard') }}
-            </a>
-          @elseif($user && $user->isAcademicTeacher())
-            <a href="/academic-teacher-panel" target="_blank"
-               class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-              <i class="ri-apps-2-line"></i>
-              {{ __('components.navigation.app.teacher_nav.dashboard') }}
-            </a>
-          @endif
+          <a href="{{ route('teacher.calendar.index', ['subdomain' => $subdomain]) }}"
+             class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+            <i class="ri-calendar-2-line"></i>
+            {{ __('components.navigation.app.teacher_nav.dashboard') }}
+          </a>
         @endif
 
         <!-- Filament Admin Panel Link (Admin/SuperAdmin only) -->
@@ -616,19 +608,11 @@
         @endif
 
         @if($role === 'teacher')
-          @if($user && $user->isQuranTeacher())
-            <a href="/teacher-panel" target="_blank"
-               class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-              <i class="ri-apps-2-line text-xl"></i>
-              <span>{{ __('components.navigation.app.teacher_nav.dashboard') }}</span>
-            </a>
-          @elseif($user && $user->isAcademicTeacher())
-            <a href="/academic-teacher-panel" target="_blank"
-               class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-              <i class="ri-apps-2-line text-xl"></i>
-              <span>{{ __('components.navigation.app.teacher_nav.dashboard') }}</span>
-            </a>
-          @endif
+          <a href="{{ route('teacher.calendar.index', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            <i class="ri-calendar-2-line text-xl"></i>
+            <span>{{ __('components.navigation.app.teacher_nav.dashboard') }}</span>
+          </a>
         @endif
 
         @if($role === 'supervisor' && $user)

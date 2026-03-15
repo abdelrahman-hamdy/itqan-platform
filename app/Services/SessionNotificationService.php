@@ -85,11 +85,12 @@ class SessionNotificationService
 
             // Notify teacher
             if ($session->teacher) {
+                $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
                 $this->notificationService->send(
                     $session->teacher,
                     NotificationType::MEETING_ROOM_READY,
                     ['session_title' => $this->settingsService->getSessionTitle($session)],
-                    '/teacher-panel/quran-sessions/'.$session->id
+                    route('teacher.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id])
                 );
             }
         } catch (Exception $e) {
@@ -113,11 +114,12 @@ class SessionNotificationService
 
             // Notify teacher
             if ($session->academicTeacher?->user) {
+                $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
                 $this->notificationService->send(
                     $session->academicTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
                     ['session_title' => $this->settingsService->getSessionTitle($session)],
-                    '/academic-teacher-panel/academic-sessions/'.$session->id
+                    route('teacher.academic-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
                 );
             }
         } catch (Exception $e) {
@@ -169,7 +171,7 @@ class SessionNotificationService
                     $session->course->assignedTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
                     ['session_title' => $sessionTitle],
-                    '/academic-teacher-panel/interactive-course-sessions/'.$session->id
+                    route('teacher.interactive-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
                 );
             }
         } catch (Exception $e) {

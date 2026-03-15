@@ -2,6 +2,7 @@
 
 namespace App\Notifications\Admin;
 
+use App\Constants\DefaultAcademy;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -15,7 +16,8 @@ class RenewalBatchFailureNotification extends Notification
 {
     public function __construct(
         private readonly array $results,
-        private readonly string $academyName = 'Itqan Academy'
+        private readonly string $academyName = 'Itqan Academy',
+        private readonly ?string $academySubdomain = null
     ) {}
 
     /**
@@ -55,7 +57,7 @@ class RenewalBatchFailureNotification extends Notification
             ->line('• مشاكل في بوابة الدفع')
             ->line('• رصيد غير كافٍ في البطاقات')
             ->line('')
-            ->action('عرض لوحة التحكم', url('/admin'))
+            ->action('عرض لوحة التحكم', route('manage.sessions.index', ['subdomain' => $this->academySubdomain ?? DefaultAcademy::subdomain()]))
             ->line('يرجى مراجعة لوحة التحكم للحصول على تفاصيل إضافية واتخاذ الإجراءات اللازمة.')
             ->line('')
             ->line('**نصائح للمتابعة:**')

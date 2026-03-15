@@ -52,11 +52,8 @@ function openCertificateModal(type, subscriptionId) {
             circleId: null
         });
     } else {
-        // Fallback: redirect to Filament dashboard
-        const baseUrl = type === 'quran'
-            ? '{{ url("/teacher-panel/quran-subscriptions") }}'
-            : '{{ url("/academic-teacher-panel/academic-subscriptions") }}';
-        window.location.href = baseUrl;
+        // Fallback: reload the current page so Livewire can initialise
+        window.location.reload();
     }
 }
 </script>

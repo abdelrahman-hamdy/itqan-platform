@@ -146,16 +146,12 @@ class NotificationUrlBuilder
      */
     public function getTeacherCircleUrl(Model $session): string
     {
-        // Use Filament teacher panel URLs directly
-        if (method_exists($session, 'individualCircle') && $session->individualCircle) {
-            return "/teacher-panel/quran-individual-circles/{$session->individualCircle->id}";
-        }
+        $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
 
-        if (method_exists($session, 'circle') && $session->circle) {
-            return "/teacher-panel/quran-circles/{$session->circle->id}";
-        }
-
-        return "/teacher-panel/quran-sessions/{$session->id}";
+        return route('teacher.sessions.show', [
+            'subdomain' => $subdomain,
+            'sessionId' => $session->id,
+        ]);
     }
 
     /**
@@ -164,11 +160,18 @@ class NotificationUrlBuilder
      */
     private function getAcademicTeacherSessionUrl(Model $session): string
     {
+        $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
         $sessionClass = class_basename($session);
 
         return match ($sessionClass) {
-            'InteractiveCourseSession' => "/academic-teacher-panel/interactive-course-sessions/{$session->id}",
-            default => "/academic-teacher-panel/academic-sessions/{$session->id}",
+            'InteractiveCourseSession' => route('teacher.interactive-sessions.show', [
+                'subdomain' => $subdomain,
+                'session' => $session->id,
+            ]),
+            default => route('teacher.academic-sessions.show', [
+                'subdomain' => $subdomain,
+                'session' => $session->id,
+            ]),
         };
     }
 
@@ -177,14 +180,19 @@ class NotificationUrlBuilder
      */
     private function getAdminSessionUrl(Model $session): string
     {
-        $sessionClass = class_basename($session);
-
-        return match ($sessionClass) {
-            'QuranSession' => "/admin/quran-sessions/{$session->id}",
-            'AcademicSession' => "/admin/academic-sessions/{$session->id}",
-            'InteractiveCourseSession' => "/admin/interactive-course-sessions/{$session->id}",
-            default => "/admin/quran-sessions/{$session->id}",
+        $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
+        $type = match (class_basename($session)) {
+            'QuranSession' => 'quran',
+            'AcademicSession' => 'academic',
+            'InteractiveCourseSession' => 'interactive',
+            default => 'quran',
         };
+
+        return route('manage.sessions.show', [
+            'subdomain' => $subdomain,
+            'sessionType' => $type,
+            'sessionId' => $session->id,
+        ]);
     }
 
     /**
@@ -192,51 +200,83 @@ class NotificationUrlBuilder
      */
     private function getSupervisorSessionUrl(Model $session): string
     {
-        return "/supervisor-panel/monitored-all-sessions/{$session->id}";
+        $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
+        $type = match (class_basename($session)) {
+            'QuranSession' => 'quran',
+            'AcademicSession' => 'academic',
+            'InteractiveCourseSession' => 'interactive',
+            default => 'quran',
+        };
+
+        return route('manage.sessions.show', [
+            'subdomain' => $subdomain,
+            'sessionType' => $type,
+            'sessionId' => $session->id,
+        ]);
     }
 
     /**
      * Get admin panel URL for a payment.
      */
-    public function getAdminPaymentUrl(string $paymentId): string
+    public function getAdminPaymentUrl(string $paymentId, ?string $subdomain = null): string
     {
-        return "/admin/payments/{$paymentId}";
+        $subdomain = $subdomain ?? DefaultAcademy::subdomain();
+
+        return route('manage.payments.show', [
+            'subdomain' => $subdomain,
+            'payment' => $paymentId,
+        ]);
     }
 
     /**
      * Get admin panel URL for a subscription.
      */
-    public function getAdminSubscriptionUrl(string $type, string $subscriptionId): string
+    public function getAdminSubscriptionUrl(string $type, string $subscriptionId, ?string $subdomain = null): string
     {
-        return match ($type) {
-            'quran' => "/admin/quran-subscriptions/{$subscriptionId}",
-            'academic' => "/admin/academic-subscriptions/{$subscriptionId}",
-            default => "/admin/quran-subscriptions/{$subscriptionId}",
-        };
+        $subdomain = $subdomain ?? DefaultAcademy::subdomain();
+
+        return route('manage.subscriptions.show', [
+            'subdomain' => $subdomain,
+            'type' => $type,
+            'subscription' => $subscriptionId,
+        ]);
     }
 
     /**
      * Get admin panel URL for a student profile.
      */
-    public function getAdminStudentUrl(string $studentId): string
+    public function getAdminStudentUrl(string $studentId, ?string $subdomain = null): string
     {
-        return "/admin/student-profiles/{$studentId}";
+        $subdomain = $subdomain ?? DefaultAcademy::subdomain();
+
+        return route('manage.students.show', [
+            'subdomain' => $subdomain,
+            'student' => $studentId,
+        ]);
     }
 
     /**
      * Get admin panel URL for a teacher payout.
+     * Falls back to the payments index as there is no dedicated payout show page.
      */
-    public function getAdminPayoutUrl(string $payoutId): string
+    public function getAdminPayoutUrl(string $payoutId, ?string $subdomain = null): string
     {
-        return "/admin/teacher-payouts/{$payoutId}";
+        $subdomain = $subdomain ?? DefaultAcademy::subdomain();
+
+        return route('manage.payments.index', ['subdomain' => $subdomain]);
     }
 
     /**
      * Get admin panel URL for a trial request.
      */
-    public function getAdminTrialRequestUrl(string $trialRequestId): string
+    public function getAdminTrialRequestUrl(string $trialRequestId, ?string $subdomain = null): string
     {
-        return "/admin/quran-trial-requests/{$trialRequestId}";
+        $subdomain = $subdomain ?? DefaultAcademy::subdomain();
+
+        return route('manage.trial-sessions.show', [
+            'subdomain' => $subdomain,
+            'trialRequest' => $trialRequestId,
+        ]);
     }
 
     /**
@@ -269,16 +309,15 @@ class NotificationUrlBuilder
 
     /**
      * Get teacher earnings URL based on teacher type.
+     * Falls back to teacher calendar as there is no dedicated earnings frontend page.
      *
-     * @param  User|null  $teacher  The teacher user (to determine Quran vs Academic panel)
+     * @param  User|null  $teacher  The teacher user (to determine subdomain)
      */
     public function getTeacherEarningsUrl(?User $teacher = null): string
     {
-        if ($teacher && $teacher->hasRole([UserType::ACADEMIC_TEACHER->value])) {
-            return '/academic-teacher-panel/teacher-earnings';
-        }
+        $subdomain = $teacher?->academy?->subdomain ?? DefaultAcademy::subdomain();
 
-        return '/teacher-panel/teacher-earnings';
+        return route('teacher.calendar.index', ['subdomain' => $subdomain]);
     }
 
     /**

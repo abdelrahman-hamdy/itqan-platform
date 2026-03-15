@@ -304,8 +304,7 @@
 
                 <div class="space-y-3">
                     @if(!$trialRequest->trialSession && $trialRequest->status !== 'cancelled')
-                        <a href="/teacher-panel/quran-trial-requests/{{ $trialRequest->id }}"
-                           target="_blank"
+                        <a href="{{ route('teacher.calendar.index', ['subdomain' => $subdomain, 'trial_request_id' => $trialRequest->id]) }}"
                            class="flex items-center gap-3 p-3 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-colors">
                             <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
                                 <i class="ri-calendar-schedule-line text-emerald-600"></i>

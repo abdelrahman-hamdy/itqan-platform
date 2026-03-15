@@ -14,14 +14,11 @@
         // Super admin panel has no tenant prefix; academy admin has tenant slug
         $backUrl   = $user->hasRole('super_admin') ? '/admin' : '/panel/' . ($academy?->subdomain ?? '');
         $backLabel = __('العودة إلى لوحة الإدارة');
-    } elseif ($user?->hasRole('quran_teacher')) {
-        $backUrl   = '/teacher-panel';
-        $backLabel = __('العودة إلى لوحة المعلم');
-    } elseif ($user?->hasRole('academic_teacher')) {
-        $backUrl   = '/academic-teacher-panel';
+    } elseif ($user?->hasRole('quran_teacher') || $user?->hasRole('academic_teacher')) {
+        $backUrl   = route('teacher.calendar.index', ['subdomain' => $academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain()]);
         $backLabel = __('العودة إلى لوحة المعلم');
     } elseif ($user?->hasRole('supervisor')) {
-        $backUrl   = '/supervisor-panel';
+        $backUrl   = route('manage.dashboard', ['subdomain' => $academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain()]);
         $backLabel = __('العودة إلى لوحة المشرف');
     } else {
         $backUrl   = '/';
