@@ -388,6 +388,84 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             ->with('success', __('supervisor.students.student_created'));
     }
 
+    public function edit($subdomain, User $student): View
+    {
+        if (!$this->isAdminUser()) {
+            abort(403);
+        }
+
+        $this->ensureStudentBelongsToScope($student);
+
+        $student->load('studentProfile.gradeLevel');
+
+        $academy = AcademyContextService::getCurrentAcademy();
+        $gradeLevels = AcademicGradeLevel::where('academy_id', $academy->id)
+            ->where('is_active', true)->orderBy('name')->get();
+
+        return view('supervisor.students.edit', compact('student', 'gradeLevels'));
+    }
+
+    public function update(Request $request, $subdomain, User $student): RedirectResponse
+    {
+        if (!$this->isAdminUser()) {
+            abort(403);
+        }
+
+        $this->ensureStudentBelongsToScope($student);
+
+        $rules = [
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,'.$student->id,
+            'phone' => 'nullable|string|max:20',
+            'gender' => 'required|in:male,female',
+            'birth_date' => 'nullable|date|before:today',
+            'nationality' => 'nullable|string|max:100',
+            'grade_level_id' => 'required|exists:academic_grade_levels,id',
+            'parent_phone' => 'nullable|string|max:20',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $student->first_name = $request->first_name;
+        $student->last_name = $request->last_name;
+        $student->email = $request->email;
+        $student->phone = $request->phone;
+        $student->save();
+
+        if ($request->hasFile('avatar')) {
+            if ($student->avatar) {
+                Storage::disk('public')->delete($student->avatar);
+            }
+            $avatarPath = $request->file('avatar')->store('avatars/students', 'public');
+            $student->avatar = $avatarPath;
+            $student->save();
+        }
+
+        $profile = StudentProfile::where('user_id', $student->id)->first();
+        $profileData = [
+            'gender' => $request->gender,
+            'birth_date' => $request->birth_date,
+            'nationality' => $request->nationality,
+            'grade_level_id' => $request->grade_level_id,
+            'parent_phone' => $request->parent_phone,
+        ];
+
+        if ($profile) {
+            $profile->update($profileData);
+        } else {
+            StudentProfile::create(array_merge($profileData, ['user_id' => $student->id]));
+        }
+
+        return redirect()->route('manage.students.show', ['subdomain' => $subdomain, 'student' => $student->id])
+            ->with('success', __('supervisor.students.student_updated'));
+    }
+
     public function show($subdomain, User $student): View
     {
         $this->ensureStudentBelongsToScope($student);

@@ -361,6 +361,107 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             ->with('success', __('supervisor.teachers.teacher_created'));
     }
 
+    public function edit($subdomain, User $teacher): View
+    {
+        if (!$this->isAdminUser()) {
+            abort(403);
+        }
+
+        $this->ensureTeacherBelongsToScope($teacher);
+
+        $teacher->load(['quranTeacherProfile', 'academicTeacherProfile']);
+
+        $academy = AcademyContextService::getCurrentAcademy();
+        $subjects = AcademicSubject::where('academy_id', $academy->id)->where('is_active', true)->orderBy('name')->get();
+        $gradeLevels = AcademicGradeLevel::where('academy_id', $academy->id)->where('is_active', true)->orderBy('name')->get();
+
+        return view('supervisor.teachers.edit', compact('teacher', 'subjects', 'gradeLevels'));
+    }
+
+    public function update(Request $request, $subdomain, User $teacher): RedirectResponse
+    {
+        if (!$this->isAdminUser()) {
+            abort(403);
+        }
+
+        $this->ensureTeacherBelongsToScope($teacher);
+
+        $rules = [
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,'.$teacher->id,
+            'phone' => 'required|string|max:20',
+            'gender' => 'required|in:male,female',
+            'education_level' => 'required|in:diploma,bachelor,master,phd,other',
+            'university' => 'required|string|max:255',
+            'years_experience' => 'required|integer|min:0|max:50',
+        ];
+
+        $isQuran = $teacher->user_type === 'quran_teacher';
+        $isAcademic = $teacher->user_type === 'academic_teacher';
+
+        if ($isAcademic) {
+            $rules['subjects'] = 'required|array|min:1';
+            $rules['grade_levels'] = 'required|array|min:1';
+            $rules['available_days'] = 'required|array|min:1';
+        }
+
+        if ($isQuran) {
+            $rules['certifications'] = 'nullable|array';
+            $rules['certifications.*'] = 'string|max:255';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $teacher->first_name = $request->first_name;
+        $teacher->last_name = $request->last_name;
+        $teacher->email = $request->email;
+        $teacher->phone = $request->phone;
+        $teacher->education_level = $request->education_level;
+        $teacher->university = $request->university;
+        $teacher->years_experience = $request->years_experience;
+        $teacher->save();
+
+        if ($request->hasFile('avatar')) {
+            if ($teacher->avatar) {
+                Storage::disk('public')->delete($teacher->avatar);
+            }
+            $directory = $isQuran ? 'avatars/quran-teachers' : 'avatars/academic-teachers';
+            $avatarPath = $request->file('avatar')->store($directory, 'public');
+            $teacher->avatar = $avatarPath;
+            $teacher->save();
+        }
+
+        if ($isQuran && $teacher->quranTeacherProfile) {
+            $teacher->quranTeacherProfile->update([
+                'gender' => $request->gender,
+                'educational_qualification' => $request->education_level,
+                'teaching_experience_years' => $request->years_experience,
+                'certifications' => $request->certifications ?? [],
+            ]);
+        }
+
+        if ($isAcademic && $teacher->academicTeacherProfile) {
+            $teacher->academicTeacherProfile->update([
+                'gender' => $request->gender,
+                'education_level' => $request->education_level,
+                'university' => $request->university,
+                'teaching_experience_years' => $request->years_experience,
+                'subject_ids' => $request->subjects ?? [],
+                'grade_level_ids' => $request->grade_levels ?? [],
+                'available_days' => $request->available_days ?? [],
+            ]);
+        }
+
+        return redirect()->route('manage.teachers.show', ['subdomain' => $subdomain, 'teacher' => $teacher->id])
+            ->with('success', __('supervisor.teachers.teacher_updated'));
+    }
+
     public function show($subdomain, User $teacher): View
     {
         $this->ensureTeacherBelongsToScope($teacher);

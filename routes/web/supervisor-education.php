@@ -50,6 +50,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/teachers/create', [SupervisorTeachersController::class, 'create'])->name('teachers.create');
         Route::post('/teachers', [SupervisorTeachersController::class, 'store'])->name('teachers.store');
         Route::get('/teachers/{teacher}', [SupervisorTeachersController::class, 'show'])->name('teachers.show');
+        Route::get('/teachers/{teacher}/edit', [SupervisorTeachersController::class, 'edit'])->name('teachers.edit');
+        Route::put('/teachers/{teacher}', [SupervisorTeachersController::class, 'update'])->name('teachers.update');
         Route::post('/teachers/{teacher}/toggle-status', [SupervisorTeachersController::class, 'toggleStatus'])->name('teachers.toggle-status');
         Route::post('/teachers/{teacher}/reset-password', [SupervisorTeachersController::class, 'resetPassword'])->name('teachers.reset-password');
         Route::delete('/teachers/{teacher}', [SupervisorTeachersController::class, 'destroy'])->name('teachers.destroy');
@@ -59,6 +61,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/students/create', [SupervisorStudentsController::class, 'create'])->name('students.create');
         Route::post('/students', [SupervisorStudentsController::class, 'store'])->name('students.store');
         Route::get('/students/{student}', [SupervisorStudentsController::class, 'show'])->name('students.show');
+        Route::get('/students/{student}/edit', [SupervisorStudentsController::class, 'edit'])->name('students.edit');
+        Route::put('/students/{student}', [SupervisorStudentsController::class, 'update'])->name('students.update');
         Route::post('/students/{student}/toggle-status', [SupervisorStudentsController::class, 'toggleStatus'])->name('students.toggle-status');
         Route::post('/students/{student}/reset-password', [SupervisorStudentsController::class, 'resetPassword'])->name('students.reset-password');
         Route::delete('/students/{student}', [SupervisorStudentsController::class, 'destroy'])->name('students.destroy');

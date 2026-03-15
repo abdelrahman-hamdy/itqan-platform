@@ -291,6 +291,13 @@
                                     @if($isAdmin)
                                         <span class="hidden md:inline text-gray-300 mx-0.5">|</span>
 
+                                        {{-- Edit Student --}}
+                                        <a href="{{ route('manage.students.edit', ['subdomain' => $subdomain, 'student' => $studentId]) }}"
+                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors">
+                                            <i class="ri-edit-line"></i>
+                                            {{ __('common.edit') }}
+                                        </a>
+
                                         {{-- Toggle Status --}}
                                         <form id="toggle-form-{{ $studentId }}" method="POST"
                                               action="{{ route('manage.students.toggle-status', ['subdomain' => $subdomain, 'student' => $studentId]) }}">
