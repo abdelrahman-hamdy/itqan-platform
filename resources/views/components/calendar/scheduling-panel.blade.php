@@ -314,7 +314,7 @@
                                 <p class="text-[10px] font-semibold text-gray-500 uppercase mb-1.5">{{ __('teacher.calendar.schedule_preview') }}</p>
                                 <div class="space-y-1 text-xs text-gray-700">
                                     <p><span class="font-medium">{{ __('teacher.calendar.preview_start') }}:</span> <span x-text="formatDate(scheduleStartDate)"></span></p>
-                                    <p><span class="font-medium">{{ __('teacher.calendar.preview_time') }}:</span> <span x-text="scheduleHour + ':' + scheduleMinute + ' ' + (schedulePeriod === 'AM' ? @js(__('teacher.calendar.am')) : @js(__('teacher.calendar.pm')))"></span></p>
+                                    <p><span class="font-medium">{{ __('teacher.calendar.preview_time') }}:</span> <span x-text="scheduleHour + ':' + scheduleMinute + ' ' + (schedulePeriod === 'AM' ? @js(__('teacher.calendar.am')) : @js(__('teacher.calendar.pm'))) + ' (' + scheduleTime + ')'"></span></p>
                                 </div>
                             </div>
                         </template>
@@ -327,7 +327,7 @@
                                     <p><span class="font-medium">{{ __('teacher.calendar.preview_sessions') }}:</span> <span x-text="sessionCount"></span></p>
                                     <p><span class="font-medium">{{ __('teacher.calendar.preview_days') }}:</span> <span x-text="scheduleDays.map(d => getDayLabel(d)).join('، ')"></span></p>
                                     <p><span class="font-medium">{{ __('teacher.calendar.preview_start') }}:</span> <span x-text="scheduleStartDate ? formatDate(scheduleStartDate) : '{{ __('teacher.calendar.today') }}'"></span></p>
-                                    <p><span class="font-medium">{{ __('teacher.calendar.preview_time') }}:</span> <span x-text="scheduleHour + ':' + scheduleMinute + ' ' + (schedulePeriod === 'AM' ? @js(__('teacher.calendar.am')) : @js(__('teacher.calendar.pm')))"></span></p>
+                                    <p><span class="font-medium">{{ __('teacher.calendar.preview_time') }}:</span> <span x-text="scheduleHour + ':' + scheduleMinute + ' ' + (schedulePeriod === 'AM' ? @js(__('teacher.calendar.am')) : @js(__('teacher.calendar.pm'))) + ' (' + scheduleTime + ')'"></span></p>
                                 </div>
                             </div>
                         </template>
@@ -365,9 +365,9 @@ function schedulingPanel() {
         submitting: false,
         scheduleDays: [],
         scheduleStartDate: '',
-        scheduleHour: 10,
+        scheduleHour: 4,
         scheduleMinute: '00',
-        schedulePeriod: 'AM',
+        schedulePeriod: 'PM',
         sessionCount: 4,
         error: null,
         success: null,
@@ -572,8 +572,11 @@ function schedulingPanel() {
         formatDate(dateStr) {
             if (!dateStr) return '?';
             try {
-                const d = new Date(dateStr);
-                return d.toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' });
+                // Use T00:00:00 (local time) to avoid UTC-offset date-shift bugs
+                const d = new Date(dateStr + 'T00:00:00');
+                const greg = d.toLocaleDateString('ar-SA-u-ca-gregory', { year: 'numeric', month: 'short', day: 'numeric' });
+                const hijri = d.toLocaleDateString('ar-SA-u-ca-islamic-umalqura', { year: 'numeric', month: 'short', day: 'numeric' });
+                return greg + ' — ' + hijri;
             } catch (e) {
                 return String(dateStr).substring(0, 10);
             }

@@ -611,9 +611,12 @@ class SessionManagementService
         );
         $scheduledAtUtc = AcademyContextService::toUtcForStorage($scheduledAt);
 
-        // Validate not in the past
-        if ($scheduledAt->isPast()) {
-            throw new Exception('لا يمكن جدولة جلسة في وقت ماضي');
+        // Validate not in the past (compare explicitly in academy timezone)
+        $nowInAcademy = Carbon::now($timezone);
+        if ($scheduledAt->lt($nowInAcademy)) {
+            $scheduled = $scheduledAt->format('H:i');
+            $current   = $nowInAcademy->format('H:i');
+            throw new Exception("لا يمكن جدولة جلسة في وقت ماضي (الوقت المختار: {$scheduled}، الوقت الحالي: {$current})");
         }
 
         // Get teacher ID from trial request
