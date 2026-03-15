@@ -229,6 +229,17 @@
                         </div>
                     </label>
 
+                    <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <input type="hidden" name="can_manage_students" value="0">
+                        <input type="checkbox" name="can_manage_students" value="1"
+                               class="h-5 w-5 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+                               {{ old('can_manage_students', $profile?->can_manage_students) ? 'checked' : '' }}>
+                        <div>
+                            <p class="font-medium text-gray-900">{{ __('supervisor.supervisors.can_manage_students') }}</p>
+                            <p class="text-sm text-gray-500">{{ __('supervisor.supervisors.can_manage_students_description') }}</p>
+                        </div>
+                    </label>
+
                     {{-- Performance Rating --}}
                     <div>
                         <label for="performance_rating" class="block text-sm font-medium text-gray-700 mb-1">

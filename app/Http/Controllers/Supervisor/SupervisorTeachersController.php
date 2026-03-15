@@ -22,7 +22,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRules;
 use Illuminate\View\View;
 
@@ -30,13 +29,17 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 {
     public function index(Request $request, $subdomain = null): View
     {
+        if (! $this->canManageTeachers()) {
+            abort(403);
+        }
+
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
         $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
 
         $teachers = collect();
 
         // Load Quran teachers
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $quranTeachers = User::whereIn('id', $quranTeacherIds)
                 ->with('quranTeacherProfile')
                 ->get()
@@ -63,7 +66,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
         }
 
         // Load Academic teachers
-        if (!empty($academicTeacherIds)) {
+        if (! empty($academicTeacherIds)) {
             $academicTeachers = User::whereIn('id', $academicTeacherIds)
                 ->with('academicTeacherProfile')
                 ->get()
@@ -175,13 +178,13 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
     public function toggleStatus(Request $request, $subdomain, User $teacher): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageTeachers()) {
             abort(403);
         }
 
         $this->ensureTeacherBelongsToScope($teacher);
 
-        $teacher->active_status = !$teacher->active_status;
+        $teacher->active_status = ! $teacher->active_status;
         $teacher->save();
 
         return redirect()->back()->with('success', __('supervisor.teachers.status_updated'));
@@ -189,7 +192,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
     public function resetPassword(Request $request, $subdomain, User $teacher): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageTeachers()) {
             abort(403);
         }
 
@@ -198,7 +201,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
         $newPassword = $request->input('new_password');
         $confirmation = $request->input('new_password_confirmation');
 
-        if (!$newPassword || mb_strlen($newPassword) < 6) {
+        if (! $newPassword || mb_strlen($newPassword) < 6) {
             return redirect()->back()->with('error', __('supervisor.teachers.password_too_short'));
         }
 
@@ -214,7 +217,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
     public function destroy(Request $request, $subdomain, User $teacher): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageTeachers()) {
             abort(403);
         }
 
@@ -228,7 +231,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
     public function create(Request $request, $subdomain = null): View
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageTeachers()) {
             abort(403);
         }
 
@@ -241,7 +244,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
     public function store(Request $request, $subdomain = null): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageTeachers()) {
             abort(403);
         }
 
@@ -363,7 +366,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
     public function edit($subdomain, User $teacher): View
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageTeachers()) {
             abort(403);
         }
 
@@ -380,7 +383,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
     public function update(Request $request, $subdomain, User $teacher): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageTeachers()) {
             abort(403);
         }
 
@@ -461,6 +464,10 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
     public function show($subdomain, User $teacher): View
     {
+        if (! $this->canManageTeachers()) {
+            abort(403);
+        }
+
         $this->ensureTeacherBelongsToScope($teacher);
 
         $teacher->load(['quranTeacherProfile', 'academicTeacherProfile']);
@@ -612,7 +619,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
     private function ensureTeacherBelongsToScope(User $teacher): void
     {
         $allIds = $this->getAllAssignedTeacherIds();
-        if (!in_array($teacher->id, $allIds)) {
+        if (! in_array($teacher->id, $allIds)) {
             abort(403);
         }
     }

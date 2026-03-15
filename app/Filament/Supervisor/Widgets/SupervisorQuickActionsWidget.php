@@ -8,16 +8,19 @@ use App\Filament\Supervisor\Resources\ManagedQuranTeachersResource;
 use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource;
 use App\Filament\Supervisor\Resources\MonitoredAcademicLessonsResource;
 use App\Filament\Supervisor\Resources\MonitoredAcademicSessionsResource;
-use App\Filament\Supervisor\Resources\MonitoredInteractiveCourseSessionsResource;
-use App\Filament\Supervisor\Resources\MonitoredQuranSessionsResource;
 use App\Filament\Supervisor\Resources\MonitoredGroupCirclesResource;
 use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource;
+use App\Filament\Supervisor\Resources\MonitoredInteractiveCourseSessionsResource;
 use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource;
+use App\Filament\Supervisor\Resources\MonitoredQuranSessionsResource;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
+use App\Models\InteractiveCourseEnrollment;
 use App\Models\QuranCircle;
+use App\Models\QuranCircleEnrollment;
 use App\Models\QuranIndividualCircle;
+use App\Models\StudentProfile;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
 
@@ -137,6 +140,47 @@ class SupervisorQuickActionsWidget extends Widget
                 'description' => 'عرض جلسات الدورات',
                 'url' => MonitoredInteractiveCourseSessionsResource::getUrl('index'),
                 'icon' => 'heroicon-o-calendar-days',
+                'color' => 'gray',
+            ];
+        }
+
+        // Student management actions (if enabled)
+        if ($profile->canManageStudents()) {
+            // Count students from assigned teachers
+            $studentIds = collect();
+            if (! empty($quranTeacherIds)) {
+                $fromIndividual = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)
+                    ->where('is_active', true)->pluck('student_id');
+                $activeCircleIds = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)
+                    ->where('status', true)->pluck('id');
+                $fromCircles = QuranCircleEnrollment::whereIn('circle_id', $activeCircleIds)
+                    ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)->pluck('student_id');
+                $studentIds = $studentIds->merge($fromIndividual)->merge($fromCircles);
+            }
+            if (! empty($academicTeacherIds)) {
+                $profileIds = AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->pluck('id');
+                $fromAcademic = AcademicIndividualLesson::whereIn('academic_teacher_id', $profileIds)
+                    ->where('status', 'active')->pluck('student_id');
+                $studentIds = $studentIds->merge($fromAcademic);
+
+                $courseIds = InteractiveCourse::whereIn('assigned_teacher_id', $profileIds)->pluck('id');
+                if ($courseIds->isNotEmpty()) {
+                    $enrolledProfileIds = InteractiveCourseEnrollment::whereIn('course_id', $courseIds)
+                        ->where('status', 'active')->pluck('student_id');
+                    $fromCourses = StudentProfile::whereIn('id', $enrolledProfileIds)
+                        ->whereNotNull('user_id')->pluck('user_id');
+                    $studentIds = $studentIds->merge($fromCourses);
+                }
+            }
+            $studentCount = $studentIds->unique()->count();
+
+            $subdomain = $user->academy?->subdomain ?? 'itqan-academy';
+            $actions[] = [
+                'title' => 'الطلاب',
+                'count' => $studentCount,
+                'description' => 'طالب تحت الإدارة',
+                'url' => route('manage.students.index', ['subdomain' => $subdomain]),
+                'icon' => 'heroicon-o-user-group',
                 'color' => 'gray',
             ];
         }

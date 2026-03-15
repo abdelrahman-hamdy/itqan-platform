@@ -800,6 +800,8 @@ return [
         'supervisor_code' => 'كود المشرف',
         'can_manage_teachers' => 'إدارة المعلمين',
         'can_manage_teachers_description' => 'السماح لهذا المشرف بإدارة المعلمين (إضافة، تعديل، حذف)',
+        'can_manage_students' => 'إدارة الطلاب',
+        'can_manage_students_description' => 'السماح لهذا المشرف بعرض وإدارة بيانات الطلاب والاشتراكات والمدفوعات',
         'performance_rating' => 'تقييم الأداء',
         'notes' => 'ملاحظات',
         'quran_teachers_assigned' => 'معلمو القرآن',

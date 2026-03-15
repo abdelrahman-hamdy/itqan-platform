@@ -16,6 +16,10 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 {
     public function index(Request $request, $subdomain = null): View
     {
+        if (! $this->canManageStudents()) {
+            abort(403);
+        }
+
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
         $academicTeacherProfileIds = $this->getAssignedAcademicTeacherProfileIds();
 
@@ -40,7 +44,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
                     'sessions_remaining' => $sub->sessions_remaining ?? 0,
                     'start_date' => $sub->starts_at,
                     'end_date' => $sub->ends_at,
-                    'is_extended' => !empty($sub->metadata['extensions'] ?? []),
+                    'is_extended' => ! empty($sub->metadata['extensions'] ?? []),
                     'created_at' => $sub->created_at,
                 ]);
             $subscriptions = $subscriptions->merge($quranSubs);
@@ -65,7 +69,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
                     'sessions_remaining' => $sub->sessions_remaining ?? 0,
                     'start_date' => $sub->starts_at,
                     'end_date' => $sub->ends_at,
-                    'is_extended' => !empty($sub->metadata['extensions'] ?? []),
+                    'is_extended' => ! empty($sub->metadata['extensions'] ?? []),
                     'created_at' => $sub->created_at,
                 ]);
             $subscriptions = $subscriptions->merge($academicSubs);
@@ -145,6 +149,10 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
     public function show(Request $request, $subdomain, string $type, $id): View
     {
+        if (! $this->canManageStudents()) {
+            abort(403);
+        }
+
         $subscription = $this->resolveSubscription($type, $id);
         $this->ensureSubscriptionInScope($subscription, $type);
 
@@ -179,7 +187,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
     public function extend(Request $request, $subdomain, string $type, $id): RedirectResponse
     {
-        if (! $this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -232,7 +240,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
     public function cancelExtension(Request $request, $subdomain, string $type, $id): RedirectResponse
     {
-        if (! $this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -280,7 +288,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
     private function changeStatus(string $subdomain, string $type, $id, SessionSubscriptionStatus $status): RedirectResponse
     {
-        if (! $this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 

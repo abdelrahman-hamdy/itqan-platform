@@ -29,11 +29,13 @@ class SupervisorProfile extends Model
         'performance_rating',
         'notes',
         'can_manage_teachers',
+        'can_manage_students',
     ];
 
     protected $casts = [
         'performance_rating' => 'decimal:2',
         'can_manage_teachers' => 'boolean',
+        'can_manage_students' => 'boolean',
     ];
 
     /**
@@ -247,6 +249,14 @@ class SupervisorProfile extends Model
     public function canManageTeachers(): bool
     {
         return $this->can_manage_teachers ?? false;
+    }
+
+    /**
+     * Check if supervisor can manage students.
+     */
+    public function canManageStudents(): bool
+    {
+        return $this->can_manage_students ?? false;
     }
 
     /**

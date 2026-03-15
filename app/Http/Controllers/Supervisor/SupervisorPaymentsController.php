@@ -11,7 +11,7 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
 {
     public function index(Request $request, $subdomain = null): View
     {
-        if (! $this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -85,7 +85,7 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
 
     public function show(Request $request, $subdomain = null, $payment = null): View
     {
-        if (! $this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -96,7 +96,7 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
 
     public function markCompleted(Request $request, $subdomain = null, $payment = null)
     {
-        if (! $this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 

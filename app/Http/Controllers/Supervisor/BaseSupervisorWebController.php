@@ -41,6 +41,32 @@ abstract class BaseSupervisorWebController extends Controller
         return $user && ($user->isSuperAdmin() || $user->isAdmin() || $user->isAcademyAdmin());
     }
 
+    /**
+     * Check if current user has teacher management permission.
+     * Admin users always have this permission.
+     */
+    protected function canManageTeachers(): bool
+    {
+        if ($this->isAdminUser()) {
+            return true;
+        }
+
+        return $this->getCurrentSupervisorProfile()?->canManageTeachers() ?? false;
+    }
+
+    /**
+     * Check if current user has student management permission.
+     * Admin users always have this permission.
+     */
+    protected function canManageStudents(): bool
+    {
+        if ($this->isAdminUser()) {
+            return true;
+        }
+
+        return $this->getCurrentSupervisorProfile()?->canManageStudents() ?? false;
+    }
+
     // ========================================================================
     // Supervisor profile helpers
     // ========================================================================

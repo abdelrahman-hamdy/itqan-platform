@@ -2,12 +2,12 @@
 
 namespace App\Filament\Supervisor\Resources;
 
-use App\Models\Academy;
 use App\Models\AcademicTeacherProfile;
-use Filament\Tables\Columns\TextColumn;
+use App\Models\Academy;
 use App\Models\SupervisorProfile;
 use App\Services\AcademyContextService;
 use Filament\Resources\Resource;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -156,6 +156,16 @@ abstract class BaseSupervisorResource extends Resource
         $profile = static::getCurrentSupervisorProfile();
 
         return $profile?->canManageTeachers() ?? false;
+    }
+
+    /**
+     * Check if supervisor can manage student profiles, subscriptions, payments.
+     */
+    public static function canManageStudents(): bool
+    {
+        $profile = static::getCurrentSupervisorProfile();
+
+        return $profile?->canManageStudents() ?? false;
     }
 
     /**

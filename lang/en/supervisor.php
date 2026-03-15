@@ -800,6 +800,8 @@ return [
         'supervisor_code' => 'Supervisor Code',
         'can_manage_teachers' => 'Manage Teachers',
         'can_manage_teachers_description' => 'Allow this supervisor to manage teachers (add, edit, delete)',
+        'can_manage_students' => 'Manage Students',
+        'can_manage_students_description' => 'Allow this supervisor to view and manage student data, subscriptions, and payments',
         'performance_rating' => 'Performance Rating',
         'notes' => 'Notes',
         'quran_teachers_assigned' => 'Quran Teachers',

@@ -15,6 +15,10 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 {
     public function index(Request $request, $subdomain = null): View
     {
+        if (! $this->canManageTeachers()) {
+            abort(403);
+        }
+
         $academyId = $this->getAcademyId();
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
         $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
@@ -181,6 +185,10 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
     public function dispute(Request $request, $subdomain, TeacherEarning $earning): RedirectResponse
     {
+        if (! $this->canManageTeachers()) {
+            abort(403);
+        }
+
         $this->authorize('update', $earning);
         $this->validateEarningBelongsToAssignedTeachers($earning);
 
@@ -202,6 +210,10 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
     public function resolve(Request $request, $subdomain, TeacherEarning $earning): RedirectResponse
     {
+        if (! $this->canManageTeachers()) {
+            abort(403);
+        }
+
         $this->authorize('update', $earning);
         $this->validateEarningBelongsToAssignedTeachers($earning);
 

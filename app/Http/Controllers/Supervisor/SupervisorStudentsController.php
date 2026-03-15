@@ -35,6 +35,10 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 {
     public function index(Request $request, $subdomain = null): View
     {
+        if (! $this->canManageStudents()) {
+            abort(403);
+        }
+
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
         $academicProfileIds = $this->getAssignedAcademicTeacherProfileIds();
 
@@ -51,7 +55,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
                 ->pluck('id');
 
             // For program badges, still compute per-program membership
-            if (!empty($quranTeacherIds)) {
+            if (! empty($quranTeacherIds)) {
                 $fromIndividual = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)
                     ->where('is_active', true)->pluck('student_id');
                 $activeCircleIds = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)
@@ -61,7 +65,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
                 $quranStudentIds = $fromIndividual->merge($fromCircles)->unique();
             }
 
-            if (!empty($academicProfileIds)) {
+            if (! empty($academicProfileIds)) {
                 $academicStudentIds = AcademicIndividualLesson::whereIn('academic_teacher_id', $academicProfileIds)
                     ->active()->pluck('student_id')->unique();
 
@@ -77,14 +81,14 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             // Supervisor path: discover students through teacher chain
             // 1. Quran Individual
             $fromIndividual = collect();
-            if (!empty($quranTeacherIds)) {
+            if (! empty($quranTeacherIds)) {
                 $fromIndividual = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)
                     ->where('is_active', true)->pluck('student_id');
             }
 
             // 2. Quran Group
             $fromCircles = collect();
-            if (!empty($quranTeacherIds)) {
+            if (! empty($quranTeacherIds)) {
                 $activeCircleIds = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)
                     ->where('status', true)->pluck('id');
                 $fromCircles = QuranCircleEnrollment::whereIn('circle_id', $activeCircleIds)
@@ -94,13 +98,13 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             $quranStudentIds = $fromIndividual->merge($fromCircles)->unique();
 
             // 3. Academic Lessons
-            if (!empty($academicProfileIds)) {
+            if (! empty($academicProfileIds)) {
                 $academicStudentIds = AcademicIndividualLesson::whereIn('academic_teacher_id', $academicProfileIds)
                     ->active()->pluck('student_id')->unique();
             }
 
             // 4. Interactive Courses
-            if (!empty($academicProfileIds)) {
+            if (! empty($academicProfileIds)) {
                 $courseIds = InteractiveCourse::whereIn('assigned_teacher_id', $academicProfileIds)->pluck('id');
                 if ($courseIds->isNotEmpty()) {
                     $enrolledProfileIds = InteractiveCourseEnrollment::whereIn('course_id', $courseIds)
@@ -143,20 +147,20 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             if ($search = $request->input('search')) {
                 // Normalize Arabic alef variants (أ إ آ ٱ → ا) for accent-insensitive search
                 $normalizedSearch = str_replace(['أ', 'إ', 'آ', 'ٱ'], 'ا', $search);
-                $likePattern = '%' . $normalizedSearch . '%';
+                $likePattern = '%'.$normalizedSearch.'%';
 
                 $query->where(function ($q) use ($search, $likePattern) {
                     $normFirst = "REPLACE(REPLACE(REPLACE(REPLACE(first_name, 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ٱ', 'ا')";
-                    $normLast  = "REPLACE(REPLACE(REPLACE(REPLACE(last_name, 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ٱ', 'ا')";
+                    $normLast = "REPLACE(REPLACE(REPLACE(REPLACE(last_name, 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ٱ', 'ا')";
 
                     $q->whereRaw("$normFirst LIKE ?", [$likePattern])
                         ->orWhereRaw("$normLast LIKE ?", [$likePattern])
                         ->orWhereRaw("CONCAT($normFirst, ' ', $normLast) LIKE ?", [$likePattern])
-                        ->orWhere('email', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%'.$search.'%')
                         ->orWhereHas('studentProfile', function ($pq) use ($search, $likePattern) {
                             $normPFirst = "REPLACE(REPLACE(REPLACE(REPLACE(first_name, 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ٱ', 'ا')";
-                            $normPLast  = "REPLACE(REPLACE(REPLACE(REPLACE(last_name, 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ٱ', 'ا')";
-                            $pq->where('student_code', 'like', '%' . $search . '%')
+                            $normPLast = "REPLACE(REPLACE(REPLACE(REPLACE(last_name, 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ٱ', 'ا')";
+                            $pq->where('student_code', 'like', '%'.$search.'%')
                                 ->orWhereRaw("$normPFirst LIKE ?", [$likePattern])
                                 ->orWhereRaw("$normPLast LIKE ?", [$likePattern]);
                         });
@@ -248,13 +252,13 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 
     public function toggleStatus(Request $request, $subdomain, User $student): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
         $this->ensureStudentBelongsToScope($student);
 
-        $student->active_status = !$student->active_status;
+        $student->active_status = ! $student->active_status;
         $student->save();
 
         return redirect()->back()->with('success', __('supervisor.students.status_updated'));
@@ -262,7 +266,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 
     public function resetPassword(Request $request, $subdomain, User $student): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -271,7 +275,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
         $newPassword = $request->input('new_password');
         $confirmation = $request->input('new_password_confirmation');
 
-        if (!$newPassword || mb_strlen($newPassword) < 6) {
+        if (! $newPassword || mb_strlen($newPassword) < 6) {
             return redirect()->back()->with('error', __('supervisor.students.password_too_short'));
         }
 
@@ -287,7 +291,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 
     public function destroy(Request $request, $subdomain, User $student): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -301,7 +305,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 
     public function create(Request $request, $subdomain = null): View
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -314,7 +318,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 
     public function store(Request $request, $subdomain = null): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -414,7 +418,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 
     public function edit($subdomain, User $student): View
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -431,7 +435,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 
     public function update(Request $request, $subdomain, User $student): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -497,6 +501,10 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 
     public function show($subdomain, User $student): View
     {
+        if (! $this->canManageStudents()) {
+            abort(403);
+        }
+
         $this->ensureStudentBelongsToScope($student);
 
         $student->load('studentProfile.gradeLevel');
@@ -597,7 +605,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 
         $studentIds = collect();
 
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $fromIndividual = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->where('is_active', true)->pluck('student_id');
             $activeCircleIds = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)
@@ -607,7 +615,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             $studentIds = $studentIds->merge($fromIndividual)->merge($fromCircles);
         }
 
-        if (!empty($academicProfileIds)) {
+        if (! empty($academicProfileIds)) {
             $fromAcademic = AcademicIndividualLesson::whereIn('academic_teacher_id', $academicProfileIds)
                 ->active()->pluck('student_id');
             $studentIds = $studentIds->merge($fromAcademic);
@@ -622,7 +630,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             }
         }
 
-        if (!$studentIds->unique()->contains($student->id)) {
+        if (! $studentIds->unique()->contains($student->id)) {
             abort(403);
         }
     }

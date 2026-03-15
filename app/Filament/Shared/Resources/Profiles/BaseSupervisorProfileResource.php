@@ -183,6 +183,12 @@ abstract class BaseSupervisorProfileResource extends Resource
                 ->trueLabel('يملك صلاحية')
                 ->falseLabel('لا يملك صلاحية'),
 
+            TernaryFilter::make('can_manage_students')
+                ->label('إدارة الطلاب')
+                ->placeholder('الكل')
+                ->trueLabel('يملك صلاحية')
+                ->falseLabel('لا يملك صلاحية'),
+
             TernaryFilter::make('active_status')
                 ->label('حالة الحساب')
                 ->placeholder('الكل')
@@ -240,6 +246,9 @@ abstract class BaseSupervisorProfileResource extends Resource
                 Toggle::make('can_manage_teachers')
                     ->label('صلاحية إدارة المعلمين')
                     ->helperText('السماح للمشرف بإدارة المعلمين المعينين له'),
+                Toggle::make('can_manage_students')
+                    ->label('صلاحية إدارة الطلاب')
+                    ->helperText('السماح للمشرف بعرض وإدارة بيانات الطلاب والاشتراكات والمدفوعات'),
                 Grid::make(2)->schema([
                     Select::make('quran_teacher_ids')
                         ->label('معلمو القرآن')

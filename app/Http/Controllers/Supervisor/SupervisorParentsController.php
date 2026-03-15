@@ -28,6 +28,10 @@ class SupervisorParentsController extends BaseSupervisorWebController
 {
     public function index(Request $request, $subdomain = null): View
     {
+        if (! $this->canManageStudents()) {
+            abort(403);
+        }
+
         // Discover parent user IDs based on role
         if ($this->isAdminUser()) {
             $parentUserIds = User::where('user_type', 'parent')
@@ -156,13 +160,13 @@ class SupervisorParentsController extends BaseSupervisorWebController
 
     public function toggleStatus(Request $request, $subdomain, User $parent): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
         $this->ensureParentBelongsToScope($parent);
 
-        $parent->active_status = !$parent->active_status;
+        $parent->active_status = ! $parent->active_status;
         $parent->save();
 
         return redirect()->back()->with('success', __('supervisor.parents.status_updated'));
@@ -170,7 +174,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
 
     public function resetPassword(Request $request, $subdomain, User $parent): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -179,7 +183,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
         $newPassword = $request->input('new_password');
         $confirmation = $request->input('new_password_confirmation');
 
-        if (!$newPassword || mb_strlen($newPassword) < 6) {
+        if (! $newPassword || mb_strlen($newPassword) < 6) {
             return redirect()->back()->with('error', __('supervisor.parents.password_too_short'));
         }
 
@@ -195,7 +199,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
 
     public function destroy(Request $request, $subdomain, User $parent): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -209,7 +213,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
 
     public function create(Request $request, $subdomain = null): View
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -218,7 +222,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
 
     public function store(Request $request, $subdomain = null): RedirectResponse
     {
-        if (!$this->isAdminUser()) {
+        if (! $this->canManageStudents()) {
             abort(403);
         }
 
@@ -317,14 +321,14 @@ class SupervisorParentsController extends BaseSupervisorWebController
         $studentIds = collect();
 
         // 1. Quran Individual
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $fromIndividual = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->where('is_active', true)->pluck('student_id');
             $studentIds = $studentIds->merge($fromIndividual);
         }
 
         // 2. Quran Group
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $activeCircleIds = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->where('status', true)->pluck('id');
             $fromCircles = QuranCircleEnrollment::whereIn('circle_id', $activeCircleIds)
@@ -333,14 +337,14 @@ class SupervisorParentsController extends BaseSupervisorWebController
         }
 
         // 3. Academic Lessons
-        if (!empty($academicProfileIds)) {
+        if (! empty($academicProfileIds)) {
             $fromAcademic = AcademicIndividualLesson::whereIn('academic_teacher_id', $academicProfileIds)
                 ->active()->pluck('student_id');
             $studentIds = $studentIds->merge($fromAcademic);
         }
 
         // 4. Interactive Courses
-        if (!empty($academicProfileIds)) {
+        if (! empty($academicProfileIds)) {
             $courseIds = InteractiveCourse::whereIn('assigned_teacher_id', $academicProfileIds)->pluck('id');
             if ($courseIds->isNotEmpty()) {
                 $enrolledProfileIds = InteractiveCourseEnrollment::whereIn('course_id', $courseIds)
@@ -373,7 +377,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
         $studentProfileIds = StudentProfile::whereIn('user_id', $studentUserIds)->pluck('id');
 
         $parentProfile = $parent->parentProfile;
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             abort(403);
         }
 
@@ -391,7 +395,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
             ->whereIn('student_id', $studentProfileIds)
             ->exists();
 
-        if (!$pivotLinked) {
+        if (! $pivotLinked) {
             abort(403);
         }
     }

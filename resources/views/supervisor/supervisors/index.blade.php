@@ -223,6 +223,12 @@
                                             {{ __('supervisor.supervisors.can_manage_teachers') }}
                                         </span>
                                     @endif
+                                    @if($sup['can_manage_students'])
+                                        <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                                            <i class="ri-group-2-line"></i>
+                                            {{ __('supervisor.supervisors.can_manage_students') }}
+                                        </span>
+                                    @endif
                                     @if(!$sup['is_active'])
                                         <span class="inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
                                             {{ __('supervisor.teachers.inactive') }}

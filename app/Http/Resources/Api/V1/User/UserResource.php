@@ -215,6 +215,7 @@ class UserResource extends JsonResource
             'id' => $profile->id,
             'supervisor_code' => $profile->supervisor_code,
             'can_manage_teachers' => $profile->can_manage_teachers ?? false,
+            'can_manage_students' => $profile->can_manage_students ?? false,
             'assigned_teachers_count' => count($profile->getAllAssignedTeacherIds()),
             'responsibilities' => $profile->getResponsibilityCountByType(),
         ];
