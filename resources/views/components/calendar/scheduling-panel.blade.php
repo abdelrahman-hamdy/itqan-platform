@@ -117,12 +117,9 @@
                                         <div class="flex-1 min-w-0">
                                             <p class="text-sm font-semibold text-gray-900 truncate" x-text="item.name || item.title"></p>
                                         </div>
-                                        <span :class="{
-                                            'bg-green-100 text-green-700': item.status === 'fully_scheduled' || item.status === 'scheduled',
-                                            'bg-amber-100 text-amber-700': item.status === 'partially_scheduled',
-                                            'bg-gray-100 text-gray-600': item.status === 'not_scheduled' || item.status === 'unscheduled'
-                                        }" class="text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0"
-                                           x-text="getSchedulingStatusLabel(item.status)">
+                                        <span :class="getItemStatusBadgeClass(item)"
+                                              class="text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0"
+                                              x-text="getItemStatusLabel(item)">
                                         </span>
                                     </div>
 
@@ -150,15 +147,11 @@
                                     {{-- Trial Request --}}
                                     <template x-if="item.type === 'trial'">
                                         <div class="space-y-1 text-xs text-gray-600">
-                                            <p><i class="ri-user-line me-1 text-gray-400"></i> {{ __('teacher.calendar.student_label') }} <span class="font-medium text-gray-800" x-text="item.student_name || '-'"></span></p>
                                             <template x-if="item.level_label">
                                                 <p><i class="ri-bar-chart-line me-1 text-gray-400"></i> {{ __('teacher.calendar.level_label') }} <span class="font-medium text-gray-800" x-text="item.level_label"></span></p>
                                             </template>
                                             <template x-if="item.preferred_time_label">
                                                 <p><i class="ri-time-line me-1 text-gray-400"></i> {{ __('teacher.calendar.preferred_time') }} <span class="font-medium text-gray-800" x-text="item.preferred_time_label"></span></p>
-                                            </template>
-                                            <template x-if="item.status_arabic">
-                                                <p><i class="ri-information-line me-1 text-gray-400"></i> <span class="font-medium text-gray-800" x-text="item.status_arabic"></span></p>
                                             </template>
                                         </div>
                                     </template>
@@ -224,8 +217,8 @@
                             <span class="text-blue-700" x-text="selectedItem.name || selectedItem.title"></span>
                         </h3>
 
-                        <!-- Days Selection -->
-                        <div class="mb-3">
+                        <!-- Days Selection (hidden for trial sessions — day is auto-computed from date) -->
+                        <div class="mb-3" x-show="selectedItem.type !== 'trial'">
                             <label class="block text-xs font-semibold text-gray-700 mb-2">{{ __('teacher.calendar.select_days') }}</label>
                             <div class="flex flex-wrap gap-2">
                                 @php
@@ -262,8 +255,15 @@
                             </template>
                         </div>
 
-                        <!-- Start Date + Time Fields -->
-                        <div class="grid grid-cols-2 gap-3 mb-3">
+                        <!-- Session Date (trial sessions only — single date picker) -->
+                        <div class="mb-3" x-show="selectedItem.type === 'trial'">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.session_date') }}</label>
+                            <input type="date" x-model="scheduleStartDate" @change="onTrialDateChange()"
+                                   class="w-full min-h-[36px] px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <!-- Start Date + Session Count (regular items) -->
+                        <div class="grid grid-cols-2 gap-3 mb-3" x-show="selectedItem.type !== 'trial'">
                             <div>
                                 <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.start_date') }}</label>
                                 <input type="date" x-model="scheduleStartDate"
@@ -308,8 +308,19 @@
                             </div>
                         </div>
 
-                        <!-- Preview Box -->
-                        <template x-if="scheduleDays.length > 0">
+                        <!-- Preview Box: trial session (single date) -->
+                        <template x-if="selectedItem.type === 'trial' && scheduleStartDate">
+                            <div class="mb-3 bg-white border border-gray-200 rounded-lg p-3">
+                                <p class="text-[10px] font-semibold text-gray-500 uppercase mb-1.5">{{ __('teacher.calendar.schedule_preview') }}</p>
+                                <div class="space-y-1 text-xs text-gray-700">
+                                    <p><span class="font-medium">{{ __('teacher.calendar.preview_start') }}:</span> <span x-text="formatDate(scheduleStartDate)"></span></p>
+                                    <p><span class="font-medium">{{ __('teacher.calendar.preview_time') }}:</span> <span x-text="scheduleHour + ':' + scheduleMinute + ' ' + schedulePeriod"></span></p>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Preview Box: regular items -->
+                        <template x-if="selectedItem.type !== 'trial' && scheduleDays.length > 0">
                             <div class="mb-3 bg-white border border-gray-200 rounded-lg p-3">
                                 <p class="text-[10px] font-semibold text-gray-500 uppercase mb-1.5">{{ __('teacher.calendar.schedule_preview') }}</p>
                                 <div class="space-y-1 text-xs text-gray-700">
@@ -322,7 +333,7 @@
                         </template>
 
                         <!-- Submit Button (full width) -->
-                        <button @click="submitSchedule()" :disabled="submitting || scheduleDays.length === 0 || sessionCount < 1"
+                        <button @click="submitSchedule()" :disabled="submitting || (selectedItem.type === 'trial' ? !scheduleStartDate : scheduleDays.length === 0) || sessionCount < 1"
                                 class="w-full min-h-[40px] inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                             <template x-if="submitting">
                                 <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
@@ -500,6 +511,38 @@ function schedulingPanel() {
                 'scheduled': @js(__('teacher.calendar.status_scheduled'))
             };
             return labels[status] || status;
+        },
+
+        getItemStatusBadgeClass(item) {
+            if (item.type === 'trial') {
+                const classes = {
+                    'pending':   'bg-amber-100 text-amber-700',
+                    'approved':  'bg-blue-100 text-blue-700',
+                    'scheduled': 'bg-green-100 text-green-700',
+                    'completed': 'bg-emerald-100 text-emerald-700',
+                    'cancelled': 'bg-gray-100 text-gray-500',
+                    'rejected':  'bg-red-100 text-red-700',
+                    'no_show':   'bg-orange-100 text-orange-700',
+                };
+                return classes[item.status] || 'bg-gray-100 text-gray-600';
+            }
+            if (item.status === 'fully_scheduled' || item.status === 'scheduled') return 'bg-green-100 text-green-700';
+            if (item.status === 'partially_scheduled') return 'bg-amber-100 text-amber-700';
+            return 'bg-gray-100 text-gray-600';
+        },
+
+        getItemStatusLabel(item) {
+            if (item.type === 'trial') {
+                return item.status_arabic || item.status;
+            }
+            return this.getSchedulingStatusLabel(item.status);
+        },
+
+        onTrialDateChange() {
+            if (!this.scheduleStartDate) return;
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const d = new Date(this.scheduleStartDate + 'T00:00:00');
+            this.scheduleDays = [dayNames[d.getDay()]];
         },
 
         getEmptyTitle() {
