@@ -8,53 +8,76 @@
 @endphp
 
 {{-- Meeting Observer Container --}}
-<div id="observer-meeting-container" class="bg-gray-900 rounded-xl overflow-hidden" style="min-height: 500px;">
+<div id="observer-meeting-container" class="rounded-xl overflow-hidden">
 
-    {{-- Connection State (idle / connecting / error) --}}
-    <div id="observer-status" class="flex flex-col items-center justify-center h-full p-8 text-center" style="min-height: 500px;">
+    {{-- Connection State (idle / connecting / error) — Light style matching normal meeting join view --}}
+    <div id="observer-status" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
 
-        {{-- Connecting --}}
-        <div id="observer-connecting" class="hidden flex flex-col items-center">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mb-4 mx-auto"></div>
-            <p class="text-gray-300 text-lg">{{ __('supervisor.observation.connecting') }}</p>
+        {{-- Header bar (matches livekit-interface session-status-header) --}}
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <i class="ri-eye-line text-blue-600"></i>
+                        {{ __('supervisor.observation.observer_mode') }}
+                    </h2>
+                </div>
+                {{-- Timer (same as livekit-interface) --}}
+                <div class="session-timer text-start">
+                    <div class="flex items-center gap-2 text-sm">
+                        <span class="phase-label font-medium text-gray-500">{{ __('supervisor.observation.ready_to_observe') }}</span>
+                        <span class="text-gray-400">|</span>
+                        <span id="observer-idle-timer" class="time-display font-mono font-bold text-lg text-gray-900">--:--</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                        <div class="h-1.5 rounded-full bg-blue-400 transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        {{-- Idle / Ready --}}
-        <div id="observer-idle" class="flex flex-col items-center">
-            {{-- Observer badge --}}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-600/80 text-white mb-6">
-                <i class="ri-eye-line text-sm"></i>
-                {{ __('supervisor.observation.observer_mode') }}
-            </span>
-            <i class="ri-video-camera-line text-6xl text-gray-500 mb-4"></i>
-            <p class="text-gray-400 mb-6 text-lg">{{ __('supervisor.observation.ready_to_observe') }}</p>
-            <p class="text-gray-500 text-sm mb-8">{{ __('supervisor.observation.observer_description') }}</p>
-            <button
-                id="observer-join-btn"
-                class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-            >
-                <i class="ri-eye-line text-lg"></i>
-                {{ __('supervisor.observation.start_observation') }}
-            </button>
-        </div>
+        {{-- Main Content Area --}}
+        <div class="p-6">
+            {{-- Connecting --}}
+            <div id="observer-connecting" class="hidden flex flex-col items-center py-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4 mx-auto"></div>
+                <p class="text-gray-600 text-lg">{{ __('supervisor.observation.connecting') }}</p>
+            </div>
 
-        {{-- Error --}}
-        <div id="observer-error" class="hidden flex flex-col items-center">
-            <i class="ri-error-warning-line text-6xl text-red-400 mb-4"></i>
-            <p class="text-red-300 text-lg mb-4" id="observer-error-message"></p>
-            <button
-                id="observer-retry-btn"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-            >
-                <i class="ri-refresh-line"></i>
-                {{ __('supervisor.observation.retry') }}
-            </button>
+            {{-- Idle / Ready --}}
+            <div id="observer-idle" class="flex flex-col items-center py-6">
+                <div class="join-action-area text-center">
+                    <button
+                        id="observer-join-btn"
+                        class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center gap-3 mx-auto min-w-[240px] justify-center shadow-lg transform hover:scale-105"
+                    >
+                        <i class="ri-eye-line text-xl"></i>
+                        <span class="text-lg">{{ __('supervisor.observation.start_observation') }}</span>
+                    </button>
+                    <div class="status-message mt-4 bg-gray-50 rounded-lg p-3">
+                        <p class="text-gray-700 text-sm font-medium">{{ __('supervisor.observation.observer_description') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Error --}}
+            <div id="observer-error" class="hidden flex flex-col items-center py-8">
+                <i class="ri-error-warning-line text-6xl text-red-400 mb-4"></i>
+                <p class="text-red-600 text-lg mb-4" id="observer-error-message"></p>
+                <button
+                    id="observer-retry-btn"
+                    class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                >
+                    <i class="ri-refresh-line"></i>
+                    {{ __('supervisor.observation.retry') }}
+                </button>
+            </div>
         </div>
 
     </div>
 
     {{-- Video Grid (hidden until connected) --}}
-    <div id="observer-video-grid" class="hidden flex flex-col bg-gray-900" style="min-height: 500px;">
+    <div id="observer-video-grid" class="hidden flex flex-col bg-gray-900 rounded-xl overflow-hidden" style="min-height: 500px;">
 
         {{-- Top Bar (matches livekit-interface gradient bar) --}}
         <div class="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white px-4 py-3 flex items-center justify-between text-sm font-medium shadow-lg shrink-0">
@@ -73,19 +96,19 @@
             {{-- Right: Fullscreen button --}}
             <button id="observer-fullscreen-btn"
                 aria-label="{{ __('meetings.info.fullscreen') }}"
-                class="bg-black bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50">
+                class="cursor-pointer bg-black bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50">
                 <i id="observer-fullscreen-icon" class="ri-fullscreen-line text-lg text-white"></i>
                 <span id="observer-fullscreen-text" class="hidden sm:inline">{{ __('meetings.info.fullscreen') }}</span>
             </button>
         </div>
 
         {{-- Video Tiles Container --}}
-        <div id="observer-video-tiles" class="flex-1 grid gap-2 p-2" style="min-height: 400px;">
+        <div id="observer-video-tiles" class="flex-1 grid gap-2 p-2">
             {{-- Video tiles injected dynamically --}}
         </div>
 
         {{-- Bottom Bar (matches control-bar style) --}}
-        <div class="bg-gray-800 border-t border-gray-700 shadow-lg shrink-0">
+        <div id="observer-bottom-bar" class="bg-gray-800 border-t border-gray-700 shadow-lg shrink-0">
             <div class="px-4 py-4 flex items-center justify-center gap-4">
                 {{-- Observer mode badge --}}
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-600/80 text-white">
@@ -94,7 +117,7 @@
                 </span>
                 {{-- Leave button (same style as control-bar leave button) --}}
                 <button id="observer-leave-btn"
-                    class="shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95"
+                    class="cursor-pointer shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95"
                     aria-label="{{ __('supervisor.observation.leave_observation') }}">
                     <i class="ri-logout-box-line text-xl"></i>
                 </button>
@@ -103,6 +126,28 @@
 
     </div>
 </div>
+
+{{-- Fullscreen fix: ensure flex column fills entire screen --}}
+<style>
+    #observer-meeting-container:fullscreen {
+        background: #111827;
+        display: flex;
+        flex-direction: column;
+    }
+    #observer-meeting-container:fullscreen #observer-video-grid {
+        flex: 1;
+        min-height: 0;
+        height: 100%;
+    }
+    #observer-meeting-container:fullscreen #observer-video-tiles {
+        flex: 1;
+        min-height: 0;
+    }
+    #observer-meeting-container:fullscreen #observer-bottom-bar {
+        position: relative;
+        z-index: 30;
+    }
+</style>
 
 {{-- Observer Meeting JavaScript --}}
 <script>
@@ -198,20 +243,33 @@
         return (name || '?').split(' ').map(function(n) { return n[0]; }).join('').toUpperCase().slice(0, 2);
     }
 
+    // Shared avatar error handler (exposed on container for onerror access)
+    window._observerAvatarError = function(imgEl, userType, name) {
+        var cfg = AVATAR_TYPE_CONFIG[userType] || AVATAR_TYPE_CONFIG['student'];
+        var initials = getInitials(name);
+        imgEl.onerror = null;
+        imgEl.parentElement.innerHTML = '<span class="font-semibold text-lg sm:text-xl ' + cfg.text + '">' + initials + '</span>';
+    };
+
+    function escapeAttr(str) {
+        return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
     function generateAvatarHtml(avatarUrl, defaultAvatarUrl, userType, name) {
         var cfg = AVATAR_TYPE_CONFIG[userType] || AVATAR_TYPE_CONFIG['student'];
         var initials = getInitials(name);
-        var fallback = '<span class="font-semibold text-lg sm:text-xl ' + cfg.text + '">' + initials + '</span>';
+        var safeName = escapeAttr(name);
+        var safeUserType = escapeAttr(userType);
         var content = '';
         if (avatarUrl) {
-            content = '<img src="' + avatarUrl + '" alt="' + name + '" class="w-full h-full object-cover"'
-                + ' onerror="this.onerror=null;this.parentElement.innerHTML=\'' + fallback.replace(/'/g, "\\'") + '\'">';
+            content = '<img src="' + escapeAttr(avatarUrl) + '" alt="' + safeName + '" class="w-full h-full object-cover"'
+                + ' onerror="window._observerAvatarError(this,\'' + safeUserType + '\',\'' + safeName + '\')">';
         } else if (defaultAvatarUrl) {
-            content = '<img src="' + defaultAvatarUrl + '" alt="' + name + '"'
+            content = '<img src="' + escapeAttr(defaultAvatarUrl) + '" alt="' + safeName + '"'
                 + ' class="absolute object-cover" style="width:120%;height:120%;top:0;left:50%;transform:translateX(-50%)"'
-                + ' onerror="this.onerror=null;this.style.display=\'none\';this.parentElement.innerHTML=\'' + fallback.replace(/'/g, "\\'") + '\'">';
+                + ' onerror="window._observerAvatarError(this,\'' + safeUserType + '\',\'' + safeName + '\')">';
         } else {
-            content = fallback;
+            content = '<span class="font-semibold text-lg sm:text-xl ' + cfg.text + '">' + initials + '</span>';
         }
         return '<div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden ' + cfg.bg + ' relative flex items-center justify-center">' + content + '</div>';
     }
@@ -252,12 +310,12 @@
                         avatarHtml +
                         teacherBadge +
                     '</div>' +
-                    '<p class="text-white text-sm sm:text-base font-medium px-2 text-center">' + name + '</p>' +
+                    '<p class="text-white text-sm sm:text-base font-medium px-2 text-center">' + escapeAttr(name) + '</p>' +
                     '<p class="text-gray-300 text-xs mt-1">' + roleLabel + '</p>' +
                 '</div>' +
             '</div>' +
             '<div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2 flex items-center justify-between z-20">' +
-                '<span class="text-white text-xs font-medium truncate max-w-[70%]">' + name + '</span>' +
+                '<span class="text-white text-xs font-medium truncate max-w-[70%]">' + escapeAttr(name) + '</span>' +
             '</div>';
 
         videoTilesEl.appendChild(tile);
