@@ -52,7 +52,139 @@
                 </p>
             </div>
         @endif
+
+        <!-- Action Buttons -->
+        <div class="mt-4 pt-4 border-t border-gray-100">
+            <div class="flex flex-wrap items-center gap-2">
+                {{-- View Sessions --}}
+                <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'student_id' => $student->id]) }}"
+                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                    <i class="ri-calendar-event-line"></i>
+                    {{ __('supervisor.students.view_sessions') }}
+                </a>
+
+                {{-- Message Student --}}
+                <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $student->id]) }}"
+                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors">
+                    <i class="ri-message-3-line"></i>
+                    {{ __('supervisor.students.message_student') }}
+                </a>
+
+                {{-- Admin-only actions --}}
+                @if($isAdmin)
+                    <span class="hidden md:inline text-gray-300 mx-0.5">|</span>
+
+                    {{-- Edit Student --}}
+                    <a href="{{ route('manage.students.edit', ['subdomain' => $subdomain, 'student' => $student->id]) }}"
+                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                        <i class="ri-edit-line"></i>
+                        {{ __('common.edit') }}
+                    </a>
+
+                    {{-- Toggle Status --}}
+                    <form id="toggle-form-{{ $student->id }}" method="POST"
+                          action="{{ route('manage.students.toggle-status', ['subdomain' => $subdomain, 'student' => $student->id]) }}">
+                        @csrf
+                    </form>
+                    <button type="button"
+                        onclick="window.confirmAction({
+                            title: @js($student->active_status ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate')),
+                            message: @js($student->active_status ? __('supervisor.students.confirm_deactivate') : __('supervisor.students.confirm_activate')),
+                            confirmText: @js($student->active_status ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate')),
+                            isDangerous: {{ $student->active_status ? 'true' : 'false' }},
+                            icon: '{{ $student->active_status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}',
+                            onConfirm: () => document.getElementById('toggle-form-{{ $student->id }}').submit()
+                        })"
+                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg transition-colors
+                            {{ $student->active_status
+                                ? 'bg-orange-50 text-orange-700 hover:bg-orange-100'
+                                : 'bg-green-50 text-green-700 hover:bg-green-100' }}">
+                        <i class="{{ $student->active_status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}"></i>
+                        {{ $student->active_status ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate') }}
+                    </button>
+
+                    {{-- Reset Password --}}
+                    <button type="button"
+                        onclick="window.dispatchEvent(new CustomEvent('open-modal-reset-password-show-{{ $student->id }}'))"
+                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors">
+                        <i class="ri-lock-password-line"></i>
+                        {{ __('supervisor.teachers.reset_password') }}
+                    </button>
+
+                    {{-- Delete --}}
+                    <form id="delete-form-{{ $student->id }}" method="POST"
+                          action="{{ route('manage.students.destroy', ['subdomain' => $subdomain, 'student' => $student->id]) }}">
+                        @csrf
+                        @method('DELETE')
+                    </form>
+                    <button type="button"
+                        onclick="window.confirmAction({
+                            title: @js(__('supervisor.students.delete_student')),
+                            message: @js(__('supervisor.students.confirm_delete')),
+                            confirmText: @js(__('supervisor.students.delete_student')),
+                            isDangerous: true,
+                            icon: 'ri-delete-bin-line',
+                            onConfirm: () => document.getElementById('delete-form-{{ $student->id }}').submit()
+                        })"
+                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
+                        <i class="ri-delete-bin-line"></i>
+                        {{ __('supervisor.students.delete_student') }}
+                    </button>
+                @endif
+            </div>
+        </div>
     </div>
+
+    {{-- Password Reset Modal --}}
+    @if($isAdmin)
+        <x-responsive.modal id="reset-password-show-{{ $student->id }}" :title="__('supervisor.teachers.reset_password')" size="sm">
+            <form method="POST" action="{{ route('manage.students.reset-password', ['subdomain' => $subdomain, 'student' => $student->id]) }}"
+                  x-data="{ showPass: false, showConfirm: false }">
+                @csrf
+                <div class="space-y-4">
+                    <p class="text-sm text-gray-600">{{ __('supervisor.students.reset_password_description', ['name' => $student->name]) }}</p>
+                    <div>
+                        <label for="new_password_show" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teachers.new_password') }}</label>
+                        <div class="relative">
+                            <input :type="showPass ? 'text' : 'password'" name="new_password" id="new_password_show"
+                                   class="min-h-[44px] w-full px-3 py-2 pe-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                                   placeholder="{{ __('supervisor.teachers.new_password_placeholder') }}"
+                                   required minlength="6">
+                            <button type="button" @click="showPass = !showPass"
+                                class="cursor-pointer absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600">
+                                <i :class="showPass ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="new_password_confirmation_show" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teachers.confirm_password') }}</label>
+                        <div class="relative">
+                            <input :type="showConfirm ? 'text' : 'password'" name="new_password_confirmation" id="new_password_confirmation_show"
+                                   class="min-h-[44px] w-full px-3 py-2 pe-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                                   placeholder="{{ __('supervisor.teachers.confirm_password_placeholder') }}"
+                                   required minlength="6">
+                            <button type="button" @click="showConfirm = !showConfirm"
+                                class="cursor-pointer absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600">
+                                <i :class="showConfirm ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <x-slot:footer>
+                    <div class="flex items-center justify-end gap-3">
+                        <button type="button" @click="open = false"
+                            class="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+                            {{ __('common.cancel') }}
+                        </button>
+                        <button type="submit"
+                            class="cursor-pointer px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700">
+                            {{ __('supervisor.teachers.reset_password') }}
+                        </button>
+                    </div>
+                </x-slot:footer>
+            </form>
+        </x-responsive.modal>
+    @endif
 
     <!-- Stats Row -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

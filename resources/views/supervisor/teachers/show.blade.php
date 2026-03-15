@@ -49,7 +49,177 @@
                 </div>
             </div>
         </div>
+
+        <!-- Action Buttons -->
+        <div class="mt-4 pt-4 border-t border-gray-100">
+            <div class="flex flex-wrap items-center gap-2">
+                {{-- View Entities --}}
+                @if($isQuranTeacher)
+                    <a href="{{ route('manage.group-circles.index', ['subdomain' => $subdomain, 'teacher_id' => $teacher->id]) }}"
+                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors">
+                        <i class="ri-team-line"></i>
+                        {{ __('supervisor.teachers.view_circles') }}
+                    </a>
+                    <a href="{{ route('manage.individual-circles.index', ['subdomain' => $subdomain, 'teacher_id' => $teacher->id]) }}"
+                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-yellow-600 hover:bg-yellow-700 text-white transition-colors">
+                        <i class="ri-user-line"></i>
+                        {{ __('supervisor.teachers.view_individual_circles') }}
+                    </a>
+                    <a href="{{ route('manage.trial-sessions.index', ['subdomain' => $subdomain, 'teacher_id' => $teacher->id]) }}"
+                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-colors">
+                        <i class="ri-gift-line"></i>
+                        {{ __('supervisor.teachers.view_trial_sessions') }}
+                    </a>
+                @else
+                    <a href="{{ route('manage.academic-lessons.index', ['subdomain' => $subdomain, 'teacher_id' => $teacher->id]) }}"
+                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-violet-600 hover:bg-violet-700 text-white transition-colors">
+                        <i class="ri-graduation-cap-line"></i>
+                        {{ __('supervisor.teachers.view_lessons') }}
+                    </a>
+                    <a href="{{ route('manage.interactive-courses.index', ['subdomain' => $subdomain, 'teacher_id' => $teacher->id]) }}"
+                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-colors">
+                        <i class="ri-live-line"></i>
+                        {{ __('supervisor.teachers.view_interactive_courses') }}
+                    </a>
+                @endif
+
+                {{-- Sessions & Reports --}}
+                <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'teacher_id' => $teacher->id]) }}"
+                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                    <i class="ri-calendar-event-line"></i>
+                    {{ __('supervisor.teachers.view_sessions') }}
+                </a>
+                <a href="{{ route('manage.session-reports.index', ['subdomain' => $subdomain, 'teacher_id' => $teacher->id]) }}"
+                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-fuchsia-600 hover:bg-fuchsia-700 text-white transition-colors">
+                    <i class="ri-file-chart-line"></i>
+                    {{ __('supervisor.teachers.view_reports') }}
+                </a>
+                <a href="{{ route('manage.teacher-earnings.index', ['subdomain' => $subdomain, 'teacher_id' => $teacher->id]) }}"
+                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors">
+                    <i class="ri-money-dollar-circle-line"></i>
+                    {{ __('supervisor.teachers.view_earnings') }}
+                </a>
+                <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $teacher->id]) }}"
+                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors">
+                    <i class="ri-message-3-line"></i>
+                    {{ __('supervisor.teachers.message_teacher') }}
+                </a>
+
+                {{-- Admin-only actions --}}
+                @if($isAdmin)
+                    <span class="hidden md:inline text-gray-300 mx-0.5">|</span>
+
+                    {{-- Edit Teacher --}}
+                    <a href="{{ route('manage.teachers.edit', ['subdomain' => $subdomain, 'teacher' => $teacher->id]) }}"
+                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                        <i class="ri-edit-line"></i>
+                        {{ __('common.edit') }}
+                    </a>
+
+                    {{-- Toggle Status --}}
+                    <form id="toggle-form-{{ $teacher->id }}" method="POST"
+                          action="{{ route('manage.teachers.toggle-status', ['subdomain' => $subdomain, 'teacher' => $teacher->id]) }}">
+                        @csrf
+                    </form>
+                    <button type="button"
+                        onclick="window.confirmAction({
+                            title: @js($teacher->active_status ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate')),
+                            message: @js($teacher->active_status ? __('supervisor.teachers.confirm_deactivate') : __('supervisor.teachers.confirm_activate')),
+                            confirmText: @js($teacher->active_status ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate')),
+                            isDangerous: {{ $teacher->active_status ? 'true' : 'false' }},
+                            icon: '{{ $teacher->active_status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}',
+                            onConfirm: () => document.getElementById('toggle-form-{{ $teacher->id }}').submit()
+                        })"
+                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg transition-colors
+                            {{ $teacher->active_status
+                                ? 'bg-orange-50 text-orange-700 hover:bg-orange-100'
+                                : 'bg-green-50 text-green-700 hover:bg-green-100' }}">
+                        <i class="{{ $teacher->active_status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}"></i>
+                        {{ $teacher->active_status ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate') }}
+                    </button>
+
+                    {{-- Reset Password --}}
+                    <button type="button"
+                        onclick="window.dispatchEvent(new CustomEvent('open-modal-reset-password-show-{{ $teacher->id }}'))"
+                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors">
+                        <i class="ri-lock-password-line"></i>
+                        {{ __('supervisor.teachers.reset_password') }}
+                    </button>
+
+                    {{-- Delete --}}
+                    <form id="delete-form-{{ $teacher->id }}" method="POST"
+                          action="{{ route('manage.teachers.destroy', ['subdomain' => $subdomain, 'teacher' => $teacher->id]) }}">
+                        @csrf
+                        @method('DELETE')
+                    </form>
+                    <button type="button"
+                        onclick="window.confirmAction({
+                            title: @js(__('supervisor.teachers.delete_teacher')),
+                            message: @js(__('supervisor.teachers.confirm_delete')),
+                            confirmText: @js(__('supervisor.teachers.delete_teacher')),
+                            isDangerous: true,
+                            icon: 'ri-delete-bin-line',
+                            onConfirm: () => document.getElementById('delete-form-{{ $teacher->id }}').submit()
+                        })"
+                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
+                        <i class="ri-delete-bin-line"></i>
+                        {{ __('supervisor.teachers.delete_teacher') }}
+                    </button>
+                @endif
+            </div>
+        </div>
     </div>
+
+    {{-- Password Reset Modal --}}
+    @if($isAdmin)
+        <x-responsive.modal id="reset-password-show-{{ $teacher->id }}" :title="__('supervisor.teachers.reset_password')" size="sm">
+            <form method="POST" action="{{ route('manage.teachers.reset-password', ['subdomain' => $subdomain, 'teacher' => $teacher->id]) }}"
+                  x-data="{ showPass: false, showConfirm: false }">
+                @csrf
+                <div class="space-y-4">
+                    <p class="text-sm text-gray-600">{{ __('supervisor.teachers.reset_password_description', ['name' => $teacher->name]) }}</p>
+                    <div>
+                        <label for="new_password_show" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teachers.new_password') }}</label>
+                        <div class="relative">
+                            <input :type="showPass ? 'text' : 'password'" name="new_password" id="new_password_show"
+                                   class="min-h-[44px] w-full px-3 py-2 pe-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                                   placeholder="{{ __('supervisor.teachers.new_password_placeholder') }}"
+                                   required minlength="6">
+                            <button type="button" @click="showPass = !showPass"
+                                class="cursor-pointer absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600">
+                                <i :class="showPass ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="new_password_confirmation_show" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teachers.confirm_password') }}</label>
+                        <div class="relative">
+                            <input :type="showConfirm ? 'text' : 'password'" name="new_password_confirmation" id="new_password_confirmation_show"
+                                   class="min-h-[44px] w-full px-3 py-2 pe-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                                   placeholder="{{ __('supervisor.teachers.confirm_password_placeholder') }}"
+                                   required minlength="6">
+                            <button type="button" @click="showConfirm = !showConfirm"
+                                class="cursor-pointer absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600">
+                                <i :class="showConfirm ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <x-slot:footer>
+                    <div class="flex items-center justify-end gap-3">
+                        <button type="button" @click="open = false"
+                            class="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+                            {{ __('common.cancel') }}
+                        </button>
+                        <button type="submit"
+                            class="cursor-pointer px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700">
+                            {{ __('supervisor.teachers.reset_password') }}
+                        </button>
+                    </div>
+                </x-slot:footer>
+            </form>
+        </x-responsive.modal>
+    @endif
 
     <!-- Stats Row -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
