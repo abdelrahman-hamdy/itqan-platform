@@ -141,12 +141,25 @@ class SupervisorStudentsController extends BaseSupervisorWebController
                 ->with('studentProfile.gradeLevel');
 
             if ($search = $request->input('search')) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('first_name', 'like', '%' . $search . '%')
-                        ->orWhere('last_name', 'like', '%' . $search . '%')
-                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $search . '%'])
+                // Normalize Arabic alef variants (أ إ آ ٱ → ا) for accent-insensitive search
+                $normalizedSearch = str_replace(['أ', 'إ', 'آ', 'ٱ'], 'ا', $search);
+                $likePattern = '%' . $normalizedSearch . '%';
+
+                $query->where(function ($q) use ($search, $likePattern) {
+                    $normFirst = "REPLACE(REPLACE(REPLACE(REPLACE(first_name, 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ٱ', 'ا')";
+                    $normLast  = "REPLACE(REPLACE(REPLACE(REPLACE(last_name, 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ٱ', 'ا')";
+
+                    $q->whereRaw("$normFirst LIKE ?", [$likePattern])
+                        ->orWhereRaw("$normLast LIKE ?", [$likePattern])
+                        ->orWhereRaw("CONCAT($normFirst, ' ', $normLast) LIKE ?", [$likePattern])
                         ->orWhere('email', 'like', '%' . $search . '%')
-                        ->orWhereHas('studentProfile', fn ($q) => $q->where('student_code', 'like', '%' . $search . '%'));
+                        ->orWhereHas('studentProfile', function ($pq) use ($search, $likePattern) {
+                            $normPFirst = "REPLACE(REPLACE(REPLACE(REPLACE(first_name, 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ٱ', 'ا')";
+                            $normPLast  = "REPLACE(REPLACE(REPLACE(REPLACE(last_name, 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ٱ', 'ا')";
+                            $pq->where('student_code', 'like', '%' . $search . '%')
+                                ->orWhereRaw("$normPFirst LIKE ?", [$likePattern])
+                                ->orWhereRaw("$normPLast LIKE ?", [$likePattern]);
+                        });
                 });
             }
 
