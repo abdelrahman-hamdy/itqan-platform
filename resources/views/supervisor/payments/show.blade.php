@@ -199,10 +199,12 @@
                     {{ __('supervisor.payments.payer_info') }}
                 </h2>
                 @if($payment->user)
-                    <div class="flex items-center gap-3">
+                    <a href="{{ route('manage.students.show', ['subdomain' => $subdomain, 'student' => $payment->user->id]) }}"
+                       class="flex items-center gap-3 p-2 -m-2 rounded-lg hover:bg-gray-50 transition-colors group">
                         <x-avatar :user="$payment->user" size="md" user-type="student" />
-                        <p class="font-medium text-gray-900">{{ $payment->user->name }}</p>
-                    </div>
+                        <p class="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{{ $payment->user->name }}</p>
+                        <i class="ri-arrow-left-s-line text-gray-400 group-hover:text-blue-500 ms-auto"></i>
+                    </a>
                 @else
                     <p class="text-sm text-gray-500">{{ __('supervisor.payments.unknown') }}</p>
                 @endif
