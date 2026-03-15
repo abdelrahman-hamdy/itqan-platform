@@ -121,12 +121,36 @@ class SupervisorStudentsController extends BaseSupervisorWebController
         $academicStudentIdsArray = $academicStudentIds->toArray();
         $interactiveStudentUserIdsArray = $interactiveStudentUserIds->toArray();
 
-        // Load users with profiles
+        // Stats from unfiltered set (count queries, no need to load all users)
+        $totalStudents = $allStudentIds->count();
+        $activeCount = $allStudentIds->isNotEmpty()
+            ? User::whereIn('id', $allStudentIds)->where('active_status', true)->count()
+            : 0;
+        $inactiveCount = $totalStudents - $activeCount;
+        $maleCount = $allStudentIds->isNotEmpty()
+            ? StudentProfile::whereIn('user_id', $allStudentIds)->where('gender', 'male')->count()
+            : 0;
+        $femaleCount = $allStudentIds->isNotEmpty()
+            ? StudentProfile::whereIn('user_id', $allStudentIds)->where('gender', 'female')->count()
+            : 0;
+
+        // Load users with profiles — apply name/email/code search at DB level
         $students = collect();
         if ($allStudentIds->isNotEmpty()) {
-            $students = User::whereIn('id', $allStudentIds)
-                ->with('studentProfile.gradeLevel')
-                ->get()
+            $query = User::whereIn('id', $allStudentIds)
+                ->with('studentProfile.gradeLevel');
+
+            if ($search = $request->input('search')) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'like', '%' . $search . '%')
+                        ->orWhere('last_name', 'like', '%' . $search . '%')
+                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $search . '%'])
+                        ->orWhere('email', 'like', '%' . $search . '%')
+                        ->orWhereHas('studentProfile', fn ($q) => $q->where('student_code', 'like', '%' . $search . '%'));
+                });
+            }
+
+            $students = $query->get()
                 ->map(function ($user) use ($quranStudentIdsArray, $academicStudentIdsArray, $interactiveStudentUserIdsArray) {
                     return [
                         'user' => $user,
@@ -146,27 +170,8 @@ class SupervisorStudentsController extends BaseSupervisorWebController
                 });
         }
 
-        // Stats from unfiltered set
-        $totalStudents = $students->count();
-        $activeCount = $students->where('is_active', true)->count();
-        $inactiveCount = $totalStudents - $activeCount;
-        $maleCount = $students->where('gender', 'male')->count();
-        $femaleCount = $students->where('gender', 'female')->count();
-
-        // Apply filters
+        // Apply remaining filters (program, gender, status, grade level) at collection level
         $filtered = $students;
-
-        if ($search = $request->input('search')) {
-            $search = mb_strtolower($search);
-            $filtered = $filtered->filter(function ($s) use ($search) {
-                $fullName = mb_strtolower($s['user']->first_name . ' ' . $s['user']->last_name);
-                return str_contains($fullName, $search)
-                    || str_contains(mb_strtolower($s['user']->first_name ?? ''), $search)
-                    || str_contains(mb_strtolower($s['user']->last_name ?? ''), $search)
-                    || str_contains(mb_strtolower($s['user']->email ?? ''), $search)
-                    || str_contains(mb_strtolower($s['student_code'] ?? ''), $search);
-            });
-        }
 
         if ($program = $request->input('program')) {
             $filtered = $filtered->filter(fn ($s) => in_array($program, $s['programs']));

@@ -222,13 +222,6 @@
                             <div class="flex-1 min-w-0">
                                 <div class="flex flex-wrap items-center gap-2 mb-1">
                                     <a href="{{ route('manage.students.show', ['subdomain' => $subdomain, 'student' => $student['user']->id]) }}" class="text-base md:text-lg font-bold text-gray-900 hover:text-blue-600 truncate transition-colors">{{ $student['user']->name }}</a>
-                                    @foreach($programs as $program)
-                                        <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full
-                                            {{ $program === 'quran' ? 'bg-green-100 text-green-700' : ($program === 'academic' ? 'bg-violet-100 text-violet-700' : 'bg-purple-100 text-purple-700') }}">
-                                            <i class="{{ $program === 'quran' ? 'ri-book-read-line' : ($program === 'academic' ? 'ri-graduation-cap-line' : 'ri-live-line') }}"></i>
-                                            {{ __('supervisor.students.program_' . $program) }}
-                                        </span>
-                                    @endforeach
                                     @if(!$student['is_active'])
                                         <span class="inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
                                             {{ __('supervisor.teachers.inactive') }}
