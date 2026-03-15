@@ -5,6 +5,9 @@
         'sessionType' => $sessionType,
         'sessionId' => $session->id,
     ]);
+    $academySettings = current_academy();
+    $preparationMinutes = $academySettings?->default_preparation_minutes ?? 10;
+    $endingBufferMinutes = $academySettings?->default_buffer_minutes ?? 5;
 @endphp
 
 {{-- Meeting Observer Container --}}
@@ -22,17 +25,19 @@
                         {{ __('supervisor.observation.observer_mode') }}
                     </h2>
                 </div>
-                {{-- Timer (same as livekit-interface) --}}
-                <div class="session-timer text-start">
+                {{-- Timer (same as livekit-interface, driven by SmartSessionTimer) --}}
+                @if($session->scheduled_at)
+                <div class="session-timer text-start" id="observer-session-timer" data-phase="not_started">
                     <div class="flex items-center gap-2 text-sm">
-                        <span class="phase-label font-medium text-gray-500">{{ __('supervisor.observation.ready_to_observe') }}</span>
+                        <span id="observer-timer-phase" class="phase-label font-medium">{{ __('meetings.timer.waiting_session') }}</span>
                         <span class="text-gray-400">|</span>
-                        <span id="observer-idle-timer" class="time-display font-mono font-bold text-lg text-gray-900">--:--</span>
+                        <span id="observer-time-display" class="time-display font-mono font-bold text-lg">--:--</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                        <div class="h-1.5 rounded-full bg-blue-400 transition-all duration-1000" style="width: 0%"></div>
+                        <div id="observer-timer-progress" class="h-1.5 rounded-full transition-all duration-1000" style="width: 0%"></div>
                     </div>
                 </div>
+                @endif
             </div>
         </div>
 
@@ -538,5 +543,56 @@
 
     // Initial state
     showState('idle');
+
+    // Initialize SmartSessionTimer for the idle header
+    @if($session->scheduled_at)
+    (function initObserverTimer() {
+        function loadTimerScript() {
+            return new Promise(function(resolve, reject) {
+                if (typeof SmartSessionTimer !== 'undefined') { resolve(); return; }
+                var s = document.createElement('script');
+                s.src = '{{ asset("js/session-timer.js") }}?v={{ time() }}';
+                s.onload = resolve;
+                s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+
+        var timerConfig = {
+            sessionId: {{ $session->id }},
+            scheduledAt: '{{ $session->scheduled_at->toISOString() }}',
+            durationMinutes: {{ $session->duration_minutes ?? 30 }},
+            preparationMinutes: {{ $preparationMinutes }},
+            endingBufferMinutes: {{ $endingBufferMinutes }},
+            timerElementId: 'observer-session-timer',
+            phaseElementId: 'observer-timer-phase',
+            displayElementId: 'observer-time-display',
+            onPhaseChange: function() {},
+            onTick: function(timing) {
+                var progressEl = document.getElementById('observer-timer-progress');
+                if (progressEl && timing.progress !== undefined) {
+                    progressEl.style.width = Math.min(timing.progress, 100) + '%';
+                    // Color based on phase
+                    var phase = timing.phase || '';
+                    if (phase === 'session') {
+                        progressEl.className = 'h-1.5 rounded-full transition-all duration-1000 bg-green-500';
+                    } else if (phase === 'overtime') {
+                        progressEl.className = 'h-1.5 rounded-full transition-all duration-1000 bg-red-500';
+                    } else if (phase === 'preparation') {
+                        progressEl.className = 'h-1.5 rounded-full transition-all duration-1000 bg-yellow-500';
+                    } else {
+                        progressEl.className = 'h-1.5 rounded-full transition-all duration-1000 bg-blue-400';
+                    }
+                }
+            }
+        };
+
+        loadTimerScript().then(function() {
+            if (typeof SmartSessionTimer !== 'undefined') {
+                window.observerSessionTimer = new SmartSessionTimer(timerConfig);
+            }
+        }).catch(function() {});
+    })();
+    @endif
 })();
 </script>
