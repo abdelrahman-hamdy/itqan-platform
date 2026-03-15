@@ -184,7 +184,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
         }
 
         // TEMP DEBUG - remove after fixing search issue
-        Log::info('SEARCH_DEBUG', [
+        Log::error('SEARCH_DEBUG', [
             'allStudentIds_count' => $allStudentIds->count(),
             'search' => $request->input('search'),
             'students_count' => $students->count(),
