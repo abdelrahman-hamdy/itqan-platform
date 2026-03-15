@@ -51,7 +51,12 @@
                 </div>
                 <div>
                     <span class="text-sm text-gray-500">{{ __('supervisor.homework.student') }}</span>
-                    <p class="font-medium text-gray-900">{{ $session?->student?->name ?? '-' }}</p>
+                    @if($session?->student)
+                        <a href="{{ route('manage.students.show', ['subdomain' => $subdomain, 'student' => $session->student->id]) }}"
+                           class="font-medium text-gray-900 hover:text-blue-600 transition-colors">{{ $session->student->name }}</a>
+                    @else
+                        <p class="font-medium text-gray-900">-</p>
+                    @endif
                 </div>
                 <div>
                     <span class="text-sm text-gray-500">{{ __('supervisor.homework.session_date') }}</span>
@@ -106,10 +111,18 @@
                                 @endphp
                                 <tr class="hover:bg-gray-50/50 transition-colors">
                                     <td class="px-4 md:px-6 py-3">
-                                        <div class="flex items-center gap-2">
-                                            <x-avatar :user="$report->student" size="xs" user-type="student" />
-                                            <span class="font-medium text-gray-900">{{ $report->student?->name ?? '-' }}</span>
-                                        </div>
+                                        @if($report->student)
+                                            <a href="{{ route('manage.students.show', ['subdomain' => $subdomain, 'student' => $report->student->id]) }}"
+                                               class="flex items-center gap-2 hover:text-blue-600 transition-colors">
+                                                <x-avatar :user="$report->student" size="xs" user-type="student" />
+                                                <span class="font-medium">{{ $report->student->name }}</span>
+                                            </a>
+                                        @else
+                                            <div class="flex items-center gap-2">
+                                                <x-avatar :user="null" size="xs" user-type="student" />
+                                                <span class="font-medium text-gray-900">-</span>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="px-4 md:px-6 py-3">
                                         @if($report->new_memorization_degree !== null)
@@ -246,17 +259,25 @@
                             @endphp
                             <tr class="hover:bg-gray-50/50 transition-colors">
                                 <td class="px-4 md:px-6 py-3">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">
-                                            {{ mb_substr($submission->student?->name ?? '?', 0, 1) }}
+                                    @if($submission->student)
+                                        <a href="{{ route('manage.students.show', ['subdomain' => $subdomain, 'student' => $submission->student->id]) }}"
+                                           class="flex items-center gap-2 hover:text-blue-600 transition-colors group">
+                                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">
+                                                {{ mb_substr($submission->student->name, 0, 1) }}
+                                            </div>
+                                            <div>
+                                                <div class="font-medium text-gray-900 group-hover:text-blue-600">{{ $submission->student->name }}</div>
+                                                @if($submission->is_late)
+                                                    <span class="text-xs text-red-600 font-medium">{{ __('supervisor.homework.late') }}</span>
+                                                @endif
+                                            </div>
+                                        </a>
+                                    @else
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">?</div>
+                                            <div class="font-medium text-gray-900">-</div>
                                         </div>
-                                        <div>
-                                            <div class="font-medium text-gray-900">{{ $submission->student?->name ?? '-' }}</div>
-                                            @if($submission->is_late)
-                                                <span class="text-xs text-red-600 font-medium">{{ __('supervisor.homework.late') }}</span>
-                                            @endif
-                                        </div>
-                                    </div>
+                                    @endif
                                 </td>
                                 <td class="px-4 md:px-6 py-3 text-gray-600">
                                     {{ $submission->submitted_at?->format('Y-m-d H:i') ?? '-' }}

@@ -105,7 +105,6 @@
                                         <th class="px-4 md:px-6 py-3 text-start font-medium hidden md:table-cell">{{ __('supervisor.homework.session_date') }}</th>
                                         <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.homework.evaluation') }}</th>
                                         <th class="px-4 md:px-6 py-3 text-start font-medium hidden lg:table-cell">{{ __('supervisor.homework.scores') }}</th>
-                                        <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.homework.actions') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
@@ -115,7 +114,7 @@
                                             $report = $session?->studentReport;
                                             $isEvaluated = $report && ($report->new_memorization_degree !== null || $report->reservation_degree !== null);
                                         @endphp
-                                        <tr class="hover:bg-gray-50/50 transition-colors">
+                                        <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location='{{ route('manage.homework.submissions', ['subdomain' => $subdomain, 'type' => 'quran', 'id' => $hw->id]) }}'">
                                             <td class="px-4 md:px-6 py-3">
                                                 <div class="font-medium text-gray-900">{{ $session?->student?->name ?? '-' }}</div>
                                                 <div class="text-xs text-gray-500 md:hidden">{{ $session?->scheduled_at?->format('Y-m-d') }}</div>
@@ -159,13 +158,6 @@
                                                 @else
                                                     <span class="text-gray-400">-</span>
                                                 @endif
-                                            </td>
-                                            <td class="px-4 md:px-6 py-3">
-                                                <a href="{{ route('manage.homework.submissions', ['subdomain' => $subdomain, 'type' => 'quran', 'id' => $hw->id]) }}"
-                                                   class="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">
-                                                    <i class="ri-eye-line"></i>
-                                                    {{ __('supervisor.homework.view_details') }}
-                                                </a>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -241,7 +233,6 @@
                                         <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.homework.submission_progress') }}</th>
                                         <th class="px-4 md:px-6 py-3 text-start font-medium hidden lg:table-cell">{{ __('supervisor.homework.avg_score_label') }}</th>
                                         <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.homework.status') }}</th>
-                                        <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.homework.actions') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
@@ -258,7 +249,7 @@
                                                 'overdue' => 'bg-red-100 text-red-700',
                                             ];
                                         @endphp
-                                        <tr class="hover:bg-gray-50/50 transition-colors">
+                                        <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location='{{ route('manage.homework.submissions', ['subdomain' => $subdomain, 'type' => 'academic', 'id' => $hw->id]) }}'">
                                             <td class="px-4 md:px-6 py-3">
                                                 <div class="font-medium text-gray-900 max-w-[200px] truncate">{{ $hw->title ?? __('supervisor.homework.academic_homework') . ' #' . $hw->id }}</div>
                                                 <div class="text-xs text-gray-500 md:hidden">{{ $hw->teacher?->name }}</div>
@@ -286,13 +277,6 @@
                                                 <span class="px-2 py-1 text-xs rounded-full whitespace-nowrap {{ $statusBadges[$status] ?? 'bg-gray-100 text-gray-700' }}">
                                                     {{ __('supervisor.homework.status_' . $status) }}
                                                 </span>
-                                            </td>
-                                            <td class="px-4 md:px-6 py-3">
-                                                <a href="{{ route('manage.homework.submissions', ['subdomain' => $subdomain, 'type' => 'academic', 'id' => $hw->id]) }}"
-                                                   class="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">
-                                                    <i class="ri-eye-line"></i>
-                                                    {{ __('supervisor.homework.view_submissions') }}
-                                                </a>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -368,7 +352,6 @@
                                         <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.homework.submission_progress') }}</th>
                                         <th class="px-4 md:px-6 py-3 text-start font-medium hidden lg:table-cell">{{ __('supervisor.homework.avg_score_label') }}</th>
                                         <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.homework.status') }}</th>
-                                        <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.homework.actions') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
@@ -385,7 +368,7 @@
                                                 'overdue' => 'bg-red-100 text-red-700',
                                             ];
                                         @endphp
-                                        <tr class="hover:bg-gray-50/50 transition-colors">
+                                        <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location='{{ route('manage.homework.submissions', ['subdomain' => $subdomain, 'type' => 'interactive', 'id' => $hw->id]) }}'">
                                             <td class="px-4 md:px-6 py-3">
                                                 <div class="font-medium text-gray-900 max-w-[200px] truncate">{{ $hw->title ?? ($hw->session?->course?->title ?? __('supervisor.homework.interactive_homework')) . ' #' . $hw->id }}</div>
                                                 <div class="text-xs text-gray-500 md:hidden">{{ $hw->teacher?->name }}</div>
@@ -413,13 +396,6 @@
                                                 <span class="px-2 py-1 text-xs rounded-full whitespace-nowrap {{ $statusBadges[$status] ?? 'bg-gray-100 text-gray-700' }}">
                                                     {{ __('supervisor.homework.status_' . $status) }}
                                                 </span>
-                                            </td>
-                                            <td class="px-4 md:px-6 py-3">
-                                                <a href="{{ route('manage.homework.submissions', ['subdomain' => $subdomain, 'type' => 'interactive', 'id' => $hw->id]) }}"
-                                                   class="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">
-                                                    <i class="ri-eye-line"></i>
-                                                    {{ __('supervisor.homework.view_submissions') }}
-                                                </a>
                                             </td>
                                         </tr>
                                     @endforeach
