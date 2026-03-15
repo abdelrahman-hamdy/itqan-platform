@@ -459,7 +459,10 @@ class SupervisorStudentsController extends BaseSupervisorWebController
         if ($profile) {
             $profile->update($profileData);
         } else {
-            StudentProfile::create(array_merge($profileData, ['user_id' => $student->id]));
+            StudentProfile::create(array_merge($profileData, [
+                'user_id' => $student->id,
+                'email' => $student->email,
+            ]));
         }
 
         return redirect()->route('manage.students.show', ['subdomain' => $subdomain, 'student' => $student->id])

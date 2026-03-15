@@ -373,7 +373,7 @@
 
                                         {{-- Edit Teacher --}}
                                         <a href="{{ route('manage.teachers.edit', ['subdomain' => $subdomain, 'teacher' => $teacherId]) }}"
-                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors">
+                                           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
                                             <i class="ri-edit-line"></i>
                                             {{ __('common.edit') }}
                                         </a>

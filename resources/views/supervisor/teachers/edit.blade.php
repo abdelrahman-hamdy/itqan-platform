@@ -266,7 +266,7 @@
                             <option value="">{{ __('auth.register.teacher.step2.qualification_placeholder') }}</option>
                             @foreach(\App\Enums\EducationalQualification::cases() as $qualification)
                                 <option value="{{ $qualification->value }}"
-                                    {{ old('education_level', $teacher->education_level) === $qualification->value ? 'selected' : '' }}>
+                                    {{ old('education_level', $isQuran ? ($profile?->educational_qualification ?? '') : ($profile?->education_level ?? '')) === $qualification->value ? 'selected' : '' }}>
                                     {{ $qualification->label() }}
                                 </option>
                             @endforeach
@@ -281,7 +281,7 @@
                         <label for="university" class="block text-sm font-medium text-gray-700 mb-1">
                             {{ __('auth.register.teacher.step2.university') }} <span class="text-red-600">*</span>
                         </label>
-                        <input type="text" name="university" id="university" value="{{ old('university', $teacher->university) }}" required
+                        <input type="text" name="university" id="university" value="{{ old('university', $isQuran ? ($profile?->university ?? $teacher->university) : $profile?->university) }}" required
                                class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('university') border-red-500 @enderror">
                         @error('university')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -294,7 +294,7 @@
                             {{ __('auth.register.teacher.step2.years_experience') }} <span class="text-red-600">*</span>
                         </label>
                         <input type="number" name="years_experience" id="years_experience"
-                               value="{{ old('years_experience', $teacher->years_experience) }}" required
+                               value="{{ old('years_experience', $profile?->teaching_experience_years) }}" required
                                min="0" max="50"
                                class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('years_experience') border-red-500 @enderror">
                         @error('years_experience')

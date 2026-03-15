@@ -422,9 +422,6 @@ class SupervisorTeachersController extends BaseSupervisorWebController
         $teacher->last_name = $request->last_name;
         $teacher->email = $request->email;
         $teacher->phone = $request->phone;
-        $teacher->education_level = $request->education_level;
-        $teacher->university = $request->university;
-        $teacher->years_experience = $request->years_experience;
         $teacher->save();
 
         if ($request->hasFile('avatar')) {
