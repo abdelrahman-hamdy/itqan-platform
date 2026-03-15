@@ -54,29 +54,51 @@
     </div>
 
     {{-- Video Grid (hidden until connected) --}}
-    <div id="observer-video-grid" class="hidden relative" style="min-height: 500px;">
+    <div id="observer-video-grid" class="hidden flex flex-col bg-gray-900" style="min-height: 500px;">
 
-        {{-- Header Bar (matches livekit-interface header style) --}}
-        <div class="absolute top-0 inset-x-0 z-10 bg-gradient-to-b from-black/70 to-transparent p-4 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-600/80 text-white">
-                    <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                    {{ __('supervisor.observation.observing') }}
-                </span>
-                <span id="observer-participant-count" class="text-gray-300 text-sm"></span>
+        {{-- Top Bar (matches livekit-interface gradient bar) --}}
+        <div class="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white px-4 py-3 flex items-center justify-between text-sm font-medium shadow-lg shrink-0">
+            {{-- Left: Participant count + Timer --}}
+            <div class="flex items-center gap-4 sm:gap-8">
+                <div class="flex items-center gap-2">
+                    <i class="ri-group-line text-lg text-white"></i>
+                    <span id="observer-participant-count" class="text-white font-semibold">0</span>
+                    <span class="text-white">{{ __('meetings.info.participant') }}</span>
+                </div>
+                <div class="flex items-center gap-2 font-mono">
+                    <div id="observer-timer-dot" class="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                    <span id="observer-timer" class="text-white font-bold">00:00</span>
+                </div>
             </div>
-            <button
-                id="observer-leave-btn"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-                <i class="ri-door-open-line"></i>
-                {{ __('supervisor.observation.leave_observation') }}
+            {{-- Right: Fullscreen button --}}
+            <button id="observer-fullscreen-btn"
+                aria-label="{{ __('meetings.info.fullscreen') }}"
+                class="bg-black bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50">
+                <i id="observer-fullscreen-icon" class="ri-fullscreen-line text-lg text-white"></i>
+                <span id="observer-fullscreen-text" class="hidden sm:inline">{{ __('meetings.info.fullscreen') }}</span>
             </button>
         </div>
 
         {{-- Video Tiles Container --}}
-        <div id="observer-video-tiles" class="grid gap-2 p-2 pt-16" style="min-height: 500px;">
+        <div id="observer-video-tiles" class="flex-1 grid gap-2 p-2" style="min-height: 400px;">
             {{-- Video tiles injected dynamically --}}
+        </div>
+
+        {{-- Bottom Bar (matches control-bar style) --}}
+        <div class="bg-gray-800 border-t border-gray-700 shadow-lg shrink-0">
+            <div class="px-4 py-4 flex items-center justify-center gap-4">
+                {{-- Observer mode badge --}}
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-600/80 text-white">
+                    <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                    {{ __('supervisor.observation.observing') }}
+                </span>
+                {{-- Leave button (same style as control-bar leave button) --}}
+                <button id="observer-leave-btn"
+                    class="shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95"
+                    aria-label="{{ __('supervisor.observation.leave_observation') }}">
+                    <i class="ri-logout-box-line text-xl"></i>
+                </button>
+            </div>
         </div>
 
     </div>
@@ -98,6 +120,24 @@
         disconnected: @json(__('supervisor.observation.disconnected')),
         connection_failed: @json(__('supervisor.observation.connection_failed')),
         participants: @json(__('supervisor.observation.participants_count')),
+    };
+
+    // Role labels
+    const ROLE_LABELS = {
+        teacher: @json(__('meetings.participants.teacher')),
+        student: @json(__('meetings.participants.student')),
+        admin: @json(__('meetings.participants.admin')),
+        supervisor: @json(__('supervisor.observation.role_supervisor')),
+    };
+
+    // Avatar color config (matches LiveKitParticipants.generateAvatarHtml)
+    const AVATAR_TYPE_CONFIG = {
+        quran_teacher:    { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+        academic_teacher: { bg: 'bg-violet-100', text: 'text-violet-700' },
+        supervisor:       { bg: 'bg-orange-100', text: 'text-orange-700' },
+        admin:            { bg: 'bg-red-100',    text: 'text-red-700'    },
+        super_admin:      { bg: 'bg-red-100',    text: 'text-red-700'    },
+        student:          { bg: 'bg-blue-100',   text: 'text-blue-700'   },
     };
 
     let room = null;
@@ -137,68 +177,95 @@
 
     function updateParticipantCount() {
         if (!room) return;
-        const count = room.remoteParticipants.size;
-        participantCountEl.textContent = STRINGS.participants + ': ' + count;
+        participantCountEl.textContent = room.remoteParticipants.size;
     }
 
     function updateVideoLayout() {
         const tiles = videoTilesEl.children.length;
+        const base = 'flex-1 grid gap-2 p-2';
         if (tiles <= 1) {
-            videoTilesEl.className = 'grid grid-cols-1 gap-2 p-2 pt-16';
+            videoTilesEl.className = base + ' grid-cols-1';
         } else if (tiles <= 2) {
-            videoTilesEl.className = 'grid grid-cols-1 md:grid-cols-2 gap-2 p-2 pt-16';
+            videoTilesEl.className = base + ' grid-cols-1 md:grid-cols-2';
         } else if (tiles <= 4) {
-            videoTilesEl.className = 'grid grid-cols-2 gap-2 p-2 pt-16';
+            videoTilesEl.className = base + ' grid-cols-2';
         } else {
-            videoTilesEl.className = 'grid grid-cols-2 md:grid-cols-3 gap-2 p-2 pt-16';
+            videoTilesEl.className = base + ' grid-cols-2 md:grid-cols-3';
         }
     }
 
+    function getInitials(name) {
+        return (name || '?').split(' ').map(function(n) { return n[0]; }).join('').toUpperCase().slice(0, 2);
+    }
+
+    function generateAvatarHtml(avatarUrl, defaultAvatarUrl, userType, name) {
+        var cfg = AVATAR_TYPE_CONFIG[userType] || AVATAR_TYPE_CONFIG['student'];
+        var initials = getInitials(name);
+        var fallback = '<span class="font-semibold text-lg sm:text-xl ' + cfg.text + '">' + initials + '</span>';
+        var content = '';
+        if (avatarUrl) {
+            content = '<img src="' + avatarUrl + '" alt="' + name + '" class="w-full h-full object-cover"'
+                + ' onerror="this.onerror=null;this.parentElement.innerHTML=\'' + fallback.replace(/'/g, "\\'") + '\'">';
+        } else if (defaultAvatarUrl) {
+            content = '<img src="' + defaultAvatarUrl + '" alt="' + name + '"'
+                + ' class="absolute object-cover" style="width:120%;height:120%;top:0;left:50%;transform:translateX(-50%)"'
+                + ' onerror="this.onerror=null;this.style.display=\'none\';this.parentElement.innerHTML=\'' + fallback.replace(/'/g, "\\'") + '\'">';
+        } else {
+            content = fallback;
+        }
+        return '<div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden ' + cfg.bg + ' relative flex items-center justify-center">' + content + '</div>';
+    }
+
+    function getRoleLabel(metadata) {
+        var userType = metadata.userType || '';
+        if (userType === 'quran_teacher' || userType === 'academic_teacher' || metadata.role === 'teacher')
+            return ROLE_LABELS.teacher;
+        if (userType === 'supervisor' || userType === 'admin' || userType === 'super_admin')
+            return ROLE_LABELS.supervisor;
+        return ROLE_LABELS.student;
+    }
+
     function createParticipantTile(participant) {
-        const tileId = 'tile-' + participant.sid;
+        var tileId = 'tile-' + participant.sid;
         if (document.getElementById(tileId)) return;
 
-        const metadata = JSON.parse(participant.metadata || '{}');
-        const name = metadata.name || participant.identity;
-        const role = metadata.role || '';
+        var metadata = JSON.parse(participant.metadata || '{}');
+        var name = metadata.name || participant.identity;
+        var userType = metadata.userType || 'student';
+        var avatarUrl = metadata.avatarUrl || null;
+        var defaultAvatarUrl = metadata.defaultAvatarUrl || null;
+        var isTeacher = metadata.role === 'teacher' || userType === 'quran_teacher' || userType === 'academic_teacher';
+        var roleLabel = getRoleLabel(metadata);
+        var avatarHtml = generateAvatarHtml(avatarUrl, defaultAvatarUrl, userType, name);
 
-        let roleBadge = '';
-        const roleTeacher = @json(__('supervisor.observation.role_teacher'));
-        const roleStudent = @json(__('supervisor.observation.role_student'));
-        const roleAdmin = @json(__('supervisor.observation.role_admin'));
+        var teacherBadge = isTeacher
+            ? '<div class="absolute -top-1 -right-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-lg z-10">' + ROLE_LABELS.teacher + '</div>'
+            : '';
 
-        if (role === 'teacher') {
-            roleBadge = '<span class="px-2 py-0.5 rounded text-xs bg-green-600 text-white">' + roleTeacher + '</span>';
-        } else if (role === 'student') {
-            roleBadge = '<span class="px-2 py-0.5 rounded text-xs bg-blue-600 text-white">' + roleStudent + '</span>';
-        } else if (role === 'admin' || role === 'observer') {
-            roleBadge = '<span class="px-2 py-0.5 rounded text-xs bg-purple-600 text-white">' + roleAdmin + '</span>';
-        }
-
-        const tile = document.createElement('div');
+        var tile = document.createElement('div');
         tile.id = tileId;
-        tile.className = 'relative bg-gray-800 rounded-lg overflow-hidden aspect-video flex items-center justify-center';
-        tile.innerHTML = `
-            <div class="absolute inset-0 flex items-center justify-center" data-placeholder>
-                <div class="text-center">
-                    <div class="w-16 h-16 mx-auto mb-2 rounded-full bg-gray-700 flex items-center justify-center text-2xl font-bold text-gray-400">
-                        ${(name || '?').charAt(0)}
-                    </div>
-                    <p class="text-gray-400 text-sm">${name}</p>
-                </div>
-            </div>
-            <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2 flex items-center justify-between">
-                <span class="text-white text-xs font-medium truncate max-w-[70%]">${name}</span>
-                ${roleBadge}
-            </div>
-        `;
+        tile.className = 'relative bg-gray-800 rounded-lg overflow-hidden aspect-video flex items-center justify-center group';
+        tile.innerHTML =
+            '<div class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blue-900 to-gray-800 z-10" data-placeholder>' +
+                '<div class="flex flex-col items-center text-center">' +
+                    '<div class="relative mb-3 shadow-lg transition-transform duration-200 group-hover:scale-110">' +
+                        avatarHtml +
+                        teacherBadge +
+                    '</div>' +
+                    '<p class="text-white text-sm sm:text-base font-medium px-2 text-center">' + name + '</p>' +
+                    '<p class="text-gray-300 text-xs mt-1">' + roleLabel + '</p>' +
+                '</div>' +
+            '</div>' +
+            '<div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2 flex items-center justify-between z-20">' +
+                '<span class="text-white text-xs font-medium truncate max-w-[70%]">' + name + '</span>' +
+            '</div>';
 
         videoTilesEl.appendChild(tile);
         updateVideoLayout();
     }
 
     function removeParticipantTile(participant) {
-        const tile = document.getElementById('tile-' + participant.sid);
+        var tile = document.getElementById('tile-' + participant.sid);
         if (tile) {
             tile.remove();
             updateVideoLayout();
@@ -206,27 +273,27 @@
     }
 
     function attachTrack(track, participant) {
-        const tile = document.getElementById('tile-' + participant.sid);
+        var tile = document.getElementById('tile-' + participant.sid);
         if (!tile) return;
 
         if (track.kind === 'video') {
-            const videoEl = track.attach();
-            videoEl.className = 'absolute inset-0 w-full h-full object-cover';
+            var videoEl = track.attach();
+            videoEl.className = 'absolute inset-0 w-full h-full object-cover z-0';
             tile.insertBefore(videoEl, tile.firstChild);
-            const placeholder = tile.querySelector('[data-placeholder]');
+            var placeholder = tile.querySelector('[data-placeholder]');
             if (placeholder) placeholder.classList.add('hidden');
         } else if (track.kind === 'audio') {
-            const audioEl = track.attach();
+            var audioEl = track.attach();
             audioEl.style.display = 'none';
             tile.appendChild(audioEl);
         }
     }
 
     function detachTrack(track, participant) {
-        track.detach().forEach(el => el.remove());
-        const tile = document.getElementById('tile-' + participant.sid);
+        track.detach().forEach(function(el) { el.remove(); });
+        var tile = document.getElementById('tile-' + participant.sid);
         if (tile && track.kind === 'video') {
-            const placeholder = tile.querySelector('[data-placeholder]');
+            var placeholder = tile.querySelector('[data-placeholder]');
             if (placeholder) placeholder.classList.remove('hidden');
         }
     }
@@ -272,6 +339,56 @@
         return response.json();
     }
 
+    // Timer
+    let timerInterval = null;
+    let timerSeconds = 0;
+    const timerEl = document.getElementById('observer-timer');
+
+    function startTimer() {
+        timerSeconds = 0;
+        if (timerEl) timerEl.textContent = '00:00';
+        timerInterval = setInterval(function() {
+            timerSeconds++;
+            var m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+            var s = String(timerSeconds % 60).padStart(2, '0');
+            if (timerEl) timerEl.textContent = m + ':' + s;
+        }, 1000);
+    }
+
+    function stopTimer() {
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        timerSeconds = 0;
+        if (timerEl) timerEl.textContent = '00:00';
+    }
+
+    // Fullscreen
+    const fullscreenBtn = document.getElementById('observer-fullscreen-btn');
+    const fullscreenIcon = document.getElementById('observer-fullscreen-icon');
+    const fullscreenText = document.getElementById('observer-fullscreen-text');
+    const containerEl = document.getElementById('observer-meeting-container');
+    const fsEnterText = @json(__('meetings.info.fullscreen'));
+    const fsExitText = @json(__('meetings.info.exit_fullscreen'));
+
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', function() {
+            if (!document.fullscreenElement) {
+                containerEl.requestFullscreen().catch(function() {});
+            } else {
+                document.exitFullscreen().catch(function() {});
+            }
+        });
+    }
+
+    document.addEventListener('fullscreenchange', function() {
+        if (document.fullscreenElement) {
+            if (fullscreenIcon) fullscreenIcon.className = 'ri-fullscreen-exit-line text-lg text-white';
+            if (fullscreenText) fullscreenText.textContent = fsExitText;
+        } else {
+            if (fullscreenIcon) fullscreenIcon.className = 'ri-fullscreen-line text-lg text-white';
+            if (fullscreenText) fullscreenText.textContent = fsEnterText;
+        }
+    });
+
     async function connect() {
         showState('connecting');
 
@@ -306,6 +423,7 @@
             room.on(window.LiveKit.RoomEvent.Disconnected, () => {
                 isConnected = false;
                 videoTilesEl.innerHTML = '';
+                stopTimer();
                 showState('idle');
             });
 
@@ -313,6 +431,7 @@
 
             isConnected = true;
             showState('connected');
+            startTimer();
 
             room.remoteParticipants.forEach((participant) => {
                 createParticipantTile(participant);
@@ -343,6 +462,7 @@
         }
         isConnected = false;
         videoTilesEl.innerHTML = '';
+        stopTimer();
         showState('idle');
     }
 

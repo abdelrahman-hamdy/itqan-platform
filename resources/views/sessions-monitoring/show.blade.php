@@ -98,13 +98,13 @@
         @if($canObserve)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
                 <div class="flex items-center gap-3 justify-center">
-                    <a href="?mode=participant"
-                       class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ $mode === 'participant' ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    <a href="?mode=participant" data-mode="participant"
+                       class="mode-toggle-btn inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ $mode === 'participant' ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
                         <i class="ri-video-chat-line"></i>
                         {{ __('supervisor.observation.participant_mode') }}
                     </a>
-                    <a href="?mode=observer"
-                       class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ $mode === 'observer' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    <a href="?mode=observer" data-mode="observer"
+                       class="mode-toggle-btn inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ $mode === 'observer' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
                         <i class="ri-eye-line"></i>
                         {{ __('supervisor.observation.observer_mode') }}
                     </a>
@@ -120,7 +120,7 @@
         @endif
 
         {{-- Meeting Interface --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+        <div id="meeting-section" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             @if($mode === 'observer' && $canObserve)
                 <x-meetings.observer-interface
                     :session="$session"
@@ -208,6 +208,36 @@
 
     </div>
 </main>
+
+<script>
+(function() {
+    var currentMode = @json($mode);
+
+    // On page load with ?mode=X, auto-scroll to meeting section
+    if (window.location.search.includes('mode=')) {
+        window.addEventListener('load', function() {
+            var section = document.getElementById('meeting-section');
+            if (section) {
+                setTimeout(function() {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 300);
+            }
+        });
+    }
+
+    // Mode toggle buttons — scroll instead of reload when already in target mode
+    document.querySelectorAll('.mode-toggle-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            var targetMode = this.dataset.mode;
+            if (targetMode === currentMode) {
+                e.preventDefault();
+                var section = document.getElementById('meeting-section');
+                if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+})();
+</script>
 
 </body>
 </html>
