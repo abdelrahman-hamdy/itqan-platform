@@ -34,8 +34,9 @@
                         </span>
                     @endif
                     @if($student->studentProfile?->gender)
+                        @php $genderEnum = \App\Enums\Gender::tryFrom($student->studentProfile->gender); @endphp
                         <span class="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">
-                            {{ $student->studentProfile->gender === 'male' ? __('supervisor.students.male') : __('supervisor.students.female') }}
+                            {{ $genderEnum?->label() ?? $student->studentProfile->gender }}
                         </span>
                     @endif
                     <span class="text-xs px-2.5 py-1 rounded-full {{ $student->active_status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
@@ -53,86 +54,37 @@
             </div>
         @endif
 
-        <!-- Action Buttons -->
-        <div class="mt-4 pt-4 border-t border-gray-100">
-            <div class="flex flex-wrap items-center gap-2">
-                {{-- View Sessions --}}
-                <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'student_id' => $student->id]) }}"
-                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
-                    <i class="ri-calendar-event-line"></i>
-                    {{ __('supervisor.students.view_sessions') }}
-                </a>
-
-                {{-- Message Student --}}
-                <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $student->id]) }}"
-                   class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors">
-                    <i class="ri-message-3-line"></i>
-                    {{ __('supervisor.students.message_student') }}
-                </a>
-
-                {{-- Admin-only actions --}}
-                @if($isAdmin)
-                    <span class="hidden md:inline text-gray-300 mx-0.5">|</span>
-
-                    {{-- Edit Student --}}
-                    <a href="{{ route('manage.students.edit', ['subdomain' => $subdomain, 'student' => $student->id]) }}"
-                       class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
-                        <i class="ri-edit-line"></i>
-                        {{ __('common.edit') }}
-                    </a>
-
-                    {{-- Toggle Status --}}
-                    <form id="toggle-form-{{ $student->id }}" method="POST"
-                          action="{{ route('manage.students.toggle-status', ['subdomain' => $subdomain, 'student' => $student->id]) }}">
-                        @csrf
-                    </form>
-                    <button type="button"
-                        onclick="window.confirmAction({
-                            title: @js($student->active_status ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate')),
-                            message: @js($student->active_status ? __('supervisor.students.confirm_deactivate') : __('supervisor.students.confirm_activate')),
-                            confirmText: @js($student->active_status ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate')),
-                            isDangerous: {{ $student->active_status ? 'true' : 'false' }},
-                            icon: '{{ $student->active_status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}',
-                            onConfirm: () => document.getElementById('toggle-form-{{ $student->id }}').submit()
-                        })"
-                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg transition-colors
-                            {{ $student->active_status
-                                ? 'bg-orange-50 text-orange-700 hover:bg-orange-100'
-                                : 'bg-green-50 text-green-700 hover:bg-green-100' }}">
-                        <i class="{{ $student->active_status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}"></i>
-                        {{ $student->active_status ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate') }}
-                    </button>
-
-                    {{-- Reset Password --}}
-                    <button type="button"
-                        onclick="window.dispatchEvent(new CustomEvent('open-modal-reset-password-show-{{ $student->id }}'))"
-                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors">
-                        <i class="ri-lock-password-line"></i>
-                        {{ __('supervisor.teachers.reset_password') }}
-                    </button>
-
-                    {{-- Delete --}}
-                    <form id="delete-form-{{ $student->id }}" method="POST"
-                          action="{{ route('manage.students.destroy', ['subdomain' => $subdomain, 'student' => $student->id]) }}">
-                        @csrf
-                        @method('DELETE')
-                    </form>
-                    <button type="button"
-                        onclick="window.confirmAction({
-                            title: @js(__('supervisor.students.delete_student')),
-                            message: @js(__('supervisor.students.confirm_delete')),
-                            confirmText: @js(__('supervisor.students.delete_student')),
-                            isDangerous: true,
-                            icon: 'ri-delete-bin-line',
-                            onConfirm: () => document.getElementById('delete-form-{{ $student->id }}').submit()
-                        })"
-                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
-                        <i class="ri-delete-bin-line"></i>
-                        {{ __('supervisor.students.delete_student') }}
-                    </button>
-                @endif
+        {{-- Student Info Grid (merged from sidebar) --}}
+        @if($student->studentProfile?->student_code || $student->studentProfile?->enrollment_date || $student->studentProfile?->birth_date || $student->studentProfile?->nationality)
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    @if($student->studentProfile?->student_code)
+                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                            <i class="ri-hashtag text-gray-400"></i>
+                            <span>{{ $student->studentProfile->student_code }}</span>
+                        </div>
+                    @endif
+                    @if($student->studentProfile?->enrollment_date)
+                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                            <i class="ri-calendar-line text-gray-400"></i>
+                            <span>{{ __('supervisor.students.enrolled_at') }}: {{ $student->studentProfile->enrollment_date->translatedFormat('Y/m/d') }}</span>
+                        </div>
+                    @endif
+                    @if($student->studentProfile?->birth_date)
+                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                            <i class="ri-cake-line text-gray-400"></i>
+                            <span>{{ __('supervisor.students.birth_date') }}: {{ $student->studentProfile->birth_date->translatedFormat('Y/m/d') }}</span>
+                        </div>
+                    @endif
+                    @if($student->studentProfile?->nationality)
+                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                            <i class="ri-global-line text-gray-400"></i>
+                            <span>{{ __('supervisor.students.nationality_label') }}: {{ \App\Helpers\CountryList::getLabel($student->studentProfile->nationality) }}</span>
+                        </div>
+                    @endif
+                </div>
             </div>
-        </div>
+        @endif
     </div>
 
     {{-- Password Reset Modal --}}
@@ -247,7 +199,8 @@
                 @if($quranSubscriptions->isNotEmpty() || $academicSubscriptions->isNotEmpty())
                     <div class="space-y-3">
                         @foreach($quranSubscriptions as $sub)
-                            <div class="flex items-center gap-3 p-3 rounded-lg border border-gray-200">
+                            <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => 'quran', 'subscription' => $sub->id]) }}"
+                               class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
                                 <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
                                     <i class="ri-book-read-line text-yellow-600 text-sm"></i>
                                 </div>
@@ -262,15 +215,17 @@
                                         @endif
                                     </p>
                                 </div>
-                                @php $subStatus = is_object($sub->status) ? $sub->status->value : $sub->status; @endphp
-                                <span class="text-xs px-2 py-1 rounded-full {{ $subStatus === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
-                                    {{ $subStatus }}
+                                @php $statusEnum = $sub->status instanceof \App\Enums\SessionSubscriptionStatus ? $sub->status : \App\Enums\SessionSubscriptionStatus::tryFrom(is_object($sub->status) ? $sub->status->value : $sub->status); @endphp
+                                <span class="text-xs px-2 py-1 rounded-full {{ $statusEnum?->badgeClasses() ?? 'bg-gray-100 text-gray-800' }}">
+                                    {{ $statusEnum?->label() ?? $sub->status }}
                                 </span>
-                            </div>
+                                <i class="ri-arrow-left-s-line text-gray-400"></i>
+                            </a>
                         @endforeach
 
                         @foreach($academicSubscriptions as $sub)
-                            <div class="flex items-center gap-3 p-3 rounded-lg border border-gray-200">
+                            <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => 'academic', 'subscription' => $sub->id]) }}"
+                               class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
                                 <div class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
                                     <i class="ri-graduation-cap-line text-violet-600 text-sm"></i>
                                 </div>
@@ -285,11 +240,12 @@
                                         @endif
                                     </p>
                                 </div>
-                                @php $subStatus = is_object($sub->status) ? $sub->status->value : $sub->status; @endphp
-                                <span class="text-xs px-2 py-1 rounded-full {{ $subStatus === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
-                                    {{ $subStatus }}
+                                @php $statusEnum = $sub->status instanceof \App\Enums\SessionSubscriptionStatus ? $sub->status : \App\Enums\SessionSubscriptionStatus::tryFrom(is_object($sub->status) ? $sub->status->value : $sub->status); @endphp
+                                <span class="text-xs px-2 py-1 rounded-full {{ $statusEnum?->badgeClasses() ?? 'bg-gray-100 text-gray-800' }}">
+                                    {{ $statusEnum?->label() ?? $sub->status }}
                                 </span>
-                            </div>
+                                <i class="ri-arrow-left-s-line text-gray-400"></i>
+                            </a>
                         @endforeach
                     </div>
                 @else
@@ -309,7 +265,8 @@
                 @if($recentSessions->isNotEmpty())
                     <div class="space-y-3">
                         @foreach($recentSessions as $session)
-                            <div class="flex items-center gap-3 p-3 rounded-lg border border-gray-200">
+                            <a href="{{ route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $session['type'], 'sessionId' => $session['id']]) }}"
+                               class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
                                 <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 {{ $session['type'] === 'quran' ? 'bg-yellow-100' : 'bg-violet-100' }}">
                                     <i class="{{ $session['type'] === 'quran' ? 'ri-book-read-line text-yellow-600' : 'ri-graduation-cap-line text-violet-600' }}"></i>
                                 </div>
@@ -318,18 +275,21 @@
                                     <p class="text-xs text-gray-500">
                                         {{ $session['teacher_name'] }}
                                         &middot;
-                                        {{ $session['date']?->format('Y/m/d') }}
+                                        {{ $session['date']?->translatedFormat('Y/m/d') }}
                                     </p>
                                 </div>
-                                @php $sessionStatus = is_object($session['status']) ? $session['status']->value : $session['status']; @endphp
-                                <span class="text-xs px-2 py-1 rounded-full {{ match($sessionStatus) {
-                                    'completed' => 'bg-green-100 text-green-700',
-                                    'scheduled' => 'bg-blue-100 text-blue-700',
-                                    'cancelled' => 'bg-red-100 text-red-700',
-                                    'ongoing', 'live' => 'bg-orange-100 text-orange-700',
+                                @php $statusEnum = $session['status'] instanceof \App\Enums\SessionStatus ? $session['status'] : \App\Enums\SessionStatus::tryFrom(is_object($session['status']) ? $session['status']->value : $session['status']); @endphp
+                                <span class="text-xs px-2 py-1 rounded-full {{ match($statusEnum?->color()) {
+                                    'success' => 'bg-green-100 text-green-700',
+                                    'info' => 'bg-blue-100 text-blue-700',
+                                    'danger' => 'bg-red-100 text-red-700',
+                                    'primary' => 'bg-cyan-100 text-cyan-700',
+                                    'warning' => 'bg-amber-100 text-amber-700',
+                                    'gray' => 'bg-gray-100 text-gray-700',
                                     default => 'bg-gray-100 text-gray-700',
-                                } }}">{{ $sessionStatus }}</span>
-                            </div>
+                                } }}">{{ $statusEnum?->label() ?? $session['status'] }}</span>
+                                <i class="ri-arrow-left-s-line text-gray-400"></i>
+                            </a>
                         @endforeach
                     </div>
                 @else
@@ -345,59 +305,111 @@
 
         <!-- Sidebar -->
         <div class="space-y-6">
+            <!-- Actions -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-sm font-bold text-gray-900 mb-3">{{ __('supervisor.students.actions') }}</h3>
+                <div class="space-y-2">
+                    {{-- View Sessions --}}
+                    <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'student_id' => $student->id]) }}"
+                       class="cursor-pointer w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                        <i class="ri-calendar-event-line"></i>
+                        {{ __('supervisor.students.view_sessions') }}
+                    </a>
+
+                    {{-- Message Student --}}
+                    <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $student->id]) }}"
+                       class="cursor-pointer w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors">
+                        <i class="ri-message-3-line"></i>
+                        {{ __('supervisor.students.message_student') }}
+                    </a>
+
+                    {{-- Admin-only actions --}}
+                    @if($isAdmin)
+                        <div class="border-t border-gray-100 pt-2 mt-2"></div>
+
+                        {{-- Edit Student --}}
+                        <a href="{{ route('manage.students.edit', ['subdomain' => $subdomain, 'student' => $student->id]) }}"
+                           class="cursor-pointer w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                            <i class="ri-edit-line"></i>
+                            {{ __('common.edit') }}
+                        </a>
+
+                        {{-- Toggle Status --}}
+                        <form id="toggle-form-{{ $student->id }}" method="POST"
+                              action="{{ route('manage.students.toggle-status', ['subdomain' => $subdomain, 'student' => $student->id]) }}">
+                            @csrf
+                        </form>
+                        <button type="button"
+                            onclick="window.confirmAction({
+                                title: @js($student->active_status ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate')),
+                                message: @js($student->active_status ? __('supervisor.students.confirm_deactivate') : __('supervisor.students.confirm_activate')),
+                                confirmText: @js($student->active_status ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate')),
+                                isDangerous: {{ $student->active_status ? 'true' : 'false' }},
+                                icon: '{{ $student->active_status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}',
+                                onConfirm: () => document.getElementById('toggle-form-{{ $student->id }}').submit()
+                            })"
+                            class="cursor-pointer w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors
+                                {{ $student->active_status
+                                    ? 'bg-orange-50 text-orange-700 hover:bg-orange-100'
+                                    : 'bg-green-50 text-green-700 hover:bg-green-100' }}">
+                            <i class="{{ $student->active_status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}"></i>
+                            {{ $student->active_status ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate') }}
+                        </button>
+
+                        {{-- Reset Password --}}
+                        <button type="button"
+                            onclick="window.dispatchEvent(new CustomEvent('open-modal-reset-password-show-{{ $student->id }}'))"
+                            class="cursor-pointer w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors">
+                            <i class="ri-lock-password-line"></i>
+                            {{ __('supervisor.teachers.reset_password') }}
+                        </button>
+
+                        {{-- Delete --}}
+                        <form id="delete-form-{{ $student->id }}" method="POST"
+                              action="{{ route('manage.students.destroy', ['subdomain' => $subdomain, 'student' => $student->id]) }}">
+                            @csrf
+                            @method('DELETE')
+                        </form>
+                        <button type="button"
+                            onclick="window.confirmAction({
+                                title: @js(__('supervisor.students.delete_student')),
+                                message: @js(__('supervisor.students.confirm_delete')),
+                                confirmText: @js(__('supervisor.students.delete_student')),
+                                isDangerous: true,
+                                icon: 'ri-delete-bin-line',
+                                onConfirm: () => document.getElementById('delete-form-{{ $student->id }}').submit()
+                            })"
+                            class="cursor-pointer w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
+                            <i class="ri-delete-bin-line"></i>
+                            {{ __('supervisor.students.delete_student') }}
+                        </button>
+                    @endif
+                </div>
+            </div>
+
             <!-- Certificates -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <h3 class="text-sm font-bold text-gray-900 mb-3">{{ __('supervisor.students.certificates') }}</h3>
                 @if($certificates->isNotEmpty())
                     <div class="space-y-2">
                         @foreach($certificates as $cert)
-                            <div class="flex items-center gap-2 p-2 rounded-lg bg-amber-50 border border-amber-100">
+                            <a href="{{ route('manage.certificates.show', ['subdomain' => $subdomain, 'certificate' => $cert->id]) }}"
+                               class="flex items-center gap-2 p-2 rounded-lg bg-amber-50 border border-amber-100 hover:bg-amber-100 transition-colors">
                                 <i class="ri-award-fill text-amber-500"></i>
                                 <div class="min-w-0 flex-1">
                                     <p class="text-xs font-medium text-gray-900 truncate">{{ $cert->certificate_number }}</p>
-                                    <p class="text-xs text-gray-500">{{ $cert->issued_at?->format('Y/m/d') }}</p>
+                                    <p class="text-xs text-gray-500">{{ $cert->issued_at?->translatedFormat('Y/m/d') }}</p>
                                 </div>
                                 <a href="{{ route('student.certificate.view', ['subdomain' => $subdomain, 'certificate' => $cert->id]) }}"
-                                   target="_blank" class="text-blue-500 hover:text-blue-700">
+                                   target="_blank" class="text-blue-500 hover:text-blue-700" onclick="event.stopPropagation();">
                                     <i class="ri-eye-line text-sm"></i>
                                 </a>
-                            </div>
+                            </a>
                         @endforeach
                     </div>
                 @else
                     <p class="text-sm text-gray-500 text-center py-4">{{ __('supervisor.students.no_certificates') }}</p>
                 @endif
-            </div>
-
-            <!-- Student Info -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 class="text-sm font-bold text-gray-900 mb-3">{{ __('supervisor.students.student_info') }}</h3>
-                <div class="space-y-2 text-sm text-gray-600">
-                    @if($student->studentProfile?->student_code)
-                        <div class="flex items-center gap-2">
-                            <i class="ri-hashtag text-gray-400"></i>
-                            {{ $student->studentProfile->student_code }}
-                        </div>
-                    @endif
-                    @if($student->studentProfile?->enrollment_date)
-                        <div class="flex items-center gap-2">
-                            <i class="ri-calendar-line text-gray-400"></i>
-                            {{ __('supervisor.students.enrolled_at') }}: {{ $student->studentProfile->enrollment_date?->format('Y/m/d') }}
-                        </div>
-                    @endif
-                    @if($student->studentProfile?->birth_date)
-                        <div class="flex items-center gap-2">
-                            <i class="ri-cake-line text-gray-400"></i>
-                            {{ $student->studentProfile->birth_date?->format('Y/m/d') }}
-                        </div>
-                    @endif
-                    @if($student->studentProfile?->nationality)
-                        <div class="flex items-center gap-2">
-                            <i class="ri-global-line text-gray-400"></i>
-                            {{ $student->studentProfile->nationality }}
-                        </div>
-                    @endif
-                </div>
             </div>
         </div>
     </div>

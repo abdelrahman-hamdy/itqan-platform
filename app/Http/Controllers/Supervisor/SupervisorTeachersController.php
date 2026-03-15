@@ -560,6 +560,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                 ->limit(10)
                 ->get()
                 ->map(fn ($s) => [
+                    'id' => $s->id,
                     'type' => 'quran',
                     'date' => $s->scheduled_at,
                     'student_name' => $s->student?->name ?? '',
@@ -576,6 +577,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                 ->limit(10)
                 ->get()
                 ->map(fn ($s) => [
+                    'id' => $s->id,
                     'type' => 'academic',
                     'date' => $s->scheduled_at,
                     'student_name' => $s->student?->name ?? '',
