@@ -198,7 +198,6 @@
                             <th class="px-4 md:px-6 py-3 text-start font-medium hidden md:table-cell">{{ __('supervisor.payments.method') }}</th>
                             <th class="px-4 md:px-6 py-3 text-start font-medium hidden lg:table-cell">{{ __('supervisor.payments.date') }}</th>
                             <th class="px-4 md:px-6 py-3 text-start font-medium hidden lg:table-cell">{{ __('supervisor.payments.related_to') }}</th>
-                            <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.payments.actions') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
@@ -229,7 +228,7 @@
                                     };
                                 }
                             @endphp
-                            <tr class="hover:bg-gray-50/50 transition-colors">
+                            <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location='{{ route('manage.payments.show', ['subdomain' => $subdomain, 'payment' => $payment->id]) }}'">
                                 <td class="px-4 md:px-6 py-3">
                                     <div class="flex items-center gap-2">
                                         <x-avatar :user="$payment->user" size="sm" user-type="student" />
@@ -260,13 +259,6 @@
                                     @else
                                         <span class="text-gray-400">-</span>
                                     @endif
-                                </td>
-                                <td class="px-4 md:px-6 py-3">
-                                    <a href="{{ route('manage.payments.show', ['subdomain' => $subdomain, 'payment' => $payment->id]) }}"
-                                       class="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
-                                        <i class="ri-eye-line"></i>
-                                        {{ __('supervisor.payments.view') }}
-                                    </a>
                                 </td>
                             </tr>
                         @endforeach
