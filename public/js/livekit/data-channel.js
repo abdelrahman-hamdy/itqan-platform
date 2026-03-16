@@ -34,11 +34,6 @@ class MeetingDataChannelHandler {
         this.setupNetworkMonitoring();
         this.startStateSynchronization();
 
-        console.log('MeetingDataChannelHandler initialized', {
-            sessionId: this.sessionId,
-            role: this.participantRole,
-            channels: this.channels
-        });
     }
 
     /**
@@ -592,67 +587,3 @@ class MeetingDataChannelHandler {
     }
 }
 
-// Global debugging functions
-window.debugDataChannel = function () {
-    if (window.meeting?.dataChannelHandler) {
-        const handler = window.meeting.dataChannelHandler;
-        console.log('Data channel debug info', {
-            channels: handler.channels,
-            messageHistory: Array.from(handler.messageHistory.entries()),
-            isOnline: handler.isOnline,
-            lastSync: handler.lastSyncTimestamp,
-            sessionId: handler.sessionId,
-            role: handler.participantRole
-        });
-    } else {
-        console.log('No data channel handler available');
-    }
-};
-
-window.testDataChannelDelivery = function () {
-
-    if (window.meeting?.dataChannelHandler) {
-        const testMessage = {
-            message_id: 'test_' + Date.now(),
-            type: 'test',
-            command: 'session_announcement',
-            data: {
-                message: 'This is a test message from console'
-            },
-            timestamp: new Date().toISOString()
-        };
-
-        window.meeting.dataChannelHandler.handleIncomingMessage(testMessage, 'console');
-    }
-};
-
-// Test teacher controls integration
-window.testTeacherMuteAll = async function () {
-
-    if (window.meeting?.controls && window.meeting.controls.userRole === 'teacher') {
-        try {
-            await window.meeting.controls.toggleAllStudentsMicrophones();
-        } catch (error) {
-        }
-    } else {
-    }
-};
-
-// Test backend service directly
-window.testBackendMuteAll = async function () {
-
-    const sessionId = window.sessionId || prompt('Enter session ID:');
-    if (!sessionId) {
-        return;
-    }
-
-    try {
-        const response = await window.LiveKitAPI.post(`/api/sessions/${sessionId}/commands/mute-all`, {});
-
-        if (response.ok) {
-            const result = await response.json();
-        } else {
-        }
-    } catch (error) {
-    }
-};

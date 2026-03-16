@@ -66,12 +66,6 @@ class LiveKitControls {
         // Role detection
         this.userRole = this.detectUserRole();
 
-        console.log('MeetingControlsHandler initialized', {
-            userRole: this.userRole,
-            canRaiseHand: this.canRaiseHand(),
-            canControlAudio: this.canControlStudentAudio()
-        });
-
         // If teacher, request current hand raise status from all participants (with delay for room setup)
         if (this.canControlStudentAudio()) {
             setTimeout(() => {
@@ -303,22 +297,14 @@ class LiveKitControls {
 
         // Chat toggle
         const chatButton = document.getElementById('toggleChat');
-        console.log('[SIDEBAR DEBUG] Chat button element:', chatButton);
         if (chatButton) {
-            console.log('[SIDEBAR DEBUG] Adding click listener to chat button');
             chatButton.addEventListener('click', () => this.toggleChat());
-        } else {
-            console.error('[SIDEBAR DEBUG] Chat button not found!');
         }
 
         // Participants list toggle
         const participantsButton = document.getElementById('toggleParticipants');
-        console.log('[SIDEBAR DEBUG] Participants button element:', participantsButton);
         if (participantsButton) {
-            console.log('[SIDEBAR DEBUG] Adding click listener to participants button');
             participantsButton.addEventListener('click', () => this.toggleParticipantsList());
-        } else {
-            console.error('[SIDEBAR DEBUG] Participants button not found!');
         }
 
         // Settings toggle
@@ -517,14 +503,6 @@ class LiveKitControls {
             return true;
         }
 
-        // Debug: Log current global audio control state
-        console.log('Global audio control state', {
-            allStudentsMuted: this.globalAudioControlsState.allStudentsMuted,
-            studentsCanSelfUnmute: this.globalAudioControlsState.studentsCanSelfUnmute,
-            teacherControlsAudio: this.globalAudioControlsState.teacherControlsAudio,
-            globalStateExplicitlySet: this.globalStateExplicitlySet
-        });
-
         // CRITICAL FIX: Always enforce teacher restrictions when they exist
         // Check if teacher has disabled microphones for all students
         if (this.globalAudioControlsState.allStudentsMuted === true) {
@@ -579,11 +557,6 @@ class LiveKitControls {
             lastUpdated: Date.now()
         });
 
-        console.log('Student audio permission state updated', {
-            participantSid,
-            isMuted: !this.isAudioEnabled,
-            canSpeak: currentPermission.canSpeak
-        });
     }
 
     /**
@@ -1348,16 +1321,6 @@ class LiveKitControls {
             // Use actual LiveKit room name from connected room
             const roomName = this.room?.name || this.config?.meetingConfig?.roomName || `session-${window.sessionId}`;
 
-            // Debug logging
-            console.log('Toggle all students microphones', {
-                hasRoom: !!this.room,
-                roomName: roomName,
-                roomObject: this.room?.name,
-                configName: this.config?.meetingConfig?.roomName,
-                fallback: `session-${window.sessionId}`,
-                muted: newMutedState
-            });
-
             // Call server-side API to mute all students
             const response = await window.LiveKitAPI.post('/livekit/participants/mute-all-students', {
                 room_name: roomName,
@@ -1417,16 +1380,6 @@ class LiveKitControls {
 
             // Use actual LiveKit room name from connected room
             const roomName = this.room?.name || this.config?.meetingConfig?.roomName || `session-${window.sessionId}`;
-
-            // Debug logging
-            console.log('Toggle all students cameras', {
-                hasRoom: !!this.room,
-                roomName: roomName,
-                roomObject: this.room?.name,
-                configName: this.config?.meetingConfig?.roomName,
-                fallback: `session-${window.sessionId}`,
-                disabled: !newAllowedState
-            });
 
             // Call server-side API to disable/enable all students cameras
             const response = await window.LiveKitAPI.post('/livekit/participants/disable-all-students-camera', {
@@ -1509,7 +1462,6 @@ class LiveKitControls {
      * Toggle chat sidebar
      */
     toggleChat() {
-        console.log('[SIDEBAR DEBUG] toggleChat called');
         this.toggleSidebar('chat');
     }
 
@@ -1517,7 +1469,6 @@ class LiveKitControls {
      * Toggle participants list sidebar
      */
     toggleParticipantsList() {
-        console.log('[SIDEBAR DEBUG] toggleParticipantsList called');
         this.toggleSidebar('participants');
     }
 
@@ -1584,12 +1535,9 @@ class LiveKitControls {
      * @param {string} type - Sidebar type ('chat', 'participants', 'settings')
      */
     toggleSidebar(type) {
-        console.log('[SIDEBAR DEBUG] toggleSidebar called with type:', type, 'currentSidebarType:', this.currentSidebarType);
         if (this.currentSidebarType === type) {
-            console.log('[SIDEBAR DEBUG] Closing sidebar (same type)');
             this.closeSidebar();
         } else {
-            console.log('[SIDEBAR DEBUG] Opening sidebar');
             this.openSidebar(type);
         }
     }
@@ -1599,12 +1547,8 @@ class LiveKitControls {
      * @param {string} type - Sidebar type
      */
     openSidebar(type) {
-        console.log('[SIDEBAR DEBUG] openSidebar called with type:', type);
-
         const sidebar = document.getElementById('meetingSidebar');
-        console.log('[SIDEBAR DEBUG] sidebar element:', sidebar);
         if (!sidebar) {
-            console.error('[SIDEBAR DEBUG] meetingSidebar element not found!');
             return;
         }
 
@@ -1623,14 +1567,11 @@ class LiveKitControls {
         }
 
         // Show sidebar by sliding in from right (handles both LTR and RTL)
-        console.log('[SIDEBAR DEBUG] Before class change - sidebar classes:', sidebar.className);
         sidebar.classList.remove('translate-x-full', 'rtl:-translate-x-full');
         sidebar.classList.add('translate-x-0');
-        console.log('[SIDEBAR DEBUG] After class change - sidebar classes:', sidebar.className);
 
         this.currentSidebarType = type;
         this.updateSidebarButtonStates(type);
-        console.log('[SIDEBAR DEBUG] Sidebar opened successfully for type:', type);
 
         // Update specific sidebar state
         switch (type) {
@@ -2065,13 +2006,6 @@ class LiveKitControls {
      * Update control button states
      */
     updateControlButtons() {
-        console.log('Updating control buttons', {
-            audio: this.isAudioEnabled,
-            video: this.isVideoEnabled,
-            screenShare: this.isScreenSharing,
-            handRaise: this.isHandRaised
-        });
-
         // Microphone button - show proper status for all users
         const micButton = document.getElementById('toggleMic');
         if (micButton) {
@@ -2482,20 +2416,8 @@ class LiveKitControls {
      */
     handleDataReceived(data, participant) {
         try {
-            // Log all received data for debugging
-            if (window.debugMode) {
-                console.log('Data received', {
-                    type: data.type,
-                    from: participant?.identity,
-                    data: data
-                });
-            }
-
-
             // Don't process messages from ourselves unless it's a test message
             if (participant?.sid === this.localParticipant?.sid && data.type !== 'testMessage') {
-                if (window.debugMode) {
-                }
                 return;
             }
 
@@ -2542,8 +2464,6 @@ class LiveKitControls {
                     break;
 
                 default:
-                    if (window.debugMode) {
-                    }
                     break;
             }
         } catch (error) {
@@ -2718,12 +2638,6 @@ class LiveKitControls {
      * @param {LiveKit.Participant} participant - Sender participant
      */
     handleGlobalAudioControlEvent(data, participant) {
-        console.log('Global audio control event received', {
-            action: data.action,
-            settings: data.settings,
-            controlledBy: data.controlledBy
-        });
-
         // Only process if from a teacher (or self for immediate UI update)
         const isFromTeacher = this.getParticipantRole(participant?.identity) === 'teacher';
         const isFromSelf = participant?.sid === this.localParticipant?.sid;
@@ -2744,12 +2658,6 @@ class LiveKitControls {
             ...data.settings
         };
 
-        console.log('Global audio control state updated', {
-            previous: previousState,
-            current: this.globalAudioControlsState,
-            action: data.action
-        });
-
         if (data.action === 'muteAll') {
             this.handleGlobalMuteAll(data);
         } else if (data.action === 'allowAll') {
@@ -2764,14 +2672,6 @@ class LiveKitControls {
             this.updateGlobalAudioControlToggle();
         }
 
-        // Debug logging
-        if (window.debugMode) {
-            console.log('Student unmute check', {
-                canStudentUnmute: this.canStudentUnmute(),
-                isAudioEnabled: this.isAudioEnabled,
-                sdkAudioEnabled: this.localParticipant?.isMicrophoneEnabled
-            });
-        }
     }
 
     /**

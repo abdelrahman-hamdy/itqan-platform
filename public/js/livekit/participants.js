@@ -920,17 +920,6 @@ class LiveKitParticipants {
             handRaiseIndicator.style.transform = 'scale(1)';
             handRaiseIndicator.style.visibility = 'visible';
             
-            // Debug: Check computed styles
-            const computedStyle = window.getComputedStyle(handRaiseIndicator);
-            console.log('Hand raise indicator computed styles', {
-                display: computedStyle.display,
-                opacity: computedStyle.opacity,
-                visibility: computedStyle.visibility,
-                position: computedStyle.position,
-                top: computedStyle.top,
-                right: computedStyle.right,
-                zIndex: computedStyle.zIndex
-            });
         } else {
             // Debug: Check what elements exist
             const allElements = document.querySelectorAll('[id^="hand-raise-"]');
@@ -981,15 +970,6 @@ class LiveKitParticipants {
 
         const hasActiveVideo = videoPublication && !videoPublication.isMuted && videoPublication.track;
         const hasActiveAudio = audioPublication && !audioPublication.isMuted && audioPublication.track;
-
-        console.log('Participant media status update', {
-            camera: hasActiveVideo ? 'ON' : 'OFF',
-            mic: hasActiveAudio ? 'ON' : 'OFF',
-            hasVideoPublication: !!videoPublication,
-            hasAudioPublication: !!audioPublication,
-            videoMuted: videoPublication?.isMuted,
-            audioMuted: audioPublication?.isMuted
-        });
 
         // Update camera status icon (video grid placeholder)
         const cameraStatus = document.getElementById(`camera-status-${participantId}`);

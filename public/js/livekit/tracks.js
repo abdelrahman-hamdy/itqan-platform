@@ -498,16 +498,6 @@ class LiveKitTracks {
         // Insert screen share at the beginning of video grid for prominence
         videoGrid.insertBefore(screenShareDiv, videoGrid.firstChild);
 
-        // Add a small delay and then test if the element is clickable
-        setTimeout(() => {
-            console.log('Screen share element test', {
-                id: screenShareDiv.id,
-                exists: !!document.getElementById(screenShareDiv.id),
-                clickable: screenShareDiv.style.pointerEvents === 'auto',
-                hasClickListeners: screenShareDiv.onclick !== null
-            });
-        }, 100);
-
         // Store element reference with screen share suffix
         if (!this.participantTracks.has(screenShareId)) {
             this.participantTracks.set(screenShareId, {});

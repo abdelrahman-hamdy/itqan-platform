@@ -347,36 +347,4 @@ class MeetingDataChannelController extends Controller
         }
     }
 
-    /**
-     * Test data channel connectivity
-     */
-    public function testConnectivity(QuranSession $session): JsonResponse
-    {
-        $user = auth()->user();
-        if (! $user || ! $user->isSuperAdmin()) {
-            abort(403, 'Only super administrators can use the connectivity test endpoint.');
-        }
-
-        try {
-            $testData = [
-                'message_id' => 'test_'.uniqid(),
-                'type' => 'connectivity_test',
-                'command' => 'test_connectivity',
-                'data' => [
-                    'test_timestamp' => now()->toISOString(),
-                    'user_id' => Auth::id(),
-                    'message' => 'Testing data channel connectivity',
-                ],
-            ];
-
-            // Test WebSocket broadcast
-            broadcast(new MeetingCommandEvent($session, $testData));
-
-            return $this->success([
-                'test_id' => $testData['message_id'],
-            ], __('api.meeting.connectivity_test_sent'));
-        } catch (Exception $e) {
-            return $this->serverError(__('api.meeting.connectivity_test_failed'));
-        }
-    }
 }

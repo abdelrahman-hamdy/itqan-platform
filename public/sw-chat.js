@@ -21,7 +21,6 @@ self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
-                console.log('Opened cache');
                 // Cache files individually to prevent failure if one doesn't exist
                 return Promise.allSettled(
                     urlsToCache.map(url =>
@@ -33,7 +32,6 @@ self.addEventListener('install', event => {
                 );
             })
             .then(() => {
-                console.log('Service Worker installed successfully (some files may have failed to cache)');
                 return self.skipWaiting();
             })
             .catch(err => {
@@ -50,7 +48,6 @@ self.addEventListener('activate', event => {
             return Promise.all(
                 cacheNames.map(cacheName => {
                     if (cacheName !== CACHE_NAME && cacheName.startsWith('itqan-chat-')) {
-                        console.log('Deleting old cache:', cacheName);
                         return caches.delete(cacheName);
                     }
                 })
@@ -388,4 +385,3 @@ async function updateCachedMessages() {
     }
 }
 
-console.log('Chat Service Worker loaded successfully');

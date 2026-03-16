@@ -160,20 +160,8 @@ class LiveKitConnection {
 
         // Data received
         this.room.on(window.LiveKit.RoomEvent.DataReceived, (payload, participant) => {
-            console.log('Data received from participant', [
-                this.room?.localParticipant?.identity,
-                ...Array.from(this.room.remoteParticipants.values()).map(p => p.identity)
-            ]);
-
-            // Try to decode the payload for debugging
-            try {
-                const decodedData = JSON.parse(new TextDecoder().decode(payload));
-            } catch (e) {
-            }
-
             if (this.config.onDataReceived) {
                 this.config.onDataReceived(payload, participant);
-            } else {
             }
         });
 
