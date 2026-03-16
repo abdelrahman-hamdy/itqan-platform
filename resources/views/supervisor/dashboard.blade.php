@@ -340,34 +340,35 @@
         </script>
         @endpush
     @else
-        {{-- Supervisor: Upcoming Sessions + Quick Actions --}}
+        {{-- Supervisor: Today's Sessions + Quick Actions --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
                 <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4">
-                    <i class="ri-time-line text-blue-500 me-1.5"></i>
-                    {{ __('supervisor.dashboard.upcoming_sessions') }}
+                    <i class="ri-calendar-todo-line text-blue-500 me-1.5"></i>
+                    {{ __('supervisor.dashboard.today_sessions') }}
                 </h2>
 
-                @if($upcomingSessions->isNotEmpty())
+                @if($todaySessions->isNotEmpty())
                     <div class="space-y-3">
-                        @foreach($upcomingSessions as $session)
-                            <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        @foreach($todaySessions as $session)
+                            <a href="{{ route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $session['session_type'], 'sessionId' => $session['id']]) }}"
+                               class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer block">
                                 <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
-                                    {{ $session['type'] === 'quran' ? 'bg-green-100' : 'bg-violet-100' }}">
-                                    <i class="{{ $session['type'] === 'quran' ? 'ri-book-read-line text-green-600' : 'ri-graduation-cap-line text-violet-600' }}"></i>
+                                    {{ str_starts_with($session['type'], 'quran') ? 'bg-green-100' : 'bg-violet-100' }}">
+                                    <i class="{{ str_starts_with($session['type'], 'quran') ? 'ri-book-read-line text-green-600' : 'ri-graduation-cap-line text-violet-600' }}"></i>
                                 </div>
                                 <div class="min-w-0 flex-1">
                                     <p class="text-sm font-medium text-gray-900 truncate">{{ $session['title'] }}</p>
                                     <p class="text-xs text-gray-500">
                                         {{ $session['teacher_name'] }}
-                                        · {{ $session['scheduled_at']->translatedFormat('D d M - h:i A') }}
+                                        · {{ toAcademyTimezone($session['scheduled_at'])->translatedFormat('h:i A') }}
                                     </p>
                                 </div>
                                 <span class="text-xs px-2 py-1 rounded-full flex-shrink-0
-                                    {{ $session['type'] === 'quran' ? 'bg-green-100 text-green-700' : 'bg-violet-100 text-violet-700' }}">
-                                    {{ $session['type'] === 'quran' ? __('supervisor.dashboard.quran') : __('supervisor.dashboard.academic') }}
+                                    {{ str_starts_with($session['type'], 'quran') ? 'bg-green-100 text-green-700' : 'bg-violet-100 text-violet-700' }}">
+                                    {{ __('supervisor.dashboard.' . $session['type']) }}
                                 </span>
-                            </div>
+                            </a>
                         @endforeach
                     </div>
                 @else
@@ -375,7 +376,7 @@
                         <div class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                             <i class="ri-calendar-line text-2xl text-gray-400"></i>
                         </div>
-                        <p class="text-sm text-gray-500">{{ __('supervisor.dashboard.no_upcoming_sessions') }}</p>
+                        <p class="text-sm text-gray-500">{{ __('supervisor.dashboard.no_today_sessions') }}</p>
                     </div>
                 @endif
             </div>

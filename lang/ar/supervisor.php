@@ -88,9 +88,13 @@ return [
         'earnings_recorded' => 'الدورات المسجلة',
         'total' => 'الإجمالي',
 
-        // Upcoming sessions & quick actions
+        // Today's sessions & quick actions
         'upcoming_sessions' => 'الجلسات القادمة',
         'no_upcoming_sessions' => 'لا توجد جلسات قادمة',
+        'today_sessions' => 'جلسات اليوم',
+        'no_today_sessions' => 'لا توجد جلسات اليوم',
+        'quran_individual' => 'قرآن فردي',
+        'quran_group' => 'قرآن جماعي',
         'quick_actions' => 'إجراءات سريعة',
         'go_to_calendar' => 'التقويم',
         'go_to_monitoring' => 'مراقبة الجلسات',

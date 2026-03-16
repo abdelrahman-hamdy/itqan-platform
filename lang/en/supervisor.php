@@ -88,9 +88,13 @@ return [
         'earnings_recorded' => 'Recorded Courses',
         'total' => 'Total',
 
-        // Upcoming sessions & quick actions
+        // Today's sessions & quick actions
         'upcoming_sessions' => 'Upcoming Sessions',
         'no_upcoming_sessions' => 'No upcoming sessions',
+        'today_sessions' => 'Today\'s Sessions',
+        'no_today_sessions' => 'No sessions today',
+        'quran_individual' => 'Individual Quran',
+        'quran_group' => 'Group Quran',
         'quick_actions' => 'Quick Actions',
         'go_to_calendar' => 'Calendar',
         'go_to_monitoring' => 'Sessions Monitoring',

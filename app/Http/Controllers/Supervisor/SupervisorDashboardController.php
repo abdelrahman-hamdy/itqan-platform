@@ -106,50 +106,56 @@ class SupervisorDashboardController extends BaseSupervisorWebController
         );
 
         // ====================================================================
-        // Admin: Charts data | Supervisor: Upcoming sessions
+        // Admin: Charts data | Both: Today's sessions
         // ====================================================================
         $chartData = null;
-        $upcomingSessions = collect();
+        $todaySessions = collect();
 
         if ($isAdmin) {
             $chartData = $this->buildChartData($academyId);
-        } else {
-            if (! empty($quranTeacherIds)) {
-                $quranUpcoming = QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
-                    ->where('scheduled_at', '>', now())
-                    ->with(['quranTeacher', 'student', 'circle', 'individualCircle'])
-                    ->orderBy('scheduled_at')
-                    ->limit(5)
-                    ->get()
-                    ->map(fn ($s) => [
-                        'type' => 'quran',
-                        'title' => $s->circle?->name ?? $s->student?->name ?? __('supervisor.dashboard.session_with', ['name' => '']),
-                        'teacher_name' => $s->quranTeacher?->name ?? '',
-                        'scheduled_at' => $s->scheduled_at,
-                        'status' => $s->status,
-                    ]);
-                $upcomingSessions = $upcomingSessions->merge($quranUpcoming);
-            }
-
-            if (! empty($academicTeacherProfileIds)) {
-                $academicUpcoming = AcademicSession::whereIn('academic_teacher_id', $academicTeacherProfileIds)
-                    ->where('scheduled_at', '>', now())
-                    ->with(['academicTeacher.user', 'student'])
-                    ->orderBy('scheduled_at')
-                    ->limit(5)
-                    ->get()
-                    ->map(fn ($s) => [
-                        'type' => 'academic',
-                        'title' => $s->student?->name ?? __('supervisor.dashboard.session_with', ['name' => '']),
-                        'teacher_name' => $s->academicTeacher?->user?->name ?? '',
-                        'scheduled_at' => $s->scheduled_at,
-                        'status' => $s->status,
-                    ]);
-                $upcomingSessions = $upcomingSessions->merge($academicUpcoming);
-            }
-
-            $upcomingSessions = $upcomingSessions->sortBy('scheduled_at')->take(5);
         }
+
+        // Today's sessions for all roles
+        $today = now()->startOfDay();
+        $tomorrow = now()->addDay()->startOfDay();
+
+        if (! empty($quranTeacherIds)) {
+            $quranToday = QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
+                ->whereBetween('scheduled_at', [$today, $tomorrow])
+                ->with(['quranTeacher', 'student', 'circle', 'individualCircle'])
+                ->orderBy('scheduled_at')
+                ->get()
+                ->map(fn ($s) => [
+                    'type' => $s->session_type === 'individual' ? 'quran_individual' : 'quran_group',
+                    'session_type' => 'quran',
+                    'id' => $s->id,
+                    'title' => $s->circle?->name ?? $s->student?->name ?? __('supervisor.dashboard.session_with', ['name' => '']),
+                    'teacher_name' => $s->quranTeacher?->name ?? '',
+                    'scheduled_at' => $s->scheduled_at,
+                    'status' => $s->status,
+                ]);
+            $todaySessions = $todaySessions->merge($quranToday);
+        }
+
+        if (! empty($academicTeacherProfileIds)) {
+            $academicToday = AcademicSession::whereIn('academic_teacher_id', $academicTeacherProfileIds)
+                ->whereBetween('scheduled_at', [$today, $tomorrow])
+                ->with(['academicTeacher.user', 'student'])
+                ->orderBy('scheduled_at')
+                ->get()
+                ->map(fn ($s) => [
+                    'type' => 'academic',
+                    'session_type' => 'academic',
+                    'id' => $s->id,
+                    'title' => $s->student?->name ?? __('supervisor.dashboard.session_with', ['name' => '']),
+                    'teacher_name' => $s->academicTeacher?->user?->name ?? '',
+                    'scheduled_at' => $s->scheduled_at,
+                    'status' => $s->status,
+                ]);
+            $todaySessions = $todaySessions->merge($academicToday);
+        }
+
+        $todaySessions = $todaySessions->sortBy('scheduled_at')->values();
 
         return view('supervisor.dashboard', compact(
             'user',
@@ -157,7 +163,7 @@ class SupervisorDashboardController extends BaseSupervisorWebController
             'generalStats',
             'monthlyStats',
             'chartData',
-            'upcomingSessions',
+            'todaySessions',
         ));
     }
 
