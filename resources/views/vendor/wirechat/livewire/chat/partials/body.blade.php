@@ -99,7 +99,7 @@
     style="contain: content; background: linear-gradient(135deg, #ede9fe, #dbeafe, #e0e7ff);" >
 
     {{-- Chat background pattern overlay --}}
-    <div class="absolute inset-0 pointer-events-none" style="background-image: url('{{ asset('app-design-assets/new-chat-bg-pattern3.png') }}'); background-repeat: repeat; background-size: 600px; opacity: 0.12;"></div>
+    <div class="absolute inset-0 pointer-events-none" style="background-image: url('{{ asset('app-design-assets/new-chat-bg-seamless-pattern.png') }}'); background-repeat: repeat; background-size: 800px; opacity: 0.12;"></div>
 
 
 
