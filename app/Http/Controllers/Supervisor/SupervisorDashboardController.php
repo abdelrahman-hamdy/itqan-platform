@@ -21,6 +21,7 @@ class SupervisorDashboardController extends BaseSupervisorWebController
     public function index($subdomain = null): View
     {
         $user = auth()->user();
+        $isAdmin = $this->isAdminUser();
         $academy = AcademyContextService::getCurrentAcademy();
         $academyId = $academy?->id;
 
