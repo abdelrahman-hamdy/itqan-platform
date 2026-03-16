@@ -76,10 +76,6 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
 
     public function update(Request $request, $subdomain, $circleId): RedirectResponse
     {
-        if (! $this->isAdminUser()) {
-            abort(403);
-        }
-
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
         $circle = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)->findOrFail($circleId);
 
@@ -95,7 +91,7 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
             'description' => 'nullable|string|max:500',
             'quran_teacher_id' => ['required', Rule::in($quranTeacherIds)],
             'max_students' => 'required|integer|min:1|max:20',
-            'monthly_fee' => 'required|numeric|min:0',
+            'monthly_fee' => 'required|integer|min:0',
             'monthly_sessions_count' => 'required|in:4,8,12,16,20',
             'schedule_days' => 'nullable|array',
             'schedule_days.*' => Rule::in($weekDayValues),
@@ -107,7 +103,10 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
 
         $validated['status'] = (bool) $validated['status'];
 
-        if (! $this->isAdminUser()) {
+        // Supervisors can only edit supervisor_notes; admins can only edit admin_notes
+        if ($this->isAdminUser()) {
+            unset($validated['supervisor_notes']);
+        } else {
             unset($validated['admin_notes']);
         }
 

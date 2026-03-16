@@ -121,7 +121,7 @@
             <div class="space-y-4 md:space-y-6">
                 <x-circle.info-sidebar :circle="$circle" view-type="supervisor" />
 
-                @if(isset($isAdmin) && $isAdmin)
+                @if(isset($isAdmin) || isset($quranTeachers))
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
                     <h3 class="text-sm font-bold text-gray-900 mb-4">{{ __('supervisor.common.edit_details') }}</h3>
                     <form method="POST" action="{{ route('manage.group-circles.update', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
@@ -197,7 +197,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.monthly_fee') }}</label>
-                                        <input type="number" name="monthly_fee" value="{{ old('monthly_fee', $circle->monthly_fee) }}" min="0" step="0.01"
+                                        <input type="number" name="monthly_fee" value="{{ old('monthly_fee', (int) $circle->monthly_fee) }}" min="0" step="1"
                                                class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
                                     </div>
                                     <div class="md:col-span-2">
@@ -255,21 +255,27 @@
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.supervisor_notes') }}</label>
-                                        <textarea name="supervisor_notes" rows="2" maxlength="2000"
-                                                  class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">{{ old('supervisor_notes', $circle->supervisor_notes) }}</textarea>
+                                        @if($isAdmin)
+                                            <div class="w-full rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 p-2 min-h-[3.5rem]">{{ $circle->supervisor_notes ?: '—' }}</div>
+                                        @else
+                                            <textarea name="supervisor_notes" rows="2" maxlength="2000"
+                                                      class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">{{ old('supervisor_notes', $circle->supervisor_notes) }}</textarea>
+                                        @endif
                                     </div>
-                                    @if($isAdmin)
-                                        <div>
-                                            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.admin_notes') }}</label>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.admin_notes') }}</label>
+                                        @if($isAdmin)
                                             <textarea name="admin_notes" rows="2" maxlength="1000"
                                                       class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">{{ old('admin_notes', $circle->admin_notes) }}</textarea>
-                                        </div>
-                                    @endif
+                                        @else
+                                            <div class="w-full rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 p-2 min-h-[3.5rem]">{{ $circle->admin_notes ?: '—' }}</div>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
 
                             <button type="submit"
-                                    class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                    class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer">
                                 {{ __('supervisor.common.save') }}
                             </button>
                         </div>
