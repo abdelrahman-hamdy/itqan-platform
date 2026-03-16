@@ -288,7 +288,7 @@
                                         <span class="font-semibold text-gray-900">{{ $sessionsCompleted }}/{{ $sessionsTotal }}</span>
                                     </div>
                                     <div class="w-full bg-gray-200 rounded-full h-1.5">
-                                        <div class="h-1.5 rounded-full transition-all {{ $progressPct >= 80 ? 'bg-red-500' : ($progressPct >= 50 ? 'bg-amber-500' : 'bg-blue-500') }}"
+                                        <div class="h-1.5 rounded-full transition-all {{ $progressPct >= 90 ? 'bg-red-500' : ($progressPct >= 70 ? 'bg-amber-500' : 'bg-blue-500') }}"
                                              style="width: {{ $progressPct }}%"></div>
                                     </div>
                                     @if($sub['sessions_remaining'] <= 3 && $sub['sessions_remaining'] > 0)
