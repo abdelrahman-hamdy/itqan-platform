@@ -16,6 +16,7 @@ return [
     ],
 
     'profile_button' => 'الملف الشخصي',
+    'dashboard_button' => 'لوحة التحكم',
 
     'inputs' => [
         'search' => [
