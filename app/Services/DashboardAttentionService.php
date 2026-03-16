@@ -245,11 +245,11 @@ class DashboardAttentionService
 
         // Critical group
         $criticalItems = array_filter([
-            $this->makeItem('expiring_subscriptions_3d', $counts['expiring_3d'], 'critical', 'ri-time-line', 'manage.subscriptions.index'),
-            $this->makeItem('extended_subscriptions', $counts['extended_subs'], 'critical', 'ri-loop-right-line', 'manage.subscriptions.index'),
-            $this->makeItem('expired_pending_subscriptions', $counts['expired_pending'], 'critical', 'ri-error-warning-line', 'manage.subscriptions.index'),
-            $this->makeItem('failed_payments_today', $counts['failed_payments'], 'critical', 'ri-bank-card-line', 'manage.payments.index'),
-            $this->makeItem('cancelled_sessions_today', $counts['cancelled_sessions'], 'critical', 'ri-close-circle-line', 'manage.sessions.index'),
+            $this->makeItem('expiring_subscriptions_3d', $counts['expiring_3d'], 'critical', 'ri-time-line', 'manage.subscriptions.index', 'renew'),
+            $this->makeItem('extended_subscriptions', $counts['extended_subs'], 'critical', 'ri-loop-right-line', 'manage.subscriptions.index', 'manage'),
+            $this->makeItem('expired_pending_subscriptions', $counts['expired_pending'], 'critical', 'ri-error-warning-line', 'manage.subscriptions.index', 'activate'),
+            $this->makeItem('failed_payments_today', $counts['failed_payments'], 'critical', 'ri-bank-card-line', 'manage.payments.index', 'review'),
+            $this->makeItem('cancelled_sessions_today', $counts['cancelled_sessions'], 'critical', 'ri-close-circle-line', 'manage.sessions.index', 'view'),
         ], fn ($item) => $item['count'] > 0);
 
         if (! empty($criticalItems)) {
@@ -263,13 +263,13 @@ class DashboardAttentionService
 
         // Warning group
         $warningItems = array_filter([
-            $this->makeItem('expiring_subscriptions_7d', $counts['expiring_7d'], 'warning', 'ri-timer-line', 'manage.subscriptions.index'),
-            $this->makeItem('pending_subscriptions', $counts['pending_subs'], 'warning', 'ri-bank-card-line', 'manage.subscriptions.index'),
-            $this->makeItem('pending_payments', $counts['pending_payments'], 'warning', 'ri-money-dollar-circle-line', 'manage.payments.index'),
-            $this->makeItem('pending_trial_requests', $counts['pending_trials'], 'warning', 'ri-flask-line', 'manage.trial-sessions.index'),
-            $this->makeItem('homework_awaiting_grading', $counts['homework_grading'], 'warning', 'ri-draft-line', 'manage.homework.index'),
-            $this->makeItem('overdue_homework', $counts['overdue_homework'], 'warning', 'ri-task-line', 'manage.homework.index'),
-            $counts['manual_reviews'] ? $this->makeItem('reviews_awaiting_approval', $counts['pending_reviews'], 'warning', 'ri-star-line', null) : null,
+            $this->makeItem('expiring_subscriptions_7d', $counts['expiring_7d'], 'warning', 'ri-timer-line', 'manage.subscriptions.index', 'renew'),
+            $this->makeItem('pending_subscriptions', $counts['pending_subs'], 'warning', 'ri-bank-card-line', 'manage.subscriptions.index', 'activate'),
+            $this->makeItem('pending_payments', $counts['pending_payments'], 'warning', 'ri-money-dollar-circle-line', 'manage.payments.index', 'collect'),
+            $this->makeItem('pending_trial_requests', $counts['pending_trials'], 'warning', 'ri-flask-line', 'manage.trial-sessions.index', 'schedule'),
+            $this->makeItem('homework_awaiting_grading', $counts['homework_grading'], 'warning', 'ri-draft-line', 'manage.homework.index', 'grade'),
+            $this->makeItem('overdue_homework', $counts['overdue_homework'], 'warning', 'ri-task-line', 'manage.homework.index', 'follow_up'),
+            $counts['manual_reviews'] ? $this->makeItem('reviews_awaiting_approval', $counts['pending_reviews'], 'warning', 'ri-star-line', null, 'review') : null,
         ], fn ($item) => $item !== null && $item['count'] > 0);
 
         if (! empty($warningItems)) {
@@ -283,11 +283,11 @@ class DashboardAttentionService
 
         // Info group
         $infoItems = array_filter([
-            $this->makeItem('inactive_students', $counts['inactive_students'], 'info', 'ri-user-unfollow-line', 'manage.students.index'),
-            $this->makeItem('inactive_quran_teachers', $counts['inactive_quran_teachers'], 'info', 'ri-book-read-line', 'manage.teachers.index'),
-            $this->makeItem('inactive_academic_teachers', $counts['inactive_academic_teachers'], 'info', 'ri-graduation-cap-line', 'manage.teachers.index'),
-            $this->makeItem('inactive_parents', $counts['inactive_parents'], 'info', 'ri-parent-line', 'manage.parents.index'),
-            $this->makeItem('pending_session_requests', $counts['pending_session_requests'], 'info', 'ri-calendar-todo-line', 'manage.sessions.index'),
+            $this->makeItem('inactive_students', $counts['inactive_students'], 'info', 'ri-user-unfollow-line', 'manage.students.index', 'activate'),
+            $this->makeItem('inactive_quran_teachers', $counts['inactive_quran_teachers'], 'info', 'ri-book-read-line', 'manage.teachers.index', 'activate'),
+            $this->makeItem('inactive_academic_teachers', $counts['inactive_academic_teachers'], 'info', 'ri-graduation-cap-line', 'manage.teachers.index', 'activate'),
+            $this->makeItem('inactive_parents', $counts['inactive_parents'], 'info', 'ri-parent-line', 'manage.parents.index', 'activate'),
+            $this->makeItem('pending_session_requests', $counts['pending_session_requests'], 'info', 'ri-calendar-todo-line', 'manage.sessions.index', 'review'),
         ], fn ($item) => $item['count'] > 0);
 
         if (! empty($infoItems)) {
@@ -302,7 +302,7 @@ class DashboardAttentionService
         return $groups;
     }
 
-    private function makeItem(string $key, int $count, string $severity, string $icon, ?string $route): array
+    private function makeItem(string $key, int $count, string $severity, string $icon, ?string $route, string $actionKey = 'view'): array
     {
         return [
             'key' => $key,
@@ -311,6 +311,7 @@ class DashboardAttentionService
             'severity' => $severity,
             'icon' => $icon,
             'route' => $route,
+            'action_key' => 'supervisor.attention.action_'.$actionKey,
         ];
     }
 

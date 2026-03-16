@@ -124,6 +124,17 @@ return [
         'inactive_parents' => 'أولياء أمور غير نشطين',
         'pending_session_requests' => 'طلبات جلسات معلقة',
 
+        // Action buttons
+        'action_view' => 'عرض',
+        'action_activate' => 'تفعيل',
+        'action_renew' => 'تجديد',
+        'action_manage' => 'إدارة',
+        'action_review' => 'مراجعة',
+        'action_collect' => 'تحصيل',
+        'action_schedule' => 'جدولة',
+        'action_grade' => 'تصحيح',
+        'action_follow_up' => 'متابعة',
+
         // Reviews panel
         'pending_reviews' => 'مراجعات معلقة',
         'course_review' => 'تقييم دورة',
