@@ -35,9 +35,10 @@ class SupervisorDashboardController extends BaseSupervisorWebController
             $totalQuranTeachers = User::where('academy_id', $academyId)->where('user_type', UserType::QURAN_TEACHER->value)->count();
             $totalAcademicTeachers = User::where('academy_id', $academyId)->where('user_type', UserType::ACADEMIC_TEACHER->value)->count();
             $totalParents = User::where('academy_id', $academyId)->where('user_type', UserType::PARENT->value)->count();
-            $totalUsers = $totalStudents + $totalQuranTeachers + $totalAcademicTeachers + $totalParents;
+            $totalSupervisors = User::where('academy_id', $academyId)->where('user_type', UserType::SUPERVISOR->value)->count();
+            $totalUsers = $totalStudents + $totalQuranTeachers + $totalAcademicTeachers + $totalParents + $totalSupervisors;
             $activeUsers = User::where('academy_id', $academyId)
-                ->whereIn('user_type', [UserType::STUDENT->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::PARENT->value])
+                ->whereIn('user_type', [UserType::STUDENT->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::PARENT->value, UserType::SUPERVISOR->value])
                 ->where('active_status', true)->count();
 
             $totalIncome = Payment::where('academy_id', $academyId)->where('status', PaymentStatus::COMPLETED->value)->sum('amount');
@@ -55,7 +56,7 @@ class SupervisorDashboardController extends BaseSupervisorWebController
                 'totalUsers', 'activeUsers',
                 'totalIncome',
                 'totalSessions', 'passedSessions',
-                'totalStudents', 'totalQuranTeachers', 'totalAcademicTeachers', 'totalParents'
+                'totalStudents', 'totalQuranTeachers', 'totalAcademicTeachers', 'totalParents', 'totalSupervisors'
             );
         });
 
@@ -144,6 +145,7 @@ class SupervisorDashboardController extends BaseSupervisorWebController
 
         return view('supervisor.dashboard', compact(
             'user',
+            'isAdmin',
             'generalStats',
             'monthlyStats',
             'upcomingSessions',

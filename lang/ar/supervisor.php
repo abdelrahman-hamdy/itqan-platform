@@ -56,6 +56,7 @@ return [
         'stat_quran_teachers' => 'معلمو القرآن',
         'stat_academic_teachers' => 'المعلمون الأكاديميون',
         'stat_parents' => 'أولياء الأمور',
+        'stat_supervisors' => 'المشرفون',
         'active' => 'نشط',
         'inactive' => 'غير نشط',
         'passed' => 'منتهية',

@@ -56,6 +56,7 @@ return [
         'stat_quran_teachers' => 'Quran Teachers',
         'stat_academic_teachers' => 'Academic Teachers',
         'stat_parents' => 'Parents',
+        'stat_supervisors' => 'Supervisors',
         'active' => 'active',
         'inactive' => 'inactive',
         'passed' => 'passed',

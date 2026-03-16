@@ -114,6 +114,21 @@
                 </div>
             </div>
         </div>
+
+        {{-- Supervisors (admin/superadmin only) --}}
+        @if($isAdmin)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 md:w-12 md:h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <i class="ri-shield-user-line text-lg md:text-xl text-indigo-600"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($generalStats['totalSupervisors']) }}</p>
+                        <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_supervisors') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 
     {{-- Monthly Stats --}}
