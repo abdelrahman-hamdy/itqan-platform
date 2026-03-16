@@ -15,14 +15,18 @@ use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
+use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use App\Models\CourseReview;
+use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Models\Payment;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
+use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
+use App\Models\RecordedCourse;
 use App\Models\SessionRequest;
 use App\Models\TeacherReview;
 use App\Models\User;
@@ -55,7 +59,7 @@ class DashboardAttentionService
         $worstSeverity = $this->determineWorstSeverity($groups);
 
         // Reviews data (not cached — needs to be fresh for inline actions)
-        $pendingReviews = $this->getPendingReviewsData($academyId);
+        $pendingReviews = $this->getPendingReviewsData($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds);
 
         return [
             'groups' => $groups,
@@ -73,28 +77,51 @@ class DashboardAttentionService
         $threeDays = $now->copy()->addDays(3);
         $sevenDays = $now->copy()->addDays(7);
 
+        // Derive additional ID sets for supervisor scoping.
+        // QuranTeacherProfile IDs → for QuranTrialRequest.teacher_id, TeacherReview.reviewable_id
+        // Academic teacher User IDs → for homework.teacher_id, SessionRequest.teacher_id, RecordedCourse.created_by
+        $quranTeacherProfileIds = [];
+        $academicTeacherUserIds = [];
+
+        if (! $isAdmin) {
+            if (! empty($quranTeacherIds)) {
+                $quranTeacherProfileIds = QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)
+                    ->pluck('id')->toArray();
+            }
+            if (! empty($academicTeacherProfileIds)) {
+                $academicTeacherUserIds = AcademicTeacherProfile::whereIn('id', $academicTeacherProfileIds)
+                    ->pluck('user_id')->toArray();
+            }
+        }
+
         // === CRITICAL ===
 
         // 1. Subscriptions expiring within 3 days
         $expiring3d = QuranSubscription::where('academy_id', $academyId)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->where('ends_at', '<=', $threeDays)
-            ->where('ends_at', '>', $now)->count()
+            ->where('ends_at', '>', $now)
+            ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
+            ->count()
             + AcademicSubscription::where('academy_id', $academyId)
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->where('ends_at', '<=', $threeDays)
-                ->where('ends_at', '>', $now)->count();
+                ->where('ends_at', '>', $now)
+                ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
+                ->count();
 
         // 2. Extended subscriptions (active grace period)
         $extendedSubs = QuranSubscription::where('academy_id', $academyId)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereNotNull('metadata->grace_period_ends_at')
             ->whereRaw("JSON_EXTRACT(metadata, '$.grace_period_ends_at') > ?", [$now->toDateTimeString()])
+            ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
             ->count()
             + AcademicSubscription::where('academy_id', $academyId)
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->whereNotNull('metadata->grace_period_ends_at')
                 ->whereRaw("JSON_EXTRACT(metadata, '$.grace_period_ends_at') > ?", [$now->toDateTimeString()])
+                ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
                 ->count();
 
         // 3. Expired-pending subscriptions (pending > 48h)
@@ -103,18 +130,24 @@ class DashboardAttentionService
             ->where('payment_status', SubscriptionPaymentStatus::PENDING->value)
             ->where('created_at', '<', $now->copy()->subHours(
                 config('subscriptions.pending.expires_after_hours', 48)
-            ))->count()
+            ))
+            ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
+            ->count()
             + AcademicSubscription::where('academy_id', $academyId)
                 ->where('status', SessionSubscriptionStatus::PENDING->value)
                 ->where('payment_status', SubscriptionPaymentStatus::PENDING->value)
                 ->where('created_at', '<', $now->copy()->subHours(
                     config('subscriptions.pending.expires_after_hours', 48)
-                ))->count();
+                ))
+                ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
+                ->count();
 
-        // 4. Failed payments today
-        $failedPayments = Payment::where('academy_id', $academyId)
-            ->where('status', PaymentStatus::FAILED->value)
-            ->whereBetween('created_at', [$today, $endOfDay])->count();
+        // 4. Failed payments today (admin-only — payments are polymorphic, impractical to scope by teacher)
+        $failedPayments = $isAdmin
+            ? Payment::where('academy_id', $academyId)
+                ->where('status', PaymentStatus::FAILED->value)
+                ->whereBetween('created_at', [$today, $endOfDay])->count()
+            : 0;
 
         // 5. Cancelled sessions today (scoped by teacher for supervisors)
         $cancelledSessions = 0;
@@ -135,86 +168,120 @@ class DashboardAttentionService
         $expiring7d = QuranSubscription::where('academy_id', $academyId)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->where('ends_at', '>', $threeDays)
-            ->where('ends_at', '<=', $sevenDays)->count()
+            ->where('ends_at', '<=', $sevenDays)
+            ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
+            ->count()
             + AcademicSubscription::where('academy_id', $academyId)
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->where('ends_at', '>', $threeDays)
-                ->where('ends_at', '<=', $sevenDays)->count();
+                ->where('ends_at', '<=', $sevenDays)
+                ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
+                ->count();
 
         // 7. Pending subscriptions
         $pendingSubs = QuranSubscription::where('academy_id', $academyId)
-            ->where('status', SessionSubscriptionStatus::PENDING->value)->count()
+            ->where('status', SessionSubscriptionStatus::PENDING->value)
+            ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
+            ->count()
             + AcademicSubscription::where('academy_id', $academyId)
-                ->where('status', SessionSubscriptionStatus::PENDING->value)->count();
+                ->where('status', SessionSubscriptionStatus::PENDING->value)
+                ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
+                ->count();
 
-        // 8. Pending payments
-        $pendingPayments = Payment::where('academy_id', $academyId)
-            ->where('status', PaymentStatus::PENDING->value)->count();
+        // 8. Pending payments (admin-only)
+        $pendingPayments = $isAdmin
+            ? Payment::where('academy_id', $academyId)
+                ->where('status', PaymentStatus::PENDING->value)->count()
+            : 0;
 
-        // 9. Pending trial requests
+        // 9. Pending trial requests (Quran only — scoped by teacher profile)
         $pendingTrials = QuranTrialRequest::where('academy_id', $academyId)
-            ->where('status', TrialRequestStatus::PENDING->value)->count();
+            ->where('status', TrialRequestStatus::PENDING->value)
+            ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $quranTeacherProfileIds ?: [0]))
+            ->count();
 
-        // 10. Homework awaiting grading
+        // 10. Homework awaiting grading (scoped by homework teacher)
         $homeworkGrading = AcademicHomeworkSubmission::where('academy_id', $academyId)
             ->whereIn('submission_status', [
                 HomeworkSubmissionStatus::SUBMITTED->value,
                 HomeworkSubmissionStatus::LATE->value,
                 HomeworkSubmissionStatus::RESUBMITTED->value,
-            ])->count()
+            ])
+            ->when(! $isAdmin, fn ($q) => $q->whereHas('homework', fn ($hq) => $hq->whereIn('teacher_id', $academicTeacherUserIds ?: [0])))
+            ->count()
             + InteractiveCourseHomeworkSubmission::where('academy_id', $academyId)
                 ->whereIn('submission_status', [
                     HomeworkSubmissionStatus::SUBMITTED->value,
                     HomeworkSubmissionStatus::LATE->value,
                     HomeworkSubmissionStatus::RESUBMITTED->value,
-                ])->count();
+                ])
+                ->when(! $isAdmin, fn ($q) => $q->whereHas('homework', fn ($hq) => $hq->whereIn('teacher_id', $academicTeacherUserIds ?: [0])))
+                ->count();
 
-        // 11. Overdue homework
+        // 11. Overdue homework (scoped by teacher)
         $overdueHomework = AcademicHomework::where('academy_id', $academyId)
             ->where('due_date', '<', $now)
-            ->where('status', HomeworkStatus::PUBLISHED->value)->count()
+            ->where('status', HomeworkStatus::PUBLISHED->value)
+            ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherUserIds ?: [0]))
+            ->count()
             + InteractiveCourseHomework::where('academy_id', $academyId)
                 ->where('due_date', '<', $now)
-                ->where('status', HomeworkStatus::PUBLISHED->value)->count();
+                ->where('status', HomeworkStatus::PUBLISHED->value)
+                ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherUserIds ?: [0]))
+                ->count();
 
-        // 12. Reviews awaiting approval (conditional on academy settings)
+        // 12. Reviews awaiting approval (conditional on academy settings, scoped by teacher)
         $pendingReviewsCount = 0;
         $academy = Academy::find($academyId);
         $manualReviews = ! (($academy->academic_settings ?? [])['auto_approve_reviews'] ?? true);
         if ($manualReviews) {
-            $pendingReviewsCount = CourseReview::where('academy_id', $academyId)
-                ->where('is_approved', false)->count()
-                + TeacherReview::where('academy_id', $academyId)
-                    ->where('is_approved', false)->count();
+            $pendingReviewsCount = $this->countPendingReviews(
+                $academyId, $isAdmin, $quranTeacherProfileIds, $academicTeacherProfileIds, $academicTeacherUserIds
+            );
         }
 
         // === INFO ===
 
-        // 13-16. Inactive users
-        $inactiveStudents = User::where('academy_id', $academyId)
-            ->where('active_status', false)
-            ->where('user_type', UserType::STUDENT->value)->count();
+        // 13. Inactive students (admin-only — students are not directly assigned to supervisors)
+        $inactiveStudents = $isAdmin
+            ? User::where('academy_id', $academyId)
+                ->where('active_status', false)
+                ->where('user_type', UserType::STUDENT->value)->count()
+            : 0;
 
+        // 14. Inactive Quran teachers (scoped to assigned teachers)
         $inactiveQuranTeachers = User::where('academy_id', $academyId)
             ->where('active_status', false)
-            ->where('user_type', UserType::QURAN_TEACHER->value)->count();
+            ->where('user_type', UserType::QURAN_TEACHER->value)
+            ->when(! $isAdmin, fn ($q) => $q->whereIn('id', $quranTeacherIds ?: [0]))
+            ->count();
 
+        // 15. Inactive Academic teachers (scoped to assigned teachers)
         $inactiveAcademicTeachers = User::where('academy_id', $academyId)
             ->where('active_status', false)
-            ->where('user_type', UserType::ACADEMIC_TEACHER->value)->count();
+            ->where('user_type', UserType::ACADEMIC_TEACHER->value)
+            ->when(! $isAdmin, fn ($q) => $q->whereIn('id', $academicTeacherUserIds ?: [0]))
+            ->count();
 
-        $inactiveParents = User::where('academy_id', $academyId)
-            ->where('active_status', false)
-            ->where('user_type', UserType::PARENT->value)->count();
+        // 16. Inactive parents (admin-only — parents are not directly assigned to supervisors)
+        $inactiveParents = $isAdmin
+            ? User::where('academy_id', $academyId)
+                ->where('active_status', false)
+                ->where('user_type', UserType::PARENT->value)->count()
+            : 0;
 
-        // 17. Pending session requests
+        // 17. Pending session requests (scoped by teacher)
         $pendingSessionRequests = 0;
         if (Schema::hasTable('session_requests')) {
+            $allTeacherUserIds = $isAdmin ? [] : array_unique(array_merge($quranTeacherIds, $academicTeacherUserIds));
+
             $pendingSessionRequests = SessionRequest::where('academy_id', $academyId)
                 ->whereIn('status', [
                     SessionRequestStatus::PENDING->value,
                     SessionRequestStatus::AGREED->value,
-                ])->count();
+                ])
+                ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $allTeacherUserIds ?: [0]))
+                ->count();
         }
 
         return [
@@ -237,6 +304,42 @@ class DashboardAttentionService
             'inactive_parents' => $inactiveParents,
             'pending_session_requests' => $pendingSessionRequests,
         ];
+    }
+
+    /**
+     * Count pending reviews scoped by teacher for supervisors.
+     */
+    private function countPendingReviews(int $academyId, bool $isAdmin, array $quranTeacherProfileIds, array $academicTeacherProfileIds, array $academicTeacherUserIds): int
+    {
+        // Teacher reviews: polymorphic reviewable → QuranTeacherProfile or AcademicTeacherProfile
+        $teacherReviews = TeacherReview::where('academy_id', $academyId)
+            ->where('is_approved', false)
+            ->when(! $isAdmin, function ($q) use ($quranTeacherProfileIds, $academicTeacherProfileIds) {
+                $q->where(function ($q) use ($quranTeacherProfileIds, $academicTeacherProfileIds) {
+                    $q->where(function ($q) use ($quranTeacherProfileIds) {
+                        $q->where('reviewable_type', QuranTeacherProfile::class)
+                            ->whereIn('reviewable_id', $quranTeacherProfileIds ?: [0]);
+                    })->orWhere(function ($q) use ($academicTeacherProfileIds) {
+                        $q->where('reviewable_type', AcademicTeacherProfile::class)
+                            ->whereIn('reviewable_id', $academicTeacherProfileIds ?: [0]);
+                    });
+                });
+            })->count();
+
+        // Course reviews: polymorphic reviewable → InteractiveCourse or RecordedCourse
+        $courseReviews = CourseReview::where('academy_id', $academyId)
+            ->where('is_approved', false)
+            ->when(! $isAdmin, function ($q) use ($academicTeacherProfileIds, $academicTeacherUserIds) {
+                $q->where(function ($q) use ($academicTeacherProfileIds, $academicTeacherUserIds) {
+                    $q->whereHasMorph('reviewable', [InteractiveCourse::class], function ($q) use ($academicTeacherProfileIds) {
+                        $q->whereIn('assigned_teacher_id', $academicTeacherProfileIds ?: [0]);
+                    })->orWhereHasMorph('reviewable', [RecordedCourse::class], function ($q) use ($academicTeacherUserIds) {
+                        $q->whereIn('created_by', $academicTeacherUserIds ?: [0]);
+                    });
+                });
+            })->count();
+
+        return $teacherReviews + $courseReviews;
     }
 
     private function buildGroups(array $counts, bool $isAdmin): array
@@ -349,9 +452,12 @@ class DashboardAttentionService
     }
 
     /**
-     * Get pending reviews data for inline management panel.
+     * Get pending reviews data for inline management panel (scoped by teacher for supervisors).
+     *
+     * @param  int[]  $quranTeacherIds       User IDs of assigned Quran teachers
+     * @param  int[]  $academicTeacherProfileIds  Profile IDs of assigned Academic teachers
      */
-    private function getPendingReviewsData(int $academyId): array
+    private function getPendingReviewsData(int $academyId, bool $isAdmin, array $quranTeacherIds, array $academicTeacherProfileIds): array
     {
         $academy = Academy::find($academyId);
         $manualReviews = ! (($academy->academic_settings ?? [])['auto_approve_reviews'] ?? true);
@@ -360,8 +466,31 @@ class DashboardAttentionService
             return ['enabled' => false, 'items' => [], 'total' => 0];
         }
 
+        // Derive IDs for scoping (same as queryCounts)
+        $quranTeacherProfileIds = [];
+        $academicTeacherUserIds = [];
+        if (! $isAdmin) {
+            if (! empty($quranTeacherIds)) {
+                $quranTeacherProfileIds = QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)
+                    ->pluck('id')->toArray();
+            }
+            if (! empty($academicTeacherProfileIds)) {
+                $academicTeacherUserIds = AcademicTeacherProfile::whereIn('id', $academicTeacherProfileIds)
+                    ->pluck('user_id')->toArray();
+            }
+        }
+
         $courseReviews = CourseReview::where('academy_id', $academyId)
             ->where('is_approved', false)
+            ->when(! $isAdmin, function ($q) use ($academicTeacherProfileIds, $academicTeacherUserIds) {
+                $q->where(function ($q) use ($academicTeacherProfileIds, $academicTeacherUserIds) {
+                    $q->whereHasMorph('reviewable', [InteractiveCourse::class], function ($q) use ($academicTeacherProfileIds) {
+                        $q->whereIn('assigned_teacher_id', $academicTeacherProfileIds ?: [0]);
+                    })->orWhereHasMorph('reviewable', [RecordedCourse::class], function ($q) use ($academicTeacherUserIds) {
+                        $q->whereIn('created_by', $academicTeacherUserIds ?: [0]);
+                    });
+                });
+            })
             ->with(['user', 'reviewable'])
             ->latest()
             ->limit(10)
@@ -378,6 +507,17 @@ class DashboardAttentionService
 
         $teacherReviews = TeacherReview::where('academy_id', $academyId)
             ->where('is_approved', false)
+            ->when(! $isAdmin, function ($q) use ($quranTeacherProfileIds, $academicTeacherProfileIds) {
+                $q->where(function ($q) use ($quranTeacherProfileIds, $academicTeacherProfileIds) {
+                    $q->where(function ($q) use ($quranTeacherProfileIds) {
+                        $q->where('reviewable_type', QuranTeacherProfile::class)
+                            ->whereIn('reviewable_id', $quranTeacherProfileIds ?: [0]);
+                    })->orWhere(function ($q) use ($academicTeacherProfileIds) {
+                        $q->where('reviewable_type', AcademicTeacherProfile::class)
+                            ->whereIn('reviewable_id', $academicTeacherProfileIds ?: [0]);
+                    });
+                });
+            })
             ->with(['student', 'reviewable'])
             ->latest()
             ->limit(10)
@@ -398,8 +538,9 @@ class DashboardAttentionService
             ->values()
             ->toArray();
 
-        $totalCount = CourseReview::where('academy_id', $academyId)->where('is_approved', false)->count()
-            + TeacherReview::where('academy_id', $academyId)->where('is_approved', false)->count();
+        $totalCount = $this->countPendingReviews(
+            $academyId, $isAdmin, $quranTeacherProfileIds, $academicTeacherProfileIds, $academicTeacherUserIds
+        );
 
         return [
             'enabled' => true,
