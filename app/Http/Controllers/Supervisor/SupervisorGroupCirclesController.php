@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Enums\DifficultyLevel;
+use App\Enums\WeekDays;
 use App\Models\QuranCircle;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class SupervisorGroupCirclesController extends BaseSupervisorWebController
@@ -64,7 +67,11 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
         $teacher = User::find($circle->quran_teacher_id);
         $isAdmin = $this->isAdminUser();
 
-        return view('supervisor.group-circles.show', compact('circle', 'teacher', 'isAdmin'));
+        $quranTeachers = User::whereIn('id', $quranTeacherIds)
+            ->orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name']);
+
+        return view('supervisor.group-circles.show', compact('circle', 'teacher', 'isAdmin', 'quranTeachers'));
     }
 
     public function update(Request $request, $subdomain, $circleId): RedirectResponse
@@ -76,12 +83,33 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
         $circle = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)->findOrFail($circleId);
 
+        $weekDayValues = WeekDays::values();
+        $difficultyValues = DifficultyLevel::values();
+
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'capacity' => 'required|integer|min:1|max:100',
-            'status' => 'required|in:active,inactive,full',
-            'description' => 'nullable|string|max:1000',
+            'name' => 'required|string|max:150',
+            'age_group' => 'required|in:children,youth,adults,all_ages',
+            'gender_type' => 'required|in:male,female,mixed',
+            'specialization' => 'required|in:memorization,recitation,interpretation,arabic_language,complete',
+            'memorization_level' => ['required', Rule::in($difficultyValues)],
+            'description' => 'nullable|string|max:500',
+            'quran_teacher_id' => ['required', Rule::in($quranTeacherIds)],
+            'max_students' => 'required|integer|min:1|max:20',
+            'monthly_fee' => 'required|numeric|min:0',
+            'monthly_sessions_count' => 'required|in:4,8,12,16,20',
+            'schedule_days' => 'nullable|array',
+            'schedule_days.*' => Rule::in($weekDayValues),
+            'schedule_time' => 'nullable|string',
+            'status' => 'required|in:0,1',
+            'supervisor_notes' => 'nullable|string|max:2000',
+            'admin_notes' => 'nullable|string|max:1000',
         ]);
+
+        $validated['status'] = (bool) $validated['status'];
+
+        if (! $this->isAdminUser()) {
+            unset($validated['admin_notes']);
+        }
 
         $circle->update($validated);
 

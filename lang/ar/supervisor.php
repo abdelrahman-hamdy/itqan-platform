@@ -88,6 +88,56 @@ return [
         'alert_overdue_homework' => 'واجبات متأخرة',
     ],
 
+    'attention' => [
+        // Section
+        'title' => 'يحتاج انتباهك',
+        'all_clear' => 'كل شيء على ما يرام!',
+        'all_clear_description' => 'لا توجد عناصر تحتاج انتباهك حالياً',
+        'total_items' => ':count عنصر',
+        'auto_refresh' => 'يتم التحديث تلقائياً كل 30 ثانية',
+
+        // Severity
+        'severity_critical' => 'عاجل',
+        'severity_warning' => 'يحتاج متابعة',
+        'severity_info' => 'للمراجعة',
+
+        // Critical
+        'expiring_subscriptions_3d' => 'اشتراكات تنتهي خلال 3 أيام',
+        'extended_subscriptions' => 'اشتراكات ممددة (فترة سماح)',
+        'expired_pending_subscriptions' => 'اشتراكات معلقة منتهية',
+        'failed_payments_today' => 'مدفوعات فاشلة اليوم',
+        'cancelled_sessions_today' => 'جلسات ملغية اليوم',
+
+        // Warning
+        'expiring_subscriptions_7d' => 'اشتراكات تنتهي خلال 4-7 أيام',
+        'pending_subscriptions' => 'اشتراكات معلقة',
+        'pending_payments' => 'مدفوعات معلقة',
+        'pending_trial_requests' => 'طلبات تجريبية معلقة',
+        'homework_awaiting_grading' => 'واجبات بانتظار التصحيح',
+        'overdue_homework' => 'واجبات متأخرة',
+        'reviews_awaiting_approval' => 'مراجعات بانتظار الموافقة',
+
+        // Info
+        'inactive_students' => 'طلاب غير نشطين',
+        'inactive_quran_teachers' => 'معلمو قرآن غير نشطين',
+        'inactive_academic_teachers' => 'معلمون أكاديميون غير نشطين',
+        'inactive_parents' => 'أولياء أمور غير نشطين',
+        'pending_session_requests' => 'طلبات جلسات معلقة',
+
+        // Reviews panel
+        'pending_reviews' => 'مراجعات معلقة',
+        'course_review' => 'تقييم دورة',
+        'teacher_review' => 'تقييم معلم',
+        'approve' => 'قبول',
+        'delete_review' => 'حذف',
+        'confirm_delete_review' => 'هل أنت متأكد من حذف هذه المراجعة؟',
+        'review_approved' => 'تم قبول المراجعة',
+        'review_deleted' => 'تم حذف المراجعة',
+        'show_reviews' => 'عرض المراجعات',
+        'hide_reviews' => 'إخفاء المراجعات',
+        'unknown' => 'غير معروف',
+    ],
+
     'teachers' => [
         'page_title' => 'المعلمون',
         'page_subtitle' => 'قائمة المعلمين الذين تشرف عليهم',
@@ -383,6 +433,23 @@ return [
         'capacity' => 'السعة',
         'full' => 'مكتملة',
         'description' => 'الوصف',
+        'basic_info' => 'معلومات الحلقة الأساسية',
+        'circle_settings' => 'إعدادات الحلقة',
+        'schedule_section' => 'الجدول الزمني',
+        'status_and_notes' => 'الحالة والملاحظات',
+        'quran_teacher' => 'معلم القرآن',
+        'max_students' => 'الحد الأقصى للطلاب',
+        'monthly_fee' => 'الرسوم الشهرية',
+        'monthly_sessions_count' => 'عدد الجلسات الشهرية',
+        'schedule_days' => 'أيام الانعقاد',
+        'schedule_time' => 'الساعة',
+        'circle_status' => 'حالة الحلقة',
+        'supervisor_notes' => 'ملاحظات المشرف',
+        'admin_notes' => 'ملاحظات الإدارة',
+        'age_group' => 'الفئة العمرية',
+        'gender_type' => 'النوع',
+        'specialization_label' => 'التخصص',
+        'memorization_level' => 'مستوى الحفظ',
     ],
 
     'individual_circles' => [

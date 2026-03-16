@@ -470,6 +470,35 @@ abstract class BaseQuranCircleResource extends Resource
     }
 
     // ========================================
+    // Public Static Accessors (for Blade views)
+    // ========================================
+
+    public static function getAgeGroupOptionsStatic(): array
+    {
+        return static::getAgeGroupOptions();
+    }
+
+    public static function getGenderTypeOptionsStatic(): array
+    {
+        return static::getGenderTypeOptions();
+    }
+
+    public static function getSpecializationOptionsStatic(): array
+    {
+        return static::getSpecializationOptions();
+    }
+
+    public static function getMonthlySessionsOptionsStatic(): array
+    {
+        return static::getMonthlySessionsOptions();
+    }
+
+    public static function getScheduleTimeOptionsStatic(): array
+    {
+        return static::getScheduleTimeOptions();
+    }
+
+    // ========================================
     // Formatting Helper Methods
     // ========================================
 

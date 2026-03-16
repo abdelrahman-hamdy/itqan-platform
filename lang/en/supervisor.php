@@ -88,6 +88,56 @@ return [
         'alert_overdue_homework' => 'Overdue homework',
     ],
 
+    'attention' => [
+        // Section
+        'title' => 'Needs Attention',
+        'all_clear' => 'All clear!',
+        'all_clear_description' => 'No items need your attention right now',
+        'total_items' => ':count items',
+        'auto_refresh' => 'Auto-refreshes every 30 seconds',
+
+        // Severity
+        'severity_critical' => 'Urgent',
+        'severity_warning' => 'Needs Follow-up',
+        'severity_info' => 'For Review',
+
+        // Critical
+        'expiring_subscriptions_3d' => 'Subscriptions expiring in 3 days',
+        'extended_subscriptions' => 'Extended subscriptions (grace period)',
+        'expired_pending_subscriptions' => 'Expired pending subscriptions',
+        'failed_payments_today' => 'Failed payments today',
+        'cancelled_sessions_today' => 'Cancelled sessions today',
+
+        // Warning
+        'expiring_subscriptions_7d' => 'Subscriptions expiring in 4-7 days',
+        'pending_subscriptions' => 'Pending subscriptions',
+        'pending_payments' => 'Pending payments',
+        'pending_trial_requests' => 'Pending trial requests',
+        'homework_awaiting_grading' => 'Homework awaiting grading',
+        'overdue_homework' => 'Overdue homework',
+        'reviews_awaiting_approval' => 'Reviews awaiting approval',
+
+        // Info
+        'inactive_students' => 'Inactive students',
+        'inactive_quran_teachers' => 'Inactive Quran teachers',
+        'inactive_academic_teachers' => 'Inactive academic teachers',
+        'inactive_parents' => 'Inactive parents',
+        'pending_session_requests' => 'Pending session requests',
+
+        // Reviews panel
+        'pending_reviews' => 'Pending Reviews',
+        'course_review' => 'Course review',
+        'teacher_review' => 'Teacher review',
+        'approve' => 'Approve',
+        'delete_review' => 'Delete',
+        'confirm_delete_review' => 'Are you sure you want to delete this review?',
+        'review_approved' => 'Review approved',
+        'review_deleted' => 'Review deleted',
+        'show_reviews' => 'Show reviews',
+        'hide_reviews' => 'Hide reviews',
+        'unknown' => 'Unknown',
+    ],
+
     'teachers' => [
         'page_title' => 'Assigned Teachers',
         'page_subtitle' => 'Teachers under your supervision',
@@ -383,6 +433,23 @@ return [
         'capacity' => 'Capacity',
         'full' => 'Full',
         'description' => 'Description',
+        'basic_info' => 'Basic Circle Info',
+        'circle_settings' => 'Circle Settings',
+        'schedule_section' => 'Schedule',
+        'status_and_notes' => 'Status & Notes',
+        'quran_teacher' => 'Quran Teacher',
+        'max_students' => 'Max Students',
+        'monthly_fee' => 'Monthly Fee',
+        'monthly_sessions_count' => 'Monthly Sessions',
+        'schedule_days' => 'Schedule Days',
+        'schedule_time' => 'Time',
+        'circle_status' => 'Circle Status',
+        'supervisor_notes' => 'Supervisor Notes',
+        'admin_notes' => 'Admin Notes',
+        'age_group' => 'Age Group',
+        'gender_type' => 'Gender Type',
+        'specialization_label' => 'Specialization',
+        'memorization_level' => 'Memorization Level',
     ],
 
     'individual_circles' => [
