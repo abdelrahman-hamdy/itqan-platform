@@ -149,6 +149,7 @@ return [
             'level' => 'info',
             'days' => 90, // Keep payment logs longer for auditing
             'replace_placeholders' => true,
+            'permission' => 0664,
         ],
 
         'webhook' => [

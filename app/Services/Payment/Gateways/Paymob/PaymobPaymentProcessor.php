@@ -42,14 +42,18 @@ class PaymobPaymentProcessor
         $convertedAmountCents = (int) round($convertedAmount * 100);
         $exchangeRate = $convertedAmount / $originalAmount;
 
-        Log::channel('payments')->info('Paymob currency conversion applied', [
-            'original_amount' => $originalAmount,
-            'original_currency' => $originalCurrency,
-            'converted_amount' => $convertedAmount,
-            'converted_currency' => 'EGP',
-            'exchange_rate' => $exchangeRate,
-            'payment_id' => $intent->paymentId,
-        ]);
+        try {
+            Log::channel('payments')->info('Paymob currency conversion applied', [
+                'original_amount' => $originalAmount,
+                'original_currency' => $originalCurrency,
+                'converted_amount' => $convertedAmount,
+                'converted_currency' => 'EGP',
+                'exchange_rate' => $exchangeRate,
+                'payment_id' => $intent->paymentId,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to write to payments log channel', ['error' => $e->getMessage()]);
+        }
 
         return [
             'amount_cents' => $convertedAmountCents,
