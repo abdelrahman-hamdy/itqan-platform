@@ -3,9 +3,8 @@
     $user = auth()->user();
 
     // Select appropriate layout
-    if ($user->isAdmin() || $user->isSuperAdmin()) {
-        $layoutComponent = 'layouts.admin-education';
-    } elseif ($user->isSupervisor()) {
+    // Admin/SuperAdmin/Supervisor all use supervisor layout (sidebar handles isAdmin checks)
+    if ($user->isAdmin() || $user->isSuperAdmin() || $user->isSupervisor()) {
         $layoutComponent = 'layouts.supervisor';
     } elseif ($user->isTeacher()) {
         $layoutComponent = 'layouts.teacher';
@@ -26,9 +25,7 @@
         <ol class="flex items-center gap-2 text-sm text-gray-600">
             @php
                 $subdomain = $user->academy->subdomain ?? 'itqan-academy';
-                if ($user->isAdmin() || $user->isSuperAdmin()) {
-                    $dashboardRoute = route('academy.admin.dashboard', ['subdomain' => $subdomain]);
-                } elseif ($user->isSupervisor()) {
+                if ($user->isAdmin() || $user->isSuperAdmin() || $user->isSupervisor()) {
                     $dashboardRoute = route('manage.dashboard', ['subdomain' => $subdomain]);
                 } elseif ($user->isTeacher()) {
                     $dashboardRoute = route('teacher.dashboard', ['subdomain' => $subdomain]);

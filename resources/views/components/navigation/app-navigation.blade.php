@@ -95,6 +95,11 @@
     $roleLabel = $user ? $user->getUserTypeLabel() : __('supervisor.sidebar.supervisor');
     $userAvatarType = 'supervisor';
     $userGender = $profile?->gender ?? $user?->gender ?? 'male';
+  } elseif ($role === 'admin') {
+    $displayName = $user ? $user->name : __('admin.sidebar.education_manager');
+    $roleLabel = $user ? $user->getUserTypeLabel() : __('admin.sidebar.education_manager');
+    $userAvatarType = 'admin';
+    $userGender = $user?->gender ?? 'male';
   } else {
     $profile = $user && $user->isQuranTeacher()
               ? $user->quranTeacherProfile
