@@ -13,13 +13,22 @@
     $teacherCode = $isQuran
         ? ($teacher->quranTeacherProfile?->teacher_code ?? '')
         : ($teacher->academicTeacherProfile?->teacher_code ?? '');
+
+    $currentUser = auth()->user();
+    if ($currentUser?->isSuperAdmin()) {
+        $viewingAsLabel = __('supervisor.common.viewing_as_super_admin');
+    } elseif ($currentUser?->isAcademyAdmin()) {
+        $viewingAsLabel = __('supervisor.common.viewing_as_admin');
+    } else {
+        $viewingAsLabel = __('supervisor.common.viewing_as_supervisor');
+    }
 @endphp
 
 <div class="bg-gradient-to-r {{ $bgClass }} border rounded-xl p-3 md:p-4 mb-4 md:mb-6">
     <div class="flex items-center gap-3">
         <div class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 flex-shrink-0">
             <i class="ri-shield-user-line"></i>
-            {{ __('supervisor.common.viewing_as_supervisor') }}
+            {{ $viewingAsLabel }}
         </div>
         <div class="h-4 w-px bg-gray-300 flex-shrink-0"></div>
         <x-avatar :user="$teacher" size="xs" :user-type="$isQuran ? 'quran_teacher' : 'academic_teacher'" class="flex-shrink-0" />

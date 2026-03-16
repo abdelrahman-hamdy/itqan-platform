@@ -404,6 +404,8 @@ return [
         'showing_for_teacher' => 'عرض بيانات المعلم: :name',
         'teacher_badge' => 'المعلم: :name',
         'viewing_as_supervisor' => 'عرض كمشرف',
+        'viewing_as_admin' => 'عرض كمدير',
+        'viewing_as_super_admin' => 'عرض كمدير عام',
         'teacher_info' => 'معلومات المعلم',
         'back_to_list' => 'العودة للقائمة',
         'view_details' => 'عرض التفاصيل',

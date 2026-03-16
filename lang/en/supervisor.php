@@ -404,6 +404,8 @@ return [
         'showing_for_teacher' => 'Showing data for teacher: :name',
         'teacher_badge' => 'Teacher: :name',
         'viewing_as_supervisor' => 'Viewing as Supervisor',
+        'viewing_as_admin' => 'Viewing as Admin',
+        'viewing_as_super_admin' => 'Viewing as Super Admin',
         'teacher_info' => 'Teacher Info',
         'back_to_list' => 'Back to List',
         'view_details' => 'View Details',
