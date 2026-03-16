@@ -85,7 +85,11 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         $totalPending = $subscriptions->filter(fn ($s) => $s['status'] === SessionSubscriptionStatus::PENDING)->count();
         $totalPaused = $subscriptions->filter(fn ($s) => $s['status'] === SessionSubscriptionStatus::PAUSED)->count();
         $totalExpired = $subscriptions->filter(fn ($s) => $s['status'] === SessionSubscriptionStatus::EXPIRED)->count();
-        $totalExtended = $subscriptions->filter(fn ($s) => $s['is_extended'])->count();
+        $totalExtended = $subscriptions->filter(function ($s) {
+            $gracePeriodEndsAt = $s['model']->metadata['grace_period_ends_at'] ?? null;
+
+            return $gracePeriodEndsAt && Carbon::parse($gracePeriodEndsAt)->isFuture();
+        })->count();
 
         // Apply filters
         $filtered = $subscriptions;
@@ -96,7 +100,24 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
         if ($status = $request->input('status')) {
             if ($status === 'extended') {
-                $filtered = $filtered->filter(fn ($s) => $s['is_extended']);
+                // Only show subscriptions with currently active grace period
+                $filtered = $filtered->filter(function ($s) {
+                    $gracePeriodEndsAt = $s['model']->metadata['grace_period_ends_at'] ?? null;
+
+                    return $gracePeriodEndsAt && Carbon::parse($gracePeriodEndsAt)->isFuture();
+                });
+            } elseif ($status === 'expiring_3d') {
+                $filtered = $filtered->filter(function ($s) {
+                    return $s['status'] === SessionSubscriptionStatus::ACTIVE
+                        && $s['end_date']
+                        && $s['end_date']->between(now(), now()->addDays(3));
+                });
+            } elseif ($status === 'expiring_7d') {
+                $filtered = $filtered->filter(function ($s) {
+                    return $s['status'] === SessionSubscriptionStatus::ACTIVE
+                        && $s['end_date']
+                        && $s['end_date']->between(now(), now()->addDays(7));
+                });
             } else {
                 $filtered = $filtered->filter(fn ($s) => $s['status']->value === $status);
             }

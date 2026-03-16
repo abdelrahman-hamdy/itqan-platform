@@ -245,7 +245,7 @@ class DashboardAttentionService
 
         // Critical group
         $criticalItems = array_filter([
-            $this->makeItem('expiring_subscriptions_3d', $counts['expiring_3d'], 'critical', 'ri-time-line', 'manage.subscriptions.index', ['status' => 'active', 'sort' => 'expiring_soon']),
+            $this->makeItem('expiring_subscriptions_3d', $counts['expiring_3d'], 'critical', 'ri-time-line', 'manage.subscriptions.index', ['status' => 'expiring_3d']),
             $this->makeItem('extended_subscriptions', $counts['extended_subs'], 'critical', 'ri-loop-right-line', 'manage.subscriptions.index', ['status' => 'extended']),
             $this->makeItem('expired_pending_subscriptions', $counts['expired_pending'], 'critical', 'ri-error-warning-line', 'manage.subscriptions.index', ['status' => 'pending', 'sort' => 'oldest']),
             $this->makeItem('failed_payments_today', $counts['failed_payments'], 'critical', 'ri-bank-card-line', 'manage.payments.index', ['status' => 'failed']),
@@ -273,7 +273,7 @@ class DashboardAttentionService
         }
 
         $warningItems = array_filter([
-            $this->makeItem('expiring_subscriptions_7d', $counts['expiring_7d'], 'warning', 'ri-timer-line', 'manage.subscriptions.index', ['status' => 'active', 'sort' => 'expiring_soon']),
+            $this->makeItem('expiring_subscriptions_7d', $counts['expiring_7d'], 'warning', 'ri-timer-line', 'manage.subscriptions.index', ['status' => 'expiring_7d']),
             $this->makeItem('pending_subscriptions', $counts['pending_subs'], 'warning', 'ri-bank-card-line', 'manage.subscriptions.index', ['status' => 'pending']),
             $this->makeItem('pending_payments', $counts['pending_payments'], 'warning', 'ri-money-dollar-circle-line', 'manage.payments.index', ['status' => 'pending']),
             $trialItem,

@@ -168,6 +168,8 @@
                                     <option value="{{ $statusOption->value }}" @selected(request('status') === $statusOption->value)>{{ $statusOption->label() }}</option>
                                 @endforeach
                                 <option value="extended" @selected(request('status') === 'extended')>{{ __('supervisor.subscriptions.filter_extended') }}</option>
+                                <option value="expiring_3d" @selected(request('status') === 'expiring_3d')>{{ __('supervisor.subscriptions.filter_expiring_3d') }}</option>
+                                <option value="expiring_7d" @selected(request('status') === 'expiring_7d')>{{ __('supervisor.subscriptions.filter_expiring_7d') }}</option>
                             </select>
                         </div>
                     </div>
