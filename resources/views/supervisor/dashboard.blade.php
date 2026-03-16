@@ -18,7 +18,7 @@
     {{-- Needs Attention Section --}}
     <livewire:supervisor.needs-attention />
 
-    {{-- Row 1: Programs --}}
+    {{-- Row 1: Active Programs --}}
     <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ __('supervisor.dashboard.section_programs') }}</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6">
         {{-- Active Quran Subscriptions --}}
@@ -74,10 +74,36 @@
         </div>
     </div>
 
-    {{-- Row 3: This Month --}}
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ __('supervisor.dashboard.section_this_month') }}</h2>
+    {{-- Row 2: Sessions & Performance --}}
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ __('supervisor.dashboard.section_sessions_performance') }}</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 md:mb-8">
-        {{-- Sessions Completed --}}
+        {{-- Sessions Today --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-calendar-check-line text-lg md:text-xl text-blue-600"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $sessionsToday }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.sessions_today') }}</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Sessions This Week --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-calendar-line text-lg md:text-xl text-indigo-600"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $sessionsThisWeek }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.sessions_this_week') }}</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Sessions Completed This Month --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 md:w-12 md:h-12 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -93,7 +119,7 @@
             </div>
         </div>
 
-        {{-- Revenue --}}
+        {{-- Revenue This Month --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 md:w-12 md:h-12 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -105,94 +131,13 @@
                 </div>
             </div>
         </div>
-
-        {{-- New Registrations --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-sky-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-user-add-line text-lg md:text-xl text-sky-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $newRegistrations }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.new_registrations') }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Pending Items --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-rose-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-error-warning-line text-lg md:text-xl text-rose-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $pendingItems }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.pending_items') }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Original KPI row: Today / This Week / Entities --}}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 md:mb-8">
-        {{-- Sessions Today --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-calendar-check-line text-lg md:text-xl text-amber-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $sessionsToday }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.sessions_today') }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Sessions This Week --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-calendar-line text-lg md:text-xl text-blue-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $sessionsThisWeek }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.sessions_this_week') }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Active Circles --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-book-open-line text-lg md:text-xl text-green-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $activeCircles }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.active_circles') }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Active Lessons --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-presentation-line text-lg md:text-xl text-violet-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $activeLessons }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.active_lessons') }}</p>
-                </div>
-            </div>
-        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <!-- Upcoming Sessions -->
         <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4">
-                <i class="ri-time-line text-indigo-500 me-1.5"></i>
+                <i class="ri-time-line text-blue-500 me-1.5"></i>
                 {{ __('supervisor.dashboard.upcoming_sessions') }}
             </h2>
 
@@ -249,13 +194,13 @@
                 </a>
 
                 <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain]) }}"
-                   class="flex items-center gap-3 p-3 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors">
+                   class="flex items-center gap-3 p-3 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors">
                     <i class="ri-live-line text-lg"></i>
                     <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_monitoring') }}</span>
                 </a>
 
                 <a href="{{ route('manage.session-reports.index', ['subdomain' => $subdomain]) }}"
-                   class="flex items-center gap-3 p-3 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 transition-colors">
+                   class="flex items-center gap-3 p-3 rounded-lg bg-violet-50 hover:bg-violet-100 text-violet-700 transition-colors">
                     <i class="ri-file-chart-line text-lg"></i>
                     <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_reports') }}</span>
                 </a>
