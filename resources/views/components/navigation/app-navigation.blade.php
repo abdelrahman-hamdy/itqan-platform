@@ -250,22 +250,7 @@
           </a>
         @endif
 
-        <!-- Filament Admin Panel Link (Admin/SuperAdmin only) -->
         @if($role === 'supervisor' && $user)
-          @if($user->isSuperAdmin())
-            <a href="{{ route('filament.admin.pages.dashboard') }}" target="_blank"
-               class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-              <i class="ri-settings-3-line"></i>
-              {{ __('supervisor.sidebar.admin_panel') }}
-            </a>
-          @elseif($user->isAdmin() || $user->isAcademyAdmin())
-            <a href="/panel" target="_blank"
-               class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-              <i class="ri-settings-3-line"></i>
-              {{ __('supervisor.sidebar.admin_panel') }}
-            </a>
-          @endif
-
           {{-- Academy Context Switcher (SuperAdmin only on manage pages) --}}
           @if($user->isSuperAdmin())
             <div class="hidden md:flex items-center">
@@ -473,6 +458,21 @@
                 <i class="ri-dashboard-line text-gray-400"></i>
                 {{ __('supervisor.sidebar.manage_frontend') }}
               </a>
+              @if($user->isSuperAdmin())
+              <a href="{{ route('filament.admin.pages.dashboard') }}" target="_blank"
+                 class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                 role="menuitem">
+                <i class="ri-settings-3-line text-gray-400"></i>
+                {{ __('supervisor.sidebar.admin_panel') }}
+              </a>
+              @elseif($user->isAdmin() || $user->isAcademyAdmin())
+              <a href="/panel" target="_blank"
+                 class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                 role="menuitem">
+                <i class="ri-settings-3-line text-gray-400"></i>
+                {{ __('supervisor.sidebar.admin_panel') }}
+              </a>
+              @endif
               <div class="border-t border-gray-100"></div>
               @else
               <a href="{{ $profileRoute }}"
