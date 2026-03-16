@@ -41,12 +41,8 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
      */
     public static function shouldRegisterNavigation(): bool
     {
-        return false;
-    }
-
-    public static function canAccess(): bool
-    {
-        return false;
+        return BaseSupervisorResource::canManageTeachers()
+            && BaseSupervisorResource::hasAssignedTeachers();
     }
 
     // ========================================

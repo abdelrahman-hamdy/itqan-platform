@@ -2,6 +2,7 @@
 
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+    $currency = getCurrencySymbol();
 @endphp
 
 <div>
@@ -33,6 +34,19 @@
                 </div>
             </div>
             <p class="mt-1.5 text-xs text-gray-500">{{ $generalStats['activeUsers'] }} {{ __('supervisor.dashboard.active') }}، {{ $generalStats['inactiveUsers'] }} {{ __('supervisor.dashboard.inactive') }}</p>
+        </div>
+
+        {{-- Total Revenue --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-money-dollar-circle-line text-lg md:text-xl text-yellow-600"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($generalStats['totalIncome'], 0) }} {{ $currency }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_total_revenue') }}</p>
+                </div>
+            </div>
         </div>
 
         {{-- Total Sessions --}}
@@ -146,6 +160,23 @@
                 </div>
             </div>
             <p class="mt-1.5 text-xs text-gray-500">{{ $monthlyStats['monthQuranSessions'] }} {{ __('supervisor.dashboard.quran') }}، {{ $monthlyStats['monthAcademicSessions'] }} {{ __('supervisor.dashboard.academic') }}، {{ $monthlyStats['monthInteractiveSessions'] }} {{ __('supervisor.dashboard.interactive') }}</p>
+        </div>
+
+        {{-- Monthly Revenue --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 {{ $monthlyStats['revenueGrowth'] >= 0 ? 'bg-emerald-100' : 'bg-red-100' }} rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-money-dollar-circle-line text-lg md:text-xl {{ $monthlyStats['revenueGrowth'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($monthlyStats['thisMonthRevenue'], 0) }} {{ $currency }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_month_revenue') }}</p>
+                </div>
+            </div>
+            <p class="mt-1.5 text-xs {{ $monthlyStats['revenueGrowth'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                <i class="{{ $monthlyStats['revenueGrowth'] >= 0 ? 'ri-arrow-up-line' : 'ri-arrow-down-line' }}"></i>
+                {{ $monthlyStats['revenueGrowth'] >= 0 ? '+' : '' }}{{ $monthlyStats['revenueGrowth'] }}% {{ __('supervisor.dashboard.vs_last_month') }}
+            </p>
         </div>
 
         {{-- New Users --}}
