@@ -82,7 +82,7 @@
     </div>
 
     {{-- Video Grid (hidden until connected) --}}
-    <div id="observer-video-grid" class="hidden flex flex-col bg-gray-900 rounded-xl overflow-hidden" style="min-height: 500px;">
+    <div id="observer-video-grid" class="hidden flex flex-col bg-gray-900 rounded-xl overflow-hidden" style="min-height: 700px;">
 
         {{-- Top Bar (matches livekit-interface gradient bar) --}}
         <div class="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white px-4 py-3 flex items-center justify-between text-sm font-medium shadow-lg shrink-0">

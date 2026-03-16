@@ -8,7 +8,7 @@
 ])
 
 <!-- Sidebar -->
-<div id="meetingSidebar" class="absolute top-0 end-0 bottom-0 w-96 bg-gray-800 border-s border-gray-700 flex flex-col transform translate-x-full rtl:-translate-x-full transition-transform duration-300 ease-in-out z-40">
+<div id="meetingSidebar" class="absolute top-0 end-0 bottom-0 w-96 bg-gray-800 border-s border-gray-700 flex flex-col transform translate-x-full rtl:-translate-x-full transition-transform duration-300 ease-in-out z-30">
     <!-- Sidebar Header -->
     <div class="bg-gray-700 px-4 py-3 flex items-center justify-between border-b border-gray-600">
         <h3 id="sidebarTitle" class="text-white font-semibold">{{ __('meetings.sidebar.chat') }}</h3>

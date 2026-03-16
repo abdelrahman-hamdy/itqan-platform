@@ -2168,7 +2168,8 @@ class LiveKitControls {
     showLeaveConfirmModal() {
         const modal = document.createElement('div');
         modal.id = 'leaveConfirmModal';
-        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999]';
+        modal.className = 'fixed inset-0 flex items-center justify-center z-[99999]';
+        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
 
         modal.innerHTML = `
             <div class="bg-gray-800 rounded-lg p-6 max-w-md mx-4">
