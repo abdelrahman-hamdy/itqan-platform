@@ -2,18 +2,14 @@
 
 namespace App\Http\Controllers\Supervisor;
 
-use App\Enums\HomeworkStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\UserType;
-use App\Models\AcademicHomework;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
-use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
-use App\Models\InteractiveCourseSession;
 use App\Models\Payment;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
@@ -67,14 +63,14 @@ class SupervisorDashboardController extends BaseSupervisorWebController
         $completedThisMonth = 0;
         $totalThisMonth = 0;
 
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $completedThisMonth += QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->whereBetween('scheduled_at', [$startOfMonth, $endOfMonth])
                 ->where('status', 'completed')->count();
             $totalThisMonth += QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->whereBetween('scheduled_at', [$startOfMonth, $endOfMonth])->count();
         }
-        if (!empty($academicTeacherProfileIds)) {
+        if (! empty($academicTeacherProfileIds)) {
             $completedThisMonth += AcademicSession::whereIn('academic_teacher_id', $academicTeacherProfileIds)
                 ->whereBetween('scheduled_at', [$startOfMonth, $endOfMonth])
                 ->where('status', 'completed')->count();
@@ -96,30 +92,19 @@ class SupervisorDashboardController extends BaseSupervisorWebController
         $pendingItems = $pendingPayments;
 
         // ====================================================================
-        // Alerts
-        // ====================================================================
-        $expiringSubscriptions = QuranSubscription::where('status', SessionSubscriptionStatus::ACTIVE)
-            ->whereBetween('ends_at', [now(), now()->addDays(7)])->count()
-            + AcademicSubscription::where('status', SessionSubscriptionStatus::ACTIVE)
-            ->whereBetween('ends_at', [now(), now()->addDays(7)])->count();
-
-        $overdueHomework = AcademicHomework::where('due_date', '<', now())
-            ->where('status', HomeworkStatus::PUBLISHED)->count();
-
-        // ====================================================================
         // Active entities
         // ====================================================================
         $activeCircles = 0;
         $activeLessons = 0;
 
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $activeCircles += QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->where('status', 'active')->count();
             $activeCircles += QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->where('is_active', true)->count();
         }
 
-        if (!empty($academicTeacherProfileIds)) {
+        if (! empty($academicTeacherProfileIds)) {
             $activeLessons += AcademicIndividualLesson::whereIn('academic_teacher_id', $academicTeacherProfileIds)
                 ->where('status', 'active')->count();
         }
@@ -131,11 +116,11 @@ class SupervisorDashboardController extends BaseSupervisorWebController
         $endOfDay = now()->endOfDay();
         $sessionsToday = 0;
 
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $sessionsToday += QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->whereBetween('scheduled_at', [$today, $endOfDay])->count();
         }
-        if (!empty($academicTeacherProfileIds)) {
+        if (! empty($academicTeacherProfileIds)) {
             $sessionsToday += AcademicSession::whereIn('academic_teacher_id', $academicTeacherProfileIds)
                 ->whereBetween('scheduled_at', [$today, $endOfDay])->count();
         }
@@ -144,11 +129,11 @@ class SupervisorDashboardController extends BaseSupervisorWebController
         $endOfWeek = now()->endOfWeek();
         $sessionsThisWeek = 0;
 
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $sessionsThisWeek += QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->whereBetween('scheduled_at', [$startOfWeek, $endOfWeek])->count();
         }
-        if (!empty($academicTeacherProfileIds)) {
+        if (! empty($academicTeacherProfileIds)) {
             $sessionsThisWeek += AcademicSession::whereIn('academic_teacher_id', $academicTeacherProfileIds)
                 ->whereBetween('scheduled_at', [$startOfWeek, $endOfWeek])->count();
         }
@@ -158,7 +143,7 @@ class SupervisorDashboardController extends BaseSupervisorWebController
         // ====================================================================
         $upcomingSessions = collect();
 
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $quranUpcoming = QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->where('scheduled_at', '>', now())
                 ->with(['quranTeacher', 'student', 'circle', 'individualCircle'])
@@ -175,7 +160,7 @@ class SupervisorDashboardController extends BaseSupervisorWebController
             $upcomingSessions = $upcomingSessions->merge($quranUpcoming);
         }
 
-        if (!empty($academicTeacherProfileIds)) {
+        if (! empty($academicTeacherProfileIds)) {
             $academicUpcoming = AcademicSession::whereIn('academic_teacher_id', $academicTeacherProfileIds)
                 ->where('scheduled_at', '>', now())
                 ->with(['academicTeacher.user', 'student'])
@@ -215,8 +200,6 @@ class SupervisorDashboardController extends BaseSupervisorWebController
             'newRegistrations',
             'pendingItems',
             'pendingPayments',
-            'expiringSubscriptions',
-            'overdueHomework',
             'activeCircles',
             'activeLessons',
             'sessionsToday',

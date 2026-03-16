@@ -15,27 +15,8 @@
         </p>
     </div>
 
-    {{-- Alerts --}}
-    @if($pendingPayments > 0 || $overdueHomework > 0)
-        <div class="mb-6 space-y-3">
-            @if($pendingPayments > 0)
-                <div class="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <i class="ri-money-dollar-circle-line text-lg text-red-600"></i>
-                    <span class="text-sm text-red-800">
-                        {{ __('supervisor.dashboard.alert_pending_payments', ['count' => $pendingPayments]) }}
-                    </span>
-                </div>
-            @endif
-            @if($overdueHomework > 0)
-                <div class="flex items-center gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <i class="ri-task-line text-lg text-orange-600"></i>
-                    <span class="text-sm text-orange-800">
-                        {{ __('supervisor.dashboard.alert_overdue_homework', ['count' => $overdueHomework]) }}
-                    </span>
-                </div>
-            @endif
-        </div>
-    @endif
+    {{-- Needs Attention Section --}}
+    <livewire:supervisor.needs-attention />
 
     {{-- Row 1: Programs --}}
     <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ __('supervisor.dashboard.section_programs') }}</h2>
