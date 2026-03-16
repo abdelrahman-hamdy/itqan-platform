@@ -57,11 +57,11 @@
                         class="px-3 py-1 text-sm rounded-full whitespace-nowrap transition-colors {{ !$selectedCategory ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200' }}">
                     {{ __('notifications.page.filters.all') }}
                 </button>
-                @foreach($categories as $category)
-                    <button wire:click.stop='filterByCategory("{{ $category->value }}")'
+                @foreach($categories as $tab)
+                    <button wire:click.stop='filterByCategory("{{ $tab['key'] }}")'
                             type="button"
-                            class="px-3 py-1 text-sm rounded-full whitespace-nowrap transition-colors {{ $selectedCategory === $category->value ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200' }}">
-                        {{ $category->label() }}
+                            class="px-3 py-1 text-sm rounded-full whitespace-nowrap transition-colors {{ $selectedCategory === $tab['key'] ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200' }}">
+                        {{ __($tab['label_key']) }}
                     </button>
                 @endforeach
             </div>

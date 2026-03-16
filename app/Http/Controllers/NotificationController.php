@@ -38,10 +38,11 @@ class NotificationController extends Controller
             ->where('notifiable_type', get_class($user))
             ->where('tenant_id', $user->academy_id);
 
-        // Apply category filter
+        // Apply category filter (tab key maps to multiple DB categories)
         $selectedCategory = $request->get('category');
-        if ($selectedCategory) {
-            $query->where('category', $selectedCategory);
+        $categoryValues = NotificationCategory::resolveCategoriesForTab($selectedCategory);
+        if ($categoryValues !== null) {
+            $query->whereIn('category', $categoryValues);
         }
 
         // Apply unread filter
@@ -55,8 +56,8 @@ class NotificationController extends Controller
             ->paginate(config('business.pagination.notifications', 15))
             ->withQueryString();
 
-        // Get all categories for filter
-        $categories = NotificationCategory::cases();
+        // Get filter tabs for category filter
+        $categories = NotificationCategory::filterTabs();
 
         return view('notifications.index', compact(
             'notifications',

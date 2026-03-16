@@ -105,4 +105,56 @@ enum NotificationCategory: string
             self::ALERT => 'bg-red-100 text-red-800',
         };
     }
+
+    /**
+     * Get the filter tabs for the notification UI.
+     * Each tab groups related categories together.
+     *
+     * @return array<int, array{key: string, label_key: string, categories: list<self>}>
+     */
+    public static function filterTabs(): array
+    {
+        return [
+            [
+                'key' => 'sessions',
+                'label_key' => 'enums.notification_filter.sessions',
+                'categories' => [self::SESSION, self::ATTENDANCE, self::MEETING, self::TRIAL],
+            ],
+            [
+                'key' => 'homework',
+                'label_key' => 'enums.notification_filter.homework',
+                'categories' => [self::HOMEWORK],
+            ],
+            [
+                'key' => 'payments',
+                'label_key' => 'enums.notification_filter.payments',
+                'categories' => [self::PAYMENT],
+            ],
+            [
+                'key' => 'progress',
+                'label_key' => 'enums.notification_filter.progress',
+                'categories' => [self::PROGRESS, self::REVIEW],
+            ],
+        ];
+    }
+
+    /**
+     * Resolve a filter tab key to the corresponding DB category values.
+     *
+     * @return list<string>|null  null means "show all"
+     */
+    public static function resolveCategoriesForTab(?string $tabKey): ?array
+    {
+        if ($tabKey === null) {
+            return null;
+        }
+
+        foreach (self::filterTabs() as $tab) {
+            if ($tab['key'] === $tabKey) {
+                return array_map(fn (self $c) => $c->value, $tab['categories']);
+            }
+        }
+
+        return null;
+    }
 }

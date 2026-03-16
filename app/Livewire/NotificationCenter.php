@@ -53,15 +53,15 @@ class NotificationCenter extends Component
         $this->loadUnreadCount();
     }
 
-    public function filterByCategory($category = null)
+    public function filterByCategory($tabKey = null)
     {
-        if ($category !== null) {
-            $validValues = array_column(NotificationCategory::cases(), 'value');
-            if (! in_array($category, $validValues, true)) {
+        if ($tabKey !== null) {
+            $validKeys = array_column(NotificationCategory::filterTabs(), 'key');
+            if (! in_array($tabKey, $validKeys, true)) {
                 return;
             }
         }
-        $this->selectedCategory = $category;
+        $this->selectedCategory = $tabKey;
         $this->perPage = 15;
     }
 
@@ -141,15 +141,11 @@ class NotificationCenter extends Component
             ->where('notifiable_type', get_class(auth()->user()))
             ->where('tenant_id', auth()->user()->academy_id);
 
-        // Validate selectedCategory against allowed enum values before using in query
-        $validCategory = null;
-        if ($this->selectedCategory !== null) {
-            $validValues = array_column(NotificationCategory::cases(), 'value');
-            $validCategory = in_array($this->selectedCategory, $validValues, true) ? $this->selectedCategory : null;
-        }
+        // Resolve selected tab key to DB category values
+        $categoryValues = NotificationCategory::resolveCategoriesForTab($this->selectedCategory);
 
-        if ($validCategory) {
-            $query->where('category', $validCategory);
+        if ($categoryValues !== null) {
+            $query->whereIn('category', $categoryValues);
         }
 
         $notifications = $query->orderBy('created_at', 'desc')
@@ -161,7 +157,7 @@ class NotificationCenter extends Component
             ->where('notifiable_id', auth()->id())
             ->where('notifiable_type', get_class(auth()->user()))
             ->where('tenant_id', auth()->user()->academy_id)
-            ->when($validCategory, fn ($q) => $q->where('category', $validCategory))
+            ->when($categoryValues, fn ($q) => $q->whereIn('category', $categoryValues))
             ->count();
 
         $this->hasMore = $notifications->count() < $totalCount;
@@ -171,7 +167,7 @@ class NotificationCenter extends Component
 
     public function getCategoriesProperty()
     {
-        return NotificationCategory::cases();
+        return NotificationCategory::filterTabs();
     }
 
     public function render()

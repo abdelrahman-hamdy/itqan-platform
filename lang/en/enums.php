@@ -271,6 +271,12 @@ return [
         'trial' => 'Trial Sessions',
         'alert' => 'Important Alerts',
     ],
+    'notification_filter' => [
+        'sessions' => 'Sessions',
+        'homework' => 'Homework',
+        'payments' => 'Payments',
+        'progress' => 'Progress',
+    ],
     'payment_flow_type' => [
         'redirect' => 'Redirect',
         'iframe' => 'Embedded Form',

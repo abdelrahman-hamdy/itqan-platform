@@ -271,6 +271,12 @@ return [
         'trial' => 'الجلسات التجريبية',
         'alert' => 'تنبيهات هامة',
     ],
+    'notification_filter' => [
+        'sessions' => 'الجلسات',
+        'homework' => 'الواجبات',
+        'payments' => 'المدفوعات',
+        'progress' => 'التقدم',
+    ],
     'payment_flow_type' => [
         'redirect' => 'إعادة توجيه',
         'iframe' => 'نموذج مضمن',

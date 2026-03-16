@@ -56,10 +56,10 @@
                            class="px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all {{ !$selectedCategory ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
                             {{ __('notifications.page.filters.all') }}
                         </a>
-                        @foreach($categories as $category)
-                            <a href="{{ route('notifications.index', ['subdomain' => request()->route('subdomain'), 'category' => $category->value, 'unread' => request()->get('unread')]) }}"
-                               class="px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all {{ $selectedCategory === $category->value ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                {{ $category->label() }}
+                        @foreach($categories as $tab)
+                            <a href="{{ route('notifications.index', ['subdomain' => request()->route('subdomain'), 'category' => $tab['key'], 'unread' => request()->get('unread')]) }}"
+                               class="px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all {{ $selectedCategory === $tab['key'] ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                {{ __($tab['label_key']) }}
                             </a>
                         @endforeach
                     </div>
