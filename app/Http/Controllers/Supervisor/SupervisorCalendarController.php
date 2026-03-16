@@ -362,7 +362,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
 
         // Source-specific fields
         if (in_array($source, ['quran_session', 'circle_session'])) {
-            $data['student_name'] = $session->student?->name ?? null;
+            $data['student_name'] = $session->student?->name ?? $session->trialRequest?->student_name ?? null;
             $data['circle_name'] = $session->circle?->name ?? null;
             $data['session_type'] = $session->session_type;
 
@@ -602,6 +602,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
         return match ($source) {
             'quran_session', 'circle_session' => QuranSession::where('id', $sessionId)
                 ->where('quran_teacher_id', $teacher->id)
+                ->with('trialRequest:id,student_name,status')
                 ->first(),
             'academic_session' => AcademicSession::where('id', $sessionId)
                 ->whereHas('academicTeacher', fn ($q) => $q->where('user_id', $teacher->id))
@@ -618,9 +619,11 @@ class SupervisorCalendarController extends BaseSupervisorWebController
      */
     private function getSessionModalTitle($session, string $source): string
     {
+        $studentName = $session->student?->name ?? $session->trialRequest?->student_name ?? null;
+
         return match ($source) {
-            'quran_session' => $session->student?->name
-                ? __('calendar.formatting.session_with_student', ['name' => $session->student->name])
+            'quran_session' => $studentName
+                ? __('calendar.formatting.session_with_student', ['name' => $studentName])
                 : __('calendar.formatting.session'),
             'circle_session' => $session->circle?->name ?? __('calendar.formatting.group_circle'),
             'academic_session' => $session->student?->name

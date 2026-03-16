@@ -198,6 +198,16 @@ class EventFormattingService
     }
 
     /**
+     * Resolve student name with trial request fallback.
+     */
+    private function resolveStudentName($session): ?string
+    {
+        return $session->student?->name
+            ?? $session->trialRequest?->student_name
+            ?? null;
+    }
+
+    /**
      * Get session title based on perspective
      */
     private function getSessionTitle($session, string $perspective): string
@@ -207,7 +217,7 @@ class EventFormattingService
         }
 
         if ($perspective === 'teacher') {
-            return __('calendar.formatting.session_with_student', ['name' => $session->student?->name ?? __('calendar.formatting.unknown_student')]);
+            return __('calendar.formatting.session_with_student', ['name' => $this->resolveStudentName($session) ?? __('calendar.formatting.unknown_student')]);
         } else {
             $teacherName = $session->quranTeacher
                 ? trim($session->quranTeacher->first_name.' '.$session->quranTeacher->last_name)
@@ -226,7 +236,7 @@ class EventFormattingService
 
         if ($session->session_type === 'individual') {
             if ($perspective === 'teacher') {
-                $studentName = $session->student?->name ?? __('calendar.formatting.unknown_student');
+                $studentName = $this->resolveStudentName($session) ?? __('calendar.formatting.unknown_student');
                 $description = __('calendar.formatting.individual_with_student', ['name' => $studentName]);
             } else {
                 $teacherName = $session->quranTeacher
@@ -311,6 +321,12 @@ class EventFormattingService
                 'name' => $session->student->name ?? __('calendar.formatting.unknown_student'),
                 'role' => 'student',
                 'email' => $session->student->email ?? '',
+            ];
+        } elseif ($session->trialRequest) {
+            $participants[] = [
+                'name' => $session->trialRequest->student_name,
+                'role' => 'trial_student',
+                'email' => '',
             ];
         }
 

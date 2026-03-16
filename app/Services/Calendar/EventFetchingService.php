@@ -39,6 +39,7 @@ class EventFetchingService
                 'circle:id,name,circle_code',
                 'individualCircle:id,name,circle_code,default_duration_minutes,student_id',
                 'individualCircle.student:id,first_name,last_name,name',
+                'trialRequest:id,student_name,status',
             ]);
 
         if ($user->isQuranTeacher()) {

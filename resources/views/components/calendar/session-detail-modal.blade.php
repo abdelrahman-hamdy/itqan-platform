@@ -106,7 +106,7 @@
                         <template x-if="session.meeting_link">
                             <div class="flex items-center gap-2 text-sm">
                                 <i class="ri-video-line text-gray-400 w-5"></i>
-                                <a :href="session.meeting_link" target="_blank" class="text-blue-600 hover:underline text-sm">{{ __('teacher.calendar.join_meeting') }}</a>
+                                <a :href="session.detail_url || '#'" class="text-blue-600 hover:underline text-sm">{{ __('teacher.calendar.join_meeting') }}</a>
                             </div>
                         </template>
                         <template x-if="session.teacher_notes">
