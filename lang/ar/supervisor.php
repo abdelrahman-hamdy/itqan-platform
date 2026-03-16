@@ -473,6 +473,18 @@ return [
         'breadcrumb' => 'الحلقات الفردية',
         'search_placeholder' => 'ابحث باسم الطالب...',
         'teacher' => 'المعلم',
+        'basic_info' => 'معلومات الحلقة الأساسية',
+        'circle_settings' => 'إعدادات الحلقة',
+        'status_and_notes' => 'الحالة والملاحظات',
+        'specialization_label' => 'التخصص',
+        'memorization_level' => 'مستوى الحفظ',
+        'description' => 'الوصف',
+        'name' => 'اسم الحلقة',
+        'quran_teacher' => 'معلم القرآن',
+        'default_duration' => 'مدة الجلسة الافتراضية (دقيقة)',
+        'circle_status' => 'حالة الحلقة',
+        'supervisor_notes' => 'ملاحظات المشرف',
+        'admin_notes' => 'ملاحظات الإدارة',
     ],
 
     'trial_sessions' => [

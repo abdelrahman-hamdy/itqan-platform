@@ -83,32 +83,101 @@
             <x-circle.info-sidebar :circle="$circle" view-type="supervisor" context="individual" />
             <x-circle.subscription-details :subscription="$circle->subscription" view-type="supervisor" />
 
-            @if(isset($isAdmin) && $isAdmin)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            @if(isset($isAdmin) || isset($quranTeachers))
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
                 <h3 class="text-sm font-bold text-gray-900 mb-4">{{ __('supervisor.common.edit_details') }}</h3>
                 <form method="POST" action="{{ route('manage.individual-circles.update', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
                     @csrf
                     @method('PUT')
-                    <div class="space-y-3">
+                    <div class="space-y-4">
+
+                        {{-- Section 1: Basic Circle Info --}}
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.common.status') }}</label>
-                            <select name="is_active" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="1" {{ $circle->is_active ? 'selected' : '' }}>{{ __('supervisor.common.active') }}</option>
-                                <option value="0" {{ !$circle->is_active ? 'selected' : '' }}>{{ __('supervisor.common.inactive') }}</option>
-                            </select>
+                            <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('supervisor.individual_circles.basic_info') }}</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.name') }}</label>
+                                    <input type="text" name="name" value="{{ old('name', $circle->name) }}" maxlength="255"
+                                           class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.specialization_label') }}</label>
+                                    <select name="specialization" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                        @foreach(\App\Models\QuranIndividualCircle::SPECIALIZATIONS as $value => $label)
+                                            <option value="{{ $value }}" {{ old('specialization', $circle->specialization) == $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.memorization_level') }}</label>
+                                    <select name="memorization_level" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                        @foreach(\App\Enums\DifficultyLevel::options() as $value => $label)
+                                            <option value="{{ $value }}" {{ old('memorization_level', $circle->memorization_level) == $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.description') }}</label>
+                                    <textarea name="description" rows="2" maxlength="500"
+                                              class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">{{ old('description', $circle->description) }}</textarea>
+                                </div>
+                            </div>
                         </div>
-                        @if(isset($availableTeachers) && $availableTeachers->isNotEmpty())
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.teacher') }}</label>
-                            <select name="quran_teacher_id" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
-                                @foreach($availableTeachers as $t)
-                                    <option value="{{ $t->id }}" {{ $circle->quran_teacher_id == $t->id ? 'selected' : '' }}>{{ $t->name }}</option>
-                                @endforeach
-                            </select>
+
+                        {{-- Section 2: Circle Settings --}}
+                        <div class="border-t border-gray-100 pt-4">
+                            <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('supervisor.individual_circles.circle_settings') }}</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.quran_teacher') }}</label>
+                                    <select name="quran_teacher_id" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                        @foreach($quranTeachers as $t)
+                                            <option value="{{ $t->id }}" {{ old('quran_teacher_id', $circle->quran_teacher_id) == $t->id ? 'selected' : '' }}>{{ $t->first_name }} {{ $t->last_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.default_duration') }}</label>
+                                    <input type="number" name="default_duration_minutes" value="{{ old('default_duration_minutes', $circle->default_duration_minutes) }}" min="15" max="120"
+                                           class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                            </div>
                         </div>
-                        @endif
+
+                        {{-- Section 3: Status & Notes --}}
+                        <div class="border-t border-gray-100 pt-4">
+                            <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('supervisor.individual_circles.status_and_notes') }}</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.circle_status') }}</label>
+                                    <select name="is_active" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                        <option value="1" {{ old('is_active', $circle->is_active) ? 'selected' : '' }}>{{ __('supervisor.common.active') }}</option>
+                                        <option value="0" {{ !old('is_active', $circle->is_active) ? 'selected' : '' }}>{{ __('supervisor.common.inactive') }}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.supervisor_notes') }}</label>
+                                    @if($isAdmin)
+                                        <div class="w-full rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 p-2 min-h-[3.5rem]">{{ $circle->supervisor_notes ?: '—' }}</div>
+                                    @else
+                                        <textarea name="supervisor_notes" rows="2" maxlength="2000"
+                                                  class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">{{ old('supervisor_notes', $circle->supervisor_notes) }}</textarea>
+                                    @endif
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.admin_notes') }}</label>
+                                    @if($isAdmin)
+                                        <textarea name="admin_notes" rows="2" maxlength="1000"
+                                                  class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">{{ old('admin_notes', $circle->admin_notes) }}</textarea>
+                                    @else
+                                        <div class="w-full rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 p-2 min-h-[3.5rem]">{{ $circle->admin_notes ?: '—' }}</div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
                         <button type="submit"
-                                class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer">
                             {{ __('supervisor.common.save') }}
                         </button>
                     </div>

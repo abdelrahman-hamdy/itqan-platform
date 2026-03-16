@@ -473,6 +473,18 @@ return [
         'breadcrumb' => 'Individual Circles',
         'search_placeholder' => 'Search by student name...',
         'teacher' => 'Teacher',
+        'basic_info' => 'Basic Circle Information',
+        'circle_settings' => 'Circle Settings',
+        'status_and_notes' => 'Status & Notes',
+        'specialization_label' => 'Specialization',
+        'memorization_level' => 'Memorization Level',
+        'description' => 'Description',
+        'name' => 'Circle Name',
+        'quran_teacher' => 'Quran Teacher',
+        'default_duration' => 'Default Session Duration (minutes)',
+        'circle_status' => 'Circle Status',
+        'supervisor_notes' => 'Supervisor Notes',
+        'admin_notes' => 'Admin Notes',
     ],
 
     'trial_sessions' => [

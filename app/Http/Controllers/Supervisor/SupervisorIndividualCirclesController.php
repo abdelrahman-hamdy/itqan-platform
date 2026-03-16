@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Enums\DifficultyLevel;
 use App\Models\QuranIndividualCircle;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class SupervisorIndividualCirclesController extends BaseSupervisorWebController
@@ -73,37 +75,42 @@ class SupervisorIndividualCirclesController extends BaseSupervisorWebController
         $teacher = User::find($circle->quran_teacher_id);
         $isAdmin = $this->isAdminUser();
 
-        // Get available quran teachers for reassignment
-        $availableTeachers = $isAdmin
-            ? User::whereIn('id', $quranTeacherIds)->get()
-            : collect();
+        // Always fetch teachers for the edit form (supervisors can now edit too)
+        $quranTeachers = User::whereIn('id', $quranTeacherIds)
+            ->orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name']);
 
-        return view('supervisor.individual-circles.show', compact('circle', 'teacher', 'isAdmin', 'availableTeachers'));
+        return view('supervisor.individual-circles.show', compact('circle', 'teacher', 'isAdmin', 'quranTeachers'));
     }
 
     public function update(Request $request, $subdomain, $circleId): RedirectResponse
     {
-        if (! $this->isAdminUser()) {
-            abort(403);
-        }
-
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
         $circle = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)->findOrFail($circleId);
+        $isAdmin = $this->isAdminUser();
 
         $validated = $request->validate([
-            'is_active' => 'required|boolean',
-            'quran_teacher_id' => 'nullable|exists:users,id',
+            'name' => 'nullable|string|max:255',
+            'specialization' => ['required', Rule::in(array_keys(QuranIndividualCircle::SPECIALIZATIONS))],
+            'memorization_level' => ['required', Rule::in(DifficultyLevel::values())],
+            'description' => 'nullable|string|max:500',
+            'quran_teacher_id' => ['required', Rule::in($quranTeacherIds)],
+            'default_duration_minutes' => 'nullable|integer|min:15|max:120',
+            'is_active' => 'required|in:0,1',
+            'supervisor_notes' => 'nullable|string|max:2000',
+            'admin_notes' => 'nullable|string|max:1000',
         ]);
 
-        $updateData = ['is_active' => $validated['is_active']];
-        if (! empty($validated['quran_teacher_id'])) {
-            // Verify teacher is in scope
-            if (in_array((int) $validated['quran_teacher_id'], $quranTeacherIds)) {
-                $updateData['quran_teacher_id'] = $validated['quran_teacher_id'];
-            }
+        $validated['is_active'] = (bool) $validated['is_active'];
+
+        // Role-based notes: admin can't edit supervisor_notes, supervisor can't edit admin_notes
+        if ($isAdmin) {
+            unset($validated['supervisor_notes']);
+        } else {
+            unset($validated['admin_notes']);
         }
 
-        $circle->update($updateData);
+        $circle->update($validated);
 
         return redirect()->back()->with('success', __('supervisor.common.updated_successfully'));
     }
