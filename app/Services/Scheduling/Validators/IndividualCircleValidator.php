@@ -99,7 +99,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         $requestedStart = $startDate ?? Carbon::now($timezone);
         $requestedEnd = $requestedStart->copy()->addWeeks($weeksAhead);
 
-        if ($requestedStart->isBefore($validStart)) {
+        if ($requestedStart->startOfDay()->isBefore($validStart->copy()->startOfDay())) {
             return ValidationResult::error(
                 __('scheduling.date.before_subscription_start', ['date' => $validStart->format('Y/m/d')])
             );
