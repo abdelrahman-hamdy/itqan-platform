@@ -286,8 +286,8 @@ class ReportController extends Controller
             'performance' => [
                 'overall_score' => $report->overall_performance,
                 'performance_level' => $report->performance_level,
-                'new_memorization_degree' => $report->new_memorization_degree,
-                'reservation_degree' => $report->reservation_degree,
+                'memorization_degree' => $report->new_memorization_degree,
+                'revision_degree' => $report->reservation_degree,
             ],
             'notes' => $report->notes,
             'evaluated_at' => $report->evaluated_at?->toISOString(),
