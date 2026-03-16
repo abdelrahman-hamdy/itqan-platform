@@ -75,6 +75,13 @@ return [
         'teacher' => 'teacher',
         'parent' => 'parent',
 
+        // Charts (admin only)
+        'chart_user_growth' => 'User Growth Analytics',
+        'chart_session_activity' => 'Session Activity Analytics',
+        'quran_sessions' => 'Quran Sessions',
+        'academic_sessions' => 'Academic Sessions',
+        'interactive_sessions' => 'Interactive Sessions',
+
         // Upcoming sessions & quick actions
         'upcoming_sessions' => 'Upcoming Sessions',
         'no_upcoming_sessions' => 'No upcoming sessions',

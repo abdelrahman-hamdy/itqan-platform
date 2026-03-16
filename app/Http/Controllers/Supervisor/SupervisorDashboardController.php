@@ -104,52 +104,117 @@ class SupervisorDashboardController extends BaseSupervisorWebController
         );
 
         // ====================================================================
-        // Upcoming sessions (next 5)
+        // Admin: Charts data | Supervisor: Upcoming sessions
         // ====================================================================
+        $chartData = null;
         $upcomingSessions = collect();
 
-        if (! empty($quranTeacherIds)) {
-            $quranUpcoming = QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
-                ->where('scheduled_at', '>', now())
-                ->with(['quranTeacher', 'student', 'circle', 'individualCircle'])
-                ->orderBy('scheduled_at')
-                ->limit(5)
-                ->get()
-                ->map(fn ($s) => [
-                    'type' => 'quran',
-                    'title' => $s->circle?->name ?? $s->student?->name ?? __('supervisor.dashboard.session_with', ['name' => '']),
-                    'teacher_name' => $s->quranTeacher?->name ?? '',
-                    'scheduled_at' => $s->scheduled_at,
-                    'status' => $s->status,
-                ]);
-            $upcomingSessions = $upcomingSessions->merge($quranUpcoming);
-        }
+        if ($isAdmin) {
+            $chartData = $this->buildChartData($academyId);
+        } else {
+            if (! empty($quranTeacherIds)) {
+                $quranUpcoming = QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
+                    ->where('scheduled_at', '>', now())
+                    ->with(['quranTeacher', 'student', 'circle', 'individualCircle'])
+                    ->orderBy('scheduled_at')
+                    ->limit(5)
+                    ->get()
+                    ->map(fn ($s) => [
+                        'type' => 'quran',
+                        'title' => $s->circle?->name ?? $s->student?->name ?? __('supervisor.dashboard.session_with', ['name' => '']),
+                        'teacher_name' => $s->quranTeacher?->name ?? '',
+                        'scheduled_at' => $s->scheduled_at,
+                        'status' => $s->status,
+                    ]);
+                $upcomingSessions = $upcomingSessions->merge($quranUpcoming);
+            }
 
-        if (! empty($academicTeacherProfileIds)) {
-            $academicUpcoming = AcademicSession::whereIn('academic_teacher_id', $academicTeacherProfileIds)
-                ->where('scheduled_at', '>', now())
-                ->with(['academicTeacher.user', 'student'])
-                ->orderBy('scheduled_at')
-                ->limit(5)
-                ->get()
-                ->map(fn ($s) => [
-                    'type' => 'academic',
-                    'title' => $s->student?->name ?? __('supervisor.dashboard.session_with', ['name' => '']),
-                    'teacher_name' => $s->academicTeacher?->user?->name ?? '',
-                    'scheduled_at' => $s->scheduled_at,
-                    'status' => $s->status,
-                ]);
-            $upcomingSessions = $upcomingSessions->merge($academicUpcoming);
-        }
+            if (! empty($academicTeacherProfileIds)) {
+                $academicUpcoming = AcademicSession::whereIn('academic_teacher_id', $academicTeacherProfileIds)
+                    ->where('scheduled_at', '>', now())
+                    ->with(['academicTeacher.user', 'student'])
+                    ->orderBy('scheduled_at')
+                    ->limit(5)
+                    ->get()
+                    ->map(fn ($s) => [
+                        'type' => 'academic',
+                        'title' => $s->student?->name ?? __('supervisor.dashboard.session_with', ['name' => '']),
+                        'teacher_name' => $s->academicTeacher?->user?->name ?? '',
+                        'scheduled_at' => $s->scheduled_at,
+                        'status' => $s->status,
+                    ]);
+                $upcomingSessions = $upcomingSessions->merge($academicUpcoming);
+            }
 
-        $upcomingSessions = $upcomingSessions->sortBy('scheduled_at')->take(5);
+            $upcomingSessions = $upcomingSessions->sortBy('scheduled_at')->take(5);
+        }
 
         return view('supervisor.dashboard', compact(
             'user',
             'isAdmin',
             'generalStats',
             'monthlyStats',
+            'chartData',
             'upcomingSessions',
         ));
+    }
+
+    /**
+     * Build chart datasets for user growth and session activity (admin only).
+     * Mirrors AcademyUserAnalyticsChartWidget + AcademySessionAnalyticsChartWidget.
+     */
+    private function buildChartData(int $academyId): array
+    {
+        $days = 30;
+        $labels = [];
+        $students = [];
+        $quranTeachers = [];
+        $academicTeachers = [];
+        $parents = [];
+        $quranSessions = [];
+        $academicSessions = [];
+        $interactiveSessions = [];
+
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $labels[] = $date->format('d/m');
+
+            // Cumulative user growth
+            $students[] = User::where('academy_id', $academyId)
+                ->where('user_type', UserType::STUDENT->value)
+                ->whereDate('created_at', '<=', $date)->count();
+            $quranTeachers[] = User::where('academy_id', $academyId)
+                ->where('user_type', UserType::QURAN_TEACHER->value)
+                ->whereDate('created_at', '<=', $date)->count();
+            $academicTeachers[] = User::where('academy_id', $academyId)
+                ->where('user_type', UserType::ACADEMIC_TEACHER->value)
+                ->whereDate('created_at', '<=', $date)->count();
+            $parents[] = User::where('academy_id', $academyId)
+                ->where('user_type', UserType::PARENT->value)
+                ->whereDate('created_at', '<=', $date)->count();
+
+            // Daily session counts
+            $quranSessions[] = QuranSession::where('academy_id', $academyId)
+                ->whereDate('scheduled_at', $date)->count();
+            $academicSessions[] = AcademicSession::where('academy_id', $academyId)
+                ->whereDate('scheduled_at', $date)->count();
+            $interactiveSessions[] = InteractiveCourseSession::whereHas('course', fn ($q) => $q->where('academy_id', $academyId))
+                ->whereDate('scheduled_at', $date)->count();
+        }
+
+        return [
+            'labels' => $labels,
+            'userGrowth' => [
+                ['label' => __('supervisor.dashboard.stat_students'), 'data' => $students, 'color' => '#10B981'],
+                ['label' => __('supervisor.dashboard.stat_quran_teachers'), 'data' => $quranTeachers, 'color' => '#3B82F6'],
+                ['label' => __('supervisor.dashboard.stat_academic_teachers'), 'data' => $academicTeachers, 'color' => '#8B5CF6'],
+                ['label' => __('supervisor.dashboard.stat_parents'), 'data' => $parents, 'color' => '#F59E0B'],
+            ],
+            'sessionActivity' => [
+                ['label' => __('supervisor.dashboard.quran_sessions'), 'data' => $quranSessions, 'color' => '#059669'],
+                ['label' => __('supervisor.dashboard.academic_sessions'), 'data' => $academicSessions, 'color' => '#2563EB'],
+                ['label' => __('supervisor.dashboard.interactive_sessions'), 'data' => $interactiveSessions, 'color' => '#DC2626'],
+            ],
+        ];
     }
 }

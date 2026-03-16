@@ -75,6 +75,13 @@ return [
         'teacher' => 'معلم',
         'parent' => 'ولي أمر',
 
+        // Charts (admin only)
+        'chart_user_growth' => 'تحليل نمو المستخدمين',
+        'chart_session_activity' => 'تحليل الجلسات التعليمية',
+        'quran_sessions' => 'جلسات القرآن',
+        'academic_sessions' => 'الجلسات الأكاديمية',
+        'interactive_sessions' => 'الدورات التفاعلية',
+
         // Upcoming sessions & quick actions
         'upcoming_sessions' => 'الجلسات القادمة',
         'no_upcoming_sessions' => 'لا توجد جلسات قادمة',

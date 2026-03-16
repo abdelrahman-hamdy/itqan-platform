@@ -194,80 +194,160 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        <!-- Upcoming Sessions -->
-        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-            <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4">
-                <i class="ri-time-line text-blue-500 me-1.5"></i>
-                {{ __('supervisor.dashboard.upcoming_sessions') }}
-            </h2>
-
-            @if($upcomingSessions->isNotEmpty())
-                <div class="space-y-3">
-                    @foreach($upcomingSessions as $session)
-                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
-                                {{ $session['type'] === 'quran' ? 'bg-green-100' : 'bg-violet-100' }}">
-                                <i class="{{ $session['type'] === 'quran' ? 'ri-book-read-line text-green-600' : 'ri-graduation-cap-line text-violet-600' }}"></i>
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <p class="text-sm font-medium text-gray-900 truncate">{{ $session['title'] }}</p>
-                                <p class="text-xs text-gray-500">
-                                    {{ $session['teacher_name'] }}
-                                    · {{ $session['scheduled_at']->translatedFormat('D d M - h:i A') }}
-                                </p>
-                            </div>
-                            <span class="text-xs px-2 py-1 rounded-full flex-shrink-0
-                                {{ $session['type'] === 'quran' ? 'bg-green-100 text-green-700' : 'bg-violet-100 text-violet-700' }}">
-                                {{ $session['type'] === 'quran' ? __('supervisor.dashboard.quran') : __('supervisor.dashboard.academic') }}
-                            </span>
-                        </div>
-                    @endforeach
+    @if($isAdmin && $chartData)
+        {{-- Admin/SuperAdmin: Analytics Charts --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            {{-- User Growth Chart --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+                <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4">
+                    <i class="ri-line-chart-line text-emerald-500 me-1.5"></i>
+                    {{ __('supervisor.dashboard.chart_user_growth') }}
+                </h2>
+                <div style="height: 300px;">
+                    <canvas id="userGrowthChart"></canvas>
                 </div>
-            @else
-                <div class="text-center py-8">
-                    <div class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i class="ri-calendar-line text-2xl text-gray-400"></i>
-                    </div>
-                    <p class="text-sm text-gray-500">{{ __('supervisor.dashboard.no_upcoming_sessions') }}</p>
+            </div>
+
+            {{-- Session Activity Chart --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+                <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4">
+                    <i class="ri-bar-chart-grouped-line text-blue-500 me-1.5"></i>
+                    {{ __('supervisor.dashboard.chart_session_activity') }}
+                </h2>
+                <div style="height: 300px;">
+                    <canvas id="sessionActivityChart"></canvas>
                 </div>
-            @endif
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-            <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4">
-                <i class="ri-flashlight-line text-amber-500 me-1.5"></i>
-                {{ __('supervisor.dashboard.quick_actions') }}
-            </h2>
-
-            <div class="space-y-2.5">
-                <a href="{{ route('manage.teachers.index', ['subdomain' => $subdomain]) }}"
-                   class="flex items-center gap-3 p-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-colors">
-                    <i class="ri-team-line text-lg"></i>
-                    <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_teachers') }}</span>
-                </a>
-
-                <a href="{{ route('manage.calendar.index', ['subdomain' => $subdomain]) }}"
-                   class="flex items-center gap-3 p-3 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 transition-colors">
-                    <i class="ri-calendar-schedule-line text-lg"></i>
-                    <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_calendar') }}</span>
-                </a>
-
-                <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain]) }}"
-                   class="flex items-center gap-3 p-3 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors">
-                    <i class="ri-live-line text-lg"></i>
-                    <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_monitoring') }}</span>
-                </a>
-
-                <a href="{{ route('manage.session-reports.index', ['subdomain' => $subdomain]) }}"
-                   class="flex items-center gap-3 p-3 rounded-lg bg-violet-50 hover:bg-violet-100 text-violet-700 transition-colors">
-                    <i class="ri-file-chart-line text-lg"></i>
-                    <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_reports') }}</span>
-                </a>
             </div>
         </div>
-    </div>
+
+        @push('scripts')
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const chartData = @json($chartData);
+            const chartFont = { family: 'Tajawal', size: 12 };
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: chartFont } },
+                    tooltip: { mode: 'index', intersect: false, bodyFont: chartFont, titleFont: chartFont },
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: chartFont, maxRotation: 45 } },
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { precision: 0, font: chartFont } },
+                },
+                interaction: { mode: 'nearest', axis: 'x', intersect: false },
+            };
+
+            function makeDataset(item, fill) {
+                return {
+                    label: item.label,
+                    data: item.data,
+                    borderColor: item.color,
+                    backgroundColor: item.color + '1A',
+                    pointBackgroundColor: item.color,
+                    pointBorderColor: item.color,
+                    fill: fill,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 2,
+                };
+            }
+
+            // User Growth
+            new Chart(document.getElementById('userGrowthChart'), {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: chartData.userGrowth.map(d => makeDataset(d, true)),
+                },
+                options: commonOptions,
+            });
+
+            // Session Activity
+            new Chart(document.getElementById('sessionActivityChart'), {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: chartData.sessionActivity.map(d => makeDataset(d, true)),
+                },
+                options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, ticks: { ...commonOptions.scales.y.ticks, stepSize: 1 } } } },
+            });
+        });
+        </script>
+        @endpush
+    @else
+        {{-- Supervisor: Upcoming Sessions + Quick Actions --}}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+                <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4">
+                    <i class="ri-time-line text-blue-500 me-1.5"></i>
+                    {{ __('supervisor.dashboard.upcoming_sessions') }}
+                </h2>
+
+                @if($upcomingSessions->isNotEmpty())
+                    <div class="space-y-3">
+                        @foreach($upcomingSessions as $session)
+                            <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
+                                    {{ $session['type'] === 'quran' ? 'bg-green-100' : 'bg-violet-100' }}">
+                                    <i class="{{ $session['type'] === 'quran' ? 'ri-book-read-line text-green-600' : 'ri-graduation-cap-line text-violet-600' }}"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-medium text-gray-900 truncate">{{ $session['title'] }}</p>
+                                    <p class="text-xs text-gray-500">
+                                        {{ $session['teacher_name'] }}
+                                        · {{ $session['scheduled_at']->translatedFormat('D d M - h:i A') }}
+                                    </p>
+                                </div>
+                                <span class="text-xs px-2 py-1 rounded-full flex-shrink-0
+                                    {{ $session['type'] === 'quran' ? 'bg-green-100 text-green-700' : 'bg-violet-100 text-violet-700' }}">
+                                    {{ $session['type'] === 'quran' ? __('supervisor.dashboard.quran') : __('supervisor.dashboard.academic') }}
+                                </span>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-8">
+                        <div class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="ri-calendar-line text-2xl text-gray-400"></i>
+                        </div>
+                        <p class="text-sm text-gray-500">{{ __('supervisor.dashboard.no_upcoming_sessions') }}</p>
+                    </div>
+                @endif
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+                <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4">
+                    <i class="ri-flashlight-line text-amber-500 me-1.5"></i>
+                    {{ __('supervisor.dashboard.quick_actions') }}
+                </h2>
+
+                <div class="space-y-2.5">
+                    <a href="{{ route('manage.teachers.index', ['subdomain' => $subdomain]) }}"
+                       class="flex items-center gap-3 p-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-colors">
+                        <i class="ri-team-line text-lg"></i>
+                        <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_teachers') }}</span>
+                    </a>
+                    <a href="{{ route('manage.calendar.index', ['subdomain' => $subdomain]) }}"
+                       class="flex items-center gap-3 p-3 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 transition-colors">
+                        <i class="ri-calendar-schedule-line text-lg"></i>
+                        <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_calendar') }}</span>
+                    </a>
+                    <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain]) }}"
+                       class="flex items-center gap-3 p-3 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors">
+                        <i class="ri-live-line text-lg"></i>
+                        <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_monitoring') }}</span>
+                    </a>
+                    <a href="{{ route('manage.session-reports.index', ['subdomain' => $subdomain]) }}"
+                       class="flex items-center gap-3 p-3 rounded-lg bg-violet-50 hover:bg-violet-100 text-violet-700 transition-colors">
+                        <i class="ri-file-chart-line text-lg"></i>
+                        <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_reports') }}</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
 
 </x-layouts.supervisor>
