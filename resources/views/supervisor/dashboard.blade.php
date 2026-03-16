@@ -36,7 +36,8 @@
             <p class="mt-1.5 text-xs text-gray-500">{{ $generalStats['activeUsers'] }} {{ __('supervisor.dashboard.active') }}، {{ $generalStats['inactiveUsers'] }} {{ __('supervisor.dashboard.inactive') }}</p>
         </div>
 
-        {{-- Total Revenue --}}
+        {{-- Total Revenue (admin/superadmin only) --}}
+        @if($isAdmin)
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 md:w-12 md:h-12 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -48,6 +49,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
         {{-- Total Sessions --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
@@ -162,7 +164,8 @@
             <p class="mt-1.5 text-xs text-gray-500">{{ $monthlyStats['monthQuranSessions'] }} {{ __('supervisor.dashboard.quran') }}، {{ $monthlyStats['monthAcademicSessions'] }} {{ __('supervisor.dashboard.academic') }}، {{ $monthlyStats['monthInteractiveSessions'] }} {{ __('supervisor.dashboard.interactive') }}</p>
         </div>
 
-        {{-- Monthly Revenue --}}
+        {{-- Monthly Revenue (admin/superadmin only) --}}
+        @if($isAdmin)
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 md:w-12 md:h-12 {{ $monthlyStats['revenueGrowth'] >= 0 ? 'bg-emerald-100' : 'bg-red-100' }} rounded-lg flex items-center justify-center flex-shrink-0">
@@ -178,6 +181,7 @@
                 {{ $monthlyStats['revenueGrowth'] >= 0 ? '+' : '' }}{{ $monthlyStats['revenueGrowth'] }}% {{ __('supervisor.dashboard.vs_last_month') }}
             </p>
         </div>
+        @endif
 
         {{-- New Users --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
