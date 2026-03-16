@@ -136,25 +136,13 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.default_duration') }}</label>
-                                    <input type="number" name="default_duration_minutes" value="{{ old('default_duration_minutes', $circle->default_duration_minutes) }}" min="15" max="120"
-                                           class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
-                                </div>
                             </div>
                         </div>
 
                         {{-- Section 3: Status & Notes --}}
                         <div class="border-t border-gray-100 pt-4">
-                            <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('supervisor.individual_circles.status_and_notes') }}</h4>
+                            <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('supervisor.individual_circles.notes_section') }}</h4>
                             <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.circle_status') }}</label>
-                                    <select name="is_active" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
-                                        <option value="1" {{ old('is_active', $circle->is_active) ? 'selected' : '' }}>{{ __('supervisor.common.active') }}</option>
-                                        <option value="0" {{ !old('is_active', $circle->is_active) ? 'selected' : '' }}>{{ __('supervisor.common.inactive') }}</option>
-                                    </select>
-                                </div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.supervisor_notes') }}</label>
                                     @if($isAdmin)

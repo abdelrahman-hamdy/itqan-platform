@@ -95,13 +95,9 @@ class SupervisorIndividualCirclesController extends BaseSupervisorWebController
             'memorization_level' => ['required', Rule::in(DifficultyLevel::values())],
             'description' => 'nullable|string|max:500',
             'quran_teacher_id' => ['required', Rule::in($quranTeacherIds)],
-            'default_duration_minutes' => 'nullable|integer|min:15|max:120',
-            'is_active' => 'required|in:0,1',
             'supervisor_notes' => 'nullable|string|max:2000',
             'admin_notes' => 'nullable|string|max:1000',
         ]);
-
-        $validated['is_active'] = (bool) $validated['is_active'];
 
         // Role-based notes: admin can't edit supervisor_notes, supervisor can't edit admin_notes
         if ($isAdmin) {
