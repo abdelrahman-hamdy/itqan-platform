@@ -16,16 +16,8 @@
     </div>
 
     {{-- Alerts --}}
-    @if($expiringSubscriptions > 0 || $pendingPayments > 0 || $overdueHomework > 0)
+    @if($pendingPayments > 0 || $overdueHomework > 0)
         <div class="mb-6 space-y-3">
-            @if($expiringSubscriptions > 0)
-                <div class="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <i class="ri-alarm-warning-line text-lg text-amber-600"></i>
-                    <span class="text-sm text-amber-800">
-                        {{ __('supervisor.dashboard.alert_expiring_subscriptions', ['count' => $expiringSubscriptions]) }}
-                    </span>
-                </div>
-            @endif
             @if($pendingPayments > 0)
                 <div class="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
                     <i class="ri-money-dollar-circle-line text-lg text-red-600"></i>
@@ -45,79 +37,7 @@
         </div>
     @endif
 
-    {{-- Row 1: Users --}}
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ __('supervisor.dashboard.section_users') }}</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6">
-        {{-- Total Students --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-user-line text-lg md:text-xl text-blue-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $totalStudents }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.total_students') }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Total Teachers --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-team-line text-lg md:text-xl text-indigo-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $totalTeachers }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.total_assigned_teachers') }}</p>
-                </div>
-            </div>
-            <div class="mt-2 flex gap-3 text-xs text-gray-500">
-                @if($quranTeachersCount > 0)
-                    <span class="flex items-center gap-1">
-                        <span class="w-2 h-2 bg-green-400 rounded-full"></span>
-                        {{ $quranTeachersCount }} {{ __('supervisor.dashboard.quran_teachers') }}
-                    </span>
-                @endif
-                @if($academicTeachersCount > 0)
-                    <span class="flex items-center gap-1">
-                        <span class="w-2 h-2 bg-violet-400 rounded-full"></span>
-                        {{ $academicTeachersCount }} {{ __('supervisor.dashboard.academic_teachers') }}
-                    </span>
-                @endif
-            </div>
-        </div>
-
-        {{-- Total Supervisors (admin only) --}}
-        @if($isAdmin && $totalSupervisors !== null)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <i class="ri-shield-user-line text-lg md:text-xl text-purple-600"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $totalSupervisors }}</p>
-                        <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.total_supervisors') }}</p>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        {{-- Total Parents --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-parent-line text-lg md:text-xl text-teal-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $totalParents }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.total_parents') }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Row 2: Programs --}}
+    {{-- Row 1: Programs --}}
     <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ __('supervisor.dashboard.section_programs') }}</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6">
         {{-- Active Quran Subscriptions --}}
