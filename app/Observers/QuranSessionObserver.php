@@ -6,6 +6,7 @@ use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Models\QuranSession;
+use App\Models\QuranSubscription;
 use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
 use App\Services\TrialRequestSyncService;
@@ -30,6 +31,9 @@ class QuranSessionObserver
         if ($quranSession->session_type === 'trial') {
             $this->trialSyncService->linkSessionToRequest($quranSession);
         }
+
+        // Sync subscription total_sessions_scheduled count
+        $this->syncSubscriptionScheduledCount($quranSession);
     }
 
     /**
@@ -47,10 +51,11 @@ class QuranSessionObserver
             $this->handleCancellation($quranSession);
         }
 
-        // Update circle session counts when session is completed
+        // Update circle session counts and progress when session is completed
         if ($quranSession->wasChanged('status') && $quranSession->status === SessionStatus::COMPLETED) {
             if ($quranSession->session_type === 'individual' && $quranSession->individualCircle) {
                 $quranSession->individualCircle->updateSessionCounts();
+                $quranSession->individualCircle->updateProgress();
             }
             if ($quranSession->session_type === 'circle' && $quranSession->circle) {
                 $quranSession->circle->updateSessionCounts();
@@ -171,6 +176,9 @@ class QuranSessionObserver
                 'status' => TrialRequestStatus::CANCELLED,
             ]);
         }
+
+        // Sync subscription total_sessions_scheduled count
+        $this->syncSubscriptionScheduledCount($quranSession);
     }
 
     /**
@@ -182,6 +190,27 @@ class QuranSessionObserver
         if ($quranSession->session_type === 'trial') {
             $this->trialSyncService->syncStatus($quranSession);
         }
+    }
+
+    /**
+     * Sync subscription's total_sessions_scheduled count from actual session records.
+     */
+    private function syncSubscriptionScheduledCount(QuranSession $session): void
+    {
+        if (! $session->quran_subscription_id) {
+            return;
+        }
+
+        $subscription = QuranSubscription::find($session->quran_subscription_id);
+        if (! $subscription) {
+            return;
+        }
+
+        $count = QuranSession::where('quran_subscription_id', $subscription->id)
+            ->whereNotIn('status', [SessionStatus::CANCELLED])
+            ->count();
+
+        $subscription->updateQuietly(['total_sessions_scheduled' => $count]);
     }
 
     /**

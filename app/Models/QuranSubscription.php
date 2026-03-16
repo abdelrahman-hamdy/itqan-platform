@@ -470,7 +470,7 @@ class QuranSubscription extends BaseSubscription
             return 0;
         }
 
-        return round(($this->sessions_used / $this->total_sessions) * 100, 2);
+        return round(($this->total_sessions_completed / $this->total_sessions) * 100, 2);
     }
 
     /**
@@ -522,6 +522,7 @@ class QuranSubscription extends BaseSubscription
             $subscription->update([
                 'sessions_used' => $subscription->sessions_used + 1,
                 'sessions_remaining' => max(0, $subscription->sessions_remaining - 1),
+                'total_sessions_completed' => $subscription->total_sessions_completed + 1,
                 'last_session_at' => now(),
             ]);
 
@@ -560,6 +561,7 @@ class QuranSubscription extends BaseSubscription
             $subscription->update([
                 'sessions_used' => max(0, $subscription->sessions_used - 1),
                 'sessions_remaining' => $subscription->sessions_remaining + 1,
+                'total_sessions_completed' => max(0, $subscription->total_sessions_completed - 1),
             ]);
 
             // If subscription was paused due to exhaustion, reactivate
@@ -578,6 +580,18 @@ class QuranSubscription extends BaseSubscription
 
             return $this;
         });
+    }
+
+    /**
+     * Update progress percentage based on completed sessions.
+     * Uses updateQuietly to avoid re-triggering the updated event.
+     */
+    public function updateProgress(): void
+    {
+        if ($this->total_sessions > 0) {
+            $percentage = round(($this->total_sessions_completed / $this->total_sessions) * 100, 2);
+            $this->updateQuietly(['progress_percentage' => min(100, $percentage)]);
+        }
     }
 
     /**
@@ -908,12 +922,10 @@ class QuranSubscription extends BaseSubscription
             if ($subscription->isDirty('status') && $subscription->status === SessionSubscriptionStatus::PAUSED) {
                 $subscription->notifySubscriptionPaused();
             }
-        });
 
-        // Update sessions remaining when sessions are used
-        static::updating(function ($subscription) {
-            if ($subscription->isDirty('sessions_used') && ! $subscription->isDirty('sessions_remaining')) {
-                $subscription->sessions_remaining = max(0, $subscription->total_sessions - $subscription->sessions_used);
+            // Update progress when session counts change
+            if ($subscription->isDirty(['total_sessions_completed', 'total_sessions_scheduled'])) {
+                $subscription->updateProgress();
             }
         });
 
