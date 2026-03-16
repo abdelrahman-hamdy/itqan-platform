@@ -19,15 +19,15 @@
             @php
                 $userType = auth()->user()?->user_type;
                 $isTeacher = in_array($userType, ['quran_teacher', 'academic_teacher']);
-                $profileRoute = match(true) {
-                    $userType === 'student' => route('student.profile'),
-                    $isTeacher => route('teacher.profile'),
-                    $userType === 'parent' => route('parent.dashboard'),
-                    default => config('wirechat.home_route', '/'),
-                };
+                $isAdminOrSupervisor = in_array($userType, ['super_admin', 'admin', 'supervisor']);
             @endphp
-            @if($userType === 'student' || $isTeacher)
-                <a href="{{ $profileRoute }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+            @if($isAdminOrSupervisor)
+                <a href="{{ route('manage.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    <i class="ri-dashboard-line text-base"></i>
+                    {{ __('wirechat::chats.dashboard_button') }}
+                </a>
+            @elseif($userType === 'student' || $isTeacher)
+                <a href="{{ $isTeacher ? route('teacher.profile') : route('student.profile') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
                     <i class="ri-user-line text-base"></i>
                     {{ __('wirechat::chats.profile_button') }}
                 </a>
