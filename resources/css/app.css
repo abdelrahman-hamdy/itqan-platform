@@ -37,6 +37,14 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentcolor);
   }
+
+  /* Ensure all interactive elements show pointer cursor */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  [onclick],
+  summary {
+    cursor: pointer;
+  }
 }
 
 @utility scrollbar-hide {
