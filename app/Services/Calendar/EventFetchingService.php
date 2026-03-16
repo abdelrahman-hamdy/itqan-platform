@@ -29,7 +29,7 @@ class EventFetchingService
         $query = QuranSession::select([
             'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
             'quran_teacher_id', 'student_id', 'quran_subscription_id', 'circle_id', 'session_type',
-            'individual_circle_id',
+            'individual_circle_id', 'trial_request_id',
         ])
             ->whereBetween('scheduled_at', [$startDate, $endDate])
             ->with([
