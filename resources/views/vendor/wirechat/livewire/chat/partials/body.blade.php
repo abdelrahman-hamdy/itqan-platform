@@ -95,11 +95,11 @@
     @clear-optimistic.window="clearOptimistic()"
 
     x-cloak
-     class='flex flex-col h-full  relative gap-2 gap-y-4 p-4 md:p-5 lg:p-8  grow  overscroll-contain overflow-x-hidden overflow-y-auto w-full my-auto bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950 dark:to-blue-950'
-    style="contain: content" >
+     class='flex flex-col h-full  relative gap-2 gap-y-4 p-4 md:p-5 lg:p-8  grow  overscroll-contain overflow-x-hidden overflow-y-auto w-full my-auto'
+    style="contain: content; background: linear-gradient(135deg, #ede9fe, #dbeafe, #e0e7ff);" >
 
     {{-- Chat background pattern overlay --}}
-    <div class="absolute inset-0 pointer-events-none" style="background-image: url('{{ asset('app-design-assets/chat-bg-pattern.png') }}'); background-repeat: repeat; background-size: 300px; opacity: 0.3;"></div>
+    <div class="absolute inset-0 pointer-events-none" style="background-image: url('{{ asset('app-design-assets/new-chat-bg-pattern.png') }}'); background-repeat: repeat; background-size: 300px; opacity: 0.3;"></div>
 
 
 
