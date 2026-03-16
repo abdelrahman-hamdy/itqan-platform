@@ -44,8 +44,6 @@ class SupervisorDashboardController extends BaseSupervisorWebController
                 ->whereIn('user_type', [UserType::STUDENT->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::PARENT->value, UserType::SUPERVISOR->value])
                 ->where('active_status', true)->count();
 
-            $totalIncome = Payment::where('academy_id', $academyId)->where('status', PaymentStatus::COMPLETED->value)->sum('amount');
-
             $totalQuranSessions = QuranSession::where('academy_id', $academyId)->count();
             $totalAcademicSessions = AcademicSession::where('academy_id', $academyId)->count();
             $totalInteractiveSessions = InteractiveCourseSession::whereHas('course', fn ($q) => $q->where('academy_id', $academyId))->count();
@@ -57,7 +55,6 @@ class SupervisorDashboardController extends BaseSupervisorWebController
 
             return compact(
                 'totalUsers', 'activeUsers',
-                'totalIncome',
                 'totalSessions', 'passedSessions',
                 'totalStudents', 'totalQuranTeachers', 'totalAcademicTeachers', 'totalParents', 'totalSupervisors'
             );
@@ -81,14 +78,6 @@ class SupervisorDashboardController extends BaseSupervisorWebController
             ->whereMonth('scheduled_at', now()->month)->whereYear('scheduled_at', now()->year)->count();
         $monthSessions = $monthQuranSessions + $monthAcademicSessions + $monthInteractiveSessions;
 
-        $thisMonthRevenue = Payment::where('academy_id', $academyId)->where('status', PaymentStatus::COMPLETED->value)
-            ->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->sum('amount');
-        $lastMonthRevenue = Payment::where('academy_id', $academyId)->where('status', PaymentStatus::COMPLETED->value)
-            ->whereMonth('created_at', now()->subMonth()->month)->whereYear('created_at', now()->subMonth()->year)->sum('amount');
-        $revenueGrowth = $lastMonthRevenue > 0
-            ? round((($thisMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 1)
-            : 0;
-
         $newStudents = User::where('academy_id', $academyId)->where('user_type', UserType::STUDENT->value)
             ->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
         $newTeachers = User::where('academy_id', $academyId)
@@ -101,7 +90,6 @@ class SupervisorDashboardController extends BaseSupervisorWebController
         $monthlyStats = compact(
             'totalActiveSubs', 'activeQuranSubs', 'activeAcademicSubs',
             'monthSessions', 'monthQuranSessions', 'monthAcademicSessions', 'monthInteractiveSessions',
-            'thisMonthRevenue', 'revenueGrowth',
             'newUsers', 'newStudents', 'newTeachers', 'newParents'
         );
 

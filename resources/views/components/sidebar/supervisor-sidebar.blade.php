@@ -160,14 +160,6 @@
           icon="ri-todo-line"
           :active="request()->routeIs('manage.homework.*')" />
 
-        @if($canManageTeachers)
-        <x-sidebar.nav-item
-          :href="route('manage.teacher-earnings.index', ['subdomain' => $subdomain])"
-          :label="__('supervisor.sidebar.teacher_earnings')"
-          icon="ri-money-dollar-circle-line"
-          :active="request()->routeIs('manage.teacher-earnings.*')" />
-        @endif
-
         <x-sidebar.nav-item
           :href="route('manage.quizzes.index', ['subdomain' => $subdomain])"
           :label="__('supervisor.sidebar.quizzes')"
