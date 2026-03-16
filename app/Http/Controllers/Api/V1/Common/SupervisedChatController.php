@@ -109,6 +109,9 @@ class SupervisedChatController extends Controller
             $request->entity_id
         );
 
+        // Reload to pick up the conversation_id set by ensureConversationExists
+        $group?->refresh();
+
         if (! $group || ! $group->conversation) {
             return $this->error(
                 __('Failed to create supervised chat. Please try again.'),

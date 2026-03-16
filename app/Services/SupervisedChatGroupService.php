@@ -11,6 +11,10 @@ use App\Models\QuranIndividualCircle;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Wirechat\Wirechat\Enums\ConversationType;
+use Wirechat\Wirechat\Enums\ParticipantRole;
+use Wirechat\Wirechat\Models\Conversation;
+use Wirechat\Wirechat\Models\Participant;
 
 class SupervisedChatGroupService extends ChatGroupService implements SupervisedChatGroupServiceInterface
 {
@@ -319,13 +323,106 @@ class SupervisedChatGroupService extends ChatGroupService implements SupervisedC
             return null;
         }
 
-        return match ($entityType) {
+        $group = match ($entityType) {
             'quran_individual' => $this->getOrCreateSupervisedQuranIndividualGroup($entity),
             'academic_lesson' => $this->getOrCreateSupervisedAcademicLessonGroup($entity),
             'quran_circle' => $this->getOrCreateSupervisedQuranCircleGroup($entity),
             'interactive_course' => $this->getOrCreateSupervisedInteractiveCourseGroup($entity),
             default => null,
         };
+
+        if ($group) {
+            $this->ensureConversationExists($group, $teacher, $student, $entityType, $entityId);
+        }
+
+        return $group;
+    }
+
+    /**
+     * Ensure a WireChat Conversation exists for this ChatGroup.
+     * Creates the conversation and participants if missing.
+     */
+    protected function ensureConversationExists(
+        ChatGroup $group,
+        User $teacher,
+        User $student,
+        string $entityType,
+        int $entityId
+    ): void {
+        // Already has a conversation linked
+        if ($group->conversation_id && Conversation::find($group->conversation_id)) {
+            return;
+        }
+
+        $supervisor = $group->supervisor;
+
+        DB::transaction(function () use ($group, $teacher, $student, $supervisor, $entityType, $entityId) {
+            $conversation = new Conversation;
+            $conversation->type = ConversationType::GROUP;
+            $conversation->save();
+
+            // Create WireChat group record
+            $conversation->group()->create([
+                'name' => $group->name,
+                'description' => 'محادثة مُشرف عليها',
+            ]);
+
+            // Add teacher as owner
+            Participant::create([
+                'conversation_id' => $conversation->id,
+                'participantable_id' => $teacher->id,
+                'participantable_type' => $teacher->getMorphClass(),
+                'role' => ParticipantRole::OWNER,
+            ]);
+
+            // Collect students to add based on entity type
+            $studentsToAdd = collect();
+
+            if ($entityType === 'quran_circle') {
+                $circle = QuranCircle::with('students')->find($entityId);
+                if ($circle) {
+                    $studentsToAdd = $circle->students;
+                }
+            } elseif ($entityType === 'interactive_course') {
+                $course = InteractiveCourse::with('enrolledStudents.student.user')->find($entityId);
+                if ($course) {
+                    $studentsToAdd = $course->enrolledStudents->map(fn ($e) => $e->student?->user)->filter();
+                }
+            } else {
+                $studentsToAdd = collect([$student]);
+            }
+
+            foreach ($studentsToAdd as $studentUser) {
+                if ($studentUser && $studentUser->id !== $teacher->id) {
+                    Participant::create([
+                        'conversation_id' => $conversation->id,
+                        'participantable_id' => $studentUser->id,
+                        'participantable_type' => $studentUser->getMorphClass(),
+                        'role' => ParticipantRole::PARTICIPANT,
+                    ]);
+                }
+            }
+
+            // Add supervisor as admin
+            if ($supervisor) {
+                Participant::create([
+                    'conversation_id' => $conversation->id,
+                    'participantable_id' => $supervisor->id,
+                    'participantable_type' => $supervisor->getMorphClass(),
+                    'role' => ParticipantRole::ADMIN,
+                ]);
+            }
+
+            // Link conversation to ChatGroup
+            $group->update(['conversation_id' => $conversation->id]);
+
+            Log::info('Created WireChat conversation for supervised chat group', [
+                'group_id' => $group->id,
+                'conversation_id' => $conversation->id,
+                'entity_type' => $entityType,
+                'entity_id' => $entityId,
+            ]);
+        });
     }
 
     /**
