@@ -280,6 +280,8 @@ class ReportController extends Controller
                 'is_late' => $report->is_late,
                 'late_minutes' => $report->late_minutes,
                 'attendance_percentage' => $report->attendance_percentage,
+                'enter_time' => $report->meeting_enter_time?->toISOString(),
+                'leave_time' => $report->meeting_leave_time?->toISOString(),
             ],
             'performance' => [
                 'overall_score' => $report->overall_performance,
@@ -322,6 +324,8 @@ class ReportController extends Controller
                 'is_late' => $report->is_late,
                 'late_minutes' => $report->late_minutes,
                 'attendance_percentage' => $report->attendance_percentage,
+                'enter_time' => $report->meeting_enter_time?->toISOString(),
+                'leave_time' => $report->meeting_leave_time?->toISOString(),
             ],
             'performance' => [
                 'overall_score' => $report->overall_performance,
@@ -363,6 +367,8 @@ class ReportController extends Controller
                 'is_late' => $report->is_late,
                 'late_minutes' => $report->late_minutes,
                 'attendance_percentage' => $report->attendance_percentage,
+                'enter_time' => $report->meeting_enter_time?->toISOString(),
+                'leave_time' => $report->meeting_leave_time?->toISOString(),
             ],
             'performance' => [
                 'overall_score' => $report->overall_performance,
