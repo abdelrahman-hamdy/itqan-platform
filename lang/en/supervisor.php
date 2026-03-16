@@ -126,14 +126,8 @@ return [
 
         // Action buttons
         'action_view' => 'View',
-        'action_activate' => 'Activate',
-        'action_renew' => 'Renew',
-        'action_manage' => 'Manage',
         'action_review' => 'Review',
-        'action_collect' => 'Collect',
         'action_schedule' => 'Schedule',
-        'action_grade' => 'Grade',
-        'action_follow_up' => 'Follow up',
 
         // Reviews panel
         'pending_reviews' => 'Pending Reviews',

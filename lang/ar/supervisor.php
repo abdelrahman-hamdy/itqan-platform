@@ -126,14 +126,8 @@ return [
 
         // Action buttons
         'action_view' => 'عرض',
-        'action_activate' => 'تفعيل',
-        'action_renew' => 'تجديد',
-        'action_manage' => 'إدارة',
         'action_review' => 'مراجعة',
-        'action_collect' => 'تحصيل',
         'action_schedule' => 'جدولة',
-        'action_grade' => 'تصحيح',
-        'action_follow_up' => 'متابعة',
 
         // Reviews panel
         'pending_reviews' => 'مراجعات معلقة',

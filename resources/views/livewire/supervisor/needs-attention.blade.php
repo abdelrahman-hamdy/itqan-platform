@@ -120,23 +120,46 @@
                                             </div>
                                         </div>
 
-                                        {{-- Action Button --}}
-                                        @if($item['route'])
-                                            <a
-                                                href="{{ route($item['route'], ['subdomain' => $subdomain]) }}"
-                                                class="text-xs font-medium px-3 py-1.5 rounded-lg {{ $colors['action'] }} transition-colors flex-shrink-0"
-                                            >
-                                                {{ __($item['action_key']) }}
-                                            </a>
-                                        @else
-                                            {{-- Reviews — toggle inline panel --}}
-                                            <button
-                                                wire:click="toggleReviewsPanel"
-                                                class="text-xs font-medium px-3 py-1.5 rounded-lg {{ $colors['action'] }} transition-colors flex-shrink-0"
-                                            >
-                                                {{ __($item['action_key']) }}
-                                            </button>
-                                        @endif
+                                        {{-- Action Buttons --}}
+                                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                                            @if($item['route'])
+                                                @php
+                                                    $href = route($item['route'], ['subdomain' => $subdomain]);
+                                                    if (!empty($item['query_params'])) {
+                                                        $href .= '?' . http_build_query($item['query_params']);
+                                                    }
+                                                @endphp
+                                                <a
+                                                    href="{{ $href }}"
+                                                    class="text-xs font-medium px-3 py-1.5 rounded-lg {{ $colors['action'] }} transition-colors"
+                                                >
+                                                    {{ __($item['action_key']) }}
+                                                </a>
+                                                {{-- Secondary action (e.g. supervisor calendar for trials) --}}
+                                                @if(!empty($item['secondary']))
+                                                    @php
+                                                        $secHref = route($item['secondary']['route'], ['subdomain' => $subdomain]);
+                                                        if (!empty($item['secondary']['query_params'])) {
+                                                            $secHref .= '?' . http_build_query($item['secondary']['query_params']);
+                                                        }
+                                                    @endphp
+                                                    <a
+                                                        href="{{ $secHref }}"
+                                                        class="text-xs font-medium px-3 py-1.5 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                                                    >
+                                                        {{ __($item['secondary']['action_key']) }}
+                                                    </a>
+                                                @endif
+                                            @else
+                                                {{-- Reviews — toggle inline panel --}}
+                                                <button
+                                                    wire:click="toggleReviewsPanel"
+                                                    class="text-xs font-medium px-3 py-1.5 rounded-lg {{ $colors['action'] }} transition-colors"
+                                                >
+                                                    {{ __($item['action_key']) }}
+                                                </button>
+                                            @endif
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
