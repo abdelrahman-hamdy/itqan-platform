@@ -2,6 +2,7 @@
 
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+    $currency = getCurrencySymbol();
 @endphp
 
 <div>
@@ -18,118 +19,163 @@
     {{-- Needs Attention Section --}}
     <livewire:supervisor.needs-attention />
 
-    {{-- Row 1: Active Programs --}}
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ __('supervisor.dashboard.section_programs') }}</h2>
+    {{-- General Stats --}}
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ __('supervisor.dashboard.section_general_stats') }}</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6">
-        {{-- Active Quran Subscriptions --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-book-read-line text-lg md:text-xl text-green-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $activeQuranSubscriptions }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.active_quran_subscriptions') }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Active Academic Subscriptions --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-graduation-cap-line text-lg md:text-xl text-violet-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $activeAcademicSubscriptions }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.active_academic_subscriptions') }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Interactive Course Enrollments --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-live-line text-lg md:text-xl text-amber-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $interactiveCourseEnrollments }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.interactive_enrollments') }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Recorded Course Enrollments --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-cyan-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-video-line text-lg md:text-xl text-cyan-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $recordedCourseEnrollments }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.recorded_enrollments') }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Row 2: Sessions & Performance --}}
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ __('supervisor.dashboard.section_sessions_performance') }}</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 md:mb-8">
-        {{-- Sessions Today --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-calendar-check-line text-lg md:text-xl text-blue-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $sessionsToday }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.sessions_today') }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Sessions This Week --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-calendar-line text-lg md:text-xl text-indigo-600"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $sessionsThisWeek }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.sessions_this_week') }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Sessions Completed This Month --}}
+        {{-- Total Users --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 md:w-12 md:h-12 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-checkbox-circle-line text-lg md:text-xl text-emerald-600"></i>
+                    <i class="ri-group-line text-lg md:text-xl text-emerald-600"></i>
                 </div>
                 <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ $completedThisMonth }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.sessions_completed_month') }}</p>
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($generalStats['totalUsers']) }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_users') }}</p>
                 </div>
             </div>
-            <div class="mt-2 text-xs text-gray-500">
-                {{ __('supervisor.dashboard.completion_rate') }}: <strong class="text-gray-700">{{ $completionRate }}%</strong>
-            </div>
+            <p class="mt-1.5 text-xs text-gray-500">{{ $generalStats['activeUsers'] }} {{ __('supervisor.dashboard.active') }}، {{ $generalStats['inactiveUsers'] }} {{ __('supervisor.dashboard.inactive') }}</p>
         </div>
 
-        {{-- Revenue This Month --}}
+        {{-- Total Revenue --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 md:w-12 md:h-12 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <i class="ri-money-dollar-circle-line text-lg md:text-xl text-yellow-600"></i>
                 </div>
                 <div class="min-w-0">
-                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($revenueThisMonth, 0) }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.revenue_this_month') }}</p>
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($generalStats['totalIncome'], 0) }} {{ $currency }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_total_revenue') }}</p>
                 </div>
             </div>
+        </div>
+
+        {{-- Total Sessions --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-calendar-check-line text-lg md:text-xl text-blue-600"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($generalStats['totalSessions']) }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_total_sessions') }}</p>
+                </div>
+            </div>
+            <p class="mt-1.5 text-xs text-gray-500">{{ $generalStats['passedSessions'] }} {{ __('supervisor.dashboard.passed') }}، {{ $generalStats['scheduledSessions'] }} {{ __('supervisor.dashboard.scheduled') }}</p>
+        </div>
+
+        {{-- Students --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-user-3-line text-lg md:text-xl text-emerald-600"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($generalStats['totalStudents']) }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_students') }}</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Quran Teachers --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-book-read-line text-lg md:text-xl text-green-600"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($generalStats['totalQuranTeachers']) }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_quran_teachers') }}</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Academic Teachers --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-graduation-cap-line text-lg md:text-xl text-violet-600"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($generalStats['totalAcademicTeachers']) }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_academic_teachers') }}</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Parents --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-parent-line text-lg md:text-xl text-gray-600"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($generalStats['totalParents']) }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_parents') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Monthly Stats --}}
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ __('supervisor.dashboard.section_this_month') }}</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 md:mb-8">
+        {{-- Active Subscriptions --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-bank-card-line text-lg md:text-xl text-blue-600"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($monthlyStats['totalActiveSubs']) }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_active_subs') }}</p>
+                </div>
+            </div>
+            <p class="mt-1.5 text-xs text-gray-500">{{ $monthlyStats['activeQuranSubs'] }} {{ __('supervisor.dashboard.quran') }}، {{ $monthlyStats['activeAcademicSubs'] }} {{ __('supervisor.dashboard.academic') }}</p>
+        </div>
+
+        {{-- Sessions This Month --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-calendar-line text-lg md:text-xl text-amber-600"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($monthlyStats['monthSessions']) }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_month_sessions') }}</p>
+                </div>
+            </div>
+            <p class="mt-1.5 text-xs text-gray-500">{{ $monthlyStats['monthQuranSessions'] }} {{ __('supervisor.dashboard.quran') }}، {{ $monthlyStats['monthAcademicSessions'] }} {{ __('supervisor.dashboard.academic') }}، {{ $monthlyStats['monthInteractiveSessions'] }} {{ __('supervisor.dashboard.interactive') }}</p>
+        </div>
+
+        {{-- Monthly Revenue --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 {{ $monthlyStats['revenueGrowth'] >= 0 ? 'bg-emerald-100' : 'bg-red-100' }} rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-money-dollar-circle-line text-lg md:text-xl {{ $monthlyStats['revenueGrowth'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($monthlyStats['thisMonthRevenue'], 0) }} {{ $currency }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_month_revenue') }}</p>
+                </div>
+            </div>
+            <p class="mt-1.5 text-xs {{ $monthlyStats['revenueGrowth'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                <i class="{{ $monthlyStats['revenueGrowth'] >= 0 ? 'ri-arrow-up-line' : 'ri-arrow-down-line' }}"></i>
+                {{ $monthlyStats['revenueGrowth'] >= 0 ? '+' : '' }}{{ $monthlyStats['revenueGrowth'] }}% {{ __('supervisor.dashboard.vs_last_month') }}
+            </p>
+        </div>
+
+        {{-- New Users --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-user-add-line text-lg md:text-xl text-indigo-600"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($monthlyStats['newUsers']) }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 truncate">{{ __('supervisor.dashboard.stat_new_users') }}</p>
+                </div>
+            </div>
+            <p class="mt-1.5 text-xs text-gray-500">{{ $monthlyStats['newStudents'] }} {{ __('supervisor.dashboard.student') }}، {{ $monthlyStats['newTeachers'] }} {{ __('supervisor.dashboard.teacher') }}، {{ $monthlyStats['newParents'] }} {{ __('supervisor.dashboard.parent') }}</p>
         </div>
     </div>
 
@@ -158,7 +204,7 @@
                             </div>
                             <span class="text-xs px-2 py-1 rounded-full flex-shrink-0
                                 {{ $session['type'] === 'quran' ? 'bg-green-100 text-green-700' : 'bg-violet-100 text-violet-700' }}">
-                                {{ $session['type'] === 'quran' ? __('supervisor.dashboard.quran_teachers') : __('supervisor.dashboard.academic_teachers') }}
+                                {{ $session['type'] === 'quran' ? __('supervisor.dashboard.quran') : __('supervisor.dashboard.academic') }}
                             </span>
                         </div>
                     @endforeach
