@@ -571,6 +571,7 @@ function schedulingPanel() {
             }
             if (item.status === 'fully_scheduled' || item.status === 'scheduled') return 'bg-green-100 text-green-700';
             if (item.status === 'partially_scheduled') return 'bg-amber-100 text-amber-700';
+            if (item.status === 'not_scheduled' || item.status === 'unscheduled') return 'bg-orange-100 text-orange-700';
             return 'bg-gray-100 text-gray-600';
         },
 
@@ -615,11 +616,8 @@ function schedulingPanel() {
         formatDate(dateStr) {
             if (!dateStr) return '?';
             try {
-                // Use T00:00:00 (local time) to avoid UTC-offset date-shift bugs
                 const d = new Date(dateStr + 'T00:00:00');
-                const greg = d.toLocaleDateString('ar-SA-u-ca-gregory', { year: 'numeric', month: 'short', day: 'numeric' });
-                const hijri = d.toLocaleDateString('ar-SA-u-ca-islamic-umalqura', { year: 'numeric', month: 'short', day: 'numeric' });
-                return greg + ' — ' + hijri;
+                return d.toLocaleDateString('ar-SA-u-ca-gregory', { year: 'numeric', month: 'short', day: 'numeric' });
             } catch (e) {
                 return String(dateStr).substring(0, 10);
             }
