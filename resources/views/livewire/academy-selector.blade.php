@@ -16,9 +16,9 @@
             <span class="font-semibold text-green-600">جميع الأكاديميات</span>
         @elseif($currentAcademy)
             <!-- Academy Logo/Icon -->
-            @if($currentAcademy->logo)
+            @if($currentAcademy->logo_url)
                 <div class="w-5 h-5 rounded overflow-hidden">
-                    <img src="{{ $currentAcademy->logo }}" alt="{{ $currentAcademy->name }}" 
+                    <img src="{{ $currentAcademy->logo_url }}" alt="{{ $currentAcademy->name }}" 
                          class="w-full h-full object-cover"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="w-full h-full bg-blue-500 rounded flex items-center justify-center" style="display: none;">
@@ -123,9 +123,9 @@
                 >
                     <div class="flex items-center gap-3">
                         <!-- Academy Logo/Icon -->
-                        @if($academy->logo)
+                        @if($academy->logo_url)
                             <div class="w-8 h-8 rounded overflow-hidden">
-                                <img src="{{ $academy->logo }}" alt="{{ $academy->name }}" 
+                                <img src="{{ $academy->logo_url }}" alt="{{ $academy->name }}" 
                                      class="w-full h-full object-cover"
                                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                 <div class="w-full h-full bg-blue-500 rounded flex items-center justify-center" style="display: none;">
