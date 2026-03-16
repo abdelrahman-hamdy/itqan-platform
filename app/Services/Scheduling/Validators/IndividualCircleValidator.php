@@ -294,10 +294,9 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             // For subscriptions without billing cycle, assume a reasonable scheduling window
             $weeksRemaining = 52; // 1 year
         } else {
-            // Use diffInWeeks for accurate week count, then add 1 for partial weeks
-            $fullWeeks = (int) floor($startDate->diffInWeeks($endDate));
-            $hasPartialWeek = $startDate->copy()->addWeeks($fullWeeks)->lt($endDate);
-            $weeksRemaining = max(1, $fullWeeks + ($hasPartialWeek ? 1 : 0));
+            // Use days and round to nearest week for accurate scheduling recommendation
+            $totalDays = (int) $startDate->diffInDays($endDate);
+            $weeksRemaining = max(1, (int) round($totalDays / 7));
         }
 
         // Calculate recommended pacing
