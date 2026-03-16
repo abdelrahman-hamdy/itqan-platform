@@ -295,7 +295,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             $weeksRemaining = 52; // 1 year
         } else {
             // Use diffInWeeks for accurate week count, then add 1 for partial weeks
-            $fullWeeks = $startDate->diffInWeeks($endDate);
+            $fullWeeks = (int) floor($startDate->diffInWeeks($endDate));
             $hasPartialWeek = $startDate->copy()->addWeeks($fullWeeks)->lt($endDate);
             $weeksRemaining = max(1, $fullWeeks + ($hasPartialWeek ? 1 : 0));
         }

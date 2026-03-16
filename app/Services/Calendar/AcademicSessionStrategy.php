@@ -128,8 +128,8 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                     'sessions_remaining' => $unscheduledSessions,
                     'student_name' => $subscription->student?->name ?? __('calendar.strategy.unspecified'),
                     'subject_name' => $subscription->subject_name ?? __('calendar.strategy.academic_subject'),
-                    'subscription_start' => $subscription->starts_at,
-                    'subscription_end' => $subscription->ends_at,
+                    'subscription_start' => $subscription->starts_at?->toDateString(),
+                    'subscription_end' => $subscription->ends_at?->toDateString(),
                     'can_schedule' => $unscheduledSessions > 0,
                 ];
             });
