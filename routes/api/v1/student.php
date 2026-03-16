@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\Student\ProfileController;
 use App\Http\Controllers\Api\V1\Student\QuizController;
 use App\Http\Controllers\Api\V1\Student\QuranSessionController;
 use App\Http\Controllers\Api\V1\Student\RecordedCourseController;
+use App\Http\Controllers\Api\V1\Student\ReportController;
 use App\Http\Controllers\Api\V1\Student\SearchController;
 use App\Http\Controllers\Api\V1\Student\SubscriptionController;
 use App\Http\Controllers\Api\V1\Student\TeacherController;
@@ -119,7 +120,7 @@ Route::middleware(['api.is.student', 'ability:student:*'])->group(function () {
             ->name('api.v1.student.homework.index');
 
         Route::get('/{type}/{id}', [HomeworkController::class, 'show'])
-            ->where('type', 'academic|interactive')
+            ->where('type', 'quran|academic|interactive')
             ->name('api.v1.student.homework.show');
 
         Route::post('/{type}/{id}/submit', [HomeworkController::class, 'submit'])
@@ -191,6 +192,19 @@ Route::middleware(['api.is.student', 'ability:student:*'])->group(function () {
         Route::get('/month/{year}/{month}', [CalendarController::class, 'month'])
             ->where(['year' => '[0-9]{4}', 'month' => '[0-9]{1,2}'])
             ->name('api.v1.student.calendar.month');
+    });
+
+    // Reports
+    Route::prefix('reports')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])
+            ->name('api.v1.student.reports.index');
+
+        Route::get('/summary', [ReportController::class, 'summary'])
+            ->name('api.v1.student.reports.summary');
+
+        Route::get('/{type}/{sessionId}', [ReportController::class, 'show'])
+            ->where('type', 'quran|academic|interactive')
+            ->name('api.v1.student.reports.show');
     });
 
     // Profile

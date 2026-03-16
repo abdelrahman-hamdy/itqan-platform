@@ -68,6 +68,24 @@ abstract class BaseStudentSessionController extends Controller
         $base['description'] = $session->description;
         $base['session_notes'] = $session->session_notes ?? null;
         $base['teacher_feedback'] = $session->teacher_feedback ?? null;
+        $base['supervisor_notes'] = $session->supervisor_notes ?? null;
+
+        // Timing
+        $base['started_at'] = $session->started_at?->toISOString();
+        $base['ended_at'] = $session->ended_at?->toISOString();
+
+        // Student feedback
+        $base['student_rating'] = $session->student_rating;
+        $base['student_feedback'] = $session->student_feedback;
+
+        // Cancellation
+        $base['cancellation_reason'] = $session->cancellation_reason;
+        $base['cancelled_at'] = $session->cancelled_at?->toISOString();
+
+        // Rescheduling
+        $base['rescheduled_from'] = $session->rescheduled_from?->toISOString();
+        $base['rescheduled_to'] = $session->rescheduled_to?->toISOString();
+        $base['reschedule_reason'] = $session->reschedule_reason ?? null;
 
         // Meeting data is stored directly on the session model (no separate meeting relationship)
         if ($session->meeting_link || $session->meeting_room_name) {

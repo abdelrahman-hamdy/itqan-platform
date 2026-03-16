@@ -2,9 +2,9 @@
 
 namespace App\Http\Traits\Api;
 
-use App\Models\User;
 use App\Enums\SessionStatus;
 use App\Http\Helpers\PaginationHelper;
+use App\Models\User;
 
 /**
  * Shared session viewing logic for both student and parent session controllers.

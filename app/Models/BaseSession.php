@@ -163,6 +163,8 @@ abstract class BaseSession extends Model implements MeetingCapable
         'supervisor_notes',
         'admin_notes',
         'teacher_feedback',
+        'student_rating',
+        'student_feedback',
 
         // Cancellation fields (includes cancellation_type used by CountsTowardsSubscription trait)
         'cancellation_reason',
@@ -218,6 +220,7 @@ abstract class BaseSession extends Model implements MeetingCapable
         'duration_minutes' => 'integer',
         'actual_duration_minutes' => 'integer',
         'participants_count' => 'integer',
+        'student_rating' => 'integer',
         'meeting_data' => 'array',
         'meeting_auto_generated' => 'boolean',
     ];

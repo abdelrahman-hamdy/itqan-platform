@@ -7,6 +7,7 @@ use App\Models\QuranSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class QuranSessionController extends BaseStudentSessionController
@@ -154,7 +155,35 @@ class QuranSessionController extends BaseStudentSessionController
             return $this->notFound(__('Quran session not found or not completed yet.'));
         }
 
-        return $this->error(__('Feedback submission is not yet available.'), 501, 'NOT_IMPLEMENTED');
+        if ($session->student_rating) {
+            return $this->error(__('Feedback already submitted for this session.'), 422, 'ALREADY_SUBMITTED');
+        }
+
+        $rating = $request->integer('rating');
+        $feedback = $request->input('feedback');
+
+        $updated = DB::transaction(function () use ($session, $rating, $feedback) {
+            $fresh = QuranSession::lockForUpdate()->find($session->id);
+            if (! $fresh || $fresh->student_rating) {
+                return false;
+            }
+
+            $fresh->update([
+                'student_rating' => $rating,
+                'student_feedback' => $feedback,
+            ]);
+
+            return true;
+        });
+
+        if (! $updated) {
+            return $this->error(__('Feedback already submitted for this session.'), 422, 'ALREADY_SUBMITTED');
+        }
+
+        return $this->success([
+            'rating' => $rating,
+            'feedback' => $feedback,
+        ], __('Feedback submitted successfully.'));
     }
 
     /**

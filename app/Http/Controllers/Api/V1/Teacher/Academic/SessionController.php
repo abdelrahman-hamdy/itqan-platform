@@ -529,6 +529,58 @@ class SessionController extends Controller
     }
 
     /**
+     * Update session notes.
+     */
+    public function updateNotes(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $academicTeacherId = $user->academicTeacherProfile?->id;
+
+        if (! $academicTeacherId) {
+            return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
+        }
+
+        // Try individual academic session first
+        $session = AcademicSession::where('id', $id)
+            ->where('academic_teacher_id', $academicTeacherId)
+            ->first();
+
+        if (! $session) {
+            // Try interactive course session
+            $courseIds = $user->academicTeacherProfile?->assignedCourses()?->pluck('id') ?? collect();
+            $session = InteractiveCourseSession::where('id', $id)
+                ->whereIn('course_id', $courseIds)
+                ->first();
+        }
+
+        if (! $session) {
+            return $this->notFound(__('Session not found.'));
+        }
+
+        $validator = Validator::make($request->all(), [
+            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'teacher_notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors()->toArray());
+        }
+
+        $session->update([
+            'session_notes' => $request->notes ?? $session->session_notes,
+            'teacher_feedback' => $request->teacher_notes ?? $session->teacher_feedback,
+        ]);
+
+        return $this->success([
+            'session' => [
+                'id' => $session->id,
+                'notes' => $session->session_notes,
+                'teacher_notes' => $session->teacher_feedback,
+            ],
+        ], __('Notes updated successfully'));
+    }
+
+    /**
      * Get attendance records for a session (auto-tracked via LiveKit).
      * Handles both AcademicSession (individual) and InteractiveCourseSession (interactive).
      */
@@ -656,13 +708,20 @@ class SessionController extends Controller
             'override_reason' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $updateData = [
+            'attendance_status' => $validated['status'],
+            'updated_at' => now(),
+        ];
+
+        if (! empty($validated['override_reason'])) {
+            $updateData['override_reason'] = $validated['override_reason'];
+            $updateData['overridden_by'] = $user->id;
+        }
+
         DB::table('meeting_attendances')
             ->where('id', $attendanceId)
             ->where('academy_id', $session->academy_id)
-            ->update([
-                'attendance_status' => $validated['status'],
-                'updated_at' => now(),
-            ]);
+            ->update($updateData);
 
         return $this->success([], __('Attendance updated successfully'));
     }

@@ -602,13 +602,20 @@ class SessionController extends Controller
             'override_reason' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $updateData = [
+            'attendance_status' => $validated['status'],
+            'updated_at' => now(),
+        ];
+
+        if (! empty($validated['override_reason'])) {
+            $updateData['override_reason'] = $validated['override_reason'];
+            $updateData['overridden_by'] = $user->id;
+        }
+
         DB::table('meeting_attendances')
             ->where('id', $attendanceId)
             ->where('academy_id', $session->academy_id)
-            ->update([
-                'attendance_status' => $validated['status'],
-                'updated_at' => now(),
-            ]);
+            ->update($updateData);
 
         return $this->success([], __('Attendance updated successfully'));
     }

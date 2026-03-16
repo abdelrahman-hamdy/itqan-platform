@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
+use App\Enums\EnrollmentStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSubscription;
@@ -305,5 +307,91 @@ class SubscriptionController extends Controller
             'payment_status' => $subscription->payment_status ?? 'paid',
             'enrolled_at' => $subscription->created_at->toISOString(),
         ]);
+    }
+
+    /**
+     * Toggle auto-renewal for a child's subscription.
+     */
+    public function toggleAutoRenew(Request $request, string $type, int $id): JsonResponse
+    {
+        $subscription = $this->resolveChildSubscription($request, $type, $id);
+
+        if (! $subscription) {
+            return $this->notFound(__('Subscription not found or cannot be modified.'));
+        }
+
+        $subscription->update([
+            'auto_renew' => ! $subscription->auto_renew,
+        ]);
+
+        return $this->success([
+            'auto_renew' => $subscription->auto_renew,
+        ], __('Auto-renewal updated successfully'));
+    }
+
+    /**
+     * Cancel a child's subscription.
+     */
+    public function cancel(Request $request, string $type, int $id): JsonResponse
+    {
+        $subscription = $this->resolveChildSubscription($request, $type, $id, true);
+
+        if (! $subscription) {
+            return $this->notFound(__('Subscription not found or cannot be cancelled.'));
+        }
+
+        if ($subscription instanceof CourseSubscription) {
+            $subscription->update(['status' => EnrollmentStatus::CANCELLED->value]);
+        } else {
+            $subscription->update([
+                'status' => SessionSubscriptionStatus::CANCELLED->value,
+                'cancelled_at' => now(),
+                'auto_renew' => false,
+            ]);
+        }
+
+        return $this->success([
+            'status' => 'cancelled',
+        ], __('Subscription cancelled successfully'));
+    }
+
+    /**
+     * Resolve a subscription belonging to one of the parent's children.
+     */
+    private function resolveChildSubscription(Request $request, string $type, int $id, bool $includeCourse = false)
+    {
+        $user = $request->user();
+        $parentProfile = $user->parentProfile()->first();
+
+        if (! $parentProfile) {
+            return null;
+        }
+
+        $relationships = ParentStudentRelationship::where('parent_id', $parentProfile->id)
+            ->with('student.user')
+            ->get();
+
+        $childUserIds = $relationships
+            ->map(fn ($r) => $r->student->user?->id ?? $r->student->id)
+            ->filter()
+            ->toArray();
+
+        $activeStatuses = [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value];
+
+        return match ($type) {
+            'quran' => QuranSubscription::where('id', $id)
+                ->whereIn('student_id', $childUserIds)
+                ->whereIn('status', $activeStatuses)
+                ->first(),
+            'academic' => AcademicSubscription::where('id', $id)
+                ->whereIn('student_id', $childUserIds)
+                ->whereIn('status', $activeStatuses)
+                ->first(),
+            'course' => $includeCourse ? CourseSubscription::where('id', $id)
+                ->whereIn('student_id', $relationships->pluck('student_id')->toArray())
+                ->whereIn('status', [EnrollmentStatus::ENROLLED->value, EnrollmentStatus::PENDING->value])
+                ->first() : null,
+            default => null,
+        };
     }
 }

@@ -7,6 +7,7 @@ use App\Models\AcademicSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class AcademicSessionController extends BaseStudentSessionController
@@ -152,7 +153,35 @@ class AcademicSessionController extends BaseStudentSessionController
             return $this->notFound(__('Academic session not found or not completed yet.'));
         }
 
-        return $this->error(__('Feedback submission is not yet available.'), 501, 'NOT_IMPLEMENTED');
+        if ($session->student_rating) {
+            return $this->error(__('Feedback already submitted for this session.'), 422, 'ALREADY_SUBMITTED');
+        }
+
+        $rating = $request->integer('rating');
+        $feedback = $request->input('feedback');
+
+        $updated = DB::transaction(function () use ($session, $rating, $feedback) {
+            $fresh = AcademicSession::lockForUpdate()->find($session->id);
+            if (! $fresh || $fresh->student_rating) {
+                return false;
+            }
+
+            $fresh->update([
+                'student_rating' => $rating,
+                'student_feedback' => $feedback,
+            ]);
+
+            return true;
+        });
+
+        if (! $updated) {
+            return $this->error(__('Feedback already submitted for this session.'), 422, 'ALREADY_SUBMITTED');
+        }
+
+        return $this->success([
+            'rating' => $rating,
+            'feedback' => $feedback,
+        ], __('Feedback submitted successfully.'));
     }
 
     /**
@@ -166,6 +195,7 @@ class AcademicSessionController extends BaseStudentSessionController
         $base['academic_details'] = [
             'subject' => $session->academicSubscription?->subject_name,
             'lesson_content' => $session->lesson_content,
+            'topics_covered' => $session->topics_covered ?? [],
             'homework' => $session->homework_description,
             'homework_assigned' => $session->homework_assigned,
             'homework_file' => $session->homework_file ? asset('storage/' . $session->homework_file) : null,

@@ -81,7 +81,7 @@ Route::middleware(['api.is.parent', 'ability:parent:*'])->group(function () {
             ->name('api.v1.parent.homework.index');
 
         Route::get('/{type}/{id}', [HomeworkController::class, 'show'])
-            ->where('type', 'academic')
+            ->where('type', 'quran|academic|interactive')
             ->name('api.v1.parent.homework.show');
     });
 
@@ -105,6 +105,16 @@ Route::middleware(['api.is.parent', 'ability:parent:*'])->group(function () {
         Route::get('/{type}/{id}', [SubscriptionController::class, 'show'])
             ->where('type', 'quran|academic|course')
             ->name('api.v1.parent.subscriptions.show');
+
+        Route::patch('/{type}/{id}/toggle-auto-renew', [SubscriptionController::class, 'toggleAutoRenew'])
+            ->where('type', 'quran|academic')
+            ->middleware('throttle:5,1')
+            ->name('api.v1.parent.subscriptions.toggle-auto-renew');
+
+        Route::patch('/{type}/{id}/cancel', [SubscriptionController::class, 'cancel'])
+            ->where('type', 'quran|academic|course')
+            ->middleware('throttle:5,1')
+            ->name('api.v1.parent.subscriptions.cancel');
     });
 
     // Reports - Refactored with specialized controllers

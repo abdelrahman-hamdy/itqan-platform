@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Teacher\Academic\CourseController as AcademicCourseController;
 use App\Http\Controllers\Api\V1\Teacher\Academic\LessonController as AcademicLessonController;
+use App\Http\Controllers\Api\V1\Teacher\Academic\InteractiveSessionController as AcademicInteractiveSessionController;
 use App\Http\Controllers\Api\V1\Teacher\Academic\SessionController as AcademicSessionController;
 use App\Http\Controllers\Api\V1\Teacher\CertificateController;
 use App\Http\Controllers\Api\V1\Teacher\DashboardController;
@@ -171,11 +172,47 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
             Route::put('/{id}/evaluation', [AcademicSessionController::class, 'updateEvaluation'])
                 ->name('api.v1.teacher.academic.sessions.evaluation');
 
+            Route::put('/{id}/notes', [AcademicSessionController::class, 'updateNotes'])
+                ->name('api.v1.teacher.academic.sessions.notes');
+
             Route::get('/{id}/attendance', [AcademicSessionController::class, 'attendance'])
                 ->name('api.v1.teacher.academic.sessions.attendance');
 
             Route::put('/{id}/attendance/{attendanceId}', [AcademicSessionController::class, 'overrideAttendance'])
                 ->name('api.v1.teacher.academic.sessions.attendance.override');
+        });
+
+        // Interactive Course Sessions
+        Route::prefix('interactive-sessions')->group(function () {
+            Route::get('/', [AcademicInteractiveSessionController::class, 'index'])
+                ->name('api.v1.teacher.academic.interactive-sessions.index');
+
+            Route::get('/{id}', [AcademicInteractiveSessionController::class, 'show'])
+                ->name('api.v1.teacher.academic.interactive-sessions.show');
+
+            Route::post('/{id}/complete', [AcademicInteractiveSessionController::class, 'complete'])
+                ->name('api.v1.teacher.academic.interactive-sessions.complete');
+
+            Route::post('/{id}/cancel', [AcademicInteractiveSessionController::class, 'cancel'])
+                ->name('api.v1.teacher.academic.interactive-sessions.cancel');
+
+            Route::post('/{id}/reschedule', [AcademicInteractiveSessionController::class, 'reschedule'])
+                ->name('api.v1.teacher.academic.interactive-sessions.reschedule');
+
+            Route::post('/{id}/mark-absent', [AcademicInteractiveSessionController::class, 'markAbsent'])
+                ->name('api.v1.teacher.academic.interactive-sessions.mark-absent');
+
+            Route::put('/{id}/evaluation', [AcademicInteractiveSessionController::class, 'updateEvaluation'])
+                ->name('api.v1.teacher.academic.interactive-sessions.evaluation');
+
+            Route::put('/{id}/notes', [AcademicInteractiveSessionController::class, 'updateNotes'])
+                ->name('api.v1.teacher.academic.interactive-sessions.notes');
+
+            Route::get('/{id}/attendance', [AcademicInteractiveSessionController::class, 'attendance'])
+                ->name('api.v1.teacher.academic.interactive-sessions.attendance');
+
+            Route::put('/{id}/attendance/{attendanceId}', [AcademicInteractiveSessionController::class, 'overrideAttendance'])
+                ->name('api.v1.teacher.academic.interactive-sessions.attendance.override');
         });
     });
 
