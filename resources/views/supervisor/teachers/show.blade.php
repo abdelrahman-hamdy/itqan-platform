@@ -60,9 +60,15 @@
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     @if($profile?->educational_qualification ?? $profile?->education_level)
+                        @php
+                            $qualValue = $profile->educational_qualification ?? $profile->education_level;
+                            $qualLabel = $qualValue instanceof \App\Enums\EducationalQualification
+                                ? $qualValue->label()
+                                : \App\Enums\EducationalQualification::getLabel($qualValue);
+                        @endphp
                         <div class="flex items-center gap-2 text-sm text-gray-600">
                             <i class="ri-graduation-cap-line text-gray-400"></i>
-                            <span>{{ __('supervisor.teachers.qualification') }}: {{ \App\Enums\EducationalQualification::getLabel($profile->educational_qualification ?? $profile->education_level) }}</span>
+                            <span>{{ __('supervisor.teachers.qualification') }}: {{ $qualLabel }}</span>
                         </div>
                     @endif
                     @if($profile?->teaching_experience_years)
