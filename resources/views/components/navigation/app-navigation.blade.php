@@ -265,6 +265,13 @@
               {{ __('supervisor.sidebar.admin_panel') }}
             </a>
           @endif
+
+          {{-- Academy Context Switcher (SuperAdmin only on manage pages) --}}
+          @if($user->isSuperAdmin())
+            <div class="hidden md:flex items-center">
+              @livewire('academy-selector', ['redirectUrl' => url()->current(), 'showGlobalView' => false])
+            </div>
+          @endif
         @endif
 
         <!-- Child Selector (Parent only) -->
@@ -633,6 +640,13 @@
               <i class="ri-settings-3-line text-xl"></i>
               <span>{{ __('supervisor.sidebar.admin_panel') }}</span>
             </a>
+          @endif
+
+          {{-- Academy Context Switcher (SuperAdmin only on manage pages) --}}
+          @if($user->isSuperAdmin())
+            <div class="px-4 py-2">
+              @livewire('academy-selector', ['redirectUrl' => url()->current(), 'showGlobalView' => false])
+            </div>
           @endif
         @endif
       </div>

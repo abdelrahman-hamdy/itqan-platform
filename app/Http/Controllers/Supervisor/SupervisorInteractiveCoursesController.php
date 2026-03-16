@@ -6,7 +6,6 @@ use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
 use App\Models\StudentProfile;
 use App\Models\User;
-use App\Services\AcademyContextService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -74,7 +73,7 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
         $availableStudents = collect();
         if ($isAdmin) {
             $enrolledStudentProfileIds = $course->enrollments->pluck('student_id')->toArray();
-            $academyId = AcademyContextService::getCurrentAcademy()->id;
+            $academyId = $this->getAcademyId();
             $availableStudents = User::where('user_type', 'student')
                 ->where('academy_id', $academyId)
                 ->whereHas('studentProfile', function ($q) use ($enrolledStudentProfileIds) {

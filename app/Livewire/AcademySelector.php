@@ -19,6 +19,10 @@ class AcademySelector extends Component
     #[Locked]
     public $isGlobalView = false;
 
+    public string $redirectUrl = '/admin';
+
+    public bool $showGlobalView = true;
+
     public function mount()
     {
         // Only show for super admin
@@ -65,7 +69,7 @@ class AcademySelector extends Component
             $this->dispatch('academy-selected', academyId: $academyId);
 
             // Redirect to dashboard to avoid 404 on resources from different academy
-            $this->js("window.location.href = '/admin'");
+            $this->js('window.location.href = '.json_encode($this->redirectUrl));
         }
     }
 
@@ -88,7 +92,7 @@ class AcademySelector extends Component
 
         // Dispatch browser event and redirect to dashboard
         $this->dispatch('global-view-enabled');
-        $this->js("window.location.href = '/admin'");
+        $this->js('window.location.href = '.json_encode($this->redirectUrl));
     }
 
     public function toggleGlobalView()

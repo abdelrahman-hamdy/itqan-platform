@@ -75,6 +75,7 @@
                 <p class="text-xs text-gray-600 dark:text-gray-300 mt-0.5">اختر أكاديمية لإدارة محتواها</p>
             </div>
 
+            @if($showGlobalView)
             <!-- Global View Option -->
             <button
                 wire:click="selectAcademy('global')"
@@ -89,7 +90,7 @@
                             <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
                         </svg>
                     </div>
-                    
+
                     <!-- Global View Info -->
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-medium truncate {{ $isGlobalView ? 'text-green-800 dark:text-green-200' : 'text-gray-800 dark:text-gray-100' }}">
@@ -99,7 +100,7 @@
                             عرض شامل لجميع البيانات عبر كل الأكاديميات
                         </p>
                     </div>
-                    
+
                     <!-- Selected Indicator -->
                     @if($isGlobalView)
                         <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
@@ -111,6 +112,7 @@
 
             <!-- Separator -->
             <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+            @endif
 
             <!-- Academy List -->
             @forelse($academies as $academy)

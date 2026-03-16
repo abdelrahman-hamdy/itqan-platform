@@ -24,8 +24,8 @@ class SupervisorDashboardController extends BaseSupervisorWebController
     {
         $user = auth()->user();
         $isAdmin = $this->isAdminUser();
+        $academyId = $this->getAcademyId();
         $academy = AcademyContextService::getCurrentAcademy();
-        $academyId = $academy?->id;
 
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
         $academicTeacherProfileIds = $this->getAssignedAcademicTeacherProfileIds();

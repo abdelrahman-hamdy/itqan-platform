@@ -86,7 +86,19 @@ abstract class BaseSupervisorWebController extends Controller
      */
     protected function getAcademyId(): int
     {
-        return AcademyContextService::getCurrentAcademy()->id;
+        $academy = AcademyContextService::getCurrentAcademy();
+        if ($academy) {
+            return $academy->id;
+        }
+
+        // Global view mode not supported on manage pages — auto-recover
+        if (AcademyContextService::isGlobalViewMode()) {
+            AcademyContextService::disableGlobalView();
+        }
+        AcademyContextService::initializeSuperAdminContext();
+        $academy = AcademyContextService::getCurrentAcademy();
+
+        return $academy?->id ?? abort(500, 'No academy context available.');
     }
 
     // ========================================================================
