@@ -656,7 +656,7 @@
           <a href="{{ route('manage.dashboard', ['subdomain' => $subdomain]) }}"
              class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.dashboard') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-dashboard-line text-xl"></i>
-            <span>{{ __('supervisor.sidebar.dashboard') }}</span>
+            <span>{{ __('supervisor.sidebar.manage_frontend') }}</span>
           </a>
 
           <a href="{{ route('manage.teachers.index', ['subdomain' => $subdomain]) }}"

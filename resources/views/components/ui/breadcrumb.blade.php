@@ -21,7 +21,7 @@
 
     // Supervisor/admin home link shows "Dashboard" instead of "Profile"
     $profileLabel = $viewType === 'supervisor'
-        ? __('supervisor.sidebar.dashboard')
+        ? __('supervisor.sidebar.manage_frontend')
         : __('components.ui.breadcrumb.profile');
 
     // Use dashboard icon for supervisor

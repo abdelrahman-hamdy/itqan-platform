@@ -34,7 +34,7 @@
       <x-sidebar.nav-section :title="__('supervisor.sidebar.overview')">
         <x-sidebar.nav-item
           :href="route('manage.dashboard', ['subdomain' => $subdomain])"
-          :label="__('supervisor.sidebar.dashboard')"
+          :label="__('supervisor.sidebar.manage_frontend')"
           icon="ri-dashboard-line"
           :active="request()->routeIs('manage.dashboard')" />
 

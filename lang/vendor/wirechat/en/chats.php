@@ -16,7 +16,7 @@ return [
     ],
 
     'profile_button' => 'Profile',
-    'dashboard_button' => 'Dashboard',
+    'dashboard_button' => 'Management Panel',
 
     'inputs' => [
         'search' => [
