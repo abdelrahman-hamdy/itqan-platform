@@ -81,6 +81,12 @@ return [
         'quran_sessions' => 'Quran Sessions',
         'academic_sessions' => 'Academic Sessions',
         'interactive_sessions' => 'Interactive Sessions',
+        'chart_earnings' => 'Revenue Breakdown by Source',
+        'earnings_quran_subs' => 'Quran Subscriptions',
+        'earnings_academic_subs' => 'Academic Subscriptions',
+        'earnings_interactive' => 'Interactive Courses',
+        'earnings_recorded' => 'Recorded Courses',
+        'total' => 'Total',
 
         // Upcoming sessions & quick actions
         'upcoming_sessions' => 'Upcoming Sessions',

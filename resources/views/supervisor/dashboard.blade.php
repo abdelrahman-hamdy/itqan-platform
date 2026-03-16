@@ -196,7 +196,7 @@
 
     @if($isAdmin && $chartData)
         {{-- Admin/SuperAdmin: Analytics Charts --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
             {{-- User Growth Chart --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
                 <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4">
@@ -217,6 +217,17 @@
                 <div style="height: 300px;">
                     <canvas id="sessionActivityChart"></canvas>
                 </div>
+            </div>
+        </div>
+
+        {{-- Earnings Breakdown Chart (full width) --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+            <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4">
+                <i class="ri-money-dollar-circle-line text-yellow-500 me-1.5"></i>
+                {{ __('supervisor.dashboard.chart_earnings') }}
+            </h2>
+            <div style="height: 320px;">
+                <canvas id="earningsChart"></canvas>
             </div>
         </div>
 
@@ -272,6 +283,58 @@
                     datasets: chartData.sessionActivity.map(d => makeDataset(d, true)),
                 },
                 options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, ticks: { ...commonOptions.scales.y.ticks, stepSize: 1 } } } },
+            });
+
+            // Earnings Breakdown (bar chart, stacked)
+            const currency = @json(getCurrencySymbol());
+            new Chart(document.getElementById('earningsChart'), {
+                type: 'bar',
+                data: {
+                    labels: chartData.labels,
+                    datasets: chartData.earningsBreakdown.map(item => ({
+                        label: item.label,
+                        data: item.data,
+                        backgroundColor: item.color + 'CC',
+                        borderColor: item.color,
+                        borderWidth: 1,
+                        borderRadius: 3,
+                    })),
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: chartFont } },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            bodyFont: chartFont,
+                            titleFont: chartFont,
+                            callbacks: {
+                                label: function(ctx) {
+                                    return ctx.dataset.label + ': ' + Number(ctx.parsed.y).toLocaleString() + ' ' + currency;
+                                },
+                                footer: function(items) {
+                                    const total = items.reduce((s, i) => s + i.parsed.y, 0);
+                                    return total > 0 ? ('{{ __("supervisor.dashboard.total") }}: ' + total.toLocaleString() + ' ' + currency) : '';
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: { stacked: true, grid: { display: false }, ticks: { font: chartFont, maxRotation: 45 } },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: {
+                                font: chartFont,
+                                callback: function(v) { return v.toLocaleString() + ' ' + currency; },
+                            },
+                        },
+                    },
+                    interaction: { mode: 'index', intersect: false },
+                },
             });
         });
         </script>

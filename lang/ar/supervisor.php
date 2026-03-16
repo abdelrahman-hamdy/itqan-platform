@@ -81,6 +81,12 @@ return [
         'quran_sessions' => 'جلسات القرآن',
         'academic_sessions' => 'الجلسات الأكاديمية',
         'interactive_sessions' => 'الدورات التفاعلية',
+        'chart_earnings' => 'تحليل الإيرادات حسب المصدر',
+        'earnings_quran_subs' => 'اشتراكات القرآن',
+        'earnings_academic_subs' => 'اشتراكات أكاديمية',
+        'earnings_interactive' => 'الدورات التفاعلية',
+        'earnings_recorded' => 'الدورات المسجلة',
+        'total' => 'الإجمالي',
 
         // Upcoming sessions & quick actions
         'upcoming_sessions' => 'الجلسات القادمة',

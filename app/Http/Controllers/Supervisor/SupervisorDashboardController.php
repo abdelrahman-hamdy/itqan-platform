@@ -7,6 +7,8 @@ use App\Enums\SessionSubscriptionStatus;
 use App\Enums\UserType;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
+use App\Models\CourseSubscription;
+use App\Models\InteractiveCourseEnrollment;
 use App\Models\InteractiveCourseSession;
 use App\Models\Payment;
 use App\Models\QuranSession;
@@ -175,6 +177,13 @@ class SupervisorDashboardController extends BaseSupervisorWebController
         $academicSessions = [];
         $interactiveSessions = [];
 
+        $quranSubEarnings = [];
+        $academicSubEarnings = [];
+        $interactiveCourseEarnings = [];
+        $recordedCourseEarnings = [];
+
+        $completedStatus = PaymentStatus::COMPLETED->value;
+
         for ($i = $days - 1; $i >= 0; $i--) {
             $date = now()->subDays($i);
             $labels[] = $date->format('d/m');
@@ -200,6 +209,20 @@ class SupervisorDashboardController extends BaseSupervisorWebController
                 ->whereDate('scheduled_at', $date)->count();
             $interactiveSessions[] = InteractiveCourseSession::whereHas('course', fn ($q) => $q->where('academy_id', $academyId))
                 ->whereDate('scheduled_at', $date)->count();
+
+            // Daily earnings by source
+            $basePayment = Payment::where('academy_id', $academyId)
+                ->where('status', $completedStatus)
+                ->whereDate('created_at', $date);
+
+            $quranSubEarnings[] = (float) (clone $basePayment)
+                ->where('payable_type', QuranSubscription::class)->sum('amount');
+            $academicSubEarnings[] = (float) (clone $basePayment)
+                ->where('payable_type', AcademicSubscription::class)->sum('amount');
+            $interactiveCourseEarnings[] = (float) (clone $basePayment)
+                ->where('payable_type', InteractiveCourseEnrollment::class)->sum('amount');
+            $recordedCourseEarnings[] = (float) (clone $basePayment)
+                ->where('payable_type', CourseSubscription::class)->sum('amount');
         }
 
         return [
@@ -214,6 +237,12 @@ class SupervisorDashboardController extends BaseSupervisorWebController
                 ['label' => __('supervisor.dashboard.quran_sessions'), 'data' => $quranSessions, 'color' => '#059669'],
                 ['label' => __('supervisor.dashboard.academic_sessions'), 'data' => $academicSessions, 'color' => '#2563EB'],
                 ['label' => __('supervisor.dashboard.interactive_sessions'), 'data' => $interactiveSessions, 'color' => '#DC2626'],
+            ],
+            'earningsBreakdown' => [
+                ['label' => __('supervisor.dashboard.earnings_quran_subs'), 'data' => $quranSubEarnings, 'color' => '#10B981'],
+                ['label' => __('supervisor.dashboard.earnings_academic_subs'), 'data' => $academicSubEarnings, 'color' => '#8B5CF6'],
+                ['label' => __('supervisor.dashboard.earnings_interactive'), 'data' => $interactiveCourseEarnings, 'color' => '#F59E0B'],
+                ['label' => __('supervisor.dashboard.earnings_recorded'), 'data' => $recordedCourseEarnings, 'color' => '#06B6D4'],
             ],
         ];
     }
