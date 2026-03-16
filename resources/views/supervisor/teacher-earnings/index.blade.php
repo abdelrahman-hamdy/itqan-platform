@@ -19,20 +19,6 @@
         view-type="supervisor"
     />
 
-    {{-- Flash Messages --}}
-    @if(session('success'))
-        <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-green-800 text-sm flex items-center gap-2">
-            <i class="ri-checkbox-circle-line text-green-600"></i>
-            {{ session('success') }}
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm flex items-center gap-2">
-            <i class="ri-error-warning-line text-red-600"></i>
-            {{ session('error') }}
-        </div>
-    @endif
-
     <!-- Page Header -->
     <div class="mb-6 md:mb-8">
         <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.teacher_earnings.page_title') }}</h1>

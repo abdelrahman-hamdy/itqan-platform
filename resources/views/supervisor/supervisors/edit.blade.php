@@ -240,20 +240,6 @@
                         </div>
                     </label>
 
-                    {{-- Performance Rating --}}
-                    <div>
-                        <label for="performance_rating" class="block text-sm font-medium text-gray-700 mb-1">
-                            {{ __('supervisor.supervisors.performance_rating') }}
-                        </label>
-                        <input type="number" name="performance_rating" id="performance_rating"
-                               value="{{ old('performance_rating', $profile?->performance_rating ?? '') }}"
-                               min="0" max="10" step="0.01"
-                               class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('performance_rating') border-red-500 @enderror"
-                               placeholder="0 - 10">
-                        @error('performance_rating')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
                 </div>
             </div>
 

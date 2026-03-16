@@ -26,14 +26,12 @@ class SupervisorProfile extends Model
         'avatar',
         'gender',
         'supervisor_code',
-        'performance_rating',
         'notes',
         'can_manage_teachers',
         'can_manage_students',
     ];
 
     protected $casts = [
-        'performance_rating' => 'decimal:2',
         'can_manage_teachers' => 'boolean',
         'can_manage_students' => 'boolean',
     ];

@@ -39,7 +39,6 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
                 'is_active' => (bool) ($user->active_status ?? false),
                 'can_manage_teachers' => (bool) ($user->supervisorProfile?->can_manage_teachers ?? false),
                 'can_manage_students' => (bool) ($user->supervisorProfile?->can_manage_students ?? false),
-                'performance_rating' => (float) ($user->supervisorProfile?->performance_rating ?? 0),
                 'quran_teachers_count' => $user->supervisorProfile?->quranTeachers()->count() ?? 0,
                 'academic_teachers_count' => $user->supervisorProfile?->academicTeachers()->count() ?? 0,
                 'total_responsibilities' => $user->supervisorProfile?->getTotalResponsibilitiesCount() ?? 0,
@@ -337,7 +336,6 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
             'gender' => 'required|in:male,female',
             'can_manage_teachers' => 'nullable|boolean',
             'can_manage_students' => 'nullable|boolean',
-            'performance_rating' => 'nullable|numeric|min:0|max:10',
             'notes' => 'nullable|string|max:5000',
             'password' => ['nullable', PasswordRules::min(6)->letters()->numbers()],
             'password_confirmation' => 'nullable|same:password',
@@ -392,7 +390,6 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
                     'gender' => $request->gender,
                     'can_manage_teachers' => $request->boolean('can_manage_teachers'),
                     'can_manage_students' => $request->boolean('can_manage_students'),
-                    'performance_rating' => $request->input('performance_rating', $profile->performance_rating),
                     'notes' => $request->input('notes', $profile->notes),
                     'avatar' => $supervisor->avatar,
                 ]);

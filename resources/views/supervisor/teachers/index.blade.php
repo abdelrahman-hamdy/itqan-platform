@@ -514,23 +514,4 @@
         @endif
     </div>
 </div>
-
-{{-- Flash Messages --}}
-@if(session('success'))
-    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
-        class="fixed bottom-4 start-4 z-50 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2">
-        <i class="ri-checkbox-circle-line"></i>
-        {{ session('success') }}
-        <button @click="show = false" class="cursor-pointer ms-2 hover:opacity-80"><i class="ri-close-line"></i></button>
-    </div>
-@endif
-@if(session('error'))
-    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
-        class="fixed bottom-4 start-4 z-50 bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2">
-        <i class="ri-error-warning-line"></i>
-        {{ session('error') }}
-        <button @click="show = false" class="cursor-pointer ms-2 hover:opacity-80"><i class="ri-close-line"></i></button>
-    </div>
-@endif
-
 </x-layouts.supervisor>

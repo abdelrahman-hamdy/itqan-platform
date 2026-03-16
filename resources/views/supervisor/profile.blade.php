@@ -106,19 +106,6 @@
                 </div>
             </div>
 
-            @if($profile?->performance_rating)
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
-                    <h3 class="text-sm font-bold text-gray-900 mb-3">{{ __('supervisor.profile.performance_rating') }}</h3>
-                    <div class="flex items-center gap-2">
-                        <div class="text-2xl font-bold text-amber-500">{{ number_format($profile->performance_rating, 1) }}</div>
-                        <div class="flex items-center">
-                            @for($i = 1; $i <= 5; $i++)
-                                <i class="ri-star-{{ $i <= round($profile->performance_rating) ? 'fill' : 'line' }} text-amber-400"></i>
-                            @endfor
-                        </div>
-                    </div>
-                </div>
-            @endif
 
             <a href="{{ route('manage.dashboard', ['subdomain' => $subdomain]) }}"
                class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
