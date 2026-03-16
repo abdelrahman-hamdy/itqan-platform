@@ -120,6 +120,11 @@ class Payment extends Model
         return $this->morphTo();
     }
 
+    public function subscription(): MorphTo
+    {
+        return $this->payable();
+    }
+
     // Scopes
     public function scopeSuccessful($query)
     {

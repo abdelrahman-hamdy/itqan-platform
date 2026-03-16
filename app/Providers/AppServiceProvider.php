@@ -26,6 +26,8 @@ use App\Contracts\SubscriptionServiceInterface;
 use App\Contracts\SupervisedChatGroupServiceInterface;
 use App\Contracts\UnifiedHomeworkServiceInterface;
 use App\Contracts\UnifiedSessionStatusServiceInterface;
+use App\Http\Responses\FilamentLogoutResponse;
+use Filament\Auth\Http\Responses\Contracts\LogoutResponse as LogoutResponseContract;
 use App\Health\Checks\LogFilesCheck;
 use App\Health\Checks\MediaLibrarySizeCheck;
 use App\Health\Checks\PHPMemoryCheck;
@@ -191,6 +193,9 @@ class AppServiceProvider extends ServiceProvider
             RedirectToTenantController::class,
             \App\Http\Controllers\Filament\RedirectToTenantController::class
         );
+
+        // Override Filament's logout response to redirect to frontend login page
+        $this->app->bind(LogoutResponseContract::class, FilamentLogoutResponse::class);
     }
 
     /**
@@ -323,11 +328,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->booted(function () {
             Livewire::component('filament.livewire.database-notifications', DatabaseNotifications::class);
 
-            // Override Filament's default Login component with our custom Login class.
-            // Filament v4 registers its parent Login class under 'filament.auth.pages.login'
-            // during panel boot, which can shadow our custom class. This ensures our
-            // custom Login (with Arabic translations and last_login_at tracking) is used.
-            Livewire::component('filament.auth.pages.login', \App\Filament\Pages\Auth\Login::class);
         });
 
         // Register policies for authorization

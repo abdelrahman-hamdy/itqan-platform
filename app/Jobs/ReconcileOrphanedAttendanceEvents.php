@@ -110,7 +110,7 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
             ->whereHas('session', function ($query) use ($academy) {
                 $query->where('academy_id', $academy->id);
             })
-            ->chunk($chunkSize, function ($events) use (&$closedCount, &$skippedCount, &$totalFound, $livekitService, $academy, $orphanThresholdMinutes) {
+            ->chunk($chunkSize, function ($events) use (&$closedCount, &$skippedCount, &$totalFound, $livekitService, $academy) {
                 $totalFound += $events->count();
 
                 foreach ($events as $event) {

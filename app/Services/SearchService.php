@@ -102,7 +102,7 @@ class SearchService implements SearchServiceInterface
             ->orderBy('name')
             ->limit(10)
             ->get()
-            ->map(function ($circle) use ($student) {
+            ->map(function ($circle) use ($student, $subdomain) {
                 return [
                     'type' => 'quran_circle',
                     'id' => $circle->id,
@@ -153,7 +153,7 @@ class SearchService implements SearchServiceInterface
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get()
-            ->map(function ($circle) {
+            ->map(function ($circle) use ($subdomain) {
                 return [
                     'type' => 'individual_circle',
                     'id' => $circle->id,
@@ -212,7 +212,7 @@ class SearchService implements SearchServiceInterface
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get()
-            ->map(function ($subscription) {
+            ->map(function ($subscription) use ($subdomain) {
                 return [
                     'type' => 'academic_session',
                     'id' => $subscription->id,
@@ -277,7 +277,7 @@ class SearchService implements SearchServiceInterface
             ->orderBy('title')
             ->limit(10)
             ->get()
-            ->map(function ($course) use ($student) {
+            ->map(function ($course) use ($student, $subdomain) {
                 $enrollment = $student ? $course->enrollments->where('student_id', $student->user_id)->first() : null;
 
                 return [
@@ -343,7 +343,7 @@ class SearchService implements SearchServiceInterface
             ->orderBy('title')
             ->limit(10)
             ->get()
-            ->map(function ($course) use ($student) {
+            ->map(function ($course) use ($student, $subdomain) {
                 $enrollment = $student ? $course->enrollments->where('student_id', $student->user_id)->where('status', SessionSubscriptionStatus::ACTIVE->value)->first() : null;
 
                 return [
@@ -450,7 +450,7 @@ class SearchService implements SearchServiceInterface
             ->select('academic_teacher_profiles.*')
             ->limit(10)
             ->get()
-            ->map(function ($teacher) {
+            ->map(function ($teacher) use ($subdomain) {
                 return [
                     'type' => 'academic_teacher',
                     'id' => $teacher->id,

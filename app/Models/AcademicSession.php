@@ -323,6 +323,11 @@ class AcademicSession extends BaseSession
         return $this->hasMany(AcademicSessionReport::class, 'session_id');
     }
 
+    public function reports(): HasMany
+    {
+        return $this->sessionReports();
+    }
+
     /**
      * Get all attendance records for this academic session
      */

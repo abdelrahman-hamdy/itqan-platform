@@ -45,10 +45,6 @@ class AcademicHomework extends Model
         'is_mandatory',
         'priority',
         'difficulty_level',
-        'submitted_count',
-        'graded_count',
-        'late_count',
-        'average_score',
         'created_by',
         'updated_by',
     ];
@@ -160,7 +156,7 @@ class AcademicHomework extends Model
 
     public function scopeNeedsGrading($query)
     {
-        return $query->where('submitted_count', '>', 'graded_count');
+        return $query->whereColumn('submitted_count', '>', 'graded_count');
     }
 
     public function scopeForPriority($query, string $priority)

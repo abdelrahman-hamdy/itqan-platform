@@ -18,7 +18,7 @@ class ProcessCourseEnrollmentPaymentRequest extends FormRequest
 
         $course = $this->route('course');
 
-        return $course && $course->academy_id === currentAcademy()->id;
+        return $course && $course->academy_id === current_academy()->id;
     }
 
     /**

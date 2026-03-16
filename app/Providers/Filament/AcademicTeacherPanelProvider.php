@@ -6,11 +6,10 @@ use Filament\Facades\Filament;
 use App\Filament\Resources\HomeworkSubmissionsResource;
 use App\Filament\AcademicTeacher\Pages\Dashboard;
 use App\Filament\Shared\Pages\UnifiedTeacherCalendar;
-use App\Filament\Pages\Auth\Login;
 use Filament\Navigation\MenuItem;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
-use Filament\Http\Middleware\Authenticate;
+use App\Http\Middleware\FilamentAuthenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
@@ -87,14 +86,13 @@ class AcademicTeacherPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                FilamentAuthenticate::class,
             ])
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->maxContentWidth(Width::Full)
             ->sidebarCollapsibleOnDesktop()
-            ->login(Login::class)
             ->userMenuItems([
                 'profile-page' => MenuItem::make()
                     ->label('الملف الشخصي العام')

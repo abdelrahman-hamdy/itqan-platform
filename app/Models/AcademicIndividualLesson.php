@@ -128,6 +128,11 @@ class AcademicIndividualLesson extends Model
         return $this->belongsTo(AcademicSubject::class);
     }
 
+    public function subject(): BelongsTo
+    {
+        return $this->academicSubject();
+    }
+
     public function academicGradeLevel(): BelongsTo
     {
         return $this->belongsTo(AcademicGradeLevel::class);

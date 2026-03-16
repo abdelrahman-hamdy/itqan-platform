@@ -9,6 +9,7 @@ use App\Enums\UserType;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ChatPermissionService implements ChatPermissionServiceInterface
 {

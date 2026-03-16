@@ -45,8 +45,11 @@ class PaymentApiController extends Controller
         }
 
         try {
-            // Get current academy from context
-            $academyId = $user->academy_id ?? request()->get('academy_id');
+            // Get current academy from authenticated user — never trust client input
+            $academyId = $user->academy_id;
+            if (! $academyId) {
+                return $this->error('لا يمكن تحديد الأكاديمية', 400);
+            }
 
             // SECURITY: Resolve canonical amount from DB — never trust client-supplied amount.
             $canonicalAmountCents = $this->resolveCanonicalAmountCents($validated, $academyId);

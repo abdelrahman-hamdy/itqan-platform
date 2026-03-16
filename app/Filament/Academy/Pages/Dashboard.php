@@ -3,7 +3,6 @@
 namespace App\Filament\Academy\Pages;
 
 use App\Filament\Academy\Widgets\AcademyStatsWidget;
-use App\Filament\Academy\Widgets\RenewalMetricsWidget;
 use App\Filament\Academy\Widgets\AcademyMonthlyStatsWidget;
 use App\Filament\Academy\Widgets\AcademyUserAnalyticsChartWidget;
 use App\Filament\Academy\Widgets\AcademySessionAnalyticsChartWidget;
@@ -55,7 +54,6 @@ class Dashboard extends BaseDashboard
     {
         return [
             AcademyStatsWidget::class,
-            RenewalMetricsWidget::class,
             AcademyMonthlyStatsWidget::class,
             AcademyUserAnalyticsChartWidget::class,
             AcademySessionAnalyticsChartWidget::class,

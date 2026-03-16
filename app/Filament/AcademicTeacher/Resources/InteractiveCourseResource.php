@@ -8,9 +8,11 @@ use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages\EditI
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages\ListInteractiveCourses;
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages\ViewInteractiveCourse;
 use App\Filament\Shared\Resources\BaseInteractiveCourseResource;
+use App\Models\Academy;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\InteractiveCourse;
+use App\Services\AcademyContextService;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
@@ -380,6 +382,16 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
             ->when($academy, fn ($q) => $q->where('academy_id', $academy->id))
             ->pluck('name', 'id')
             ->toArray();
+    }
+
+    /**
+     * Get current teacher's academy.
+     */
+    protected static function getCurrentTeacherAcademy(): ?Academy
+    {
+        $academyContextService = app(AcademyContextService::class);
+
+        return $academyContextService->getCurrentAcademy();
     }
 
     // ========================================

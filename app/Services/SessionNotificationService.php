@@ -137,10 +137,10 @@ class SessionNotificationService
     {
         try {
             $sessionTitle = $this->settingsService->getSessionTitle($session);
+            $subdomain = $session->course?->academy?->subdomain ?? DefaultAcademy::subdomain();
 
             // Notify enrolled students
             if ($session->course && $session->course->enrollments) {
-                $subdomain = $session->course->academy?->subdomain ?? DefaultAcademy::subdomain();
                 $startTime = $this->formatInAcademyTimezone($session->scheduled_at, 'h:i A');
 
                 foreach ($session->course->enrollments as $enrollment) {

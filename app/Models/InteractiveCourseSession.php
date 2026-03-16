@@ -119,7 +119,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
 
             // Get the last sequence number for this month
             $lastSession = static::withTrashed()
-                ->where('session_code', 'LIKE', DB::escapeLikeString($codePrefix).'%')
+                ->where('session_code', 'LIKE', str_replace(['%', '_'], ['\%', '\_'], $codePrefix).'%')
                 ->lockForUpdate()
                 ->orderByRaw('CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC')
                 ->first(['session_code']);

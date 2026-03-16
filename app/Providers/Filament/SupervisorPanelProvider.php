@@ -4,10 +4,9 @@ namespace App\Providers\Filament;
 
 use App\Filament\Resources\HomeworkSubmissionsResource;
 use App\Filament\Supervisor\Pages\Dashboard;
-use App\Filament\Pages\Auth\Login;
 use App\Http\Middleware\VerifySupervisorRole;
 use App\Services\AcademyContextService;
-use Filament\Http\Middleware\Authenticate;
+use App\Http\Middleware\FilamentAuthenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
@@ -73,7 +72,7 @@ class SupervisorPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                FilamentAuthenticate::class,
                 VerifySupervisorRole::class,
             ])
             ->databaseNotifications()
@@ -81,7 +80,6 @@ class SupervisorPanelProvider extends PanelProvider
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->maxContentWidth(Width::Full)
             ->sidebarCollapsibleOnDesktop()
-            ->login(Login::class)
             ->plugins([
                 FilamentFullCalendarPlugin::make()
                     ->selectable(true)

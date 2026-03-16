@@ -34,7 +34,7 @@ return [
     'allowed_origins_patterns' => [
         // Allow all subdomains of the main domain for multi-tenancy
         '#^https?://.*\.itqan-platform\.test$#',
-        '#^https://.*\.itqanway\.com$#',
+        '#^https://[a-z0-9\-]+\.itqanway\.com$#',
     ],
 
     'allowed_headers' => [

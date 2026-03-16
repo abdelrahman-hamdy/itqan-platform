@@ -26,9 +26,11 @@ afterEach(function () {
 });
 
 describe('Admin Panel Access (Path-based)', function () {
-    it('redirects unauthenticated users to login', function () {
-        $this->get('/admin')
-            ->assertRedirect('/admin/login');
+    it('redirects unauthenticated users to frontend login', function () {
+        $response = $this->get('/admin');
+        $response->assertRedirect();
+        expect($response->headers->get('Location'))->toContain('/login');
+        expect($response->headers->get('Location'))->not->toContain('/admin/login');
     });
 
     it('allows super admin to access admin panel', function () {
@@ -70,9 +72,11 @@ describe('Admin Panel Access (Path-based)', function () {
 });
 
 describe('Supervisor Panel Access (Path-based)', function () {
-    it('redirects unauthenticated users to login', function () {
-        $this->get('/supervisor-panel')
-            ->assertRedirect('/supervisor-panel/login');
+    it('redirects unauthenticated users to frontend login', function () {
+        $response = $this->get('/supervisor-panel');
+        $response->assertRedirect();
+        expect($response->headers->get('Location'))->toContain('/login');
+        expect($response->headers->get('Location'))->not->toContain('/supervisor-panel/login');
     });
 
     it('allows supervisor to access supervisor panel', function () {
@@ -119,9 +123,11 @@ describe('Supervisor Panel Access (Path-based)', function () {
 });
 
 describe('Academy Panel Access (Tenant in URL)', function () {
-    it('redirects unauthenticated users to login', function () {
-        $this->get('/panel')
-            ->assertRedirect('/panel/login');
+    it('redirects unauthenticated users to frontend login', function () {
+        $response = $this->get('/panel');
+        $response->assertRedirect();
+        expect($response->headers->get('Location'))->toContain('/login');
+        expect($response->headers->get('Location'))->not->toContain('/panel/login');
     });
 
     /**

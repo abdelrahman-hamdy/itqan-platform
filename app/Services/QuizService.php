@@ -270,6 +270,7 @@ class QuizService implements QuizServiceInterface
         // 3b. Academic Subscriptions (uses users.id) - private lessons subscriptions
         $academicSubIds = AcademicSubscription::where('student_id', $userId)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+            ->where('academy_id', $student->user?->academy_id)
             ->pluck('id');
         foreach ($academicSubIds as $id) {
             $assignableIds->push(['type' => AcademicSubscription::class, 'id' => $id]);

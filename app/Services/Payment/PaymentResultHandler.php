@@ -7,7 +7,10 @@ use App\Constants\DefaultAcademy;
 use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Enums\NotificationType;
 use App\Enums\PaymentStatus;
+use App\Models\AcademicSubscription;
+use App\Models\CourseSubscription;
 use App\Models\Payment;
+use App\Models\QuranSubscription;
 use App\Services\NotificationService;
 use App\Services\Payment\DTOs\PaymentResult;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -113,14 +116,14 @@ class PaymentResultHandler
                 if ($payment->payable) {
                     $notificationData['subscription_id'] = $payment->payable_id;
 
-                    if ($payment->payable_type === 'App\\Models\\QuranSubscription') {
+                    if ($payment->payable instanceof QuranSubscription) {
                         $notificationData['subscription_type'] = 'quran';
                         if ($payment->payable->quran_circle_id) {
                             $notificationData['circle_id'] = $payment->payable->quran_circle_id;
                         }
-                    } elseif ($payment->payable_type === 'App\\Models\\AcademicSubscription') {
+                    } elseif ($payment->payable instanceof AcademicSubscription) {
                         $notificationData['subscription_type'] = 'academic';
-                    } elseif ($payment->payable_type === 'App\\Models\\CourseSubscription') {
+                    } elseif ($payment->payable instanceof CourseSubscription) {
                         $notificationData['subscription_type'] = 'course';
                     }
                 }

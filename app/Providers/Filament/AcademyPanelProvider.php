@@ -18,7 +18,6 @@ use App\Filament\Academy\Widgets\AcademyMonthlyStatsWidget;
 use App\Filament\Academy\Widgets\AcademySessionAnalyticsChartWidget;
 use App\Filament\Academy\Widgets\AcademyStatsWidget;
 use App\Filament\Academy\Widgets\AcademyUserAnalyticsChartWidget;
-use App\Filament\Pages\Auth\Login;
 use App\Filament\Resources\HomeworkSubmissionsResource;
 use App\Filament\Resources\InteractiveCourseResource;
 use App\Filament\Resources\PaymentSettingsResource;
@@ -29,7 +28,7 @@ use App\Filament\Resources\TeacherReviewResource;
 use App\Http\Middleware\AcademyContext;
 use App\Models\Academy;
 use Filament\Facades\Filament;
-use Filament\Http\Middleware\Authenticate;
+use App\Http\Middleware\FilamentAuthenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationItem;
@@ -142,14 +141,13 @@ class AcademyPanelProvider extends PanelProvider
                 AcademyContext::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                FilamentAuthenticate::class,
             ])
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->maxContentWidth(Width::Full)
             ->sidebarCollapsibleOnDesktop()
-            ->login(Login::class)
             ->renderHook(
                 \Filament\View\PanelsRenderHook::STYLES_AFTER,
                 fn (): string => \Illuminate\Support\Facades\Blade::render('@vite(["resources/css/filament-custom.css"])')

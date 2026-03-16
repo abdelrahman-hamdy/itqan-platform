@@ -52,7 +52,7 @@ class Chat extends WireChatChat
     {
         // Verify the current user is a participant in this conversation BEFORE creating/touching records
         $user = auth()->user();
-        $isParticipant = \Namu\WireChat\Models\Conversation::where('id', $conversationId)
+        $isParticipant = \Wirechat\Wirechat\Models\Conversation::where('id', $conversationId)
             ->whereHas('participants', fn ($q) => $q->where('participantable_id', $user->id)->where('participantable_type', get_class($user)))
             ->exists();
 

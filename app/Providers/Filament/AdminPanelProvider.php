@@ -2,7 +2,6 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Pages\Auth\Login;
 use App\Filament\Resources\AcademicGradeLevelResource;
 use App\Filament\Resources\AcademicIndividualLessonResource;
 use App\Filament\Resources\AcademicPackageResource;
@@ -52,7 +51,7 @@ use App\Filament\Widgets\SuperAdminMonthlyStatsWidget;
 use App\Filament\Widgets\SuperAdminStatsWidget;
 use App\Filament\Widgets\UserAnalyticsChartWidget;
 use App\Http\Middleware\AcademyContext;
-use Filament\Http\Middleware\Authenticate;
+use App\Http\Middleware\FilamentAuthenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationItem;
@@ -81,7 +80,6 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('/admin')
-            ->login(Login::class)
             ->authGuard('web')
             ->authPasswordBroker('users')
             ->brandName('منصة إتقان للأعمال')
@@ -142,7 +140,7 @@ class AdminPanelProvider extends PanelProvider
                 __('filament.nav_groups.developer_tools'),
             ])
             ->authMiddleware([
-                Authenticate::class,
+                FilamentAuthenticate::class,
             ])
             ->plugins([
                 FilamentSpatieLaravelHealthPlugin::make()

@@ -78,7 +78,11 @@ class FcmService
             $error = $failure->error();
 
             if ($target && $error) {
-                $errorCode = $error->jsonSerialize()['status'] ?? '';
+                $errorCode = match (true) {
+                    $error instanceof \Kreait\Firebase\Exception\Messaging\NotFound => 'NOT_FOUND',
+                    $error instanceof \Kreait\Firebase\Exception\Messaging\InvalidArgument => 'INVALID_ARGUMENT',
+                    default => '',
+                };
                 $token = $target->value();
 
                 if (in_array($errorCode, ['NOT_FOUND', 'UNREGISTERED', 'INVALID_ARGUMENT'])) {

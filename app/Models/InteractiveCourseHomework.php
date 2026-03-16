@@ -37,11 +37,6 @@ class InteractiveCourseHomework extends Model
         'max_score',
         'status',
         'is_active',
-        'total_students',
-        'submitted_count',
-        'graded_count',
-        'late_count',
-        'average_score',
         'created_by',
         'updated_by',
     ];
@@ -149,7 +144,7 @@ class InteractiveCourseHomework extends Model
 
     public function scopeNeedsGrading($query)
     {
-        return $query->where('submitted_count', '>', 'graded_count');
+        return $query->whereColumn('submitted_count', '>', 'graded_count');
     }
 
     /**
