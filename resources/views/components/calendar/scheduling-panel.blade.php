@@ -301,8 +301,11 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.session_count') }}</label>
-                                <input type="number" x-model.number="sessionCount" min="1" max="50"
+                                <input type="number" x-model.number="sessionCount" min="1" :max="getMaxSessionCount()"
                                        class="w-full min-h-[36px] px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <template x-if="selectedItem && getRemainingSessions() > 0">
+                                    <p class="text-[10px] text-blue-600 mt-0.5">{{ __('teacher.calendar.remaining') }}: <span x-text="getRemainingSessions()"></span></p>
+                                </template>
                             </div>
                         </div>
 
@@ -439,11 +442,22 @@ function schedulingPanel() {
         selectItem(item) {
             this.selectedItem = item;
             this.scheduleDays = item.schedule_days || [];
-            this.sessionCount = item.type === 'trial' ? 1 : 4;
+            const remaining = item.sessions_remaining ?? item.remaining_sessions ?? 0;
+            this.sessionCount = item.type === 'trial' ? 1 : (remaining > 0 ? remaining : 4);
             this.error = null;
             this.success = null;
             this.recommendations = null;
             this.fetchRecommendations(item);
+        },
+
+        getRemainingSessions() {
+            if (!this.selectedItem) return 0;
+            return this.selectedItem.sessions_remaining ?? this.selectedItem.remaining_sessions ?? 0;
+        },
+
+        getMaxSessionCount() {
+            const remaining = this.getRemainingSessions();
+            return remaining > 0 ? remaining : 50;
         },
 
         async fetchRecommendations(item) {
