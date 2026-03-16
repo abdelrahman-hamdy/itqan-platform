@@ -256,7 +256,9 @@
                     <div class="px-4 md:px-6 py-4 md:py-5 hover:bg-gray-50/50 transition-colors">
                         <!-- Top row: Avatar + Info + Type Badge -->
                         <div class="flex items-start gap-3 md:gap-4 mb-3">
-                            <x-avatar :user="$teacher['user']" size="md" :user-type="$isQuran ? 'quran_teacher' : 'academic_teacher'" />
+                            <a href="{{ route('manage.teachers.show', ['subdomain' => $subdomain, 'teacher' => $teacher['user']->id]) }}">
+                                <x-avatar :user="$teacher['user']" size="md" :user-type="$isQuran ? 'quran_teacher' : 'academic_teacher'" />
+                            </a>
                             <div class="flex-1 min-w-0">
                                 <div class="flex flex-wrap items-center gap-2 mb-1">
                                     <a href="{{ route('manage.teachers.show', ['subdomain' => $subdomain, 'teacher' => $teacher['user']->id]) }}" class="text-base md:text-lg font-bold text-gray-900 hover:text-blue-600 truncate transition-colors">{{ $teacher['user']->name }}</a>

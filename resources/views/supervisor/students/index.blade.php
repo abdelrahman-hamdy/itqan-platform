@@ -218,7 +218,9 @@
                     <div class="px-4 md:px-6 py-4 md:py-5 hover:bg-gray-50/50 transition-colors">
                         <!-- Top row: Avatar + Info + Program Badges -->
                         <div class="flex items-start gap-3 md:gap-4 mb-3">
-                            <x-avatar :user="$student['user']" size="md" user-type="student" />
+                            <a href="{{ route('manage.students.show', ['subdomain' => $subdomain, 'student' => $student['user']->id]) }}">
+                                <x-avatar :user="$student['user']" size="md" user-type="student" />
+                            </a>
                             <div class="flex-1 min-w-0">
                                 <div class="flex flex-wrap items-center gap-2 mb-1">
                                     <a href="{{ route('manage.students.show', ['subdomain' => $subdomain, 'student' => $student['user']->id]) }}" class="text-base md:text-lg font-bold text-gray-900 hover:text-blue-600 truncate transition-colors">{{ $student['user']->name }}</a>
