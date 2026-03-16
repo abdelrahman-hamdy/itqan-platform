@@ -1,14 +1,16 @@
 @php
     // Determine layout based on user role
     $user = auth()->user();
-    $isParent = $user->role === 'parent' || $user->user_type === 'parent';
-    $isTeacher = $user->isQuranTeacher() || $user->isAcademicTeacher();
 
     // Select appropriate layout
-    if ($isParent) {
-        $layoutComponent = 'layouts.parent-layout';
-    } elseif ($isTeacher) {
+    if ($user->isAdmin() || $user->isSuperAdmin()) {
+        $layoutComponent = 'layouts.admin-education';
+    } elseif ($user->isSupervisor()) {
+        $layoutComponent = 'layouts.supervisor';
+    } elseif ($user->isTeacher()) {
         $layoutComponent = 'layouts.teacher';
+    } elseif ($user->isParent()) {
+        $layoutComponent = 'layouts.parent-layout';
     } else {
         $layoutComponent = 'layouts.student';
     }
@@ -24,10 +26,14 @@
         <ol class="flex items-center gap-2 text-sm text-gray-600">
             @php
                 $subdomain = $user->academy->subdomain ?? 'itqan-academy';
-                if ($isParent) {
-                    $dashboardRoute = route('parent.profile', ['subdomain' => $subdomain]);
-                } elseif ($isTeacher) {
+                if ($user->isAdmin() || $user->isSuperAdmin()) {
+                    $dashboardRoute = route('academy.admin.dashboard', ['subdomain' => $subdomain]);
+                } elseif ($user->isSupervisor()) {
+                    $dashboardRoute = route('manage.dashboard', ['subdomain' => $subdomain]);
+                } elseif ($user->isTeacher()) {
                     $dashboardRoute = route('teacher.dashboard', ['subdomain' => $subdomain]);
+                } elseif ($user->isParent()) {
+                    $dashboardRoute = route('parent.profile', ['subdomain' => $subdomain]);
                 } else {
                     $dashboardRoute = route('student.profile', ['subdomain' => $subdomain]);
                 }
