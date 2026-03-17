@@ -10,6 +10,8 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
 use App\Models\QuranSubscription;
+use App\Services\Reports\AcademicReportService;
+use App\Services\Reports\QuranReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -236,7 +238,10 @@ class SubscriptionController extends Controller
                 }
 
                 $sessions = $subscription->sessions()
-                    ->with(['quranTeacher'])
+                    ->with([
+                        'quranTeacher',
+                        'studentReports' => fn ($q) => $q->where('student_id', $user->id),
+                    ])
                     ->orderBy('scheduled_at', 'desc')
                     ->get()
                     ->map(fn ($s) => $this->formatSessionBrief($s, 'quran'))
@@ -253,10 +258,20 @@ class SubscriptionController extends Controller
                 }
 
                 $sessions = $subscription->sessions()
-                    ->with(['academicTeacher.user'])
+                    ->with([
+                        'academicTeacher.user',
+                        'sessionReports' => fn ($q) => $q->where('student_id', $user->id),
+                    ])
                     ->orderBy('scheduled_at', 'desc')
                     ->get()
-                    ->map(fn ($s) => $this->formatSessionBrief($s, 'academic'))
+                    ->map(function ($s) {
+                        // Normalize relationship name for formatSessionBrief
+                        if ($s->relationLoaded('sessionReports')) {
+                            $s->setRelation('studentReports', $s->sessionReports);
+                        }
+
+                        return $this->formatSessionBrief($s, 'academic');
+                    })
                     ->toArray();
                 break;
 
@@ -413,6 +428,151 @@ class SubscriptionController extends Controller
         return $this->success([
             'cancelled' => true,
         ], __('Subscription cancelled successfully.'));
+    }
+
+    /**
+     * Get report data for a subscription using the same services as the web app.
+     */
+    public function report(Request $request, string $type, int $id): JsonResponse
+    {
+        if (! in_array($type, ['quran', 'quran_group', 'academic'])) {
+            return $this->error(
+                __('Reports are available for quran and academic subscriptions'),
+                400,
+                'INVALID_SUBSCRIPTION_TYPE'
+            );
+        }
+
+        $user = $request->user();
+
+        // Parse optional date range
+        $dateRange = null;
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $dateRange = [
+                'start' => \Carbon\Carbon::parse($request->get('start_date')),
+                'end' => \Carbon\Carbon::parse($request->get('end_date')),
+            ];
+        }
+
+        if ($type === 'quran' || $type === 'quran_group') {
+            $subscription = QuranSubscription::where('id', $id)
+                ->where('student_id', $user->id)
+                ->with(['individualCircle', 'quranCircle'])
+                ->first();
+
+            if (! $subscription) {
+                return $this->notFound(__('Subscription not found.'));
+            }
+
+            $reportService = app(QuranReportService::class);
+            $isGroup = in_array($subscription->subscription_type, ['group', 'circle']);
+
+            if ($isGroup && $subscription->quranCircle) {
+                $reportData = $reportService->getStudentReportInGroupCircle(
+                    $subscription->quranCircle,
+                    $user,
+                    $dateRange
+                );
+            } elseif (! $isGroup && $subscription->individualCircle) {
+                $reportData = $reportService->getIndividualCircleReport(
+                    $subscription->individualCircle,
+                    $dateRange
+                );
+            } else {
+                return $this->success([
+                    'report' => $this->emptyReport(),
+                ], __('No report data available'));
+            }
+
+            // Extract DTOs and convert to API response
+            $attendance = $reportData['attendance'];
+            $performance = $reportData['performance'];
+            $progress = $reportData['progress'];
+
+            return $this->success([
+                'report' => [
+                    'attendance' => $attendance->toArray(),
+                    'performance' => [
+                        'memorization_score' => $performance->averageMemorization ?? 0,
+                        'recitation_score' => $performance->averageReservation ?? 0,
+                        'homework_score' => 0,
+                        'overall_performance' => $performance->averageOverall,
+                        'sessions_evaluated' => $performance->totalEvaluated,
+                    ],
+                    'progress' => [
+                        'pages_memorized' => $progress['pages_memorized'] ?? 0,
+                        'pages_reviewed' => $progress['pages_reviewed'] ?? 0,
+                        'progress_rate' => $progress['progress_percentage'] ?? 0,
+                        'sessions_evaluated' => $progress['sessions_evaluated'] ?? 0,
+                    ],
+                ],
+            ], __('Report retrieved successfully'));
+        }
+
+        // Academic subscription
+        $subscription = AcademicSubscription::where('id', $id)
+            ->where('student_id', $user->id)
+            ->first();
+
+        if (! $subscription) {
+            return $this->notFound(__('Subscription not found.'));
+        }
+
+        $reportService = app(AcademicReportService::class);
+        $reportData = $reportService->getSubscriptionReport($subscription, $dateRange);
+
+        $attendance = $reportData['attendance'];
+        $performance = $reportData['performance'];
+        $progress = $reportData['progress'];
+
+        return $this->success([
+            'report' => [
+                'attendance' => $attendance->toArray(),
+                'performance' => [
+                    'memorization_score' => 0,
+                    'recitation_score' => 0,
+                    'homework_score' => $performance->averageHomework ?? 0,
+                    'overall_performance' => $performance->averageOverall,
+                    'sessions_evaluated' => $performance->totalEvaluated,
+                ],
+                'progress' => [
+                    'pages_memorized' => 0,
+                    'pages_reviewed' => 0,
+                    'progress_rate' => $progress['completion_rate'] ?? 0,
+                    'sessions_evaluated' => $progress['sessions_completed'] ?? 0,
+                ],
+            ],
+        ], __('Report retrieved successfully'));
+    }
+
+    /**
+     * Return an empty report structure.
+     */
+    protected function emptyReport(): array
+    {
+        return [
+            'attendance' => [
+                'total_sessions' => 0,
+                'attended' => 0,
+                'absent' => 0,
+                'late' => 0,
+                'attendance_rate' => 0,
+                'average_duration_minutes' => 0,
+            ],
+            'performance' => [
+                'memorization_score' => 0,
+                'recitation_score' => 0,
+                'homework_score' => 0,
+                'overall_performance' => 0,
+                'sessions_evaluated' => 0,
+            ],
+            'progress' => [
+                'pages_memorized' => 0,
+                'pages_reviewed' => 0,
+                'progress_rate' => 0,
+                'sessions_evaluated' => 0,
+            ],
+        ];
     }
 
     /**
@@ -626,7 +786,13 @@ class SubscriptionController extends Controller
      */
     protected function formatSessionBrief($session, string $type): array
     {
-        // All session types now use scheduled_at
+        // Get attendance status from eager-loaded reports for the current student
+        $attendanceStatus = null;
+        if ($session->relationLoaded('studentReports') && $session->studentReports->isNotEmpty()) {
+            $status = $session->studentReports->first()->attendance_status;
+            $attendanceStatus = $status instanceof \BackedEnum ? $status->value : $status;
+        }
+
         return [
             'id' => $session->id,
             'type' => $type,
@@ -634,6 +800,7 @@ class SubscriptionController extends Controller
             'status' => $session->status->value ?? $session->status,
             'scheduled_at' => $session->scheduled_at?->toISOString(),
             'duration_minutes' => $session->duration_minutes ?? 45,
+            'attendance_status' => $attendanceStatus,
         ];
     }
 }

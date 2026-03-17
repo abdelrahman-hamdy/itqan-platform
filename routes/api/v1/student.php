@@ -103,6 +103,10 @@ Route::middleware(['api.is.student', 'ability:student:*'])->group(function () {
             ->where('type', 'quran|quran_group|academic|course')
             ->name('api.v1.student.subscriptions.sessions');
 
+        Route::get('/{type}/{id}/report', [SubscriptionController::class, 'report'])
+            ->where('type', 'quran|quran_group|academic')
+            ->name('api.v1.student.subscriptions.report');
+
         Route::patch('/{type}/{id}/toggle-auto-renew', [SubscriptionController::class, 'toggleAutoRenew'])
             ->where('type', 'quran|academic')
             ->middleware('throttle:5,1')
