@@ -267,6 +267,7 @@ class ReportController extends Controller
                 'title' => $session?->title ?? __('جلسة قرآنية'),
                 'session_code' => $session?->session_code,
                 'scheduled_at' => $session?->scheduled_at?->toISOString(),
+                'session_type' => $session?->session_type,
             ],
             'teacher' => $teacher ? [
                 'id' => $teacher->id,
