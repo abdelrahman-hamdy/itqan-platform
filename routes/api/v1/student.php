@@ -96,11 +96,11 @@ Route::middleware(['api.is.student', 'ability:student:*'])->group(function () {
             ->name('api.v1.student.subscriptions.counts');
 
         Route::get('/{type}/{id}', [SubscriptionController::class, 'show'])
-            ->where('type', 'quran|academic|course')
+            ->where('type', 'quran|quran_group|academic|course')
             ->name('api.v1.student.subscriptions.show');
 
         Route::get('/{type}/{id}/sessions', [SubscriptionController::class, 'sessions'])
-            ->where('type', 'quran|academic|course')
+            ->where('type', 'quran|quran_group|academic|course')
             ->name('api.v1.student.subscriptions.sessions');
 
         Route::patch('/{type}/{id}/toggle-auto-renew', [SubscriptionController::class, 'toggleAutoRenew'])
