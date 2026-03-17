@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Http\Traits\Api\PaginatesResults;
 use App\Http\Traits\Api\SessionViewerTrait;
+use BackedEnum;
 
 /**
  * Base controller for student session operations
@@ -101,5 +102,47 @@ abstract class BaseStudentSessionController extends Controller
         }
 
         return $base;
+    }
+
+    /**
+     * Format a session report model into a JSON-ready array.
+     */
+    protected function formatSessionReport($report, string $type): ?array
+    {
+        if (! $report || ! $report->evaluated_at) {
+            return null;
+        }
+
+        $attendance = [
+            'status' => $report->attendance_status instanceof BackedEnum
+                ? $report->attendance_status->value : (string) $report->attendance_status,
+            'duration_minutes' => $report->actual_attendance_minutes,
+            'is_late' => $report->is_late,
+            'late_minutes' => $report->late_minutes,
+            'attendance_percentage' => $report->attendance_percentage,
+            'enter_time' => $report->meeting_enter_time?->toISOString(),
+            'leave_time' => $report->meeting_leave_time?->toISOString(),
+        ];
+
+        $performance = [
+            'overall_score' => $report->overall_performance,
+            'performance_level' => $report->performance_level,
+        ];
+
+        if ($type === 'quran') {
+            $performance['memorization_degree'] = $report->new_memorization_degree;
+            $performance['revision_degree'] = $report->reservation_degree;
+        } else {
+            $performance['homework_degree'] = $report->homework_degree;
+        }
+
+        return [
+            'id' => $report->id,
+            'type' => $type,
+            'attendance' => $attendance,
+            'performance' => $performance,
+            'notes' => $report->notes,
+            'evaluated_at' => $report->evaluated_at?->toISOString(),
+        ];
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Enums\SessionStatus;
 use App\Models\QuranSession;
+use App\Models\StudentSessionReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -128,8 +129,15 @@ class QuranSessionController extends BaseStudentSessionController
             return $this->notFound(__('Quran session not found.'));
         }
 
+        $report = StudentSessionReport::where('session_id', $session->id)
+            ->where('student_id', $user->id)
+            ->first();
+
+        $details = $this->formatSessionDetails($session);
+        $details['report'] = $this->formatSessionReport($report, 'quran');
+
         return $this->success([
-            'session' => $this->formatSessionDetails($session),
+            'session' => $details,
         ], __('Quran session retrieved successfully'));
     }
 

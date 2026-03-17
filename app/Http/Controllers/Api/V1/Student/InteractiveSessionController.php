@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Enums\SessionStatus;
 use App\Models\InteractiveCourseSession;
+use App\Models\InteractiveSessionReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -161,8 +162,15 @@ class InteractiveSessionController extends BaseStudentSessionController
             return $this->notFound(__('Interactive session not found.'));
         }
 
+        $report = InteractiveSessionReport::where('session_id', $session->id)
+            ->where('student_id', $user->id)
+            ->first();
+
+        $details = $this->formatSessionDetails($session);
+        $details['report'] = $this->formatSessionReport($report, 'interactive');
+
         return $this->success([
-            'session' => $this->formatSessionDetails($session),
+            'session' => $details,
         ], __('Interactive session retrieved successfully'));
     }
 
