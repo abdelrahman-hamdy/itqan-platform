@@ -231,11 +231,6 @@ class IssueCertificateModal extends Component
                 ->findOrFail($this->subscriptionId);
         }
 
-        // Check if already has certificate
-        if ($this->subscription && $this->subscription->certificate) {
-            session()->flash('error', __('components.certificate.modal.messages.already_issued'));
-            $this->closeModal();
-        }
     }
 
     public function toggleSelectAll()

@@ -190,9 +190,9 @@ class CertificateService implements CertificateServiceInterface
             throw new Exception('Invalid subscription type for manual certificate.');
         }
 
-        // Check if certificate already issued
+        // If certificate already exists, delete old one to allow re-issuance
         if ($subscriptionable->certificate_issued || $this->repository->existsForSubscription($subscriptionable)) {
-            throw new Exception('Certificate already issued for this subscription.');
+            $this->repository->deleteForSubscription($subscriptionable);
         }
 
         $academy = $subscriptionable->academy;
