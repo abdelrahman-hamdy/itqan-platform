@@ -11,31 +11,31 @@ use Illuminate\Support\Facades\Log;
  * If the payments channel fails (e.g. file permission issues),
  * this falls back to the default log channel silently.
  */
-class SafePaymentLogger
+final class SafePaymentLogger
 {
     public static function info(string $message, array $context = []): void
     {
-        static::log('info', $message, $context);
+        self::log('info', $message, $context);
     }
 
     public static function error(string $message, array $context = []): void
     {
-        static::log('error', $message, $context);
+        self::log('error', $message, $context);
     }
 
     public static function warning(string $message, array $context = []): void
     {
-        static::log('warning', $message, $context);
+        self::log('warning', $message, $context);
     }
 
     public static function debug(string $message, array $context = []): void
     {
-        static::log('debug', $message, $context);
+        self::log('debug', $message, $context);
     }
 
     public static function critical(string $message, array $context = []): void
     {
-        static::log('critical', $message, $context);
+        self::log('critical', $message, $context);
     }
 
     private static function log(string $level, string $message, array $context): void

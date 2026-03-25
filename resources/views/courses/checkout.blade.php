@@ -148,16 +148,11 @@
                                 <span class="font-medium">{{ number_format($course->price) }} {{ getCurrencySymbol() }}</span>
                             </div>
 
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">{{ __('courses.checkout.invoice.vat') }}</span>
-                                <span class="font-medium">{{ number_format($course->price * 0.15) }} {{ getCurrencySymbol() }}</span>
-                            </div>
-
                             <div class="border-t border-gray-200 pt-3">
                                 <div class="flex justify-between text-lg font-bold">
                                     <span>{{ __('courses.checkout.invoice.total') }}</span>
                                     <span class="text-primary">
-                                        {{ number_format($course->price * 1.15) }} {{ getCurrencySymbol() }}
+                                        {{ number_format($course->price) }} {{ getCurrencySymbol() }}
                                     </span>
                                 </div>
                             </div>

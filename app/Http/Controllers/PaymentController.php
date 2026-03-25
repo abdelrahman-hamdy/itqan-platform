@@ -57,17 +57,12 @@ class PaymentController extends Controller
 
         $course->load(['academy']);
 
-        // Calculate payment details
         $finalPrice = $course->price;
-        $taxAmount = $this->calculateTax($finalPrice);
-        $totalAmount = $finalPrice + $taxAmount;
 
         return view('payments.create', compact(
             'course',
             'enrollment',
-            'finalPrice',
-            'taxAmount',
-            'totalAmount'
+            'finalPrice'
         ));
     }
 
@@ -93,11 +88,9 @@ class PaymentController extends Controller
         }
 
         $finalPrice = $course->price;
-        $taxAmount = $this->calculateTax($finalPrice);
-        $totalAmount = $finalPrice + $taxAmount;
 
         try {
-            DB::transaction(function () use ($user, $course, $enrollment, $validated, $totalAmount, $taxAmount) {
+            DB::transaction(function () use ($user, $course, $enrollment, $validated, $finalPrice) {
                 // Create payment record
                 $payment = Payment::createPayment([
                     'academy_id' => $course->academy_id,
@@ -106,10 +99,10 @@ class PaymentController extends Controller
                     'payment_method' => $validated['payment_method'],
                     'payment_gateway' => $validated['payment_gateway'] ?? $this->getGatewayForMethod($validated['payment_method']),
                     'payment_type' => 'course_enrollment',
-                    'amount' => $totalAmount,
+                    'amount' => $finalPrice,
                     'currency' => getCurrencyCode(null, $course->academy), // Always use academy's configured currency
-                    'tax_amount' => $taxAmount,
-                    'tax_percentage' => 15, // Saudi VAT
+                    'tax_amount' => 0,
+                    'tax_percentage' => 0,
                     'status' => 'pending',
                     'payment_status' => 'pending',
                 ]);
@@ -252,14 +245,6 @@ class PaymentController extends Controller
         ];
 
         return $this->success(['methods' => $methods]);
-    }
-
-    /**
-     * Calculate tax amount (VAT)
-     */
-    private function calculateTax(float $amount): float
-    {
-        return ($amount * 15) / 100; // 15% VAT in Saudi Arabia
     }
 
     /**

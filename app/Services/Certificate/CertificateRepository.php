@@ -6,7 +6,6 @@ use App\Models\Certificate;
 use App\Models\CourseSubscription;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class CertificateRepository
@@ -130,7 +129,7 @@ class CertificateRepository
 
     /**
      * Delete all certificates for a subscription (to allow re-issuance).
-     * Removes associated PDF files from storage.
+     * File cleanup is handled by the Certificate model's deleting event.
      */
     public function deleteForSubscription($subscriptionable): void
     {
@@ -139,9 +138,6 @@ class CertificateRepository
             ->get();
 
         foreach ($certificates as $certificate) {
-            if ($certificate->pdf_path && Storage::disk('public')->exists($certificate->pdf_path)) {
-                Storage::disk('public')->delete($certificate->pdf_path);
-            }
             $certificate->forceDelete();
         }
     }

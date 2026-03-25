@@ -20,6 +20,7 @@ use App\Services\Certificate\CertificateRepository;
 use App\Services\Certificate\CertificateTemplateEngine;
 use Exception;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Tcpdf\Fpdi;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -190,11 +191,6 @@ class CertificateService implements CertificateServiceInterface
             throw new Exception('Invalid subscription type for manual certificate.');
         }
 
-        // If certificate already exists, delete old one to allow re-issuance
-        if ($subscriptionable->certificate_issued || $this->repository->existsForSubscription($subscriptionable)) {
-            $this->repository->deleteForSubscription($subscriptionable);
-        }
-
         $academy = $subscriptionable->academy;
         $student = $subscriptionable->student;
 
@@ -210,35 +206,42 @@ class CertificateService implements CertificateServiceInterface
             $teacherId = $subscriptionable->teacher?->user_id;
         }
 
-        // Use achievement text directly as certificate text (no template wrapping)
-        $certificateText = $achievementText;
-
         // Convert template style to enum if string
         if (is_string($templateStyle)) {
             $templateStyle = CertificateTemplateStyle::from($templateStyle);
         }
 
-        // Create certificate
-        $certificate = $this->createCertificate([
-            'academy_id' => $academy->id,
-            'student_id' => $student->id,
-            'teacher_id' => $teacherId,
-            'certificateable_type' => $subscriptionable->getMorphClass(),
-            'certificateable_id' => $subscriptionable->id,
-            'certificate_type' => $certificateType,
-            'template_style' => $templateStyle,
-            'certificate_text' => $certificateText,
-            'is_manual' => true,
-            'issued_by' => $issuedBy,
-            'metadata' => [
-                'subscription_code' => $subscriptionable->subscription_code ?? null,
-            ],
-        ]);
+        // Wrap delete + create in a transaction to prevent orphaned state
+        $certificate = DB::transaction(function () use ($subscriptionable, $academy, $student, $teacherId, $certificateType, $templateStyle, $achievementText, $issuedBy) {
+            // If certificate already exists, delete old one to allow re-issuance
+            if ($subscriptionable->certificate_issued || $this->repository->existsForSubscription($subscriptionable)) {
+                $this->repository->deleteForSubscription($subscriptionable);
+            }
 
-        // Update subscription
-        $this->repository->updateSubscriptionStatus($subscriptionable, true);
+            // Create certificate
+            $certificate = $this->createCertificate([
+                'academy_id' => $academy->id,
+                'student_id' => $student->id,
+                'teacher_id' => $teacherId,
+                'certificateable_type' => $subscriptionable->getMorphClass(),
+                'certificateable_id' => $subscriptionable->id,
+                'certificate_type' => $certificateType,
+                'template_style' => $templateStyle,
+                'certificate_text' => $achievementText,
+                'is_manual' => true,
+                'issued_by' => $issuedBy,
+                'metadata' => [
+                    'subscription_code' => $subscriptionable->subscription_code ?? null,
+                ],
+            ]);
 
-        // Send notifications (non-blocking)
+            // Update subscription
+            $this->repository->updateSubscriptionStatus($subscriptionable, true);
+
+            return $certificate;
+        });
+
+        // Send notifications (non-blocking, outside transaction)
         $this->emailService->sendToAll($certificate);
 
         return $certificate;
