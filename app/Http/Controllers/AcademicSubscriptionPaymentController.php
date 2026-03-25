@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Exception;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\UserType;
 use App\Models\AcademicSubscription;
@@ -10,6 +9,7 @@ use App\Models\Academy;
 use App\Models\Payment;
 use App\Services\Payment\AcademyPaymentGatewayFactory;
 use App\Services\PaymentService;
+use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -109,8 +109,6 @@ class AcademicSubscriptionPaymentController extends Controller
 
         try {
             $finalPrice = $subscription->final_price ?? $subscription->monthly_price;
-            $taxAmount = round($finalPrice * 0.15, 2);
-            $totalAmount = $finalPrice + $taxAmount;
 
             DB::beginTransaction();
 
@@ -132,11 +130,11 @@ class AcademicSubscriptionPaymentController extends Controller
                 'payment_method' => 'credit_card',
                 'payment_gateway' => $gateway,
                 'payment_type' => 'subscription',
-                'amount' => $totalAmount,
+                'amount' => $finalPrice,
                 'net_amount' => $finalPrice,
                 'currency' => getCurrencyCode(null, $academy),
-                'tax_amount' => $taxAmount,
-                'tax_percentage' => 15,
+                'tax_amount' => 0,
+                'tax_percentage' => 0,
                 'status' => 'pending',
                 'payment_status' => 'pending',
                 'created_by' => $user->id,

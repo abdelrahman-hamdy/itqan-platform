@@ -5,9 +5,9 @@ namespace App\Services\Payment\DTOs;
 use App\Enums\PaymentResultStatus;
 use App\Models\Payment;
 use App\Services\Payment\EasyKashSignatureService;
+use App\Services\Payment\SafePaymentLogger;
 use DateTime;
 use DateTimeInterface;
-use Log;
 
 /**
  * Data Transfer Object for webhook payloads.
@@ -67,7 +67,7 @@ readonly class WebhookPayload
         // Handle refund flag gracefully (refunds not supported but gateway may send flag)
         $refundDetected = $obj['is_refunded'] ?? false;
         if ($refundDetected) {
-            Log::channel('payments')->warning('Paymob refund detected but platform does not support refunds', [
+            SafePaymentLogger::warning('Paymob refund detected but platform does not support refunds', [
                 'transaction_id' => $obj['id'] ?? null,
                 'merchant_order_id' => $merchantOrderId,
             ]);
@@ -160,7 +160,7 @@ readonly class WebhookPayload
         // Handle refund status gracefully (refunds not supported but gateway may send)
         $refundDetected = $statusString === 'REFUNDED';
         if ($refundDetected) {
-            Log::channel('payments')->warning('EasyKash refund detected but platform does not support refunds', [
+            SafePaymentLogger::warning('EasyKash refund detected but platform does not support refunds', [
                 'easykash_ref' => $data['easykashRef'] ?? null,
                 'customer_reference' => $data['customerReference'] ?? null,
             ]);
@@ -258,7 +258,7 @@ readonly class WebhookPayload
         // Handle refund gracefully
         $refundDetected = $tapStatus === 'REFUNDED';
         if ($refundDetected) {
-            Log::channel('payments')->warning('Tap refund detected but platform does not support refunds', [
+            SafePaymentLogger::warning('Tap refund detected but platform does not support refunds', [
                 'charge_id' => $data['id'] ?? null,
             ]);
         }

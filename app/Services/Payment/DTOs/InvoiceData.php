@@ -2,11 +2,11 @@
 
 namespace App\Services\Payment\DTOs;
 
-use App\Models\QuranSubscription;
+use App\Enums\PaymentStatus;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
-use App\Enums\PaymentStatus;
 use App\Models\Payment;
+use App\Models\QuranSubscription;
 use Carbon\Carbon;
 
 /**
@@ -106,7 +106,7 @@ readonly class InvoiceData
             customerPhone: $payment->user?->phone,
             amount: (float) $payment->amount,
             taxAmount: (float) ($payment->tax_amount ?? 0),
-            taxPercentage: (float) ($payment->tax_percentage ?? 15),
+            taxPercentage: (float) ($payment->tax_percentage ?? 0),
             discountAmount: (float) ($payment->discount_amount ?? 0),
             fees: (float) ($payment->fees ?? 0),
             netAmount: (float) ($payment->net_amount ?? $payment->amount),

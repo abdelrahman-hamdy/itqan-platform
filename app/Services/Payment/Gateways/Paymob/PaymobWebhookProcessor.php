@@ -2,9 +2,9 @@
 
 namespace App\Services\Payment\Gateways\Paymob;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use App\Services\Payment\DTOs\WebhookPayload;
+use App\Services\Payment\SafePaymentLogger;
+use Illuminate\Http\Request;
 
 /**
  * Handles webhook signature verification and payload parsing for Paymob.
@@ -20,14 +20,14 @@ class PaymobWebhookProcessor
     {
         $hmacSecret = $this->getWebhookSecret();
         if (empty($hmacSecret)) {
-            Log::channel('payments')->warning('Paymob HMAC secret not configured');
+            SafePaymentLogger::warning('Paymob HMAC secret not configured');
 
             return false;
         }
 
         $receivedHmac = $request->query('hmac') ?? $request->header('Hmac');
         if (empty($receivedHmac)) {
-            Log::channel('payments')->warning('No HMAC received in webhook');
+            SafePaymentLogger::warning('No HMAC received in webhook');
 
             return false;
         }
@@ -41,7 +41,7 @@ class PaymobWebhookProcessor
         $isValid = hash_equals($calculatedHmac, $receivedHmac);
 
         if (! $isValid) {
-            Log::channel('payments')->warning('Paymob HMAC verification failed', [
+            SafePaymentLogger::warning('Paymob HMAC verification failed', [
                 'received_prefix' => substr($receivedHmac, 0, 16).'...',
                 'calculated_prefix' => substr($calculatedHmac, 0, 16).'...',
             ]);

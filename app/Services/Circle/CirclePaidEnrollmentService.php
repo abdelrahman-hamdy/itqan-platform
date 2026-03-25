@@ -2,7 +2,6 @@
 
 namespace App\Services\Circle;
 
-use Exception;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Exceptions\EnrollmentCapacityException;
@@ -11,6 +10,7 @@ use App\Models\QuranCircle;
 use App\Models\QuranSubscription;
 use App\Models\User;
 use App\Services\PaymentService;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -100,10 +100,7 @@ class CirclePaidEnrollmentService
             $subscription = $result['subscription'];
             $lockedCircle = $result['circle'] ?? $circle;
 
-            // Calculate tax (15% VAT) - same as individual subscriptions
             $price = $lockedCircle->monthly_fee;
-            $taxAmount = round($price * 0.15, 2);
-            $totalAmount = $price + $taxAmount;
 
             // Get payment gateway (use provided or academy default)
             $paymentSettings = $academy->getPaymentSettings();
@@ -120,11 +117,11 @@ class CirclePaidEnrollmentService
                 'payment_method' => 'credit_card',
                 'payment_gateway' => $gateway,
                 'payment_type' => 'subscription',
-                'amount' => $totalAmount,
+                'amount' => $price,
                 'net_amount' => $price,
                 'currency' => $lockedCircle->currency ?? getCurrencyCode(null, $academy),
-                'tax_amount' => $taxAmount,
-                'tax_percentage' => 15,
+                'tax_amount' => 0,
+                'tax_percentage' => 0,
                 'status' => 'pending',
                 'payment_status' => 'pending',
                 'save_card' => $subscription->auto_renew,
@@ -134,7 +131,7 @@ class CirclePaidEnrollmentService
             Log::info('[CircleEnrollment] Created payment record', [
                 'payment_id' => $payment->id,
                 'subscription_id' => $subscription->id,
-                'amount' => $totalAmount,
+                'amount' => $price,
                 'gateway' => $gateway,
             ]);
 

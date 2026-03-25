@@ -19,6 +19,7 @@ use App\Services\Payment\Exceptions\WebhookValidationException;
 use App\Services\Payment\InvoiceService;
 use App\Services\Payment\PaymentStateMachine;
 use App\Services\Payment\PaymobSignatureService;
+use App\Services\Payment\SafePaymentLogger;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -52,7 +53,7 @@ class PaymobWebhookController extends Controller
         // Security: Verify webhook is from allowed IPs (if configured)
         $allowedIps = config('payments.gateways.paymob.webhook_ips', []);
         if (! empty($allowedIps) && ! in_array($request->ip(), $allowedIps)) {
-            Log::channel('payments')->warning('Webhook from unauthorized IP', [
+            SafePaymentLogger::warning('Webhook from unauthorized IP', [
                 'ip' => $request->ip(),
                 'allowed_ips' => $allowedIps,
             ]);
@@ -63,7 +64,7 @@ class PaymobWebhookController extends Controller
             ], 403);
         }
 
-        Log::channel('payments')->info('Paymob webhook received', [
+        SafePaymentLogger::info('Paymob webhook received', [
             'type' => $request->input('type'),
             'transaction_id' => $request->input('obj.id'),
             'ip' => $request->ip(),
@@ -90,7 +91,7 @@ class PaymobWebhookController extends Controller
             );
 
             if (! $wasCreated) {
-                Log::channel('payments')->info('Duplicate webhook event ignored', [
+                SafePaymentLogger::info('Duplicate webhook event ignored', [
                     'event_id' => $eventId,
                 ]);
 
@@ -105,7 +106,7 @@ class PaymobWebhookController extends Controller
 
             return response()->json($result);
         } catch (WebhookValidationException $e) {
-            Log::channel('payments')->error('Webhook validation failed', [
+            SafePaymentLogger::error('Webhook validation failed', [
                 'error' => $e->getMessage(),
                 'code' => $e->getErrorCode(),
             ]);
@@ -115,7 +116,7 @@ class PaymobWebhookController extends Controller
                 'message' => 'Webhook validation failed',
             ], 400);
         } catch (QueryException $e) {
-            Log::channel('payments')->error('Database error during webhook processing', [
+            SafePaymentLogger::error('Database error during webhook processing', [
                 'error' => $e->getMessage(),
                 'code' => $e->getCode(),
             ]);
@@ -125,7 +126,7 @@ class PaymobWebhookController extends Controller
                 'message' => 'Database error occurred',
             ], 500);
         } catch (InvalidArgumentException $e) {
-            Log::channel('payments')->error('Invalid webhook data', [
+            SafePaymentLogger::error('Invalid webhook data', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -134,7 +135,7 @@ class PaymobWebhookController extends Controller
                 'message' => 'Invalid data format',
             ], 400);
         } catch (Throwable $e) {
-            Log::channel('payments')->critical('Unexpected webhook processing error', [
+            SafePaymentLogger::critical('Unexpected webhook processing error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -170,7 +171,7 @@ class PaymobWebhookController extends Controller
         }
 
         if (! $payment) {
-            Log::channel('payments')->warning('Payment not found for webhook', [
+            SafePaymentLogger::warning('Payment not found for webhook', [
                 'payment_id' => $payload->paymentId,
                 'transaction_id' => $payload->transactionId,
             ]);
@@ -185,7 +186,7 @@ class PaymobWebhookController extends Controller
 
         // Verify academy_id if available
         if ($payload->academyId && $payment->academy_id !== $payload->academyId) {
-            Log::channel('payments')->error('Academy ID mismatch in webhook', [
+            SafePaymentLogger::error('Academy ID mismatch in webhook', [
                 'expected' => $payment->academy_id,
                 'received' => $payload->academyId,
             ]);
@@ -206,7 +207,7 @@ class PaymobWebhookController extends Controller
             $convertedAmount = convertCurrency($payment->amount, 'SAR', 'EGP');
             $expectedAmount = (int) round($convertedAmount * 100);
 
-            Log::channel('payments')->debug('Webhook: Converted SAR amount to EGP for comparison', [
+            SafePaymentLogger::debug('Webhook: Converted SAR amount to EGP for comparison', [
                 'original_amount_sar' => $payment->amount,
                 'converted_amount_egp' => $convertedAmount,
                 'expected_cents_egp' => $expectedAmount,
@@ -215,7 +216,7 @@ class PaymobWebhookController extends Controller
         }
 
         if ($payload->amountInCents !== $expectedAmount) {
-            Log::channel('payments')->error('Amount mismatch in webhook', [
+            SafePaymentLogger::error('Amount mismatch in webhook', [
                 'expected' => $expectedAmount,
                 'received' => $payload->amountInCents,
                 'payment_currency' => $payment->currency,
@@ -250,7 +251,7 @@ class PaymobWebhookController extends Controller
 
             // Check if transition is valid
             if (! $this->stateMachine->canTransition($oldStatus, $newStatus)) {
-                Log::channel('payments')->warning('Invalid status transition', [
+                SafePaymentLogger::warning('Invalid status transition', [
                     'payment_id' => $payment->id,
                     'from' => $oldStatus,
                     'to' => $newStatus,
@@ -310,7 +311,7 @@ class PaymobWebhookController extends Controller
                 $this->handleSuccessfulPayment($payment, $payload);
             }
 
-            Log::channel('payments')->info('Payment updated from webhook', [
+            SafePaymentLogger::info('Payment updated from webhook', [
                 'payment_id' => $payment->id,
                 'old_status' => $oldStatus,
                 'new_status' => $newStatus,
@@ -329,7 +330,7 @@ class PaymobWebhookController extends Controller
      */
     private function handleSuccessfulPayment(Payment $payment, ?WebhookPayload $payload = null): void
     {
-        Log::channel('payments')->info('Paymob: handleSuccessfulPayment started', [
+        SafePaymentLogger::info('Paymob: handleSuccessfulPayment started', [
             'payment_id' => $payment->id,
             'payable_type' => $payment->payable_type,
             'payable_id' => $payment->payable_id,
@@ -344,7 +345,7 @@ class PaymobWebhookController extends Controller
             if ($payable && method_exists($payable, 'activateFromPayment')) {
                 $payable->activateFromPayment($payment);
 
-                Log::channel('payments')->info('Paymob: activateFromPayment completed via polymorphic', [
+                SafePaymentLogger::info('Paymob: activateFromPayment completed via polymorphic', [
                     'payment_id' => $payment->id,
                     'payable_class' => get_class($payable),
                     'subscription_id' => $payable->id,
@@ -352,7 +353,7 @@ class PaymobWebhookController extends Controller
             }
         } elseif ($payment->subscription_id) {
             // Legacy fallback: direct subscription_id lookup
-            Log::channel('payments')->info('Paymob: using legacy subscription_id fallback', [
+            SafePaymentLogger::info('Paymob: using legacy subscription_id fallback', [
                 'payment_id' => $payment->id,
                 'subscription_id' => $payment->subscription_id,
                 'payment_type' => $payment->payment_type,
@@ -367,20 +368,20 @@ class PaymobWebhookController extends Controller
                 if ($currentStatus !== 'paid' && $currentStatus !== 'active') {
                     $subscription->activateFromPayment($payment);
 
-                    Log::channel('payments')->info('Paymob: subscription activated from legacy subscription_id', [
+                    SafePaymentLogger::info('Paymob: subscription activated from legacy subscription_id', [
                         'subscription_id' => $subscription->id,
                         'subscription_type' => get_class($subscription),
                         'payment_id' => $payment->id,
                     ]);
                 }
             } else {
-                Log::channel('payments')->warning('Paymob: legacy subscription not found', [
+                SafePaymentLogger::warning('Paymob: legacy subscription not found', [
                     'payment_id' => $payment->id,
                     'subscription_id' => $payment->subscription_id,
                 ]);
             }
         } else {
-            Log::channel('payments')->warning('Paymob: no subscription linkage found', [
+            SafePaymentLogger::warning('Paymob: no subscription linkage found', [
                 'payment_id' => $payment->id,
                 'payable_type' => $payment->payable_type,
                 'payable_id' => $payment->payable_id,
@@ -585,7 +586,7 @@ class PaymobWebhookController extends Controller
         $errorOccurred = $request->input('error_occured') === 'true';
         $txnResponseCode = $request->input('txn_response_code');
 
-        Log::channel('payments')->info('Paymob callback received', [
+        SafePaymentLogger::info('Paymob callback received', [
             'payment_id' => $payment->id,
             'success' => $request->input('success'),
             'transaction_id' => $transactionId,
@@ -638,7 +639,7 @@ class PaymobWebhookController extends Controller
                     ]);
                 }
 
-                Log::channel('payments')->info('Payment callback received (success)', [
+                SafePaymentLogger::info('Payment callback received (success)', [
                     'payment_id' => $freshPayment->id,
                     'transaction_id' => $transactionId,
                     'note' => 'Waiting for webhook to confirm and activate subscription',
@@ -660,7 +661,7 @@ class PaymobWebhookController extends Controller
         // Payment failed
         $errorMessage = $request->input('data.message') ?? __('payments.notifications.payment_failed');
 
-        Log::channel('payments')->warning('Paymob payment failed', [
+        SafePaymentLogger::warning('Paymob payment failed', [
             'payment_id' => $payment->id,
             'transaction_id' => $transactionId,
             'error_occured' => $errorOccurred,
@@ -679,7 +680,7 @@ class PaymobWebhookController extends Controller
 
             // Don't overwrite a completed payment with failed status
             if ($freshPayment->status === PaymentStatus::COMPLETED) {
-                Log::channel('payments')->info('Payment already completed, skipping failed status update', [
+                SafePaymentLogger::info('Payment already completed, skipping failed status update', [
                     'payment_id' => $freshPayment->id,
                 ]);
 

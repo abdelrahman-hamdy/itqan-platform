@@ -1,9 +1,10 @@
 <?php
 
-use App\Services\ExchangeRateService;
 use App\Enums\Currency;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
+use App\Services\ExchangeRateService;
+use App\Services\Payment\SafePaymentLogger;
 
 if (! function_exists('getAcademyCurrency')) {
     /**
@@ -262,16 +263,12 @@ if (! function_exists('convertCurrency')) {
 
         } catch (Exception $e) {
             // If service fails, log and return original amount (safe fallback)
-            try {
-                Log::channel('payments')->error('Currency conversion failed', [
-                    'from' => $fromCode,
-                    'to' => $toCode,
-                    'amount' => $amount,
-                    'error' => $e->getMessage(),
-                ]);
-            } catch (\Throwable) {
-                // Never let logging crash the payment flow
-            }
+            SafePaymentLogger::error('Currency conversion failed', [
+                'from' => $fromCode,
+                'to' => $toCode,
+                'amount' => $amount,
+                'error' => $e->getMessage(),
+            ]);
 
             return $amount;
         }

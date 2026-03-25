@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Services\ExchangeRateService;
+use App\Services\Payment\SafePaymentLogger;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 
 class RefreshExchangeRates extends Command
 {
@@ -34,7 +34,7 @@ class RefreshExchangeRates extends Command
 
             } catch (\Exception $e) {
                 $this->error("✗ {$from}→{$to}: {$e->getMessage()}");
-                Log::channel('payments')->error('Failed to refresh exchange rate', [
+                SafePaymentLogger::error('Failed to refresh exchange rate', [
                     'from' => $from,
                     'to' => $to,
                     'error' => $e->getMessage(),

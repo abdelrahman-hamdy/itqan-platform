@@ -23,6 +23,7 @@ use App\Services\Payment\Exceptions\WebhookValidationException;
 use App\Services\Payment\Gateways\EasyKashGateway;
 use App\Services\Payment\InvoiceService;
 use App\Services\Payment\PaymentStateMachine;
+use App\Services\Payment\SafePaymentLogger;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -56,7 +57,7 @@ class EasyKashWebhookController extends Controller
         // Security: Verify webhook is from allowed IPs (if configured)
         $allowedIps = config('payments.gateways.easykash.webhook_ips', []);
         if (! empty($allowedIps) && ! in_array($request->ip(), $allowedIps)) {
-            Log::channel('payments')->warning('EasyKash webhook from unauthorized IP', [
+            SafePaymentLogger::warning('EasyKash webhook from unauthorized IP', [
                 'ip' => $request->ip(),
                 'allowed_ips' => $allowedIps,
             ]);
@@ -67,7 +68,7 @@ class EasyKashWebhookController extends Controller
             ], 403);
         }
 
-        Log::channel('payments')->info('EasyKash webhook received', [
+        SafePaymentLogger::info('EasyKash webhook received', [
             'status' => $request->input('status'),
             'easykash_ref' => $request->input('easykashRef'),
             'customer_reference' => $request->input('customerReference'),
@@ -86,7 +87,7 @@ class EasyKashWebhookController extends Controller
             // Step 3: Check for duplicate event (idempotency)
             $eventId = $payload->getIdempotencyKey();
             if (PaymentWebhookEvent::eventExists($eventId)) {
-                Log::channel('payments')->info('Duplicate EasyKash webhook event ignored', [
+                SafePaymentLogger::info('Duplicate EasyKash webhook event ignored', [
                     'event_id' => $eventId,
                 ]);
 
@@ -114,7 +115,7 @@ class EasyKashWebhookController extends Controller
 
             return response()->json($result);
         } catch (WebhookValidationException $e) {
-            Log::channel('payments')->error('EasyKash webhook validation failed', [
+            SafePaymentLogger::error('EasyKash webhook validation failed', [
                 'error' => $e->getMessage(),
                 'code' => $e->getErrorCode(),
             ]);
@@ -124,7 +125,7 @@ class EasyKashWebhookController extends Controller
                 'message' => $e->getMessage(),
             ], 400);
         } catch (QueryException $e) {
-            Log::channel('payments')->error('Database error during EasyKash webhook processing', [
+            SafePaymentLogger::error('Database error during EasyKash webhook processing', [
                 'error' => $e->getMessage(),
                 'code' => $e->getCode(),
             ]);
@@ -134,7 +135,7 @@ class EasyKashWebhookController extends Controller
                 'message' => 'Database error occurred',
             ], 500);
         } catch (InvalidArgumentException $e) {
-            Log::channel('payments')->error('Invalid EasyKash webhook data', [
+            SafePaymentLogger::error('Invalid EasyKash webhook data', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -143,7 +144,7 @@ class EasyKashWebhookController extends Controller
                 'message' => 'Invalid data format',
             ], 400);
         } catch (Throwable $e) {
-            Log::channel('payments')->critical('Unexpected EasyKash webhook processing error', [
+            SafePaymentLogger::critical('Unexpected EasyKash webhook processing error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -190,7 +191,7 @@ class EasyKashWebhookController extends Controller
         }
 
         if (! $payment) {
-            Log::channel('payments')->warning('Payment not found for EasyKash webhook', [
+            SafePaymentLogger::warning('Payment not found for EasyKash webhook', [
                 'payment_id' => $payload->paymentId,
                 'transaction_id' => $payload->transactionId,
                 'customer_reference' => $payload->rawPayload['customerReference'] ?? null,
@@ -206,7 +207,7 @@ class EasyKashWebhookController extends Controller
 
         // Verify academy_id if available
         if ($payload->academyId && $payment->academy_id !== $payload->academyId) {
-            Log::channel('payments')->error('Academy ID mismatch in EasyKash webhook', [
+            SafePaymentLogger::error('Academy ID mismatch in EasyKash webhook', [
                 'expected' => $payment->academy_id,
                 'received' => $payload->academyId,
             ]);
@@ -227,7 +228,7 @@ class EasyKashWebhookController extends Controller
             $convertedAmount = convertCurrency($payment->amount, 'SAR', 'EGP');
             $expectedAmount = (int) round($convertedAmount * 100);
 
-            Log::channel('payments')->debug('EasyKash webhook: Converted SAR amount to EGP for comparison', [
+            SafePaymentLogger::debug('EasyKash webhook: Converted SAR amount to EGP for comparison', [
                 'original_amount_sar' => $payment->amount,
                 'converted_amount_egp' => $convertedAmount,
                 'expected_cents_egp' => $expectedAmount,
@@ -236,7 +237,7 @@ class EasyKashWebhookController extends Controller
         }
 
         if ($payload->amountInCents !== $expectedAmount) {
-            Log::channel('payments')->error('Amount mismatch in EasyKash webhook', [
+            SafePaymentLogger::error('Amount mismatch in EasyKash webhook', [
                 'expected' => $expectedAmount,
                 'received' => $payload->amountInCents,
                 'payment_currency' => $payment->currency,
@@ -271,7 +272,7 @@ class EasyKashWebhookController extends Controller
 
             // Check if transition is valid
             if (! $this->stateMachine->canTransition($oldStatus, $newStatus)) {
-                Log::channel('payments')->warning('Invalid status transition for EasyKash payment', [
+                SafePaymentLogger::warning('Invalid status transition for EasyKash payment', [
                     'payment_id' => $payment->id,
                     'from' => $oldStatus,
                     'to' => $newStatus,
@@ -338,7 +339,7 @@ class EasyKashWebhookController extends Controller
                 $this->handleSuccessfulPayment($payment);
             }
 
-            Log::channel('payments')->info('Payment updated from EasyKash webhook', [
+            SafePaymentLogger::info('Payment updated from EasyKash webhook', [
                 'payment_id' => $payment->id,
                 'old_status' => $oldStatus,
                 'new_status' => $newStatus,
@@ -375,7 +376,7 @@ class EasyKashWebhookController extends Controller
      */
     private function handleSuccessfulPayment(Payment $payment): void
     {
-        Log::channel('payments')->info('EasyKash: handleSuccessfulPayment started', [
+        SafePaymentLogger::info('EasyKash: handleSuccessfulPayment started', [
             'payment_id' => $payment->id,
             'payable_type' => $payment->payable_type,
             'payable_id' => $payment->payable_id,
@@ -384,7 +385,7 @@ class EasyKashWebhookController extends Controller
 
         // Activate related subscription if exists (polymorphic)
         if ($payment->payable_type && $payment->payable_id) {
-            Log::channel('payments')->info('EasyKash: using polymorphic payable', [
+            SafePaymentLogger::info('EasyKash: using polymorphic payable', [
                 'payment_id' => $payment->id,
                 'payable_type' => $payment->payable_type,
             ]);
@@ -392,38 +393,38 @@ class EasyKashWebhookController extends Controller
             $payable = $payment->payable;
 
             if ($payable) {
-                Log::channel('payments')->info('EasyKash: payable found', [
+                SafePaymentLogger::info('EasyKash: payable found', [
                     'payment_id' => $payment->id,
                     'payable_class' => get_class($payable),
                     'has_activate_method' => method_exists($payable, 'activateFromPayment'),
                 ]);
 
                 if (method_exists($payable, 'activateFromPayment')) {
-                    Log::channel('payments')->info('EasyKash: calling activateFromPayment', [
+                    SafePaymentLogger::info('EasyKash: calling activateFromPayment', [
                         'payment_id' => $payment->id,
                     ]);
 
                     $payable->activateFromPayment($payment);
 
-                    Log::channel('payments')->info('EasyKash: activateFromPayment completed', [
+                    SafePaymentLogger::info('EasyKash: activateFromPayment completed', [
                         'payment_id' => $payment->id,
                         'subscription_id' => $payable->id,
                     ]);
                 } else {
-                    Log::channel('payments')->warning('EasyKash: payable does not have activateFromPayment method', [
+                    SafePaymentLogger::warning('EasyKash: payable does not have activateFromPayment method', [
                         'payment_id' => $payment->id,
                         'payable_class' => get_class($payable),
                     ]);
                 }
             } else {
-                Log::channel('payments')->warning('EasyKash: payable not found', [
+                SafePaymentLogger::warning('EasyKash: payable not found', [
                     'payment_id' => $payment->id,
                     'payable_type' => $payment->payable_type,
                     'payable_id' => $payment->payable_id,
                 ]);
             }
         } elseif ($payment->subscription_id) {
-            Log::channel('payments')->info('EasyKash: using legacy subscription_id fallback', [
+            SafePaymentLogger::info('EasyKash: using legacy subscription_id fallback', [
                 'payment_id' => $payment->id,
                 'subscription_id' => $payment->subscription_id,
             ]);
@@ -438,20 +439,20 @@ class EasyKashWebhookController extends Controller
                 if ($currentStatus !== 'paid' && $currentStatus !== 'active') {
                     $subscription->activateFromPayment($payment);
 
-                    Log::channel('payments')->info('EasyKash: subscription activated from legacy subscription_id', [
+                    SafePaymentLogger::info('EasyKash: subscription activated from legacy subscription_id', [
                         'subscription_id' => $subscription->id,
                         'subscription_type' => get_class($subscription),
                         'payment_id' => $payment->id,
                     ]);
                 }
             } else {
-                Log::channel('payments')->warning('EasyKash: legacy subscription not found', [
+                SafePaymentLogger::warning('EasyKash: legacy subscription not found', [
                     'payment_id' => $payment->id,
                     'subscription_id' => $payment->subscription_id,
                 ]);
             }
         } else {
-            Log::channel('payments')->warning('EasyKash: no subscription linkage found', [
+            SafePaymentLogger::warning('EasyKash: no subscription linkage found', [
                 'payment_id' => $payment->id,
                 'payable_type' => $payment->payable_type,
                 'payable_id' => $payment->payable_id,
@@ -460,7 +461,7 @@ class EasyKashWebhookController extends Controller
         }
 
         // Send success notification
-        Log::channel('payments')->info('EasyKash: sending payment success notification', [
+        SafePaymentLogger::info('EasyKash: sending payment success notification', [
             'payment_id' => $payment->id,
         ]);
 
@@ -469,7 +470,7 @@ class EasyKashWebhookController extends Controller
         // Generate invoice with PDF
         $this->generateInvoice($payment);
 
-        Log::channel('payments')->info('EasyKash: handleSuccessfulPayment completed', [
+        SafePaymentLogger::info('EasyKash: handleSuccessfulPayment completed', [
             'payment_id' => $payment->id,
         ]);
     }
@@ -502,12 +503,12 @@ class EasyKashWebhookController extends Controller
                 );
             }
 
-            Log::channel('payments')->info('EasyKash: invoice generated', [
+            SafePaymentLogger::info('EasyKash: invoice generated', [
                 'payment_id' => $payment->id,
                 'invoice_number' => $invoiceData->invoiceNumber,
             ]);
         } catch (Exception $e) {
-            Log::channel('payments')->error('EasyKash: failed to generate invoice', [
+            SafePaymentLogger::error('EasyKash: failed to generate invoice', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
             ]);
@@ -597,7 +598,7 @@ class EasyKashWebhookController extends Controller
      */
     public function callback(Request $request): RedirectResponse
     {
-        Log::channel('payments')->info('EasyKash callback received', [
+        SafePaymentLogger::info('EasyKash callback received', [
             'status' => $request->input('status'),
             'provider_ref_num' => $request->input('providerRefNum'),
             'customer_reference' => $request->input('customerReference'),
@@ -620,7 +621,7 @@ class EasyKashWebhookController extends Controller
                 ->first();
 
             if ($payment) {
-                Log::channel('payments')->info('EasyKash callback: found payment by gateway_transaction_id', [
+                SafePaymentLogger::info('EasyKash callback: found payment by gateway_transaction_id', [
                     'payment_id' => $payment->id,
                     'provider_ref_num' => $providerRefNum,
                 ]);
@@ -635,7 +636,7 @@ class EasyKashWebhookController extends Controller
                 ->first();
 
             if ($payment) {
-                Log::channel('payments')->info('EasyKash callback: found payment by exact gateway_intent_id match', [
+                SafePaymentLogger::info('EasyKash callback: found payment by exact gateway_intent_id match', [
                     'payment_id' => $payment->id,
                     'customer_reference' => $customerReference,
                 ]);
@@ -652,7 +653,7 @@ class EasyKashWebhookController extends Controller
                 && $candidatePayment->payment_gateway === 'easykash'
                 && $candidatePayment->status === PaymentStatus::PENDING) {
                 $payment = $candidatePayment;
-                Log::channel('payments')->info('EasyKash callback: found payment by parsed ID', [
+                SafePaymentLogger::info('EasyKash callback: found payment by parsed ID', [
                     'payment_id' => $payment->id,
                     'parsed_id' => $parsed['payment_id'],
                 ]);
@@ -673,7 +674,7 @@ class EasyKashWebhookController extends Controller
 
             if ($candidatePayment) {
                 $payment = $candidatePayment;
-                Log::channel('payments')->info('EasyKash callback: found payment by gateway_intent_id prefix match (precision loss recovery)', [
+                SafePaymentLogger::info('EasyKash callback: found payment by gateway_intent_id prefix match (precision loss recovery)', [
                     'payment_id' => $payment->id,
                     'customer_reference' => $customerReference,
                     'stored_intent_id' => $payment->gateway_intent_id,
@@ -692,7 +693,7 @@ class EasyKashWebhookController extends Controller
                     ->first();
 
                 if ($payment) {
-                    Log::channel('payments')->info('EasyKash callback: found payment by providerRefNum', [
+                    SafePaymentLogger::info('EasyKash callback: found payment by providerRefNum', [
                         'payment_id' => $payment->id,
                         'provider_ref_num' => $providerRefNum,
                     ]);
@@ -701,7 +702,7 @@ class EasyKashWebhookController extends Controller
         }
 
         if (! $payment) {
-            Log::channel('payments')->error('EasyKash callback: payment not found', [
+            SafePaymentLogger::error('EasyKash callback: payment not found', [
                 'customer_reference' => $customerReference,
                 'provider_ref_num' => $request->input('providerRefNum'),
             ]);
@@ -715,7 +716,7 @@ class EasyKashWebhookController extends Controller
         $tenantUrl = $this->buildTenantUrl($payment);
 
         if ($status === 'PAID' || $status === 'DELIVERED') {
-            Log::channel('payments')->info('EasyKash callback: payment marked as PAID, verifying with API', [
+            SafePaymentLogger::info('EasyKash callback: payment marked as PAID, verifying with API', [
                 'payment_id' => $payment->id,
                 'customer_reference' => $customerReference,
                 'status' => $status,
@@ -728,7 +729,7 @@ class EasyKashWebhookController extends Controller
                     'customerReference' => $customerReference,
                 ]);
 
-                Log::channel('payments')->info('EasyKash verification result', [
+                SafePaymentLogger::info('EasyKash verification result', [
                     'payment_id' => $payment->id,
                     'is_successful' => $result->isSuccessful(),
                     'status' => $result->status->value ?? 'unknown',
@@ -743,7 +744,7 @@ class EasyKashWebhookController extends Controller
                             return false;
                         }
 
-                        Log::channel('payments')->info('EasyKash callback: updating payment to completed', [
+                        SafePaymentLogger::info('EasyKash callback: updating payment to completed', [
                             'payment_id' => $lockedPayment->id,
                             'old_status' => $lockedPayment->status->value,
                         ]);
@@ -758,7 +759,7 @@ class EasyKashWebhookController extends Controller
 
                         $this->handleSuccessfulPayment($lockedPayment);
 
-                        Log::channel('payments')->info('EasyKash callback: subscription activation completed', [
+                        SafePaymentLogger::info('EasyKash callback: subscription activation completed', [
                             'payment_id' => $lockedPayment->id,
                         ]);
 
@@ -766,7 +767,7 @@ class EasyKashWebhookController extends Controller
                     });
 
                     if (! $activated) {
-                        Log::channel('payments')->info('EasyKash callback: payment already completed (webhook processed it first)', [
+                        SafePaymentLogger::info('EasyKash callback: payment already completed (webhook processed it first)', [
                             'payment_id' => $payment->id,
                         ]);
                     }
@@ -775,7 +776,7 @@ class EasyKashWebhookController extends Controller
                     $subdomain = $payment->academy?->subdomain ?? DefaultAcademy::subdomain();
                     $redirectUrl = route('student.subscriptions', ['subdomain' => $subdomain]);
 
-                    Log::channel('payments')->info('EasyKash callback: redirecting to subscriptions', [
+                    SafePaymentLogger::info('EasyKash callback: redirecting to subscriptions', [
                         'payment_id' => $payment->id,
                         'subdomain' => $subdomain,
                         'redirect_url' => $redirectUrl,
@@ -788,7 +789,7 @@ class EasyKashWebhookController extends Controller
                 } else {
                     // Verification failed but payment was marked as PAID by EasyKash
                     // Still redirect to subscriptions page, but with warning
-                    Log::channel('payments')->warning('EasyKash callback: verification failed - payment not successful', [
+                    SafePaymentLogger::warning('EasyKash callback: verification failed - payment not successful', [
                         'payment_id' => $payment->id,
                         'verification_status' => $result->status->value ?? 'unknown',
                         'customer_reference' => $customerReference,
@@ -797,7 +798,7 @@ class EasyKashWebhookController extends Controller
                     $subdomain = $payment->academy?->subdomain ?? DefaultAcademy::subdomain();
                     $redirectUrl = route('student.subscriptions', ['subdomain' => $subdomain]);
 
-                    Log::channel('payments')->info('EasyKash callback: redirecting after verification failure', [
+                    SafePaymentLogger::info('EasyKash callback: redirecting after verification failure', [
                         'payment_id' => $payment->id,
                         'subdomain' => $subdomain,
                         'redirect_url' => $redirectUrl,
@@ -809,7 +810,7 @@ class EasyKashWebhookController extends Controller
             } catch (Exception $e) {
                 // Exception during verification, but payment might still be valid
                 // Redirect to subscriptions page, let webhook handle activation later
-                Log::channel('payments')->error('EasyKash callback: verification failed with exception', [
+                SafePaymentLogger::error('EasyKash callback: verification failed with exception', [
                     'payment_id' => $payment->id,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
@@ -818,7 +819,7 @@ class EasyKashWebhookController extends Controller
                 $subdomain = $payment->academy?->subdomain ?? DefaultAcademy::subdomain();
                 $redirectUrl = route('student.subscriptions', ['subdomain' => $subdomain]);
 
-                Log::channel('payments')->info('EasyKash callback: redirecting after exception', [
+                SafePaymentLogger::info('EasyKash callback: redirecting after exception', [
                     'payment_id' => $payment->id,
                     'subdomain' => $subdomain,
                     'redirect_url' => $redirectUrl,
@@ -1093,7 +1094,7 @@ class EasyKashWebhookController extends Controller
                     return $gateway;
                 }
             } catch (Exception $e) {
-                Log::channel('payments')->warning('Could not get academy-specific gateway', [
+                SafePaymentLogger::warning('Could not get academy-specific gateway', [
                     'academy_id' => $academy->id,
                     'error' => $e->getMessage(),
                 ]);

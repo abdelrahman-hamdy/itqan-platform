@@ -3,7 +3,6 @@
 namespace App\Services\Payment;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Service for verifying Paymob webhook signatures.
@@ -25,7 +24,7 @@ class PaymobSignatureService
     public function verify(Request $request): bool
     {
         if (empty($this->hmacSecret)) {
-            Log::channel('payments')->warning('Paymob HMAC secret not configured');
+            SafePaymentLogger::warning('Paymob HMAC secret not configured');
 
             return false;
         }
@@ -34,7 +33,7 @@ class PaymobSignatureService
         $receivedHmac = $request->query('hmac') ?? $request->header('Hmac');
 
         if (empty($receivedHmac)) {
-            Log::channel('payments')->warning('No HMAC received in Paymob webhook');
+            SafePaymentLogger::warning('No HMAC received in Paymob webhook');
 
             return false;
         }
@@ -50,7 +49,7 @@ class PaymobSignatureService
         $isValid = hash_equals($calculatedHmac, $receivedHmac);
 
         if (! $isValid) {
-            Log::channel('payments')->warning('Paymob HMAC verification failed', [
+            SafePaymentLogger::warning('Paymob HMAC verification failed', [
                 'received_hmac' => substr($receivedHmac, 0, 16).'...',
                 'calculated_hmac' => substr($calculatedHmac, 0, 16).'...',
                 'transaction_id' => $obj['id'] ?? 'unknown',
@@ -137,7 +136,7 @@ class PaymobSignatureService
         $receivedAmount = (int) ($obj['amount_cents'] ?? 0);
 
         if ($receivedAmount !== $expectedAmountCents) {
-            Log::channel('payments')->error('Paymob amount mismatch', [
+            SafePaymentLogger::error('Paymob amount mismatch', [
                 'expected' => $expectedAmountCents,
                 'received' => $receivedAmount,
                 'transaction_id' => $obj['id'] ?? 'unknown',

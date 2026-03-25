@@ -4,8 +4,8 @@ namespace App\Services\Payment\Gateways\Paymob;
 
 use App\Services\Payment\DTOs\PaymentIntent;
 use App\Services\Payment\DTOs\PaymentResult;
+use App\Services\Payment\SafePaymentLogger;
 use Exception;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Handles standard payment intent creation and payment verification for Paymob.
@@ -42,18 +42,14 @@ class PaymobPaymentProcessor
         $convertedAmountCents = (int) round($convertedAmount * 100);
         $exchangeRate = $convertedAmount / $originalAmount;
 
-        try {
-            Log::channel('payments')->info('Paymob currency conversion applied', [
-                'original_amount' => $originalAmount,
-                'original_currency' => $originalCurrency,
-                'converted_amount' => $convertedAmount,
-                'converted_currency' => 'EGP',
-                'exchange_rate' => $exchangeRate,
-                'payment_id' => $intent->paymentId,
-            ]);
-        } catch (\Throwable $e) {
-            Log::warning('Failed to write to payments log channel', ['error' => $e->getMessage()]);
-        }
+        SafePaymentLogger::info('Paymob currency conversion applied', [
+            'original_amount' => $originalAmount,
+            'original_currency' => $originalCurrency,
+            'converted_amount' => $convertedAmount,
+            'converted_currency' => 'EGP',
+            'exchange_rate' => $exchangeRate,
+            'payment_id' => $intent->paymentId,
+        ]);
 
         return [
             'amount_cents' => $convertedAmountCents,
@@ -125,7 +121,7 @@ class PaymobPaymentProcessor
     {
         $conversion = $this->convertToEgpIfNeeded($intent);
 
-        Log::channel('payments')->info('PaymobGateway createPaymentIntent called', [
+        SafePaymentLogger::info('PaymobGateway createPaymentIntent called', [
             'has_secret_key' => ! empty($this->config['secret_key']),
             'has_public_key' => ! empty($this->config['public_key']),
             'has_api_key' => ! empty($this->config['api_key']),
@@ -185,7 +181,7 @@ class PaymobPaymentProcessor
             $paymentMethods = $this->getIntegrationIds($intent->paymentMethod);
 
             if (empty($paymentMethods) || $paymentMethods === [0]) {
-                Log::channel('payments')->error('Paymob: No valid integration ID configured', [
+                SafePaymentLogger::error('Paymob: No valid integration ID configured', [
                     'payment_method' => $intent->paymentMethod,
                     'integration_ids_config' => $this->config['integration_ids'] ?? [],
                 ]);
@@ -231,7 +227,7 @@ class PaymobPaymentProcessor
                 $requestBody['notification_url'] = $intent->webhookUrl;
             }
 
-            Log::channel('payments')->info('Paymob: Making intention API request', [
+            SafePaymentLogger::info('Paymob: Making intention API request', [
                 'endpoint' => '/v1/intention/',
                 'payment_methods' => $paymentMethods,
                 'amount' => $requestBody['amount'],
@@ -243,7 +239,7 @@ class PaymobPaymentProcessor
                 'Authorization' => 'Token '.$this->config['secret_key'],
             ]);
 
-            Log::channel('payments')->info('Paymob: Intention API response', [
+            SafePaymentLogger::info('Paymob: Intention API response', [
                 'success' => $response['success'],
                 'has_data' => isset($response['data']),
                 'has_client_secret' => isset($response['data']['client_secret']),
@@ -252,7 +248,7 @@ class PaymobPaymentProcessor
             ]);
 
             if (! $response['success']) {
-                Log::channel('payments')->error('Paymob intention failed', [
+                SafePaymentLogger::error('Paymob intention failed', [
                     'response' => $response,
                     'intent' => $intent->toSafeLogArray(),
                 ]);
@@ -282,7 +278,7 @@ class PaymobPaymentProcessor
                 );
             }
 
-            Log::channel('payments')->info('Paymob: Payment result prepared', [
+            SafePaymentLogger::info('Paymob: Payment result prepared', [
                 'intention_id' => $intentionId,
                 'has_client_secret' => ! empty($clientSecret),
                 'has_public_key' => ! empty($publicKey),
@@ -302,7 +298,7 @@ class PaymobPaymentProcessor
                 ],
             );
         } catch (Exception $e) {
-            Log::channel('payments')->error('Paymob exception', [
+            SafePaymentLogger::error('Paymob exception', [
                 'message' => $e->getMessage(),
                 'intent' => $intent->toSafeLogArray(),
             ]);
@@ -376,7 +372,7 @@ class PaymobPaymentProcessor
                 rawResponse: $txn,
             );
         } catch (Exception $e) {
-            Log::channel('payments')->error('Paymob verification exception', [
+            SafePaymentLogger::error('Paymob verification exception', [
                 'transaction_id' => $transactionId,
                 'message' => $e->getMessage(),
             ]);

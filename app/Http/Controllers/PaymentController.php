@@ -17,7 +17,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -299,18 +298,6 @@ class PaymentController extends Controller
                     'success' => false,
                     'error' => 'Payment gateway not supported',
                 ];
-        }
-    }
-
-    /**
-     * Log to the payments channel with fallback to the default logger.
-     */
-    private function logPayment(string $level, string $message, array $context = []): void
-    {
-        try {
-            Log::channel('payments')->{$level}($message, $context);
-        } catch (\Throwable) {
-            Log::{$level}("[payments] {$message}", $context);
         }
     }
 }

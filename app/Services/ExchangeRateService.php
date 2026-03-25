@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ExchangeRate;
+use App\Services\Payment\SafePaymentLogger;
 use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -13,6 +14,7 @@ class ExchangeRateService
     private string $apiUrl = 'https://open.er-api.com/v6/latest/';
 
     private int $cacheDuration = 3600; // 1 hour in seconds
+
     /**
      * Get exchange rate from currency A to currency B.
      * Cached for 1 hour to stay within free API limits.
@@ -38,16 +40,12 @@ class ExchangeRateService
         // Try cache first (1 hour TTL)
         $cachedRate = Cache::get($cacheKey);
         if ($cachedRate !== null) {
-            try {
-                Log::channel('payments')->debug('Exchange rate from cache', [
-                    'from' => $from,
-                    'to' => $to,
-                    'rate' => $cachedRate,
-                    'source' => 'cache',
-                ]);
-            } catch (\Throwable) {
-                // Never let logging crash the payment flow
-            }
+            SafePaymentLogger::debug('Exchange rate from cache', [
+                'from' => $from,
+                'to' => $to,
+                'rate' => $cachedRate,
+                'source' => 'cache',
+            ]);
 
             return (float) $cachedRate;
         }
@@ -74,28 +72,22 @@ class ExchangeRateService
             // Also persist to DB as last-known rate
             $this->persistRate($from, $to, $rate);
 
-            try {
-                Log::channel('payments')->info('Exchange rate fetched from API', [
-                    'from' => $from,
-                    'to' => $to,
-                    'rate' => $rate,
-                    'source' => 'api',
-                    'api_updated_at' => $data['time_last_update_utc'] ?? 'unknown',
-                ]);
-            } catch (\Throwable) {
-            }
+            SafePaymentLogger::info('Exchange rate fetched from API', [
+                'from' => $from,
+                'to' => $to,
+                'rate' => $rate,
+                'source' => 'api',
+                'api_updated_at' => $data['time_last_update_utc'] ?? 'unknown',
+            ]);
 
             return $rate;
 
         } catch (Exception $e) {
-            try {
-                Log::channel('payments')->error('Exchange rate API failed', [
-                    'from' => $from,
-                    'to' => $to,
-                    'error' => $e->getMessage(),
-                ]);
-            } catch (\Throwable) {
-            }
+            SafePaymentLogger::error('Exchange rate API failed', [
+                'from' => $from,
+                'to' => $to,
+                'error' => $e->getMessage(),
+            ]);
 
             // Fallback to static config rates
             return $this->getFallbackRate($from, $to);
@@ -116,15 +108,12 @@ class ExchangeRateService
             $amountInSar = 1 / $fromRate;
             $rate = $amountInSar * $toRate;
 
-            try {
-                Log::channel('payments')->warning('Using fallback config rates', [
-                    'from' => $from,
-                    'to' => $to,
-                    'rate' => $rate,
-                    'source' => 'config_fallback',
-                ]);
-            } catch (\Throwable) {
-            }
+            SafePaymentLogger::warning('Using fallback config rates', [
+                'from' => $from,
+                'to' => $to,
+                'rate' => $rate,
+                'source' => 'config_fallback',
+            ]);
 
             return $rate;
         }
@@ -135,16 +124,13 @@ class ExchangeRateService
             ->first();
 
         if ($stored) {
-            try {
-                Log::channel('payments')->warning('Using stored DB rate as fallback', [
-                    'from' => $from,
-                    'to' => $to,
-                    'rate' => $stored->rate,
-                    'fetched_at' => $stored->fetched_at,
-                    'source' => 'db_fallback',
-                ]);
-            } catch (\Throwable) {
-            }
+            SafePaymentLogger::warning('Using stored DB rate as fallback', [
+                'from' => $from,
+                'to' => $to,
+                'rate' => $stored->rate,
+                'fetched_at' => $stored->fetched_at,
+                'source' => 'db_fallback',
+            ]);
 
             $hoursOld = $stored->fetched_at->diffInHours(now());
             if ($hoursOld > 24) {
@@ -177,14 +163,11 @@ class ExchangeRateService
                 ['rate' => $rate, 'fetched_at' => now()]
             );
         } catch (\Exception $e) {
-            try {
-                Log::channel('payments')->warning('Failed to persist exchange rate to DB', [
-                    'from' => $from,
-                    'to' => $to,
-                    'error' => $e->getMessage(),
-                ]);
-            } catch (\Throwable) {
-            }
+            SafePaymentLogger::warning('Failed to persist exchange rate to DB', [
+                'from' => $from,
+                'to' => $to,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -233,7 +216,7 @@ class ExchangeRateService
     public function clearCache(?string $from = null, ?string $to = null): void
     {
         if ($from && $to) {
-            $cacheKey = "exchange_rate_" . strtoupper($from) . "_" . strtoupper($to);
+            $cacheKey = 'exchange_rate_'.strtoupper($from).'_'.strtoupper($to);
             Cache::forget($cacheKey);
         }
         // No-op when called without params - do NOT flush entire cache

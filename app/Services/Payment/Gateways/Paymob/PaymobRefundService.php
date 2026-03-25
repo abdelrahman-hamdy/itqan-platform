@@ -2,10 +2,10 @@
 
 namespace App\Services\Payment\Gateways\Paymob;
 
-use Exception;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 use App\Services\Payment\DTOs\PaymentResult;
+use App\Services\Payment\SafePaymentLogger;
+use Carbon\Carbon;
+use Exception;
 
 /**
  * Handles refunds, voids, and transaction inquiries for Paymob.
@@ -56,7 +56,7 @@ class PaymobRefundService
                 rawResponse: $response['data'] ?? [],
             );
         } catch (Exception $e) {
-            Log::channel('payments')->error('Paymob refund exception', [
+            SafePaymentLogger::error('Paymob refund exception', [
                 'transaction_id' => $transactionId,
                 'message' => $e->getMessage(),
             ]);
@@ -135,7 +135,7 @@ class PaymobRefundService
                 rawResponse: $response['data'] ?? [],
             );
         } catch (Exception $e) {
-            Log::channel('payments')->error('Paymob void exception', [
+            SafePaymentLogger::error('Paymob void exception', [
                 'transaction_id' => $transactionId,
                 'message' => $e->getMessage(),
             ]);
@@ -214,7 +214,7 @@ class PaymobRefundService
 
             return null;
         } catch (Exception $e) {
-            Log::channel('payments')->error('Paymob order inquiry exception', [
+            SafePaymentLogger::error('Paymob order inquiry exception', [
                 'order_id' => $orderId,
                 'message' => $e->getMessage(),
             ]);

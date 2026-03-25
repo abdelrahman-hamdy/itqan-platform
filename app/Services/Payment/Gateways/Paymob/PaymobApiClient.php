@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment\Gateways\Paymob;
 
+use App\Services\Payment\SafePaymentLogger;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -31,7 +32,7 @@ class PaymobApiClient
     {
         $apiKey = $this->config['api_key'] ?? null;
         if (empty($apiKey)) {
-            Log::channel('payments')->error('Paymob API key not configured');
+            SafePaymentLogger::error('Paymob API key not configured');
 
             return null;
         }
@@ -44,7 +45,7 @@ class PaymobApiClient
             return $response['data']['token'];
         }
 
-        Log::channel('payments')->error('Paymob auth failed', [
+        SafePaymentLogger::error('Paymob auth failed', [
             'response' => $response,
         ]);
 

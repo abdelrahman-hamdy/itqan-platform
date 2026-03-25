@@ -129,10 +129,6 @@ class QuranEnrollmentService
             'created_by' => $user->id,
         ]);
 
-        // Calculate tax and create payment
-        $taxAmount = round($price * 0.15, 2);
-        $totalAmount = $price + $taxAmount;
-
         $paymentSettings = $academy->getPaymentSettings();
         $gateway = $paymentGateway ?? $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
 
@@ -146,11 +142,11 @@ class QuranEnrollmentService
             'payment_method' => 'credit_card',
             'payment_gateway' => $gateway,
             'payment_type' => 'subscription',
-            'amount' => $totalAmount,
+            'amount' => $price,
             'net_amount' => $price,
             'currency' => getCurrencyCode(null, $academy),
-            'tax_amount' => $taxAmount,
-            'tax_percentage' => 15,
+            'tax_amount' => 0,
+            'tax_percentage' => 0,
             'status' => 'pending',
             'payment_status' => 'pending',
             'save_card' => $subscription->auto_renew,

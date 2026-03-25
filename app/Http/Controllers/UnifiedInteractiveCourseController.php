@@ -2,11 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\View\View;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Carbon\Carbon;
-use Illuminate\Http\RedirectResponse;
-use Exception;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
@@ -17,10 +12,15 @@ use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
 use App\Models\Payment;
 use App\Services\PaymentService;
+use Carbon\Carbon;
+use Exception;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class UnifiedInteractiveCourseController extends Controller
 {
@@ -349,10 +349,6 @@ class UnifiedInteractiveCourseController extends Controller
                 'total_possible_attendance' => $totalPossibleSessions,
             ]);
 
-            // Calculate tax (15% VAT)
-            $taxAmount = round($price * 0.15, 2);
-            $totalAmount = $price + $taxAmount;
-
             // Get payment gateway (use provided or academy default)
             $paymentSettings = $academy->getPaymentSettings();
             $gateway = $request->payment_gateway ?? $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
@@ -368,11 +364,11 @@ class UnifiedInteractiveCourseController extends Controller
                 'payment_method' => 'credit_card',
                 'payment_gateway' => $gateway,
                 'payment_type' => 'course_enrollment',
-                'amount' => $totalAmount,
+                'amount' => $price,
                 'net_amount' => $price,
                 'currency' => getCurrencyCode(null, $academy), // Always use academy's configured currency
-                'tax_amount' => $taxAmount,
-                'tax_percentage' => 15,
+                'tax_amount' => 0,
+                'tax_percentage' => 0,
                 'status' => 'pending',
                 'payment_status' => 'pending',
                 'created_by' => $user->id,

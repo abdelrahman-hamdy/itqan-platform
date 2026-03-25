@@ -7,11 +7,11 @@ use App\Enums\NotificationType;
 use App\Enums\PaymentResultStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\AcademicSubscription;
+use App\Models\CourseSubscription;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
 use App\Models\PaymentWebhookEvent;
-use App\Models\AcademicSubscription;
-use App\Models\CourseSubscription;
 use App\Models\QuranSubscription;
 use App\Services\NotificationService;
 use App\Services\Payment\DTOs\WebhookPayload;
@@ -19,6 +19,7 @@ use App\Services\Payment\Exceptions\WebhookValidationException;
 use App\Services\Payment\Gateways\TapGateway;
 use App\Services\Payment\InvoiceService;
 use App\Services\Payment\PaymentStateMachine;
+use App\Services\Payment\SafePaymentLogger;
 use App\Services\Payment\TapSignatureService;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -53,7 +54,7 @@ class TapWebhookController extends Controller
         // Security: Verify webhook is from allowed IPs (if configured)
         $allowedIps = config('payments.gateways.tap.webhook_ips', []);
         if (! empty($allowedIps) && ! in_array($request->ip(), $allowedIps)) {
-            Log::channel('payments')->warning('Tap webhook from unauthorized IP', [
+            SafePaymentLogger::warning('Tap webhook from unauthorized IP', [
                 'ip' => $request->ip(),
                 'allowed_ips' => $allowedIps,
             ]);
@@ -64,7 +65,7 @@ class TapWebhookController extends Controller
             ], 403);
         }
 
-        Log::channel('payments')->info('Tap webhook received', [
+        SafePaymentLogger::info('Tap webhook received', [
             'charge_id' => $request->input('id'),
             'status' => $request->input('status'),
             'amount' => $request->input('amount'),
@@ -84,7 +85,7 @@ class TapWebhookController extends Controller
             // Step 3: Check for duplicate event (idempotency)
             $eventId = $payload->getIdempotencyKey();
             if (PaymentWebhookEvent::eventExists($eventId)) {
-                Log::channel('payments')->info('Duplicate Tap webhook event ignored', [
+                SafePaymentLogger::info('Duplicate Tap webhook event ignored', [
                     'event_id' => $eventId,
                 ]);
 
@@ -112,7 +113,7 @@ class TapWebhookController extends Controller
 
             return response()->json($result);
         } catch (WebhookValidationException $e) {
-            Log::channel('payments')->error('Tap webhook validation failed', [
+            SafePaymentLogger::error('Tap webhook validation failed', [
                 'error' => $e->getMessage(),
                 'code' => $e->getErrorCode(),
             ]);
@@ -122,7 +123,7 @@ class TapWebhookController extends Controller
                 'message' => $e->getMessage(),
             ], 400);
         } catch (QueryException $e) {
-            Log::channel('payments')->error('Database error during Tap webhook processing', [
+            SafePaymentLogger::error('Database error during Tap webhook processing', [
                 'error' => $e->getMessage(),
                 'code' => $e->getCode(),
             ]);
@@ -132,7 +133,7 @@ class TapWebhookController extends Controller
                 'message' => 'Database error occurred',
             ], 500);
         } catch (InvalidArgumentException $e) {
-            Log::channel('payments')->error('Invalid Tap webhook data', [
+            SafePaymentLogger::error('Invalid Tap webhook data', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -141,7 +142,7 @@ class TapWebhookController extends Controller
                 'message' => 'Invalid data format',
             ], 400);
         } catch (Throwable $e) {
-            Log::channel('payments')->critical('Unexpected Tap webhook processing error', [
+            SafePaymentLogger::critical('Unexpected Tap webhook processing error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -166,7 +167,7 @@ class TapWebhookController extends Controller
     {
         $tapId = $request->input('tap_id', '');
 
-        Log::channel('payments')->info('Tap callback received', [
+        SafePaymentLogger::info('Tap callback received', [
             'tap_id' => $tapId,
             'all_params' => $request->query(),
         ]);
@@ -188,7 +189,7 @@ class TapWebhookController extends Controller
         }
 
         if (! $payment) {
-            Log::channel('payments')->error('Tap callback: payment not found', [
+            SafePaymentLogger::error('Tap callback: payment not found', [
                 'tap_id' => $tapId,
             ]);
 
@@ -230,7 +231,7 @@ class TapWebhookController extends Controller
                 });
 
                 if (! $activated) {
-                    Log::channel('payments')->info('Tap callback: payment already completed (webhook processed it first)', [
+                    SafePaymentLogger::info('Tap callback: payment already completed (webhook processed it first)', [
                         'payment_id' => $payment->id,
                     ]);
                 }
@@ -244,7 +245,7 @@ class TapWebhookController extends Controller
             // Payment not captured — check if failed/cancelled/declined
             $tapStatus = strtoupper($result->rawResponse['status'] ?? 'UNKNOWN');
 
-            Log::channel('payments')->info('Tap callback: non-successful result', [
+            SafePaymentLogger::info('Tap callback: non-successful result', [
                 'payment_id' => $payment->id,
                 'tap_id' => $tapId,
                 'tap_status' => $tapStatus,
@@ -272,7 +273,7 @@ class TapWebhookController extends Controller
             return redirect()->to(route('student.subscriptions', ['subdomain' => $subdomain]))
                 ->with('info', 'تم استلام الدفع وجاري المعالجة');
         } catch (Exception $e) {
-            Log::channel('payments')->error('Tap callback: verification exception', [
+            SafePaymentLogger::error('Tap callback: verification exception', [
                 'payment_id' => $payment->id,
                 'tap_id' => $tapId,
                 'error' => $e->getMessage(),
@@ -305,7 +306,7 @@ class TapWebhookController extends Controller
         }
 
         if (! $payment) {
-            Log::channel('payments')->warning('Payment not found for Tap webhook', [
+            SafePaymentLogger::warning('Payment not found for Tap webhook', [
                 'payment_id' => $payload->paymentId,
                 'transaction_id' => $payload->transactionId,
             ]);
@@ -320,7 +321,7 @@ class TapWebhookController extends Controller
 
         // Verify academy_id if available
         if ($payload->academyId && $payment->academy_id !== $payload->academyId) {
-            Log::channel('payments')->error('Academy ID mismatch in Tap webhook', [
+            SafePaymentLogger::error('Academy ID mismatch in Tap webhook', [
                 'expected' => $payment->academy_id,
                 'received' => $payload->academyId,
             ]);
@@ -351,7 +352,7 @@ class TapWebhookController extends Controller
 
             // Check if transition is valid
             if (! $this->stateMachine->canTransition($oldStatus, $newStatus)) {
-                Log::channel('payments')->warning('Invalid status transition for Tap payment', [
+                SafePaymentLogger::warning('Invalid status transition for Tap payment', [
                     'payment_id' => $payment->id,
                     'from' => $oldStatus,
                     'to' => $newStatus,
@@ -411,7 +412,7 @@ class TapWebhookController extends Controller
                 $this->handleSuccessfulPayment($payment);
             }
 
-            Log::channel('payments')->info('Payment updated from Tap webhook', [
+            SafePaymentLogger::info('Payment updated from Tap webhook', [
                 'payment_id' => $payment->id,
                 'old_status' => $oldStatus,
                 'new_status' => $newStatus,
@@ -448,7 +449,7 @@ class TapWebhookController extends Controller
      */
     private function handleSuccessfulPayment(Payment $payment): void
     {
-        Log::channel('payments')->info('Tap: handleSuccessfulPayment started', [
+        SafePaymentLogger::info('Tap: handleSuccessfulPayment started', [
             'payment_id' => $payment->id,
             'payable_type' => $payment->payable_type,
             'payable_id' => $payment->payable_id,
@@ -461,19 +462,19 @@ class TapWebhookController extends Controller
             if ($payable && method_exists($payable, 'activateFromPayment')) {
                 $payable->activateFromPayment($payment);
 
-                Log::channel('payments')->info('Tap: activateFromPayment completed', [
+                SafePaymentLogger::info('Tap: activateFromPayment completed', [
                     'payment_id' => $payment->id,
                     'subscription_id' => $payable->id,
                 ]);
             } else {
-                Log::channel('payments')->warning('Tap: payable does not have activateFromPayment method', [
+                SafePaymentLogger::warning('Tap: payable does not have activateFromPayment method', [
                     'payment_id' => $payment->id,
                     'payable_class' => $payable ? get_class($payable) : null,
                 ]);
             }
         } elseif ($payment->subscription_id) {
             // Legacy fallback: direct subscription_id lookup
-            Log::channel('payments')->info('Tap: using legacy subscription_id fallback', [
+            SafePaymentLogger::info('Tap: using legacy subscription_id fallback', [
                 'payment_id' => $payment->id,
                 'subscription_id' => $payment->subscription_id,
             ]);
@@ -487,7 +488,7 @@ class TapWebhookController extends Controller
                 if ($currentStatus !== 'paid' && $currentStatus !== 'active') {
                     $subscription->activateFromPayment($payment);
 
-                    Log::channel('payments')->info('Tap: subscription activated from legacy subscription_id', [
+                    SafePaymentLogger::info('Tap: subscription activated from legacy subscription_id', [
                         'subscription_id' => $subscription->id,
                         'subscription_type' => get_class($subscription),
                         'payment_id' => $payment->id,
@@ -495,7 +496,7 @@ class TapWebhookController extends Controller
                 }
             }
         } else {
-            Log::channel('payments')->warning('Tap: no subscription linkage found', [
+            SafePaymentLogger::warning('Tap: no subscription linkage found', [
                 'payment_id' => $payment->id,
             ]);
         }
@@ -581,7 +582,7 @@ class TapWebhookController extends Controller
                 );
             }
         } catch (Exception $e) {
-            Log::channel('payments')->error('Tap: failed to generate invoice', [
+            SafePaymentLogger::error('Tap: failed to generate invoice', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
             ]);
@@ -606,7 +607,7 @@ class TapWebhookController extends Controller
                 }
             }
         } catch (Exception $e) {
-            Log::channel('payments')->warning('Tap: could not fetch charge from API for callback lookup', [
+            SafePaymentLogger::warning('Tap: could not fetch charge from API for callback lookup', [
                 'tap_id' => $tapId,
                 'error' => $e->getMessage(),
             ]);

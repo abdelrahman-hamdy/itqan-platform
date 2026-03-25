@@ -2,16 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
-use Exception;
-use Illuminate\Http\JsonResponse;
-use App\Models\AcademicSettings;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\UserType;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicPackage;
+use App\Models\AcademicSettings;
 use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
@@ -20,11 +16,15 @@ use App\Models\Payment;
 use App\Services\AcademyContextService;
 use App\Services\PaymentService;
 use App\Services\SubscriptionService;
+use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\View\View;
 
 class PublicAcademicPackageController extends Controller
 {
@@ -148,7 +148,7 @@ class PublicAcademicPackageController extends Controller
         }
 
         // Log subscription attempt
-        \Log::info('Academic subscription request received', [
+        Log::info('Academic subscription request received', [
             'user_id' => Auth::id(),
             'teacher_id' => $teacherId,
             'package_id' => $packageId,
@@ -337,10 +337,6 @@ class PublicAcademicPackageController extends Controller
             // Create subscription in PENDING state (lesson + sessions created after payment succeeds)
             $subscription = AcademicSubscription::create($subscriptionData);
 
-            // Calculate tax (15% VAT)
-            $taxAmount = round($price * 0.15, 2);
-            $totalAmount = $price + $taxAmount;
-
             // Get payment gateway (use provided or academy default)
             $paymentSettings = $academy->getPaymentSettings();
             $gateway = $request->payment_gateway ?? $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
@@ -356,11 +352,11 @@ class PublicAcademicPackageController extends Controller
                 'payment_method' => 'credit_card',
                 'payment_gateway' => $gateway,
                 'payment_type' => 'subscription',
-                'amount' => $totalAmount,
+                'amount' => $price,
                 'net_amount' => $price,
                 'currency' => getCurrencyCode(null, $academy), // Always use academy's configured currency
-                'tax_amount' => $taxAmount,
-                'tax_percentage' => 15,
+                'tax_amount' => 0,
+                'tax_percentage' => 0,
                 'status' => 'pending',
                 'payment_status' => 'pending',
                 'created_by' => $user->id,
