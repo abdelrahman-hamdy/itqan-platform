@@ -38,13 +38,11 @@
         @endif
       </span>
       <div class="text-end" dir="ltr">
+        <span class="text-xl font-bold text-primary">{{ number_format($displayPrice) }} {{ $currency }}</span>
         @if($hasSale)
           <div>
-            <span class="text-sm text-rose-400/70 line-through">{{ number_format($originalPrice) }} {{ $currency }}</span>
+            <span class="text-[11px] text-gray-400">{{ __('components.packages.instead_of', ['price' => number_format($originalPrice) . ' ' . $currency]) }}</span>
           </div>
-          <span class="text-xl font-bold text-primary">{{ number_format($displayPrice) }} {{ $currency }}</span>
-        @else
-          <span class="text-xl font-bold text-primary">{{ number_format($displayPrice) }} {{ $currency }}</span>
         @endif
         <span class="text-sm text-gray-600">{{ $periodLabel }}</span>
       </div>

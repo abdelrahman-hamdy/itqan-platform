@@ -1829,6 +1829,7 @@ return [
         'yearly' => 'سنوي',
         'sale_badge' => 'تخفيض',
         'original_price' => 'السعر الأصلي',
+        'instead_of' => 'بدلاً من :price',
         'discount_percent' => 'خصم :percent%',
         'sale_monthly_price' => 'سعر التخفيض الشهري',
         'sale_quarterly_price' => 'سعر التخفيض ربع السنوي',

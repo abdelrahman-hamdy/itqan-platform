@@ -58,16 +58,20 @@
       <div class="flex items-baseline justify-center gap-1.5 md:gap-2 flex-wrap mb-0.5 md:mb-1">
         @foreach($periods as $period)
           <span x-show="pricingPeriod === '{{ $period }}'" @if($loop->index > 0) x-cloak @endif>
-            @if($priceData[$period]['hasSale'])
-              <span class="text-base md:text-lg text-rose-400/70 line-through me-1">{{ number_format($priceData[$period]['original']) }}</span>
-              <span class="text-3xl md:text-4xl lg:text-5xl font-black text-{{ $color }}-600">{{ number_format($priceData[$period]['sale']) }}</span>
-            @else
-              <span class="text-3xl md:text-4xl lg:text-5xl font-black text-{{ $color }}-600">{{ number_format($priceData[$period]['original']) }}</span>
-            @endif
+            <span class="text-3xl md:text-4xl lg:text-5xl font-black text-{{ $color }}-600">{{ number_format($priceData[$period]['hasSale'] ? $priceData[$period]['sale'] : $priceData[$period]['original']) }}</span>
           </span>
         @endforeach
         <span class="text-base md:text-lg lg:text-xl font-bold text-{{ $color }}-500">{{ getCurrencySymbol() }}</span>
       </div>
+
+      <!-- "Instead of" text -->
+      @foreach($periods as $period)
+        @if($priceData[$period]['hasSale'])
+          <p x-show="pricingPeriod === '{{ $period }}'" @if($loop->index > 0) x-cloak @endif class="text-[11px] md:text-xs text-gray-400 mt-1">
+            {{ __('components.packages.instead_of', ['price' => number_format($priceData[$period]['original']) . ' ' . getCurrencySymbol()]) }}
+          </p>
+        @endif
+      @endforeach
 
       <!-- Renewal Text -->
       <p class="text-[10px] md:text-xs text-gray-500 mt-1.5 md:mt-2">

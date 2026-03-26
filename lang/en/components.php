@@ -1813,6 +1813,7 @@ return [
         'yearly' => 'Yearly',
         'sale_badge' => 'Sale',
         'original_price' => 'Original Price',
+        'instead_of' => 'instead of :price',
         'discount_percent' => ':percent% off',
         'sale_monthly_price' => 'Sale Monthly Price',
         'sale_quarterly_price' => 'Sale Quarterly Price',

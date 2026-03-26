@@ -148,15 +148,14 @@
                     <div class="h-full flex flex-col items-center justify-between text-center">
                         <div class="text-base font-semibold text-gray-900">{{ BillingCycle::MONTHLY->label() }}</div>
                         <div class="my-2 flex items-baseline gap-1 flex-wrap justify-center" dir="ltr">
-                            @if($saleMonthlyPrice)
-                                <span class="text-sm text-rose-400/70 line-through">{{ number_format($monthlyPrice) }} {{ $currency }}</span>
-                                <span class="text-xl font-bold text-primary">{{ number_format($saleMonthlyPrice) }} {{ $currency }}</span>
-                            @else
-                                <span class="text-xl font-bold text-primary">{{ number_format($monthlyPrice) }} {{ $currency }}</span>
-                            @endif
+                            <span class="text-xl font-bold text-primary">{{ number_format($saleMonthlyPrice ?? $monthlyPrice) }} {{ $currency }}</span>
                             <span class="text-sm text-gray-500">{{ __('public.booking.quran.package_info.per_month') }}</span>
                         </div>
-                        <div class="h-5"></div>
+                        <div class="h-5">
+                            @if($saleMonthlyPrice)
+                                <span class="text-[11px] text-gray-400">{{ __('components.packages.instead_of', ['price' => number_format($monthlyPrice) . ' ' . $currency]) }}</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
 
@@ -168,16 +167,13 @@
                         <div class="h-full flex flex-col items-center justify-between text-center">
                             <div class="text-base font-semibold text-gray-900">{{ BillingCycle::QUARTERLY->label() }}</div>
                             <div class="my-2 flex items-baseline gap-1 flex-wrap justify-center" dir="ltr">
-                                @if($saleQuarterlyPrice)
-                                    <span class="text-sm text-rose-400/70 line-through">{{ number_format($quarterlyPrice) }} {{ $currency }}</span>
-                                    <span class="text-xl font-bold text-primary">{{ number_format($saleQuarterlyPrice) }} {{ $currency }}</span>
-                                @else
-                                    <span class="text-xl font-bold text-primary">{{ number_format($quarterlyPrice) }} {{ $currency }}</span>
-                                @endif
+                                <span class="text-xl font-bold text-primary">{{ number_format($saleQuarterlyPrice ?? $quarterlyPrice) }} {{ $currency }}</span>
                                 <span class="text-sm text-gray-500">{{ __('public.booking.quran.package_info.per_quarter') }}</span>
                             </div>
                             <div class="h-5">
-                                @if($quarterlySavings > 0)
+                                @if($saleQuarterlyPrice)
+                                    <span class="text-[11px] text-gray-400">{{ __('components.packages.instead_of', ['price' => number_format($quarterlyPrice) . ' ' . $currency]) }}</span>
+                                @elseif($quarterlySavings > 0)
                                     <span class="text-xs text-green-600 font-medium">{{ __('public.booking.quran.package_info.save_percent', ['percent' => $quarterlySavings]) }}</span>
                                 @endif
                             </div>
@@ -193,16 +189,13 @@
                         <div class="h-full flex flex-col items-center justify-between text-center">
                             <div class="text-base font-semibold text-gray-900">{{ BillingCycle::YEARLY->label() }}</div>
                             <div class="my-2 flex items-baseline gap-1 flex-wrap justify-center" dir="ltr">
-                                @if($saleYearlyPrice)
-                                    <span class="text-sm text-rose-400/70 line-through">{{ number_format($yearlyPrice) }} {{ $currency }}</span>
-                                    <span class="text-xl font-bold text-primary">{{ number_format($saleYearlyPrice) }} {{ $currency }}</span>
-                                @else
-                                    <span class="text-xl font-bold text-primary">{{ number_format($yearlyPrice) }} {{ $currency }}</span>
-                                @endif
+                                <span class="text-xl font-bold text-primary">{{ number_format($saleYearlyPrice ?? $yearlyPrice) }} {{ $currency }}</span>
                                 <span class="text-sm text-gray-500">{{ __('public.booking.quran.package_info.per_year') }}</span>
                             </div>
                             <div class="h-5">
-                                @if($yearlySavings > 0)
+                                @if($saleYearlyPrice)
+                                    <span class="text-[11px] text-gray-400">{{ __('components.packages.instead_of', ['price' => number_format($yearlyPrice) . ' ' . $currency]) }}</span>
+                                @elseif($yearlySavings > 0)
                                     <span class="text-xs text-green-600 font-medium">{{ __('public.booking.quran.package_info.save_percent', ['percent' => $yearlySavings]) }}</span>
                                 @endif
                             </div>
@@ -344,12 +337,9 @@
             </h4>
             <div class="space-y-2">
                 {{-- Original price with strikethrough when sale is active --}}
-                <div x-show="currentHasSale" x-cloak class="flex justify-between items-center text-rose-400/70">
-                    <span>
-                        {{ __('components.packages.original_price') }}
-                        (<span x-text="periodLabel"></span>)
-                    </span>
-                    <span class="line-through" dir="ltr">
+                <div x-show="currentHasSale" x-cloak class="flex justify-between items-center text-gray-400 text-sm">
+                    <span>{{ __('components.packages.original_price') }}</span>
+                    <span dir="ltr">
                         <span x-text="currentOriginalPrice.toLocaleString()"></span>
                         {{ $currency }}
                     </span>
