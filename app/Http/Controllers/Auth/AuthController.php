@@ -455,8 +455,8 @@ class AuthController extends Controller
                 'teacher_type' => $teacherType,
             ]);
 
-            // Delete the user since profile creation failed
-            $user->delete();
+            // Force delete the user since profile creation failed (soft delete would block re-registration)
+            $user->forceDelete();
 
             // Check if it's a duplicate teacher code error
             if (str_contains($e->getMessage(), 'teacher_code_unique') || $e->getCode() === '23000') {
