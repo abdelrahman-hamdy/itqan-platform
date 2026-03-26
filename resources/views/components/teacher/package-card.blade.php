@@ -35,24 +35,6 @@
   <!-- Header with decorative pattern and price -->
   <div class="bg-gradient-to-br from-{{ $color }}-50 via-white to-{{ $color }}-50 p-4 md:p-6 border-b border-{{ $color }}-100 rounded-t-xl md:rounded-t-2xl overflow-hidden relative">
 
-    <!-- Sale Badge - Top end corner -->
-    @if($hasSale)
-      <div class="absolute top-2 end-2 z-10">
-        <span x-cloak>
-          @foreach($periods as $period)
-            <span x-show="pricingPeriod === '{{ $period }}' && {{ $priceData[$period]['hasSale'] ? 'true' : 'false' }}"
-                  class="inline-flex items-center gap-1 bg-red-500 text-white px-2 md:px-2.5 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-sm">
-              <i class="ri-fire-line"></i>
-              {{ __('components.packages.sale_badge') }}
-              @if($priceData[$period]['discount'] > 0)
-                {{ $priceData[$period]['discount'] }}%
-              @endif
-            </span>
-          @endforeach
-        </span>
-      </div>
-    @endif
-
     <!-- Package Name -->
     <div class="text-center mb-3 md:mb-4">
       <h3 class="text-base md:text-lg lg:text-xl font-bold text-gray-900 mb-0.5 md:mb-1">
@@ -77,8 +59,8 @@
         @foreach($periods as $period)
           <span x-show="pricingPeriod === '{{ $period }}'" @if($loop->index > 0) x-cloak @endif>
             @if($priceData[$period]['hasSale'])
-              <span class="text-base md:text-lg text-gray-400 line-through me-1">{{ number_format($priceData[$period]['original']) }}</span>
-              <span class="text-3xl md:text-4xl lg:text-5xl font-black text-red-600">{{ number_format($priceData[$period]['sale']) }}</span>
+              <span class="text-base md:text-lg text-rose-400/70 line-through me-1">{{ number_format($priceData[$period]['original']) }}</span>
+              <span class="text-3xl md:text-4xl lg:text-5xl font-black text-{{ $color }}-600">{{ number_format($priceData[$period]['sale']) }}</span>
             @else
               <span class="text-3xl md:text-4xl lg:text-5xl font-black text-{{ $color }}-600">{{ number_format($priceData[$period]['original']) }}</span>
             @endif

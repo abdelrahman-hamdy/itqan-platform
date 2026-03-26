@@ -40,9 +40,9 @@
       <div class="text-end" dir="ltr">
         @if($hasSale)
           <div>
-            <span class="text-sm text-gray-400 line-through">{{ number_format($originalPrice) }} {{ $currency }}</span>
+            <span class="text-sm text-rose-400/70 line-through">{{ number_format($originalPrice) }} {{ $currency }}</span>
           </div>
-          <span class="text-xl font-bold text-red-600">{{ number_format($displayPrice) }} {{ $currency }}</span>
+          <span class="text-xl font-bold text-primary">{{ number_format($displayPrice) }} {{ $currency }}</span>
         @else
           <span class="text-xl font-bold text-primary">{{ number_format($displayPrice) }} {{ $currency }}</span>
         @endif
