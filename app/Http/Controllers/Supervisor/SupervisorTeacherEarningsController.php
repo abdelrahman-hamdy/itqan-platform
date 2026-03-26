@@ -107,8 +107,15 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         }
 
         $academyId = $this->getAcademyId();
+        $allTeacherIds = array_merge($this->getAssignedQuranTeacherIds(), $this->getAssignedAcademicTeacherIds());
         [$quranProfileIds, $academicProfileIds] = $this->resolveProfileIds();
-        $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds);
+
+        $currentTeacherId = $request->input('teacher_id');
+        if ($currentTeacherId && ! in_array((int) $currentTeacherId, $allTeacherIds)) {
+            $currentTeacherId = null;
+        }
+
+        $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $currentTeacherId ? (int) $currentTeacherId : null);
 
         $currentMonth = $request->input('month');
         $now = Carbon::now();
@@ -122,17 +129,18 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             $currentMonth = $now->format('Y-m');
         }
 
-        // Group by teacher, session type, and calculation method (avoids N+1)
+        // Group by teacher, session type, calculation method, and rate (full detail)
         $rawEarnings = (clone $query)
             ->select(
                 'teacher_type',
                 'teacher_id',
                 'session_type',
                 'calculation_method',
+                'rate_snapshot',
                 DB::raw('SUM(amount) as total_amount'),
                 DB::raw('COUNT(*) as sessions_count')
             )
-            ->groupBy('teacher_type', 'teacher_id', 'session_type', 'calculation_method')
+            ->groupBy('teacher_type', 'teacher_id', 'session_type', 'calculation_method', 'rate_snapshot')
             ->get();
 
         $teacherSummaries = [];
@@ -143,10 +151,10 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
                 $teacherSummaries[$key] = [
                     'teacher_type' => $row->teacher_type,
                     'teacher_id' => $row->teacher_id,
-                    'quran_individual' => 0,
-                    'quran_group' => 0,
-                    'academic' => 0,
-                    'interactive' => 0,
+                    'quran_individual' => ['amount' => 0, 'sessions_count' => 0, 'rate' => null, 'method' => null],
+                    'quran_group' => ['amount' => 0, 'sessions_count' => 0, 'rate' => null, 'method' => null],
+                    'academic' => ['amount' => 0, 'sessions_count' => 0, 'rate' => null, 'method' => null],
+                    'interactive' => ['amount' => 0, 'details' => []],
                     'total' => 0,
                     'sessions_count' => 0,
                 ];
@@ -157,24 +165,45 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
             if ($row->session_type === QuranSession::class) {
                 $isGroup = in_array($row->calculation_method, ['group_rate', 'per_student']);
-                if ($isGroup) {
-                    $teacherSummaries[$key]['quran_group'] += $row->total_amount;
-                } else {
-                    $teacherSummaries[$key]['quran_individual'] += $row->total_amount;
-                }
+                $source = $isGroup ? 'quran_group' : 'quran_individual';
+                $teacherSummaries[$key][$source]['amount'] += $row->total_amount;
+                $teacherSummaries[$key][$source]['sessions_count'] += $row->sessions_count;
+                $teacherSummaries[$key][$source]['rate'] = $row->rate_snapshot;
+                $teacherSummaries[$key][$source]['method'] = $row->calculation_method;
             } elseif ($row->session_type === AcademicSession::class) {
-                $teacherSummaries[$key]['academic'] += $row->total_amount;
+                $teacherSummaries[$key]['academic']['amount'] += $row->total_amount;
+                $teacherSummaries[$key]['academic']['sessions_count'] += $row->sessions_count;
+                $teacherSummaries[$key]['academic']['rate'] = $row->rate_snapshot;
+                $teacherSummaries[$key]['academic']['method'] = $row->calculation_method;
             } elseif ($row->session_type === InteractiveCourseSession::class) {
-                $teacherSummaries[$key]['interactive'] += $row->total_amount;
+                $teacherSummaries[$key]['interactive']['amount'] += $row->total_amount;
+                $teacherSummaries[$key]['interactive']['details'][] = [
+                    'method' => $row->calculation_method,
+                    'rate' => $row->rate_snapshot,
+                    'sessions_count' => $row->sessions_count,
+                    'amount' => $row->total_amount,
+                ];
             }
         }
 
         usort($teacherSummaries, fn ($a, $b) => $b['total'] <=> $a['total']);
 
+        // Teacher list for filter dropdown
+        $teachersList = [];
+        if (! empty($allTeacherIds)) {
+            $teachersList = User::whereIn('id', $allTeacherIds)
+                ->select('id', 'first_name', 'last_name', 'user_type')
+                ->get()
+                ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'type' => $u->user_type])
+                ->toArray();
+        }
+
         return view('supervisor.teacher-earnings.teacher-summary', [
             'teacherSummaries' => $teacherSummaries,
             'profileUserMap' => $this->buildProfileUserMap(),
             'availableMonths' => $this->getAvailableMonths($academyId, $scopeQuery),
+            'teachers' => $teachersList,
+            'currentTeacherId' => $currentTeacherId,
             'currentMonth' => $currentMonth,
             'activeTab' => 'summary',
         ]);

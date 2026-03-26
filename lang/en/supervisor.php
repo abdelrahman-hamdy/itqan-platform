@@ -894,6 +894,9 @@ return [
         'summary_total' => 'Total',
         'summary_sessions_count' => 'Sessions',
         'summary_no_results' => 'No earnings to display for this month',
+        'summary_rate_per_session' => 'per session',
+        'summary_rate_per_student' => 'per student',
+        'summary_rate_fixed' => 'fixed',
     ],
 
     'supervisors' => [

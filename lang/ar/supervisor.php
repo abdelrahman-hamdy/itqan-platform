@@ -894,6 +894,9 @@ return [
         'summary_total' => 'الإجمالي',
         'summary_sessions_count' => 'عدد الجلسات',
         'summary_no_results' => 'لا توجد أرباح لعرضها في هذا الشهر',
+        'summary_rate_per_session' => 'لكل جلسة',
+        'summary_rate_per_student' => 'لكل طالب',
+        'summary_rate_fixed' => 'مبلغ ثابت',
     ],
 
     'supervisors' => [
