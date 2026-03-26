@@ -209,7 +209,7 @@ class PublicAcademicPackageController extends Controller
 
         try {
             // Calculate the price based on billing cycle
-            $price = $package->getPriceForBillingCycle($request->billing_cycle);
+            $price = $package->getEffectivePriceForBillingCycle($request->billing_cycle);
 
             if (! $price) {
                 Log::warning('Invalid billing cycle for academic package', [

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasSalePrices;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AcademicPackage extends Model
 {
-    use HasFactory, ScopedToAcademy, SoftDeletes;
+    use HasFactory, HasSalePrices, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -20,8 +21,11 @@ class AcademicPackage extends Model
         'sessions_per_month',
         'session_duration_minutes',
         'monthly_price',
+        'sale_monthly_price',
         'quarterly_price',
+        'sale_quarterly_price',
         'yearly_price',
+        'sale_yearly_price',
         'currency',
         'features',
         'is_active',
@@ -32,8 +36,11 @@ class AcademicPackage extends Model
         'sessions_per_month' => 'integer',
         'session_duration_minutes' => 'integer',
         'monthly_price' => 'decimal:2',
+        'sale_monthly_price' => 'decimal:2',
         'quarterly_price' => 'decimal:2',
+        'sale_quarterly_price' => 'decimal:2',
         'yearly_price' => 'decimal:2',
+        'sale_yearly_price' => 'decimal:2',
         'features' => 'array',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
@@ -67,17 +74,6 @@ class AcademicPackage extends Model
     public function scopeForAcademy($query, $academyId)
     {
         return $query->where('academy_id', $academyId);
-    }
-
-    // Helper methods
-    public function getPriceForBillingCycle(string $billingCycle): ?float
-    {
-        return match ($billingCycle) {
-            'monthly' => $this->monthly_price,
-            'quarterly' => $this->quarterly_price,
-            'yearly' => $this->yearly_price,
-            default => null,
-        };
     }
 
     /**

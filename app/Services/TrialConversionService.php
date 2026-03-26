@@ -2,9 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Database\Eloquent\Collection;
-use Carbon\Carbon;
-use Exception;
 use App\Enums\BillingCycle;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -14,6 +11,9 @@ use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
 use App\Models\QuranTrialRequest;
 use App\Models\User;
+use Carbon\Carbon;
+use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -191,7 +191,7 @@ class TrialConversionService
 
         return DB::transaction(function () use ($trialRequest, $package, $billingCycle, $createdBy) {
             // Calculate pricing
-            $price = $package->getPriceForBillingCycle($billingCycle->value);
+            $price = $package->getEffectivePriceForBillingCycle($billingCycle->value);
             $sessionsPerMonth = $package->sessions_per_month;
             $multiplier = $billingCycle->sessionMultiplier();
             $totalSessions = $sessionsPerMonth * $multiplier;

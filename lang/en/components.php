@@ -1811,6 +1811,13 @@ return [
         'monthly' => 'Monthly',
         'quarterly' => 'Quarterly',
         'yearly' => 'Yearly',
+        'sale_badge' => 'Sale',
+        'original_price' => 'Original Price',
+        'discount_percent' => ':percent% off',
+        'sale_monthly_price' => 'Sale Monthly Price',
+        'sale_quarterly_price' => 'Sale Quarterly Price',
+        'sale_yearly_price' => 'Sale Yearly Price',
+        'sale_price_helper' => 'Leave empty if no sale is active',
     ],
     'subscription' => [
         'billing_cycle' => 'Billing Cycle',

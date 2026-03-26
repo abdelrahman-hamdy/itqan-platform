@@ -142,19 +142,7 @@ class TeacherController extends Controller
                 'available_time_end' => $teacher->available_time_end?->format('H:i'),
                 'is_subscribed' => $circle !== null,
                 'subscription_id' => $circle?->id,
-                'packages' => $packages->map(fn ($pkg) => [
-                    'id' => $pkg->id,
-                    'name' => $pkg->name,
-                    'description' => $pkg->description,
-                    'sessions_per_month' => $pkg->sessions_per_month,
-                    'session_duration_minutes' => $pkg->session_duration_minutes,
-                    'monthly_price' => $pkg->monthly_price,
-                    'quarterly_price' => $pkg->quarterly_price,
-                    'yearly_price' => $pkg->yearly_price,
-                    'currency' => $pkg->currency ?? 'SAR',
-                    'features' => $pkg->features ?? [],
-                    'is_popular' => $pkg->sort_order === 0,
-                ])->toArray(),
+                'packages' => $packages->map(fn ($pkg) => $this->mapPackageToArray($pkg))->toArray(),
             ],
         ], __('Teacher retrieved successfully'));
     }
@@ -303,20 +291,28 @@ class TeacherController extends Controller
                 'available_time_end' => $teacher->available_time_end?->format('H:i'),
                 'is_subscribed' => $lesson !== null,
                 'subscription_id' => $lesson?->id,
-                'packages' => $packages->map(fn ($pkg) => [
-                    'id' => $pkg->id,
-                    'name' => $pkg->name,
-                    'description' => $pkg->description,
-                    'sessions_per_month' => $pkg->sessions_per_month,
-                    'session_duration_minutes' => $pkg->session_duration_minutes,
-                    'monthly_price' => $pkg->monthly_price,
-                    'quarterly_price' => $pkg->quarterly_price,
-                    'yearly_price' => $pkg->yearly_price,
-                    'currency' => $pkg->currency ?? 'SAR',
-                    'features' => $pkg->features ?? [],
-                    'is_popular' => $pkg->sort_order === 0,
-                ])->toArray(),
+                'packages' => $packages->map(fn ($pkg) => $this->mapPackageToArray($pkg))->toArray(),
             ],
         ], __('Teacher retrieved successfully'));
+    }
+
+    private function mapPackageToArray(QuranPackage|AcademicPackage $pkg): array
+    {
+        return [
+            'id' => $pkg->id,
+            'name' => $pkg->name,
+            'description' => $pkg->description,
+            'sessions_per_month' => $pkg->sessions_per_month,
+            'session_duration_minutes' => $pkg->session_duration_minutes,
+            'monthly_price' => $pkg->monthly_price,
+            'quarterly_price' => $pkg->quarterly_price,
+            'yearly_price' => $pkg->yearly_price,
+            'sale_monthly_price' => $pkg->sale_monthly_price,
+            'sale_quarterly_price' => $pkg->sale_quarterly_price,
+            'sale_yearly_price' => $pkg->sale_yearly_price,
+            'currency' => $pkg->currency ?? 'SAR',
+            'features' => $pkg->features ?? [],
+            'is_popular' => $pkg->sort_order === 0,
+        ];
     }
 }

@@ -31,16 +31,33 @@
     // Always use academy's currency (ignore package's stored currency)
     $currency = getCurrencySymbol(null, $academy);
 
-    // Get prices with fallbacks
+    // Original prices with fallbacks
     $monthlyPrice = $package->monthly_price ?? 0;
     $quarterlyPrice = $package->quarterly_price ?? ($monthlyPrice * 3 * 0.9);
     $yearlyPrice = $package->yearly_price ?? ($monthlyPrice * 12 * 0.8);
 
-    // Calculate actual savings percentages
+    // Sale prices (null = no sale)
+    $saleMonthlyPrice = $package->sale_monthly_price;
+    $saleQuarterlyPrice = $package->sale_quarterly_price;
+    $saleYearlyPrice = $package->sale_yearly_price;
+
+    // Effective prices via trait
+    $effectiveMonthly = $package->getEffectivePriceForBillingCycle('monthly') ?? $monthlyPrice;
+    $effectiveQuarterly = $package->getEffectivePriceForBillingCycle('quarterly') ?? $quarterlyPrice;
+    $effectiveYearly = $package->getEffectivePriceForBillingCycle('yearly') ?? $yearlyPrice;
+
+    // Pre-compute discount percentages
+    $saleDiscounts = [
+        'monthly' => $package->getDiscountPercentage('monthly'),
+        'quarterly' => $package->getDiscountPercentage('quarterly'),
+        'yearly' => $package->getDiscountPercentage('yearly'),
+    ];
+
+    // Savings percentages (quarterly/yearly vs monthly baseline)
     $quarterlyFullPrice = $monthlyPrice * 3;
-    $yearlyfullPrice = $monthlyPrice * 12;
+    $yearlyFullPrice = $monthlyPrice * 12;
     $quarterlySavings = $quarterlyFullPrice > 0 ? round((($quarterlyFullPrice - $quarterlyPrice) / $quarterlyFullPrice) * 100) : 0;
-    $yearlySavings = $yearlyfullPrice > 0 ? round((($yearlyfullPrice - $yearlyPrice) / $yearlyfullPrice) * 100) : 0;
+    $yearlySavings = $yearlyFullPrice > 0 ? round((($yearlyFullPrice - $yearlyPrice) / $yearlyFullPrice) * 100) : 0;
 @endphp
 
 @livewire('payment.payment-gateway-modal', ['academyId' => $academy->id])
@@ -69,13 +86,29 @@
           x-data="{
               billingCycle: '{{ old('billing_cycle', $selectedPeriod) ?: 'monthly' }}',
               prices: {
+                  monthly: {{ (float) $effectiveMonthly }},
+                  quarterly: {{ (float) $effectiveQuarterly }},
+                  yearly: {{ (float) $effectiveYearly }}
+              },
+              originalPrices: {
                   monthly: {{ (float) $monthlyPrice }},
                   quarterly: {{ (float) $quarterlyPrice }},
                   yearly: {{ (float) $yearlyPrice }}
               },
+              hasSale: {
+                  monthly: {{ $saleMonthlyPrice ? 'true' : 'false' }},
+                  quarterly: {{ $saleQuarterlyPrice ? 'true' : 'false' }},
+                  yearly: {{ $saleYearlyPrice ? 'true' : 'false' }}
+              },
               currency: '{{ $currency }}',
               get currentPrice() {
                   return this.prices[this.billingCycle] || this.prices.monthly || 0;
+              },
+              get currentOriginalPrice() {
+                  return this.originalPrices[this.billingCycle] || this.originalPrices.monthly || 0;
+              },
+              get currentHasSale() {
+                  return this.hasSale[this.billingCycle] || false;
               },
               get periodLabel() {
                   const labels = {
@@ -110,31 +143,57 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {{-- Monthly --}}
                 <div @click="billingCycle = 'monthly'"
-                     class="cursor-pointer h-full p-4 border-2 rounded-lg transition-all"
+                     class="cursor-pointer h-full p-4 border-2 rounded-lg transition-all relative overflow-hidden"
                      :class="billingCycle === 'monthly' ? 'border-primary bg-primary/5 ring-2 ring-primary' : 'border-gray-200 hover:border-gray-300'">
+                    @if($saleMonthlyPrice)
+                        <div class="absolute top-0 end-0 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-es">
+                            {{ __('components.packages.sale_badge') }}
+                        </div>
+                    @endif
                     <div class="h-full flex flex-col items-center justify-between text-center">
                         <div class="text-base font-semibold text-gray-900">{{ BillingCycle::MONTHLY->label() }}</div>
-                        <div class="my-2 flex items-baseline gap-1" dir="ltr">
-                            <span class="text-xl font-bold text-primary">{{ number_format($monthlyPrice) }} {{ $currency }}</span>
+                        <div class="my-2 flex items-baseline gap-1 flex-wrap justify-center" dir="ltr">
+                            @if($saleMonthlyPrice)
+                                <span class="text-sm text-gray-400 line-through">{{ number_format($monthlyPrice) }} {{ $currency }}</span>
+                                <span class="text-xl font-bold text-red-600">{{ number_format($saleMonthlyPrice) }} {{ $currency }}</span>
+                            @else
+                                <span class="text-xl font-bold text-primary">{{ number_format($monthlyPrice) }} {{ $currency }}</span>
+                            @endif
                             <span class="text-sm text-gray-500">{{ __('public.booking.quran.package_info.per_month') }}</span>
                         </div>
-                        <div class="h-5"></div>
+                        <div class="h-5">
+                            @if($saleMonthlyPrice && $saleDiscounts['monthly'] > 0)
+                                <span class="text-xs text-red-600 font-medium">{{ __('components.packages.discount_percent', ['percent' => $saleDiscounts['monthly']]) }}</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
 
                 {{-- Quarterly --}}
                 @if($package->quarterly_price)
                     <div @click="billingCycle = 'quarterly'"
-                         class="cursor-pointer h-full p-4 border-2 rounded-lg transition-all"
+                         class="cursor-pointer h-full p-4 border-2 rounded-lg transition-all relative overflow-hidden"
                          :class="billingCycle === 'quarterly' ? 'border-primary bg-primary/5 ring-2 ring-primary' : 'border-gray-200 hover:border-gray-300'">
+                        @if($saleQuarterlyPrice)
+                            <div class="absolute top-0 end-0 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-es">
+                                {{ __('components.packages.sale_badge') }}
+                            </div>
+                        @endif
                         <div class="h-full flex flex-col items-center justify-between text-center">
                             <div class="text-base font-semibold text-gray-900">{{ BillingCycle::QUARTERLY->label() }}</div>
-                            <div class="my-2 flex items-baseline gap-1" dir="ltr">
-                                <span class="text-xl font-bold text-primary">{{ number_format($quarterlyPrice) }} {{ $currency }}</span>
+                            <div class="my-2 flex items-baseline gap-1 flex-wrap justify-center" dir="ltr">
+                                @if($saleQuarterlyPrice)
+                                    <span class="text-sm text-gray-400 line-through">{{ number_format($quarterlyPrice) }} {{ $currency }}</span>
+                                    <span class="text-xl font-bold text-red-600">{{ number_format($saleQuarterlyPrice) }} {{ $currency }}</span>
+                                @else
+                                    <span class="text-xl font-bold text-primary">{{ number_format($quarterlyPrice) }} {{ $currency }}</span>
+                                @endif
                                 <span class="text-sm text-gray-500">{{ __('public.booking.quran.package_info.per_quarter') }}</span>
                             </div>
                             <div class="h-5">
-                                @if($quarterlySavings > 0)
+                                @if($saleQuarterlyPrice && $saleDiscounts['quarterly'] > 0)
+                                    <span class="text-xs text-red-600 font-medium">{{ __('components.packages.discount_percent', ['percent' => $saleDiscounts['quarterly']]) }}</span>
+                                @elseif($quarterlySavings > 0)
                                     <span class="text-xs text-green-600 font-medium">{{ __('public.booking.quran.package_info.save_percent', ['percent' => $quarterlySavings]) }}</span>
                                 @endif
                             </div>
@@ -145,16 +204,28 @@
                 {{-- Yearly --}}
                 @if($package->yearly_price)
                     <div @click="billingCycle = 'yearly'"
-                         class="cursor-pointer h-full p-4 border-2 rounded-lg transition-all"
+                         class="cursor-pointer h-full p-4 border-2 rounded-lg transition-all relative overflow-hidden"
                          :class="billingCycle === 'yearly' ? 'border-primary bg-primary/5 ring-2 ring-primary' : 'border-gray-200 hover:border-gray-300'">
+                        @if($saleYearlyPrice)
+                            <div class="absolute top-0 end-0 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-es">
+                                {{ __('components.packages.sale_badge') }}
+                            </div>
+                        @endif
                         <div class="h-full flex flex-col items-center justify-between text-center">
                             <div class="text-base font-semibold text-gray-900">{{ BillingCycle::YEARLY->label() }}</div>
-                            <div class="my-2 flex items-baseline gap-1" dir="ltr">
-                                <span class="text-xl font-bold text-primary">{{ number_format($yearlyPrice) }} {{ $currency }}</span>
+                            <div class="my-2 flex items-baseline gap-1 flex-wrap justify-center" dir="ltr">
+                                @if($saleYearlyPrice)
+                                    <span class="text-sm text-gray-400 line-through">{{ number_format($yearlyPrice) }} {{ $currency }}</span>
+                                    <span class="text-xl font-bold text-red-600">{{ number_format($saleYearlyPrice) }} {{ $currency }}</span>
+                                @else
+                                    <span class="text-xl font-bold text-primary">{{ number_format($yearlyPrice) }} {{ $currency }}</span>
+                                @endif
                                 <span class="text-sm text-gray-500">{{ __('public.booking.quran.package_info.per_year') }}</span>
                             </div>
                             <div class="h-5">
-                                @if($yearlySavings > 0)
+                                @if($saleYearlyPrice && $saleDiscounts['yearly'] > 0)
+                                    <span class="text-xs text-red-600 font-medium">{{ __('components.packages.discount_percent', ['percent' => $saleDiscounts['yearly']]) }}</span>
+                                @elseif($yearlySavings > 0)
                                     <span class="text-xs text-green-600 font-medium">{{ __('public.booking.quran.package_info.save_percent', ['percent' => $yearlySavings]) }}</span>
                                 @endif
                             </div>
@@ -295,19 +366,30 @@
                 {{ __('public.booking.quran.form.cost_summary') }}
             </h4>
             <div class="space-y-2">
+                {{-- Original price with strikethrough when sale is active --}}
+                <div x-show="currentHasSale" x-cloak class="flex justify-between items-center text-gray-400">
+                    <span>
+                        {{ __('components.packages.original_price') }}
+                        (<span x-text="periodLabel"></span>)
+                    </span>
+                    <span class="line-through" dir="ltr">
+                        <span x-text="currentOriginalPrice.toLocaleString()"></span>
+                        {{ $currency }}
+                    </span>
+                </div>
                 <div class="flex justify-between items-center">
                     <span>
                         {{ __('public.booking.quran.form.package_price') }}
                         (<span x-text="periodLabel"></span>)
                     </span>
-                    <span dir="ltr">
+                    <span dir="ltr" :class="currentHasSale ? 'text-red-600 font-semibold' : ''">
                         <span x-text="currentPrice.toLocaleString()"></span>
                         {{ $currency }}
                     </span>
                 </div>
                 <div class="border-t border-gray-300 pt-2 flex justify-between items-center font-bold text-lg">
                     <span>{{ __('public.booking.quran.form.total') }}</span>
-                    <span class="text-primary" dir="ltr">
+                    <span dir="ltr" :class="currentHasSale ? 'text-red-600' : 'text-primary'">
                         <span x-text="currentPrice.toLocaleString()"></span>
                         {{ $currency }}
                     </span>

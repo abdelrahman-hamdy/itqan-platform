@@ -4,12 +4,18 @@
     // Always use academy's currency (ignore package's stored currency)
     $currency = getCurrencySymbol(null, $package->academy);
 
-    // Get price based on selected period
-    $displayPrice = match($selectedPeriod) {
+    // Get original price based on selected period
+    $originalPrice = match($selectedPeriod) {
         'quarterly' => $package->quarterly_price ?? $package->monthly_price,
         'yearly' => $package->yearly_price ?? $package->monthly_price,
         default => $package->monthly_price,
     };
+
+    // Get effective price (sale if active, otherwise original)
+    $salePrice = $package->getSalePriceForBillingCycle($selectedPeriod);
+    $displayPrice = $salePrice ?? $originalPrice;
+    $hasSale = $salePrice !== null;
+
     $periodLabel = match($selectedPeriod) {
         'quarterly' => __('public.booking.quran.package_info.per_quarter'),
         'yearly' => __('public.booking.quran.package_info.per_year'),
@@ -32,7 +38,14 @@
         @endif
       </span>
       <div class="text-end" dir="ltr">
-        <span class="text-xl font-bold text-primary">{{ number_format($displayPrice) }} {{ $currency }}</span>
+        @if($hasSale)
+          <div>
+            <span class="text-sm text-gray-400 line-through">{{ number_format($originalPrice) }} {{ $currency }}</span>
+          </div>
+          <span class="text-xl font-bold text-red-600">{{ number_format($displayPrice) }} {{ $currency }}</span>
+        @else
+          <span class="text-xl font-bold text-primary">{{ number_format($displayPrice) }} {{ $currency }}</span>
+        @endif
         <span class="text-sm text-gray-600">{{ $periodLabel }}</span>
       </div>
     </div>

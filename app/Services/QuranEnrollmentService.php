@@ -37,7 +37,7 @@ class QuranEnrollmentService
         $billingCycle = $enrollmentData['billing_cycle'];
 
         // Calculate the price based on billing cycle
-        $price = $package->getPriceForBillingCycle($billingCycle);
+        $price = $package->getEffectivePriceForBillingCycle($billingCycle);
 
         if (! $price) {
             return ['subscription' => null, 'payment' => null, 'redirect_url' => null, 'error' => __('payments.subscription.billing_cycle_unavailable')];

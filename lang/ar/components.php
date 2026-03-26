@@ -1827,6 +1827,13 @@ return [
         'monthly' => 'شهري',
         'quarterly' => 'ربع سنوي',
         'yearly' => 'سنوي',
+        'sale_badge' => 'تخفيض',
+        'original_price' => 'السعر الأصلي',
+        'discount_percent' => 'خصم :percent%',
+        'sale_monthly_price' => 'سعر التخفيض الشهري',
+        'sale_quarterly_price' => 'سعر التخفيض ربع السنوي',
+        'sale_yearly_price' => 'سعر التخفيض السنوي',
+        'sale_price_helper' => 'اتركه فارغاً إذا لم يكن هناك تخفيض',
     ],
     'subscription' => [
         'billing_cycle' => 'دورة الفوترة',

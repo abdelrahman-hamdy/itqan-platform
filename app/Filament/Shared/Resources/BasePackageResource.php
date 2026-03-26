@@ -1,30 +1,31 @@
 <?php
+
 namespace App\Filament\Shared\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Schemas\Components\Grid;
+use App\Enums\SessionDuration;
+use App\Services\AcademyContextService;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\TernaryFilter;
-use App\Enums\SessionDuration;
-use Filament\Facades\Filament;
-use Filament\Forms;
 use Filament\Resources\Resource;
-use Filament\Tables;
-use App\Services\AcademyContextService;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 abstract class BasePackageResource extends Resource
 {
     abstract protected static function scopeEloquentQuery(Builder $query): Builder;
+
     abstract protected static function getTableActions(): array;
+
     abstract protected static function getTableBulkActions(): array;
 
     protected static function isViewingAllAcademies(): bool
@@ -33,6 +34,7 @@ abstract class BasePackageResource extends Resource
             return false;
         }
         $academyContextService = app(AcademyContextService::class);
+
         return $academyContextService->getCurrentAcademyId() === null;
     }
 
@@ -44,6 +46,7 @@ abstract class BasePackageResource extends Resource
     protected static function getAcademyColumn(): TextColumn
     {
         $academyPath = static::getAcademyRelationshipPath();
+
         return TextColumn::make($academyPath.'.name')
             ->label('الأكاديمية')
             ->sortable()
@@ -68,10 +71,23 @@ abstract class BasePackageResource extends Resource
                 ]),
             ]),
             Section::make('الأسعار')->description('أسعار الباقة لدورات الفوترة المختلفة')->schema([
-                Grid::make(3)->schema([
+                Grid::make(2)->schema([
                     TextInput::make('monthly_price')->label('السعر الشهري')->required()->numeric()->minValue(0)->prefix(getCurrencySymbol()),
+                    TextInput::make('sale_monthly_price')->label(__('components.packages.sale_monthly_price'))->numeric()->minValue(0)->prefix(getCurrencySymbol())
+                        ->helperText(__('components.packages.sale_price_helper'))
+                        ->lt('monthly_price'),
+                ]),
+                Grid::make(2)->schema([
                     TextInput::make('quarterly_price')->label('السعر ربع السنوي (3 أشهر)')->required()->numeric()->minValue(0)->prefix(getCurrencySymbol()),
+                    TextInput::make('sale_quarterly_price')->label(__('components.packages.sale_quarterly_price'))->numeric()->minValue(0)->prefix(getCurrencySymbol())
+                        ->helperText(__('components.packages.sale_price_helper'))
+                        ->lt('quarterly_price'),
+                ]),
+                Grid::make(2)->schema([
                     TextInput::make('yearly_price')->label('السعر السنوي')->required()->numeric()->minValue(0)->prefix(getCurrencySymbol()),
+                    TextInput::make('sale_yearly_price')->label(__('components.packages.sale_yearly_price'))->numeric()->minValue(0)->prefix(getCurrencySymbol())
+                        ->helperText(__('components.packages.sale_price_helper'))
+                        ->lt('yearly_price'),
                 ]),
             ]),
             Section::make('مميزات الباقة')->description('المميزات والخدمات المتضمنة في الباقة')->schema([
@@ -119,6 +135,7 @@ abstract class BasePackageResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->with(['academy']);
+
         return static::scopeEloquentQuery($query);
     }
 }
