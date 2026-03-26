@@ -881,6 +881,19 @@ return [
         'already_disputed' => 'This earning is already disputed.',
         'not_disputed' => 'This earning is not disputed.',
         'pending_earnings_count' => ':count pending earnings',
+        // Tabs
+        'tab_details' => 'Earnings Details',
+        'tab_teacher_summary' => 'Teacher Summary',
+        // Teacher summary
+        'summary_page_subtitle' => 'Teacher earnings summary by source',
+        'summary_teacher_name' => 'Teacher',
+        'summary_quran_individual' => 'Quran Individual',
+        'summary_quran_group' => 'Quran Group',
+        'summary_academic' => 'Academic',
+        'summary_interactive' => 'Interactive Courses',
+        'summary_total' => 'Total',
+        'summary_sessions_count' => 'Sessions',
+        'summary_no_results' => 'No earnings to display for this month',
     ],
 
     'supervisors' => [

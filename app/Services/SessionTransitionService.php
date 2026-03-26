@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\User;
-use Exception;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
@@ -12,6 +10,9 @@ use App\Exceptions\SessionOperationException;
 use App\Models\BaseSession;
 use App\Models\MeetingAttendance;
 use App\Models\StudentSessionReport;
+use App\Models\TeacherEarning;
+use App\Models\User;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -487,6 +488,72 @@ class SessionTransitionService
                 'session_id' => $session->id,
                 'session_type' => $this->settingsService->getSessionType($session),
                 'student_id' => $session->student_id ?? null,
+            ]);
+
+            return true;
+        });
+    }
+
+    /**
+     * Transition session from ABSENT to FORGIVEN (admin action).
+     * The status update triggers observers which handle subscription reversal
+     * and circle/lesson count updates (same pattern as transitionToCancelled).
+     * This method additionally deletes the teacher earning record.
+     */
+    public function transitionToForgiven(BaseSession $session, string $reason, int $forgivenBy): bool
+    {
+        return DB::transaction(function () use ($session, $reason, $forgivenBy) {
+            $lockedSession = $session::lockForUpdate()->find($session->id);
+
+            if (! $lockedSession) {
+                Log::warning('Cannot transition to FORGIVEN: session not found', [
+                    'session_id' => $session->id,
+                ]);
+
+                return false;
+            }
+
+            if (! $this->settingsService->isIndividualSession($lockedSession)) {
+                Log::warning('Cannot transition to FORGIVEN: not an individual session', [
+                    'session_id' => $lockedSession->id,
+                ]);
+
+                return false;
+            }
+
+            if ($lockedSession->status !== SessionStatus::ABSENT) {
+                Log::warning('Cannot transition to FORGIVEN: not in ABSENT status', [
+                    'session_id' => $lockedSession->id,
+                    'current_status' => $lockedSession->status->value ?? $lockedSession->status,
+                ]);
+
+                return false;
+            }
+
+            // Status change triggers observer (handleForgiveness) for subscription reversal
+            $lockedSession->update([
+                'status' => SessionStatus::FORGIVEN,
+                'forgiven_at' => now(),
+                'forgiven_by' => $forgivenBy,
+                'forgiven_reason' => $reason,
+            ]);
+
+            // Delete teacher earning for this session (not handled by observer)
+            $earning = TeacherEarning::forSession(get_class($lockedSession), $lockedSession->id)->first();
+            if ($earning) {
+                if ($earning->is_disputed) {
+                    Log::warning('Deleting disputed earning due to forgiveness', [
+                        'earning_id' => $earning->id,
+                        'session_id' => $lockedSession->id,
+                    ]);
+                }
+                $earning->delete();
+            }
+
+            Log::info('Session transitioned to FORGIVEN', [
+                'session_id' => $lockedSession->id,
+                'session_type' => $this->settingsService->getSessionType($lockedSession),
+                'forgiven_by' => $forgivenBy,
             ]);
 
             return true;

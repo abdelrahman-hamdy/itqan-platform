@@ -9,6 +9,7 @@ return [
         'completed' => 'Completed',
         'cancelled' => 'Cancelled',
         'absent' => 'Student Absent',
+        'forgiven' => 'Forgiven',
     ],
     'attendance_status' => [
         'attended' => 'Attended',

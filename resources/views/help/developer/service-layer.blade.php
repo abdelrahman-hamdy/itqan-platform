@@ -82,9 +82,14 @@
 │   ├── ChatPermissionService.php           — Matrix-based chat authorization
 │   └── SupervisedChatGroupService.php      — Creates teacher-student-supervisor groups
 │
-└── Unified
-    ├── Unified/UnifiedSessionFetchingService.php   — Cross-type session queries
-    └── Unified/UnifiedStatisticsService.php        — Dashboard aggregation</pre>
+├── Unified
+│   ├── Unified/UnifiedSessionFetchingService.php   — Cross-type session queries
+│   └── Unified/UnifiedStatisticsService.php        — Dashboard aggregation
+│
+└── Frontend Dashboards (143+ services total)
+    ├── StudentDashboardService.php         — Student portal aggregated data
+    ├── SupervisorDashboardService.php      — Management dashboard aggregated stats
+    └── StudentStatisticsService.php        — Student progress statistics</pre>
     </div>
 
     {{-- =========================================================

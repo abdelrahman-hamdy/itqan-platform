@@ -62,6 +62,7 @@ class CalendarColorLegendWidget extends Widget
             SessionStatus::COMPLETED,
             SessionStatus::CANCELLED,
             SessionStatus::ABSENT,
+            SessionStatus::FORGIVEN,
         ];
 
         return collect($relevantStatuses)

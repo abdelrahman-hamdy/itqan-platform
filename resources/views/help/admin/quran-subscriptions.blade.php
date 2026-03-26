@@ -24,13 +24,61 @@
     <li><strong>جماعي (حلقة):</strong> مجموعة طلاب في حلقة مع معلم واحد</li>
 </ul>
 
+<div class="overflow-x-auto my-4">
+    <table class="min-w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-2 text-right font-semibold text-gray-600 border-b">بطاقة الإحصاء</th>
+                <th class="px-4 py-2 text-right font-semibold text-gray-600 border-b">المحتوى</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 text-gray-600">
+            <tr><td class="px-4 py-2 font-medium text-green-700">نشطة</td><td class="px-4 py-2">الاشتراكات الجارية حالياً</td></tr>
+            <tr><td class="px-4 py-2 font-medium text-orange-700">تنتهي هذا الأسبوع</td><td class="px-4 py-2">اشتراكات على وشك الانتهاء خلال 7 أيام</td></tr>
+            <tr><td class="px-4 py-2 font-medium text-yellow-700">معلقة</td><td class="px-4 py-2">الاشتراكات الموقوفة مؤقتاً</td></tr>
+            <tr><td class="px-4 py-2 font-medium text-blue-700">منتظرة</td><td class="px-4 py-2">الاشتراكات التي لم تبدأ بعد</td></tr>
+            <tr><td class="px-4 py-2 font-medium text-red-700">منتهية</td><td class="px-4 py-2">الاشتراكات المنتهية الصلاحية</td></tr>
+            <tr><td class="px-4 py-2 font-medium text-purple-700">مُمدَّدة</td><td class="px-4 py-2">اشتراكات في فترة السماح (grace period)</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<p class="mb-3">خيارات التصفية والترتيب:</p>
+<ul>
+    <li><strong>النوع:</strong> قرآن / أكاديمي</li>
+    <li><strong>الحالة:</strong> نشط / معلق / ملغى / منتهي / مُمدَّد</li>
+    <li><strong>بحث:</strong> باسم الطالب أو المعلم</li>
+    <li><strong>الترتيب:</strong> الأحدث / الأقدم / ينتهي قريباً / الجلسات المتبقية</li>
+    <li><strong>الصفحة:</strong> 15 اشتراكاً في كل صفحة</li>
+</ul>
+
+<h2>الإجراءات المتاحة على الاشتراك</h2>
+
+<p>من صفحة تفاصيل الاشتراك تتوفر الإجراءات التالية:</p>
+<ul>
+    <li><strong>تفعيل:</strong> تحويل الاشتراك من معلق إلى نشط</li>
+    <li><strong>إيقاف مؤقت:</strong> تعليق الاشتراك مع الاحتفاظ بالجلسات المتبقية</li>
+    <li><strong>استئناف:</strong> إعادة تشغيل اشتراك موقوف</li>
+    <li><strong>تمديد (فترة سماح):</strong> منح وقت إضافي بعد انتهاء الاشتراك</li>
+    <li><strong>إلغاء:</strong> إنهاء الاشتراك نهائياً</li>
+</ul>
+
 <h2>إنشاء اشتراك جديد</h2>
+
+<div class="help-note">
+    <i class="ri-information-line help-callout-icon"></i>
+    <div>
+        <strong>ملاحظة:</strong> إنشاء الاشتراكات الجديدة يتم حالياً من لوحة Filament على
+        <code dir="ltr">/panel</code> ضمن إدارة القرآن ← اشتراكات القرآن.
+        صفحة <code dir="ltr">/manage/subscriptions</code> تُستخدم لإدارة الاشتراكات القائمة وتطبيق الإجراءات عليها.
+    </div>
+</div>
 
 <div class="help-step">
     <div class="help-step-number">1</div>
     <div class="help-step-content">
         <h3>افتح قسم اشتراكات القرآن</h3>
-        <p>من القائمة الجانبية، اختر <strong>إدارة القرآن ← اشتراكات القرآن</strong>، ثم انقر <strong>إنشاء اشتراك</strong>.</p>
+        <p>من لوحة Filament على رابط <strong>/panel</strong>، اختر <strong>إدارة القرآن ← اشتراكات القرآن</strong>، ثم انقر <strong>إنشاء اشتراك</strong>.</p>
     </div>
 </div>
 
@@ -135,6 +183,7 @@
             <tr><td class="px-4 py-2 font-medium text-yellow-700">معلق</td><td class="px-4 py-2">تم إيقاف الاشتراك مؤقتاً (مشكلة دفع أو طلب الطالب)</td></tr>
             <tr><td class="px-4 py-2 font-medium text-red-700">ملغى</td><td class="px-4 py-2">الاشتراك أُلغي نهائياً</td></tr>
             <tr><td class="px-4 py-2 font-medium text-gray-700">منتهي</td><td class="px-4 py-2">انقضت فترة الاشتراك أو نفدت الجلسات</td></tr>
+            <tr><td class="px-4 py-2 font-medium text-purple-700">مُمدَّد</td><td class="px-4 py-2">الاشتراك في فترة السماح (grace period) — منحة وقت إضافي بعد الانتهاء</td></tr>
         </tbody>
     </table>
 </div>
@@ -145,15 +194,5 @@
         عند <strong>تعليق الاشتراك</strong>، يظهر تحذير في ملف الحلقة الفردية المرتبطة، ولا يمكن جدولة جلسات جديدة حتى تُفعَّل الاشتراك مرة أخرى.
     </div>
 </div>
-
-<h2>تصفية الاشتراكات</h2>
-
-<p>يوفر جدول الاشتراكات خيارات تصفية متعددة:</p>
-<ul>
-    <li><strong>النوع:</strong> فردي / جماعي</li>
-    <li><strong>الحالة:</strong> نشط / معلق / ملغى / منتهي</li>
-    <li><strong>حالة الدفع:</strong> مدفوع / معلق / مجاني</li>
-    <li><strong>البحث:</strong> باسم الطالب أو المعلم</li>
-</ul>
 
 @endsection

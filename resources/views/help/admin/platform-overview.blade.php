@@ -162,49 +162,48 @@
 
 {{-- ── 3. Frontend vs Filament ────────────────────────────────────────────── --}}
 
-<h2>الفرق بين لوحة الإدارة والموقع الأمامي</h2>
+<h2>الفرق بين لوحات التحكم في المنصة</h2>
 
 <p>
-    كثير من المستخدمين يتساءلون عند البداية: لماذا هناك روابط دخول مختلفة؟
-    الإجابة بسيطة — المنصة لها <strong>واجهتان مستقلتان تمامًا</strong> تخدمان أغراضًا مختلفة:
+    المنصة توفر الآن <strong>واجهات أمامية متكاملة لجميع الأدوار</strong>.
+    جميع العمليات اليومية تُنجز من خلال لوحتين أماميتين، بينما تُستخدم لوحة Filament للعمليات المتقدمة وإدارة المنصة فقط:
 </p>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 my-5">
+<div class="my-5 space-y-3">
 
-    {{-- Filament Admin Panel --}}
+    {{-- Tier 1: Frontend Management Dashboard --}}
     <div class="rounded-2xl border-2 border-blue-200 bg-white p-5 shadow-sm">
         <div class="flex items-center gap-2 mb-3">
             <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
-                <i class="ri-dashboard-3-line text-white text-lg"></i>
+                <i class="ri-dashboard-line text-white text-lg"></i>
             </div>
             <div>
-                <p class="font-bold text-sm text-gray-900 leading-none">لوحة الإدارة</p>
-                <p class="text-xs text-gray-500 mt-0.5">للموظفين والمعلمين</p>
+                <p class="font-bold text-sm text-gray-900 leading-none">لوحة الإدارة الأمامية</p>
+                <p class="text-xs text-gray-500 mt-0.5">للمدير والمشرف والمدير العام — العمليات اليومية</p>
             </div>
         </div>
         <p class="text-gray-600 text-xs leading-relaxed mb-3">
-            واجهة إدارية متخصصة للمديرين والمعلمين والمشرفين.
-            تُستخدم لإدارة البيانات والمحتوى والمستخدمين.
-            مظهرها يتغير حسب إعدادات الأكاديمية.
+            لوحة إدارة كاملة بواجهة عصرية لجميع العمليات اليومية: إدارة المعلمين والطلاب
+            والاشتراكات والجلسات والمدفوعات والتقارير. هذا هو الرابط الرئيسي لعمل المدير والمشرف.
         </p>
         <div class="space-y-1.5">
             <div class="flex items-center gap-1.5 text-xs text-gray-600">
-                <i class="ri-checkbox-circle-fill text-blue-500"></i> المدير العام ومدير الأكاديمية
+                <i class="ri-checkbox-circle-fill text-blue-500"></i> مدير عام
             </div>
             <div class="flex items-center gap-1.5 text-xs text-gray-600">
-                <i class="ri-checkbox-circle-fill text-blue-500"></i> معلمو القرآن والمعلمون الأكاديميون
+                <i class="ri-checkbox-circle-fill text-blue-500"></i> مدير الأكاديمية
             </div>
             <div class="flex items-center gap-1.5 text-xs text-gray-600">
-                <i class="ri-checkbox-circle-fill text-blue-500"></i> المشرفون
+                <i class="ri-checkbox-circle-fill text-blue-500"></i> المشرف
             </div>
         </div>
         <div class="mt-3 pt-3 border-t border-gray-100">
-            <p class="text-xs text-gray-400">الرابط يحتوي على</p>
-            <p class="text-xs font-mono text-blue-700 mt-0.5" dir="ltr">/panel &nbsp;أو&nbsp; /teacher-panel &nbsp;أو&nbsp; /admin</p>
+            <p class="text-xs text-gray-400">الرابط الرئيسي</p>
+            <p class="text-xs font-mono text-blue-700 mt-0.5" dir="ltr">/manage/dashboard</p>
         </div>
     </div>
 
-    {{-- Frontend Portal --}}
+    {{-- Tier 2: Frontend Portal (teachers, students, parents) --}}
     <div class="rounded-2xl border-2 border-primary bg-primary/5 p-5">
         <div class="flex items-center gap-2 mb-3">
             <div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
@@ -212,27 +211,59 @@
             </div>
             <div>
                 <p class="font-bold text-sm text-gray-900 leading-none">الموقع الأمامي</p>
-                <p class="text-xs text-gray-500 mt-0.5">للطلاب والمعلمين وأولياء الأمور</p>
+                <p class="text-xs text-gray-500 mt-0.5">للمعلمين والطلاب وأولياء الأمور</p>
             </div>
         </div>
         <p class="text-gray-600 text-xs leading-relaxed mb-3">
-            الموقع العادي للطلاب والمعلمين وأولياء الأمور لمتابعة الدراسة والجلسات والواجبات.
-            تصميمه موجه للاستخدام اليومي وليس للإدارة.
+            الواجهة الرئيسية للمعلمين لإدارة جلساتهم وواجباتهم وطلابهم.
+            وللطلاب وأولياء الأمور لمتابعة الدراسة والتقارير.
         </p>
         <div class="space-y-1.5">
+            <div class="flex items-center gap-1.5 text-xs text-gray-600">
+                <i class="ri-checkbox-circle-fill text-primary"></i> معلمو القرآن والمعلمون الأكاديميون
+            </div>
             <div class="flex items-center gap-1.5 text-xs text-gray-600">
                 <i class="ri-checkbox-circle-fill text-primary"></i> الطلاب
             </div>
             <div class="flex items-center gap-1.5 text-xs text-gray-600">
                 <i class="ri-checkbox-circle-fill text-primary"></i> أولياء الأمور
             </div>
-            <div class="flex items-center gap-1.5 text-xs text-gray-600">
-                <i class="ri-checkbox-circle-fill text-primary"></i> معلمو القرآن والمعلمون الأكاديميون
-            </div>
         </div>
         <div class="mt-3 pt-3 border-t border-primary/20">
-            <p class="text-xs text-gray-400">الرابط يحتوي على</p>
-            <p class="text-xs font-mono text-primary mt-0.5" dir="ltr">/login &nbsp;أو&nbsp; /dashboard</p>
+            <p class="text-xs text-gray-400">الرابط</p>
+            <p class="text-xs font-mono text-primary mt-0.5" dir="ltr">/login &nbsp;→&nbsp; /profile &nbsp;أو&nbsp; /teacher/*</p>
+        </div>
+    </div>
+
+    {{-- Tier 3: Filament (advanced/supplementary) --}}
+    <div class="rounded-2xl border-2 border-gray-200 bg-gray-50 p-5">
+        <div class="flex items-center gap-2 mb-3">
+            <div class="w-9 h-9 rounded-lg bg-gray-600 flex items-center justify-center flex-shrink-0">
+                <i class="ri-settings-3-line text-white text-lg"></i>
+            </div>
+            <div>
+                <p class="font-bold text-sm text-gray-900 leading-none">لوحة Filament <span class="text-xs font-normal text-gray-500">(متقدم / اختياري)</span></p>
+                <p class="text-xs text-gray-500 mt-0.5">للعمليات المتقدمة وإدارة المنصة</p>
+            </div>
+        </div>
+        <p class="text-gray-600 text-xs leading-relaxed mb-3">
+            تُستخدم بشكل رئيسي من المدير العام لإنشاء الأكاديميات وضبط إعدادات المنصة.
+            ويمكن للمدير استخدامها للعمليات المتقدمة التي لا تتوفر في لوحة الإدارة الأمامية.
+        </p>
+        <div class="space-y-1.5">
+            <div class="flex items-center gap-1.5 text-xs text-gray-500">
+                <i class="ri-checkbox-circle-line text-gray-400"></i> مدير عام (استخدام أساسي)
+            </div>
+            <div class="flex items-center gap-1.5 text-xs text-gray-500">
+                <i class="ri-checkbox-circle-line text-gray-400"></i> مدير الأكاديمية (اختياري — للإعدادات المتقدمة)
+            </div>
+            <div class="flex items-center gap-1.5 text-xs text-gray-500">
+                <i class="ri-checkbox-circle-line text-gray-400"></i> المعلمون (اختياري)
+            </div>
+        </div>
+        <div class="mt-3 pt-3 border-t border-gray-200">
+            <p class="text-xs text-gray-400">الروابط</p>
+            <p class="text-xs font-mono text-gray-600 mt-0.5" dir="ltr">/admin &nbsp;أو&nbsp; /panel &nbsp;أو&nbsp; /teacher-panel</p>
         </div>
     </div>
 
@@ -242,7 +273,7 @@
     <i class="ri-lightbulb-line help-callout-icon"></i>
     <div>
         الطلاب وأولياء الأمور لا يستطيعون الدخول عبر روابط لوحة الإدارة
-        (<code dir="ltr">/panel</code>).
+        (<code dir="ltr">/panel</code> أو <code dir="ltr">/manage/dashboard</code>).
         كل واجهة لها رابط دخول مستقل.
     </div>
 </div>
@@ -257,12 +288,12 @@
     يمكنك نسخ أي رابط بالضغط على أيقونة النسخ.
 </p>
 
-{{-- Group 1: Panel-only (3 roles) --}}
+{{-- Group 1: Filament only (super admin) --}}
 <div class="mt-5 mb-2">
     <div class="flex items-center gap-2 mb-3">
-        <span class="inline-flex items-center gap-1.5 bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full">
-            <i class="ri-lock-line text-sm"></i>
-            لوحة الإدارة فقط — لا يوجد دخول من الموقع الأمامي
+        <span class="inline-flex items-center gap-1.5 bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1 rounded-full">
+            <i class="ri-shield-star-line text-sm"></i>
+            لوحة Filament فقط — المدير العام
         </span>
     </div>
     <div class="space-y-2">
@@ -282,17 +313,40 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-            <i class="ri-user-settings-line text-blue-600 text-lg flex-shrink-0"></i>
+    </div>
+</div>
+
+{{-- Group 2: Frontend management dashboard (admin + supervisor) --}}
+<div class="mb-2">
+    <div class="flex items-center gap-2 mb-3">
+        <span class="inline-flex items-center gap-1.5 bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
+            <i class="ri-dashboard-line text-sm"></i>
+            لوحة الإدارة الأمامية — الرابط الرئيسي للإدارة اليومية
+        </span>
+    </div>
+    <div class="space-y-2">
+
+        <div class="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+            <i class="ri-user-settings-line text-blue-600 text-lg flex-shrink-0 mt-0.5"></i>
             <div class="flex-1 min-w-0">
-                <p class="text-xs font-bold text-blue-800">مدير الأكاديمية</p>
-                <div x-data="{ copied: false }" class="flex items-center gap-2 mt-1">
-                    <code class="text-xs bg-blue-100 text-blue-900 px-2 py-1 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/panel</code>
-                    <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/panel'); copied = true; setTimeout(() => copied = false, 2000)"
-                            class="flex-shrink-0 p-1 rounded hover:bg-blue-200 transition-colors"
-                            :title="copied ? 'تم النسخ!' : 'نسخ الرابط'">
-                        <i :class="copied ? 'ri-check-line text-green-600' : 'ri-file-copy-line text-blue-500'" class="text-sm"></i>
-                    </button>
+                <p class="text-xs font-bold text-blue-800 mb-1.5">مدير الأكاديمية</p>
+                <div class="space-y-1.5">
+                    <div x-data="{ copied: false }" class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500 flex-shrink-0">الأساسي:</span>
+                        <code class="text-xs bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/manage/dashboard</code>
+                        <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/manage/dashboard'); copied = true; setTimeout(() => copied = false, 2000)"
+                                class="flex-shrink-0 p-1 rounded hover:bg-blue-200 transition-colors">
+                            <i :class="copied ? 'ri-check-line text-green-600' : 'ri-file-copy-line text-blue-400'" class="text-sm"></i>
+                        </button>
+                    </div>
+                    <div x-data="{ copied: false }" class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500 flex-shrink-0">Filament (متقدم):</span>
+                        <code class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/panel</code>
+                        <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/panel'); copied = true; setTimeout(() => copied = false, 2000)"
+                                class="flex-shrink-0 p-1 rounded hover:bg-gray-200 transition-colors">
+                            <i :class="copied ? 'ri-check-line text-green-600' : 'ri-file-copy-line text-gray-400'" class="text-sm"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -302,8 +356,8 @@
             <div class="flex-1 min-w-0">
                 <p class="text-xs font-bold text-orange-800">المشرف</p>
                 <div x-data="{ copied: false }" class="flex items-center gap-2 mt-1">
-                    <code class="text-xs bg-orange-100 text-orange-900 px-2 py-1 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/supervisor-panel</code>
-                    <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/supervisor-panel'); copied = true; setTimeout(() => copied = false, 2000)"
+                    <code class="text-xs bg-orange-100 text-orange-900 px-2 py-1 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/manage/dashboard</code>
+                    <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/manage/dashboard'); copied = true; setTimeout(() => copied = false, 2000)"
                             class="flex-shrink-0 p-1 rounded hover:bg-orange-200 transition-colors"
                             :title="copied ? 'تم النسخ!' : 'نسخ الرابط'">
                         <i :class="copied ? 'ri-check-line text-green-600' : 'ri-file-copy-line text-orange-500'" class="text-sm"></i>
@@ -315,12 +369,12 @@
     </div>
 </div>
 
-{{-- Group 2: Both access (2 teacher roles) --}}
+{{-- Group 3: Frontend primary + optional Filament (2 teacher roles) --}}
 <div class="mb-2">
     <div class="flex items-center gap-2 mb-3">
         <span class="inline-flex items-center gap-1.5 bg-purple-100 text-purple-700 text-xs font-semibold px-3 py-1 rounded-full">
-            <i class="ri-git-merge-line text-sm"></i>
-            كلا الرابطين متاح — لوحة الإدارة أو الموقع الأمامي
+            <i class="ri-computer-line text-sm"></i>
+            الموقع الأمامي — الرابط الأساسي للمعلمين
         </span>
     </div>
     <div class="space-y-2">
@@ -331,17 +385,17 @@
                 <p class="text-xs font-bold text-purple-800 mb-1.5">معلم القرآن</p>
                 <div class="space-y-1.5">
                     <div x-data="{ copied: false }" class="flex items-center gap-2">
-                        <span class="text-xs text-gray-500 flex-shrink-0">لوحة إدارة:</span>
-                        <code class="text-xs bg-purple-100 text-purple-900 px-2 py-0.5 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/teacher-panel</code>
-                        <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/teacher-panel'); copied = true; setTimeout(() => copied = false, 2000)"
+                        <span class="text-xs text-gray-500 flex-shrink-0">الأساسي:</span>
+                        <code class="text-xs bg-purple-100 text-purple-900 px-2 py-0.5 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/login</code>
+                        <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/login'); copied = true; setTimeout(() => copied = false, 2000)"
                                 class="flex-shrink-0 p-1 rounded hover:bg-purple-200 transition-colors">
                             <i :class="copied ? 'ri-check-line text-green-600' : 'ri-file-copy-line text-purple-400'" class="text-sm"></i>
                         </button>
                     </div>
                     <div x-data="{ copied: false }" class="flex items-center gap-2">
-                        <span class="text-xs text-gray-500 flex-shrink-0">موقع أمامي:</span>
-                        <code class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/login</code>
-                        <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/login'); copied = true; setTimeout(() => copied = false, 2000)"
+                        <span class="text-xs text-gray-500 flex-shrink-0">Filament (اختياري):</span>
+                        <code class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/teacher-panel</code>
+                        <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/teacher-panel'); copied = true; setTimeout(() => copied = false, 2000)"
                                 class="flex-shrink-0 p-1 rounded hover:bg-gray-200 transition-colors">
                             <i :class="copied ? 'ri-check-line text-green-600' : 'ri-file-copy-line text-gray-400'" class="text-sm"></i>
                         </button>
@@ -356,17 +410,17 @@
                 <p class="text-xs font-bold text-indigo-800 mb-1.5">المعلم الأكاديمي</p>
                 <div class="space-y-1.5">
                     <div x-data="{ copied: false }" class="flex items-center gap-2">
-                        <span class="text-xs text-gray-500 flex-shrink-0">لوحة إدارة:</span>
-                        <code class="text-xs bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/academic-teacher-panel</code>
-                        <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/academic-teacher-panel'); copied = true; setTimeout(() => copied = false, 2000)"
+                        <span class="text-xs text-gray-500 flex-shrink-0">الأساسي:</span>
+                        <code class="text-xs bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/login</code>
+                        <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/login'); copied = true; setTimeout(() => copied = false, 2000)"
                                 class="flex-shrink-0 p-1 rounded hover:bg-indigo-200 transition-colors">
                             <i :class="copied ? 'ri-check-line text-green-600' : 'ri-file-copy-line text-indigo-400'" class="text-sm"></i>
                         </button>
                     </div>
                     <div x-data="{ copied: false }" class="flex items-center gap-2">
-                        <span class="text-xs text-gray-500 flex-shrink-0">موقع أمامي:</span>
-                        <code class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/login</code>
-                        <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/login'); copied = true; setTimeout(() => copied = false, 2000)"
+                        <span class="text-xs text-gray-500 flex-shrink-0">Filament (اختياري):</span>
+                        <code class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/academic-teacher-panel</code>
+                        <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/academic-teacher-panel'); copied = true; setTimeout(() => copied = false, 2000)"
                                 class="flex-shrink-0 p-1 rounded hover:bg-gray-200 transition-colors">
                             <i :class="copied ? 'ri-check-line text-green-600' : 'ri-file-copy-line text-gray-400'" class="text-sm"></i>
                         </button>
@@ -378,7 +432,7 @@
     </div>
 </div>
 
-{{-- Group 3: Frontend only (student + parent) --}}
+{{-- Group 4: Frontend only (student + parent) --}}
 <div class="mb-5">
     <div class="flex items-center gap-2 mb-3">
         <span class="inline-flex items-center gap-1.5 bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full">
@@ -414,33 +468,29 @@
     </div>
 </div>
 
-{{-- ── 5. 5 Dashboards Map ─────────────────────────────────────────────────── --}}
+{{-- ── 5. Two-Tier Dashboard Map ────────────────────────────────────────────── --}}
 
 <h2>لوحات التحكم المتاحة في المنصة</h2>
 
 <p>
-    المنصة تحتوي على <strong>خمس لوحات تحكم</strong> مختلفة (إضافةً إلى الموقع الأمامي للطلاب وأولياء الأمور):
+    المنصة تعتمد نظاماً من <strong>طبقتين</strong>: لوحات أمامية للعمليات اليومية، ولوحات Filament للعمليات المتقدمة وإدارة المنصة.
 </p>
 
-<div class="my-5 space-y-3">
+{{-- Tier 1: Frontend Dashboards --}}
+<h3 class="text-base font-bold text-gray-800 mt-6 mb-3 flex items-center gap-2">
+    <span class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">١</span>
+    لوحات الإدارة الأمامية — للعمليات اليومية
+</h3>
 
-    <div class="flex items-center gap-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-        <div class="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center flex-shrink-0 shadow">
-            <i class="ri-shield-star-line text-white text-xl"></i>
+<div class="my-3 space-y-2">
+
+    <div class="flex items-center gap-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+        <div class="w-12 h-12 rounded-xl bg-green-500 flex items-center justify-center flex-shrink-0 shadow">
+            <i class="ri-graduation-cap-line text-white text-xl"></i>
         </div>
         <div class="flex-1 min-w-0">
-            <p class="font-bold text-amber-800 text-sm">لوحة المدير العام</p>
-            <p class="text-xs text-amber-700 mt-0.5">إدارة جميع الأكاديميات — تُدخل عبر: <code class="bg-amber-100 px-1 rounded" dir="ltr">itqanway.com/admin</code></p>
-        </div>
-    </div>
-
-    <div class="flex items-center gap-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-        <div class="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center flex-shrink-0 shadow">
-            <i class="ri-building-2-line text-white text-xl"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-            <p class="font-bold text-blue-800 text-sm">لوحة مدير الأكاديمية</p>
-            <p class="text-xs text-blue-700 mt-0.5">إدارة أكاديمية واحدة — تُدخل عبر: <code class="bg-blue-100 px-1 rounded" dir="ltr">{academy}.itqanway.com/panel</code></p>
+            <p class="font-bold text-green-800 text-sm">طالب / ولي أمر</p>
+            <p class="text-xs text-green-700 mt-0.5">متابعة الدراسة والجلسات — تُدخل عبر: <code class="bg-green-100 px-1 rounded" dir="ltr">/login</code></p>
         </div>
     </div>
 
@@ -449,38 +499,68 @@
             <i class="ri-book-2-line text-white text-xl"></i>
         </div>
         <div class="flex-1 min-w-0">
-            <p class="font-bold text-purple-800 text-sm">لوحة معلم القرآن</p>
-            <p class="text-xs text-purple-700 mt-0.5">جلسات وطلاب وواجبات — تُدخل عبر: <code class="bg-purple-100 px-1 rounded" dir="ltr">{academy}.itqanway.com/teacher-panel</code></p>
+            <p class="font-bold text-purple-800 text-sm">معلم قرآن / معلم أكاديمي</p>
+            <p class="text-xs text-purple-700 mt-0.5">جلسات وطلاب وواجبات — تُدخل عبر: <code class="bg-purple-100 px-1 rounded" dir="ltr">/login</code> ← الملف الشخصي</p>
         </div>
     </div>
 
-    <div class="flex items-center gap-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
-        <div class="w-12 h-12 rounded-xl bg-indigo-500 flex items-center justify-center flex-shrink-0 shadow">
+    <div class="flex items-center gap-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+        <div class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0 shadow">
+            <i class="ri-dashboard-line text-white text-xl"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="font-bold text-blue-800 text-sm">مشرف + مدير + مدير عام</p>
+            <p class="text-xs text-blue-700 mt-0.5">جميع العمليات الإدارية اليومية — تُدخل عبر: <code class="bg-blue-100 px-1 rounded" dir="ltr">{academy}.itqanway.com/manage/dashboard</code></p>
+        </div>
+    </div>
+
+</div>
+
+{{-- Tier 2: Filament Panels --}}
+<h3 class="text-base font-bold text-gray-800 mt-6 mb-3 flex items-center gap-2">
+    <span class="w-6 h-6 rounded-full bg-gray-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">٢</span>
+    لوحات Filament — للعمليات المتقدمة وإدارة المنصة
+</h3>
+
+<div class="my-3 space-y-2">
+
+    <div class="flex items-center gap-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+        <div class="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center flex-shrink-0 shadow">
+            <i class="ri-shield-star-line text-white text-xl"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="font-bold text-amber-800 text-sm">لوحة المدير العام <span class="text-xs font-normal text-amber-600">(استخدام أساسي)</span></p>
+            <p class="text-xs text-amber-700 mt-0.5">إدارة جميع الأكاديميات وإنشاء مستأجرين جدد — تُدخل عبر: <code class="bg-amber-100 px-1 rounded" dir="ltr">itqanway.com/admin</code></p>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-4 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+        <div class="w-12 h-12 rounded-xl bg-gray-500 flex items-center justify-center flex-shrink-0 shadow">
+            <i class="ri-building-2-line text-white text-xl"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="font-bold text-gray-800 text-sm">لوحة مدير الأكاديمية <span class="text-xs font-normal text-gray-600">(اختياري)</span></p>
+            <p class="text-xs text-gray-700 mt-0.5">إعدادات متقدمة وباقات التسعير — تُدخل عبر: <code class="bg-gray-100 px-1 rounded" dir="ltr">{academy}.itqanway.com/panel</code></p>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-4 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+        <div class="w-12 h-12 rounded-xl bg-gray-400 flex items-center justify-center flex-shrink-0 shadow">
+            <i class="ri-book-2-line text-white text-xl"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="font-bold text-gray-700 text-sm">لوحة معلم القرآن <span class="text-xs font-normal text-gray-500">(اختياري)</span></p>
+            <p class="text-xs text-gray-600 mt-0.5">واجهة بديلة للمعلم — تُدخل عبر: <code class="bg-gray-100 px-1 rounded" dir="ltr">{academy}.itqanway.com/teacher-panel</code></p>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-4 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+        <div class="w-12 h-12 rounded-xl bg-gray-400 flex items-center justify-center flex-shrink-0 shadow">
             <i class="ri-pencil-ruler-2-line text-white text-xl"></i>
         </div>
         <div class="flex-1 min-w-0">
-            <p class="font-bold text-indigo-800 text-sm">لوحة المعلم الأكاديمي</p>
-            <p class="text-xs text-indigo-700 mt-0.5">دروس ومحتوى أكاديمي — تُدخل عبر: <code class="bg-indigo-100 px-1 rounded" dir="ltr">{academy}.itqanway.com/academic-teacher-panel</code></p>
-        </div>
-    </div>
-
-    <div class="flex items-center gap-4 p-4 bg-orange-50 border border-orange-200 rounded-xl">
-        <div class="w-12 h-12 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0 shadow">
-            <i class="ri-eye-line text-white text-xl"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-            <p class="font-bold text-orange-800 text-sm">لوحة المشرف</p>
-            <p class="text-xs text-orange-700 mt-0.5">متابعة وإشراف — تُدخل عبر: <code class="bg-orange-100 px-1 rounded" dir="ltr">{academy}.itqanway.com/supervisor-panel</code></p>
-        </div>
-    </div>
-
-    <div class="flex items-center gap-4 p-4 bg-green-50 border border-green-200 rounded-xl">
-        <div class="w-12 h-12 rounded-xl bg-green-500 flex items-center justify-center flex-shrink-0 shadow">
-            <i class="ri-computer-line text-white text-xl"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-            <p class="font-bold text-green-800 text-sm">الموقع الأمامي (للطلاب وأولياء الأمور)</p>
-            <p class="text-xs text-green-700 mt-0.5">متابعة الدراسة — تُدخل عبر: <code class="bg-green-100 px-1 rounded" dir="ltr">{academy}.itqanway.com/login</code></p>
+            <p class="font-bold text-gray-700 text-sm">لوحة المعلم الأكاديمي <span class="text-xs font-normal text-gray-500">(اختياري)</span></p>
+            <p class="text-xs text-gray-600 mt-0.5">واجهة بديلة للمعلم الأكاديمي — تُدخل عبر: <code class="bg-gray-100 px-1 rounded" dir="ltr">{academy}.itqanway.com/academic-teacher-panel</code></p>
         </div>
     </div>
 
@@ -489,8 +569,8 @@
 <div class="help-note">
     <i class="ri-information-line help-callout-icon"></i>
     <div>
-        <strong>أنت الآن في لوحة مدير الأكاديمية</strong> — الرابط يحتوي على
-        <code dir="ltr">/panel</code>.
+        <strong>أنت الآن في لوحة الإدارة الأمامية</strong> — الرابط الرئيسي هو
+        <code dir="ltr">/manage/dashboard</code>.
         باقي الأدلة في مركز المساعدة تشرح كل قسم بالتفصيل.
     </div>
 </div>

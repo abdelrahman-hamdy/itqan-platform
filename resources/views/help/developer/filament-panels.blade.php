@@ -2,11 +2,72 @@
 
 @section('content')
 
-<h2 id="panels-overview">Panel Overview</h2>
+<h2 id="frontend-vs-filament">Frontend Dashboard vs. Filament</h2>
 
 <p>
-    The platform uses <strong>Filament 5.2.x</strong> for all admin interfaces. There are 5 panel configurations
-    across 4 role-based panels plus a super-admin panel.
+    As of the current architecture, <strong>Filament is no longer the primary interface for daily operations</strong>.
+    All roles now have complete frontend dashboards; Filament panels are optional/supplementary.
+</p>
+
+<div style="overflow-x: auto; direction: ltr;">
+<table class="help-table">
+    <thead>
+        <tr>
+            <th>Interface</th>
+            <th>URL</th>
+            <th>Roles</th>
+            <th>Purpose</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Management Dashboard</strong></td>
+            <td><code>/manage/dashboard</code></td>
+            <td>admin, supervisor, super_admin</td>
+            <td>All daily educational operations</td>
+        </tr>
+        <tr>
+            <td><strong>Teacher Frontend</strong></td>
+            <td><code>/login</code> → <code>/teacher/*</code></td>
+            <td>quran_teacher, academic_teacher</td>
+            <td>Teacher sessions, circles, calendar</td>
+        </tr>
+        <tr>
+            <td><strong>Student/Parent Frontend</strong></td>
+            <td><code>/login</code> → <code>/profile</code></td>
+            <td>student, parent</td>
+            <td>Subscriptions, sessions, homework</td>
+        </tr>
+        <tr>
+            <td><strong>Filament Panels</strong></td>
+            <td><code>/admin</code>, <code>/panel</code>, etc.</td>
+            <td>super_admin (primary), others (optional)</td>
+            <td>Tenant creation, platform config, advanced bulk ops</td>
+        </tr>
+    </tbody>
+</table>
+</div>
+
+<p>
+    The <code>/manage/*</code> route set covers: teachers, students, parents, circles, subscriptions,
+    sessions, attendance, homework, quizzes, payments, certificates, calendar, courses, reports,
+    earnings, and trial sessions. See the <a href="#frontend-routes">Frontend Routes</a> section below.
+</p>
+
+<div class="help-note">
+    <i class="ri-information-line help-callout-icon"></i>
+    <div>
+        <strong>Middleware:</strong> <code>/manage/*</code> routes use <code>auth, role:supervisor,super_admin,admin</code>
+        middleware. The frontend dashboard is served by <code>app/Http/Controllers/Supervisor/</code> (23 controllers)
+        backed by Blade views in <code>resources/views/supervisor/</code> (51 templates).
+    </div>
+</div>
+
+<h2 id="panels-overview">Filament Panels Overview (Supplementary)</h2>
+
+<p>
+    The platform has <strong>5 Filament panels</strong>, now used primarily for platform-level management
+    and advanced configuration rather than daily educational operations.
 </p>
 
 <div style="overflow-x: auto; direction: ltr;">
@@ -183,6 +244,43 @@ public static function getEloquentQuery(): Builder
         <tr><td>Timezone in forms</td><td>DateTimePicker must use <code>->timezone(AcademyContextService::getTimezone())</code></td></tr>
         <tr><td>Arabic labels</td><td>All labels must use <code>__('key')</code> — never hardcoded Arabic text</td></tr>
         <tr><td>Infolist view pages</td><td>Return the infolist schema — not the infolist itself (Filament 5 pattern)</td></tr>
+    </tbody>
+</table>
+</div>
+
+<h2 id="frontend-routes">Frontend Management Dashboard Routes</h2>
+
+<p>The <code>/manage/*</code> route prefix covers all daily management operations:</p>
+
+<div style="overflow-x: auto; direction: ltr;">
+<table class="help-table">
+    <thead>
+        <tr>
+            <th>Route</th>
+            <th>Purpose</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td><code>/manage/dashboard</code></td><td>Analytics, stats, today's sessions overview</td></tr>
+        <tr><td><code>/manage/teachers</code></td><td>Teacher management (CRUD, toggle status, reset password)</td></tr>
+        <tr><td><code>/manage/students</code></td><td>Student management (CRUD, toggle)</td></tr>
+        <tr><td><code>/manage/parents</code></td><td>Parent management (CRUD)</td></tr>
+        <tr><td><code>/manage/supervisors</code></td><td>Supervisor management (admin-only)</td></tr>
+        <tr><td><code>/manage/individual-circles</code></td><td>Quran individual circle management</td></tr>
+        <tr><td><code>/manage/group-circles</code></td><td>Quran group circle management</td></tr>
+        <tr><td><code>/manage/academic-lessons</code></td><td>Academic lesson/subscription monitoring</td></tr>
+        <tr><td><code>/manage/interactive-courses</code></td><td>Interactive course management</td></tr>
+        <tr><td><code>/manage/sessions</code></td><td>Unified session management (Quran + Academic + Interactive)</td></tr>
+        <tr><td><code>/manage/subscriptions</code></td><td>Subscription lifecycle management</td></tr>
+        <tr><td><code>/manage/payments</code></td><td>Payment management (admin-only)</td></tr>
+        <tr><td><code>/manage/homework</code></td><td>Homework oversight and grading</td></tr>
+        <tr><td><code>/manage/attendance</code></td><td>Attendance records</td></tr>
+        <tr><td><code>/manage/quizzes</code></td><td>Quiz management</td></tr>
+        <tr><td><code>/manage/certificates</code></td><td>Certificate issuance and management</td></tr>
+        <tr><td><code>/manage/calendar</code></td><td>Calendar, scheduling, homework assignment</td></tr>
+        <tr><td><code>/manage/teacher-earnings</code></td><td>Earnings tracking and disputes</td></tr>
+        <tr><td><code>/manage/session-reports</code></td><td>Session report viewing</td></tr>
+        <tr><td><code>/manage/trial-sessions</code></td><td>Trial session request management</td></tr>
     </tbody>
 </table>
 </div>

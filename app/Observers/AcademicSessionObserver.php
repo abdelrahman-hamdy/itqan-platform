@@ -2,12 +2,12 @@
 
 namespace App\Observers;
 
-use Exception;
 use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -28,6 +28,11 @@ class AcademicSessionObserver
             $this->handleCancellation($session);
         }
 
+        // Handle session forgiveness (admin pardons absence)
+        if ($session->wasChanged('status') && $session->status === SessionStatus::FORGIVEN) {
+            $this->handleForgiveness($session);
+        }
+
         // Use wasChanged() (not isDirty) in the 'updated' observer: after save, isDirty() is always false.
         // Deduplicate: send one notification if ANY homework field changed to a truthy value.
         $homeworkDescriptionSet = $session->wasChanged('homework_description') && ! empty($session->homework_description);
@@ -43,28 +48,40 @@ class AcademicSessionObserver
      */
     private function handleCancellation(AcademicSession $session): void
     {
+        $this->reverseSessionSideEffects($session, 'cancellation');
+    }
+
+    /**
+     * Handle session forgiveness side-effects (admin pardons absence)
+     */
+    private function handleForgiveness(AcademicSession $session): void
+    {
+        $this->reverseSessionSideEffects($session, 'forgiveness');
+    }
+
+    /**
+     * Shared logic for reversing session side-effects (cancellation or forgiveness).
+     */
+    private function reverseSessionSideEffects(AcademicSession $session, string $action): void
+    {
         try {
-            // Wrap both writes in a transaction so that a partial failure (e.g. reversal succeeds
-            // but handleSessionCancelled fails) doesn't leave subscription counts inconsistent.
             DB::transaction(function () use ($session) {
-                // 1. Reverse subscription usage if was counted
-                if (method_exists($session, 'isSubscriptionCounted') && $session->isSubscriptionCounted()) {
+                if ($session->isSubscriptionCounted()) {
                     $session->reverseSubscriptionUsage();
                 }
 
-                // 2. Update lesson remaining sessions (for individual sessions)
                 if ($session->session_type === 'individual' && $session->academicIndividualLesson) {
                     $session->academicIndividualLesson->handleSessionCancelled();
                 }
             });
 
-            Log::info('Academic session cancellation handled', [
+            Log::info("Academic session {$action} handled", [
                 'session_id' => $session->id,
                 'session_type' => $session->session_type ?? 'individual',
             ]);
         } catch (Exception $e) {
             report($e);
-            Log::error('Failed to handle Academic session cancellation', [
+            Log::error("Failed to handle Academic session {$action}", [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),

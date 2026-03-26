@@ -25,6 +25,8 @@
         <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.teacher_earnings.page_subtitle') }}</p>
     </div>
 
+    @include('supervisor.teacher-earnings.partials.tab-navigation', ['activeTab' => $activeTab ?? 'details', 'subdomain' => $subdomain])
+
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
         {{-- Total Earnings This Month --}}

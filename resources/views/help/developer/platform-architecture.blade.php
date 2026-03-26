@@ -23,7 +23,7 @@ graph TB
         A[Alpine.js Interactivity]
     end
     subgraph "Business Logic"
-        S[100+ Service Classes]
+        S[143+ Service Classes]
         J[Queue Jobs - Horizon]
         C[Console Commands - 60+]
     end
@@ -127,12 +127,55 @@ graph LR
     </div>
 </div>
 
-<h2 id="panels">Filament Admin Panels</h2>
+<h2 id="panels">Admin &amp; User Interface Architecture</h2>
 
 <p>
-    There are <strong>5 Filament panels</strong>, each serving a distinct user role with its own
-    navigation, resources, and access control enforced via <code>canAccessPanel()</code> on the User model.
+    The platform uses a <strong>two-tier interface architecture</strong>. Frontend dashboards handle
+    all daily educational operations; Filament panels serve advanced and platform-level operations.
 </p>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.75rem; font-weight: 600;">Sub-section A: Frontend Dashboards (Primary)</h3>
+
+<div style="overflow-x: auto; direction: ltr;">
+<table class="help-table">
+    <thead>
+        <tr>
+            <th>Route Prefix</th>
+            <th>Roles</th>
+            <th>Entry Point</th>
+            <th>Purpose</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>/manage/*</code></td>
+            <td>admin, supervisor, super_admin</td>
+            <td><code>/manage/dashboard</code></td>
+            <td>All daily educational management</td>
+        </tr>
+        <tr>
+            <td><code>/teacher/*</code></td>
+            <td>quran_teacher, academic_teacher</td>
+            <td><code>/login</code> → <code>/profile</code></td>
+            <td>Teacher sessions, circles, calendar</td>
+        </tr>
+        <tr>
+            <td><code>/parent/*</code></td>
+            <td>parent</td>
+            <td><code>/login</code> → <code>/parent/</code></td>
+            <td>Child monitoring, reports, payments</td>
+        </tr>
+        <tr>
+            <td><code>/profile</code></td>
+            <td>student</td>
+            <td><code>/login</code> → <code>/profile</code></td>
+            <td>Subscriptions, sessions, homework</td>
+        </tr>
+    </tbody>
+</table>
+</div>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.75rem; font-weight: 600;">Sub-section B: Filament Panels (Advanced / Platform Operations)</h3>
 
 <div style="overflow-x: auto; direction: ltr;">
 <table class="help-table">
@@ -142,44 +185,44 @@ graph LR
             <th>Directory</th>
             <th>URL Prefix</th>
             <th>Roles</th>
-            <th>Resources</th>
+            <th>Primary Use</th>
         </tr>
     </thead>
     <tbody>
+        <tr>
+            <td><strong>Super Admin</strong></td>
+            <td><code>app/Filament/ (root)</code></td>
+            <td><code>/admin</code></td>
+            <td>super_admin</td>
+            <td>Platform-wide management, tenant creation</td>
+        </tr>
         <tr>
             <td><strong>Academy</strong></td>
             <td><code>app/Filament/Academy/</code></td>
             <td><code>/panel/{subdomain}</code></td>
             <td>admin, supervisor</td>
-            <td>70+</td>
+            <td>Advanced academy config, packages, pricing (supplementary)</td>
         </tr>
         <tr>
             <td><strong>Teacher</strong> (Quran)</td>
             <td><code>app/Filament/Teacher/</code></td>
             <td><code>/teacher-panel</code></td>
             <td>quran_teacher</td>
-            <td>10+</td>
+            <td>Optional alternative teacher interface</td>
         </tr>
         <tr>
             <td><strong>AcademicTeacher</strong></td>
             <td><code>app/Filament/AcademicTeacher/</code></td>
             <td><code>/academic-teacher-panel</code></td>
             <td>academic_teacher</td>
-            <td>10+</td>
+            <td>Optional alternative teacher interface</td>
         </tr>
         <tr>
             <td><strong>Supervisor</strong></td>
             <td><code>app/Filament/Supervisor/</code></td>
             <td><code>/supervisor-panel</code></td>
             <td>supervisor</td>
-            <td>—</td>
-        </tr>
-        <tr>
-            <td><strong>Super Admin</strong></td>
-            <td><code>app/Filament/ (root)</code></td>
-            <td><code>/admin</code></td>
-            <td>super_admin</td>
-            <td>Platform-wide</td>
+            <td>Legacy — now uses <code>/manage/dashboard</code> instead</td>
         </tr>
     </tbody>
 </table>
@@ -229,6 +272,7 @@ sequenceDiagram
 │   │   └── Shared/             # Cross-panel components
 │   ├── Http/
 │   │   ├── Controllers/Api/    # REST API controllers (v1)
+│   │   ├── Controllers/Supervisor/ # Frontend management dashboard (23 controllers)
 │   │   └── Requests/           # Form Request validation
 │   ├── Jobs/                   # Queue-dispatched jobs
 │   ├── Livewire/               # Livewire page components
@@ -237,7 +281,7 @@ sequenceDiagram
 │   ├── Observers/              # Eloquent model observers
 │   ├── Policies/               # 22 authorization policies
 │   ├── Providers/              # Service providers
-│   └── Services/               # 100+ business logic services
+│   └── Services/               # 143+ business logic services
 ├── config/                     # 40 config files
 ├── database/
 │   ├── migrations/             # 111 migration files (~90 tables)
@@ -245,7 +289,9 @@ sequenceDiagram
 ├── resources/
 │   ├── css/app.css             # TailwindCSS entry
 │   ├── js/app.js               # Livewire + Alpine entry
-│   └── views/                  # 981 Blade templates
+│   └── views/
+│       ├── supervisor/         # Frontend management dashboard (51 Blade templates)
+│       └── ...                 # 981 total Blade templates
 ├── routes/
 │   ├── web.php                 # 77KB — includes sub-files
 │   ├── web/                    # Per-feature route files

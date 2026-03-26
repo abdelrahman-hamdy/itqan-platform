@@ -2,12 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use BadMethodCallException;
-use Illuminate\Database\Eloquent\Collection;
-use App\Services\SessionNamingService;
 use App\Contracts\MeetingCapable;
 use App\Enums\SessionStatus;
 use App\Models\Traits\HasAttendanceTracking;
@@ -17,11 +11,17 @@ use App\Models\Traits\HasSessionFeedback;
 use App\Models\Traits\HasSessionScheduling;
 use App\Models\Traits\HasSessionStatus;
 use App\Models\Traits\ScopedToAcademyForWeb;
+use App\Services\SessionNamingService;
+use BadMethodCallException;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -172,6 +172,11 @@ abstract class BaseSession extends Model implements MeetingCapable
         'cancelled_by',
         'cancelled_at',
 
+        // Forgiveness fields (admin pardoning an absence)
+        'forgiven_at',
+        'forgiven_by',
+        'forgiven_reason',
+
         // Rescheduling fields
         'reschedule_reason',
         'rescheduled_from',
@@ -214,6 +219,7 @@ abstract class BaseSession extends Model implements MeetingCapable
         'started_at' => 'datetime',
         'ended_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'forgiven_at' => 'datetime',
         'rescheduled_from' => 'datetime',
         'rescheduled_to' => 'datetime',
         'meeting_expires_at' => 'datetime',
@@ -256,6 +262,14 @@ abstract class BaseSession extends Model implements MeetingCapable
     public function cancelledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    /**
+     * Get the admin/supervisor who forgave this session's absence
+     */
+    public function forgivenByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'forgiven_by');
     }
 
     /**

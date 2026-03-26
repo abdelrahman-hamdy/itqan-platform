@@ -21,9 +21,9 @@
 <div class="help-step">
     <div class="help-step-number">1</div>
     <div class="help-step-content">
-        <h3>افتح لوحة إدارة الأكاديمية</h3>
+        <h3>افتح لوحة الإدارة الأمامية</h3>
         <p>
-            انتقل إلى <strong>/panel</strong> على نطاق أكاديميتك. ستجد في القائمة الجانبية مجموعة <strong>إدارة القرآن</strong>.
+            انتقل إلى <strong>/manage/dashboard</strong> على نطاق أكاديميتك. جميع عمليات القرآن متاحة من لوحة الإدارة الأمامية مباشرةً من القائمة الجانبية.
         </p>
     </div>
 </div>
@@ -31,14 +31,14 @@
 <div class="help-step">
     <div class="help-step-number">2</div>
     <div class="help-step-content">
-        <h3>المحتويات الرئيسية للقسم</h3>
-        <p>يضمّ قسم إدارة القرآن الموارد التالية:</p>
+        <h3>المحتويات الرئيسية في لوحة الإدارة</h3>
+        <p>تضم لوحة الإدارة الأمامية الأقسام التالية لإدارة القرآن:</p>
         <ul>
-            <li><strong>باقات القرآن</strong> — إنشاء خطط الأسعار وعدد الجلسات الشهرية</li>
-            <li><strong>الحلقات الفردية</strong> — ربط كل طالب بمعلمه وتحديد نوع التخصص</li>
-            <li><strong>اشتراكات القرآن</strong> — إنشاء اشتراكات الطلاب وتتبع الجلسات المتبقية</li>
-            <li><strong>جلسات القرآن</strong> — متابعة الجلسات المجدولة والمكتملة والواجبات</li>
-            <li><strong>طلبات التجربة</strong> — مراجعة طلبات الجلسات التجريبية المجانية</li>
+            <li><strong>المعلمون</strong> (<code dir="ltr">/manage/teachers</code>) — إدارة حسابات معلمي القرآن</li>
+            <li><strong>الحلقات الفردية</strong> (<code dir="ltr">/manage/individual-circles</code>) — ربط كل طالب بمعلمه وتحديد نوع التخصص</li>
+            <li><strong>الاشتراكات</strong> (<code dir="ltr">/manage/subscriptions</code>) — إدارة اشتراكات الطلاب وتتبع الجلسات المتبقية</li>
+            <li><strong>الجلسات</strong> (<code dir="ltr">/manage/sessions</code>) — متابعة الجلسات المجدولة والمكتملة والواجبات</li>
+            <li><strong>طلبات التجربة</strong> (<code dir="ltr">/manage/trial-sessions</code>) — مراجعة طلبات الجلسات التجريبية المجانية</li>
         </ul>
     </div>
 </div>
@@ -46,7 +46,10 @@
 <div class="help-note">
     <i class="ri-information-line help-callout-icon"></i>
     <div>
-        يُدار <strong>معلمو القرآن</strong> من قسم <em>إدارة المستخدمين</em> المنفصل في القائمة الجانبية، وليس ضمن قسم إدارة القرآن مباشرةً.
+        يُدار <strong>معلمو القرآن</strong> من قسم <em>المعلمون</em> في لوحة الإدارة الأمامية
+        (<code dir="ltr">/manage/teachers</code>).
+        أما <strong>باقات القرآن</strong> (الأسعار وعدد الجلسات) فتُدار من لوحة Filament
+        (<code dir="ltr">/panel</code>) ضمن إعدادات الأكاديمية المتقدمة.
     </div>
 </div>
 
@@ -57,8 +60,8 @@
 <div class="help-step">
     <div class="help-step-number">1</div>
     <div class="help-step-content">
-        <h3>إنشاء الباقات</h3>
-        <p>حدد عدد الجلسات الشهرية ومدتها وأسعارها الثلاثة (شهري، ربع سنوي، سنوي).</p>
+        <h3>إنشاء الباقات (من لوحة Filament)</h3>
+        <p>حدد عدد الجلسات الشهرية ومدتها وأسعارها الثلاثة (شهري، ربع سنوي، سنوي) من لوحة Filament على <code dir="ltr">/panel</code>. إعدادات الباقات والتسعير تُدار من هناك.</p>
     </div>
 </div>
 
@@ -66,7 +69,8 @@
     <div class="help-step-number">2</div>
     <div class="help-step-content">
         <h3>إضافة المعلمين</h3>
-        <p>أنشئ حسابات المعلمين من قسم <em>معلمو القرآن</em> في إدارة المستخدمين وفعّل حساباتهم.</p>
+        <p>أنشئ حسابات المعلمين من قسم <em>المعلمون</em> في لوحة الإدارة الأمامية
+        (<code dir="ltr">/manage/teachers</code>) وفعّل حساباتهم.</p>
     </div>
 </div>
 
@@ -74,15 +78,17 @@
     <div class="help-step-number">3</div>
     <div class="help-step-content">
         <h3>تسجيل الطلاب واشتراكاتهم</h3>
-        <p>أنشئ اشتراكاً لكل طالب مرتبطاً بالباقة والمعلم المناسبين.</p>
+        <p>راجع وأدر اشتراكات الطلاب من قسم <em>الاشتراكات</em>
+        (<code dir="ltr">/manage/subscriptions</code>) في لوحة الإدارة الأمامية.</p>
     </div>
 </div>
 
 <div class="help-step">
     <div class="help-step-number">4</div>
     <div class="help-step-content">
-        <h3>إنشاء الحلقة الفردية</h3>
-        <p>أنشئ حلقة فردية تربط الطالب بمعلمه وتُحدد فيها التخصص ومستوى الحفظ.</p>
+        <h3>إدارة الحلقات الفردية</h3>
+        <p>راجع الحلقات وعدّل بياناتها من قسم <em>الحلقات الفردية</em>
+        (<code dir="ltr">/manage/individual-circles</code>). تُنشأ الحلقات تلقائياً عند تفعيل الاشتراكات.</p>
     </div>
 </div>
 
@@ -90,7 +96,8 @@
     <div class="help-step-number">5</div>
     <div class="help-step-content">
         <h3>متابعة الجلسات</h3>
-        <p>تتولى المنصة جدولة الجلسات تلقائياً. يمكنك متابعتها من قسم <em>جلسات القرآن</em>.</p>
+        <p>تتولى المنصة جدولة الجلسات تلقائياً. يمكنك متابعتها من قسم <em>الجلسات</em>
+        (<code dir="ltr">/manage/sessions</code>) في لوحة الإدارة الأمامية.</p>
     </div>
 </div>
 

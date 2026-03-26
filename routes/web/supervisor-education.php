@@ -8,34 +8,33 @@
 | Prefix: /manage, Middleware: auth, role:supervisor,super_admin,admin
 */
 
+use App\Http\Controllers\AcademicSessionController;
 use App\Http\Controllers\SessionReportShowController;
-use App\Http\Controllers\SessionsMonitoringController;
+use App\Http\Controllers\StudentInteractiveCourseController;
 use App\Http\Controllers\Supervisor\SupervisorAcademicLessonsController;
 use App\Http\Controllers\Supervisor\SupervisorAttendanceController;
-use App\Http\Controllers\Supervisor\SupervisorHomeworkController;
-use App\Http\Controllers\Supervisor\SupervisorPaymentsController;
-use App\Http\Controllers\Supervisor\SupervisorRecordedCoursesController;
-use App\Http\Controllers\Supervisor\SupervisorSessionsController;
-use App\Http\Controllers\Supervisor\SupervisorSubscriptionsController;
 use App\Http\Controllers\Supervisor\SupervisorCalendarController;
 use App\Http\Controllers\Supervisor\SupervisorCertificatesController;
 use App\Http\Controllers\Supervisor\SupervisorDashboardController;
 use App\Http\Controllers\Supervisor\SupervisorGroupCirclesController;
+use App\Http\Controllers\Supervisor\SupervisorHomeworkController;
 use App\Http\Controllers\Supervisor\SupervisorIndividualCirclesController;
 use App\Http\Controllers\Supervisor\SupervisorInteractiveCoursesController;
+use App\Http\Controllers\Supervisor\SupervisorParentsController;
+use App\Http\Controllers\Supervisor\SupervisorPaymentsController;
 use App\Http\Controllers\Supervisor\SupervisorProfileController;
 use App\Http\Controllers\Supervisor\SupervisorQuizzesController;
+use App\Http\Controllers\Supervisor\SupervisorRecordedCoursesController;
 use App\Http\Controllers\Supervisor\SupervisorSessionReportsController;
-use App\Http\Controllers\Supervisor\SupervisorTeacherEarningsController;
-use App\Http\Controllers\Supervisor\SupervisorParentsController;
+use App\Http\Controllers\Supervisor\SupervisorSessionsController;
 use App\Http\Controllers\Supervisor\SupervisorStudentsController;
-use App\Http\Controllers\Supervisor\SupervisorTeachersController;
-use App\Http\Controllers\Teacher\IndividualCircleReportController;
-use App\Http\Controllers\Teacher\GroupCircleReportController;
-use App\Http\Controllers\AcademicSessionController;
-use App\Http\Controllers\StudentInteractiveCourseController;
+use App\Http\Controllers\Supervisor\SupervisorSubscriptionsController;
 use App\Http\Controllers\Supervisor\SupervisorSupervisorsController;
+use App\Http\Controllers\Supervisor\SupervisorTeacherEarningsController;
+use App\Http\Controllers\Supervisor\SupervisorTeachersController;
 use App\Http\Controllers\Supervisor\SupervisorTrialSessionsController;
+use App\Http\Controllers\Teacher\GroupCircleReportController;
+use App\Http\Controllers\Teacher\IndividualCircleReportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -87,6 +86,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Teacher Earnings
         Route::get('/teacher-earnings', [SupervisorTeacherEarningsController::class, 'index'])->name('teacher-earnings.index');
+        Route::get('/teacher-earnings/teacher-summary', [SupervisorTeacherEarningsController::class, 'teacherSummary'])->name('teacher-earnings.teacher-summary');
         Route::post('/teacher-earnings/{earning}/dispute', [SupervisorTeacherEarningsController::class, 'dispute'])->name('teacher-earnings.dispute');
         Route::post('/teacher-earnings/{earning}/resolve', [SupervisorTeacherEarningsController::class, 'resolve'])->name('teacher-earnings.resolve');
 

@@ -26,6 +26,7 @@ enum SessionStatus: string
     case COMPLETED = 'completed';          // Finished successfully
     case CANCELLED = 'cancelled';          // Cancelled by teacher/admin
     case ABSENT = 'absent';                // Student didn't attend (individual only)
+    case FORGIVEN = 'forgiven';            // Admin pardoned absence (individual only)
 
     /**
      * Get the localized label for the status
@@ -48,6 +49,7 @@ enum SessionStatus: string
             self::COMPLETED => 'ri-check-circle-line',
             self::CANCELLED => 'ri-close-circle-line',
             self::ABSENT => 'ri-user-x-line',
+            self::FORGIVEN => 'ri-heart-line',
         };
     }
 
@@ -64,6 +66,7 @@ enum SessionStatus: string
             self::COMPLETED => 'success',
             self::CANCELLED => 'danger',
             self::ABSENT => 'warning',
+            self::FORGIVEN => 'info',
         };
     }
 
@@ -80,6 +83,7 @@ enum SessionStatus: string
             self::COMPLETED => '#22c55e',    // green-500
             self::CANCELLED => '#ef4444',    // red-500
             self::ABSENT => '#f59e0b',       // amber-500
+            self::FORGIVEN => '#60A5FA',     // blue-400
         };
     }
 
@@ -116,6 +120,14 @@ enum SessionStatus: string
     }
 
     /**
+     * Check if an absent session can be forgiven by admin
+     */
+    public function canForgive(): bool
+    {
+        return $this === self::ABSENT;
+    }
+
+    /**
      * Check if session is currently active/ongoing
      */
     public function isActive(): bool
@@ -132,6 +144,7 @@ enum SessionStatus: string
             self::COMPLETED,
             self::CANCELLED,
             self::ABSENT,
+            self::FORGIVEN,
         ]);
     }
 
@@ -142,6 +155,7 @@ enum SessionStatus: string
     {
         return match ($this) {
             self::COMPLETED, self::ABSENT => true,
+            self::FORGIVEN => false,
             default => false,
         };
     }
@@ -159,6 +173,7 @@ enum SessionStatus: string
             self::COMPLETED,
             self::CANCELLED,
             self::ABSENT,
+            self::FORGIVEN,
         ];
     }
 
@@ -210,7 +225,7 @@ enum SessionStatus: string
      */
     public static function finishedStatuses(): array
     {
-        return [self::COMPLETED, self::CANCELLED];
+        return [self::COMPLETED, self::CANCELLED, self::FORGIVEN];
     }
 
     /**

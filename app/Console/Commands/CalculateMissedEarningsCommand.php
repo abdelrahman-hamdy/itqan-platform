@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use Exception;
 use App\Enums\SessionStatus;
 use App\Jobs\CalculateSessionEarningsJob;
 use App\Models\AcademicSession;
@@ -10,6 +9,7 @@ use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\TeacherEarning;
 use App\Services\CronJobLogger;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -122,7 +122,7 @@ class CalculateMissedEarningsCommand extends Command
     {
         $cutoffDate = now()->subDays($days);
 
-        QuranSession::where('status', SessionStatus::COMPLETED)
+        QuranSession::whereIn('status', [SessionStatus::COMPLETED, SessionStatus::ABSENT])
             ->where('ended_at', '>=', $cutoffDate)
             ->whereNotNull('ended_at')
             ->chunkById(100, function ($sessions) use ($isDryRun, $isVerbose, &$results) {
@@ -172,7 +172,7 @@ class CalculateMissedEarningsCommand extends Command
     {
         $cutoffDate = now()->subDays($days);
 
-        AcademicSession::where('status', SessionStatus::COMPLETED)
+        AcademicSession::whereIn('status', [SessionStatus::COMPLETED, SessionStatus::ABSENT])
             ->where('ended_at', '>=', $cutoffDate)
             ->whereNotNull('ended_at')
             ->chunkById(100, function ($sessions) use ($isDryRun, $isVerbose, &$results) {
@@ -222,7 +222,7 @@ class CalculateMissedEarningsCommand extends Command
     {
         $cutoffDate = now()->subDays($days);
 
-        InteractiveCourseSession::where('status', SessionStatus::COMPLETED)
+        InteractiveCourseSession::whereIn('status', [SessionStatus::COMPLETED, SessionStatus::ABSENT])
             ->where('ended_at', '>=', $cutoffDate)
             ->whereNotNull('ended_at')
             ->chunkById(100, function ($sessions) use ($isDryRun, $isVerbose, &$results) {

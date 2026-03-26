@@ -14,11 +14,20 @@
 
 <h2>إنشاء باقة جديدة</h2>
 
+<div class="help-note">
+    <i class="ri-information-line help-callout-icon"></i>
+    <div>
+        <strong>ملاحظة:</strong> تُدار باقات القرآن (الأسعار وعدد الجلسات) من <strong>لوحة Filament</strong>
+        على الرابط <code dir="ltr">/panel</code>، وليس من لوحة الإدارة الأمامية.
+        أما العمليات اليومية كإدارة الاشتراكات والمعلمين فتتم من لوحة الإدارة الأمامية.
+    </div>
+</div>
+
 <div class="help-step">
     <div class="help-step-number">1</div>
     <div class="help-step-content">
         <h3>افتح قسم باقات القرآن</h3>
-        <p>من القائمة الجانبية في لوحة تحكم الأكاديمية، اختر <strong>إدارة القرآن ← باقات القرآن</strong>.</p>
+        <p>من لوحة Filament على رابط <strong>/panel</strong> في نطاق أكاديميتك، اختر <strong>إدارة القرآن ← باقات القرآن</strong>.</p>
     </div>
 </div>
 

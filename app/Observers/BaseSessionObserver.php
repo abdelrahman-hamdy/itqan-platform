@@ -112,7 +112,7 @@ class BaseSessionObserver
             // Trigger earnings calculation when session becomes completed
             $newStatusEnum = is_string($newStatus) ? SessionStatus::from($newStatus) : $newStatus;
 
-            if ($newStatusEnum === SessionStatus::COMPLETED) {
+            if (in_array($newStatusEnum, [SessionStatus::COMPLETED, SessionStatus::ABSENT])) {
                 try {
                     Log::info('Dispatching earnings calculation job', [
                         'session_id' => $session->id,

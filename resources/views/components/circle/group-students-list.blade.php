@@ -43,6 +43,16 @@
 
                         @if($viewType === 'teacher')
                             <div class="flex items-center gap-2">
+                                <a href="{{ route('teacher.group-circles.student-report', [
+                                        'subdomain' => $subdomain,
+                                        'circle' => $circle->id,
+                                        'student' => $student->id,
+                                    ]) }}"
+                                   class="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                                   title="{{ __('components.circle.group_students_list.view_report') }}">
+                                    <i class="ri-file-chart-line"></i>
+                                    <span class="hidden sm:inline">{{ __('components.circle.group_students_list.view_report') }}</span>
+                                </a>
                                 <a href="{{ route('chat.start-supervised', [
                                         'subdomain' => $subdomain,
                                         'teacher' => $teacher->id,

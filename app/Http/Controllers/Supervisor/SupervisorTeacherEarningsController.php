@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Models\AcademicSession;
 use App\Models\AcademicTeacherProfile;
+use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
 use App\Models\QuranTeacherProfile;
 use App\Models\TeacherEarning;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class SupervisorTeacherEarningsController extends BaseSupervisorWebController
@@ -20,9 +24,8 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         }
 
         $academyId = $this->getAcademyId();
-        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
-        $allTeacherIds = array_merge($quranTeacherIds, $academicTeacherIds);
+        $allTeacherIds = array_merge($this->getAssignedQuranTeacherIds(), $this->getAssignedAcademicTeacherIds());
+        [$quranProfileIds, $academicProfileIds] = $this->resolveProfileIds();
 
         // Build the teacher list for the filter dropdown
         $teachersList = [];
@@ -38,98 +41,41 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
                 ->toArray();
         }
 
-        // Resolve profile IDs for the earnings query (TeacherEarning uses morph: profile type + profile ID)
-        $quranProfileIds = ! empty($quranTeacherIds)
-            ? QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->pluck('id')->toArray()
-            : [];
-        $academicProfileIds = ! empty($academicTeacherIds)
-            ? AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->pluck('id')->toArray()
-            : [];
-
-        // If a specific teacher_id filter is set, validate it belongs to assigned set
         $currentTeacherId = $request->input('teacher_id');
         if ($currentTeacherId && ! in_array((int) $currentTeacherId, $allTeacherIds)) {
             $currentTeacherId = null;
         }
 
-        // Build scope conditions for assigned teachers
-        $scopeQuery = function ($query) use ($quranProfileIds, $academicProfileIds, $currentTeacherId) {
-            if ($currentTeacherId) {
-                // Filter to a specific teacher
-                $user = User::find($currentTeacherId);
-                if ($user && $user->user_type === 'quran_teacher') {
-                    $profileId = QuranTeacherProfile::where('user_id', $currentTeacherId)->value('id');
-                    $query->where('teacher_type', 'quran_teacher')->where('teacher_id', $profileId);
-                } elseif ($user && $user->user_type === 'academic_teacher') {
-                    $profileId = AcademicTeacherProfile::where('user_id', $currentTeacherId)->value('id');
-                    $query->where('teacher_type', 'academic_teacher')->where('teacher_id', $profileId);
-                } else {
-                    $query->whereRaw('1 = 0'); // No results
-                }
-            } else {
-                // All assigned teachers
-                $query->where(function ($q) use ($quranProfileIds, $academicProfileIds) {
-                    if (! empty($quranProfileIds)) {
-                        $q->orWhere(function ($sub) use ($quranProfileIds) {
-                            $sub->where('teacher_type', 'quran_teacher')
-                                ->whereIn('teacher_id', $quranProfileIds);
-                        });
-                    }
-                    if (! empty($academicProfileIds)) {
-                        $q->orWhere(function ($sub) use ($academicProfileIds) {
-                            $sub->where('teacher_type', 'academic_teacher')
-                                ->whereIn('teacher_id', $academicProfileIds);
-                        });
-                    }
-                    if (empty($quranProfileIds) && empty($academicProfileIds)) {
-                        $q->whereRaw('1 = 0');
-                    }
-                });
-            }
-        };
+        $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $currentTeacherId ? (int) $currentTeacherId : null);
 
-        // Parse month filter
         $currentMonth = $request->input('month');
         $currentStatus = $request->input('status', 'all');
 
-        // Stats query (all assigned teachers, current month or all time)
         $statsBase = TeacherEarning::where('academy_id', $academyId)->where($scopeQuery);
 
         $now = Carbon::now();
-        $totalEarningsThisMonth = (clone $statsBase)->forMonth($now->year, $now->month)->sum('amount');
-        $totalEarningsAllTime = (clone $statsBase)->sum('amount');
-        $finalizedAmount = (clone $statsBase)->finalized()->sum('amount');
-        $disputedAmount = (clone $statsBase)->disputed()->sum('amount');
-        $sessionsCount = (clone $statsBase)->count();
-
         $stats = [
-            'totalEarningsThisMonth' => $totalEarningsThisMonth,
-            'totalEarningsAllTime' => $totalEarningsAllTime,
-            'finalizedAmount' => $finalizedAmount,
-            'disputedAmount' => $disputedAmount,
-            'sessionsCount' => $sessionsCount,
+            'totalEarningsThisMonth' => (clone $statsBase)->forMonth($now->year, $now->month)->sum('amount'),
+            'totalEarningsAllTime' => (clone $statsBase)->sum('amount'),
+            'finalizedAmount' => (clone $statsBase)->finalized()->sum('amount'),
+            'disputedAmount' => (clone $statsBase)->disputed()->sum('amount'),
+            'sessionsCount' => (clone $statsBase)->count(),
         ];
 
-        // Filtered earnings list
         $earningsQuery = TeacherEarning::where('academy_id', $academyId)
             ->where($scopeQuery)
             ->with([
                 'teacher',
                 'session' => function ($morphTo) {
                     $morphTo->morphWith([
-                        \App\Models\QuranSession::class => ['individualCircle', 'circle'],
-                        \App\Models\AcademicSession::class => ['academicIndividualLesson'],
-                        \App\Models\InteractiveCourseSession::class => ['course'],
+                        QuranSession::class => ['individualCircle', 'circle'],
+                        AcademicSession::class => ['academicIndividualLesson'],
+                        InteractiveCourseSession::class => ['course'],
                     ]);
                 },
             ]);
 
-        if ($currentMonth) {
-            $parts = explode('-', $currentMonth);
-            if (count($parts) === 2) {
-                $earningsQuery->forMonth((int) $parts[0], (int) $parts[1]);
-            }
-        }
+        $this->applyMonthFilter($earningsQuery, $currentMonth);
 
         if ($currentStatus === 'finalized') {
             $earningsQuery->finalized();
@@ -141,45 +87,96 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
         $earnings = $earningsQuery->orderByDesc('session_completed_at')->paginate(15);
 
-        // Build a map of teacher profile ID → user for name resolution
-        $profileUserMap = [];
-        if (! empty($quranTeacherIds)) {
-            $quranProfiles = QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->with('user')->get();
-            foreach ($quranProfiles as $p) {
-                $profileUserMap['quran_teacher_'.$p->id] = $p->user;
-            }
-        }
-        if (! empty($academicTeacherIds)) {
-            $academicProfiles = AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->with('user')->get();
-            foreach ($academicProfiles as $p) {
-                $profileUserMap['academic_teacher_'.$p->id] = $p->user;
-            }
-        }
-
-        // Available months for dropdown
-        $availableMonths = TeacherEarning::where('academy_id', $academyId)
-            ->where($scopeQuery)
-            ->selectRaw('YEAR(session_completed_at) as year, MONTH(session_completed_at) as month')
-            ->groupBy('year', 'month')
-            ->orderByDesc('year')
-            ->orderByDesc('month')
-            ->get()
-            ->filter(fn ($m) => $m->year && $m->month)
-            ->map(fn ($m) => [
-                'value' => sprintf('%04d-%02d', $m->year, $m->month),
-                'label' => Carbon::create($m->year, $m->month, 1)->locale('ar')->translatedFormat('F Y'),
-            ])
-            ->toArray();
-
         return view('supervisor.teacher-earnings.index', [
             'earnings' => $earnings,
             'stats' => $stats,
-            'availableMonths' => $availableMonths,
+            'availableMonths' => $this->getAvailableMonths($academyId, $scopeQuery),
             'teachers' => $teachersList,
-            'profileUserMap' => $profileUserMap,
+            'profileUserMap' => $this->buildProfileUserMap(),
             'currentTeacherId' => $currentTeacherId,
             'currentMonth' => $currentMonth,
             'currentStatus' => $currentStatus,
+            'activeTab' => 'details',
+        ]);
+    }
+
+    public function teacherSummary(Request $request, $subdomain = null): View
+    {
+        if (! $this->canManageTeachers()) {
+            abort(403);
+        }
+
+        $academyId = $this->getAcademyId();
+        [$quranProfileIds, $academicProfileIds] = $this->resolveProfileIds();
+        $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds);
+
+        $currentMonth = $request->input('month');
+        $now = Carbon::now();
+
+        $query = TeacherEarning::where('academy_id', $academyId)->where($scopeQuery);
+
+        if ($currentMonth) {
+            $this->applyMonthFilter($query, $currentMonth);
+        } else {
+            $query->forMonth($now->year, $now->month);
+            $currentMonth = $now->format('Y-m');
+        }
+
+        // Group by teacher, session type, and calculation method (avoids N+1)
+        $rawEarnings = (clone $query)
+            ->select(
+                'teacher_type',
+                'teacher_id',
+                'session_type',
+                'calculation_method',
+                DB::raw('SUM(amount) as total_amount'),
+                DB::raw('COUNT(*) as sessions_count')
+            )
+            ->groupBy('teacher_type', 'teacher_id', 'session_type', 'calculation_method')
+            ->get();
+
+        $teacherSummaries = [];
+        foreach ($rawEarnings as $row) {
+            $key = $row->teacher_type.'_'.$row->teacher_id;
+
+            if (! isset($teacherSummaries[$key])) {
+                $teacherSummaries[$key] = [
+                    'teacher_type' => $row->teacher_type,
+                    'teacher_id' => $row->teacher_id,
+                    'quran_individual' => 0,
+                    'quran_group' => 0,
+                    'academic' => 0,
+                    'interactive' => 0,
+                    'total' => 0,
+                    'sessions_count' => 0,
+                ];
+            }
+
+            $teacherSummaries[$key]['total'] += $row->total_amount;
+            $teacherSummaries[$key]['sessions_count'] += $row->sessions_count;
+
+            if ($row->session_type === QuranSession::class) {
+                $isGroup = in_array($row->calculation_method, ['group_rate', 'per_student']);
+                if ($isGroup) {
+                    $teacherSummaries[$key]['quran_group'] += $row->total_amount;
+                } else {
+                    $teacherSummaries[$key]['quran_individual'] += $row->total_amount;
+                }
+            } elseif ($row->session_type === AcademicSession::class) {
+                $teacherSummaries[$key]['academic'] += $row->total_amount;
+            } elseif ($row->session_type === InteractiveCourseSession::class) {
+                $teacherSummaries[$key]['interactive'] += $row->total_amount;
+            }
+        }
+
+        usort($teacherSummaries, fn ($a, $b) => $b['total'] <=> $a['total']);
+
+        return view('supervisor.teacher-earnings.teacher-summary', [
+            'teacherSummaries' => $teacherSummaries,
+            'profileUserMap' => $this->buildProfileUserMap(),
+            'availableMonths' => $this->getAvailableMonths($academyId, $scopeQuery),
+            'currentMonth' => $currentMonth,
+            'activeTab' => 'summary',
         ]);
     }
 
@@ -244,15 +241,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
     private function validateEarningBelongsToAssignedTeachers(TeacherEarning $earning): void
     {
-        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
-
-        $quranProfileIds = ! empty($quranTeacherIds)
-            ? QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->pluck('id')->toArray()
-            : [];
-        $academicProfileIds = ! empty($academicTeacherIds)
-            ? AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->pluck('id')->toArray()
-            : [];
+        [$quranProfileIds, $academicProfileIds] = $this->resolveProfileIds();
 
         $belongsToAssigned = false;
         if ($earning->teacher_type === 'quran_teacher' && in_array($earning->teacher_id, $quranProfileIds)) {
@@ -263,5 +252,104 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         }
 
         abort_unless($belongsToAssigned, 403);
+    }
+
+    private function resolveProfileIds(): array
+    {
+        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
+        $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
+
+        $quranProfileIds = ! empty($quranTeacherIds)
+            ? QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->pluck('id')->toArray()
+            : [];
+        $academicProfileIds = ! empty($academicTeacherIds)
+            ? AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->pluck('id')->toArray()
+            : [];
+
+        return [$quranProfileIds, $academicProfileIds];
+    }
+
+    private function buildTeacherScopeQuery(array $quranProfileIds, array $academicProfileIds, ?int $filterTeacherId = null): \Closure
+    {
+        return function ($query) use ($quranProfileIds, $academicProfileIds, $filterTeacherId) {
+            if ($filterTeacherId) {
+                $user = User::find($filterTeacherId);
+                if ($user && $user->user_type === 'quran_teacher') {
+                    $profileId = QuranTeacherProfile::where('user_id', $filterTeacherId)->value('id');
+                    $query->where('teacher_type', 'quran_teacher')->where('teacher_id', $profileId);
+                } elseif ($user && $user->user_type === 'academic_teacher') {
+                    $profileId = AcademicTeacherProfile::where('user_id', $filterTeacherId)->value('id');
+                    $query->where('teacher_type', 'academic_teacher')->where('teacher_id', $profileId);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            } else {
+                $query->where(function ($q) use ($quranProfileIds, $academicProfileIds) {
+                    if (! empty($quranProfileIds)) {
+                        $q->orWhere(function ($sub) use ($quranProfileIds) {
+                            $sub->where('teacher_type', 'quran_teacher')
+                                ->whereIn('teacher_id', $quranProfileIds);
+                        });
+                    }
+                    if (! empty($academicProfileIds)) {
+                        $q->orWhere(function ($sub) use ($academicProfileIds) {
+                            $sub->where('teacher_type', 'academic_teacher')
+                                ->whereIn('teacher_id', $academicProfileIds);
+                        });
+                    }
+                    if (empty($quranProfileIds) && empty($academicProfileIds)) {
+                        $q->whereRaw('1 = 0');
+                    }
+                });
+            }
+        };
+    }
+
+    private function buildProfileUserMap(): array
+    {
+        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
+        $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
+
+        $map = [];
+        if (! empty($quranTeacherIds)) {
+            foreach (QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->with('user')->get() as $p) {
+                $map['quran_teacher_'.$p->id] = $p->user;
+            }
+        }
+        if (! empty($academicTeacherIds)) {
+            foreach (AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->with('user')->get() as $p) {
+                $map['academic_teacher_'.$p->id] = $p->user;
+            }
+        }
+
+        return $map;
+    }
+
+    private function getAvailableMonths(int $academyId, \Closure $scopeQuery): array
+    {
+        return TeacherEarning::where('academy_id', $academyId)
+            ->where($scopeQuery)
+            ->selectRaw('YEAR(session_completed_at) as year, MONTH(session_completed_at) as month')
+            ->groupBy('year', 'month')
+            ->orderByDesc('year')
+            ->orderByDesc('month')
+            ->get()
+            ->filter(fn ($m) => $m->year && $m->month)
+            ->map(fn ($m) => [
+                'value' => sprintf('%04d-%02d', $m->year, $m->month),
+                'label' => Carbon::create($m->year, $m->month, 1)->locale('ar')->translatedFormat('F Y'),
+            ])
+            ->toArray();
+    }
+
+    private function applyMonthFilter($query, ?string $month): void
+    {
+        if (! $month) {
+            return;
+        }
+        $parts = explode('-', $month);
+        if (count($parts) === 2) {
+            $query->forMonth((int) $parts[0], (int) $parts[1]);
+        }
     }
 }

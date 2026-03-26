@@ -2,10 +2,12 @@
 
 namespace App\Filament\Shared\Actions;
 
-use Filament\Actions\Action;
-use Exception;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
+use App\Services\SessionTransitionService;
+use Exception;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
@@ -200,6 +202,63 @@ class SessionStatusActions
     }
 
     /**
+     * Get the forgive absent session action (admin only)
+     * Transitions ABSENT → FORGIVEN, reversing subscription usage and deleting teacher earnings.
+     */
+    public static function forgiveSession(): Action
+    {
+        return Action::make('forgive_session')
+            ->label(__('sessions.actions.forgive'))
+            ->icon('heroicon-o-heart')
+            ->color('info')
+            ->requiresConfirmation()
+            ->modalHeading(__('sessions.actions.forgive_heading'))
+            ->modalDescription(__('sessions.actions.forgive_description'))
+            ->modalSubmitActionLabel(__('sessions.actions.forgive_confirm'))
+            ->visible(fn (Model $record): bool => static::canForgive($record))
+            ->form([
+                Textarea::make('forgiven_reason')
+                    ->label(__('sessions.fields.forgiven_reason'))
+                    ->required()
+                    ->maxLength(500)
+                    ->rows(3),
+            ])
+            ->action(function (Model $record, array $data) {
+                try {
+                    $transitionService = app(SessionTransitionService::class);
+                    $success = $transitionService->transitionToForgiven(
+                        $record,
+                        $data['forgiven_reason'],
+                        auth()->id()
+                    );
+
+                    if ($success) {
+                        Notification::make()
+                            ->title(__('sessions.actions.forgive_success'))
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title(__('sessions.actions.forgive_error'))
+                            ->danger()
+                            ->send();
+                    }
+                } catch (Exception $e) {
+                    Log::error('Session forgiveness failed', [
+                        'session_id' => $record->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    report($e);
+
+                    Notification::make()
+                        ->title(__('sessions.actions.forgive_error'))
+                        ->danger()
+                        ->send();
+                }
+            });
+    }
+
+    /**
      * Get the join meeting action
      */
     public static function joinMeeting(): Action
@@ -262,6 +321,22 @@ class SessionStatusActions
     }
 
     /**
+     * Check if session can be forgiven (only ABSENT individual sessions)
+     */
+    protected static function canForgive(Model $record): bool
+    {
+        $status = $record->status instanceof SessionStatus
+            ? $record->status
+            : SessionStatus::from($record->status);
+
+        if (! $status->canForgive()) {
+            return false;
+        }
+
+        return $record->session_type === 'individual' || ! isset($record->session_type);
+    }
+
+    /**
      * Check if session is scheduled or ongoing
      */
     protected static function isScheduledOrOngoing(Model $record): bool
@@ -289,6 +364,7 @@ class SessionStatusActions
             static::completeSession(),
             static::cancelSession(role: $role),
             static::markAbsent(),
+            static::forgiveSession(),
             static::joinMeeting(),
         ];
     }

@@ -24,13 +24,47 @@
     </div>
 </div>
 
-<h2>إنشاء حلقة فردية جديدة</h2>
+<div class="overflow-x-auto my-4">
+    <table class="min-w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-2 text-right font-semibold text-gray-600 border-b">بطاقة الإحصاء</th>
+                <th class="px-4 py-2 text-right font-semibold text-gray-600 border-b">المحتوى</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 text-gray-600">
+            <tr><td class="px-4 py-2 font-medium">إجمالي الحلقات</td><td class="px-4 py-2">جميع الحلقات في الأكاديمية</td></tr>
+            <tr><td class="px-4 py-2 font-medium text-green-700">نشطة</td><td class="px-4 py-2">الحلقات ذات الاشتراك الفعّال</td></tr>
+            <tr><td class="px-4 py-2 font-medium text-yellow-700">موقوفة</td><td class="px-4 py-2">الحلقات المعلقة مؤقتاً</td></tr>
+            <tr><td class="px-4 py-2 font-medium text-gray-700">مكتملة</td><td class="px-4 py-2">الحلقات المنتهية</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<p class="mb-3">خيارات التصفية:</p>
+<ul>
+    <li><strong>المعلم:</strong> فلترة حلقات معلم بعينه</li>
+    <li><strong>بحث باسم الطالب</strong></li>
+    <li><strong>الحالة:</strong> نشطة / موقوفة / مكتملة</li>
+    <li><strong>نطاق التاريخ:</strong> تاريخ بداية الحلقة</li>
+</ul>
+
+<h2>إنشاء حلقة فردية</h2>
+
+<div class="help-note">
+    <i class="ri-information-line help-callout-icon"></i>
+    <div>
+        <strong>ملاحظة:</strong> الحلقات الفردية تُنشأ تلقائياً عند تفعيل اشتراك الطالب.
+        صفحة <code dir="ltr">/manage/individual-circles</code> مخصصة لعرض وإدارة الحلقات الحالية،
+        وليس لإنشاء حلقات جديدة يدوياً.
+    </div>
+</div>
 
 <div class="help-step">
     <div class="help-step-number">1</div>
     <div class="help-step-content">
         <h3>افتح قسم الحلقات الفردية</h3>
-        <p>من القائمة الجانبية، اختر <strong>إدارة القرآن ← الحلقات الفردية</strong>، ثم انقر <strong>إنشاء حلقة</strong>.</p>
+        <p>انتقل إلى <strong>/manage/individual-circles</strong> من لوحة الإدارة الأمامية لعرض وإدارة الحلقات القائمة.</p>
     </div>
 </div>
 
@@ -79,6 +113,17 @@
         <p>انقر <strong>حفظ</strong>. ستُنشأ الحلقة وتُربط باشتراك الطالب النشط تلقائياً.</p>
     </div>
 </div>
+
+<h2>صفحة تفاصيل الحلقة</h2>
+
+<p>تعرض صفحة تفاصيل الحلقة:</p>
+<ul>
+    <li><strong>معلومات الحلقة:</strong> التخصص (تحفيظ / تلاوة / تجويد / تفسير / شامل) ومستوى الصعوبة</li>
+    <li><strong>المعلم المعيّن:</strong> اسمه وكوده وبياناته</li>
+    <li><strong>الطالب:</strong> اسمه ومستواه الحالي</li>
+    <li><strong>تفاصيل الاشتراك:</strong> الجلسات المتبقية وتاريخ الانتهاء والحالة</li>
+    <li><strong>قائمة الجلسات:</strong> الجلسات الأخيرة مع حالتها والواجبات</li>
+</ul>
 
 <h2>تتبع تقدم الطالب</h2>
 

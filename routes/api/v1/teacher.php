@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Teacher\Academic\CourseController as AcademicCourseController;
-use App\Http\Controllers\Api\V1\Teacher\Academic\LessonController as AcademicLessonController;
 use App\Http\Controllers\Api\V1\Teacher\Academic\InteractiveSessionController as AcademicInteractiveSessionController;
+use App\Http\Controllers\Api\V1\Teacher\Academic\LessonController as AcademicLessonController;
 use App\Http\Controllers\Api\V1\Teacher\Academic\SessionController as AcademicSessionController;
 use App\Http\Controllers\Api\V1\Teacher\CertificateController;
 use App\Http\Controllers\Api\V1\Teacher\DashboardController;
@@ -11,8 +11,8 @@ use App\Http\Controllers\Api\V1\Teacher\HomeworkController;
 use App\Http\Controllers\Api\V1\Teacher\MeetingController;
 use App\Http\Controllers\Api\V1\Teacher\ProfileController;
 use App\Http\Controllers\Api\V1\Teacher\Quran\CircleController as QuranCircleController;
-use App\Http\Controllers\Api\V1\Teacher\ReportController;
 use App\Http\Controllers\Api\V1\Teacher\Quran\SessionController as QuranSessionController;
+use App\Http\Controllers\Api\V1\Teacher\ReportController;
 use App\Http\Controllers\Api\V1\Teacher\ScheduleController;
 use App\Http\Controllers\Api\V1\Teacher\StudentController;
 use App\Http\Controllers\Api\V1\Teacher\TrialRequestController;
@@ -310,6 +310,15 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
 
         Route::get('/quran/group/{id}/sessions', [ReportController::class, 'quranGroupSessions'])
             ->name('api.v1.teacher.reports.quran.group.sessions');
+
+        Route::get('/quran/individual/{id}/report', [ReportController::class, 'quranIndividualFullReport'])
+            ->name('api.v1.teacher.reports.quran.individual.report');
+
+        Route::get('/quran/group/{id}/students-reports', [ReportController::class, 'quranGroupStudentsReportSummary'])
+            ->name('api.v1.teacher.reports.quran.group.students-reports');
+
+        Route::get('/quran/group/{circleId}/students/{studentId}/report', [ReportController::class, 'quranGroupStudentReport'])
+            ->name('api.v1.teacher.reports.quran.group.student-report');
     });
 
     // Certificates (common for both teacher types)

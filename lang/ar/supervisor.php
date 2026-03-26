@@ -881,6 +881,19 @@ return [
         'already_disputed' => 'هذا الربح متنازع عليه بالفعل.',
         'not_disputed' => 'هذا الربح غير متنازع عليه.',
         'pending_earnings_count' => ':count ربح معلق',
+        // Tabs
+        'tab_details' => 'تفاصيل الأرباح',
+        'tab_teacher_summary' => 'ملخص المعلمين',
+        // Teacher summary
+        'summary_page_subtitle' => 'ملخص أرباح المعلمين حسب المصدر',
+        'summary_teacher_name' => 'المعلم',
+        'summary_quran_individual' => 'قرآن فردي',
+        'summary_quran_group' => 'قرآن جماعي',
+        'summary_academic' => 'أكاديمي',
+        'summary_interactive' => 'دورات تفاعلية',
+        'summary_total' => 'الإجمالي',
+        'summary_sessions_count' => 'عدد الجلسات',
+        'summary_no_results' => 'لا توجد أرباح لعرضها في هذا الشهر',
     ],
 
     'supervisors' => [

@@ -9,6 +9,7 @@ return [
         'completed' => 'مكتملة',
         'cancelled' => 'ملغية',
         'absent' => 'غياب الطالب',
+        'forgiven' => 'معفو عنها',
     ],
     'attendance_status' => [
         'attended' => 'حاضر',

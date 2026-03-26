@@ -179,7 +179,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
      */
     protected function isEligibleForEarnings(BaseSession $session): bool
     {
-        if ($session->status !== SessionStatus::COMPLETED) {
+        if (! in_array($session->status, [SessionStatus::COMPLETED, SessionStatus::ABSENT])) {
             return false;
         }
 
@@ -199,6 +199,11 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
      */
     protected function didTeacherAttend(BaseSession $session): bool
     {
+        // ABSENT sessions: teacher was ready, student no-showed — teacher is implicitly present
+        if ($session->status === SessionStatus::ABSENT) {
+            return true;
+        }
+
         $teacherId = $this->getTeacherId($session);
 
         if (! $teacherId) {

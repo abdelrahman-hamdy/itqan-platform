@@ -40,6 +40,10 @@ return [
         'absent_teacher_expired' => 'انتهت فترة الجلسة',
         'absent_student_recorded' => 'تم تسجيل غياب الطالب',
         'absent_student_button_text' => 'غياب الطالب',
+
+        // Forgiven sub-states
+        'forgiven_message' => 'تم إعفاء الطالب من هذه الجلسة',
+        'forgiven_button' => 'معفو عنها',
     ],
 
     // Session naming (SessionNamingService)
@@ -89,5 +93,21 @@ return [
         'teacher' => 'معلم',
         'quran_teacher' => 'معلم قرآن',
         'academic_teacher' => 'معلم أكاديمي',
+    ],
+
+    // Forgiveness actions (admin pardoning absence)
+    'actions' => [
+        'forgive' => 'إعفاء الطالب',
+        'forgive_heading' => 'إعفاء الطالب من الغياب',
+        'forgive_description' => 'سيتم إرجاع الجلسة لرصيد الاشتراك وحذف مستحقات المعلم عن هذه الجلسة.',
+        'forgive_confirm' => 'نعم، إعفاء',
+        'forgive_success' => 'تم إعفاء الطالب بنجاح',
+        'forgive_error' => 'فشل في إعفاء الطالب',
+    ],
+
+    'fields' => [
+        'forgiven_reason' => 'سبب الإعفاء',
+        'forgiven_at' => 'تاريخ الإعفاء',
+        'forgiven_by' => 'تم الإعفاء بواسطة',
     ],
 ];

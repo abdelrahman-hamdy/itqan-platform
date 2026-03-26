@@ -16,13 +16,35 @@
 <h2>الوصول إلى قسم الجلسات</h2>
 
 <p>
-    من القائمة الجانبية، اختر <strong>إدارة القرآن ← جلسات القرآن</strong>.
-    يُعرض جدول بجميع جلسات الأكاديمية قابلة للتصفية والفرز.
+    انتقل إلى <strong>/manage/sessions</strong> من لوحة الإدارة الأمامية.
+    يعرض الصفحة شريط إحصاءات علوياً ثم قائمة بجميع جلسات الأكاديمية مع تبويبات للتصفية السريعة.
 </p>
 
-<img src="/images/help/admin/quran-sessions-list.png"
-     alt="قائمة جلسات القرآن — عرض الجلسات مع حالتها وتوقيتها وكودها"
-     class="help-screenshot">
+<div class="overflow-x-auto my-4">
+    <table class="min-w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-2 text-right font-semibold text-gray-600 border-b">بطاقة الإحصاء</th>
+                <th class="px-4 py-2 text-right font-semibold text-gray-600 border-b">المحتوى</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 text-gray-600">
+            <tr><td class="px-4 py-2 font-medium">إجمالي الجلسات</td><td class="px-4 py-2">عدد جميع الجلسات في الأكاديمية</td></tr>
+            <tr><td class="px-4 py-2 font-medium text-green-700">مباشر الآن 🔴</td><td class="px-4 py-2">جلسات جارية حالياً (مع مؤشر متحرك)</td></tr>
+            <tr><td class="px-4 py-2 font-medium">مجدولة اليوم</td><td class="px-4 py-2">الجلسات المقررة في اليوم الحالي</td></tr>
+            <tr><td class="px-4 py-2 font-medium">مكتملة هذا الأسبوع</td><td class="px-4 py-2">إجمالي الجلسات المنجزة خلال الأسبوع</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<p class="mt-4">تشتمل القائمة على أربعة تبويبات للتصفية السريعة:</p>
+
+<div class="flex flex-wrap gap-2 my-3">
+    <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded-full border border-gray-200">الكل</span>
+    <span class="inline-flex items-center gap-1 bg-purple-100 text-purple-700 text-xs font-medium px-3 py-1 rounded-full border border-purple-200">قرآن</span>
+    <span class="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs font-medium px-3 py-1 rounded-full border border-blue-200">أكاديمي</span>
+    <span class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-full border border-green-200">تفاعلي</span>
+</div>
 
 <h2>دورة حياة الجلسة</h2>
 
@@ -83,12 +105,12 @@
 
 <h2>تصفية الجلسات</h2>
 
-<p>يدعم جدول الجلسات التصفية حسب:</p>
+<p>يدعم جدول الجلسات في لوحة الإدارة الأمامية التصفية حسب:</p>
 <ul>
     <li><strong>الحالة:</strong> مجدولة / مباشر / مكتملة / ملغاة</li>
-    <li><strong>النوع:</strong> فردي / جماعي</li>
-    <li><strong>التاريخ:</strong> جلسات اليوم، هذا الأسبوع، أو نطاق مخصص</li>
-    <li><strong>المعلم:</strong> فلترة جلسات معلم بعينه</li>
+    <li><strong>التاريخ:</strong> اليوم / هذا الأسبوع / هذا الشهر</li>
+    <li><strong>المعلم:</strong> فلترة جلسات معلم بعينه من القائمة المنسدلة</li>
+    <li><strong>البحث النصي:</strong> عن اسم الطالب أو المعلم أو كود الجلسة</li>
 </ul>
 
 <h2>عرض تفاصيل جلسة</h2>
@@ -136,9 +158,21 @@
 <div class="help-note">
     <i class="ri-information-line help-callout-icon"></i>
     <div>
-        يستطيع <strong>المعلم فقط</strong> تعيين الواجبات من لوحة تحكمه. دور المدير هنا هو المراجعة والمتابعة لا التعديل.
+        يستطيع <strong>المعلم</strong> تعيين الواجبات وإضافة ملاحظات الجلسة من خلال الموقع الأمامي مباشرةً (لا يحتاج لوحة Filament).
+        دور المدير والمشرف هنا هو المراجعة والمتابعة.
     </div>
 </div>
+
+<h2>الإجراءات المتاحة على الجلسة</h2>
+
+<p>من صفحة تفاصيل الجلسة في لوحة الإدارة الأمامية يمكن:</p>
+<ul>
+    <li><strong>سجلات الحضور:</strong> عرض حضور كل طالب ومدة مشاركته</li>
+    <li><strong>ملاحظات الجلسة:</strong> عرض ملاحظات المعلم</li>
+    <li><strong>تقييم المعلم:</strong> عرض تقييم أداء الطالب في الجلسة</li>
+    <li><strong>تحديث الموعد:</strong> تعديل وقت الجلسة المجدولة</li>
+    <li><strong>إلغاء الجلسة:</strong> إلغاء جلسة مجدولة مع تحديد السبب</li>
+</ul>
 
 <h2>ملاحظات على التوقيت</h2>
 

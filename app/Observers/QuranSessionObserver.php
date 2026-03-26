@@ -51,8 +51,13 @@ class QuranSessionObserver
             $this->handleCancellation($quranSession);
         }
 
-        // Update circle session counts and progress when session is completed
-        if ($quranSession->wasChanged('status') && $quranSession->status === SessionStatus::COMPLETED) {
+        // Handle session forgiveness (admin pardons absence)
+        if ($quranSession->wasChanged('status') && $quranSession->status === SessionStatus::FORGIVEN) {
+            $this->handleForgiveness($quranSession);
+        }
+
+        // Update circle session counts and progress when session is completed or absent
+        if ($quranSession->wasChanged('status') && in_array($quranSession->status, [SessionStatus::COMPLETED, SessionStatus::ABSENT])) {
             if ($quranSession->session_type === 'individual' && $quranSession->individualCircle) {
                 $quranSession->individualCircle->updateSessionCounts();
                 $quranSession->individualCircle->updateProgress();
@@ -71,32 +76,43 @@ class QuranSessionObserver
      */
     private function handleCancellation(QuranSession $session): void
     {
+        $this->reverseSessionSideEffects($session, 'cancellation');
+    }
+
+    /**
+     * Handle session forgiveness side-effects (admin pardons absence)
+     */
+    private function handleForgiveness(QuranSession $session): void
+    {
+        $this->reverseSessionSideEffects($session, 'forgiveness');
+    }
+
+    /**
+     * Shared logic for reversing session side-effects (cancellation or forgiveness).
+     */
+    private function reverseSessionSideEffects(QuranSession $session, string $action): void
+    {
         try {
-            // Wrap all writes in a transaction so a partial failure (e.g. reversal succeeds
-            // but handleSessionCancelled fails) doesn't leave subscription counts inconsistent.
             DB::transaction(function () use ($session) {
-                // 1. Reverse subscription usage if was counted
-                if (method_exists($session, 'isSubscriptionCounted') && $session->isSubscriptionCounted()) {
+                if ($session->isSubscriptionCounted()) {
                     $session->reverseSubscriptionUsage();
                 }
 
-                // 2. Update circle remaining sessions (for individual sessions)
                 if ($session->session_type === 'individual' && $session->individualCircle) {
                     $session->individualCircle->handleSessionCancelled();
                 }
 
-                // 3. For group circles, update the circle session counts
                 if ($session->session_type === 'circle' && $session->circle) {
                     $session->circle->updateSessionCounts();
                 }
             });
 
-            Log::info('Quran session cancellation handled', [
+            Log::info("Quran session {$action} handled", [
                 'session_id' => $session->id,
                 'session_type' => $session->session_type,
             ]);
         } catch (Exception $e) {
-            Log::error('Failed to handle Quran session cancellation', [
+            Log::error("Failed to handle Quran session {$action}", [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -207,7 +223,7 @@ class QuranSessionObserver
         }
 
         $count = QuranSession::where('quran_subscription_id', $subscription->id)
-            ->whereNotIn('status', [SessionStatus::CANCELLED])
+            ->whereNotIn('status', [SessionStatus::CANCELLED, SessionStatus::FORGIVEN])
             ->count();
 
         $subscription->updateQuietly(['total_sessions_scheduled' => $count]);

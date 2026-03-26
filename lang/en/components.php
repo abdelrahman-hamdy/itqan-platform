@@ -448,6 +448,7 @@ return [
             'available_seats' => ':count additional seat available in this circle|:count additional seats available in this circle',
             'circle_full' => 'Circle is full - Cannot add new students',
             'no_students_yet' => 'No students enrolled yet',
+            'view_report' => 'View Report',
         ],
         'individual_progress' => [
             'title' => 'Progress Overview',

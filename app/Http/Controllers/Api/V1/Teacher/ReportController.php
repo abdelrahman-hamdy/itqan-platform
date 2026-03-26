@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
+use App\Contracts\QuranReportServiceInterface;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
-use App\Models\QuranIndividualCircle;
 use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -222,5 +225,163 @@ class ReportController extends Controller
             'sessions' => $sessions,
             'total' => count($sessions),
         ], __('Sessions retrieved successfully'));
+    }
+
+    /**
+     * Get full report for a Quran individual circle using QuranReportService.
+     * Returns the same format as the student SubscriptionController::report().
+     */
+    public function quranIndividualFullReport(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user->quranTeacherProfile) {
+            return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
+        }
+
+        $circle = QuranIndividualCircle::where('id', $id)
+            ->where('quran_teacher_id', $user->id)
+            ->first();
+
+        if (! $circle) {
+            return $this->notFound(__('Circle not found.'));
+        }
+
+        $dateRange = $this->parseDateRange($request);
+
+        $reportService = app(QuranReportServiceInterface::class);
+        $reportData = $reportService->getIndividualCircleReport($circle, $dateRange);
+
+        return $this->formatReportResponse($reportData);
+    }
+
+    /**
+     * Get per-student report summaries for a Quran group circle.
+     * Returns a list of students with their key metrics.
+     */
+    public function quranGroupStudentsReportSummary(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user->quranTeacherProfile) {
+            return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
+        }
+
+        $circle = QuranCircle::where('id', $id)
+            ->where('quran_teacher_id', $user->id)
+            ->with('students')
+            ->first();
+
+        if (! $circle) {
+            return $this->notFound(__('Circle not found.'));
+        }
+
+        $dateRange = $this->parseDateRange($request);
+        $reportService = app(QuranReportServiceInterface::class);
+
+        $studentsReports = [];
+
+        foreach ($circle->students as $student) {
+            $reportData = $reportService->getStudentReportInGroupCircle($circle, $student, $dateRange);
+
+            $attendance = $reportData['attendance'];
+            $performance = $reportData['performance'];
+
+            $studentsReports[] = [
+                'student' => [
+                    'id' => $student->id,
+                    'name' => $student->name,
+                    'avatar' => $student->avatar ? asset('storage/'.$student->avatar) : null,
+                ],
+                'summary' => [
+                    'attendance_rate' => $attendance->attendanceRate,
+                    'memorization_score' => $performance->averageMemorization ?? 0,
+                    'recitation_score' => $performance->averageReservation ?? 0,
+                    'overall_performance' => $performance->averageOverall,
+                ],
+            ];
+        }
+
+        return $this->success([
+            'students' => $studentsReports,
+            'total' => count($studentsReports),
+        ], __('Students reports retrieved successfully'));
+    }
+
+    /**
+     * Get full report for a specific student in a Quran group circle.
+     */
+    public function quranGroupStudentReport(Request $request, int $circleId, int $studentId): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user->quranTeacherProfile) {
+            return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
+        }
+
+        $circle = QuranCircle::where('id', $circleId)
+            ->where('quran_teacher_id', $user->id)
+            ->first();
+
+        if (! $circle) {
+            return $this->notFound(__('Circle not found.'));
+        }
+
+        $student = User::find($studentId);
+
+        if (! $student || ! $circle->students()->where('users.id', $student->id)->exists()) {
+            return $this->notFound(__('Student not found in this circle.'));
+        }
+
+        $dateRange = $this->parseDateRange($request);
+
+        $reportService = app(QuranReportServiceInterface::class);
+        $reportData = $reportService->getStudentReportInGroupCircle($circle, $student, $dateRange);
+
+        return $this->formatReportResponse($reportData);
+    }
+
+    /**
+     * Parse optional date range from request.
+     */
+    private function parseDateRange(Request $request): ?array
+    {
+        if ($request->has('start_date') && $request->has('end_date')) {
+            return [
+                'start' => Carbon::parse($request->get('start_date')),
+                'end' => Carbon::parse($request->get('end_date')),
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Format report data DTOs into the standard API response format.
+     */
+    private function formatReportResponse(array $reportData): JsonResponse
+    {
+        $attendance = $reportData['attendance'];
+        $performance = $reportData['performance'];
+        $progress = $reportData['progress'];
+
+        return $this->success([
+            'report' => [
+                'attendance' => $attendance->toArray(),
+                'performance' => [
+                    'memorization_score' => $performance->averageMemorization ?? 0,
+                    'recitation_score' => $performance->averageReservation ?? 0,
+                    'homework_score' => 0,
+                    'overall_performance' => $performance->averageOverall,
+                    'sessions_evaluated' => $performance->totalEvaluated,
+                ],
+                'progress' => [
+                    'pages_memorized' => $progress['pages_memorized'] ?? 0,
+                    'pages_reviewed' => $progress['pages_reviewed'] ?? 0,
+                    'progress_rate' => $progress['progress_percentage'] ?? 0,
+                    'sessions_evaluated' => $progress['sessions_evaluated'] ?? 0,
+                ],
+            ],
+        ], __('Report retrieved successfully'));
     }
 }

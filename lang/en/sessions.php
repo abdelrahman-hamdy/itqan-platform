@@ -28,6 +28,10 @@ return [
         'absent_teacher_expired' => 'Session period has ended',
         'absent_student_recorded' => 'Student absence recorded',
         'absent_student_button_text' => 'Student Absent',
+
+        // Forgiven sub-states
+        'forgiven_message' => 'Student absence has been forgiven for this session',
+        'forgiven_button' => 'Forgiven',
     ],
 
     'naming' => [
@@ -74,5 +78,21 @@ return [
         'teacher' => 'Teacher',
         'quran_teacher' => 'Quran Teacher',
         'academic_teacher' => 'Academic Teacher',
+    ],
+
+    // Forgiveness actions (admin pardoning absence)
+    'actions' => [
+        'forgive' => 'Forgive Absence',
+        'forgive_heading' => 'Forgive Student Absence',
+        'forgive_description' => 'This will return the session to the subscription quota and delete teacher earnings for this session.',
+        'forgive_confirm' => 'Yes, Forgive',
+        'forgive_success' => 'Student absence forgiven successfully',
+        'forgive_error' => 'Failed to forgive student absence',
+    ],
+
+    'fields' => [
+        'forgiven_reason' => 'Reason',
+        'forgiven_at' => 'Forgiven At',
+        'forgiven_by' => 'Forgiven By',
     ],
 ];
