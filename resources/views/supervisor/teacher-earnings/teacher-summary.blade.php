@@ -156,56 +156,31 @@
                                     </div>
                                 </td>
 
-                                {{-- Quran Individual --}}
-                                <td class="px-3 py-4 text-center">
-                                    @if($summary['quran_individual']['amount'] > 0)
-                                        <span class="text-sm font-medium text-green-700">{{ number_format($summary['quran_individual']['amount'], 2) }}</span>
-                                        @if($summary['quran_individual']['rate'])
-                                            <p class="text-xs text-gray-400 mt-0.5">{{ $summary['quran_individual']['sessions_count'] }} × {{ number_format($summary['quran_individual']['rate'], 2) }}</p>
+                                @php
+                                    $sourceColumns = [
+                                        'quran_individual' => 'text-green-700',
+                                        'quran_group' => 'text-emerald-700',
+                                        'academic' => 'text-violet-700',
+                                        'interactive' => 'text-blue-700',
+                                    ];
+                                @endphp
+                                @foreach($sourceColumns as $sourceKey => $colorClass)
+                                    <td class="px-3 py-4 text-center">
+                                        @if($summary[$sourceKey]['amount'] > 0)
+                                            <span class="text-sm font-medium {{ $colorClass }}">{{ number_format($summary[$sourceKey]['amount'], 2) }}</span>
+                                            @foreach($summary[$sourceKey]['details'] as $detail)
+                                                <p class="text-xs text-gray-400 mt-0.5">
+                                                    {{ $detail['sessions_count'] }} × {{ number_format($detail['rate'] ?? 0, 2) }}
+                                                    @if(count($summary[$sourceKey]['details']) > 1)
+                                                        <span class="text-gray-300">({{ $methodLabels[$detail['method']] ?? $detail['method'] }})</span>
+                                                    @endif
+                                                </p>
+                                            @endforeach
+                                        @else
+                                            <span class="text-sm text-gray-300">-</span>
                                         @endif
-                                    @else
-                                        <span class="text-sm text-gray-300">-</span>
-                                    @endif
-                                </td>
-
-                                {{-- Quran Group --}}
-                                <td class="px-3 py-4 text-center">
-                                    @if($summary['quran_group']['amount'] > 0)
-                                        <span class="text-sm font-medium text-emerald-700">{{ number_format($summary['quran_group']['amount'], 2) }}</span>
-                                        @if($summary['quran_group']['rate'])
-                                            <p class="text-xs text-gray-400 mt-0.5">{{ $summary['quran_group']['sessions_count'] }} × {{ number_format($summary['quran_group']['rate'], 2) }}</p>
-                                        @endif
-                                    @else
-                                        <span class="text-sm text-gray-300">-</span>
-                                    @endif
-                                </td>
-
-                                {{-- Academic --}}
-                                <td class="px-3 py-4 text-center">
-                                    @if($summary['academic']['amount'] > 0)
-                                        <span class="text-sm font-medium text-violet-700">{{ number_format($summary['academic']['amount'], 2) }}</span>
-                                        @if($summary['academic']['rate'])
-                                            <p class="text-xs text-gray-400 mt-0.5">{{ $summary['academic']['sessions_count'] }} × {{ number_format($summary['academic']['rate'], 2) }}</p>
-                                        @endif
-                                    @else
-                                        <span class="text-sm text-gray-300">-</span>
-                                    @endif
-                                </td>
-
-                                {{-- Interactive --}}
-                                <td class="px-3 py-4 text-center">
-                                    @if($summary['interactive']['amount'] > 0)
-                                        <span class="text-sm font-medium text-blue-700">{{ number_format($summary['interactive']['amount'], 2) }}</span>
-                                        @foreach($summary['interactive']['details'] as $detail)
-                                            <p class="text-xs text-gray-400 mt-0.5">
-                                                {{ $detail['sessions_count'] }} × {{ number_format($detail['rate'] ?? 0, 2) }}
-                                                <span class="text-gray-300">({{ $methodLabels[$detail['method']] ?? $detail['method'] }})</span>
-                                            </p>
-                                        @endforeach
-                                    @else
-                                        <span class="text-sm text-gray-300">-</span>
-                                    @endif
-                                </td>
+                                    </td>
+                                @endforeach
 
                                 <td class="px-3 py-4 text-center whitespace-nowrap">
                                     <span class="text-sm text-gray-600">{{ $summary['sessions_count'] }}</span>
