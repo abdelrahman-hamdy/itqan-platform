@@ -29,11 +29,9 @@ class TeacherController extends Controller
             ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user']);
 
-        // Filter by gender if provided
-        if ($request->filled('gender')) {
-            $query->whereHas('user', function ($q) use ($request) {
-                $q->where('gender', $request->gender);
-            });
+        $studentGender = getAuthenticatedStudentGender();
+        if ($studentGender) {
+            $query->where('gender', $studentGender);
         }
 
         // Search by name (through User relationship - personal info is on User model)
@@ -171,6 +169,11 @@ class TeacherController extends Controller
         $query = AcademicTeacherProfile::where('academy_id', $academy->id)
             ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user']);
+
+        $studentGender = getAuthenticatedStudentGender();
+        if ($studentGender) {
+            $query->where('gender', $studentGender);
+        }
 
         // Filter by subject
         if ($request->filled('subject_id')) {

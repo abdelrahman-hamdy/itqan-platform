@@ -35,7 +35,7 @@ class BrowseController extends Controller
             ->with(['user']);
 
         if ($request->filled('gender')) {
-            $query->whereHas('user', fn ($q) => $q->where('gender', $request->gender));
+            $query->where('gender', $request->gender);
         }
 
         $search = $request->get('search');

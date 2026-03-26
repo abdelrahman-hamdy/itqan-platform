@@ -2,25 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
-use Exception;
 use App\Enums\QuranLearningLevel;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Enums\UserType;
 use App\Models\Academy;
+use App\Models\QuranIndividualCircle;
 use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
-use App\Models\QuranIndividualCircle;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
 use App\Services\QuranEnrollmentService;
 use App\Services\TrialNotificationService;
+use Exception;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\View\View;
 
 class UnifiedQuranTeacherController extends Controller
 {
@@ -65,7 +65,11 @@ class UnifiedQuranTeacherController extends Controller
             }
         }
 
-        if ($request->filled('gender')) {
+        // Auto-filter by student gender for authenticated students; manual filter for guests
+        $studentGender = getAuthenticatedStudentGender();
+        if ($studentGender) {
+            $query->where('gender', $studentGender);
+        } elseif ($request->filled('gender')) {
             $query->where('gender', $request->gender);
         }
 

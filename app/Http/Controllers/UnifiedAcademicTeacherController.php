@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\View\View;
-use App\Models\AcademicSubject;
-use App\Models\AcademicGradeLevel;
 use App\Enums\SessionSubscriptionStatus;
+use App\Models\AcademicGradeLevel;
 use App\Models\AcademicPackage;
+use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class UnifiedAcademicTeacherController extends Controller
 {
@@ -97,10 +97,12 @@ class UnifiedAcademicTeacherController extends Controller
             }
         }
 
-        if ($request->filled('gender')) {
-            $query->whereHas('user', function ($userQuery) use ($request) {
-                $userQuery->where('gender', $request->gender);
-            });
+        // Auto-filter by student gender for authenticated students; manual filter for guests
+        $studentGender = getAuthenticatedStudentGender();
+        if ($studentGender) {
+            $query->where('gender', $studentGender);
+        } elseif ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
         }
 
         if ($request->filled('schedule_days') && is_array($request->schedule_days)) {

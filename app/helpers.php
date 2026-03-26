@@ -1,11 +1,11 @@
 <?php
 
+use App\Enums\UserType;
+use App\Helpers\FaviconHelper;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\UserType;
-use App\Helpers\FaviconHelper;
 
 if (! function_exists('current_academy')) {
     /**
@@ -157,7 +157,7 @@ if (! function_exists('getFavicon')) {
     /**
      * Get the favicon URL for the current academy
      *
-     * @param Academy|null $academy Academy instance (auto-resolves if null)
+     * @param  Academy|null  $academy  Academy instance (auto-resolves if null)
      * @return string Favicon URL
      */
     function getFavicon(?Academy $academy = null): string
@@ -170,7 +170,7 @@ if (! function_exists('getFaviconLinkTag')) {
     /**
      * Get favicon HTML link tag
      *
-     * @param Academy|null $academy Academy instance (auto-resolves if null)
+     * @param  Academy|null  $academy  Academy instance (auto-resolves if null)
      * @return string HTML link tag
      */
     function getFaviconLinkTag(?Academy $academy = null): string
@@ -183,7 +183,7 @@ if (! function_exists('hasCustomFavicon')) {
     /**
      * Check if academy has a custom favicon
      *
-     * @param Academy|null $academy Academy instance (auto-resolves if null)
+     * @param  Academy|null  $academy  Academy instance (auto-resolves if null)
      * @return bool True if academy has custom favicon
      */
     function hasCustomFavicon(?Academy $academy = null): bool
@@ -197,3 +197,6 @@ require_once __DIR__.'/Helpers/TimeHelper.php';
 
 // Include CurrencyHelper functions
 require_once __DIR__.'/Helpers/CurrencyHelper.php';
+
+// Include GenderHelper functions
+require_once __DIR__.'/Helpers/GenderHelper.php';

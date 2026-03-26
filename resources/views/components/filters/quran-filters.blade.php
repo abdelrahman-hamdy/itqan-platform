@@ -130,8 +130,8 @@
             </div>
             @endif
 
-            <!-- Gender Filter (for teachers) -->
-            @if($showGender)
+            <!-- Gender Filter (for teachers) — hidden for authenticated students (auto-filtered server-side) -->
+            @if($showGender && (!auth()->check() || auth()->user()->user_type !== \App\Enums\UserType::STUDENT->value))
             <div>
                 <label class="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
                     <i class="ri-user-line"></i>

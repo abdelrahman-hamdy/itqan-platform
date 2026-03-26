@@ -77,16 +77,18 @@ class SearchController extends Controller
             ->pluck('circle_id')
             ->toArray();
 
+        $studentGender = getAuthenticatedStudentGender();
+
         $results = collect();
 
         // Search based on filter
         if ($filter === 'all' || $filter === 'quran_teachers') {
-            $quranTeachers = $this->searchQuranTeachers($query, $academyId, $perPage);
+            $quranTeachers = $this->searchQuranTeachers($query, $academyId, $perPage, $studentGender);
             $results = $results->merge($quranTeachers);
         }
 
         if ($filter === 'all' || $filter === 'academic_teachers') {
-            $academicTeachers = $this->searchAcademicTeachers($query, $academyId, $perPage);
+            $academicTeachers = $this->searchAcademicTeachers($query, $academyId, $perPage, $studentGender);
             $results = $results->merge($academicTeachers);
         }
 
@@ -106,7 +108,7 @@ class SearchController extends Controller
         }
 
         // Get counts for each type (for tab badges)
-        $counts = $this->getCounts($query, $academyId);
+        $counts = $this->getCounts($query, $academyId, $studentGender);
 
         // Sort results by relevance (exact match first, then partial)
         $sortedResults = $this->sortByRelevance($results, $query);
@@ -127,9 +129,10 @@ class SearchController extends Controller
     /**
      * Search Quran teachers.
      */
-    protected function searchQuranTeachers(string $query, ?int $academyId, int $limit): Collection
+    protected function searchQuranTeachers(string $query, ?int $academyId, int $limit, ?string $studentGender = null): Collection
     {
         $teachers = QuranTeacherProfile::where('academy_id', $academyId)
+            ->when($studentGender, fn ($q, $gender) => $q->where('gender', $gender))
             ->where(function ($q) use ($query) {
                 $q->where('bio_arabic', 'LIKE', "%{$query}%")
                     ->orWhere('bio_english', 'LIKE', "%{$query}%")
@@ -167,9 +170,10 @@ class SearchController extends Controller
     /**
      * Search Academic teachers.
      */
-    protected function searchAcademicTeachers(string $query, ?int $academyId, int $limit): Collection
+    protected function searchAcademicTeachers(string $query, ?int $academyId, int $limit, ?string $studentGender = null): Collection
     {
         $teachers = AcademicTeacherProfile::where('academy_id', $academyId)
+            ->when($studentGender, fn ($q, $gender) => $q->where('gender', $gender))
             ->where(function ($q) use ($query) {
                 $q->whereHas('user', function ($userQuery) use ($query) {
                     $userQuery->where('first_name', 'LIKE', "%{$query}%")
@@ -347,10 +351,11 @@ class SearchController extends Controller
     /**
      * Get counts for each search type.
      */
-    protected function getCounts(string $query, ?int $academyId): array
+    protected function getCounts(string $query, ?int $academyId, ?string $studentGender = null): array
     {
         $quranTeachersCount = QuranTeacherProfile::where('academy_id', $academyId)
             ->whereHas('user', fn ($uq) => $uq->where('active_status', true))
+            ->when($studentGender, fn ($q, $gender) => $q->where('gender', $gender))
             ->where(function ($q) use ($query) {
                 $q->whereHas('user', function ($userQuery) use ($query) {
                     $userQuery->where('first_name', 'like', "%{$query}%")
@@ -363,6 +368,7 @@ class SearchController extends Controller
 
         $academicTeachersCount = AcademicTeacherProfile::where('academy_id', $academyId)
             ->whereHas('user', fn ($uq) => $uq->where('active_status', true))
+            ->when($studentGender, fn ($q, $gender) => $q->where('gender', $gender))
             ->where(function ($q) use ($query) {
                 $q->whereHas('user', function ($userQuery) use ($query) {
                     $userQuery->where('first_name', 'like', "%{$query}%")

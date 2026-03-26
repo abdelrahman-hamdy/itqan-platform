@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
-use Exception;
-use Log;
-use Carbon\Carbon;
-use App\Models\AcademicSubject;
-use App\Models\AcademicGradeLevel;
 use App\Enums\EducationalQualification;
 use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\Academy\AcademyBrandingResource;
 use App\Http\Resources\Api\V1\User\UserResource;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\AcademicGradeLevel;
+use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
 use App\Models\ParentProfile;
 use App\Models\ParentStudentRelationship;
@@ -20,12 +17,15 @@ use App\Models\QuranTeacherProfile;
 use App\Models\StudentProfile;
 use App\Models\User;
 use App\Rules\PasswordRules;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Enum;
+use Log;
 
 class RegisterController extends Controller
 {
@@ -376,6 +376,7 @@ class RegisterController extends Controller
             'education_level' => ['required', new Enum(EducationalQualification::class)],
             'university' => ['nullable', 'string', 'max:255'],
             'years_experience' => ['required', 'integer', 'min:0', 'max:50'],
+            'gender' => ['required', 'in:male,female'],
             'bio' => ['nullable', 'string', 'max:2000'],
         ];
 
@@ -427,6 +428,7 @@ class RegisterController extends Controller
                 QuranTeacherProfile::create([
                     'academy_id' => $academy->id,
                     'user_id' => $user->id,
+                    'gender' => $request->gender,
                     'educational_qualification' => $request->education_level,
                     'teaching_experience_years' => $request->years_experience,
                     'bio_arabic' => $request->bio,
@@ -435,6 +437,7 @@ class RegisterController extends Controller
                 AcademicTeacherProfile::create([
                     'academy_id' => $academy->id,
                     'user_id' => $user->id,
+                    'gender' => $request->gender,
                     'education_level' => $request->education_level,
                     'university' => $request->university,
                     'teaching_experience_years' => $request->years_experience,
