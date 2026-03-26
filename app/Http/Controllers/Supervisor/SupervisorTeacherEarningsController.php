@@ -114,16 +114,9 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $teachersList, $currentTeacherId ? (int) $currentTeacherId : null);
 
         $currentMonth = $request->input('month');
-        $now = Carbon::now();
 
         $query = TeacherEarning::where('academy_id', $academyId)->where($scopeQuery);
-
-        if ($currentMonth) {
-            $this->applyMonthFilter($query, $currentMonth);
-        } else {
-            $query->forMonth($now->year, $now->month);
-            $currentMonth = $now->format('Y-m');
-        }
+        $this->applyMonthFilter($query, $currentMonth);
 
         $rawEarnings = (clone $query)
             ->select(

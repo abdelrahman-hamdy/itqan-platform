@@ -34,6 +34,12 @@
 
     <!-- Summary Table -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <!-- Header -->
+        <div class="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
+            <h2 class="text-base md:text-lg font-semibold text-gray-900">
+                {{ __('supervisor.teacher_earnings.summary_list_title') }} ({{ count($teacherSummaries) }})
+            </h2>
+        </div>
 
         <!-- Collapsible Filters -->
         <div x-data="{ open: {{ $hasActiveFilters ? 'true' : 'false' }} }" class="border-b border-gray-200">
@@ -66,6 +72,7 @@
                         <div>
                             <label for="month" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teacher_earnings.filter_month') }}</label>
                             <select name="month" id="month" class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">{{ __('supervisor.teacher_earnings.all_months') }}</option>
                                 @foreach($availableMonths as $m)
                                     <option value="{{ $m['value'] }}" {{ ($currentMonth ?? null) === $m['value'] ? 'selected' : '' }}>{{ $m['label'] }}</option>
                                 @endforeach
