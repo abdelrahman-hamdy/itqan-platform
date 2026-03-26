@@ -101,6 +101,13 @@
                     {{ __('supervisor.sessions.cancel_session') }}
                 </a>
             @endif
+            @if($status->canForgive())
+                <a href="{{ $showUrl }}#forgive"
+                   class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                    <i class="ri-heart-line"></i>
+                    {{ __('sessions.actions.forgive') }}
+                </a>
+            @endif
         </div>
     </td>
 </tr>

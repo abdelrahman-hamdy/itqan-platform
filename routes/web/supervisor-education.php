@@ -159,6 +159,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
             ->name('sessions.update')->whereIn('sessionType', ['quran', 'academic', 'interactive']);
         Route::post('/sessions/{sessionType}/{sessionId}/cancel', [SupervisorSessionsController::class, 'cancel'])
             ->name('sessions.cancel')->whereIn('sessionType', ['quran', 'academic', 'interactive']);
+        Route::post('/sessions/{sessionType}/{sessionId}/forgive', [SupervisorSessionsController::class, 'forgive'])
+            ->name('sessions.forgive')->whereIn('sessionType', ['quran', 'academic']);
 
         // Redirect old monitoring route
         Route::get('/sessions-monitoring', fn (Request $request, $subdomain) => redirect()->route('manage.sessions.index', ['subdomain' => $subdomain] + $request->query()))->name('sessions-monitoring.index');

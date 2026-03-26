@@ -86,7 +86,7 @@
     @endif
 
     {{-- Action Bar --}}
-    @if(($canObserve && $isLive) || $status->canCancel() || $filamentUrl)
+    @if(($canObserve && $isLive) || $status->canCancel() || $status->canForgive() || $filamentUrl)
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
         <div class="flex flex-wrap items-center gap-3">
             {{-- Observer / Participant Mode Toggle --}}
@@ -110,6 +110,14 @@
                 <button @click="showCancelModal = true" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer">
                     <i class="ri-close-circle-line"></i>
                     {{ __($t.'cancel_session') }}
+                </button>
+            @endif
+
+            {{-- Forgive absent session button --}}
+            @if($status->canForgive())
+                <button @click="showForgiveModal = true" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors cursor-pointer">
+                    <i class="ri-heart-line"></i>
+                    {{ __('sessions.actions.forgive') }}
                 </button>
             @endif
 
@@ -361,6 +369,45 @@
         </div>
     </div>
 
+    {{-- Forgive Confirmation Modal --}}
+    @if($status->canForgive())
+    <div x-show="showForgiveModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div x-show="showForgiveModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 bg-black/50" @click="showForgiveModal = false"></div>
+
+            <div x-show="showForgiveModal" x-transition class="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6 z-10">
+                <div class="text-center mb-4">
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="ri-heart-line text-2xl text-blue-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900">{{ __('sessions.actions.forgive_heading') }}</h3>
+                    <p class="text-sm text-gray-500 mt-1">{{ __('sessions.actions.forgive_description') }}</p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('sessions.fields.forgiven_reason') }}</label>
+                    <textarea x-model="forgivenReason" rows="3" required
+                        class="w-full text-sm rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <button @click="showForgiveModal = false"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer">
+                        {{ __($t.'cancel_modal_close') }}
+                    </button>
+                    <button @click="submitForgive()" :disabled="submittingForgive || !forgivenReason.trim()"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 cursor-pointer">
+                        <span x-show="!submittingForgive">{{ __('sessions.actions.forgive_confirm') }}</span>
+                        <span x-show="submittingForgive" x-cloak>{{ __('supervisor.observation.saving') }}...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Cancel Confirmation Modal --}}
     <div x-show="showCancelModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen p-4">
@@ -406,6 +453,9 @@
 @php
     $updateUrl = route('manage.sessions.update', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]);
     $cancelUrl = route('manage.sessions.cancel', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]);
+    $forgiveUrl = in_array($sessionType, ['quran', 'academic'])
+        ? route('manage.sessions.forgive', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id])
+        : null;
     $initialNotes = $session->supervisor_notes ?? '';
     $initialAdminNotes = $session->admin_notes ?? '';
     $countdownLabels = [
@@ -441,10 +491,13 @@ function sessionCountdown(targetMs) {
 function sessionDetail() {
     return {
         showCancelModal: false,
+        showForgiveModal: false,
         savingNotes: false,
         notesSaved: false,
         submittingCancel: false,
+        submittingForgive: false,
         cancellationReason: '',
+        forgivenReason: '',
 
         editForm: {
             supervisor_notes: @json($initialNotes),
@@ -507,9 +560,39 @@ function sessionDetail() {
             }
         },
 
+        async submitForgive() {
+            if (!this.forgivenReason.trim()) return;
+            this.submittingForgive = true;
+            try {
+                const forgiveUrl = @json($forgiveUrl);
+                const response = await fetch(forgiveUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ forgiven_reason: this.forgivenReason }),
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Error');
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            } finally {
+                this.submittingForgive = false;
+            }
+        },
+
         init() {
             if (window.location.hash === '#cancel') {
                 this.showCancelModal = true;
+            }
+            if (window.location.hash === '#forgive') {
+                this.showForgiveModal = true;
             }
         }
     }

@@ -6,10 +6,10 @@ use App\Contracts\MeetingObserverServiceInterface;
 use App\Enums\SessionStatus;
 use App\Http\Requests\Supervisor\UpdateSessionRequest;
 use App\Models\AcademicSession;
-use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\User;
+use App\Services\SessionTransitionService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -177,6 +177,41 @@ class SupervisorSessionsController extends BaseSupervisorWebController
 
         return response()->json([
             'message' => __('supervisor.sessions.cancel_success'),
+        ]);
+    }
+
+    /**
+     * Forgive absent session via AJAX (reverses subscription + deletes earnings).
+     */
+    public function forgive(Request $request, $subdomain, string $sessionType, string $sessionId): JsonResponse
+    {
+        $request->validate([
+            'forgiven_reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $session = $this->resolveSession($sessionType, $sessionId);
+
+        if (! $session) {
+            return response()->json(['message' => __('supervisor.observation.session_not_found')], 404);
+        }
+
+        if (! $session->status->canForgive()) {
+            return response()->json(['message' => __('sessions.actions.forgive_error')], 422);
+        }
+
+        $transitionService = app(SessionTransitionService::class);
+        $success = $transitionService->transitionToForgiven(
+            $session,
+            $request->input('forgiven_reason'),
+            auth()->id()
+        );
+
+        if (! $success) {
+            return response()->json(['message' => __('sessions.actions.forgive_error')], 422);
+        }
+
+        return response()->json([
+            'message' => __('sessions.actions.forgive_success'),
         ]);
     }
 
