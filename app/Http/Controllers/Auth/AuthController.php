@@ -359,13 +359,13 @@ class AuthController extends Controller
             'years_experience' => 'required|integer|min:0|max:50',
         ];
 
-        if ($teacherType === 'academic_teacher') {
+        if ($teacherType === UserType::ACADEMIC_TEACHER->value) {
             $rules['subjects'] = 'required|array|min:1';
             $rules['grade_levels'] = 'required|array|min:1';
             $rules['available_days'] = 'required|array|min:1';
         }
 
-        if ($teacherType === 'quran_teacher') {
+        if ($teacherType === UserType::QURAN_TEACHER->value) {
             $rules['certifications'] = 'nullable|array';
             $rules['certifications.*'] = 'string|max:255';
         }
@@ -418,7 +418,7 @@ class AuthController extends Controller
 
                 // Create teacher profile (automatic creation is disabled for teachers)
                 // Personal info (first_name, last_name, email, phone) is stored ONLY in users table
-                if ($teacherType === 'quran_teacher') {
+                if ($teacherType === UserType::QURAN_TEACHER->value) {
                     QuranTeacherProfile::create([
                         'user_id' => $user->id,
                         'academy_id' => $academy->id,
@@ -444,14 +444,14 @@ class AuthController extends Controller
 
                 return $user;
             });
-        } catch (QueryException $e) {
+        } catch (Exception $e) {
             Log::error('Teacher registration failed: '.$e->getMessage(), [
                 'academy_id' => $academy->id,
                 'email' => $request->email,
                 'teacher_type' => $teacherType,
             ]);
 
-            if (str_contains($e->getMessage(), 'teacher_code_unique') || $e->getCode() === '23000') {
+            if ($e instanceof QueryException && str_contains($e->getMessage(), 'teacher_code_unique')) {
                 return back()->withErrors(['error' => 'حدث خطأ في إنشاء رمز المعلم. يرجى المحاولة مرة أخرى.'])->withInput();
             }
 
