@@ -28,7 +28,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
 {
     public function index(Request $request, $subdomain = null): View
     {
-        if (! $this->canManageStudents()) {
+        if (! $this->canManageParents()) {
             abort(403);
         }
 
@@ -160,7 +160,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
 
     public function toggleStatus(Request $request, $subdomain, User $parent): RedirectResponse
     {
-        if (! $this->canManageStudents()) {
+        if (! $this->canManageParents()) {
             abort(403);
         }
 
@@ -174,7 +174,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
 
     public function resetPassword(Request $request, $subdomain, User $parent): RedirectResponse
     {
-        if (! $this->canManageStudents()) {
+        if (! $this->canResetPasswords()) {
             abort(403);
         }
 
@@ -200,7 +200,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
 
     public function destroy(Request $request, $subdomain, User $parent): RedirectResponse
     {
-        if (! $this->canManageStudents()) {
+        if (! $this->canManageParents()) {
             abort(403);
         }
 
@@ -214,7 +214,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
 
     public function create(Request $request, $subdomain = null): View
     {
-        if (! $this->canManageStudents()) {
+        if (! $this->canManageParents()) {
             abort(403);
         }
 
@@ -223,7 +223,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
 
     public function store(Request $request, $subdomain = null): RedirectResponse
     {
-        if (! $this->canManageStudents()) {
+        if (! $this->canManageParents()) {
             abort(403);
         }
 

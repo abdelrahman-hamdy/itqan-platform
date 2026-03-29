@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Rules\PasswordRules;
 use App\Services\AcademyContextService;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -243,12 +244,39 @@ abstract class BaseSupervisorProfileResource extends Resource
     {
         return Section::make('المسؤوليات')
             ->schema([
-                Toggle::make('can_manage_teachers')
-                    ->label('صلاحية إدارة المعلمين')
-                    ->helperText('السماح للمشرف بإدارة المعلمين المعينين له'),
-                Toggle::make('can_manage_students')
-                    ->label('صلاحية إدارة الطلاب')
-                    ->helperText('السماح للمشرف بعرض وإدارة بيانات الطلاب والاشتراكات والمدفوعات'),
+                Fieldset::make('إدارة المستخدمين')
+                    ->schema([
+                        Toggle::make('can_manage_teachers')
+                            ->label('إدارة المعلمين')
+                            ->helperText('إنشاء وتعديل وحذف المعلمين'),
+                        Toggle::make('can_manage_students')
+                            ->label('إدارة الطلاب')
+                            ->helperText('إنشاء وتعديل وحذف الطلاب'),
+                        Toggle::make('can_manage_parents')
+                            ->label('إدارة أولياء الأمور')
+                            ->helperText('إنشاء وتعديل وحذف أولياء الأمور'),
+                        Toggle::make('can_reset_passwords')
+                            ->label('إعادة تعيين كلمات المرور')
+                            ->helperText('تغيير كلمات مرور المستخدمين'),
+                    ])->columns(2),
+                Fieldset::make('الإدارة المالية')
+                    ->schema([
+                        Toggle::make('can_manage_subscriptions')
+                            ->label('إدارة الاشتراكات')
+                            ->helperText('عرض وتفعيل وإيقاف الاشتراكات'),
+                        Toggle::make('can_manage_payments')
+                            ->label('إدارة المدفوعات')
+                            ->helperText('عرض المدفوعات وتأكيد الدفع'),
+                        Toggle::make('can_manage_teacher_earnings')
+                            ->label('إدارة أرباح المعلمين')
+                            ->helperText('عرض ومراجعة أرباح المعلمين'),
+                    ])->columns(2),
+                Fieldset::make('المراقبة')
+                    ->schema([
+                        Toggle::make('can_monitor_sessions')
+                            ->label('مراقبة الجلسات')
+                            ->helperText('الانضمام للاجتماعات ومراقبة الجلسات'),
+                    ]),
                 Grid::make(2)->schema([
                     Select::make('quran_teacher_ids')
                         ->label('معلمو القرآن')

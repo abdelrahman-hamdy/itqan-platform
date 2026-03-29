@@ -67,6 +67,60 @@ abstract class BaseSupervisorWebController extends Controller
         return $this->getCurrentSupervisorProfile()?->canManageStudents() ?? false;
     }
 
+    protected function canManageParents(): bool
+    {
+        if ($this->isAdminUser()) {
+            return true;
+        }
+
+        return $this->getCurrentSupervisorProfile()?->canManageParents() ?? false;
+    }
+
+    protected function canResetPasswords(): bool
+    {
+        if ($this->isAdminUser()) {
+            return true;
+        }
+
+        return $this->getCurrentSupervisorProfile()?->canResetPasswords() ?? false;
+    }
+
+    protected function canManageSubscriptions(): bool
+    {
+        if ($this->isAdminUser()) {
+            return true;
+        }
+
+        return $this->getCurrentSupervisorProfile()?->canManageSubscriptions() ?? false;
+    }
+
+    protected function canManagePayments(): bool
+    {
+        if ($this->isAdminUser()) {
+            return true;
+        }
+
+        return $this->getCurrentSupervisorProfile()?->canManagePayments() ?? false;
+    }
+
+    protected function canManageTeacherEarnings(): bool
+    {
+        if ($this->isAdminUser()) {
+            return true;
+        }
+
+        return $this->getCurrentSupervisorProfile()?->canManageTeacherEarnings() ?? false;
+    }
+
+    protected function canMonitorSessions(): bool
+    {
+        if ($this->isAdminUser()) {
+            return true;
+        }
+
+        return $this->getCurrentSupervisorProfile()?->canMonitorSessions() ?? false;
+    }
+
     // ========================================================================
     // Supervisor profile helpers
     // ========================================================================

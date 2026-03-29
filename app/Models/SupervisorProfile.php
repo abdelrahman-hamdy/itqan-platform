@@ -29,11 +29,23 @@ class SupervisorProfile extends Model
         'notes',
         'can_manage_teachers',
         'can_manage_students',
+        'can_manage_parents',
+        'can_reset_passwords',
+        'can_manage_subscriptions',
+        'can_manage_payments',
+        'can_manage_teacher_earnings',
+        'can_monitor_sessions',
     ];
 
     protected $casts = [
         'can_manage_teachers' => 'boolean',
         'can_manage_students' => 'boolean',
+        'can_manage_parents' => 'boolean',
+        'can_reset_passwords' => 'boolean',
+        'can_manage_subscriptions' => 'boolean',
+        'can_manage_payments' => 'boolean',
+        'can_manage_teacher_earnings' => 'boolean',
+        'can_monitor_sessions' => 'boolean',
     ];
 
     /**
@@ -255,6 +267,36 @@ class SupervisorProfile extends Model
     public function canManageStudents(): bool
     {
         return $this->can_manage_students ?? false;
+    }
+
+    public function canManageParents(): bool
+    {
+        return $this->can_manage_parents ?? false;
+    }
+
+    public function canResetPasswords(): bool
+    {
+        return $this->can_reset_passwords ?? false;
+    }
+
+    public function canManageSubscriptions(): bool
+    {
+        return $this->can_manage_subscriptions ?? false;
+    }
+
+    public function canManagePayments(): bool
+    {
+        return $this->can_manage_payments ?? false;
+    }
+
+    public function canManageTeacherEarnings(): bool
+    {
+        return $this->can_manage_teacher_earnings ?? false;
+    }
+
+    public function canMonitorSessions(): bool
+    {
+        return $this->can_monitor_sessions ?? false;
     }
 
     /**

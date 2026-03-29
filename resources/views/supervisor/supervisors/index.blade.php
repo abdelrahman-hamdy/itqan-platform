@@ -217,18 +217,26 @@
                             <div class="flex-1 min-w-0">
                                 <div class="flex flex-wrap items-center gap-2 mb-1">
                                     <h3 class="text-base md:text-lg font-bold text-gray-900 truncate">{{ $sup['user']->name }}</h3>
-                                    @if($sup['can_manage_teachers'])
-                                        <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-                                            <i class="ri-shield-star-line"></i>
-                                            {{ __('supervisor.supervisors.can_manage_teachers') }}
-                                        </span>
-                                    @endif
-                                    @if($sup['can_manage_students'])
-                                        <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                                            <i class="ri-group-2-line"></i>
-                                            {{ __('supervisor.supervisors.can_manage_students') }}
-                                        </span>
-                                    @endif
+                                    @php
+                                        $permBadges = [
+                                            'can_manage_teachers' => ['bg-amber-100 text-amber-700', 'ri-user-settings-line'],
+                                            'can_manage_students' => ['bg-blue-100 text-blue-700', 'ri-group-2-line'],
+                                            'can_manage_parents' => ['bg-purple-100 text-purple-700', 'ri-parent-line'],
+                                            'can_reset_passwords' => ['bg-red-100 text-red-700', 'ri-lock-password-line'],
+                                            'can_manage_subscriptions' => ['bg-green-100 text-green-700', 'ri-vip-crown-line'],
+                                            'can_manage_payments' => ['bg-emerald-100 text-emerald-700', 'ri-money-dollar-circle-line'],
+                                            'can_manage_teacher_earnings' => ['bg-yellow-100 text-yellow-700', 'ri-wallet-3-line'],
+                                            'can_monitor_sessions' => ['bg-indigo-100 text-indigo-700', 'ri-eye-line'],
+                                        ];
+                                    @endphp
+                                    @foreach($permBadges as $perm => [$colors, $icon])
+                                        @if($sup['user']->supervisorProfile?->$perm)
+                                            <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full {{ $colors }}">
+                                                <i class="{{ $icon }}"></i>
+                                                {{ __("supervisor.supervisors.{$perm}") }}
+                                            </span>
+                                        @endif
+                                    @endforeach
                                     @if(!$sup['is_active'])
                                         <span class="inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
                                             {{ __('supervisor.teachers.inactive') }}

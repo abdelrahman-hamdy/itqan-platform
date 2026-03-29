@@ -192,7 +192,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
     public function resetPassword(Request $request, $subdomain, User $teacher): RedirectResponse
     {
-        if (! $this->canManageTeachers()) {
+        if (! $this->canResetPasswords()) {
             abort(403);
         }
 

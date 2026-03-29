@@ -19,7 +19,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 {
     public function index(Request $request, $subdomain = null): View
     {
-        if (! $this->canManageTeachers()) {
+        if (! $this->canManageTeacherEarnings()) {
             abort(403);
         }
 
@@ -93,7 +93,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
     public function teacherSummary(Request $request, $subdomain = null): View
     {
-        if (! $this->canManageTeachers()) {
+        if (! $this->canManageTeacherEarnings()) {
             abort(403);
         }
 
@@ -188,7 +188,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
     public function dispute(Request $request, $subdomain, TeacherEarning $earning): RedirectResponse
     {
-        if (! $this->canManageTeachers()) {
+        if (! $this->canManageTeacherEarnings()) {
             abort(403);
         }
 
@@ -213,7 +213,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
     public function resolve(Request $request, $subdomain, TeacherEarning $earning): RedirectResponse
     {
-        if (! $this->canManageTeachers()) {
+        if (! $this->canManageTeacherEarnings()) {
             abort(403);
         }
 

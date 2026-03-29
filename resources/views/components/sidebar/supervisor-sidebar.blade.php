@@ -11,8 +11,13 @@
     $hasAcademicTeachers = $isAdmin || !empty($user->supervisorProfile?->getAssignedAcademicTeacherIds());
 
     // Permission flags for conditional sidebar items
-    $canManageTeachers = $isAdmin || ($user->supervisorProfile?->canManageTeachers() ?? false);
-    $canManageStudents = $isAdmin || ($user->supervisorProfile?->canManageStudents() ?? false);
+    $profile = $user->supervisorProfile;
+    $canManageTeachers = $isAdmin || ($profile?->canManageTeachers() ?? false);
+    $canManageStudents = $isAdmin || ($profile?->canManageStudents() ?? false);
+    $canManageParents = $isAdmin || ($profile?->canManageParents() ?? false);
+    $canManageSubscriptions = $isAdmin || ($profile?->canManageSubscriptions() ?? false);
+    $canManagePayments = $isAdmin || ($profile?->canManagePayments() ?? false);
+    $canManageTeacherEarnings = $isAdmin || ($profile?->canManageTeacherEarnings() ?? false);
 @endphp
 
 <x-sidebar.container sidebar-id="supervisor-sidebar" storage-key="supervisorSidebarCollapsed">
@@ -52,7 +57,9 @@
           :label="__('supervisor.sidebar.my_students')"
           icon="ri-group-2-line"
           :active="request()->routeIs('manage.students.*')" />
+        @endif
 
+        @if($canManageParents)
         <x-sidebar.nav-item
           :href="route('manage.parents.index', ['subdomain' => $subdomain])"
           :label="__('supervisor.sidebar.my_parents')"
@@ -140,13 +147,15 @@
 
       <!-- Management -->
       <x-sidebar.nav-section :title="__('supervisor.sidebar.management')">
-        @if($canManageStudents)
+        @if($canManageSubscriptions)
         <x-sidebar.nav-item
           :href="route('manage.subscriptions.index', ['subdomain' => $subdomain])"
           :label="__('supervisor.sidebar.subscriptions')"
           icon="ri-vip-crown-line"
           :active="request()->routeIs('manage.subscriptions.*')" />
+        @endif
 
+        @if($canManagePayments)
         <x-sidebar.nav-item
           :href="route('manage.payments.index', ['subdomain' => $subdomain])"
           :label="__('supervisor.sidebar.payments')"
@@ -160,7 +169,7 @@
           icon="ri-todo-line"
           :active="request()->routeIs('manage.homework.*')" />
 
-        @if($canManageTeachers)
+        @if($canManageTeacherEarnings)
         <x-sidebar.nav-item
           :href="route('manage.teacher-earnings.index', ['subdomain' => $subdomain])"
           :label="__('supervisor.sidebar.teacher_earnings')"
