@@ -363,7 +363,7 @@
                     {{-- Password Reset Modal --}}
                     @if($isAdmin)
                         <x-responsive.modal id="reset-password-{{ $studentId }}" :title="__('supervisor.teachers.reset_password')" size="sm">
-                            <form method="POST" action="{{ route('manage.students.reset-password', ['subdomain' => $subdomain, 'student' => $studentId]) }}"
+                            <form id="reset-pw-form-{{ $studentId }}" method="POST" action="{{ route('manage.students.reset-password', ['subdomain' => $subdomain, 'student' => $studentId]) }}"
                                   x-data="{ showPass: false, showConfirm: false }">
                                 @csrf
                                 <div class="space-y-4">
@@ -401,7 +401,7 @@
                                             class="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
                                             {{ __('common.cancel') }}
                                         </button>
-                                        <button type="submit"
+                                        <button type="submit" form="reset-pw-form-{{ $studentId }}"
                                             class="cursor-pointer px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700">
                                             {{ __('supervisor.teachers.reset_password') }}
                                         </button>
