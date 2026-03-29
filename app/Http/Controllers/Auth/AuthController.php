@@ -94,7 +94,7 @@ class AuthController extends Controller
             if (! $user->isActive()) {
                 Auth::logout();
 
-                return back()->withErrors(['email' => 'حسابك غير نشط. يرجى التواصل مع الإدارة'])->withInput();
+                return back()->withErrors(['email' => __('auth.account_inactive')])->withInput();
             }
 
             // Update last login

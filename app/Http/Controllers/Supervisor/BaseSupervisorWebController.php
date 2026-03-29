@@ -116,6 +116,7 @@ abstract class BaseSupervisorWebController extends Controller
     {
         if ($this->isAdminUser()) {
             return User::where('user_type', UserType::QURAN_TEACHER->value)
+                ->where('academy_id', $this->getAcademyId())
                 ->pluck('id')
                 ->toArray();
         }
@@ -140,6 +141,7 @@ abstract class BaseSupervisorWebController extends Controller
     {
         if ($this->isAdminUser()) {
             return User::where('user_type', UserType::ACADEMIC_TEACHER->value)
+                ->where('academy_id', $this->getAcademyId())
                 ->pluck('id')
                 ->toArray();
         }
