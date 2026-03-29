@@ -32,7 +32,8 @@ class NotificationService implements NotificationServiceInterface
         private readonly NotificationRepository $repository,
         private readonly SessionNotificationBuilder $sessionNotificationBuilder,
         private readonly PaymentNotificationBuilder $paymentNotificationBuilder,
-        private readonly NotificationUrlBuilder $urlBuilder
+        private readonly NotificationUrlBuilder $urlBuilder,
+        private readonly SupervisorResolutionService $supervisorResolutionService
     ) {}
 
     // ========================================
@@ -76,7 +77,7 @@ class NotificationService implements NotificationServiceInterface
         array $metadata = [],
         bool $isImportant = false,
     ): void {
-        $supervisor = app(SupervisorResolutionService::class)->getSupervisorForTeacher($teacher);
+        $supervisor = $this->supervisorResolutionService->getSupervisorForTeacher($teacher);
 
         if ($supervisor) {
             $this->send($supervisor, $type, $data, $actionUrl, $metadata, $isImportant);

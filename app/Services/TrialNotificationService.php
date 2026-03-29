@@ -54,8 +54,6 @@ class TrialNotificationService
             return;
         }
 
-        $subdomain = $trialRequest->academy?->subdomain ?? DefaultAcademy::subdomain();
-
         $notificationData = [
             'student_name' => $trialRequest->student?->name ?? $trialRequest->student_name,
             'student_level' => $trialRequest->level_label,
