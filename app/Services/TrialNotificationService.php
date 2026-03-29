@@ -56,18 +56,31 @@ class TrialNotificationService
 
         $subdomain = $trialRequest->academy?->subdomain ?? DefaultAcademy::subdomain();
 
+        $notificationData = [
+            'student_name' => $trialRequest->student?->name ?? $trialRequest->student_name,
+            'student_level' => $trialRequest->level_label,
+            'preferred_time' => $trialRequest->time_label,
+            'request_code' => $trialRequest->request_code,
+        ];
+        $notificationMeta = ['trial_request_id' => $trialRequest->id];
+
         $this->notificationService->send(
             $trialRequest->teacher->user,
             NotificationType::TRIAL_REQUEST_RECEIVED,
-            [
-                'student_name' => $trialRequest->student?->name ?? $trialRequest->student_name,
-                'student_level' => $trialRequest->level_label,
-                'preferred_time' => $trialRequest->time_label,
-                'request_code' => $trialRequest->request_code,
-            ],
+            $notificationData,
             $this->urlBuilder->getTeacherTrialRequestUrl($trialRequest->id, $trialRequest->academy?->subdomain),
-            ['trial_request_id' => $trialRequest->id],
+            $notificationMeta,
             true // important
+        );
+
+        // Also notify the teacher's supervisor
+        $this->notificationService->notifySupervisorOfTeacher(
+            $trialRequest->teacher->user,
+            NotificationType::TRIAL_REQUEST_RECEIVED,
+            $notificationData,
+            $this->urlBuilder->getAdminTrialRequestUrl($trialRequest->id, $trialRequest->academy?->subdomain),
+            $notificationMeta,
+            true
         );
     }
 
@@ -161,15 +174,27 @@ class TrialNotificationService
 
         // Notify teacher with TEACHER-specific type
         if ($trialRequest->teacher?->user) {
+            $completedData = [
+                'student_name' => $trialRequest->student?->name ?? $trialRequest->student_name,
+                'request_code' => $trialRequest->request_code,
+            ];
+            $completedMeta = ['trial_request_id' => $trialRequest->id];
+
             $this->notificationService->send(
                 $trialRequest->teacher->user,
                 NotificationType::TRIAL_SESSION_COMPLETED_TEACHER,
-                [
-                    'student_name' => $trialRequest->student?->name ?? $trialRequest->student_name,
-                    'request_code' => $trialRequest->request_code,
-                ],
+                $completedData,
                 $this->urlBuilder->getTeacherTrialRequestUrl($trialRequest->id, $trialRequest->academy?->subdomain),
-                ['trial_request_id' => $trialRequest->id]
+                $completedMeta
+            );
+
+            // Also notify the teacher's supervisor
+            $this->notificationService->notifySupervisorOfTeacher(
+                $trialRequest->teacher->user,
+                NotificationType::TRIAL_SESSION_COMPLETED_TEACHER,
+                $completedData,
+                $this->urlBuilder->getAdminTrialRequestUrl($trialRequest->id, $trialRequest->academy?->subdomain),
+                $completedMeta
             );
         }
     }

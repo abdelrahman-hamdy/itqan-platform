@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Exception;
 use App\Constants\DefaultAcademy;
 use App\Enums\NotificationType;
 use App\Models\AcademicSession;
@@ -10,6 +9,7 @@ use App\Models\BaseSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -83,14 +83,23 @@ class SessionNotificationService
                 }
             }
 
-            // Notify teacher
+            // Notify teacher + supervisor
             if ($session->teacher) {
                 $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
+                $readyData = ['session_title' => $this->settingsService->getSessionTitle($session)];
+
                 $this->notificationService->send(
                     $session->teacher,
                     NotificationType::MEETING_ROOM_READY,
-                    ['session_title' => $this->settingsService->getSessionTitle($session)],
+                    $readyData,
                     route('teacher.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id])
+                );
+
+                $this->notificationService->notifySupervisorOfTeacher(
+                    $session->teacher,
+                    NotificationType::MEETING_ROOM_READY,
+                    $readyData,
+                    route('manage.sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
                 );
             }
         } catch (Exception $e) {
@@ -112,14 +121,23 @@ class SessionNotificationService
                 $this->parentNotificationService->sendSessionReminder($session);
             }
 
-            // Notify teacher
+            // Notify teacher + supervisor
             if ($session->academicTeacher?->user) {
                 $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
+                $readyData = ['session_title' => $this->settingsService->getSessionTitle($session)];
+
                 $this->notificationService->send(
                     $session->academicTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
-                    ['session_title' => $this->settingsService->getSessionTitle($session)],
+                    $readyData,
                     route('teacher.academic-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
+                );
+
+                $this->notificationService->notifySupervisorOfTeacher(
+                    $session->academicTeacher->user,
+                    NotificationType::MEETING_ROOM_READY,
+                    $readyData,
+                    route('manage.sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
                 );
             }
         } catch (Exception $e) {
@@ -165,13 +183,20 @@ class SessionNotificationService
                 }
             }
 
-            // Notify teacher
+            // Notify teacher + supervisor
             if ($session->course?->assignedTeacher?->user) {
                 $this->notificationService->send(
                     $session->course->assignedTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
                     ['session_title' => $sessionTitle],
                     route('teacher.interactive-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
+                );
+
+                $this->notificationService->notifySupervisorOfTeacher(
+                    $session->course->assignedTeacher->user,
+                    NotificationType::MEETING_ROOM_READY,
+                    ['session_title' => $sessionTitle],
+                    route('manage.sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
                 );
             }
         } catch (Exception $e) {

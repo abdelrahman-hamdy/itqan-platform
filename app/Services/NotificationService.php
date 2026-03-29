@@ -64,6 +64,25 @@ class NotificationService implements NotificationServiceInterface
         );
     }
 
+    /**
+     * Send the same notification to the supervisor responsible for a teacher.
+     * No-op if the teacher has no assigned supervisor.
+     */
+    public function notifySupervisorOfTeacher(
+        User $teacher,
+        NotificationType $type,
+        array $data = [],
+        ?string $actionUrl = null,
+        array $metadata = [],
+        bool $isImportant = false,
+    ): void {
+        $supervisor = app(SupervisorResolutionService::class)->getSupervisorForTeacher($teacher);
+
+        if ($supervisor) {
+            $this->send($supervisor, $type, $data, $actionUrl, $metadata, $isImportant);
+        }
+    }
+
     // ========================================
     // NOTIFICATION MANAGEMENT
     // ========================================
