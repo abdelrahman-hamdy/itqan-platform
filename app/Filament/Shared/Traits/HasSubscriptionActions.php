@@ -117,82 +117,82 @@ trait HasSubscriptionActions
                     return;
                 }
                 DB::transaction(function () use ($record, $data) {
-                $updateData = [
-                    'payment_status' => SubscriptionPaymentStatus::PAID,
-                    'last_payment_date' => now(),
-                ];
+                    $updateData = [
+                        'payment_status' => SubscriptionPaymentStatus::PAID,
+                        'last_payment_date' => now(),
+                    ];
 
-                // If PENDING, SUSPENDED, or CANCELLED, activate the subscription
-                if (in_array($record->status, [
-                    SessionSubscriptionStatus::PENDING,
-                    SessionSubscriptionStatus::SUSPENDED,
-                    SessionSubscriptionStatus::CANCELLED,
-                ])) {
-                    $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
+                    // If PENDING, SUSPENDED, or CANCELLED, activate the subscription
+                    if (in_array($record->status, [
+                        SessionSubscriptionStatus::PENDING,
+                        SessionSubscriptionStatus::SUSPENDED,
+                        SessionSubscriptionStatus::CANCELLED,
+                    ])) {
+                        $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
 
-                    // Clear cancellation fields if reactivating from CANCELLED.
-                    // Do NOT re-enable auto_renew — the student cancelled deliberately
-                    // and should opt back in manually.
-                    if ($record->status === SessionSubscriptionStatus::CANCELLED) {
-                        $updateData['cancelled_at'] = null;
-                        $updateData['cancellation_reason'] = null;
-                        $updateData['auto_renew'] = false;
-                    }
-
-                    // If no start date or dates expired, reset them
-                    if (! $record->starts_at || $record->ends_at?->isPast()) {
-                        $updateData['starts_at'] = now();
-                        $updateData['ends_at'] = $record->calculateEndDate(now());
-                    }
-
-                    // If grace period was active, calculate new period from ends_at (which was never modified)
-                    $metadata = $record->metadata ?? [];
-                    if (isset($metadata['grace_period_ends_at'])) {
-                        $updateData['starts_at'] = $record->ends_at;
-                        $updateData['ends_at'] = $record->billing_cycle
-                            ? $record->billing_cycle->calculateEndDate($record->ends_at)
-                            : ($record->ends_at ?? now())->copy()->addMonth();
-
-                        // For Academic: sync end_date
-                        if ($record instanceof AcademicSubscription) {
-                            $updateData['end_date'] = $updateData['ends_at'];
+                        // Clear cancellation fields if reactivating from CANCELLED.
+                        // Do NOT re-enable auto_renew — the student cancelled deliberately
+                        // and should opt back in manually.
+                        if ($record->status === SessionSubscriptionStatus::CANCELLED) {
+                            $updateData['cancelled_at'] = null;
+                            $updateData['cancellation_reason'] = null;
+                            $updateData['auto_renew'] = false;
                         }
 
-                        // Clear grace period metadata
-                        unset($metadata['grace_period_ends_at']);
-                        $updateData['metadata'] = $metadata ?: null;
+                        // If no start date or dates expired, reset them
+                        if (! $record->starts_at || $record->ends_at?->isPast()) {
+                            $updateData['starts_at'] = now();
+                            $updateData['ends_at'] = $record->calculateEndDate(now());
+                        }
+
+                        // If grace period was active, calculate new period from ends_at (which was never modified)
+                        $metadata = $record->metadata ?? [];
+                        if (isset($metadata['grace_period_ends_at'])) {
+                            $updateData['starts_at'] = $record->ends_at;
+                            $updateData['ends_at'] = $record->billing_cycle
+                                ? $record->billing_cycle->calculateEndDate($record->ends_at)
+                                : ($record->ends_at ?? now())->copy()->addMonth();
+
+                            // For Academic: sync end_date
+                            if ($record instanceof AcademicSubscription) {
+                                $updateData['end_date'] = $updateData['ends_at'];
+                            }
+
+                            // Clear grace period metadata
+                            unset($metadata['grace_period_ends_at']);
+                            $updateData['metadata'] = $metadata ?: null;
+                        }
                     }
-                }
 
-                // Activate linked circle if reactivating
-                if (($updateData['status'] ?? null) === SessionSubscriptionStatus::ACTIVE
-                    && $record instanceof QuranSubscription
-                    && $record->education_unit_id) {
-                    $record->educationUnit?->update(['is_active' => true]);
-                }
+                    // Activate linked circle if reactivating
+                    if (($updateData['status'] ?? null) === SessionSubscriptionStatus::ACTIVE
+                        && $record instanceof QuranSubscription
+                        && $record->education_unit_id) {
+                        $record->educationUnit?->update(['is_active' => true]);
+                    }
 
-                // Store payment reference in admin notes if provided
-                if (! empty($data['payment_reference'])) {
-                    $note = sprintf(
-                        '[%s] تأكيد دفع بواسطة %s - المرجع: %s',
-                        now()->format('Y-m-d H:i'),
-                        auth()->user()->name,
-                        $data['payment_reference']
-                    );
-                    $updateData['admin_notes'] = $record->admin_notes
-                        ? $record->admin_notes."\n\n".$note
-                        : $note;
-                }
+                    // Store payment reference in admin notes if provided
+                    if (! empty($data['payment_reference'])) {
+                        $note = sprintf(
+                            '[%s] تأكيد دفع بواسطة %s - المرجع: %s',
+                            now()->format('Y-m-d H:i'),
+                            auth()->user()->name,
+                            $data['payment_reference']
+                        );
+                        $updateData['admin_notes'] = $record->admin_notes
+                            ? $record->admin_notes."\n\n".$note
+                            : $note;
+                    }
 
-                $record->update($updateData);
+                    $record->update($updateData);
 
-                DB::afterCommit(function () {
-                    Notification::make()
-                        ->success()
-                        ->title('تم تأكيد الدفع')
-                        ->body('تم تأكيد الدفع وتفعيل الاشتراك بنجاح.')
-                        ->send();
-                });
+                    DB::afterCommit(function () {
+                        Notification::make()
+                            ->success()
+                            ->title('تم تأكيد الدفع')
+                            ->body('تم تأكيد الدفع وتفعيل الاشتراك بنجاح.')
+                            ->send();
+                    });
                 }); // end DB::transaction
             })
             ->visible(fn (BaseSubscription $record) => in_array($record->payment_status, [
@@ -558,8 +558,10 @@ trait HasSubscriptionActions
                         45 => '45 دقيقة',
                         60 => '60 دقيقة',
                         90 => '90 دقيقة',
-                    ])
-                    ->default(45),
+                    ]),
+            ])
+            ->fillForm(fn (BaseSubscription $record) => [
+                'default_duration_minutes' => $record->session_duration_minutes,
             ])
             ->action(function (BaseSubscription $record, array $data) {
                 // Tenant ownership guard

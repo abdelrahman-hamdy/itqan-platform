@@ -19,6 +19,7 @@ class ViewMonitoredTrialRequest extends ViewRecord
             EditAction::make()
                 ->label('تعديل'),
             MonitoredTrialRequestsResource::makeScheduleAction(),
+            MonitoredTrialRequestsResource::makeRescheduleAction(),
             Action::make('cancel')
                 ->label('إلغاء الطلب')
                 ->icon('heroicon-o-x-circle')

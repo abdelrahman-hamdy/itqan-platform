@@ -116,7 +116,7 @@ enum SessionStatus: string
      */
     public function canReschedule(): bool
     {
-        return $this === self::SCHEDULED || $this === self::READY;
+        return $this === self::SCHEDULED || $this === self::READY || $this === self::ABSENT;
     }
 
     /**

@@ -56,6 +56,12 @@ class QuranSessionObserver
             $this->handleForgiveness($quranSession);
         }
 
+        // Handle session rescheduled from ABSENT back to SCHEDULED
+        if ($quranSession->wasChanged('status') && $quranSession->status === SessionStatus::SCHEDULED
+            && $quranSession->getOriginal('status') === SessionStatus::ABSENT) {
+            $this->reverseSessionSideEffects($quranSession, 'reschedule_from_absent');
+        }
+
         // Update circle session counts and progress when session is completed or absent
         if ($quranSession->wasChanged('status') && in_array($quranSession->status, [SessionStatus::COMPLETED, SessionStatus::ABSENT])) {
             if ($quranSession->session_type === 'individual' && $quranSession->individualCircle) {

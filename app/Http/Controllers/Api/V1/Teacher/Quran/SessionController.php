@@ -6,6 +6,7 @@ use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
+use App\Http\Traits\Api\HandlesAbsentReschedule;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use Exception;
@@ -17,7 +18,7 @@ use Illuminate\Validation\Rule;
 
 class SessionController extends Controller
 {
-    use ApiResponses;
+    use ApiResponses, HandlesAbsentReschedule;
 
     /**
      * Get Quran sessions.
@@ -312,6 +313,10 @@ class SessionController extends Controller
             return $this->validationError($validator->errors()->toArray());
         }
 
+        if ($absentResponse = $this->rescheduleFromAbsentIfNeeded($session, $request, $user->id)) {
+            return $absentResponse;
+        }
+
         $oldScheduledAt = $session->scheduled_at;
 
         $session->update([
@@ -319,7 +324,7 @@ class SessionController extends Controller
             'rescheduled_from' => $oldScheduledAt,
             'rescheduled_at' => now(),
             'rescheduled_by' => $user->id,
-            'rescheduling_reason' => $request->reason,
+            'reschedule_reason' => $request->reason,
         ]);
 
         return $this->success([

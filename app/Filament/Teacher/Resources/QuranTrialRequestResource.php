@@ -14,7 +14,6 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -43,7 +42,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
 
     protected static ?string $navigationLabel = 'طلبات الجلسات التجريبية';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'جلساتي';
+    protected static string|\UnitEnum|null $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 5;
 
@@ -217,6 +216,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                     }),
 
                 static::makeScheduleAction(),
+                static::makeRescheduleAction(),
             ]),
         ];
     }

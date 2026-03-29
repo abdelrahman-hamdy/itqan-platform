@@ -167,7 +167,10 @@ trait HasSessionStatus
             ],
             SessionStatus::COMPLETED->value => [],
             SessionStatus::CANCELLED->value => [],
-            SessionStatus::ABSENT->value => [],
+            SessionStatus::ABSENT->value => [
+                SessionStatus::FORGIVEN->value,
+                SessionStatus::SCHEDULED->value,
+            ],
         ];
 
         $currentValue = $currentStatus instanceof SessionStatus
@@ -291,10 +294,7 @@ trait HasSessionStatus
                     SessionStatus::SCHEDULED,
                     SessionStatus::READY,
                 ]),
-                'can_reschedule' => in_array($status, [
-                    SessionStatus::SCHEDULED,
-                    SessionStatus::READY,
-                ]),
+                'can_reschedule' => $status->canReschedule(),
                 'is_upcoming' => false,
                 'is_active' => true,
                 'is_preparing_meeting' => true,
@@ -323,10 +323,7 @@ trait HasSessionStatus
                 SessionStatus::SCHEDULED,
                 SessionStatus::READY,
             ]),
-            'can_reschedule' => in_array($status, [
-                SessionStatus::SCHEDULED,
-                SessionStatus::READY,
-            ]),
+            'can_reschedule' => $status->canReschedule(),
             'is_upcoming' => $status === SessionStatus::SCHEDULED && $this->scheduled_at && $this->scheduled_at->isFuture(),
             'is_active' => in_array($status, [SessionStatus::READY, SessionStatus::ONGOING]),
             'is_preparing_meeting' => false,

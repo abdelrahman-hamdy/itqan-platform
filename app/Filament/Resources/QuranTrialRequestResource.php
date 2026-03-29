@@ -2,34 +2,36 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use App\Models\User;
-use App\Models\QuranTeacherProfile;
-use Filament\Actions\ActionGroup;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\Action;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use App\Filament\Resources\QuranTrialRequestResource\Pages\ListQuranTrialRequests;
-use App\Filament\Resources\QuranTrialRequestResource\Pages\CreateQuranTrialRequest;
-use App\Filament\Resources\QuranTrialRequestResource\Pages\ViewQuranTrialRequest;
-use App\Filament\Resources\QuranTrialRequestResource\Pages\EditQuranTrialRequest;
+use App\Enums\LearningGoal;
+use App\Enums\QuranLearningLevel;
+use App\Enums\TimeSlot;
 use App\Enums\UserType;
 use App\Filament\Resources\QuranTrialRequestResource\Pages;
+use App\Filament\Resources\QuranTrialRequestResource\Pages\CreateQuranTrialRequest;
+use App\Filament\Resources\QuranTrialRequestResource\Pages\EditQuranTrialRequest;
+use App\Filament\Resources\QuranTrialRequestResource\Pages\ListQuranTrialRequests;
+use App\Filament\Resources\QuranTrialRequestResource\Pages\ViewQuranTrialRequest;
 use App\Filament\Shared\Resources\BaseQuranTrialRequestResource;
+use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
+use App\Models\User;
 use App\Services\AcademyContextService;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Tables;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -61,7 +63,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
 
     protected static ?string $navigationLabel = 'طلبات الجلسات التجريبية';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة القرآن';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 8;
 
@@ -136,15 +138,20 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                         ->schema([
                             Select::make('current_level')
                                 ->label('المستوى الحالي')
-                                ->options(QuranTrialRequest::LEVELS)
+                                ->options(QuranLearningLevel::options())
                                 ->required()
                                 ->native(false),
 
                             Select::make('preferred_time')
                                 ->label('الوقت المفضل')
-                                ->options(QuranTrialRequest::TIMES)
+                                ->options(TimeSlot::options())
                                 ->native(false),
                         ]),
+
+                    \Filament\Forms\Components\CheckboxList::make('learning_goals')
+                        ->label('أهداف التعلم')
+                        ->options(LearningGoal::options())
+                        ->columns(2),
 
                     Textarea::make('notes')
                         ->label('ملاحظات الطالب')
@@ -166,6 +173,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                 EditAction::make(),
 
                 static::makeScheduleAction(),
+                static::makeRescheduleAction(),
 
                 Action::make('cancel')
                     ->label('إلغاء الطلب')

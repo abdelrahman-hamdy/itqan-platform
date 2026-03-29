@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Calendar;
 
-use Exception;
 use App\Enums\CalendarSessionType;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -13,8 +12,10 @@ use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
+use App\Services\SessionTransitionService;
 use App\ValueObjects\CalendarEventId;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -66,16 +67,8 @@ class CalendarEventHandler
                 );
             }
 
-            // Check if session is in a final state
-            $status = $this->getSessionStatus($session);
-            if ($status && $status->isFinal()) {
-                return EventHandlerResult::revert(
-                    __('calendar.event.cannot_move_completed'),
-                    'status'
-                );
-            }
-
             // Check if session can be rescheduled based on status
+            $status = $this->getSessionStatus($session);
             if ($status && ! $status->canReschedule()) {
                 return EventHandlerResult::revert(
                     __('calendar.event.cannot_reschedule_status'),
@@ -110,13 +103,26 @@ class CalendarEventHandler
                 return EventHandlerResult::revert($e->getMessage(), 'conflict');
             }
 
-            // Perform the update
-            return DB::transaction(function () use ($session, $newStart) {
-                // Store old time for rescheduling audit
-                $oldScheduledAt = $session->scheduled_at;
+            // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
+            $scheduledAtForStorage = AcademyContextService::toUtcForStorage($newStart);
 
-                // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
-                $scheduledAtForStorage = AcademyContextService::toUtcForStorage($newStart);
+            // ABSENT sessions require the transition service for proper side-effect handling
+            if ($status === SessionStatus::ABSENT) {
+                $transitionService = app(SessionTransitionService::class);
+                $success = $transitionService->transitionToScheduledFromAbsent(
+                    $session, $scheduledAtForStorage, null, Auth::id()
+                );
+
+                if (! $success) {
+                    return EventHandlerResult::error(__('calendar.event.update_error'));
+                }
+
+                return EventHandlerResult::success(__('calendar.event.updated_successfully'));
+            }
+
+            // Normal reschedule for SCHEDULED/READY sessions
+            return DB::transaction(function () use ($session, $newStart, $scheduledAtForStorage) {
+                $oldScheduledAt = $session->scheduled_at;
 
                 $session->update([
                     'scheduled_at' => $scheduledAtForStorage,

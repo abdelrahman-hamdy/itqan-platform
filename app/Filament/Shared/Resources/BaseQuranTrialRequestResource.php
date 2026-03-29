@@ -2,36 +2,35 @@
 
 namespace App\Filament\Shared\Resources;
 
-use Illuminate\Database\Eloquent\Model;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
-use Carbon\Carbon;
-use App\Services\SessionNamingService;
-use App\Models\QuranSession;
-use Exception;
-use Log;
-use Filament\Infolists\Components\TextEntry;
 use App\Enums\SessionStatus;
 use App\Enums\TrialRequestStatus;
+use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
 use App\Services\AcademyContextService;
+use App\Services\SessionNamingService;
+use App\Services\SessionTransitionService;
+use Carbon\Carbon;
+use Exception;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Infolists;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Log;
 
 /**
  * Base Quran Trial Request Resource
@@ -43,7 +42,7 @@ abstract class BaseQuranTrialRequestResource extends Resource
 {
     protected static ?string $model = QuranTrialRequest::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $modelLabel = 'طلب جلسة تجريبية';
 
@@ -98,16 +97,23 @@ abstract class BaseQuranTrialRequestResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = static::getEloquentQuery()->where('status', TrialRequestStatus::PENDING->value)->count();
+        $count = static::getPendingTrialRequestCount();
 
         return $count > 0 ? (string) $count : null;
     }
 
     public static function getNavigationBadgeColor(): string|array|null
     {
-        $count = static::getEloquentQuery()->where('status', TrialRequestStatus::PENDING->value)->count();
+        $count = static::getPendingTrialRequestCount();
 
         return $count > 0 ? 'warning' : null;
+    }
+
+    protected static function getPendingTrialRequestCount(): int
+    {
+        static $count = null;
+
+        return $count ??= static::getEloquentQuery()->where('status', TrialRequestStatus::PENDING->value)->count();
     }
 
     public static function getNavigationBadgeTooltip(): ?string
@@ -452,6 +458,78 @@ abstract class BaseQuranTrialRequestResource extends Resource
 
             throw $e;
         }
+    }
+
+    public static function makeRescheduleAction(): Action
+    {
+        return Action::make('reschedule')
+            ->label(__('filament.trial_reschedule.label'))
+            ->icon('heroicon-o-arrow-path')
+            ->color('warning')
+            ->visible(fn (QuranTrialRequest $record) => $record->canBeRescheduled())
+            ->schema([
+                Section::make(__('filament.trial_reschedule.heading'))
+                    ->description(__('filament.trial_reschedule.description'))
+                    ->schema([
+                        DateTimePicker::make('scheduled_at')
+                            ->label(__('filament.trial_reschedule.new_date'))
+                            ->required()
+                            ->native(false)
+                            ->timezone(AcademyContextService::getTimezone())
+                            ->seconds(false)
+                            ->minutesStep(15)
+                            ->minDate(now()->setTimezone(AcademyContextService::getTimezone()))
+                            ->helperText(__('filament.trial_reschedule.meeting_hint')),
+                        TextInput::make('reason')
+                            ->label(__('filament.trial_reschedule.reason'))
+                            ->maxLength(500)
+                            ->placeholder(__('filament.trial_reschedule.optional')),
+                    ]),
+            ])
+            ->action(function (QuranTrialRequest $record, array $data) {
+                static::executeRescheduleAction($record, $data);
+            });
+    }
+
+    protected static function executeRescheduleAction(QuranTrialRequest $record, array $data): void
+    {
+        $session = $record->trialSession;
+
+        if (! $session || $session->status !== SessionStatus::ABSENT) {
+            Notification::make()
+                ->danger()
+                ->title(__('filament.trial_reschedule.cannot_reschedule'))
+                ->body(__('filament.trial_reschedule.not_absent'))
+                ->send();
+
+            return;
+        }
+
+        $scheduledAtUtc = Carbon::parse($data['scheduled_at']);
+
+        $transitionService = app(SessionTransitionService::class);
+        $success = $transitionService->transitionToScheduledFromAbsent(
+            $session,
+            $scheduledAtUtc,
+            $data['reason'] ?? null,
+            auth()->id()
+        );
+
+        if (! $success) {
+            Notification::make()
+                ->danger()
+                ->title(__('filament.trial_reschedule.failed'))
+                ->body(__('filament.trial_reschedule.failed_body'))
+                ->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->success()
+            ->title(__('filament.trial_reschedule.success'))
+            ->body(__('filament.trial_reschedule.success_body', ['student' => $record->student_name]))
+            ->send();
     }
 
     // ========================================

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SessionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -253,6 +254,12 @@ class QuranTrialRequest extends Model
     public function canBeScheduled(): bool
     {
         return $this->status === TrialRequestStatus::PENDING;
+    }
+
+    public function canBeRescheduled(): bool
+    {
+        return $this->trialSession
+            && $this->trialSession->status === SessionStatus::ABSENT;
     }
 
     /**

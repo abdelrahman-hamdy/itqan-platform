@@ -2,32 +2,30 @@
 
 namespace App\Filament\Supervisor\Resources;
 
-use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Section;
-use Filament\Actions\ActionGroup;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\Action;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\BulkAction;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Supervisor\Resources\MonitoredTrialRequestsResource\Pages\ListMonitoredTrialRequests;
-use App\Filament\Supervisor\Resources\MonitoredTrialRequestsResource\Pages\ViewMonitoredTrialRequest;
-use App\Filament\Supervisor\Resources\MonitoredTrialRequestsResource\Pages\EditMonitoredTrialRequest;
 use App\Enums\TrialRequestStatus;
 use App\Filament\Shared\Resources\BaseQuranTrialRequestResource;
 use App\Filament\Supervisor\Resources\MonitoredTrialRequestsResource\Pages;
+use App\Filament\Supervisor\Resources\MonitoredTrialRequestsResource\Pages\EditMonitoredTrialRequest;
+use App\Filament\Supervisor\Resources\MonitoredTrialRequestsResource\Pages\ListMonitoredTrialRequests;
+use App\Filament\Supervisor\Resources\MonitoredTrialRequestsResource\Pages\ViewMonitoredTrialRequest;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
 use App\Models\SupervisorProfile;
 use App\Services\AcademyContextService;
-use Filament\Forms\Components\DateTimePicker;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -49,7 +47,7 @@ class MonitoredTrialRequestsResource extends BaseQuranTrialRequestResource
 
     protected static ?string $navigationLabel = 'طلبات الجلسات التجريبية';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة القرآن';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 3;
 
@@ -246,6 +244,7 @@ class MonitoredTrialRequestsResource extends BaseQuranTrialRequestResource
                     ->icon('heroicon-m-pencil'),
 
                 static::makeScheduleAction(),
+                static::makeRescheduleAction(),
 
                 Action::make('cancel_request')
                     ->label('إلغاء الطلب')

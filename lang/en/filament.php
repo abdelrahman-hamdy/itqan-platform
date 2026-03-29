@@ -261,4 +261,21 @@ return [
         'confirm_delete' => 'Are you sure you want to delete this record?',
         'no_records' => 'No records found',
     ],
+
+    // Trial Request Reschedule
+    'trial_reschedule' => [
+        'label' => 'Reschedule',
+        'heading' => 'Reschedule Trial Session',
+        'description' => 'The previous session was marked as absent. You can reschedule it to a new date.',
+        'new_date' => 'New Date',
+        'meeting_hint' => 'A new meeting room will be automatically created when the session time approaches',
+        'reason' => 'Reschedule Reason',
+        'optional' => 'Optional',
+        'cannot_reschedule' => 'Cannot reschedule this session',
+        'not_absent' => 'Session is not in absent status',
+        'failed' => 'Failed to reschedule session',
+        'failed_body' => 'An error occurred while rescheduling. Please try again.',
+        'success' => 'Trial session rescheduled',
+        'success_body' => 'Session date updated for student :student',
+    ],
 ];

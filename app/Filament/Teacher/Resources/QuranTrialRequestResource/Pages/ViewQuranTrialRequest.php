@@ -20,6 +20,7 @@ class ViewQuranTrialRequest extends ViewRecord
                 ->label('تعديل'),
             QuranTrialRequestResource::makeViewSessionAction(),
             QuranTrialRequestResource::makeScheduleAction(),
+            QuranTrialRequestResource::makeRescheduleAction(),
             Action::make('cancel')
                 ->label('إلغاء الطلب')
                 ->icon('heroicon-o-x-circle')

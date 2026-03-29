@@ -6,6 +6,7 @@ use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
+use App\Http\Traits\Api\HandlesAbsentReschedule;
 use App\Models\InteractiveCourseSession;
 use App\Models\InteractiveSessionReport;
 use Exception;
@@ -17,7 +18,7 @@ use Illuminate\Validation\Rule;
 
 class InteractiveSessionController extends Controller
 {
-    use ApiResponses;
+    use ApiResponses, HandlesAbsentReschedule;
 
     /**
      * Resolve an interactive course session belonging to the authenticated teacher.
@@ -332,6 +333,10 @@ class InteractiveSessionController extends Controller
 
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
+        }
+
+        if ($absentResponse = $this->rescheduleFromAbsentIfNeeded($session, $request, $user->id)) {
+            return $absentResponse;
         }
 
         $oldScheduledAt = $session->scheduled_at;
