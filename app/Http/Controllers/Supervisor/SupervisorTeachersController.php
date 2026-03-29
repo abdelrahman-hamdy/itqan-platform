@@ -210,6 +210,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
         }
 
         $teacher->password = Hash::make($newPassword);
+        $teacher->plain_password = $newPassword;
         $teacher->save();
 
         return redirect()->back()->with('success', __('supervisor.teachers.password_reset_success'));
@@ -300,6 +301,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
+            'plain_password' => $request->password,
             'education_level' => $request->education_level,
             'university' => $request->university,
             'years_experience' => $request->years_experience,

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
-use Log;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Rules\PasswordRules;
@@ -11,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Log;
 
 class ProfileController extends Controller
 {
@@ -291,6 +291,7 @@ class ProfileController extends Controller
         // Update password
         $user->update([
             'password' => Hash::make($request->password),
+            'plain_password' => $request->password,
         ]);
 
         return $this->success([

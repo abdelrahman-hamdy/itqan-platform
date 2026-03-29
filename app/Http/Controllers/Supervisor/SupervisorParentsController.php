@@ -192,6 +192,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
         }
 
         $parent->password = Hash::make($newPassword);
+        $parent->plain_password = $newPassword;
         $parent->save();
 
         return redirect()->back()->with('success', __('supervisor.parents.password_reset_success'));
@@ -261,6 +262,7 @@ class SupervisorParentsController extends BaseSupervisorWebController
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
+            'plain_password' => $request->password,
         ]);
         $user->user_type = 'parent';
         $user->active_status = true;

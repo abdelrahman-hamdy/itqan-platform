@@ -26,8 +26,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -221,6 +221,7 @@ class AuthController extends Controller
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
+            'plain_password' => $request->password,
         ]);
         $user->user_type = UserType::STUDENT->value;
         $user->active_status = true;
@@ -408,6 +409,7 @@ class AuthController extends Controller
                     'email' => $request->email,
                     'phone' => $request->phone,
                     'password' => Hash::make($request->password),
+                    'plain_password' => $request->password,
                     'education_level' => $request->education_level,
                     'university' => $request->university,
                     'years_experience' => $request->years_experience,
@@ -693,6 +695,7 @@ class AuthController extends Controller
         // Update password
         $user->update([
             'password' => Hash::make($request->password),
+            'plain_password' => $request->password,
         ]);
 
         // Delete reset token
@@ -921,11 +924,13 @@ class AuthController extends Controller
     {
         if ($user->isSuperAdmin()) {
             $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? DefaultAcademy::subdomain());
+
             return redirect()->route('manage.dashboard', ['subdomain' => $subdomain]);
         }
 
         if ($user->isAcademyAdmin()) {
             $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? DefaultAcademy::subdomain());
+
             return redirect()->route('manage.dashboard', ['subdomain' => $subdomain]);
         }
 

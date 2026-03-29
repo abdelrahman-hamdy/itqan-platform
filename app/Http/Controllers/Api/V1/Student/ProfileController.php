@@ -115,6 +115,7 @@ class ProfileController extends Controller
 
             $user->update([
                 'password' => Hash::make($request->new_password),
+                'plain_password' => $request->new_password,
             ]);
         }
 
@@ -265,6 +266,7 @@ class ProfileController extends Controller
         // Update password
         $user->update([
             'password' => Hash::make($request->new_password),
+            'plain_password' => $request->new_password,
         ]);
 
         return $this->success(null, __('Password changed successfully.'));

@@ -197,6 +197,8 @@ return [
         'deactivate' => 'Deactivate',
         'confirm_activate' => 'Are you sure you want to activate this teacher?',
         'confirm_deactivate' => 'Are you sure you want to deactivate this teacher?',
+        'copy_email' => 'Copy Email',
+        'copy_password' => 'Copy Password',
         'reset_password' => 'Reset Password',
         'reset_password_description' => 'Enter a new password for teacher :name',
         'new_password' => 'New Password',

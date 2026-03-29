@@ -145,6 +145,7 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
         }
 
         $supervisor->password = Hash::make($newPassword);
+        $supervisor->plain_password = $newPassword;
         $supervisor->save();
 
         return redirect()->back()->with('success', __('supervisor.supervisors.password_reset_success'));
@@ -233,6 +234,7 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
+            'plain_password' => $request->password,
         ]);
         $user->user_type = 'supervisor';
         $user->active_status = true;
@@ -366,6 +368,7 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
 
             if (filled($request->password)) {
                 $supervisor->password = Hash::make($request->password);
+                $supervisor->plain_password = $request->password;
             }
 
             // Handle avatar

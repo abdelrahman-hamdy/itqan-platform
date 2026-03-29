@@ -274,6 +274,7 @@ class ParentRegistrationController extends Controller
                 'email' => $request->email,
                 'phone' => $request->parent_phone, // Use parent_phone from verification step
                 'password' => Hash::make($request->password),
+                'plain_password' => $request->password,
             ]);
             $user->user_type = UserType::PARENT->value;
             $user->active_status = true; // Parents are automatically active upon registration

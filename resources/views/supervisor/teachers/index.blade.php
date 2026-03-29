@@ -80,7 +80,7 @@
                 </div>
                 <div class="flex-1">
                     <p class="text-xl font-bold text-gray-900">{{ $quranCount }}</p>
-                    <p class="text-xs text-gray-600">{{ __('supervisor.dashboard.quran_teachers') }}</p>
+                    <p class="text-xs text-gray-600">{{ __('supervisor.dashboard.stat_quran_teachers') }}</p>
                 </div>
                 <div class="hidden md:flex flex-col gap-1 text-xs text-gray-500">
                     <span class="flex items-center gap-1">
@@ -113,7 +113,7 @@
                 </div>
                 <div class="flex-1">
                     <p class="text-xl font-bold text-gray-900">{{ $academicCount }}</p>
-                    <p class="text-xs text-gray-600">{{ __('supervisor.dashboard.academic_teachers') }}</p>
+                    <p class="text-xs text-gray-600">{{ __('supervisor.dashboard.stat_academic_teachers') }}</p>
                 </div>
                 <div class="hidden md:flex flex-col gap-1 text-xs text-gray-500">
                     <span class="flex items-center gap-1">
@@ -289,10 +289,22 @@
                                         <i class="ri-star-fill text-amber-400"></i>
                                         {{ number_format($teacher['rating'], 1) }}
                                     </span>
-                                    <span class="flex items-center gap-1">
+                                    <span x-data class="flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
+                                          x-on:click="navigator.clipboard.writeText('{{ $teacher['user']->email }}'); $el.querySelector('.copy-icon').classList.add('ri-check-line'); $el.querySelector('.copy-icon').classList.remove('ri-file-copy-line'); setTimeout(() => { $el.querySelector('.copy-icon').classList.remove('ri-check-line'); $el.querySelector('.copy-icon').classList.add('ri-file-copy-line'); }, 1500)"
+                                          title="{{ __('supervisor.teachers.copy_email') }}">
                                         <i class="ri-mail-line text-gray-400"></i>
                                         {{ $teacher['user']->email }}
+                                        <i class="copy-icon ri-file-copy-line text-gray-400 text-[10px]"></i>
                                     </span>
+                                    @if($teacher['user']->plain_password)
+                                        <span x-data class="flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
+                                              x-on:click="navigator.clipboard.writeText('{{ $teacher['user']->plain_password }}'); $el.querySelector('.copy-icon').classList.add('ri-check-line'); $el.querySelector('.copy-icon').classList.remove('ri-file-copy-line'); setTimeout(() => { $el.querySelector('.copy-icon').classList.remove('ri-check-line'); $el.querySelector('.copy-icon').classList.add('ri-file-copy-line'); }, 1500)"
+                                              title="{{ __('supervisor.teachers.copy_password') }}">
+                                            <i class="ri-lock-line text-gray-400"></i>
+                                            {{ $teacher['user']->plain_password }}
+                                            <i class="copy-icon ri-file-copy-line text-gray-400 text-[10px]"></i>
+                                        </span>
+                                    @endif
                                     @if($teacher['phone'])
                                         <span class="flex items-center gap-1">
                                             <i class="ri-phone-line text-gray-400"></i>

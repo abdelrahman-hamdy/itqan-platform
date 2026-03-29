@@ -208,6 +208,7 @@ class ForgotPasswordController extends Controller
         // Update password
         $user->update([
             'password' => Hash::make($request->password),
+            'plain_password' => $request->password,
         ]);
 
         // Send password changed notification for security awareness

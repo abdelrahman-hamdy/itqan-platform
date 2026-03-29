@@ -197,6 +197,8 @@ return [
         'deactivate' => 'إلغاء التفعيل',
         'confirm_activate' => 'هل أنت متأكد من تفعيل هذا المعلم؟',
         'confirm_deactivate' => 'هل أنت متأكد من إلغاء تفعيل هذا المعلم؟',
+        'copy_email' => 'نسخ البريد الإلكتروني',
+        'copy_password' => 'نسخ كلمة المرور',
         'reset_password' => 'إعادة تعيين كلمة المرور',
         'reset_password_description' => 'أدخل كلمة المرور الجديدة للمعلم :name',
         'new_password' => 'كلمة المرور الجديدة',

@@ -77,6 +77,7 @@ class RegisterController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
+                'plain_password' => $request->password,
             ]);
             $user->user_type = UserType::STUDENT->value;
             $user->active_status = true;
@@ -230,6 +231,7 @@ class RegisterController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
+                'plain_password' => $request->password,
             ]);
             $user->user_type = UserType::PARENT->value;
             $user->active_status = true; // Parents are automatically active upon registration
@@ -416,6 +418,7 @@ class RegisterController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
+                'plain_password' => $request->password,
             ]);
             $user->user_type = $teacherType;
             $user->active_status = false; // Requires admin approval

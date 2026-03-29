@@ -185,6 +185,7 @@ class ProfileController extends Controller
         // Update password
         $user->update([
             'password' => Hash::make($request->password),
+            'plain_password' => $request->password,
         ]);
 
         // Revoke other tokens (optional - keep current session)
