@@ -2,12 +2,13 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use App\Enums\QuranLearningLevel;
+use App\Enums\TimeSlot;
 use App\Enums\TrialRequestStatus;
 use App\Filament\Shared\Resources\BaseQuranTrialRequestResource;
 use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages\EditQuranTrialRequest;
 use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages\ListQuranTrialRequests;
 use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages\ViewQuranTrialRequest;
-use App\Models\QuranTrialRequest;
 use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Filament\Actions\ActionGroup;
@@ -127,13 +128,13 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                         ->schema([
                             Select::make('current_level')
                                 ->label('المستوى الحالي')
-                                ->options(QuranTrialRequest::LEVELS)
+                                ->options(QuranLearningLevel::options())
                                 ->disabled()
                                 ->dehydrated(false),
 
                             Select::make('preferred_time')
                                 ->label('الوقت المفضل')
-                                ->options(QuranTrialRequest::TIMES)
+                                ->options(TimeSlot::options())
                                 ->disabled()
                                 ->dehydrated(false),
                         ]),

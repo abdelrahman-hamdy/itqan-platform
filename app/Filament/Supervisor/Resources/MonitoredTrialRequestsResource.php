@@ -2,6 +2,8 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use App\Enums\QuranLearningLevel;
+use App\Enums\TimeSlot;
 use App\Enums\TrialRequestStatus;
 use App\Filament\Shared\Resources\BaseQuranTrialRequestResource;
 use App\Filament\Supervisor\Resources\MonitoredTrialRequestsResource\Pages;
@@ -203,13 +205,13 @@ class MonitoredTrialRequestsResource extends BaseQuranTrialRequestResource
                         ->schema([
                             Select::make('current_level')
                                 ->label('المستوى الحالي')
-                                ->options(QuranTrialRequest::LEVELS)
+                                ->options(QuranLearningLevel::options())
                                 ->disabled()
                                 ->dehydrated(false),
 
                             Select::make('preferred_time')
                                 ->label('الوقت المفضل')
-                                ->options(QuranTrialRequest::TIMES)
+                                ->options(TimeSlot::options())
                                 ->disabled()
                                 ->dehydrated(false),
                         ]),
@@ -333,7 +335,7 @@ class MonitoredTrialRequestsResource extends BaseQuranTrialRequestResource
 
             TextColumn::make('current_level')
                 ->label('المستوى')
-                ->formatStateUsing(fn (string $state): string => QuranTrialRequest::LEVELS[$state] ?? $state)
+                ->formatStateUsing(fn (string $state): string => QuranLearningLevel::tryFrom($state)?->label() ?? $state)
                 ->badge()
                 ->color('info')
                 ->toggleable(),
@@ -393,7 +395,7 @@ class MonitoredTrialRequestsResource extends BaseQuranTrialRequestResource
 
             SelectFilter::make('current_level')
                 ->label('المستوى')
-                ->options(QuranTrialRequest::LEVELS),
+                ->options(QuranLearningLevel::options()),
 
             Filter::make('needs_action')
                 ->label('يتطلب إجراء')

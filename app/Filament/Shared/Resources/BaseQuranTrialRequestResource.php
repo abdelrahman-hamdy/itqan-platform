@@ -2,7 +2,9 @@
 
 namespace App\Filament\Shared\Resources;
 
+use App\Enums\QuranLearningLevel;
 use App\Enums\SessionStatus;
+use App\Enums\TimeSlot;
 use App\Enums\TrialRequestStatus;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
@@ -236,7 +238,7 @@ abstract class BaseQuranTrialRequestResource extends Resource
 
             TextColumn::make('current_level')
                 ->label('المستوى')
-                ->formatStateUsing(fn (string $state): string => QuranTrialRequest::LEVELS[$state] ?? $state)
+                ->formatStateUsing(fn (string $state): string => QuranLearningLevel::tryFrom($state)?->label() ?? $state)
                 ->badge()
                 ->color('info')
                 ->toggleable(),
@@ -286,7 +288,7 @@ abstract class BaseQuranTrialRequestResource extends Resource
 
             SelectFilter::make('current_level')
                 ->label('المستوى')
-                ->options(QuranTrialRequest::LEVELS),
+                ->options(QuranLearningLevel::options()),
         ];
     }
 
@@ -357,11 +359,11 @@ abstract class BaseQuranTrialRequestResource extends Resource
 
                                 Placeholder::make('current_level_display')
                                     ->label('المستوى الحالي')
-                                    ->content(fn (QuranTrialRequest $record) => QuranTrialRequest::LEVELS[$record->current_level] ?? $record->current_level ?? '-'),
+                                    ->content(fn (QuranTrialRequest $record) => $record->current_level ? (QuranLearningLevel::tryFrom($record->current_level)?->label() ?? $record->current_level) : '-'),
 
                                 Placeholder::make('preferred_time_display')
                                     ->label('الوقت المفضل')
-                                    ->content(fn (QuranTrialRequest $record) => QuranTrialRequest::TIMES[$record->preferred_time] ?? $record->preferred_time ?? '-'),
+                                    ->content(fn (QuranTrialRequest $record) => $record->preferred_time ? (TimeSlot::tryFrom($record->preferred_time)?->label() ?? $record->preferred_time) : '-'),
                             ]),
 
                         Placeholder::make('learning_goals_display')
@@ -579,11 +581,11 @@ abstract class BaseQuranTrialRequestResource extends Resource
                             ->schema([
                                 TextEntry::make('current_level')
                                     ->label('المستوى الحالي')
-                                    ->formatStateUsing(fn (string $state): string => QuranTrialRequest::LEVELS[$state] ?? $state),
+                                    ->formatStateUsing(fn (string $state): string => QuranLearningLevel::tryFrom($state)?->label() ?? $state),
 
                                 TextEntry::make('preferred_time')
                                     ->label('الوقت المفضل')
-                                    ->formatStateUsing(fn (?string $state): string => $state ? (QuranTrialRequest::TIMES[$state] ?? $state) : '-'),
+                                    ->formatStateUsing(fn (?string $state): string => $state ? (TimeSlot::tryFrom($state)?->label() ?? $state) : '-'),
                             ]),
 
                         TextEntry::make('notes')
