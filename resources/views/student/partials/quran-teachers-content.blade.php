@@ -18,6 +18,16 @@
     </div>
   </div>
 
+  <!-- Filters Section -->
+  <x-filters.quran-filters
+    :route="route('quran-teachers.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])"
+    :showSearch="true"
+    :showExperience="true"
+    :showGender="!auth()->check() || auth()->user()->user_type !== \App\Enums\UserType::STUDENT->value"
+    :showDays="true"
+    color="yellow"
+  />
+
   <!-- Gender Tabs (for authenticated students) -->
   @auth
   @if(auth()->user()->user_type === \App\Enums\UserType::STUDENT->value)
@@ -40,16 +50,6 @@
   </div>
   @endif
   @endauth
-
-  <!-- Filters Section -->
-  <x-filters.quran-filters
-    :route="route('quran-teachers.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])"
-    :showSearch="true"
-    :showExperience="true"
-    :showGender="!auth()->check() || auth()->user()->user_type !== \App\Enums\UserType::STUDENT->value"
-    :showDays="true"
-    color="yellow"
-  />
 
   <!-- Results Summary -->
   <div class="mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">

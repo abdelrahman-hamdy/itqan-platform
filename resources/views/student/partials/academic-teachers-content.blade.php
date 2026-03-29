@@ -18,6 +18,20 @@
     </div>
   </div>
 
+  <!-- Filters Section -->
+  <x-filters.academic-filters
+    :route="route('academic-teachers.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])"
+    :subjects="$subjects"
+    :gradeLevels="$gradeLevels"
+    :showSearch="true"
+    :showSubjects="true"
+    :showGradeLevels="true"
+    :showExperience="false"
+    :showGender="!auth()->check() || auth()->user()->user_type !== \App\Enums\UserType::STUDENT->value"
+    :showDays="true"
+    color="violet"
+  />
+
   <!-- Gender Tabs (for authenticated students) -->
   @auth
   @if(auth()->user()->user_type === \App\Enums\UserType::STUDENT->value)
@@ -40,20 +54,6 @@
   </div>
   @endif
   @endauth
-
-  <!-- Filters Section -->
-  <x-filters.academic-filters
-    :route="route('academic-teachers.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])"
-    :subjects="$subjects"
-    :gradeLevels="$gradeLevels"
-    :showSearch="true"
-    :showSubjects="true"
-    :showGradeLevels="true"
-    :showExperience="false"
-    :showGender="!auth()->check() || auth()->user()->user_type !== \App\Enums\UserType::STUDENT->value"
-    :showDays="true"
-    color="violet"
-  />
 
   <!-- Results Summary -->
   <div class="mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
