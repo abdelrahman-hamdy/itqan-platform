@@ -24,16 +24,16 @@
   @php
     $activeGender = request('gender', $studentGender ?? 'male');
   @endphp
-  <div class="mb-4">
-    <div class="flex gap-1 bg-white rounded-xl p-1 border border-gray-200 shadow-sm w-fit">
+  <div class="mb-4 flex justify-center">
+    <div class="flex gap-1 bg-white rounded-xl p-1 border border-gray-200 shadow-sm">
       <a href="{{ route('quran-teachers.index', array_merge(request()->except(['gender', 'page']), ['subdomain' => $academy->subdomain, 'gender' => 'male'])) }}"
-         class="{{ $activeGender === 'male' ? 'bg-yellow-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100' }} px-5 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5">
-        <i class="ri-men-line"></i>
+         class="{{ $activeGender === 'male' ? 'bg-yellow-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100' }} px-5 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2">
+        <img src="{{ asset('app-design-assets/male-quran-teacher-avatar.png') }}" alt="" class="w-6 h-6 rounded-full object-cover">
         {{ __('components.filters.male_teachers') }}
       </a>
       <a href="{{ route('quran-teachers.index', array_merge(request()->except(['gender', 'page']), ['subdomain' => $academy->subdomain, 'gender' => 'female'])) }}"
-         class="{{ $activeGender === 'female' ? 'bg-yellow-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100' }} px-5 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5">
-        <i class="ri-women-line"></i>
+         class="{{ $activeGender === 'female' ? 'bg-yellow-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100' }} px-5 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2">
+        <img src="{{ asset('app-design-assets/female-quran-teacher-avatar.png') }}" alt="" class="w-6 h-6 rounded-full object-cover">
         {{ __('components.filters.female_teachers') }}
       </a>
     </div>
