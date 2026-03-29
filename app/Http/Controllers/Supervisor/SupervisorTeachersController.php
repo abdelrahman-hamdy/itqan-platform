@@ -128,7 +128,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             $filtered = $filtered->filter(fn ($t) => $t['gender'] === $gender);
         }
 
-        if ($request->has('status') && $request->input('status') !== '') {
+        if ($request->filled('status')) {
             $statusFilter = $request->input('status') === 'active';
             $filtered = $filtered->where('is_active', $statusFilter);
         }

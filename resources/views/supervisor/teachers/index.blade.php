@@ -6,12 +6,12 @@
     $hasActiveFilters = request('search')
         || request('type')
         || request('gender')
-        || (request()->has('status') && request('status') !== '');
+        || request()->filled('status');
 
     $filterCount = (request('search') ? 1 : 0)
         + (request('type') ? 1 : 0)
         + (request('gender') ? 1 : 0)
-        + (request()->has('status') && request('status') !== '' ? 1 : 0);
+        + (request()->filled('status') ? 1 : 0);
 
     $currentSort = request('sort', 'name_asc');
 @endphp
