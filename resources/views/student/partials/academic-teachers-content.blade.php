@@ -18,6 +18,29 @@
     </div>
   </div>
 
+  <!-- Gender Tabs (for authenticated students) -->
+  @auth
+  @if(auth()->user()->user_type === \App\Enums\UserType::STUDENT->value)
+  @php
+    $activeGender = request('gender', $studentGender ?? 'male');
+  @endphp
+  <div class="mb-4">
+    <div class="flex gap-1 bg-white rounded-xl p-1 border border-gray-200 shadow-sm w-fit">
+      <a href="{{ route('academic-teachers.index', array_merge(request()->except(['gender', 'page']), ['subdomain' => $academy->subdomain, 'gender' => 'male'])) }}"
+         class="{{ $activeGender === 'male' ? 'bg-violet-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100' }} px-5 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5">
+        <i class="ri-men-line"></i>
+        {{ __('components.filters.male_teachers') }}
+      </a>
+      <a href="{{ route('academic-teachers.index', array_merge(request()->except(['gender', 'page']), ['subdomain' => $academy->subdomain, 'gender' => 'female'])) }}"
+         class="{{ $activeGender === 'female' ? 'bg-violet-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100' }} px-5 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5">
+        <i class="ri-women-line"></i>
+        {{ __('components.filters.female_teachers') }}
+      </a>
+    </div>
+  </div>
+  @endif
+  @endauth
+
   <!-- Filters Section -->
   <x-filters.academic-filters
     :route="route('academic-teachers.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])"
@@ -27,7 +50,7 @@
     :showSubjects="true"
     :showGradeLevels="true"
     :showExperience="false"
-    :showGender="true"
+    :showGender="!auth()->check() || auth()->user()->user_type !== \App\Enums\UserType::STUDENT->value"
     :showDays="true"
     color="violet"
   />

@@ -29,9 +29,8 @@ class TeacherController extends Controller
             ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user']);
 
-        $studentGender = getAuthenticatedStudentGender();
-        if ($studentGender) {
-            $query->where('gender', $studentGender);
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
         }
 
         // Search by name (through User relationship - personal info is on User model)
@@ -60,6 +59,7 @@ class TeacherController extends Controller
         }
 
         return $this->success([
+
             'teachers' => collect($teachers->items())->map(fn ($teacher) => [
                 'id' => $teacher->id,
                 'user_id' => $teacher->user_id,
@@ -158,9 +158,8 @@ class TeacherController extends Controller
             ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user']);
 
-        $studentGender = getAuthenticatedStudentGender();
-        if ($studentGender) {
-            $query->where('gender', $studentGender);
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
         }
 
         // Filter by subject
@@ -207,6 +206,7 @@ class TeacherController extends Controller
         }
 
         return $this->success([
+
             'teachers' => collect($teachers->items())->map(fn ($teacher) => [
                 'id' => $teacher->id,
                 'user_id' => $teacher->user_id,

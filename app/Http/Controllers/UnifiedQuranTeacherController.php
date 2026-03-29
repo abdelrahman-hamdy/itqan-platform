@@ -65,12 +65,12 @@ class UnifiedQuranTeacherController extends Controller
             }
         }
 
-        // Auto-filter by student gender for authenticated students; manual filter for guests
+        // Gender filter: students see tabs (default to their gender), guests use dropdown
         $studentGender = getAuthenticatedStudentGender();
-        if ($studentGender) {
-            $query->where('gender', $studentGender);
-        } elseif ($request->filled('gender')) {
+        if ($request->filled('gender')) {
             $query->where('gender', $request->gender);
+        } elseif ($studentGender) {
+            $query->where('gender', $studentGender);
         }
 
         if ($request->filled('schedule_days') && is_array($request->schedule_days)) {
@@ -157,7 +157,8 @@ class UnifiedQuranTeacherController extends Controller
             'quranTeachers',
             'activeSubscriptionsCount',
             'availablePackages',
-            'isAuthenticated'
+            'isAuthenticated',
+            'studentGender'
         ));
     }
 

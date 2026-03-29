@@ -1786,6 +1786,8 @@ return [
         'gender' => 'الجنس',
         'male_teacher' => 'معلم',
         'female_teacher' => 'معلمة',
+        'male_teachers' => 'معلمون',
+        'female_teachers' => 'معلمات',
         'schedule_days' => 'أيام الدراسة',
         'all_days' => 'جميع الأيام',
         'days_selected' => '{count} أيام',

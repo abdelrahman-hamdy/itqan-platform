@@ -1698,6 +1698,8 @@ return [
         'gender' => 'Gender',
         'male_teacher' => 'Male Teacher',
         'female_teacher' => 'Female Teacher',
+        'male_teachers' => 'Male Teachers',
+        'female_teachers' => 'Female Teachers',
         'schedule_days' => 'Study Days',
         'all_days' => 'All Days',
         'days_selected' => '{count} days',
