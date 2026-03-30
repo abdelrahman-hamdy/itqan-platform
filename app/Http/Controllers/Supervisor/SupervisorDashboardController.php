@@ -100,7 +100,7 @@ class SupervisorDashboardController extends BaseSupervisorWebController
             $activeAcademicSubs = AcademicSubscription::where('academy_id', $academyId)->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
         } else {
             $activeQuranSubs = ! empty($quranTeacherIds) ? QuranSubscription::whereIn('quran_teacher_id', $quranTeacherIds)->where('status', SessionSubscriptionStatus::ACTIVE->value)->count() : 0;
-            $activeAcademicSubs = ! empty($academicTeacherProfileIds) ? AcademicSubscription::whereIn('academic_teacher_id', $academicTeacherProfileIds)->where('status', SessionSubscriptionStatus::ACTIVE->value)->count() : 0;
+            $activeAcademicSubs = ! empty($academicTeacherProfileIds) ? AcademicSubscription::whereIn('teacher_id', $academicTeacherProfileIds)->where('status', SessionSubscriptionStatus::ACTIVE->value)->count() : 0;
         }
         $totalActiveSubs = $activeQuranSubs + $activeAcademicSubs;
 
