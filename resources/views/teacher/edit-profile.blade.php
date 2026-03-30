@@ -74,7 +74,7 @@
             <x-profile.select-input
                 label="{{ __('teacher.edit_profile.educational_qualification') }}"
                 name="educational_qualification"
-                :value="$teacherProfile->educational_qualification ?? 'bachelor'"
+                :value="$teacherProfile->educational_qualification?->value ?? 'bachelor'"
                 :options="\App\Enums\EducationalQualification::options()"
                 placeholder="{{ __('teacher.edit_profile.choose_qualification') }}" />
           @endif
