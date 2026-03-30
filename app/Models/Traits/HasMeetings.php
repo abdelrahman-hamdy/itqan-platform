@@ -5,8 +5,11 @@ namespace App\Models\Traits;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Exceptions\MeetingException;
+use App\Models\AcademicSession;
 use App\Models\Academy;
+use App\Models\InteractiveCourseSession;
 use App\Models\MeetingAttendance;
+use App\Models\QuranSession;
 use App\Models\User;
 use App\Services\LiveKitService;
 use Exception;
@@ -333,15 +336,15 @@ trait HasMeetings
      */
     protected function getAttendanceSessionType(): string
     {
-        if ($this instanceof \App\Models\QuranSession) {
+        if ($this instanceof QuranSession) {
             return $this->session_type ?? 'individual';
         }
 
-        if ($this instanceof \App\Models\AcademicSession) {
+        if ($this instanceof AcademicSession) {
             return 'academic';
         }
 
-        if ($this instanceof \App\Models\InteractiveCourseSession) {
+        if ($this instanceof InteractiveCourseSession) {
             return 'interactive';
         }
 

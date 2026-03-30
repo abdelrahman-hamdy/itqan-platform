@@ -6,10 +6,7 @@ use App\Contracts\AttendanceEventServiceInterface;
 use App\Enums\AttendanceStatus;
 use App\Enums\UserType;
 use App\Events\AttendanceUpdated;
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
 use App\Models\MeetingAttendance;
-use App\Models\QuranSession;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Cache;
@@ -245,30 +242,17 @@ class AttendanceEventService implements AttendanceEventServiceInterface
     }
 
     /**
-     * Get session type from session model.
+     * Get session type matching the meeting_attendances.session_type enum.
      *
-     * Returns values matching the meeting_attendances.session_type enum:
-     * 'individual', 'group', 'academic', 'interactive'.
+     * Delegates to the model's getAttendanceSessionType() to avoid duplicate logic.
      */
     private function getSessionType($session): string
     {
-        if ($session instanceof QuranSession) {
-            $type = $session->session_type ?? 'individual';
-
-            return match ($type) {
-                'individual', 'group' => $type,
-                default => 'individual',
-            };
+        if (method_exists($session, 'getAttendanceSessionType')) {
+            return $session->getAttendanceSessionType();
         }
 
-        if ($session instanceof AcademicSession) {
-            return 'academic';
-        }
-
-        if ($session instanceof InteractiveCourseSession) {
-            return 'interactive';
-        }
-
+        // Fallback for non-BaseSession models (e.g. trial, circle, etc. → individual)
         return 'individual';
     }
 

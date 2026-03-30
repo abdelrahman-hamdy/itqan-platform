@@ -36,7 +36,7 @@ class FixAbsentSessionsWithAttendance extends Command
                    MIN(CASE WHEN ma.user_type = 'teacher' THEN ma.first_join_time END) as teacher_first_join,
                    MAX(ma.last_leave_time) as last_leave
             FROM quran_sessions qs
-            JOIN meeting_attendances ma ON ma.session_id = qs.id
+            JOIN meeting_attendances ma ON ma.session_id = qs.id AND ma.session_type IN ('individual', 'group')
             WHERE qs.status = ?
             AND qs.deleted_at IS NULL
             GROUP BY qs.id, qs.title, qs.scheduled_at, qs.duration_minutes, qs.started_at,
