@@ -227,43 +227,4 @@ class QuranIndividualCircleController extends Controller
         }
     }
 
-    /**
-     * Generate comprehensive progress report for the circle
-     */
-    public function progressReport($subdomain, $circle): View
-    {
-        $user = Auth::user();
-
-        // Find the circle
-        $circleModel = QuranIndividualCircle::where('academy_id', $user->academy_id)
-            ->findOrFail($circle);
-
-        // Authorize viewing the circle (includes teacher ownership check)
-        $this->authorize('view', $circleModel);
-
-        // Load comprehensive data for enhanced progress tracking
-        $circleModel->load([
-            'student.studentProfile',
-            'subscription.package',
-            'sessions' => function ($query) {
-                $query->orderBy('scheduled_at', 'desc');
-            },
-        ]);
-
-        // Get comprehensive report data using the QuranReportService (DTO-based)
-        $reportData = $this->reportService->getIndividualCircleReport($circleModel);
-
-        // Extract stats for view compatibility
-        $stats = $reportData['progress'];
-        $stats['total_sessions'] = $circleModel->total_sessions ?? 0;
-        $stats['completed_sessions'] = $circleModel->sessions_completed ?? 0;
-        $stats['remaining_sessions'] = $circleModel->sessions_remaining ?? 0;
-        $stats['scheduled_sessions'] = max(0, $stats['total_sessions'] - $stats['completed_sessions']);
-        $stats['attendance_rate'] = $reportData['attendance']->attendanceRate;
-
-        // Rename for view consistency
-        $circle = $circleModel;
-
-        return view('teacher.individual-circles.progress', compact('circle', 'stats'));
-    }
 }

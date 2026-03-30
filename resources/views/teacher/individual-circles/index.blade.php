@@ -171,7 +171,7 @@
 
                         if ($circle->is_active && !$circle->completed_at) {
                             $actions[] = [
-                                'href' => route('teacher.individual-circles.progress', ['subdomain' => $subdomain, 'circle' => $circle->id]),
+                                'href' => route('teacher.individual-circles.report', ['subdomain' => $subdomain, 'circle' => $circle->id]),
                                 'icon' => 'ri-bar-chart-line',
                                 'label' => __('teacher.individual_circles_list.report'),
                                 'shortLabel' => __('teacher.individual_circles_list.report'),

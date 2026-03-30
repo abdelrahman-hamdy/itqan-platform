@@ -290,7 +290,6 @@ class TestUserPagesCommand extends Command
             $individualCircles = QuranIndividualCircle::where('quran_teacher_id', $teacherProfile->id)->limit(3)->pluck('id');
             foreach ($individualCircles as $circleId) {
                 $pages[] = ['name' => "Individual Circle #{$circleId}", 'url' => "/{$this->subdomain}/individual-circles/{$circleId}", 'route' => 'individual-circles.show'];
-                $pages[] = ['name' => "Individual Circle Progress #{$circleId}", 'url' => "/{$this->subdomain}/teacher/individual-circles/{$circleId}/progress", 'route' => 'teacher.individual-circles.progress'];
             }
 
             // Group circles (quran_teacher_id stores user_id)
