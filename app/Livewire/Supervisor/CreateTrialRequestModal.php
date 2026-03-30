@@ -110,7 +110,7 @@ class CreateTrialRequestModal extends Component
             'created_by' => auth()->id(),
         ]);
 
-        $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+        $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
 
         $this->redirect(route('manage.trial-sessions.show', [
             'subdomain' => $subdomain,
