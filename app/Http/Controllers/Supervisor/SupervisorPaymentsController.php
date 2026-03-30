@@ -73,6 +73,8 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
             ->pluck('payment_method')
             ->toArray();
 
+        $isAdmin = $this->isAdminUser();
+
         return view('supervisor.payments.index', compact(
             'payments',
             'revenueThisMonth',
@@ -80,6 +82,7 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
             'completedToday',
             'totalRevenue',
             'paymentMethods',
+            'isAdmin',
         ));
     }
 

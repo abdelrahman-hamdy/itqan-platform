@@ -32,6 +32,7 @@
 
     <!-- Stats -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
+        @if($isAdmin)
         {{-- Revenue This Month --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
             <div class="flex items-center gap-3 mb-3">
@@ -42,6 +43,7 @@
             </div>
             <div class="text-2xl md:text-3xl font-bold text-gray-900">{{ number_format($revenueThisMonth, 2) }}</div>
         </div>
+        @endif
 
         {{-- Pending Payments --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
@@ -65,6 +67,7 @@
             <div class="text-2xl md:text-3xl font-bold text-gray-900">{{ $completedToday }}</div>
         </div>
 
+        @if($isAdmin)
         {{-- Total Revenue --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
             <div class="flex items-center gap-3 mb-3">
@@ -75,6 +78,7 @@
             </div>
             <div class="text-2xl md:text-3xl font-bold text-gray-900">{{ number_format($totalRevenue, 2) }}</div>
         </div>
+        @endif
     </div>
 
     <!-- List Card -->
