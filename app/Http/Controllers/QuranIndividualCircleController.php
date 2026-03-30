@@ -248,7 +248,6 @@ class QuranIndividualCircleController extends Controller
             'sessions' => function ($query) {
                 $query->orderBy('scheduled_at', 'desc');
             },
-            'homework',
         ]);
 
         // Get comprehensive report data using the QuranReportService (DTO-based)
