@@ -26,7 +26,7 @@
             <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.parents.page_title') }}</h1>
             <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.parents.page_subtitle') }}</p>
         </div>
-        @if($isAdmin)
+        @if($isAdmin || $canManageParents)
             <a href="{{ route('manage.parents.create', ['subdomain' => $subdomain]) }}"
                class="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap cursor-pointer">
                 <i class="ri-add-line"></i>
@@ -275,8 +275,8 @@
                                         {{ __('supervisor.parents.message_parent') }}
                                     </a>
 
-                                    {{-- Admin-only actions --}}
-                                    @if($isAdmin)
+                                    {{-- Management actions --}}
+                                    @if($isAdmin || $canManageParents)
                                         <span class="hidden md:inline text-gray-300 mx-0.5">|</span>
 
                                         {{-- Toggle Status --}}
@@ -308,8 +308,10 @@
                                             <i class="ri-lock-password-line"></i>
                                             {{ __('supervisor.teachers.reset_password') }}
                                         </button>
+                                    @endif
 
-                                        {{-- Delete --}}
+                                    {{-- Delete (admin only) --}}
+                                    @if($isAdmin)
                                         <form id="delete-form-{{ $parentId }}" method="POST"
                                               action="{{ route('manage.parents.destroy', ['subdomain' => $subdomain, 'parent' => $parentId]) }}">
                                             @csrf
@@ -335,7 +337,7 @@
                     </div>
 
                     {{-- Password Reset Modal --}}
-                    @if($isAdmin)
+                    @if($isAdmin || $canManageParents)
                         <x-responsive.modal id="reset-password-{{ $parentId }}" :title="__('supervisor.teachers.reset_password')" size="sm">
                             <form id="reset-pw-form-{{ $parentId }}" method="POST" action="{{ route('manage.parents.reset-password', ['subdomain' => $subdomain, 'parent' => $parentId]) }}"
                                   x-data="{ showPass: false, showConfirm: false }">

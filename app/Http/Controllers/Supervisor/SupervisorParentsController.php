@@ -156,6 +156,8 @@ class SupervisorParentsController extends BaseSupervisorWebController
             'motherCount' => $motherCount,
             'filteredCount' => $filteredValues->count(),
             'isAdmin' => $this->isAdminUser(),
+            'canManageParents' => $this->canManageParents(),
+            'canResetPasswords' => $this->canResetPasswords(),
         ]);
     }
 
@@ -219,7 +221,16 @@ class SupervisorParentsController extends BaseSupervisorWebController
             abort(403);
         }
 
-        return view('supervisor.parents.create');
+        // Get students in scope for child linking
+        $academy = AcademyContextService::getCurrentAcademy();
+        $students = User::where('user_type', 'student')
+            ->where('academy_id', $academy->id)
+            ->where('active_status', true)
+            ->orderBy('first_name')
+            ->get()
+            ->map(fn ($s) => ['id' => $s->id, 'label' => $s->name.' ('.$s->email.')']);
+
+        return view('supervisor.parents.create', compact('students'));
     }
 
     public function store(Request $request, $subdomain = null): RedirectResponse
@@ -238,6 +249,8 @@ class SupervisorParentsController extends BaseSupervisorWebController
             'occupation' => 'nullable|string|max:255',
             'password' => ['required', PasswordRules::min(6)->letters()->numbers()],
             'password_confirmation' => 'required|same:password',
+            'student_ids' => 'required|array|min:1',
+            'student_ids.*' => 'exists:users,id',
         ];
 
         $validator = Validator::make($request->all(), $rules, [
@@ -297,6 +310,19 @@ class SupervisorParentsController extends BaseSupervisorWebController
                     'occupation' => $request->occupation,
                     'avatar' => $avatarPath,
                 ]);
+            }
+
+            // Link selected students to the parent
+            if ($request->filled('student_ids') && $profile) {
+                $studentProfiles = \App\Models\StudentProfile::whereIn('user_id', $request->student_ids)->pluck('id');
+                foreach ($studentProfiles as $studentProfileId) {
+                    \App\Models\ParentStudentRelationship::firstOrCreate([
+                        'parent_id' => $profile->id,
+                        'student_id' => $studentProfileId,
+                    ], [
+                        'relationship_type' => $request->relationship_type,
+                    ]);
+                }
             }
         } catch (QueryException $e) {
             Log::error('Parent creation failed: '.$e->getMessage(), [

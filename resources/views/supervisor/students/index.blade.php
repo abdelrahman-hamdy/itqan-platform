@@ -294,8 +294,8 @@
                                         {{ __('supervisor.students.message_student') }}
                                     </a>
 
-                                    {{-- Admin-only actions --}}
-                                    @if($isAdmin)
+                                    {{-- Management actions (admin or supervisor with permission) --}}
+                                    @if($isAdmin || $canManageStudents)
                                         <span class="hidden md:inline text-gray-300 mx-0.5">|</span>
 
                                         {{-- Edit Student --}}
@@ -334,8 +334,10 @@
                                             <i class="ri-lock-password-line"></i>
                                             {{ __('supervisor.teachers.reset_password') }}
                                         </button>
+                                    @endif
 
-                                        {{-- Delete --}}
+                                    {{-- Delete (admin only) --}}
+                                    @if($isAdmin)
                                         <form id="delete-form-{{ $studentId }}" method="POST"
                                               action="{{ route('manage.students.destroy', ['subdomain' => $subdomain, 'student' => $studentId]) }}">
                                             @csrf
@@ -361,7 +363,7 @@
                     </div>
 
                     {{-- Password Reset Modal --}}
-                    @if($isAdmin)
+                    @if($isAdmin || $canManageStudents)
                         <x-responsive.modal id="reset-password-{{ $studentId }}" :title="__('supervisor.teachers.reset_password')" size="sm">
                             <form id="reset-pw-form-{{ $studentId }}" method="POST" action="{{ route('manage.students.reset-password', ['subdomain' => $subdomain, 'student' => $studentId]) }}"
                                   x-data="{ showPass: false, showConfirm: false }">

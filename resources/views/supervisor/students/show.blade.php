@@ -195,6 +195,7 @@
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Active Subscriptions -->
+            @if($canManageSubscriptions)
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('supervisor.students.active_subscriptions') }}</h3>
 
@@ -259,6 +260,7 @@
                     </div>
                 @endif
             </div>
+            @endif
 
             <!-- Recent Sessions Timeline -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

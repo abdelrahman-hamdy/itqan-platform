@@ -368,11 +368,13 @@
                                     </a>
 
                                     {{-- Earnings --}}
+                                    @if($canManageTeacherEarnings)
                                     <a href="{{ route('manage.teacher-earnings.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherId]) }}"
                                        class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors">
                                         <i class="ri-money-dollar-circle-line"></i>
                                         {{ __('supervisor.teachers.view_earnings') }}
                                     </a>
+                                    @endif
 
                                     {{-- Message --}}
                                     <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $teacherId]) }}"
@@ -381,8 +383,8 @@
                                         {{ __('supervisor.teachers.message_teacher') }}
                                     </a>
 
-                                    {{-- Admin-only actions --}}
-                                    @if($isAdmin)
+                                    {{-- Management actions --}}
+                                    @if($isAdmin || $canManageTeachers)
                                         <span class="hidden md:inline text-gray-300 mx-0.5">|</span>
 
                                         {{-- Edit Teacher --}}
@@ -422,7 +424,10 @@
                                             {{ __('supervisor.teachers.reset_password') }}
                                         </button>
 
-                                        {{-- Delete --}}
+                                    @endif
+
+                                    {{-- Delete (admin only) --}}
+                                    @if($isAdmin)
                                         <form id="delete-form-{{ $teacherId }}" method="POST"
                                               action="{{ route('manage.teachers.destroy', ['subdomain' => $subdomain, 'teacher' => $teacherId]) }}">
                                             @csrf
@@ -448,7 +453,7 @@
                     </div>
 
                     {{-- Password Reset Modal --}}
-                    @if($isAdmin)
+                    @if($isAdmin || $canManageTeachers)
                         <x-responsive.modal id="reset-password-{{ $teacherId }}" :title="__('supervisor.teachers.reset_password')" size="sm">
                             <form id="reset-pw-form-{{ $teacherId }}" method="POST" action="{{ route('manage.teachers.reset-password', ['subdomain' => $subdomain, 'teacher' => $teacherId]) }}"
                                   x-data="{ showPass: false, showConfirm: false }">

@@ -203,6 +203,25 @@
                         @enderror
                     </div>
 
+                    {{-- Link Children (Students) --}}
+                    @if(isset($students) && $students->isNotEmpty())
+                    <div>
+                        <label for="student_ids" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ __('supervisor.parents.link_children') }} <span class="text-red-600">*</span>
+                        </label>
+                        <select name="student_ids[]" id="student_ids" multiple required
+                                class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('student_ids') border-red-500 @enderror">
+                            @foreach($students as $student)
+                                <option value="{{ $student['id'] }}" {{ in_array($student['id'], old('student_ids', [])) ? 'selected' : '' }}>{{ $student['label'] }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">{{ __('supervisor.parents.link_children_hint') }}</p>
+                        @error('student_ids')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    @endif
+
                     {{-- Occupation --}}
                     <div>
                         <label for="occupation" class="block text-sm font-medium text-gray-700 mb-1">

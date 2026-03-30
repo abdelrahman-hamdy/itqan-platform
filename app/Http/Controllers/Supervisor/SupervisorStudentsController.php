@@ -247,6 +247,10 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             'femaleCount' => $femaleCount,
             'filteredCount' => $filteredValues->count(),
             'isAdmin' => $isAdmin,
+            'canManageStudents' => $this->canManageStudents(),
+            'canResetPasswords' => $this->canResetPasswords(),
+            'canManageSubscriptions' => $this->canManageSubscriptions(),
+            'canManagePayments' => $this->canManagePayments(),
             'gradeLevels' => $gradeLevels,
         ]);
     }
@@ -591,6 +595,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             'completedSessions' => $completedSessions,
             'recentSessions' => $recentSessions,
             'isAdmin' => $isAdmin,
+            'canManageSubscriptions' => $this->canManageSubscriptions(),
         ]);
     }
 

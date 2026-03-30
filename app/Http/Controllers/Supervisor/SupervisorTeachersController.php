@@ -174,6 +174,9 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'academicFemale' => $academicFemale,
             'filteredCount' => $filteredValues->count(),
             'isAdmin' => $isAdmin,
+            'canManageTeachers' => $this->canManageTeachers(),
+            'canResetPasswords' => $this->canResetPasswords(),
+            'canManageTeacherEarnings' => $this->canManageTeacherEarnings(),
         ]);
     }
 
