@@ -532,6 +532,7 @@ return [
         'create_request' => 'إنشاء الطلب',
         'creating' => 'جاري الإنشاء...',
         'request_created_successfully' => 'تم إنشاء طلب الجلسة التجريبية بنجاح',
+        'schedule_session' => 'جدولة الجلسة',
     ],
 
     'academic_lessons' => [

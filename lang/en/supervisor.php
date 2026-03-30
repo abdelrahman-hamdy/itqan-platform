@@ -532,6 +532,7 @@ return [
         'create_request' => 'Create Request',
         'creating' => 'Creating...',
         'request_created_successfully' => 'Trial session request created successfully',
+        'schedule_session' => 'Schedule Session',
     ],
 
     'academic_lessons' => [

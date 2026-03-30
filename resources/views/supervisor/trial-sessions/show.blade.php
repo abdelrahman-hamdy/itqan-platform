@@ -86,11 +86,20 @@
         <div class="lg:col-span-1 space-y-4 md:space-y-6">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
                 <h3 class="text-sm font-bold text-gray-900 mb-3">{{ __('supervisor.dashboard.quick_actions') }}</h3>
-                <a href="{{ route('manage.trial-sessions.index', ['subdomain' => $subdomain]) }}"
-                   class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
-                    <i class="ri-arrow-right-line"></i>
-                    {{ __('supervisor.common.back_to_list') }}
-                </a>
+                <div class="space-y-2">
+                    @if(!$trialRequest->trialSession && !in_array($statusValue, ['cancelled', 'completed']))
+                        <a href="{{ route('manage.calendar.index', ['subdomain' => $subdomain, 'teacher_id' => $teacher?->id]) }}"
+                           class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors">
+                            <i class="ri-calendar-schedule-line"></i>
+                            {{ __('supervisor.trial_sessions.schedule_session') }}
+                        </a>
+                    @endif
+                    <a href="{{ route('manage.trial-sessions.index', ['subdomain' => $subdomain]) }}"
+                       class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
+                        <i class="ri-arrow-right-line"></i>
+                        {{ __('supervisor.common.back_to_list') }}
+                    </a>
+                </div>
             </div>
         </div>
     </div>
