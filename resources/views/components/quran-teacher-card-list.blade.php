@@ -8,8 +8,8 @@
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 card-hover flex flex-col overflow-hidden">
-  {{-- Section 1: Colored Header with Avatar --}}
-  <div class="relative bg-amber-50 h-20">
+  {{-- Section 1: Colored Header — Avatar + Name + Rating --}}
+  <div class="relative bg-amber-50 pb-6 pt-4 pe-4 sm:pe-6 ps-40 sm:ps-44">
     {{-- My Teacher Badge (top-end corner) --}}
     @if($isSubscribed)
     <span class="absolute top-3 end-3 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500 text-white shadow-sm z-20">
@@ -29,10 +29,8 @@
           class="flex-shrink-0" />
       </div>
     </div>
-  </div>
 
-  {{-- Section 2: Name + Rating (beside avatar, with start padding to clear it) --}}
-  <div class="ps-40 sm:ps-44 pe-4 sm:pe-6 pt-3 pb-2 min-h-[3.5rem]">
+    {{-- Name + Rating (inside header, beside avatar) --}}
     <h3 class="font-bold text-gray-900 text-lg leading-tight truncate">
       {{ $teacher->user->full_name ?? $teacher->user->name ?? __('components.cards.quran_teacher.default_name') }}
     </h3>
@@ -45,8 +43,8 @@
     </div>
   </div>
 
-  {{-- Section 3: Main Info Area --}}
-  <div class="px-4 sm:px-6 flex-1 flex flex-col">
+  {{-- Section 2: Main Info Area (pt-8 clears avatar overflow from header) --}}
+  <div class="px-4 sm:px-6 pt-8 flex-1 flex flex-col">
     {{-- Key Details --}}
     <div class="space-y-2.5 mb-3">
       {{-- Qualification + Experience Row --}}
