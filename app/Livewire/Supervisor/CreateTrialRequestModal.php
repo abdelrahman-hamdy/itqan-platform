@@ -8,6 +8,7 @@ use App\Enums\TimeSlot;
 use App\Enums\UserType;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
+use App\Models\StudentProfile;
 use App\Models\User;
 use Livewire\Component;
 
@@ -80,6 +81,10 @@ class CreateTrialRequestModal extends Component
             $this->student_name = $user->name ?? '';
             $this->phone = $user->phone ?? '';
             $this->email = $user->email ?? '';
+
+            // Compute age from StudentProfile birth_date
+            $profile = StudentProfile::where('user_id', $user->id)->first();
+            $this->student_age = $profile?->birth_date?->age;
         }
     }
 

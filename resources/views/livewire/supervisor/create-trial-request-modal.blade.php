@@ -69,14 +69,16 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.trial_sessions.student_name') }} <span class="text-red-500">*</span></label>
                                 <input type="text" wire:model="student_name"
-                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-amber-500 focus:ring-amber-500"
-                                    placeholder="{{ __('supervisor.trial_sessions.student_name_placeholder') }}">
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-amber-500 focus:ring-amber-500 {{ $student_id ? 'bg-gray-50 text-gray-500' : '' }}"
+                                    placeholder="{{ __('supervisor.trial_sessions.student_name_placeholder') }}"
+                                    {{ $student_id ? 'readonly' : '' }}>
                                 @error('student_name') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.trial_sessions.student_age') }}</label>
                                 <input type="number" wire:model="student_age" min="3" max="100"
-                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-amber-500 focus:ring-amber-500">
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-amber-500 focus:ring-amber-500 {{ $student_id ? 'bg-gray-50 text-gray-500' : '' }}"
+                                    {{ $student_id ? 'readonly' : '' }}>
                             </div>
                         </div>
 
@@ -84,12 +86,14 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.trial_sessions.phone') }}</label>
                                 <input type="tel" wire:model="phone" dir="ltr"
-                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-amber-500 focus:ring-amber-500 text-left">
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-amber-500 focus:ring-amber-500 text-left {{ $student_id ? 'bg-gray-50 text-gray-500' : '' }}"
+                                    {{ $student_id ? 'readonly' : '' }}>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.trial_sessions.email') }}</label>
                                 <input type="email" wire:model="email" dir="ltr"
-                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-amber-500 focus:ring-amber-500 text-left">
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-amber-500 focus:ring-amber-500 text-left {{ $student_id ? 'bg-gray-50 text-gray-500' : '' }}"
+                                    {{ $student_id ? 'readonly' : '' }}>
                             </div>
                         </div>
                     </div>
