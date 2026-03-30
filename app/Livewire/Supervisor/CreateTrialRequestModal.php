@@ -10,6 +10,7 @@ use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
 use App\Models\StudentProfile;
 use App\Models\User;
+use App\Services\TrialNotificationService;
 use Livewire\Component;
 
 class CreateTrialRequestModal extends Component
@@ -109,6 +110,12 @@ class CreateTrialRequestModal extends Component
             'status' => 'pending',
             'created_by' => auth()->id(),
         ]);
+
+        // Send notifications to teacher and student
+        $trialRequest->load(['teacher.user', 'student', 'academy']);
+        $notificationService = app(TrialNotificationService::class);
+        $notificationService->sendTrialRequestReceivedNotification($trialRequest);
+        $notificationService->sendTrialApprovedNotification($trialRequest);
 
         $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
 
