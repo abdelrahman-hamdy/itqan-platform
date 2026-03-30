@@ -8,18 +8,10 @@
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 card-hover flex flex-col overflow-hidden">
-  {{-- Section 1: Colored Header — Avatar + Name + Rating --}}
-  <div class="relative bg-amber-50 pb-6 pt-4 pe-4 sm:pe-6 ps-40 sm:ps-44">
-    {{-- My Teacher Badge (top-end corner) --}}
-    @if($isSubscribed)
-    <span class="absolute top-3 end-3 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500 text-white shadow-sm z-20">
-      <i class="ri-check-line me-1"></i>
-      {{ __('components.cards.quran_teacher.my_teacher') }}
-    </span>
-    @endif
-
+  {{-- Section 1: Colored Header — My Teacher + Name/Rating + Avatar --}}
+  <div class="relative bg-amber-50 px-4 sm:px-6 pt-3 pb-6">
     {{-- Avatar: vertically centered on bottom border, positioned at start side --}}
-    <div class="absolute start-4 sm:start-6 -bottom-12 z-10">
+    <div class="absolute start-4 sm:start-6 -bottom-8 z-10">
       <div class="rounded-full border-4 border-white shadow-lg">
         <x-avatar
           :user="$teacher"
@@ -30,21 +22,33 @@
       </div>
     </div>
 
-    {{-- Name + Rating (inside header, beside avatar) --}}
-    <h3 class="font-bold text-gray-900 text-lg leading-tight truncate">
-      {{ $teacher->user->full_name ?? $teacher->user->name ?? __('components.cards.quran_teacher.default_name') }}
-    </h3>
-    <div class="flex items-center gap-1 mt-1">
-      <x-reviews.star-rating
-        :rating="$rating"
-        :total-reviews="$teacher->total_reviews ?? null"
-        size="sm"
-      />
+    {{-- My Teacher Badge (first line, normal flow) --}}
+    @if($isSubscribed)
+    <div class="mb-2">
+      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500 text-white shadow-sm">
+        <i class="ri-check-line me-1"></i>
+        {{ __('components.cards.quran_teacher.my_teacher') }}
+      </span>
+    </div>
+    @endif
+
+    {{-- Name + Rating (second line, name near avatar / rating on opposite side) --}}
+    <div class="flex items-end justify-between gap-2 ps-36 sm:ps-40">
+      <h3 class="font-bold text-gray-900 text-lg leading-tight truncate">
+        {{ $teacher->user->full_name ?? $teacher->user->name ?? __('components.cards.quran_teacher.default_name') }}
+      </h3>
+      <div class="flex items-center gap-1 flex-shrink-0">
+        <x-reviews.star-rating
+          :rating="$rating"
+          :total-reviews="$teacher->total_reviews ?? null"
+          size="sm"
+        />
+      </div>
     </div>
   </div>
 
-  {{-- Section 2: Main Info Area (pt-8 clears avatar overflow from header) --}}
-  <div class="px-4 sm:px-6 pt-8 flex-1 flex flex-col">
+  {{-- Section 2: Main Info Area (ps + pt clears avatar overflow from header) --}}
+  <div class="px-4 sm:px-6 pt-10 flex-1 flex flex-col">
     {{-- Key Details --}}
     <div class="space-y-2.5 mb-3">
       {{-- Qualification + Experience Row --}}
