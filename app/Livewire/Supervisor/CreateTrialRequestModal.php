@@ -94,7 +94,7 @@ class CreateTrialRequestModal extends Component
 
         $academy = current_academy();
 
-        QuranTrialRequest::create([
+        $trialRequest = QuranTrialRequest::create([
             'academy_id' => $academy->id,
             'student_id' => $this->student_id,
             'teacher_id' => $this->teacher_id,
@@ -110,9 +110,12 @@ class CreateTrialRequestModal extends Component
             'created_by' => auth()->id(),
         ]);
 
-        $this->showModal = false;
-        $this->dispatch('trial-request-created');
-        session()->flash('success', __('supervisor.trial_sessions.request_created_successfully'));
+        $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+
+        $this->redirect(route('manage.trial-sessions.show', [
+            'subdomain' => $subdomain,
+            'trialRequest' => $trialRequest->id,
+        ]));
     }
 
     protected function resetForm(): void
