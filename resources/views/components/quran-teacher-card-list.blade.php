@@ -32,7 +32,7 @@
   </div>
 
   {{-- Section 2: Name + Rating (beside avatar, with start padding to clear it) --}}
-  <div class="ps-32 sm:ps-36 pe-4 sm:pe-6 pt-3 pb-2 min-h-[3.5rem]">
+  <div class="ps-40 sm:ps-44 pe-4 sm:pe-6 pt-3 pb-2 min-h-[3.5rem]">
     <h3 class="font-bold text-gray-900 text-lg leading-tight truncate">
       {{ $teacher->user->full_name ?? $teacher->user->name ?? __('components.cards.quran_teacher.default_name') }}
     </h3>
