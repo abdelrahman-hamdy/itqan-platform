@@ -9,7 +9,7 @@
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 card-hover flex flex-col overflow-hidden">
   {{-- Section 1: Colored Header — My Teacher + Name/Rating + Avatar --}}
-  <div class="relative bg-green-50 px-4 sm:px-6 pt-3 pb-6 min-h-[100px]">
+  <div class="relative bg-green-50 pe-4 sm:pe-6 ps-36 sm:ps-40 min-h-[100px] flex flex-col justify-end pb-3">
     {{-- Avatar: vertically centered on bottom border, positioned at start side --}}
     <div class="absolute start-4 sm:start-6 -bottom-8 z-10">
       <div class="rounded-full border-4 border-white">
@@ -22,7 +22,7 @@
       </div>
     </div>
 
-    {{-- My Teacher Badge (first line, floated to end/left in RTL) --}}
+    {{-- My Teacher Badge (floated to end/left in RTL) --}}
     @if($isSubscribed)
     <div class="mb-2 flex justify-end">
       <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500 text-white shadow-sm">
@@ -32,8 +32,8 @@
     </div>
     @endif
 
-    {{-- Name + Rating (second line, name near avatar / rating on opposite side) --}}
-    <div class="flex items-end justify-between gap-2 ps-36 sm:ps-40">
+    {{-- Name + Rating (stuck to bottom, full width beside avatar) --}}
+    <div class="flex items-end justify-between gap-3">
       <h3 class="font-bold text-gray-900 text-lg leading-tight truncate">
         {{ $teacher->user->full_name ?? $teacher->user->name ?? __('components.cards.quran_teacher.default_name') }}
       </h3>
