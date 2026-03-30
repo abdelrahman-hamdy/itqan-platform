@@ -563,9 +563,12 @@ class AuthController extends Controller
     /**
      * Show reset password form
      */
-    public function showResetPasswordForm(Request $request, string $token): View|RedirectResponse
+    public function showResetPasswordForm(Request $request): View|RedirectResponse
     {
+        // Get route parameters explicitly by name to avoid parameter order issues
+        // (subdomain is captured from domain routing and can interfere with positional params)
         $subdomain = $request->route('subdomain');
+        $token = $request->route('token');
         $academy = Academy::where('subdomain', $subdomain)->first();
 
         if (! $academy || ! $academy->is_active) {
