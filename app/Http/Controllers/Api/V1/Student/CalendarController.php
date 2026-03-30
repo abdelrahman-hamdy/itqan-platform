@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
-use App\Models\User;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
+use App\Models\User;
 use App\Services\AcademyContextService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -50,7 +50,7 @@ class CalendarController extends Controller
     /**
      * Get calendar data for a specific month.
      *
-     * @param User $user
+     * @param  User  $user
      */
     protected function getCalendarData(Request $request, $user, int $year, int $month): JsonResponse
     {
@@ -136,7 +136,7 @@ class CalendarController extends Controller
         $timezone = AcademyContextService::getTimezone();
         $start = $session->scheduled_at?->copy()->setTimezone($timezone);
 
-        $duration = $session->duration_minutes ?? 45;
+        $duration = $session->duration_minutes ?? 60;
         $end = $start?->copy()->addMinutes($duration);
 
         $title = match ($type) {

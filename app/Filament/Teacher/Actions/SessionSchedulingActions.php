@@ -2,27 +2,26 @@
 
 namespace App\Filament\Teacher\Actions;
 
-use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\TimePicker;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Exception;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Services\AcademyContextService;
 use App\Services\SessionManagementService;
 use Carbon\Carbon;
+use Exception;
 use Filament\Actions\Action;
-use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Illuminate\Support\Facades\Auth;
 
 class SessionSchedulingActions
@@ -77,10 +76,11 @@ class SessionSchedulingActions
                                 $circle = QuranIndividualCircle::find($state);
                                 $defaultDuration = $circle?->subscription?->session_duration_minutes
                                     ?? $circle?->subscription?->package?->session_duration_minutes
-                                    ?? 45;
+                                    ?? $circle?->default_duration_minutes
+                                    ?? 60;
                             } else {
                                 $circle = QuranCircle::find($state);
-                                $defaultDuration = $circle?->session_duration_minutes ?? 60;
+                                $defaultDuration = $circle?->schedule?->default_duration_minutes ?? 60;
                             }
 
                             $set('duration_minutes', $defaultDuration);
@@ -198,11 +198,12 @@ class SessionSchedulingActions
 
                                     return $circle?->subscription?->session_duration_minutes
                                         ?? $circle?->subscription?->package?->session_duration_minutes
-                                        ?? 45;
+                                        ?? $circle?->default_duration_minutes
+                                        ?? 60;
                                 } else {
                                     $circle = QuranCircle::find($circleId);
 
-                                    return $circle?->session_duration_minutes ?? 60;
+                                    return $circle?->schedule?->default_duration_minutes ?? 60;
                                 }
                             })
                             ->minValue(15)
@@ -219,10 +220,11 @@ class SessionSchedulingActions
                                         $circle = QuranIndividualCircle::find($circleId);
                                         $defaultDuration = $circle?->subscription?->session_duration_minutes
                                             ?? $circle?->subscription?->package?->session_duration_minutes
-                                            ?? 45;
+                                            ?? $circle?->default_duration_minutes
+                                            ?? 60;
                                     } else {
                                         $circle = QuranCircle::find($circleId);
-                                        $defaultDuration = $circle?->session_duration_minutes ?? 60;
+                                        $defaultDuration = $circle?->schedule?->default_duration_minutes ?? 60;
                                     }
 
                                     if ($state == 60 || $state == 45) { // Only auto-update if it's still the default

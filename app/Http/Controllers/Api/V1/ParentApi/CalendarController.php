@@ -164,7 +164,7 @@ class CalendarController extends Controller
         $timezone = AcademyContextService::getTimezone();
         $start = $session->scheduled_at?->copy()->setTimezone($timezone);
 
-        $duration = $session->duration_minutes ?? 45;
+        $duration = $session->duration_minutes ?? 60;
         $end = $start?->copy()->addMinutes($duration);
 
         $title = match ($type) {

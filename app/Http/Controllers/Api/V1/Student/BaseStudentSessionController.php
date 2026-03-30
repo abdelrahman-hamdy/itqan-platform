@@ -42,7 +42,7 @@ abstract class BaseStudentSessionController extends Controller
             'status' => $session->status->value ?? $session->status,
             'status_label' => $session->status->label ?? $session->status,
             'scheduled_at' => $session->scheduled_at?->toISOString(),
-            'duration_minutes' => $session->duration_minutes ?? 45,
+            'duration_minutes' => $session->duration_minutes ?? 60,
             'teacher' => $this->formatTeacherData($teacher),
             'meeting_url' => $session->meeting_link ?? null,
             'can_join' => $this->canJoinSession($session),

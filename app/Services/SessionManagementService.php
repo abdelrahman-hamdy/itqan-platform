@@ -51,11 +51,12 @@ class SessionManagementService
                 throw new Exception('لا توجد جلسات متبقية في الاشتراك');
             }
 
-            // Get duration from subscription -> package if not provided
+            // Get duration from subscription -> package -> circle default
             if ($durationMinutes === null) {
                 $durationMinutes = $lockedCircle->subscription?->session_duration_minutes
                     ?? $lockedCircle->subscription?->package?->session_duration_minutes
-                    ?? 45; // fallback
+                    ?? $lockedCircle->default_duration_minutes
+                    ?? 60;
             }
 
             // Check for conflicts
@@ -112,10 +113,9 @@ class SessionManagementService
         ?string $description = null
     ): QuranSession {
         return DB::transaction(function () use ($circle, $scheduledAt, &$durationMinutes, &$title, &$description) {
-            // CRITICAL FIX: Get duration from circle settings, not hardcoded 60 minutes
-            // Group circles should use their configured session_duration_minutes
+            // Get duration from circle schedule settings
             if ($durationMinutes === null) {
-                $durationMinutes = $circle->session_duration_minutes ?? 60;
+                $durationMinutes = $circle->schedule?->default_duration_minutes ?? 60;
             }
 
             // Check for conflicts
@@ -179,7 +179,8 @@ class SessionManagementService
             if ($circle instanceof QuranIndividualCircle) {
                 $durationMinutes = $circle->subscription?->session_duration_minutes
                     ?? $circle->subscription?->package?->session_duration_minutes
-                    ?? 45; // fallback
+                    ?? $circle->default_duration_minutes
+                    ?? 60;
             } else {
                 // Group circles use standard duration (60 minutes)
                 $durationMinutes = 60;
@@ -526,7 +527,7 @@ class SessionManagementService
                         $this->createGroupSession(
                             $circle,
                             $scheduledAt,
-                            $schedule->default_duration_minutes ?? $circle->session_duration_minutes ?? 60
+                            $schedule->default_duration_minutes ?? 60
                         );
                         $createdCount++;
                     } catch (Exception $e) {
@@ -564,8 +565,9 @@ class SessionManagementService
 
         $createdCount = 0;
         $durationMinutes = $circle->default_duration_minutes
+            ?? $circle->subscription?->session_duration_minutes
             ?? $circle->subscription?->package?->session_duration_minutes
-            ?? 45;
+            ?? 60;
 
         foreach ($sessionDates as $scheduledAt) {
             try {
@@ -615,7 +617,7 @@ class SessionManagementService
         $nowInAcademy = Carbon::now($timezone);
         if ($scheduledAt->lt($nowInAcademy)) {
             $scheduled = $scheduledAt->format('H:i');
-            $current   = $nowInAcademy->format('H:i');
+            $current = $nowInAcademy->format('H:i');
             throw new Exception("لا يمكن جدولة جلسة في وقت ماضي (الوقت المختار: {$scheduled}، الوقت الحالي: {$current})");
         }
 

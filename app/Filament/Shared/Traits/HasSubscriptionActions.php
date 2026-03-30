@@ -583,7 +583,7 @@ trait HasSubscriptionActions
                     'memorization_level' => $data['memorization_level'],
                     'total_sessions' => $record->total_sessions,
                     'sessions_remaining' => $record->sessions_remaining,
-                    'default_duration_minutes' => $data['default_duration_minutes'] ?? $record->session_duration_minutes ?? 45,
+                    'default_duration_minutes' => $data['default_duration_minutes'] ?? $record->session_duration_minutes ?? $record->package?->session_duration_minutes ?? 60,
                     'is_active' => true,
                 ];
 

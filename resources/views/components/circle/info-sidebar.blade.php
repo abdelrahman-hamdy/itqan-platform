@@ -294,9 +294,9 @@
                 </div>
                 <p class="text-sm font-bold text-pink-900 mt-1">
                     @if($context === 'group')
-                        {{ $circle->session_duration_minutes ?? 60 }} {{ __('components.circle.info_sidebar.minutes') }}
+                        {{ $circle->schedule?->default_duration_minutes ?? 60 }} {{ __('components.circle.info_sidebar.minutes') }}
                     @else
-                        {{ $circle->default_duration_minutes ?? 60 }} {{ __('components.circle.info_sidebar.minutes') }}
+                        {{ $circle->default_duration_minutes ?? $circle->subscription?->session_duration_minutes ?? 60 }} {{ __('components.circle.info_sidebar.minutes') }}
                     @endif
                 </p>
             </div>

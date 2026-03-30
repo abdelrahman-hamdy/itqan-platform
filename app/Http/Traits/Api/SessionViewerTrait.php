@@ -45,7 +45,7 @@ trait SessionViewerTrait
     /**
      * Format teacher data for API response.
      *
-     * @param User|null $teacher
+     * @param  User|null  $teacher
      */
     protected function formatTeacherData($teacher): ?array
     {
@@ -112,7 +112,7 @@ trait SessionViewerTrait
         }
 
         $joinStart = $sessionTime->copy()->subMinutes(10);
-        $duration = $session->duration_minutes ?? 45;
+        $duration = $session->duration_minutes ?? 60;
         $joinEnd = $sessionTime->copy()->addMinutes($duration);
 
         $status = $session->status->value ?? $session->status;

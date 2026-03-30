@@ -219,6 +219,7 @@ class CircleEnrollmentStatusService
                 'payment_status' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? 'pending' : 'paid',
                 'status' => SessionSubscriptionStatus::ACTIVE->value,
                 'memorization_level' => $circle->memorization_level ?? 'beginner',
+                'session_duration_minutes' => $circle->schedule?->default_duration_minutes ?? 60,
                 'starts_at' => now(),
                 'next_payment_at' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? now()->addMonth() : null,
                 'auto_renew' => true,

@@ -589,7 +589,7 @@ class QuranSessionController extends Controller
             $sessionData['session_type'] = 'individual';
             $sessionData['individual_circle_id'] = $circle->id;
             $sessionData['student_id'] = $circle->student_id;
-            $sessionData['duration_minutes'] = $validated['duration_minutes'] ?? $circle->default_duration_minutes ?? 45;
+            $sessionData['duration_minutes'] = $validated['duration_minutes'] ?? $circle->default_duration_minutes ?? 60;
 
             // Link to subscription if available
             if ($circle->subscription_id) {

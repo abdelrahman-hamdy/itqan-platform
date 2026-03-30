@@ -268,7 +268,7 @@ class SessionController extends Controller
             'status' => $session->status->value ?? $session->status,
             'status_label' => $session->status->label ?? $session->status,
             'scheduled_at' => $session->scheduled_at?->toISOString(),
-            'duration_minutes' => $session->duration_minutes ?? 45,
+            'duration_minutes' => $session->duration_minutes ?? 60,
             'teacher' => $teacher ? [
                 'id' => $teacher->id,
                 'name' => $teacher->name,

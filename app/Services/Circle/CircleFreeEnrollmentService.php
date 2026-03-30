@@ -2,7 +2,6 @@
 
 namespace App\Services\Circle;
 
-use Exception;
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -11,6 +10,7 @@ use App\Models\QuranCircle;
 use App\Models\QuranCircleEnrollment;
 use App\Models\QuranSubscription;
 use App\Models\User;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -91,6 +91,7 @@ class CircleFreeEnrollmentService
                         'payment_status' => SubscriptionPaymentStatus::PAID,
                         'status' => SessionSubscriptionStatus::ACTIVE,
                         'memorization_level' => $lockedCircle->memorization_level ?? 'beginner',
+                        'session_duration_minutes' => $lockedCircle->schedule?->default_duration_minutes ?? 60,
                         'starts_at' => now(),
                         'auto_renew' => false,
                     ]);

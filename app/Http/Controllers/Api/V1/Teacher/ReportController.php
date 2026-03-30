@@ -119,7 +119,7 @@ class ReportController extends Controller
                     'title' => $s->title,
                     'status' => $s->status->value ?? $s->status,
                     'scheduled_at' => $s->scheduled_at?->toISOString(),
-                    'duration_minutes' => $s->duration_minutes ?? 45,
+                    'duration_minutes' => $s->duration_minutes ?? 60,
                     'attendance_status' => $s->attendance_status ?? null,
                     'memorization_degree' => $report?->new_memorization_degree,
                     'revision_degree' => $report?->reservation_degree,
@@ -217,7 +217,7 @@ class ReportController extends Controller
                 'title' => $s->title,
                 'status' => $s->status->value ?? $s->status,
                 'scheduled_at' => $s->scheduled_at?->toISOString(),
-                'duration_minutes' => $s->duration_minutes ?? 45,
+                'duration_minutes' => $s->duration_minutes ?? 60,
             ])
             ->toArray();
 

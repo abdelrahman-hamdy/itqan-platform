@@ -799,7 +799,7 @@ class SubscriptionController extends Controller
             'title' => $session->title,
             'status' => $session->status->value ?? $session->status,
             'scheduled_at' => $session->scheduled_at?->toISOString(),
-            'duration_minutes' => $session->duration_minutes ?? 45,
+            'duration_minutes' => $session->duration_minutes ?? 60,
             'attendance_status' => $attendanceStatus,
         ];
     }

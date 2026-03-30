@@ -95,7 +95,7 @@ class MeetingTokenController extends Controller
                     'id' => $session->id,
                     'type' => $sessionType,
                     'title' => $session->title,
-                    'duration_minutes' => $session->duration_minutes ?? 45,
+                    'duration_minutes' => $session->duration_minutes ?? 60,
                 ],
                 'expires_in' => 7200,
             ], __('Meeting token generated'));
@@ -164,7 +164,7 @@ class MeetingTokenController extends Controller
                 'title' => $session->title,
                 'status' => $session->status->value ?? $session->status,
                 'scheduled_at' => $this->getScheduledAt($session, $sessionType)?->toISOString(),
-                'duration_minutes' => $session->duration_minutes ?? 45,
+                'duration_minutes' => $session->duration_minutes ?? 60,
             ],
             'meeting' => $meeting ? [
                 'id' => $meeting->id,
@@ -521,7 +521,7 @@ class MeetingTokenController extends Controller
 
         $now = now();
         $joinStart = $scheduledAt->copy()->subMinutes(10);
-        $duration = $session->duration_minutes ?? 45;
+        $duration = $session->duration_minutes ?? 60;
         $joinEnd = $scheduledAt->copy()->addMinutes($duration + 15); // 15 min grace after
 
         $status = $session->status->value ?? $session->status;
@@ -568,7 +568,7 @@ class MeetingTokenController extends Controller
     protected function getJoinWindowEnd($session, string $type)
     {
         $scheduledAt = $this->getScheduledAt($session, $type);
-        $duration = $session->duration_minutes ?? 45;
+        $duration = $session->duration_minutes ?? 60;
 
         return $scheduledAt?->copy()->addMinutes($duration + 15);
     }

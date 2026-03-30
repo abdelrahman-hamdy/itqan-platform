@@ -2,8 +2,6 @@
 
 namespace App\Services\Calendar;
 
-use InvalidArgumentException;
-use Exception;
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -20,8 +18,10 @@ use App\Services\Scheduling\Validators\IndividualCircleValidator;
 use App\Services\Scheduling\Validators\ScheduleValidatorInterface;
 use App\Services\Scheduling\Validators\TrialSessionValidator;
 use App\Services\SessionManagementService;
+use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use InvalidArgumentException;
 
 /**
  * Quran teacher session strategy
@@ -146,7 +146,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                     'monthly_sessions' => $circle->monthly_sessions_count,
                     'students_count' => $circle->enrolled_students,
                     'max_students' => $circle->max_students,
-                    'session_duration_minutes' => $circle->session_duration_minutes ?? 60,
+                    'session_duration_minutes' => $circle->schedule?->default_duration_minutes ?? 60,
                 ];
             });
     }
@@ -168,13 +168,13 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                 ])
                 // ALSO include CANCELLED subscriptions that haven't reached end date yet
                 // (paid period should remain accessible until ends_at)
-                ->orWhere(function ($q) {
-                    $q->where('status', SessionSubscriptionStatus::CANCELLED->value)
-                        ->where(function ($dateQuery) {
-                            $dateQuery->where('ends_at', '>', now())
-                                ->orWhereNull('ends_at'); // Include if no end date set yet
-                        });
-                });
+                    ->orWhere(function ($q) {
+                        $q->where('status', SessionSubscriptionStatus::CANCELLED->value)
+                            ->where(function ($dateQuery) {
+                                $dateQuery->where('ends_at', '>', now())
+                                    ->orWhereNull('ends_at'); // Include if no end date set yet
+                            });
+                    });
             })
             ->whereHas('student')
             ->get()
@@ -326,7 +326,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                 'quran_teacher_id' => $teacherId,
                 'weekly_schedule' => $weeklySchedule,
                 'timezone' => AcademyContextService::getTimezone(),
-                'default_duration_minutes' => $circle->session_duration_minutes ?? 60,
+                'default_duration_minutes' => $circle->schedule?->default_duration_minutes ?? 60,
                 'is_active' => true,
                 'schedule_starts_at' => isset($data['schedule_start_date']) ? AcademyContextService::parseInAcademyTimezone($data['schedule_start_date'])->startOfDay() : AcademyContextService::nowInAcademyTimezone()->startOfDay(),
                 'generate_ahead_days' => 30,

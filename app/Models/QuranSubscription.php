@@ -389,7 +389,7 @@ class QuranSubscription extends BaseSubscription
             'package_description_en' => $package->description,
             'package_features' => $package->features ?? [],
             'sessions_per_month' => $package->sessions_per_month,
-            'session_duration_minutes' => $package->session_duration_minutes ?? 45,
+            'session_duration_minutes' => $package->session_duration_minutes ?? 60,
             'monthly_price' => $package->monthly_price ?? $package->price,
             'quarterly_price' => $package->quarterly_price ?? (($package->monthly_price ?? $package->price) * 3 * 0.9),
             'yearly_price' => $package->yearly_price ?? (($package->monthly_price ?? $package->price) * 12 * 0.8),
@@ -771,7 +771,7 @@ class QuranSubscription extends BaseSubscription
             'memorization_level' => $this->memorization_level ?? 'beginner',
             'total_sessions' => $this->total_sessions,
             'sessions_remaining' => $this->sessions_remaining,
-            'default_duration_minutes' => $this->session_duration_minutes ?? 45,
+            'default_duration_minutes' => $this->session_duration_minutes ?? $this->package?->session_duration_minutes ?? 60,
             'is_active' => $this->isActive(),
             'created_by' => $this->created_by,
         ]);

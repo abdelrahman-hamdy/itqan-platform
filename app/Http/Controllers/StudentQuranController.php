@@ -2,23 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Pagination\LengthAwarePaginator;
-use App\Models\QuranIndividualCircle;
-use Exception;
-use Log;
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
 use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
 use App\Services\CircleEnrollmentService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Log;
 
 class StudentQuranController extends Controller
 {
@@ -204,6 +204,7 @@ class StudentQuranController extends Controller
                     'payment_status' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? 'pending' : 'paid',
                     'status' => 'active',
                     'memorization_level' => $circle->memorization_level ?? 'beginner',
+                    'session_duration_minutes' => $circle->schedule?->default_duration_minutes ?? 60,
                     'starts_at' => now(),
                     'next_payment_at' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? now()->addMonth() : null,
                     'auto_renew' => true,

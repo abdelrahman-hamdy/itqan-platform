@@ -219,7 +219,7 @@ class TrialConversionService
                 'sessions_scheduled' => 0,
                 'sessions_completed' => 0,
                 'sessions_remaining' => $totalSessions,
-                'default_duration_minutes' => $package->session_duration_minutes ?? 45,
+                'default_duration_minutes' => $package->session_duration_minutes ?? 60,
                 'status' => SessionSubscriptionStatus::PENDING->value, // Will become active when subscription is paid
                 'started_at' => null,
                 'recording_enabled' => true,
@@ -242,7 +242,7 @@ class TrialConversionService
                 'total_sessions' => $totalSessions,
                 'sessions_remaining' => $totalSessions,
                 'sessions_per_month' => $sessionsPerMonth,
-                'session_duration_minutes' => $package->session_duration_minutes ?? 45,
+                'session_duration_minutes' => $package->session_duration_minutes ?? 60,
                 'base_price' => $price,
                 'final_price' => $price,
                 'currency' => getCurrencyCode(null, $trialRequest->academy), // Always use academy's configured currency

@@ -98,6 +98,7 @@ class QuranEnrollmentService
             'package_id' => $package->id,
             'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
             'subscription_type' => 'individual',
+            'session_duration_minutes' => $package->session_duration_minutes,
             'total_sessions' => $totalSessions,
             'sessions_used' => 0,
             'sessions_remaining' => $totalSessions,

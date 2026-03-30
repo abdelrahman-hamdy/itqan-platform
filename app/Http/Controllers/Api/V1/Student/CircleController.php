@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
-use App\Models\QuranCircleEnrollment;
 use App\Enums\CircleEnrollmentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranCircle;
+use App\Models\QuranCircleEnrollment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -132,7 +132,7 @@ class CircleController extends Controller
                 'schedule_days' => $circle->schedule_days ?? [],
                 'start_time' => $circle->start_time,
                 'end_time' => $circle->end_time,
-                'session_duration_minutes' => $circle->session_duration_minutes,
+                'session_duration_minutes' => $circle->schedule?->default_duration_minutes ?? 60,
                 'monthly_price' => $circle->monthly_price,
                 'is_active' => (bool) $circle->status,
                 'accepts_new_students' => $circle->enrollment_status === CircleEnrollmentStatus::OPEN,

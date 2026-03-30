@@ -84,6 +84,7 @@ class CirclePaidEnrollmentService
                     'payment_status' => SubscriptionPaymentStatus::PENDING,
                     'status' => SessionSubscriptionStatus::PENDING,
                     'memorization_level' => $lockedCircle->memorization_level ?? 'beginner',
+                    'session_duration_minutes' => $lockedCircle->schedule?->default_duration_minutes ?? 60,
                     'starts_at' => now(),
                     'auto_renew' => true,
                 ]);

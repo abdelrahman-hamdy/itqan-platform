@@ -118,7 +118,7 @@
                     <i class="ri-timer-line text-pink-600 text-sm"></i>
                     <span class="text-xs font-medium text-pink-600">مدة الجلسة</span>
                 </div>
-                <p class="text-sm font-bold text-pink-900 mt-1">{{ $package->session_duration_minutes ?? '60' }} دقيقة</p>
+                <p class="text-sm font-bold text-pink-900 mt-1">{{ $lesson->session_duration_minutes ?? $package->session_duration_minutes ?? 60 }} {{ __('components.circle.info_sidebar.minutes') }}</p>
             </div>
 
         @else
