@@ -78,7 +78,7 @@ class FixAbsentSessionsWithAttendance extends Command
 
                     $updateData = [
                         'status' => SessionStatus::COMPLETED,
-                        'attendance_status' => 'completed',
+                        'attendance_status' => 'attended',
                     ];
 
                     // Set started_at from teacher's first join if missing
