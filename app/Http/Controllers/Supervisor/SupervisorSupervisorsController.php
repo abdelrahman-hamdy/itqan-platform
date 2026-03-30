@@ -228,6 +228,9 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
 
         $academy = AcademyContextService::getCurrentAcademy();
 
+        // Remove any soft-deleted user with the same email to avoid DB unique constraint violation
+        User::onlyTrashed()->where('email', $request->email)->where('academy_id', $academy->id)->forceDelete();
+
         $user = new User([
             'academy_id' => $academy->id,
             'first_name' => $request->first_name,
