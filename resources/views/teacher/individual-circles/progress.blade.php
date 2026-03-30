@@ -464,7 +464,7 @@
                     $completedSessions = $circle->sessions->where('status', 'completed');
                     $avgRecitation = $completedSessions->avg('recitation_quality') ?? 0;
                     $avgTajweed = $completedSessions->avg('tajweed_accuracy') ?? 0;
-                    $totalPapers = $circle->papers_memorized_precise ?? $circle->convertVersesToPapers($circle->verses_memorized ?? 0);
+                    $totalPapers = $circle->total_memorized_pages ?? 0;
                 @endphp
                 
                 <div class="space-y-3 md:space-y-4">
@@ -687,7 +687,7 @@
                         {{ __('teacher.progress.view_circle_btn') }}
                     </a>
 
-                    @if($circle->canScheduleSession())
+                    @if($circle->sessions_remaining > 0)
                         <button class="min-h-[44px] w-full px-4 md:px-5 py-2.5 md:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs md:text-sm font-medium rounded-lg md:rounded-xl hover:from-green-700 hover:to-emerald-700 transition-colors shadow-lg">
                             <i class="ri-calendar-line ms-1.5 md:ms-2"></i>
                             {{ __('teacher.progress.schedule_new_session') }}
