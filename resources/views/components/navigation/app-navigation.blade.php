@@ -667,6 +667,13 @@
           $sidebarIsAdmin = $sidebarUser->isSuperAdmin() || $sidebarUser->isAdmin() || $sidebarUser->isAcademyAdmin();
           $sidebarHasQuran = $sidebarIsAdmin || !empty($sidebarUser->supervisorProfile?->getAssignedQuranTeacherIds());
           $sidebarHasAcademic = $sidebarIsAdmin || !empty($sidebarUser->supervisorProfile?->getAssignedAcademicTeacherIds());
+          $sidebarProfile = $sidebarUser->supervisorProfile;
+          $sidebarCanManageTeachers = $sidebarIsAdmin || ($sidebarProfile?->canManageTeachers() ?? false);
+          $sidebarCanManageStudents = $sidebarIsAdmin || ($sidebarProfile?->canManageStudents() ?? false);
+          $sidebarCanManageParents = $sidebarIsAdmin || ($sidebarProfile?->canManageParents() ?? false);
+          $sidebarCanManageSubscriptions = $sidebarIsAdmin || ($sidebarProfile?->canManageSubscriptions() ?? false);
+          $sidebarCanManagePayments = $sidebarIsAdmin || ($sidebarProfile?->canManagePayments() ?? false);
+          $sidebarCanManageTeacherEarnings = $sidebarIsAdmin || ($sidebarProfile?->canManageTeacherEarnings() ?? false);
         @endphp
 
         <!-- Divider -->
@@ -683,11 +690,37 @@
             <span>{{ __('supervisor.sidebar.manage_frontend') }}</span>
           </a>
 
+          @if($sidebarCanManageTeachers)
           <a href="{{ route('manage.teachers.index', ['subdomain' => $subdomain]) }}"
              class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.teachers.*') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-team-line text-xl"></i>
             <span>{{ __('supervisor.sidebar.my_teachers') }}</span>
           </a>
+          @endif
+
+          @if($sidebarCanManageStudents)
+          <a href="{{ route('manage.students.index', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.students.*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-group-2-line text-xl"></i>
+            <span>{{ __('supervisor.sidebar.my_students') }}</span>
+          </a>
+          @endif
+
+          @if($sidebarCanManageParents)
+          <a href="{{ route('manage.parents.index', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.parents.*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-parent-line text-xl"></i>
+            <span>{{ __('supervisor.sidebar.my_parents') }}</span>
+          </a>
+          @endif
+
+          @if($sidebarIsAdmin)
+          <a href="{{ route('manage.supervisors.index', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.supervisors.*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-user-settings-line text-xl"></i>
+            <span>{{ __('supervisor.sidebar.my_supervisors') }}</span>
+          </a>
+          @endif
 
           @if($sidebarHasQuran)
           <!-- Section: Quran Programs -->
@@ -727,6 +760,14 @@
             <i class="ri-book-open-line text-xl"></i>
             <span>{{ __('supervisor.sidebar.interactive_courses') }}</span>
           </a>
+
+          @if($sidebarIsAdmin)
+          <a href="{{ route('manage.recorded-courses.index', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.recorded-courses.*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-video-line text-xl"></i>
+            <span>{{ __('supervisor.sidebar.recorded_courses') }}</span>
+          </a>
+          @endif
           @endif
 
           <!-- Section: Calendar & Monitoring -->
@@ -738,14 +779,50 @@
             <span>{{ __('supervisor.sidebar.calendar') }}</span>
           </a>
 
-          <a href="{{ route('manage.sessions-monitoring.index', ['subdomain' => $subdomain]) }}"
-             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.sessions-monitoring.*') ? 'bg-gray-100 text-primary' : '' }}">
-            <i class="ri-live-line text-xl"></i>
-            <span>{{ __('supervisor.sidebar.sessions_monitoring') }}</span>
+          <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.sessions.*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-calendar-check-line text-xl"></i>
+            <span>{{ __('supervisor.sidebar.sessions_management') }}</span>
+          </a>
+
+          <a href="{{ route('manage.attendance.index', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.attendance.*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-user-follow-line text-xl"></i>
+            <span>{{ __('supervisor.sidebar.attendance') }}</span>
           </a>
 
           <!-- Section: Management -->
           <p class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase mt-4">{{ __('supervisor.sidebar.management') }}</p>
+
+          @if($sidebarCanManageSubscriptions)
+          <a href="{{ route('manage.subscriptions.index', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.subscriptions.*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-vip-crown-line text-xl"></i>
+            <span>{{ __('supervisor.sidebar.subscriptions') }}</span>
+          </a>
+          @endif
+
+          @if($sidebarCanManagePayments)
+          <a href="{{ route('manage.payments.index', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.payments.*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-bank-card-line text-xl"></i>
+            <span>{{ __('supervisor.sidebar.payments') }}</span>
+          </a>
+          @endif
+
+          <a href="{{ route('manage.homework.index', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.homework.*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-todo-line text-xl"></i>
+            <span>{{ __('supervisor.sidebar.homework') }}</span>
+          </a>
+
+          @if($sidebarCanManageTeacherEarnings)
+          <a href="{{ route('manage.teacher-earnings.index', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.teacher-earnings.*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-money-dollar-circle-line text-xl"></i>
+            <span>{{ __('supervisor.sidebar.teacher_earnings') }}</span>
+          </a>
+          @endif
 
           <a href="{{ route('manage.quizzes.index', ['subdomain' => $subdomain]) }}"
              class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.quizzes.*') ? 'bg-gray-100 text-primary' : '' }}">
