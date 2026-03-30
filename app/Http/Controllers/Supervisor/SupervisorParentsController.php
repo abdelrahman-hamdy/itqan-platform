@@ -221,10 +221,9 @@ class SupervisorParentsController extends BaseSupervisorWebController
             abort(403);
         }
 
-        // Get students in scope for child linking
-        $academy = AcademyContextService::getCurrentAcademy();
-        $students = User::where('user_type', 'student')
-            ->where('academy_id', $academy->id)
+        // Get students in supervisor's scope for child linking
+        $studentUserIds = $this->discoverStudentUserIds();
+        $students = User::whereIn('id', $studentUserIds)
             ->where('active_status', true)
             ->orderBy('first_name')
             ->get()
