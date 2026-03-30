@@ -205,17 +205,93 @@
 
                     {{-- Link Children (Students) --}}
                     @if(isset($students) && $students->isNotEmpty())
-                    <div>
-                        <label for="student_ids" class="block text-sm font-medium text-gray-700 mb-1">
+                    <div x-data="{
+                        open: false,
+                        search: '',
+                        selected: @js(collect(old('student_ids', []))->map(fn($id) => (int)$id)->toArray()),
+                        students: @js($students->values()),
+                        get filtered() {
+                            if (!this.search) return this.students;
+                            const q = this.search.toLowerCase();
+                            return this.students.filter(s => s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q));
+                        },
+                        isSelected(id) { return this.selected.includes(id); },
+                        toggle(id) {
+                            if (this.isSelected(id)) { this.selected = this.selected.filter(i => i !== id); }
+                            else { this.selected.push(id); }
+                        },
+                        remove(id) { this.selected = this.selected.filter(i => i !== id); },
+                        getStudent(id) { return this.students.find(s => s.id === id); },
+                        initials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase(); }
+                    }" @click.outside="open = false">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
                             {{ __('supervisor.parents.link_children') }} <span class="text-red-600">*</span>
                         </label>
-                        <select name="student_ids[]" id="student_ids" multiple required
-                                class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('student_ids') border-red-500 @enderror">
-                            @foreach($students as $student)
-                                <option value="{{ $student['id'] }}" {{ in_array($student['id'], old('student_ids', [])) ? 'selected' : '' }}>{{ $student['label'] }}</option>
-                            @endforeach
-                        </select>
-                        <p class="mt-1 text-xs text-gray-500">{{ __('supervisor.parents.link_children_hint') }}</p>
+
+                        {{-- Hidden inputs for form submission --}}
+                        <template x-for="id in selected" :key="id">
+                            <input type="hidden" name="student_ids[]" :value="id">
+                        </template>
+
+                        {{-- Selected chips --}}
+                        <div class="min-h-[44px] w-full px-2 py-1.5 border rounded-lg text-sm cursor-pointer flex flex-wrap gap-1.5 items-center @error('student_ids') border-red-500 @else border-gray-300 @enderror"
+                             @click="open = !open">
+                            <template x-for="id in selected" :key="'chip-'+id">
+                                <span class="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-xs">
+                                    <template x-if="getStudent(id)?.avatar">
+                                        <img :src="getStudent(id).avatar" class="w-5 h-5 rounded-full object-cover" :alt="getStudent(id).name">
+                                    </template>
+                                    <template x-if="!getStudent(id)?.avatar">
+                                        <span class="w-5 h-5 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center text-[9px] font-bold" x-text="initials(getStudent(id)?.name || '')"></span>
+                                    </template>
+                                    <span x-text="getStudent(id)?.name"></span>
+                                    <button type="button" @click.stop="remove(id)" class="text-indigo-400 hover:text-indigo-700">
+                                        <i class="ri-close-line text-xs"></i>
+                                    </button>
+                                </span>
+                            </template>
+                            <span x-show="selected.length === 0" class="text-gray-400 text-sm py-1">{{ __('supervisor.parents.link_children_hint') }}</span>
+                            <i class="ri-arrow-down-s-line text-gray-400 ms-auto" :class="{ 'rotate-180': open }"></i>
+                        </div>
+
+                        {{-- Dropdown --}}
+                        <div x-show="open" x-transition class="relative z-20">
+                            <div class="absolute w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-hidden">
+                                {{-- Search --}}
+                                <div class="p-2 border-b border-gray-100">
+                                    <input type="text" x-model="search" @click.stop
+                                           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                           placeholder="{{ __('supervisor.parents.search_students') }}">
+                                </div>
+                                {{-- Options --}}
+                                <div class="overflow-y-auto max-h-48">
+                                    <template x-for="student in filtered" :key="student.id">
+                                        <button type="button" @click.stop="toggle(student.id)"
+                                                class="w-full flex items-center gap-3 px-3 py-2.5 text-start hover:bg-gray-50 transition-colors"
+                                                :class="{ 'bg-indigo-50': isSelected(student.id) }">
+                                            {{-- Avatar --}}
+                                            <template x-if="student.avatar">
+                                                <img :src="student.avatar" class="w-8 h-8 rounded-full object-cover flex-shrink-0" :alt="student.name">
+                                            </template>
+                                            <template x-if="!student.avatar">
+                                                <span class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold flex-shrink-0" x-text="initials(student.name)"></span>
+                                            </template>
+                                            {{-- Info --}}
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 truncate" x-text="student.name"></p>
+                                                <p class="text-xs text-gray-500 truncate" x-text="student.email"></p>
+                                            </div>
+                                            {{-- Checkbox --}}
+                                            <i class="text-lg flex-shrink-0" :class="isSelected(student.id) ? 'ri-checkbox-fill text-indigo-600' : 'ri-checkbox-blank-line text-gray-300'"></i>
+                                        </button>
+                                    </template>
+                                    <div x-show="filtered.length === 0" class="px-3 py-4 text-center text-sm text-gray-500">
+                                        {{ __('supervisor.parents.no_students_found') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         @error('student_ids')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror

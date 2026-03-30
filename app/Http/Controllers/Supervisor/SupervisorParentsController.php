@@ -228,7 +228,12 @@ class SupervisorParentsController extends BaseSupervisorWebController
             ->where('active_status', true)
             ->orderBy('first_name')
             ->get()
-            ->map(fn ($s) => ['id' => $s->id, 'label' => $s->name.' ('.$s->email.')']);
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'email' => $s->email,
+                'avatar' => $s->avatar ? asset('storage/'.$s->avatar) : null,
+            ]);
 
         return view('supervisor.parents.create', compact('students'));
     }
