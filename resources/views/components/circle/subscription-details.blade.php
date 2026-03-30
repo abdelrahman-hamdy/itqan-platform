@@ -104,10 +104,12 @@
                     <p class="text-xs {{ $textLightColor }} mb-1">{{ __('components.circle.subscription_details.subscription_type') }}</p>
                     <p class="text-lg font-bold {{ $textDarkColor }}">{{ $details['billing_cycle_ar'] }}</p>
                 </div>
+                @if(!$isTeacher)
                 <div class="text-end">
                     <p class="text-xs {{ $textLightColor }} mb-1">{{ __('components.circle.subscription_details.amount') }}</p>
                     <p class="text-lg font-bold {{ $textDarkColor }}">{{ $formattedPrice }}</p>
                 </div>
+                @endif
             </div>
         </div>
 
