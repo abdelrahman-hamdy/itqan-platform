@@ -9,42 +9,40 @@
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 card-hover flex flex-col overflow-hidden">
   {{-- Section 1: Colored Header with Avatar --}}
-  <div class="relative bg-gradient-to-l from-yellow-50 to-amber-100 pt-6 pb-10 px-4 sm:px-6">
-    {{-- My Teacher Badge (top corner) --}}
+  <div class="relative bg-amber-50 h-20">
+    {{-- My Teacher Badge (top-end corner) --}}
     @if($isSubscribed)
-    <span class="absolute top-3 start-3 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500 text-white shadow-sm">
+    <span class="absolute top-3 end-3 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500 text-white shadow-sm z-20">
       <i class="ri-check-line me-1"></i>
       {{ __('components.cards.quran_teacher.my_teacher') }}
     </span>
     @endif
-  </div>
 
-  {{-- Avatar (centered, overlapping header/body) --}}
-  <div class="flex justify-center -mt-10 relative z-10">
-    <div class="rounded-full border-3 border-white shadow-md">
-      <x-avatar
-        :user="$teacher"
-        size="xl"
-        userType="quran_teacher"
-        :gender="$teacher->gender ?? $teacher->user?->gender ?? 'male'"
-        class="flex-shrink-0" />
+    {{-- Avatar: vertically centered on bottom border, positioned at start side --}}
+    <div class="absolute start-4 sm:start-6 -bottom-12 z-10">
+      <div class="rounded-full border-4 border-white shadow-lg">
+        <x-avatar
+          :user="$teacher"
+          size="lg"
+          userType="quran_teacher"
+          :gender="$teacher->gender ?? $teacher->user?->gender ?? 'male'"
+          class="flex-shrink-0" />
+      </div>
     </div>
   </div>
 
-  {{-- Section 2: Name + Rating (centered below avatar) --}}
-  <div class="text-center px-4 sm:px-6 pt-2 pb-3">
+  {{-- Section 2: Name + Rating (beside avatar, with start padding to clear it) --}}
+  <div class="ps-32 sm:ps-36 pe-4 sm:pe-6 pt-3 pb-2 min-h-[3.5rem]">
     <h3 class="font-bold text-gray-900 text-lg leading-tight truncate">
       {{ $teacher->user->full_name ?? $teacher->user->name ?? __('components.cards.quran_teacher.default_name') }}
     </h3>
-    @if($rating > 0)
-    <div class="flex items-center justify-center gap-1 mt-1">
+    <div class="flex items-center gap-1 mt-1">
       <x-reviews.star-rating
         :rating="$rating"
         :total-reviews="$teacher->total_reviews ?? null"
         size="sm"
       />
     </div>
-    @endif
   </div>
 
   {{-- Section 3: Main Info Area --}}
@@ -173,10 +171,10 @@
     {{-- Section 4: Action Buttons --}}
     <div class="pb-4 sm:pb-6 pt-3 mt-auto">
       @if($isSubscribed && $subscription && $subscription->individualCircle)
-        {{-- Subscribed: Two prominent buttons side by side --}}
+        {{-- Subscribed: Circle button + Chat icon + Profile icon --}}
         <div class="flex items-center gap-2">
           <a href="{{ route('individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $subscription->individualCircle->id]) }}"
-             class="flex-1 inline-flex items-center justify-center gap-1.5 bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors">
+             class="flex-1 inline-flex items-center justify-center gap-1.5 bg-green-600 text-white h-11 px-4 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors">
             <i class="ri-book-open-line"></i>
             {{ __('components.cards.quran_teacher.open_circle') }}
           </a>
@@ -188,13 +186,13 @@
                 entityType="quran_individual"
                 :entityId="$subscription->individualCircle->id"
                 variant="icon-only"
-                size="lg"
-                class="!w-11 !h-11 !rounded-lg bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center"
+                size="md"
+                class="!w-11 !h-11 !p-0 !rounded-lg !bg-blue-50 !border !border-blue-200 !text-blue-600 hover:!bg-blue-100"
             />
           @endif
 
           <a href="{{ route('quran-teachers.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'teacherId' => $teacher->id]) }}"
-             class="w-11 h-11 inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-yellow-600 transition-colors"
+             class="w-11 h-11 inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-yellow-600 transition-colors flex-shrink-0"
              title="{{ __('components.cards.quran_teacher.view_profile') }}">
             <i class="ri-user-line text-lg"></i>
           </a>
@@ -202,20 +200,20 @@
       @elseif($isSubscribed && $subscription)
         {{-- Subscribed but circle not ready --}}
         <div class="flex items-center gap-2">
-          <span class="flex-1 inline-flex items-center justify-center gap-1.5 bg-gray-100 text-gray-400 px-4 py-2.5 rounded-lg text-sm font-semibold cursor-not-allowed">
+          <span class="flex-1 inline-flex items-center justify-center gap-1.5 bg-gray-100 text-gray-400 h-11 px-4 rounded-lg text-sm font-semibold cursor-not-allowed">
             <i class="ri-time-line"></i>
             {{ __('components.cards.quran_teacher.circle_preparing') }}
           </span>
           <a href="{{ route('quran-teachers.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'teacherId' => $teacher->id]) }}"
-             class="w-11 h-11 inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-yellow-600 transition-colors"
+             class="w-11 h-11 inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-yellow-600 transition-colors flex-shrink-0"
              title="{{ __('components.cards.quran_teacher.view_profile') }}">
             <i class="ri-user-line text-lg"></i>
           </a>
         </div>
       @else
-        {{-- Not subscribed: View Profile as full-width --}}
+        {{-- Not subscribed: View Profile full-width --}}
         <a href="{{ route('quran-teachers.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'teacherId' => $teacher->id]) }}"
-           class="w-full inline-flex items-center justify-center gap-1.5 bg-yellow-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors">
+           class="w-full inline-flex items-center justify-center gap-1.5 bg-yellow-600 text-white h-11 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors">
           <i class="ri-eye-line"></i>
           {{ __('components.cards.quran_teacher.view_profile') }}
         </a>
