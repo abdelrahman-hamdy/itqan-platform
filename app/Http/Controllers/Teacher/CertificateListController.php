@@ -36,8 +36,7 @@ class CertificateListController extends Controller
                         $sub->where('quran_teacher_id', $user->id);
                     })
                     ->orWhereHasMorph('certificateable', [\App\Models\QuranSubscription::class], function ($sub) use ($user) {
-                        $sub->whereHas('circle', fn ($c) => $c->where('quran_teacher_id', $user->id))
-                            ->orWhereHas('individualCircle', fn ($c) => $c->where('quran_teacher_id', $user->id));
+                        $sub->where('quran_teacher_id', $user->id);
                     });
             });
         } elseif ($user->isAcademicTeacher()) {

@@ -22,8 +22,8 @@ class PaymentStateMachine
     private const TRANSITIONS = [
         'pending' => ['completed', 'failed', 'cancelled', 'expired'],
         'completed' => ['refunded', 'partially_refunded'], // Allow refund after completion
-        'failed' => ['pending'], // Allow retry
-        'cancelled' => [], // Terminal state
+        'failed' => ['pending', 'completed'], // Allow retry + gateway success after initial failure
+        'cancelled' => ['completed'], // Allow gateway success after void
         'expired' => ['pending'], // Allow re-initiation
         'refunded' => [], // Terminal state
         'partially_refunded' => ['refunded'], // Can fully refund after partial

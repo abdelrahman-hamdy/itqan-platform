@@ -287,6 +287,16 @@ class EasyKashWebhookController extends Controller
                 ];
             }
 
+            // Log recovery transitions (failed/cancelled → completed)
+            $oldStatusValue = $oldStatus instanceof PaymentStatus ? $oldStatus->value : $oldStatus;
+            if (in_array($oldStatusValue, ['failed', 'cancelled']) && $newStatus === PaymentStatus::COMPLETED->value) {
+                SafePaymentLogger::info('EasyKash: RECOVERY — payment transitioning from '.$oldStatusValue.' to completed', [
+                    'payment_id' => $payment->id,
+                    'old_status' => $oldStatusValue,
+                    'transaction_id' => $payload->transactionId,
+                ]);
+            }
+
             // Update payment
             $updateData = [
                 'status' => $newStatus,
@@ -384,79 +394,67 @@ class EasyKashWebhookController extends Controller
         ]);
 
         // Activate related subscription if exists (polymorphic)
-        if ($payment->payable_type && $payment->payable_id) {
-            SafePaymentLogger::info('EasyKash: using polymorphic payable', [
-                'payment_id' => $payment->id,
-                'payable_type' => $payment->payable_type,
-            ]);
+        try {
+            if ($payment->payable_type && $payment->payable_id) {
+                $payable = $payment->payable;
 
-            $payable = $payment->payable;
-
-            if ($payable) {
-                SafePaymentLogger::info('EasyKash: payable found', [
-                    'payment_id' => $payment->id,
-                    'payable_class' => get_class($payable),
-                    'has_activate_method' => method_exists($payable, 'activateFromPayment'),
-                ]);
-
-                if (method_exists($payable, 'activateFromPayment')) {
-                    SafePaymentLogger::info('EasyKash: calling activateFromPayment', [
-                        'payment_id' => $payment->id,
-                    ]);
-
+                if ($payable && method_exists($payable, 'activateFromPayment')) {
                     $payable->activateFromPayment($payment);
 
-                    SafePaymentLogger::info('EasyKash: activateFromPayment completed', [
+                    SafePaymentLogger::info('EasyKash: activateFromPayment completed via polymorphic', [
                         'payment_id' => $payment->id,
+                        'payable_class' => get_class($payable),
                         'subscription_id' => $payable->id,
                     ]);
                 } else {
-                    SafePaymentLogger::warning('EasyKash: payable does not have activateFromPayment method', [
+                    SafePaymentLogger::warning('EasyKash: payable missing activateFromPayment method', [
                         'payment_id' => $payment->id,
-                        'payable_class' => get_class($payable),
+                        'payable_class' => $payable ? get_class($payable) : 'null',
                     ]);
                 }
-            } else {
-                SafePaymentLogger::warning('EasyKash: payable not found', [
-                    'payment_id' => $payment->id,
-                    'payable_type' => $payment->payable_type,
-                    'payable_id' => $payment->payable_id,
-                ]);
-            }
-        } elseif ($payment->subscription_id) {
-            SafePaymentLogger::info('EasyKash: using legacy subscription_id fallback', [
-                'payment_id' => $payment->id,
-                'subscription_id' => $payment->subscription_id,
-            ]);
-
-            // Legacy fallback: direct subscription_id lookup (try all subscription types)
-            $subscription = QuranSubscription::find($payment->subscription_id)
-                ?? AcademicSubscription::find($payment->subscription_id)
-                ?? CourseSubscription::find($payment->subscription_id);
-
-            if ($subscription && method_exists($subscription, 'activateFromPayment')) {
-                $currentStatus = $subscription->payment_status->value ?? $subscription->status ?? null;
-                if ($currentStatus !== 'paid' && $currentStatus !== 'active') {
-                    $subscription->activateFromPayment($payment);
-
-                    SafePaymentLogger::info('EasyKash: subscription activated from legacy subscription_id', [
-                        'subscription_id' => $subscription->id,
-                        'subscription_type' => get_class($subscription),
-                        'payment_id' => $payment->id,
-                    ]);
-                }
-            } else {
-                SafePaymentLogger::warning('EasyKash: legacy subscription not found', [
+            } elseif ($payment->subscription_id) {
+                SafePaymentLogger::info('EasyKash: using legacy subscription_id fallback', [
                     'payment_id' => $payment->id,
                     'subscription_id' => $payment->subscription_id,
                 ]);
+
+                $subscription = QuranSubscription::find($payment->subscription_id)
+                    ?? AcademicSubscription::find($payment->subscription_id)
+                    ?? CourseSubscription::find($payment->subscription_id);
+
+                if ($subscription && method_exists($subscription, 'activateFromPayment')) {
+                    $currentStatus = $subscription->payment_status->value ?? $subscription->status ?? null;
+                    if ($currentStatus !== 'paid' && $currentStatus !== 'active') {
+                        $subscription->activateFromPayment($payment);
+
+                        SafePaymentLogger::info('EasyKash: subscription activated from legacy subscription_id', [
+                            'subscription_id' => $subscription->id,
+                            'subscription_type' => get_class($subscription),
+                            'payment_id' => $payment->id,
+                        ]);
+                    }
+                } else {
+                    SafePaymentLogger::warning('EasyKash: legacy subscription not found or missing activateFromPayment', [
+                        'payment_id' => $payment->id,
+                        'subscription_id' => $payment->subscription_id,
+                        'subscription_class' => $subscription ? get_class($subscription) : 'null',
+                    ]);
+                }
+            } else {
+                SafePaymentLogger::warning('EasyKash: no subscription linkage found', [
+                    'payment_id' => $payment->id,
+                    'payable_type' => $payment->payable_type,
+                    'payable_id' => $payment->payable_id,
+                    'subscription_id' => $payment->subscription_id,
+                ]);
             }
-        } else {
-            SafePaymentLogger::warning('EasyKash: no subscription linkage found', [
+        } catch (Throwable $e) {
+            SafePaymentLogger::error('EasyKash: activateFromPayment FAILED — payment is completed but subscription NOT activated', [
                 'payment_id' => $payment->id,
                 'payable_type' => $payment->payable_type,
                 'payable_id' => $payment->payable_id,
-                'subscription_id' => $payment->subscription_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
 

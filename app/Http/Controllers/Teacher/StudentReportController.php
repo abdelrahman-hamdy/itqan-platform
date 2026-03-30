@@ -326,14 +326,15 @@ class StudentReportController extends Controller
             }
 
             $attendances = MeetingAttendance::where('session_id', $sessionId)
-                ->get(['user_id', 'first_join_time', 'last_leave_time', 'total_duration_minutes', 'is_currently_in_meeting']);
+                ->get(['user_id', 'first_join_time', 'last_leave_time', 'total_duration_minutes', 'last_heartbeat_at']);
 
             $result = [];
             foreach ($attendances as $attendance) {
+                $isInMeeting = $attendance->isCurrentlyInMeeting();
                 $result[$attendance->user_id] = [
                     'has_joined' => $attendance->first_join_time !== null,
-                    'is_in_meeting' => (bool) $attendance->is_currently_in_meeting,
-                    'has_left' => $attendance->last_leave_time !== null && ! $attendance->is_currently_in_meeting,
+                    'is_in_meeting' => $isInMeeting,
+                    'has_left' => $attendance->last_leave_time !== null && ! $isInMeeting,
                     'duration_minutes' => $attendance->total_duration_minutes ?? 0,
                 ];
             }

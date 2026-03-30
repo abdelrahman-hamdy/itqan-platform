@@ -984,4 +984,67 @@ class CourseSubscription extends BaseSubscription
 
         return max(0, $total - $used);
     }
+
+    /**
+     * Activate subscription from successful payment.
+     *
+     * Called by payment webhook after successful payment.
+     * Transitions status from PENDING to ENROLLED and sets enrollment timestamp.
+     */
+    public function activateFromPayment(Payment $payment): void
+    {
+        $this->update([
+            'status' => EnrollmentStatus::ENROLLED,
+            'payment_status' => SubscriptionPaymentStatus::PAID,
+            'enrolled_at' => now(),
+            'starts_at' => $this->starts_at ?? now(),
+            'last_payment_date' => now(),
+        ]);
+
+        \Log::info('[CourseSubscription] Activated from payment', [
+            'subscription_id' => $this->id,
+            'payment_id' => $payment->id,
+            'course_type' => $this->course_type?->value ?? $this->course_type,
+        ]);
+
+        // Send activation notification
+        try {
+            $this->notifySubscriptionActivated();
+        } catch (\Exception $e) {
+            \Log::error('[CourseSubscription] Failed to send activation notification', [
+                'subscription_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Send notification when subscription is activated
+     */
+    private function notifySubscriptionActivated(): void
+    {
+        if (! $this->student) {
+            return;
+        }
+
+        try {
+            $courseName = $this->recordedCourse?->title ?? $this->interactiveCourse?->title ?? __('payments.course');
+            app(\App\Services\NotificationService::class)->sendNotification(
+                user: $this->student,
+                title: __('payments.subscription_activated_title'),
+                body: __('payments.course_subscription_activated', ['course' => $courseName]),
+                type: \App\Enums\NotificationType::PAYMENT,
+                data: [
+                    'subscription_id' => $this->id,
+                    'subscription_type' => 'course',
+                    'course_type' => $this->course_type?->value ?? $this->course_type,
+                ],
+            );
+        } catch (\Exception $e) {
+            \Log::warning('[CourseSubscription] Failed to send notification', [
+                'subscription_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
 }

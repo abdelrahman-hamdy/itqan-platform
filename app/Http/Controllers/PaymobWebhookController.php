@@ -266,6 +266,16 @@ class PaymobWebhookController extends Controller
                 ];
             }
 
+            // Log recovery transitions (failed/cancelled → completed)
+            $oldStatusValue = $oldStatus instanceof PaymentStatus ? $oldStatus->value : $oldStatus;
+            if (in_array($oldStatusValue, ['failed', 'cancelled']) && $newStatus === PaymentStatus::COMPLETED->value) {
+                SafePaymentLogger::info('Paymob: RECOVERY — payment transitioning from '.$oldStatusValue.' to completed', [
+                    'payment_id' => $payment->id,
+                    'old_status' => $oldStatusValue,
+                    'transaction_id' => $payload->transactionId,
+                ]);
+            }
+
             // Update payment
             $updateData = [
                 'status' => $newStatus,
@@ -339,53 +349,69 @@ class PaymobWebhookController extends Controller
         ]);
 
         // Activate related subscription if exists (polymorphic)
-        if ($payment->payable_type && $payment->payable_id) {
-            $payable = $payment->payable;
+        try {
+            if ($payment->payable_type && $payment->payable_id) {
+                $payable = $payment->payable;
 
-            if ($payable && method_exists($payable, 'activateFromPayment')) {
-                $payable->activateFromPayment($payment);
+                if ($payable && method_exists($payable, 'activateFromPayment')) {
+                    $payable->activateFromPayment($payment);
 
-                SafePaymentLogger::info('Paymob: activateFromPayment completed via polymorphic', [
-                    'payment_id' => $payment->id,
-                    'payable_class' => get_class($payable),
-                    'subscription_id' => $payable->id,
-                ]);
-            }
-        } elseif ($payment->subscription_id) {
-            // Legacy fallback: direct subscription_id lookup
-            SafePaymentLogger::info('Paymob: using legacy subscription_id fallback', [
-                'payment_id' => $payment->id,
-                'subscription_id' => $payment->subscription_id,
-                'payment_type' => $payment->payment_type,
-            ]);
-
-            $subscription = QuranSubscription::find($payment->subscription_id)
-                ?? AcademicSubscription::find($payment->subscription_id)
-                ?? CourseSubscription::find($payment->subscription_id);
-
-            if ($subscription && method_exists($subscription, 'activateFromPayment')) {
-                $currentStatus = $subscription->payment_status->value ?? $subscription->status ?? null;
-                if ($currentStatus !== 'paid' && $currentStatus !== 'active') {
-                    $subscription->activateFromPayment($payment);
-
-                    SafePaymentLogger::info('Paymob: subscription activated from legacy subscription_id', [
-                        'subscription_id' => $subscription->id,
-                        'subscription_type' => get_class($subscription),
+                    SafePaymentLogger::info('Paymob: activateFromPayment completed via polymorphic', [
                         'payment_id' => $payment->id,
+                        'payable_class' => get_class($payable),
+                        'subscription_id' => $payable->id,
+                    ]);
+                } else {
+                    SafePaymentLogger::warning('Paymob: payable missing activateFromPayment method', [
+                        'payment_id' => $payment->id,
+                        'payable_class' => $payable ? get_class($payable) : 'null',
+                    ]);
+                }
+            } elseif ($payment->subscription_id) {
+                // Legacy fallback: direct subscription_id lookup
+                SafePaymentLogger::info('Paymob: using legacy subscription_id fallback', [
+                    'payment_id' => $payment->id,
+                    'subscription_id' => $payment->subscription_id,
+                    'payment_type' => $payment->payment_type,
+                ]);
+
+                $subscription = QuranSubscription::find($payment->subscription_id)
+                    ?? AcademicSubscription::find($payment->subscription_id)
+                    ?? CourseSubscription::find($payment->subscription_id);
+
+                if ($subscription && method_exists($subscription, 'activateFromPayment')) {
+                    $currentStatus = $subscription->payment_status->value ?? $subscription->status ?? null;
+                    if ($currentStatus !== 'paid' && $currentStatus !== 'active') {
+                        $subscription->activateFromPayment($payment);
+
+                        SafePaymentLogger::info('Paymob: subscription activated from legacy subscription_id', [
+                            'subscription_id' => $subscription->id,
+                            'subscription_type' => get_class($subscription),
+                            'payment_id' => $payment->id,
+                        ]);
+                    }
+                } else {
+                    SafePaymentLogger::warning('Paymob: legacy subscription not found or missing activateFromPayment', [
+                        'payment_id' => $payment->id,
+                        'subscription_id' => $payment->subscription_id,
+                        'subscription_class' => $subscription ? get_class($subscription) : 'null',
                     ]);
                 }
             } else {
-                SafePaymentLogger::warning('Paymob: legacy subscription not found', [
+                SafePaymentLogger::warning('Paymob: no subscription linkage found', [
                     'payment_id' => $payment->id,
+                    'payable_type' => $payment->payable_type,
+                    'payable_id' => $payment->payable_id,
                     'subscription_id' => $payment->subscription_id,
                 ]);
             }
-        } else {
-            SafePaymentLogger::warning('Paymob: no subscription linkage found', [
+        } catch (Throwable $e) {
+            SafePaymentLogger::error('Paymob: activateFromPayment FAILED — payment is completed but subscription NOT activated', [
                 'payment_id' => $payment->id,
                 'payable_type' => $payment->payable_type,
                 'payable_id' => $payment->payable_id,
-                'subscription_id' => $payment->subscription_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
 

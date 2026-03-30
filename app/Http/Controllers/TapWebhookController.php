@@ -366,6 +366,16 @@ class TapWebhookController extends Controller
                 ];
             }
 
+            // Log recovery transitions (failed/cancelled → completed)
+            $oldStatusValue = $oldStatus instanceof PaymentStatus ? $oldStatus->value : $oldStatus;
+            if (in_array($oldStatusValue, ['failed', 'cancelled']) && $newStatus === PaymentStatus::COMPLETED->value) {
+                SafePaymentLogger::info('Tap: RECOVERY — payment transitioning from '.$oldStatusValue.' to completed', [
+                    'payment_id' => $payment->id,
+                    'old_status' => $oldStatusValue,
+                    'transaction_id' => $payload->transactionId,
+                ]);
+            }
+
             // Update payment record
             $updateData = [
                 'status' => $newStatus,
@@ -456,48 +466,64 @@ class TapWebhookController extends Controller
         ]);
 
         // Activate related subscription if exists (polymorphic)
-        if ($payment->payable_type && $payment->payable_id) {
-            $payable = $payment->payable;
+        try {
+            if ($payment->payable_type && $payment->payable_id) {
+                $payable = $payment->payable;
 
-            if ($payable && method_exists($payable, 'activateFromPayment')) {
-                $payable->activateFromPayment($payment);
+                if ($payable && method_exists($payable, 'activateFromPayment')) {
+                    $payable->activateFromPayment($payment);
 
-                SafePaymentLogger::info('Tap: activateFromPayment completed', [
-                    'payment_id' => $payment->id,
-                    'subscription_id' => $payable->id,
-                ]);
-            } else {
-                SafePaymentLogger::warning('Tap: payable does not have activateFromPayment method', [
-                    'payment_id' => $payment->id,
-                    'payable_class' => $payable ? get_class($payable) : null,
-                ]);
-            }
-        } elseif ($payment->subscription_id) {
-            // Legacy fallback: direct subscription_id lookup
-            SafePaymentLogger::info('Tap: using legacy subscription_id fallback', [
-                'payment_id' => $payment->id,
-                'subscription_id' => $payment->subscription_id,
-            ]);
-
-            $subscription = QuranSubscription::find($payment->subscription_id)
-                ?? AcademicSubscription::find($payment->subscription_id)
-                ?? CourseSubscription::find($payment->subscription_id);
-
-            if ($subscription && method_exists($subscription, 'activateFromPayment')) {
-                $currentStatus = $subscription->payment_status->value ?? $subscription->status ?? null;
-                if ($currentStatus !== 'paid' && $currentStatus !== 'active') {
-                    $subscription->activateFromPayment($payment);
-
-                    SafePaymentLogger::info('Tap: subscription activated from legacy subscription_id', [
-                        'subscription_id' => $subscription->id,
-                        'subscription_type' => get_class($subscription),
+                    SafePaymentLogger::info('Tap: activateFromPayment completed', [
                         'payment_id' => $payment->id,
+                        'payable_class' => get_class($payable),
+                        'subscription_id' => $payable->id,
+                    ]);
+                } else {
+                    SafePaymentLogger::warning('Tap: payable missing activateFromPayment method', [
+                        'payment_id' => $payment->id,
+                        'payable_class' => $payable ? get_class($payable) : 'null',
                     ]);
                 }
+            } elseif ($payment->subscription_id) {
+                SafePaymentLogger::info('Tap: using legacy subscription_id fallback', [
+                    'payment_id' => $payment->id,
+                    'subscription_id' => $payment->subscription_id,
+                ]);
+
+                $subscription = QuranSubscription::find($payment->subscription_id)
+                    ?? AcademicSubscription::find($payment->subscription_id)
+                    ?? CourseSubscription::find($payment->subscription_id);
+
+                if ($subscription && method_exists($subscription, 'activateFromPayment')) {
+                    $currentStatus = $subscription->payment_status->value ?? $subscription->status ?? null;
+                    if ($currentStatus !== 'paid' && $currentStatus !== 'active') {
+                        $subscription->activateFromPayment($payment);
+
+                        SafePaymentLogger::info('Tap: subscription activated from legacy subscription_id', [
+                            'subscription_id' => $subscription->id,
+                            'subscription_type' => get_class($subscription),
+                            'payment_id' => $payment->id,
+                        ]);
+                    }
+                } else {
+                    SafePaymentLogger::warning('Tap: legacy subscription not found or missing activateFromPayment', [
+                        'payment_id' => $payment->id,
+                        'subscription_id' => $payment->subscription_id,
+                        'subscription_class' => $subscription ? get_class($subscription) : 'null',
+                    ]);
+                }
+            } else {
+                SafePaymentLogger::warning('Tap: no subscription linkage found', [
+                    'payment_id' => $payment->id,
+                ]);
             }
-        } else {
-            SafePaymentLogger::warning('Tap: no subscription linkage found', [
+        } catch (Throwable $e) {
+            SafePaymentLogger::error('Tap: activateFromPayment FAILED — payment is completed but subscription NOT activated', [
                 'payment_id' => $payment->id,
+                'payable_type' => $payment->payable_type,
+                'payable_id' => $payment->payable_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
 

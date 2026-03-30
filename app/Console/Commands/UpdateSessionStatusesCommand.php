@@ -413,7 +413,7 @@ class UpdateSessionStatusesCommand extends Command
             });
         }
 
-        $query->active()->where('scheduled_date', '>=', now()->subDay()->toDateString());
+        $query->active()->where('scheduled_at', '>=', now()->subDay());
 
         // Count total sessions for progress tracking
         $totalCount = $query->count();
