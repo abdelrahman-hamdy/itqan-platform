@@ -180,14 +180,16 @@
 
                     {{-- Phone --}}
                     <div>
-                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
-                            {{ __('auth.register.teacher.step2.phone') }}
-                        </label>
-                        <input type="text" name="phone" id="phone" value="{{ old('phone', $supervisor->phone) }}"
-                               class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('phone') border-red-500 @enderror">
-                        @error('phone')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <x-forms.phone-input
+                            name="phone"
+                            label="{{ __('auth.register.teacher.step2.phone') }}"
+                            :required="false"
+                            countryCodeField="phone_country_code"
+                            countryField="phone_country"
+                            initialCountry="sa"
+                            :value="old('phone', $supervisor->phone)"
+                            :error="$errors->first('phone')"
+                        />
                     </div>
 
                     {{-- Gender --}}
