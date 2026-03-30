@@ -9,10 +9,10 @@
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 card-hover flex flex-col overflow-hidden">
   {{-- Section 1: Colored Header — My Teacher + Name/Rating + Avatar --}}
-  <div class="relative bg-amber-50 px-4 sm:px-6 pt-3 pb-6">
+  <div class="relative bg-green-50 px-4 sm:px-6 pt-3 pb-6 min-h-[100px]">
     {{-- Avatar: vertically centered on bottom border, positioned at start side --}}
     <div class="absolute start-4 sm:start-6 -bottom-8 z-10">
-      <div class="rounded-full border-4 border-white shadow-lg">
+      <div class="rounded-full border-4 border-white">
         <x-avatar
           :user="$teacher"
           size="lg"
@@ -22,9 +22,9 @@
       </div>
     </div>
 
-    {{-- My Teacher Badge (first line, normal flow) --}}
+    {{-- My Teacher Badge (first line, floated to end/left in RTL) --}}
     @if($isSubscribed)
-    <div class="mb-2">
+    <div class="mb-2 flex justify-end">
       <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500 text-white shadow-sm">
         <i class="ri-check-line me-1"></i>
         {{ __('components.cards.quran_teacher.my_teacher') }}
