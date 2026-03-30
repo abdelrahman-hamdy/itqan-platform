@@ -1824,6 +1824,8 @@ return [
         'students_only' => 'متاح للطلاب فقط',
         'login_to_subscribe' => 'سجل دخولك للاشتراك',
         'secure_payment' => 'دفع آمن ومضمون',
+        'show_details' => 'عرض التفاصيل',
+        'hide_details' => 'إخفاء التفاصيل',
         'choose_package' => 'اختر الباقة المناسبة لك',
         'packages_description' => 'خطط تعليمية مصممة لتناسب احتياجاتك وأهدافك',
         'monthly' => 'شهري',

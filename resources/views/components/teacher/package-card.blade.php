@@ -4,7 +4,8 @@
     'academy',
     'color' => 'blue', // blue or violet
     'subscribeRoute',
-    'isPopular' => false
+    'isPopular' => false,
+    'compact' => false,
 ])
 
 @php
@@ -21,6 +22,143 @@
     }
 @endphp
 
+@if($compact)
+{{-- ============ COMPACT MODE (Mobile vertical list) ============ --}}
+<div x-data="{ expanded: false }"
+     class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden {{ $isPopular ? 'ring-2 ring-'.$color.'-500' : '' }}">
+
+  {{-- Compact Header - Always visible, clickable --}}
+  <button @click="expanded = !expanded" type="button"
+          class="w-full text-start p-3 flex items-center justify-between gap-3 bg-gradient-to-r from-{{ $color }}-50/50 to-white">
+    {{-- Left: name + badge + summary --}}
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 mb-0.5">
+        <h3 class="text-sm font-bold text-gray-900 truncate">{{ $package->name }}</h3>
+        @if($isPopular)
+          <span class="bg-{{ $color }}-600 text-white px-2 py-0.5 rounded-full text-[9px] font-bold whitespace-nowrap flex-shrink-0">
+            {{ __('components.packages.most_popular') }}
+          </span>
+        @endif
+      </div>
+      <p class="text-[11px] text-gray-500">
+        {{ $package->sessions_per_month }} {{ __('components.packages.sessions_unit') }}
+        &middot;
+        {{ $package->session_duration_minutes }} {{ __('components.packages.minutes') }}
+      </p>
+    </div>
+
+    {{-- Right: price + chevron --}}
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <div class="text-end">
+        @foreach($periods as $period)
+          <span x-show="pricingPeriod === '{{ $period }}'" @if($loop->index > 0) x-cloak @endif>
+            <span class="text-lg font-black text-{{ $color }}-600">{{ number_format($priceData[$period]['hasSale'] ? $priceData[$period]['sale'] : $priceData[$period]['original']) }}</span>
+          </span>
+        @endforeach
+        <span class="text-xs font-bold text-{{ $color }}-500">{{ getCurrencySymbol() }}</span>
+      </div>
+      <i class="ri-arrow-down-s-line text-gray-400 text-lg transition-transform duration-200"
+         :class="expanded && 'rotate-180'"></i>
+    </div>
+  </button>
+
+  {{-- Expandable Details --}}
+  <div x-show="expanded" x-collapse x-cloak>
+    <div class="px-3 pb-3 border-t border-gray-100">
+      @if($package->description)
+        <p class="text-xs text-gray-600 mt-3 mb-3">{{ $package->description }}</p>
+      @endif
+
+      {{-- "Instead of" sale text --}}
+      @foreach($periods as $period)
+        @if($priceData[$period]['hasSale'])
+          <p x-show="pricingPeriod === '{{ $period }}'" @if($loop->index > 0) x-cloak @endif class="text-[11px] text-gray-400 mb-2">
+            {{ __('components.packages.instead_of', ['price' => number_format($priceData[$period]['original']) . ' ' . getCurrencySymbol()]) }}
+          </p>
+        @endif
+      @endforeach
+
+      {{-- Renewal Text --}}
+      <p class="text-[10px] text-gray-500 mb-3">
+        <span x-show="pricingPeriod === 'monthly'">{{ __('components.packages.renews_monthly') }}</span>
+        <span x-show="pricingPeriod === 'quarterly'" x-cloak>{{ __('components.packages.renews_quarterly') }}</span>
+        <span x-show="pricingPeriod === 'yearly'" x-cloak>{{ __('components.packages.renews_yearly') }}</span>
+      </p>
+
+      {{-- Sessions and Duration - Side by Side --}}
+      <div class="grid grid-cols-2 gap-1.5 mb-2">
+        <div class="flex items-center gap-1.5 p-2 bg-gray-50 rounded-lg">
+          <div class="w-7 h-7 bg-{{ $color }}-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <i class="ri-video-chat-line text-xs text-{{ $color }}-600"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[10px] text-gray-500 mb-0.5 truncate">{{ __('components.packages.sessions_count') }}</p>
+            <p class="font-bold text-gray-900 text-xs truncate">{{ $package->sessions_per_month }} {{ __('components.packages.sessions_unit') }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 p-2 bg-gray-50 rounded-lg">
+          <div class="w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <i class="ri-time-line text-xs text-green-600"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[10px] text-gray-500 mb-0.5 truncate">{{ __('components.packages.session_duration') }}</p>
+            <p class="font-bold text-gray-900 text-xs truncate">{{ $package->session_duration_minutes }} {{ __('components.packages.minutes') }}</p>
+          </div>
+        </div>
+      </div>
+
+      {{-- Features --}}
+      @if($package->features && count($package->features) > 0)
+        <div class="space-y-1 mb-3">
+          @foreach($package->features as $feature)
+            <div class="flex items-start gap-2 py-1">
+              <i class="ri-check-line text-green-500 text-sm mt-0.5 flex-shrink-0 font-bold"></i>
+              <span class="text-gray-700 text-xs">{{ $feature }}</span>
+            </div>
+          @endforeach
+        </div>
+      @endif
+
+      {{-- CTA Button --}}
+      <div class="mt-2">
+        @auth
+          @if(auth()->user()->user_type === 'student')
+            <a :href="`{{ $subscribeRoute }}?period=${pricingPeriod}`"
+               class="min-h-[44px] group block w-full bg-gradient-to-r from-{{ $color }}-500 to-{{ $color }}-600 hover:from-{{ $color }}-600 hover:to-{{ $color }}-700 text-white px-4 py-3 rounded-lg font-bold text-sm transition-all shadow-lg text-center relative overflow-hidden">
+              <span class="relative z-10 flex items-center justify-center gap-1.5">
+                <i class="ri-shopping-cart-line text-base"></i>
+                <span>{{ __('components.packages.subscribe_now') }}</span>
+              </span>
+              <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+            </a>
+          @else
+            <div class="min-h-[44px] w-full bg-gray-100 text-gray-400 text-center font-bold py-3 rounded-lg cursor-not-allowed text-sm flex items-center justify-center">
+              <i class="ri-user-line ms-1.5"></i>
+              {{ __('components.packages.students_only') }}
+            </div>
+          @endif
+        @else
+          <a :href="`{{ route('login', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}?redirect={{ urlencode($subscribeRoute . '?period=') }}${pricingPeriod}`"
+             class="min-h-[44px] group block w-full bg-gradient-to-r from-{{ $color }}-500 to-{{ $color }}-600 hover:from-{{ $color }}-600 hover:to-{{ $color }}-700 text-white px-4 py-3 rounded-lg font-bold text-sm transition-all shadow-lg text-center relative overflow-hidden">
+            <span class="relative z-10 flex items-center justify-center gap-1.5">
+              <i class="ri-login-box-line text-base"></i>
+              <span>{{ __('components.packages.login_to_subscribe') }}</span>
+            </span>
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+          </a>
+        @endauth
+
+        <div class="flex items-center justify-center gap-1.5 mt-3 pt-3 border-t border-gray-100">
+          <i class="ri-shield-check-line text-green-600 text-sm"></i>
+          <span class="text-[10px] text-gray-600">{{ __('components.packages.secure_payment') }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@else
+{{-- ============ FULL MODE (Desktop/Tablet grid) ============ --}}
 <div class="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-200 overflow-visible {{ $isPopular ? 'ring-2 ring-'.$color.'-500' : '' }} flex flex-col relative">
 
   <!-- Popular Badge - Centered on top border -->
@@ -160,3 +298,4 @@
     </div>
   </div>
 </div>
+@endif

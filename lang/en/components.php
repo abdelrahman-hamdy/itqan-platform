@@ -1808,6 +1808,8 @@ return [
         'students_only' => 'Available for students only',
         'login_to_subscribe' => 'Login to Subscribe',
         'secure_payment' => 'Secure and guaranteed payment',
+        'show_details' => 'Show details',
+        'hide_details' => 'Hide details',
         'choose_package' => 'Choose the Right Package',
         'packages_description' => 'Educational plans designed to meet your needs and goals',
         'monthly' => 'Monthly',

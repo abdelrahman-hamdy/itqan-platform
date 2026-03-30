@@ -165,47 +165,19 @@
         @endforeach
       </div>
 
-      <!-- Mobile Slider -->
-      <div class="sm:hidden" x-data="{
-          current: 0,
-          total: {{ $packages->count() }},
-          startX: 0,
-          get offset() {
-              const dir = document.documentElement.dir === 'rtl' ? 1 : -1;
-              return this.current * 100 * dir;
-          }
-      }"
-      @touchstart="startX = $event.touches[0].clientX"
-      @touchend="
-          let diff = startX - $event.changedTouches[0].clientX;
-          if (diff > 50 && current < total - 1) current++;
-          else if (diff < -50 && current > 0) current--;
-      ">
-        <div class="overflow-hidden">
-          <div class="flex transition-transform duration-300 ease-out"
-               :style="'transform: translateX(' + offset + '%)'">
-            @foreach($packages as $package)
-              <div class="w-full flex-shrink-0 px-1 pt-4">
-                <x-teacher.package-card
-                  :package="$package"
-                  :teacher="$teacher"
-                  :academy="$academy"
-                  color="violet"
-                  subscribe-route="{{ route('public.academic-packages.subscribe', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id, 'packageId' => $package->id]) }}"
-                  :is-popular="$loop->index === 1"
-                />
-              </div>
-            @endforeach
-          </div>
-        </div>
-        <!-- Dots Navigation -->
-        <div class="flex justify-center gap-2 mt-4">
-          @foreach($packages as $package)
-            <button @click="current = {{ $loop->index }}"
-                    :class="current === {{ $loop->index }} ? 'bg-violet-600 w-6' : 'bg-gray-300 w-2'"
-                    class="h-2 rounded-full transition-all duration-300"></button>
-          @endforeach
-        </div>
+      <!-- Mobile Vertical List -->
+      <div class="sm:hidden space-y-3 px-1">
+        @foreach($packages as $package)
+          <x-teacher.package-card
+            :package="$package"
+            :teacher="$teacher"
+            :academy="$academy"
+            color="violet"
+            subscribe-route="{{ route('public.academic-packages.subscribe', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id, 'packageId' => $package->id]) }}"
+            :is-popular="$loop->index === 1"
+            :compact="true"
+          />
+        @endforeach
       </div>
     </div>
   @endif
