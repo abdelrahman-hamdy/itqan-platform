@@ -6,6 +6,7 @@ use App\Enums\TrialRequestStatus;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
 use App\Models\User;
+use App\Services\TrialNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -15,9 +16,12 @@ class SupervisorTrialSessionsController extends BaseSupervisorWebController
     public function index(Request $request, $subdomain = null): View
     {
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-
-        // Trial requests reference teacher_id as QuranTeacherProfile.id
         $profileIds = QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->pluck('id')->toArray();
+
+        if ($this->isAdminUser()) {
+            $profileIds = QuranTeacherProfile::pluck('id')->toArray();
+            $quranTeacherIds = User::where('user_type', 'quran_teacher')->pluck('id')->toArray();
+        }
 
         $baseQuery = QuranTrialRequest::whereIn('teacher_id', $profileIds);
 
@@ -26,7 +30,6 @@ class SupervisorTrialSessionsController extends BaseSupervisorWebController
             $baseQuery->whereIn('teacher_id', $filterProfileIds);
         }
 
-        // Stats from DB (before search/status/date filters)
         $stats = [
             'total' => (clone $baseQuery)->count(),
             'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
@@ -34,7 +37,6 @@ class SupervisorTrialSessionsController extends BaseSupervisorWebController
             'completed' => (clone $baseQuery)->where('status', 'completed')->count(),
         ];
 
-        // Apply filters
         $query = clone $baseQuery;
         $query->with(['student', 'academy', 'trialSession.meeting', 'teacher.user']);
 
@@ -68,23 +70,20 @@ class SupervisorTrialSessionsController extends BaseSupervisorWebController
 
     public function show($subdomain, $trialRequestId): View
     {
-        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        $profileIds = QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->pluck('id')->toArray();
+        $profileIds = $this->getAssignedQuranTeacherProfileIds();
 
         $trialRequest = QuranTrialRequest::whereIn('teacher_id', $profileIds)
-            ->with(['student.studentProfile', 'trialSession.meeting', 'trialSession.attendances', 'academy'])
+            ->with(['student.studentProfile', 'trialSession.meeting', 'trialSession.attendances', 'academy', 'teacher.user'])
             ->findOrFail($trialRequestId);
 
-        $teacherProfile = QuranTeacherProfile::find($trialRequest->teacher_id);
-        $teacher = $teacherProfile?->user;
+        $teacher = $trialRequest->teacher?->user;
 
         return view('supervisor.trial-sessions.show', compact('trialRequest', 'teacher'));
     }
 
     public function cancel($subdomain, $trialRequestId): RedirectResponse
     {
-        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        $profileIds = QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->pluck('id')->toArray();
+        $profileIds = $this->getAssignedQuranTeacherProfileIds();
 
         $trialRequest = QuranTrialRequest::whereIn('teacher_id', $profileIds)
             ->findOrFail($trialRequestId);
@@ -94,6 +93,9 @@ class SupervisorTrialSessionsController extends BaseSupervisorWebController
         }
 
         $trialRequest->update(['status' => TrialRequestStatus::CANCELLED]);
+
+        $trialRequest->load(['teacher.user', 'student', 'academy']);
+        app(TrialNotificationService::class)->sendTrialCancelledNotification($trialRequest);
 
         return back()->with('success', __('supervisor.trial_sessions.request_cancelled_successfully'));
     }

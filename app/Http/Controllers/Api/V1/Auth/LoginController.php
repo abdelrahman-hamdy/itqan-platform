@@ -291,13 +291,7 @@ class LoginController extends Controller
 
         try {
             $user->sendEmailVerificationNotification();
-        } catch (\Throwable $e) {
-            Log::error('Failed to send verification email via API', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'error' => $e->getMessage(),
-            ]);
-
+        } catch (\Throwable) {
             return $this->error(__('auth.verification.send_failed'), 503);
         }
 

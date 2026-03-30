@@ -844,13 +844,7 @@ class AuthController extends Controller
 
         try {
             $user->sendEmailVerificationNotification();
-        } catch (\Throwable $e) {
-            Log::error('Failed to send verification email', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'error' => $e->getMessage(),
-            ]);
-
+        } catch (\Throwable) {
             return back()->with('error', __('auth.verification.send_failed'));
         }
 

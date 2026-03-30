@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Supervisor;
 use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicTeacherProfile;
+use App\Models\QuranTeacherProfile;
 use App\Models\SupervisorProfile;
 use App\Models\User;
 use App\Services\AcademyContextService;
@@ -206,12 +207,29 @@ abstract class BaseSupervisorWebController extends Controller
     }
 
     /**
-     * Get the AcademicTeacherProfile IDs for academic teachers.
+     * Get the QuranTeacherProfile IDs for Quran teachers.
      * Needed when filtering resources that reference the profile ID rather
-     * than the user ID (e.g. AcademicSession.academic_teacher_id).
+     * than the user ID (e.g. QuranTrialRequest.teacher_id).
      *
      * @return int[]
      */
+    protected function getAssignedQuranTeacherProfileIds(): array
+    {
+        if ($this->isAdminUser()) {
+            return QuranTeacherProfile::pluck('id')->toArray();
+        }
+
+        $userIds = $this->getAssignedQuranTeacherIds();
+
+        if (empty($userIds)) {
+            return [];
+        }
+
+        return QuranTeacherProfile::whereIn('user_id', $userIds)
+            ->pluck('id')
+            ->toArray();
+    }
+
     protected function getAssignedAcademicTeacherProfileIds(): array
     {
         if ($this->isAdminUser()) {
