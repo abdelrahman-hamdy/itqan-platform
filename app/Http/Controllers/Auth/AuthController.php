@@ -528,7 +528,7 @@ class AuthController extends Controller
             ->first();
 
         // Always show success message (security best practice - prevent user enumeration)
-        $successMessage = 'إذا كان هذا البريد الإلكتروني مسجلاً لدينا، ستتلقى رابط إعادة تعيين كلمة المرور خلال دقائق.';
+        $successMessage = __('auth.forgot_password.link_sent');
 
         if ($user) {
             // Generate reset token
@@ -557,7 +557,7 @@ class AuthController extends Controller
             }
         }
 
-        return back()->with('status', $successMessage);
+        return back()->with('success', $successMessage);
     }
 
     /**

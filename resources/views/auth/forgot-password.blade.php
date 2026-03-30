@@ -1,10 +1,10 @@
 <x-auth.layout title="{{ __('auth.forgot_password.title') }}" subtitle="{{ __('auth.forgot_password.subtitle') }}" :academy="$academy">
     <!-- Success Message -->
-    @if(session('status'))
+    @if(session('success') || session('status'))
         <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
             <div class="flex items-center">
                 <i class="ri-checkbox-circle-fill text-green-500 text-xl ms-3"></i>
-                <p class="text-sm text-green-800">{{ session('status') }}</p>
+                <p class="text-sm text-green-800">{{ session('success') ?? session('status') }}</p>
             </div>
         </div>
     @endif
