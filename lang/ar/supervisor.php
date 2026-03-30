@@ -957,7 +957,7 @@ return [
         'can_manage_parents' => 'إدارة أولياء الأمور',
         'can_manage_parents_description' => 'إنشاء وتعديل وإدارة حسابات أولياء الأمور',
         'can_reset_passwords' => 'إعادة تعيين كلمات المرور',
-        'can_reset_passwords_description' => 'تغيير كلمات مرور المستخدمين',
+        'can_reset_passwords_description' => 'عرض وتغيير كلمات مرور المستخدمين',
         'can_manage_subscriptions' => 'إدارة الاشتراكات',
         'can_manage_subscriptions_description' => 'عرض وتفعيل وإيقاف وتمديد الاشتراكات',
         'can_manage_payments' => 'إدارة المدفوعات',

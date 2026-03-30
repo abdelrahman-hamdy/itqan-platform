@@ -296,7 +296,7 @@
                                         {{ $teacher['user']->email }}
                                         <i class="copy-icon ri-file-copy-line text-gray-400 text-[10px]"></i>
                                     </span>
-                                    @if($teacher['user']->plain_password)
+                                    @if(($isAdmin || $canResetPasswords) && $teacher['user']->plain_password)
                                         <span x-data="{ val: @js($teacher['user']->plain_password) }" class="flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
                                               x-on:click="navigator.clipboard.writeText(val); $el.querySelector('.copy-icon').classList.add('ri-check-line'); $el.querySelector('.copy-icon').classList.remove('ri-file-copy-line'); setTimeout(() => { $el.querySelector('.copy-icon').classList.remove('ri-check-line'); $el.querySelector('.copy-icon').classList.add('ri-file-copy-line'); }, 1500)"
                                               title="{{ __('supervisor.teachers.copy_password') }}">

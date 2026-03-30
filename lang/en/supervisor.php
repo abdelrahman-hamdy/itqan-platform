@@ -957,7 +957,7 @@ return [
         'can_manage_parents' => 'Manage Parents',
         'can_manage_parents_description' => 'Create, edit, and manage parent accounts',
         'can_reset_passwords' => 'Reset Passwords',
-        'can_reset_passwords_description' => 'Change user passwords',
+        'can_reset_passwords_description' => 'View and change user passwords',
         'can_manage_subscriptions' => 'Manage Subscriptions',
         'can_manage_subscriptions_description' => 'View, activate, pause, and extend subscriptions',
         'can_manage_payments' => 'Manage Payments',
