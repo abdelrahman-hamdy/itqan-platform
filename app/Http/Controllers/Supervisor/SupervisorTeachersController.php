@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password as PasswordRules;
 use Illuminate\View\View;
 
@@ -256,7 +257,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => ['required', 'email', Rule::unique('users', 'email')->whereNull('deleted_at')],
             'phone' => 'required|string|max:20',
             'gender' => 'required|in:male,female',
             'password' => PasswordRules::min(6)->letters()->numbers(),
@@ -395,7 +396,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,'.$teacher->id,
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($teacher->id)->whereNull('deleted_at')],
             'phone' => 'required|string|max:20',
             'gender' => 'required|in:male,female',
             'education_level' => 'required|in:diploma,bachelor,master,phd,other',

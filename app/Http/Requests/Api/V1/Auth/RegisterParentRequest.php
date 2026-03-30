@@ -5,6 +5,7 @@ namespace App\Http\Requests\Api\V1\Auth;
 use Illuminate\Contracts\Validation\ValidationRule;
 use App\Http\Requests\Api\BaseApiFormRequest;
 use App\Rules\PasswordRules;
+use Illuminate\Validation\Rule;
 
 /**
  * Form request for parent registration.
@@ -35,7 +36,7 @@ class RegisterParentRequest extends BaseApiFormRequest
         return [
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->whereNull('deleted_at')],
             'phone' => ['required', 'string', 'max:20'],
             'password' => PasswordRules::create(),
             'student_code' => ['required', 'string'],

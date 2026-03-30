@@ -6,6 +6,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use App\Helpers\CountryList;
 use App\Http\Requests\Api\BaseApiFormRequest;
 use App\Rules\PasswordRules;
+use Illuminate\Validation\Rule;
 
 /**
  * Form request for student registration.
@@ -36,7 +37,7 @@ class RegisterStudentRequest extends BaseApiFormRequest
         return [
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->whereNull('deleted_at')],
             'phone' => ['required', 'string', 'max:20'],
             'password' => PasswordRules::create(),
             'birth_date' => ['required', 'date', 'before:today'],
