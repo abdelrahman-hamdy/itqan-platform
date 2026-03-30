@@ -36,6 +36,11 @@
 
                 // Get the actual User model for display purposes
                 $teacher = $teacherProfile?->user ?? $teacherProfile;
+
+                // Get teacher gender from profile (QuranTeacherProfile/AcademicTeacherProfile stores gender, User may not)
+                $teacherGender = $teacher->gender
+                    ?? ($type === 'quran' ? $circle->quranTeacherProfile?->gender : $teacherProfile?->gender)
+                    ?? 'male';
             @endphp
             @if($teacherProfile)
                 <a href="{{ route($teacherRoute, $teacherRouteParams) }}"
@@ -45,7 +50,7 @@
                             :user="$teacher"
                             size="sm"
                             :userType="$type === 'academic' ? 'academic_teacher' : 'quran_teacher'"
-                            :gender="$teacher->gender ?? 'male'"
+                            :gender="$teacherGender"
                             class="flex-shrink-0" />
                         <div class="flex-1">
                             <span class="text-xs font-medium text-blue-600 uppercase tracking-wide">{{ __('components.circle.info_sidebar.teacher') }}</span>
