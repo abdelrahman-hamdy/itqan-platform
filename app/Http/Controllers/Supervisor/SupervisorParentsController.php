@@ -243,11 +243,13 @@ class SupervisorParentsController extends BaseSupervisorWebController
             abort(403);
         }
 
+        $academy = AcademyContextService::getCurrentAcademy();
+
         $rules = [
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => ['required', 'email', Rule::unique('users', 'email')->whereNull('deleted_at')],
+            'email' => ['required', 'email', Rule::unique('users', 'email')->where('academy_id', $academy->id)->whereNull('deleted_at')],
             'phone' => 'nullable|string|max:20',
             'relationship_type' => 'required|in:father,mother,other',
             'occupation' => 'nullable|string|max:255',
@@ -258,20 +260,20 @@ class SupervisorParentsController extends BaseSupervisorWebController
         ];
 
         $validator = Validator::make($request->all(), $rules, [
-            'first_name.required' => __('auth.register.student.first_name_required', [], 'ar'),
-            'last_name.required' => __('auth.register.student.last_name_required', [], 'ar'),
-            'email.required' => __('auth.register.student.email_required', [], 'ar'),
-            'email.unique' => __('auth.register.student.email_unique', [], 'ar'),
+            'first_name.required' => __('supervisor.parents.first_name_required'),
+            'last_name.required' => __('supervisor.parents.last_name_required'),
+            'email.required' => __('supervisor.parents.email_required'),
+            'email.unique' => __('supervisor.parents.email_unique'),
             'relationship_type.required' => __('supervisor.parents.relationship_placeholder'),
             'password.min' => __('supervisor.parents.password_too_short'),
             'password_confirmation.same' => __('supervisor.parents.passwords_dont_match'),
+            'student_ids.required' => __('supervisor.parents.student_ids_required'),
+            'student_ids.min' => __('supervisor.parents.student_ids_required'),
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
-
-        $academy = AcademyContextService::getCurrentAcademy();
 
         // Remove any soft-deleted user with the same email to avoid DB unique constraint violation
         User::onlyTrashed()->where('email', $request->email)->where('academy_id', $academy->id)->forceDelete();
