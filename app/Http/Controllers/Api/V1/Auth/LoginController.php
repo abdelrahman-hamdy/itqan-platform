@@ -289,7 +289,17 @@ class LoginController extends Controller
             ], __('auth.verification.already_verified'));
         }
 
-        $user->sendEmailVerificationNotification();
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (\Throwable $e) {
+            Log::error('Failed to send verification email via API', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->error(__('auth.verification.send_failed'), 503);
+        }
 
         return $this->success([
             'sent' => true,

@@ -421,6 +421,7 @@ return [
         'invalid_link_title' => 'Invalid Link',
         'go_to_login' => 'Go to Login',
         'request_new_link' => 'Log in and request a new verification link from your profile page.',
+        'send_failed' => 'Unable to send verification email at this time. Please try again later.',
     ],
 
     // Common

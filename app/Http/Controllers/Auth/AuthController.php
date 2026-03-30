@@ -842,7 +842,17 @@ class AuthController extends Controller
                 ->with('info', __('auth.verification.already_verified'));
         }
 
-        $user->sendEmailVerificationNotification();
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (\Throwable $e) {
+            Log::error('Failed to send verification email', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', __('auth.verification.send_failed'));
+        }
 
         return back()->with('success', __('auth.verification.email_sent'));
     }
