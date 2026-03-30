@@ -136,7 +136,7 @@ class SupervisorDashboardController extends BaseSupervisorWebController
             $newParents = User::where('academy_id', $academyId)->where('user_type', UserType::PARENT->value)
                 ->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
         } else {
-            $allTeacherIds = array_merge($quranTeacherIds, $this->getAssignedAcademicTeacherIds());
+            $allTeacherIds = array_merge($quranTeacherIds, $academicTeacherUserIds);
             $newTeachers = ! empty($allTeacherIds) ? User::whereIn('id', $allTeacherIds)
                 ->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count() : 0;
             $newStudents = 0;
