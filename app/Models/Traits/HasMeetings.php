@@ -2,14 +2,14 @@
 
 namespace App\Models\Traits;
 
-use Exception;
-use App\Models\MeetingAttendance;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Exceptions\MeetingException;
 use App\Models\Academy;
+use App\Models\MeetingAttendance;
 use App\Models\User;
 use App\Services\LiveKitService;
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -91,6 +91,8 @@ trait HasMeetings
                 'meeting_room_name' => $meetingData['room_name'],
                 'meeting_link' => $meetingData['meeting_url'],
                 'meeting_id' => $meetingData['meeting_id'],
+                'meeting_platform' => 'livekit',
+                'meeting_auto_generated' => true,
                 'meeting_created_at' => now(),
             ]);
 

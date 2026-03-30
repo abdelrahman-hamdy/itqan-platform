@@ -2,16 +2,16 @@
 
 namespace App\Services;
 
-use Exception;
-use Carbon\Carbon;
-use App\Models\QuranSession;
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
-use App\Events\AttendanceUpdated;
 use App\Contracts\AttendanceEventServiceInterface;
 use App\Enums\AttendanceStatus;
 use App\Enums\UserType;
+use App\Events\AttendanceUpdated;
+use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
 use App\Models\MeetingAttendance;
+use App\Models\QuranSession;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -245,30 +245,23 @@ class AttendanceEventService implements AttendanceEventServiceInterface
     }
 
     /**
-     * Get session type from session model
+     * Get session type from session model.
+     *
+     * Uses getMeetingSessionType() which returns 'quran'/'academic'/'interactive'
+     * to match the HasMeetings::meetingAttendances() relationship filter.
      */
     private function getSessionType($session): string
     {
-        if ($session instanceof QuranSession) {
-            // Map 'trial' to 'individual' since trial sessions are 1-on-1
-            // DB enum only allows: individual, group, academic, interactive
-            $type = $session->session_type ?? 'individual';
-
-            return match ($type) {
-                'individual', 'group' => $type,
-                default => 'individual', // trial, circle, etc. → individual
-            };
+        if (method_exists($session, 'getMeetingSessionType')) {
+            return $session->getMeetingSessionType();
         }
 
-        if ($session instanceof AcademicSession) {
-            return 'academic';
-        }
-
-        if ($session instanceof InteractiveCourseSession) {
-            return 'interactive';
-        }
-
-        return 'individual';
+        return match (true) {
+            $session instanceof QuranSession => 'quran',
+            $session instanceof AcademicSession => 'academic',
+            $session instanceof InteractiveCourseSession => 'interactive',
+            default => 'quran',
+        };
     }
 
     /**

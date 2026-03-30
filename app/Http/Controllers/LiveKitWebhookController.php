@@ -23,6 +23,7 @@ use App\Models\User;
 use App\Services\AttendanceEventService;
 use App\Services\RecordingService;
 use App\Services\RoomPermissionService;
+use App\Services\SessionTransitionService;
 use App\Services\UnifiedSessionStatusService;
 use Cache;
 use Carbon\Carbon;
@@ -328,11 +329,16 @@ class LiveKitWebhookController extends Controller
             // Only mark as completed if the session was actually used
             $wasCompletedByThisEvent = false;
             if ($duration > 60) { // At least 1 minute of activity
-                $session->update([
+                $updateData = [
                     'status' => SessionStatus::COMPLETED,
                     'ended_at' => now(),
                     'actual_duration_minutes' => round($duration / 60),
-                ]);
+                ];
+                // Ensure started_at is set (may be null if webhook join didn't transition)
+                if (! $session->started_at) {
+                    $updateData['started_at'] = $session->scheduled_at ?? now()->subMinutes(round($duration / 60));
+                }
+                $session->update($updateData);
                 $wasCompletedByThisEvent = true;
             } elseif (! in_array($currentStatus, [SessionStatus::COMPLETED])) {
                 // Very short session, just mark as ended (don't overwrite already-completed)
@@ -497,6 +503,23 @@ class LiveKitWebhookController extends Controller
                 'user_id' => $userId,
                 'participant_sid' => $participantData['sid'] ?? null,
             ]);
+
+            // Transition session READY/SCHEDULED → ONGOING (sets started_at)
+            $session->refresh();
+            if (in_array($session->status, [SessionStatus::READY, SessionStatus::SCHEDULED])) {
+                try {
+                    app(SessionTransitionService::class)->transitionToOngoing($session);
+                    Log::channel('webhook')->info('Session transitioned to ONGOING on participant join', [
+                        'session_id' => $session->id,
+                    ]);
+                } catch (Exception $e) {
+                    Log::channel('webhook')->warning('Could not transition session to ONGOING', [
+                        'session_id' => $session->id,
+                        'current_status' => $session->status->value ?? $session->status,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
 
             // Clear any cached attendance status
             Cache::forget("attendance_status_{$session->id}_{$userId}");
