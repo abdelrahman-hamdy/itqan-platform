@@ -112,12 +112,12 @@ class ListQuranTrialRequests extends ListRecords
                                     TextInput::make('phone')
                                         ->label('رقم الهاتف')
                                         ->tel()
-                                        ->dir('ltr'),
+                                        ->extraInputAttributes(['dir' => 'ltr']),
 
                                     TextInput::make('email')
                                         ->label('البريد الإلكتروني')
                                         ->email()
-                                        ->dir('ltr'),
+                                        ->extraInputAttributes(['dir' => 'ltr']),
                                 ]),
                         ]),
 
