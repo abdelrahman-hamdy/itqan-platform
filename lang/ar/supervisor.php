@@ -533,6 +533,10 @@ return [
         'creating' => 'جاري الإنشاء...',
         'request_created_successfully' => 'تم إنشاء طلب الجلسة التجريبية بنجاح',
         'schedule_session' => 'جدولة الجلسة',
+        'cancel_request' => 'إلغاء الطلب',
+        'confirm_cancel' => 'هل أنت متأكد من إلغاء هذا الطلب؟',
+        'request_cancelled_successfully' => 'تم إلغاء طلب الجلسة التجريبية بنجاح',
+        'cannot_cancel' => 'لا يمكن إلغاء هذا الطلب',
     ],
 
     'academic_lessons' => [

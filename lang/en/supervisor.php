@@ -533,6 +533,10 @@ return [
         'creating' => 'Creating...',
         'request_created_successfully' => 'Trial session request created successfully',
         'schedule_session' => 'Schedule Session',
+        'cancel_request' => 'Cancel Request',
+        'confirm_cancel' => 'Are you sure you want to cancel this request?',
+        'request_cancelled_successfully' => 'Trial session request cancelled successfully',
+        'cannot_cancel' => 'This request cannot be cancelled',
     ],
 
     'academic_lessons' => [

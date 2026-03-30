@@ -94,6 +94,18 @@
                             {{ __('supervisor.trial_sessions.schedule_session') }}
                         </a>
                     @endif
+                    @if(!in_array($statusValue, ['cancelled', 'completed']))
+                        <form action="{{ route('manage.trial-sessions.cancel', ['subdomain' => $subdomain, 'trialRequest' => $trialRequest->id]) }}"
+                              method="POST"
+                              onsubmit="return confirm('{{ __('supervisor.trial_sessions.confirm_cancel') }}')">
+                            @csrf
+                            <button type="submit"
+                                class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-colors">
+                                <i class="ri-close-circle-line"></i>
+                                {{ __('supervisor.trial_sessions.cancel_request') }}
+                            </button>
+                        </form>
+                    @endif
                     <a href="{{ route('manage.trial-sessions.index', ['subdomain' => $subdomain]) }}"
                        class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
                         <i class="ri-arrow-right-line"></i>

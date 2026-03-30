@@ -103,6 +103,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Trial Sessions
         Route::get('/trial-sessions', [SupervisorTrialSessionsController::class, 'index'])->name('trial-sessions.index');
         Route::get('/trial-sessions/{trialRequest}', [SupervisorTrialSessionsController::class, 'show'])->name('trial-sessions.show');
+        Route::post('/trial-sessions/{trialRequest}/cancel', [SupervisorTrialSessionsController::class, 'cancel'])->name('trial-sessions.cancel');
 
         // Academic Lessons
         Route::get('/academic-lessons', [SupervisorAcademicLessonsController::class, 'index'])->name('academic-lessons.index');

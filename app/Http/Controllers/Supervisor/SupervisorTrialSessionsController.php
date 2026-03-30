@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Enums\TrialRequestStatus;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -77,5 +79,22 @@ class SupervisorTrialSessionsController extends BaseSupervisorWebController
         $teacher = $teacherProfile?->user;
 
         return view('supervisor.trial-sessions.show', compact('trialRequest', 'teacher'));
+    }
+
+    public function cancel($subdomain, $trialRequestId): RedirectResponse
+    {
+        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
+        $profileIds = QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->pluck('id')->toArray();
+
+        $trialRequest = QuranTrialRequest::whereIn('teacher_id', $profileIds)
+            ->findOrFail($trialRequestId);
+
+        if ($trialRequest->status === TrialRequestStatus::CANCELLED || $trialRequest->status === TrialRequestStatus::COMPLETED) {
+            return back()->with('error', __('supervisor.trial_sessions.cannot_cancel'));
+        }
+
+        $trialRequest->update(['status' => TrialRequestStatus::CANCELLED]);
+
+        return back()->with('success', __('supervisor.trial_sessions.request_cancelled_successfully'));
     }
 }
