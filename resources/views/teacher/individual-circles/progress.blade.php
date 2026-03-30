@@ -92,7 +92,7 @@
                     <i class="ri-printer-line md:ms-2"></i>
                     <span class="hidden md:inline">{{ __('teacher.progress.print_report') }}</span>
                 </button>
-                <a href="{{ route('teacher.students.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'student' => $circle->student->id]) }}"
+                <a href="#"
                    class="min-h-[44px] inline-flex items-center justify-center px-3 md:px-6 py-2 md:py-3 bg-white text-purple-600 text-xs md:text-sm font-medium rounded-lg md:rounded-xl hover:bg-gray-50 transition-colors">
                     <i class="ri-user-line md:ms-2"></i>
                     <span class="hidden md:inline">{{ __('teacher.progress.student_file') }}</span>
