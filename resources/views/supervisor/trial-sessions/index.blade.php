@@ -20,9 +20,12 @@
 <div>
     <x-ui.breadcrumb :items="[['label' => __('supervisor.trial_sessions.page_title')]]" view-type="supervisor" />
 
-    <div class="mb-6 md:mb-8">
-        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.trial_sessions.page_title') }}</h1>
-        <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.trial_sessions.page_subtitle') }}</p>
+    <div class="mb-6 md:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.trial_sessions.page_title') }}</h1>
+            <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.trial_sessions.page_subtitle') }}</p>
+        </div>
+        <livewire:supervisor.create-trial-request-modal />
     </div>
 
     {{-- Stats Cards --}}
