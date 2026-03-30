@@ -247,21 +247,29 @@ class AttendanceEventService implements AttendanceEventServiceInterface
     /**
      * Get session type from session model.
      *
-     * Uses getMeetingSessionType() which returns 'quran'/'academic'/'interactive'
-     * to match the HasMeetings::meetingAttendances() relationship filter.
+     * Returns values matching the meeting_attendances.session_type enum:
+     * 'individual', 'group', 'academic', 'interactive'.
      */
     private function getSessionType($session): string
     {
-        if (method_exists($session, 'getMeetingSessionType')) {
-            return $session->getMeetingSessionType();
+        if ($session instanceof QuranSession) {
+            $type = $session->session_type ?? 'individual';
+
+            return match ($type) {
+                'individual', 'group' => $type,
+                default => 'individual',
+            };
         }
 
-        return match (true) {
-            $session instanceof QuranSession => 'quran',
-            $session instanceof AcademicSession => 'academic',
-            $session instanceof InteractiveCourseSession => 'interactive',
-            default => 'quran',
-        };
+        if ($session instanceof AcademicSession) {
+            return 'academic';
+        }
+
+        if ($session instanceof InteractiveCourseSession) {
+            return 'interactive';
+        }
+
+        return 'individual';
     }
 
     /**

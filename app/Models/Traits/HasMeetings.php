@@ -317,12 +317,35 @@ trait HasMeetings
     }
 
     /**
-     * Relationship with meeting attendances
+     * Relationship with meeting attendances.
+     *
+     * Filters by the session_type enum value stored in meeting_attendances
+     * ('individual', 'group', 'academic', 'interactive').
      */
     public function meetingAttendances()
     {
         return $this->hasMany(MeetingAttendance::class, 'session_id')
-            ->where('session_type', $this->getMeetingSessionType());
+            ->where('session_type', $this->getAttendanceSessionType());
+    }
+
+    /**
+     * Get the session type value matching the meeting_attendances.session_type enum.
+     */
+    protected function getAttendanceSessionType(): string
+    {
+        if ($this instanceof \App\Models\QuranSession) {
+            return $this->session_type ?? 'individual';
+        }
+
+        if ($this instanceof \App\Models\AcademicSession) {
+            return 'academic';
+        }
+
+        if ($this instanceof \App\Models\InteractiveCourseSession) {
+            return 'interactive';
+        }
+
+        return 'individual';
     }
 
     /**

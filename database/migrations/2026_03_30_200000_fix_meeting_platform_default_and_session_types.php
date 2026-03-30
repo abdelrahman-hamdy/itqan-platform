@@ -22,11 +22,10 @@ return new class extends Migration
             }
         }
 
-        // Fix 2: Correct session_type in meeting_attendances
-        // The webhook was storing 'individual'/'group' but the relationship filters by 'quran'/'academic'/'interactive'
-        DB::table('meeting_attendances')
-            ->whereIn('session_type', ['individual', 'group'])
-            ->update(['session_type' => 'quran']);
+        // Note: meeting_attendances.session_type uses the DB enum values
+        // ('individual', 'group', 'academic', 'interactive').
+        // The HasMeetings::meetingAttendances() relationship was fixed to match these values
+        // instead of using getMeetingSessionType() which returns 'quran'.
     }
 
     public function down(): void
