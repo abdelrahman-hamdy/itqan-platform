@@ -218,6 +218,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Individual Circles Management
         Route::get('/individual-circles', [QuranIndividualCircleController::class, 'index'])->name('individual-circles.index');
+        Route::get('/individual-circles/{circle}', [QuranIndividualCircleController::class, 'show'])->name('individual-circles.show');
         Route::get('/individual-circles/{circle}/progress', [QuranIndividualCircleController::class, 'progressReport'])->name('individual-circles.progress');
         Route::get('/individual-circles/{circle}/report', [IndividualCircleReportController::class, 'show'])->name('individual-circles.report');
 
