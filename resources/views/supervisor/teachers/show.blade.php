@@ -370,6 +370,28 @@
                         {{ __('supervisor.teachers.message_teacher') }}
                     </a>
 
+                    {{-- Verify Email (admin or supervisor with manage teachers permission) --}}
+                    @if(($isAdmin || $canManageTeachers) && !$teacher->email_verified_at)
+                        <div class="border-t border-gray-100 pt-2 mt-2"></div>
+                        <form id="verify-email-form-{{ $teacher->id }}" method="POST"
+                              action="{{ route('manage.teachers.verify-email', ['subdomain' => $subdomain, 'teacher' => $teacher->id]) }}">
+                            @csrf
+                        </form>
+                        <button type="button"
+                            onclick="window.confirmAction({
+                                title: @js(__('supervisor.teachers.verify_email')),
+                                message: @js(__('supervisor.teachers.confirm_verify_email')),
+                                confirmText: @js(__('supervisor.teachers.verify_email')),
+                                isDangerous: false,
+                                icon: 'ri-mail-check-line',
+                                onConfirm: () => document.getElementById('verify-email-form-{{ $teacher->id }}').submit()
+                            })"
+                            class="cursor-pointer w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors">
+                            <i class="ri-mail-check-line"></i>
+                            {{ __('supervisor.teachers.verify_email') }}
+                        </button>
+                    @endif
+
                     {{-- Admin-only actions --}}
                     @if($isAdmin)
                         <div class="border-t border-gray-100 pt-2 mt-2"></div>

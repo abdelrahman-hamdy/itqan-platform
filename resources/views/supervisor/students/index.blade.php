@@ -327,6 +327,27 @@
                                             {{ $student['is_active'] ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate') }}
                                         </button>
 
+                                        {{-- Verify Email --}}
+                                        @if(!$student['user']->email_verified_at)
+                                            <form id="verify-email-form-{{ $studentId }}" method="POST"
+                                                  action="{{ route('manage.students.verify-email', ['subdomain' => $subdomain, 'student' => $studentId]) }}">
+                                                @csrf
+                                            </form>
+                                            <button type="button"
+                                                onclick="window.confirmAction({
+                                                    title: @js(__('supervisor.students.verify_email')),
+                                                    message: @js(__('supervisor.students.confirm_verify_email')),
+                                                    confirmText: @js(__('supervisor.students.verify_email')),
+                                                    isDangerous: false,
+                                                    icon: 'ri-mail-check-line',
+                                                    onConfirm: () => document.getElementById('verify-email-form-{{ $studentId }}').submit()
+                                                })"
+                                                class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors">
+                                                <i class="ri-mail-check-line"></i>
+                                                {{ __('supervisor.students.verify_email') }}
+                                            </button>
+                                        @endif
+
                                         {{-- Reset Password --}}
                                         <button type="button"
                                             onclick="window.dispatchEvent(new CustomEvent('open-modal-reset-password-{{ $studentId }}'))"

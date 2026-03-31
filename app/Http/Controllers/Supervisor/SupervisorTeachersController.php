@@ -194,6 +194,23 @@ class SupervisorTeachersController extends BaseSupervisorWebController
         return redirect()->back()->with('success', __('supervisor.teachers.status_updated'));
     }
 
+    public function verifyEmail(Request $request, $subdomain, User $teacher): RedirectResponse
+    {
+        if (! $this->canManageTeachers()) {
+            abort(403);
+        }
+
+        $this->ensureTeacherBelongsToScope($teacher);
+
+        if ($teacher->hasVerifiedEmail()) {
+            return redirect()->back()->with('info', __('supervisor.teachers.email_already_verified'));
+        }
+
+        $teacher->markEmailAsVerified();
+
+        return redirect()->back()->with('success', __('supervisor.teachers.email_verified_success'));
+    }
+
     public function resetPassword(Request $request, $subdomain, User $teacher): RedirectResponse
     {
         if (! $this->canResetPasswords()) {
@@ -630,6 +647,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'totalStudents' => $totalStudents,
             'recentSessions' => $recentSessions,
             'isAdmin' => $isAdmin,
+            'canManageTeachers' => $this->canManageTeachers(),
         ]);
     }
 

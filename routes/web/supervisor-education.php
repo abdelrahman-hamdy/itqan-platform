@@ -53,6 +53,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::put('/teachers/{teacher}', [SupervisorTeachersController::class, 'update'])->name('teachers.update');
         Route::post('/teachers/{teacher}/toggle-status', [SupervisorTeachersController::class, 'toggleStatus'])->name('teachers.toggle-status');
         Route::post('/teachers/{teacher}/reset-password', [SupervisorTeachersController::class, 'resetPassword'])->name('teachers.reset-password');
+        Route::post('/teachers/{teacher}/verify-email', [SupervisorTeachersController::class, 'verifyEmail'])->name('teachers.verify-email');
         Route::delete('/teachers/{teacher}', [SupervisorTeachersController::class, 'destroy'])->name('teachers.destroy');
 
         // Students
@@ -64,6 +65,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::put('/students/{student}', [SupervisorStudentsController::class, 'update'])->name('students.update');
         Route::post('/students/{student}/toggle-status', [SupervisorStudentsController::class, 'toggleStatus'])->name('students.toggle-status');
         Route::post('/students/{student}/reset-password', [SupervisorStudentsController::class, 'resetPassword'])->name('students.reset-password');
+        Route::post('/students/{student}/verify-email', [SupervisorStudentsController::class, 'verifyEmail'])->name('students.verify-email');
         Route::delete('/students/{student}', [SupervisorStudentsController::class, 'destroy'])->name('students.destroy');
 
         // Parents
