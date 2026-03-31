@@ -120,7 +120,7 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
                 ->collapsed()
                 ->schema([
                     TextInput::make('session_price_individual')->label('سعر الجلسة الفردية')
-                        ->numeric()->prefix(getTeacherEarningsCurrencySymbol())->minValue(0),
+                        ->numeric()->prefix(fn ($record) => getTeacherEarningsCurrencySymbol($record?->academy))->minValue(0),
                 ]),
 
             Section::make('المحتوى التعريفي')->schema([

@@ -117,11 +117,19 @@ enum SessionDuration: int
      *
      * @param  string  $fieldPrefix  e.g. 'individual_session_prices' or 'quran_settings.default_group_session_prices'
      * @param  string|null  $placeholder  e.g. __('filament.academy_default')
-     * @param  string|null  $currencySymbol  Currency prefix. Defaults to teacher earnings currency.
+     * @param  \Closure|string|null  $currencySymbol  Currency prefix. Defaults to a closure that resolves from the record's academy.
      */
-    public static function priceInputGrid(string $fieldPrefix, ?string $placeholder = null, ?string $currencySymbol = null): array
+    public static function priceInputGrid(string $fieldPrefix, ?string $placeholder = null, \Closure|string|null $currencySymbol = null): array
     {
-        $symbol = $currencySymbol ?? getTeacherEarningsCurrencySymbol();
+        // Use a Filament closure so the currency resolves at render time from the record context,
+        // not eagerly at schema build time (which fails for super admins with no academy).
+        $symbol = $currencySymbol ?? function (?\Illuminate\Database\Eloquent\Model $record = null) {
+            if ($record instanceof \App\Models\Academy) {
+                return getTeacherEarningsCurrencySymbol($record);
+            }
+
+            return getTeacherEarningsCurrencySymbol($record?->academy ?? null);
+        };
 
         return collect(self::cases())->map(fn (self $duration) => \Filament\Forms\Components\TextInput::make("{$fieldPrefix}.{$duration->value}")
             ->label($duration->label())

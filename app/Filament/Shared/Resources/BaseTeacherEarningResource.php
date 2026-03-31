@@ -122,7 +122,7 @@ abstract class BaseTeacherEarningResource extends Resource
                         TextInput::make('amount')
                             ->label('المبلغ')
                             ->numeric()
-                            ->prefix(getTeacherEarningsCurrencySymbol())
+                            ->prefix(fn ($record) => getTeacherEarningsCurrencySymbol($record?->academy))
                             ->disabled(),
 
                         TextInput::make('calculation_method')

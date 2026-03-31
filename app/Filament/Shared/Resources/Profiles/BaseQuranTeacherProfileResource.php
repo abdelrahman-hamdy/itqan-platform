@@ -115,9 +115,9 @@ abstract class BaseQuranTeacherProfileResource extends Resource
                 ->schema([
                     Grid::make(2)->schema([
                         TextInput::make('session_price_individual')->label('سعر الجلسة الفردية')
-                            ->numeric()->prefix(getTeacherEarningsCurrencySymbol())->minValue(0),
+                            ->numeric()->prefix(fn ($record) => getTeacherEarningsCurrencySymbol($record?->academy))->minValue(0),
                         TextInput::make('session_price_group')->label('سعر جلسة الحلقة')
-                            ->numeric()->prefix(getTeacherEarningsCurrencySymbol())->minValue(0),
+                            ->numeric()->prefix(fn ($record) => getTeacherEarningsCurrencySymbol($record?->academy))->minValue(0),
                     ]),
                 ]),
 
