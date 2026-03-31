@@ -188,28 +188,26 @@ class LiveKitConnection {
             // LiveKit optimization: VP9 codec + Dynacast + Adaptive Stream + Simulcast
             // These optimizations reduce bandwidth by 70-90% and server CPU by 60-70%
             const connectionOptions = {
-                // Use VP9 codec (30-35% more efficient than VP8)
-                // Browser will fall back to VP8 if VP9 not supported
                 publishDefaults: {
                     videoCodec: 'vp9',
-                    // Enable simulcast (publish 3 quality layers)
-                    // Server selectively forwards only the quality each client needs
                     simulcast: true,
                     videoSimulcastLayers: [
-                        { resolution: window.LiveKit.VideoPresets.h180.resolution, maxBitrate: 150000 },  // Low layer (320×180)
-                        { resolution: window.LiveKit.VideoPresets.h360.resolution, maxBitrate: 500000 },  // Medium layer (640×360)
-                        { resolution: window.LiveKit.VideoPresets.h540.resolution, maxBitrate: 800000 },  // High layer (960×540)
+                        { resolution: window.LiveKit.VideoPresets.h180.resolution, maxBitrate: 150000 },
+                        { resolution: window.LiveKit.VideoPresets.h360.resolution, maxBitrate: 500000 },
+                        { resolution: window.LiveKit.VideoPresets.h540.resolution, maxBitrate: 800000 },
                     ],
+                    dtx: true,
+                    audioBitrate: 32000,
                 },
-                // Dynacast: Selective layer forwarding (server-side, reduces CPU 60-70%)
                 dynacast: true,
-
-                // Adaptive stream: Automatically adjust quality based on network conditions
                 adaptiveStream: true,
-
-                // Default video capture settings
                 videoCaptureDefaults: {
-                    resolution: window.LiveKit.VideoPresets.h540.resolution,  // 960×540 default
+                    resolution: window.LiveKit.VideoPresets.h540.resolution,
+                },
+                audioCaptureDefaults: {
+                    autoGainControl: true,
+                    echoCancellation: true,
+                    noiseSuppression: true,
                 },
             };
 
@@ -290,16 +288,22 @@ class LiveKitConnection {
                         { resolution: window.LiveKit.VideoPresets.h360.resolution, maxBitrate: 500000 },
                         { resolution: window.LiveKit.VideoPresets.h540.resolution, maxBitrate: 800000 },
                     ],
+                    dtx: true,
+                    audioBitrate: 32000,
                 },
                 dynacast: true,
                 adaptiveStream: true,
                 videoCaptureDefaults: {
                     resolution: window.LiveKit.VideoPresets.h540.resolution,
                 },
+                audioCaptureDefaults: {
+                    autoGainControl: true,
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                },
             };
 
             await this.room.connect(serverUrl, token, connectionOptions);
-
 
         } catch (error) {
             this.isConnecting = false;

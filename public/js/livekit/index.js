@@ -580,38 +580,43 @@ class LiveKitMeeting {
      * - Students: Mic OFF, Camera OFF
      */
     async setupMediaPermissions(localParticipant) {
-        // Determine user role from config
         const isTeacher = this.config.role === 'teacher';
-
-
         let mediaPermissionsGranted = false;
 
         // MICROPHONE: ON for teachers, OFF for students
         try {
-            await navigator.mediaDevices.getUserMedia({ audio: true });
+            // Request permission then IMMEDIATELY release the stream to free the device lock.
+            // Without this, the orphaned stream can prevent LiveKit SDK from acquiring the mic.
+            const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioStream.getTracks().forEach(track => track.stop());
 
             if (isTeacher) {
                 await localParticipant.setMicrophoneEnabled(true);
-                mediaPermissionsGranted = true;
-            } else {
-                // Request permission but keep it OFF for students
-                await localParticipant.setMicrophoneEnabled(false);
-                mediaPermissionsGranted = true;
             }
+            // Students start muted by default — no SDK call needed
+            mediaPermissionsGranted = true;
         } catch (audioError) {
             if (audioError.name === 'NotAllowedError') {
                 this.showNotification(t('connection.mic_access_denied'), 'warning');
             }
         }
 
-        // CAMERA: OFF for everyone by default
+        // CAMERA: OFF for everyone — just check permission without acquiring device
         try {
-            await navigator.mediaDevices.getUserMedia({ video: true });
-            await localParticipant.setCameraEnabled(false);
-            mediaPermissionsGranted = true;
-        } catch (videoError) {
-            if (videoError.name === 'NotAllowedError') {
-                this.showNotification(t('connection.camera_access_denied'), 'warning');
+            const result = await navigator.permissions.query({ name: 'camera' });
+            if (result.state === 'granted' || result.state === 'prompt') {
+                mediaPermissionsGranted = true;
+            }
+        } catch (permError) {
+            // Permissions API not supported — acquire and immediately release
+            try {
+                const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                videoStream.getTracks().forEach(track => track.stop());
+                mediaPermissionsGranted = true;
+            } catch (videoError) {
+                if (videoError.name === 'NotAllowedError') {
+                    this.showNotification(t('connection.camera_access_denied'), 'warning');
+                }
             }
         }
 
