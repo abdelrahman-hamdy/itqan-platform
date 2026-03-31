@@ -83,6 +83,18 @@
                 </div>
             </div>
         </div>
+        {{-- Reset instructions (hidden by default, toggled by reset button) --}}
+        <div data-role="reset-instructions" class="hidden p-3 bg-orange-50 rounded-lg border border-orange-200 text-sm text-orange-800 space-y-2">
+            <div class="font-semibold flex items-center gap-1">
+                <i class="ri-information-line"></i>
+                {{ __('meetings.system.how_to_reset_title') }}
+            </div>
+            <ol class="list-decimal list-inside space-y-1 text-xs">
+                <li>{{ __('meetings.system.how_to_reset_step1') }}</li>
+                <li>{{ __('meetings.system.how_to_reset_step2') }}</li>
+                <li>{{ __('meetings.system.how_to_reset_step3') }}</li>
+            </ol>
+        </div>
     </div>
 </div>
 
@@ -218,18 +230,12 @@
     if (camBtn) camBtn.addEventListener('click', function() { requestMedia('camera', { video: true }); });
     if (micBtn) micBtn.addEventListener('click', function() { requestMedia('mic', { audio: true }); });
 
-    // Reset button: opens Chrome site settings page (only way to un-deny permissions)
+    // Reset button: show inline instructions (browser blocks chrome:// URLs from JS)
     window._sysStatusOpenSiteSettings = function() {
-        // Chrome: open site settings for current origin
-        window.open('chrome://settings/content/siteDetails?site=' + encodeURIComponent(window.location.origin), '_blank');
-        // Chrome blocks chrome:// URLs from JS, so also show a toast/alert as fallback
-        setTimeout(function() {
-            if (window.toast) {
-                window.toast.show({ type: 'info', message: @json(__('meetings.system.click_lock_icon')), duration: 8000 });
-            } else {
-                alert(@json(__('meetings.system.click_lock_icon')));
-            }
-        }, 300);
+        var msg = root.querySelector('[data-role="reset-instructions"]');
+        if (msg) {
+            msg.classList.toggle('hidden');
+        }
     };
 })();
 </script>
