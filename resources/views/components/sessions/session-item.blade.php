@@ -124,8 +124,7 @@ use App\Enums\SessionStatus;
                         </span>
                     @endif
                     @if($session instanceof \App\Contracts\RecordingCapable
-                        && $session->recordings()->where('status', \App\Enums\RecordingStatus::COMPLETED)->exists()
-                        && method_exists($session, 'shouldShowRecordingToUser')
+                        && $session->hasCompletedRecordings()
                         && $session->shouldShowRecordingToUser(auth()->user()))
                         <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-50 text-red-600 text-[10px] md:text-xs font-medium">
                             <i class="ri-mic-line"></i>

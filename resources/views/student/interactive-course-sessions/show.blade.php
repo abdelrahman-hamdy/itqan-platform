@@ -46,7 +46,6 @@
         {{-- Session Recordings (for completed sessions, gated by visibility toggle) --}}
         @if($session instanceof \App\Contracts\RecordingCapable
             && $session->status === \App\Enums\SessionStatus::COMPLETED
-            && method_exists($session, 'shouldShowRecordingToUser')
             && $session->shouldShowRecordingToUser(auth()->user()))
             <x-recordings.session-recordings
                 :session="$session"
