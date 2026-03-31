@@ -120,4 +120,85 @@ return [
     ],
 
     'generic_error' => 'An error occurred while processing. Please try again.',
+
+    // Pause action
+    'pause_label' => 'Pause',
+    'pause_modal_heading' => 'Pause Subscription',
+    'pause_modal_description' => 'The subscription will be paused temporarily and can be resumed later.',
+    'pause_success' => 'Subscription paused successfully',
+
+    // Resume action
+    'resume_label' => 'Resume Subscription',
+    'resume_modal_heading' => 'Resume Subscription',
+    'resume_modal_description' => 'The subscription will be resumed and reactivated.',
+    'resume_success' => 'Subscription resumed successfully',
+
+    // Reactivate action
+    'reactivate_label' => 'Reactivate Subscription',
+    'reactivate_modal_heading' => 'Reactivate Cancelled Subscription',
+    'reactivate_modal_description' => 'The cancelled subscription will be reactivated and payment confirmed. Start and end dates will be updated.',
+    'reactivate_confirm_button' => 'Yes, Reactivate',
+    'reactivate_success' => 'Subscription reactivated',
+    'reactivate_success_body' => 'The cancelled subscription has been reactivated successfully.',
+
+    // Extend grace period action
+    'extend_grace_label' => 'Extend Grace Period',
+    'extend_grace_modal_heading' => 'Extend Grace Period',
+    'extend_grace_modal_description' => 'Grant the student an additional grace period. The original subscription end date (:ends_at) will not change.',
+    'not_specified' => 'not specified',
+    'grace_days_label' => 'Grace Period Days',
+    'day_suffix' => 'day(s)',
+    'grace_calculated_from' => 'Grace period will be calculated from ',
+    'grace_current_ends' => 'current grace period end: ',
+    'subscription_ends_at_prefix' => 'subscription end date: ',
+    'additional_days' => 'Additional days',
+    'extend_grace_success' => 'Grace period extended',
+    'extend_grace_success_body' => 'Grace period of :days days granted until :date',
+
+    // Cancel action
+    'cancel_label' => 'Cancel Subscription',
+    'cancel_modal_heading' => 'Cancel Subscription',
+    'cancel_modal_description' => 'The subscription will be cancelled along with all upcoming scheduled sessions.',
+    'cancel_confirm_button' => 'Yes, Cancel Subscription',
+    'cancel_success' => 'Subscription cancelled',
+    'cancel_success_body' => 'Subscription cancelled along with :count scheduled sessions.',
+
+    // Create circle action
+    'create_circle_label' => 'Create Circle',
+    'create_circle_modal_heading' => 'Create Individual Circle',
+    'create_circle_modal_description' => 'An individual circle will be created and linked to this subscription.',
+    'specialization_interpretation' => 'Interpretation',
+    'circle_name_label' => 'Circle Name (optional)',
+    'circle_name_placeholder' => 'Auto-generated if left empty',
+    'circle_description_label' => 'Circle Description (optional)',
+    'learning_objectives_label' => 'Learning Objectives (optional)',
+    'learning_objectives_placeholder' => 'Add a learning objective',
+    'default_session_duration_label' => 'Default Session Duration',
+    'auto_activated_title' => 'Subscription auto-activated',
+    'auto_activated_body' => 'Subscription activated because payment is confirmed and circle was created.',
+    'create_circle_success' => 'Circle created',
+    'create_circle_success_body' => 'Individual circle created: :code',
+
+    // Cancel pending action
+    'cancel_pending_label' => 'Cancel Pending Request',
+    'cancel_pending_modal_heading' => 'Cancel Pending Subscription Request',
+    'cancel_pending_modal_description' => 'Are you sure you want to cancel this subscription request? This action cannot be undone.',
+    'cancel_pending_confirm_button' => 'Yes, Cancel Request',
+    'cancel_pending_success' => 'Request cancelled',
+    'cancel_pending_success_body' => 'Subscription request cancelled successfully.',
+
+    // Bulk cancel pending action
+    'bulk_cancel_pending_label' => 'Cancel Selected Pending Requests',
+    'bulk_cancel_pending_modal_heading' => 'Cancel Pending Subscription Requests',
+    'bulk_cancel_pending_modal_description' => 'All selected pending subscription requests will be cancelled. This action cannot be undone.',
+    'bulk_cancel_pending_confirm_button' => 'Yes, Cancel Requests',
+    'bulk_cancel_pending_success' => 'Requests cancelled',
+    'bulk_cancel_pending_success_body' => ':count subscription requests cancelled successfully.',
+
+    // Filters
+    'request_status_label' => 'Request Status',
+    'filter_all_pending' => 'All Pending Requests',
+    'filter_expired_pending' => 'Expired Requests',
+    'filter_valid_pending' => 'Valid Requests',
+    'filter_expired_hours' => 'Expired requests (> :hours hours)',
 ];

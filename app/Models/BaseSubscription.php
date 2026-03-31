@@ -439,12 +439,7 @@ abstract class BaseSubscription extends Model
      */
     public function canRenew(): bool
     {
-        return in_array($this->status, [
-            SessionSubscriptionStatus::ACTIVE,
-            SessionSubscriptionStatus::PAUSED,
-            SessionSubscriptionStatus::SUSPENDED,
-            SessionSubscriptionStatus::EXPIRED,
-        ]);
+        return $this->status->canRenew();
     }
 
     /**

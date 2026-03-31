@@ -126,4 +126,85 @@ return [
     ],
 
     'generic_error' => 'حدث خطأ أثناء المعالجة. يرجى المحاولة مرة أخرى.',
+
+    // Pause action
+    'pause_label' => 'إيقاف مؤقت',
+    'pause_modal_heading' => 'إيقاف الاشتراك مؤقتاً',
+    'pause_modal_description' => 'سيتم إيقاف الاشتراك مؤقتاً ويمكن استئنافه لاحقاً.',
+    'pause_success' => 'تم إيقاف الاشتراك مؤقتاً',
+
+    // Resume action
+    'resume_label' => 'استئناف الاشتراك',
+    'resume_modal_heading' => 'استئناف الاشتراك',
+    'resume_modal_description' => 'سيتم استئناف الاشتراك وإعادة تفعيله',
+    'resume_success' => 'تم استئناف الاشتراك',
+
+    // Reactivate action
+    'reactivate_label' => 'إعادة تفعيل الاشتراك',
+    'reactivate_modal_heading' => 'إعادة تفعيل اشتراك ملغي',
+    'reactivate_modal_description' => 'سيتم إعادة تفعيل الاشتراك الملغي وتأكيد الدفع. سيتم تحديث تواريخ البدء والانتهاء.',
+    'reactivate_confirm_button' => 'نعم، إعادة التفعيل',
+    'reactivate_success' => 'تم إعادة تفعيل الاشتراك',
+    'reactivate_success_body' => 'تم إعادة تفعيل الاشتراك الملغي بنجاح.',
+
+    // Extend grace period action
+    'extend_grace_label' => 'تمديد فترة السماح',
+    'extend_grace_modal_heading' => 'تمديد فترة السماح',
+    'extend_grace_modal_description' => 'منح الطالب فترة سماح إضافية. تاريخ انتهاء الاشتراك الأصلي (:ends_at) لن يتغير.',
+    'not_specified' => 'غير محدد',
+    'grace_days_label' => 'عدد أيام فترة السماح',
+    'day_suffix' => 'يوم',
+    'grace_calculated_from' => 'سيتم حساب فترة السماح من ',
+    'grace_current_ends' => 'نهاية فترة السماح الحالية: ',
+    'subscription_ends_at_prefix' => 'تاريخ انتهاء الاشتراك: ',
+    'additional_days' => 'عدد الأيام الإضافية',
+    'extend_grace_success' => 'تم تمديد فترة السماح',
+    'extend_grace_success_body' => 'تم منح فترة سماح :days يوم حتى :date',
+
+    // Cancel action
+    'cancel_label' => 'إلغاء الاشتراك',
+    'cancel_modal_heading' => 'إلغاء الاشتراك',
+    'cancel_modal_description' => 'سيتم إلغاء الاشتراك وإلغاء جميع الجلسات المجدولة القادمة.',
+    'cancel_confirm_button' => 'نعم، إلغاء الاشتراك',
+    'cancel_success' => 'تم إلغاء الاشتراك',
+    'cancel_success_body' => 'تم إلغاء الاشتراك و :count جلسة مجدولة.',
+
+    // Create circle action
+    'create_circle_label' => 'إنشاء حلقة',
+    'create_circle_modal_heading' => 'إنشاء حلقة فردية',
+    'create_circle_modal_description' => 'سيتم إنشاء حلقة فردية وربطها بهذا الاشتراك.',
+    'specialization_interpretation' => 'تفسير',
+    'circle_name_label' => 'اسم الحلقة (اختياري)',
+    'circle_name_placeholder' => 'يتم إنشاؤه تلقائياً إذا تُرك فارغاً',
+    'circle_description_label' => 'وصف الحلقة (اختياري)',
+    'learning_objectives_label' => 'أهداف التعلم (اختياري)',
+    'learning_objectives_placeholder' => 'أضف هدفاً تعليمياً',
+    'default_session_duration_label' => 'مدة الجلسة الافتراضية',
+    'auto_activated_title' => 'تم تفعيل الاشتراك تلقائياً',
+    'auto_activated_body' => 'تم تفعيل الاشتراك لأن الدفع مؤكد والحلقة تم إنشاؤها.',
+    'create_circle_success' => 'تم إنشاء الحلقة',
+    'create_circle_success_body' => 'تم إنشاء الحلقة الفردية: :code',
+
+    // Cancel pending action
+    'cancel_pending_label' => 'إلغاء الطلب المعلق',
+    'cancel_pending_modal_heading' => 'إلغاء طلب الاشتراك المعلق',
+    'cancel_pending_modal_description' => 'هل أنت متأكد من إلغاء طلب الاشتراك هذا؟ هذا الإجراء لا يمكن التراجع عنه.',
+    'cancel_pending_confirm_button' => 'نعم، إلغاء الطلب',
+    'cancel_pending_success' => 'تم إلغاء الطلب',
+    'cancel_pending_success_body' => 'تم إلغاء طلب الاشتراك بنجاح.',
+
+    // Bulk cancel pending action
+    'bulk_cancel_pending_label' => 'إلغاء الطلبات المعلقة المحددة',
+    'bulk_cancel_pending_modal_heading' => 'إلغاء طلبات الاشتراك المعلقة',
+    'bulk_cancel_pending_modal_description' => 'سيتم إلغاء جميع طلبات الاشتراك المعلقة المحددة. هذا الإجراء لا يمكن التراجع عنه.',
+    'bulk_cancel_pending_confirm_button' => 'نعم، إلغاء الطلبات',
+    'bulk_cancel_pending_success' => 'تم إلغاء الطلبات',
+    'bulk_cancel_pending_success_body' => 'تم إلغاء :count طلب اشتراك بنجاح.',
+
+    // Filters
+    'request_status_label' => 'حالة الطلب',
+    'filter_all_pending' => 'جميع الطلبات المعلقة',
+    'filter_expired_pending' => 'طلبات منتهية الصلاحية',
+    'filter_valid_pending' => 'طلبات صالحة',
+    'filter_expired_hours' => 'طلبات منتهية (> :hours ساعة)',
 ];

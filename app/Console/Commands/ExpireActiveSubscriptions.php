@@ -45,99 +45,65 @@ class ExpireActiveSubscriptions extends Command
 
         $now = now();
 
-        // Process Quran subscriptions
-        QuranSubscription::withoutGlobalScopes()
-            ->where('status', SessionSubscriptionStatus::ACTIVE)
-            ->whereNotNull('ends_at')
-            ->where('ends_at', '<', $now)
-            ->chunkById(100, function ($subscriptions) use ($dryRun, $now, &$stats) {
-                foreach ($subscriptions as $subscription) {
-                    if ($this->isInGracePeriod($subscription, $now)) {
-                        $stats['skipped_grace']++;
+        // Process both subscription types with shared logic
+        $types = [
+            'quran' => QuranSubscription::class,
+            'academic' => AcademicSubscription::class,
+        ];
 
-                        continue;
+        foreach ($types as $type => $modelClass) {
+            // Pre-fetch IDs that have a pending renewal (single query instead of N+1)
+            $idsWithPendingRenewal = $modelClass::withoutGlobalScopes()
+                ->where('status', SessionSubscriptionStatus::PENDING)
+                ->whereNotNull('previous_subscription_id')
+                ->pluck('previous_subscription_id')
+                ->flip();
+
+            $modelClass::withoutGlobalScopes()
+                ->where('status', SessionSubscriptionStatus::ACTIVE)
+                ->whereNotNull('ends_at')
+                ->where('ends_at', '<', $now)
+                ->chunkById(100, function ($subscriptions) use ($dryRun, $now, &$stats, $type, $idsWithPendingRenewal) {
+                    foreach ($subscriptions as $subscription) {
+                        if ($this->isInGracePeriod($subscription, $now)) {
+                            $stats['skipped_grace']++;
+
+                            continue;
+                        }
+
+                        if ($idsWithPendingRenewal->has($subscription->id)) {
+                            $stats['skipped_grace']++;
+
+                            continue;
+                        }
+
+                        if ($dryRun) {
+                            $this->line("  [DRY RUN] Would expire {$type} subscription #{$subscription->id} (ends_at: {$subscription->ends_at})");
+                            $stats[$type]++;
+
+                            continue;
+                        }
+
+                        try {
+                            $subscription->update(['status' => SessionSubscriptionStatus::EXPIRED]);
+                            $stats[$type]++;
+
+                            Log::info('Subscription auto-expired', [
+                                'subscription_id' => $subscription->id,
+                                'type' => $type,
+                                'ends_at' => $subscription->ends_at->toDateTimeString(),
+                            ]);
+                        } catch (\Exception $e) {
+                            $stats['errors']++;
+                            Log::error('Failed to expire subscription', [
+                                'subscription_id' => $subscription->id,
+                                'type' => $type,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
                     }
-
-                    // Skip if there is a pending renewal subscription
-                    if ($subscription->hasPendingRenewal()) {
-                        $stats['skipped_grace']++;
-
-                        continue;
-                    }
-
-                    if ($dryRun) {
-                        $this->line("  [DRY RUN] Would expire Quran subscription #{$subscription->id} (ends_at: {$subscription->ends_at})");
-                        $stats['quran']++;
-
-                        continue;
-                    }
-
-                    try {
-                        $subscription->update(['status' => SessionSubscriptionStatus::EXPIRED]);
-                        $stats['quran']++;
-
-                        Log::info('Subscription auto-expired', [
-                            'subscription_id' => $subscription->id,
-                            'type' => 'quran',
-                            'ends_at' => $subscription->ends_at->toDateTimeString(),
-                        ]);
-                    } catch (\Exception $e) {
-                        $stats['errors']++;
-                        Log::error('Failed to expire subscription', [
-                            'subscription_id' => $subscription->id,
-                            'type' => 'quran',
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-                }
-            });
-
-        // Process Academic subscriptions
-        AcademicSubscription::withoutGlobalScopes()
-            ->where('status', SessionSubscriptionStatus::ACTIVE)
-            ->whereNotNull('ends_at')
-            ->where('ends_at', '<', $now)
-            ->chunkById(100, function ($subscriptions) use ($dryRun, $now, &$stats) {
-                foreach ($subscriptions as $subscription) {
-                    if ($this->isInGracePeriod($subscription, $now)) {
-                        $stats['skipped_grace']++;
-
-                        continue;
-                    }
-
-                    // Skip if there is a pending renewal subscription
-                    if ($subscription->hasPendingRenewal()) {
-                        $stats['skipped_grace']++;
-
-                        continue;
-                    }
-
-                    if ($dryRun) {
-                        $this->line("  [DRY RUN] Would expire Academic subscription #{$subscription->id} (ends_at: {$subscription->ends_at})");
-                        $stats['academic']++;
-
-                        continue;
-                    }
-
-                    try {
-                        $subscription->update(['status' => SessionSubscriptionStatus::EXPIRED]);
-                        $stats['academic']++;
-
-                        Log::info('Subscription auto-expired', [
-                            'subscription_id' => $subscription->id,
-                            'type' => 'academic',
-                            'ends_at' => $subscription->ends_at->toDateTimeString(),
-                        ]);
-                    } catch (\Exception $e) {
-                        $stats['errors']++;
-                        Log::error('Failed to expire subscription', [
-                            'subscription_id' => $subscription->id,
-                            'type' => 'academic',
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-                }
-            });
+                });
+        }
 
         $total = $stats['quran'] + $stats['academic'];
 

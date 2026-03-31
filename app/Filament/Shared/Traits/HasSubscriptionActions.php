@@ -3,6 +3,7 @@
 namespace App\Filament\Shared\Traits;
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -154,12 +155,12 @@ trait HasSubscriptionActions
     protected static function getPauseAction(): Action
     {
         return Action::make('pause')
-            ->label('إيقاف مؤقت')
+            ->label(__('subscriptions.pause_label'))
             ->icon('heroicon-o-pause-circle')
             ->color('warning')
             ->requiresConfirmation()
-            ->modalHeading('إيقاف الاشتراك مؤقتاً')
-            ->modalDescription('سيتم إيقاف الاشتراك مؤقتاً ويمكن استئنافه لاحقاً.')
+            ->modalHeading(__('subscriptions.pause_modal_heading'))
+            ->modalDescription(__('subscriptions.pause_modal_description'))
             ->action(function (BaseSubscription $record) {
                 // Tenant ownership guard
                 $academyId = auth()->user()?->academy_id;
@@ -178,7 +179,7 @@ trait HasSubscriptionActions
 
                 Notification::make()
                     ->success()
-                    ->title('تم إيقاف الاشتراك مؤقتاً')
+                    ->title(__('subscriptions.pause_success'))
                     ->send();
             })
             ->visible(fn (BaseSubscription $record) => $record->status === SessionSubscriptionStatus::ACTIVE
@@ -192,12 +193,12 @@ trait HasSubscriptionActions
     protected static function getResumeAction(): Action
     {
         return Action::make('resume')
-            ->label('استئناف الاشتراك')
+            ->label(__('subscriptions.resume_label'))
             ->icon('heroicon-o-play-circle')
             ->color('success')
             ->requiresConfirmation()
-            ->modalHeading('استئناف الاشتراك')
-            ->modalDescription('سيتم استئناف الاشتراك وإعادة تفعيله')
+            ->modalHeading(__('subscriptions.resume_modal_heading'))
+            ->modalDescription(__('subscriptions.resume_modal_description'))
             ->action(function (BaseSubscription $record) {
                 // Tenant ownership guard
                 $academyId = auth()->user()?->academy_id;
@@ -217,7 +218,7 @@ trait HasSubscriptionActions
 
                 Notification::make()
                     ->success()
-                    ->title('تم استئناف الاشتراك')
+                    ->title(__('subscriptions.resume_success'))
                     ->send();
             })
             ->visible(fn (BaseSubscription $record) => $record->status === SessionSubscriptionStatus::PAUSED);
@@ -230,13 +231,13 @@ trait HasSubscriptionActions
     protected static function getReactivateAction(): Action
     {
         return Action::make('reactivate')
-            ->label('إعادة تفعيل الاشتراك')
+            ->label(__('subscriptions.reactivate_label'))
             ->icon('heroicon-o-arrow-path')
             ->color('success')
             ->requiresConfirmation()
-            ->modalHeading('إعادة تفعيل اشتراك ملغي')
-            ->modalDescription('سيتم إعادة تفعيل الاشتراك الملغي وتأكيد الدفع. سيتم تحديث تواريخ البدء والانتهاء.')
-            ->modalSubmitActionLabel('نعم، إعادة التفعيل')
+            ->modalHeading(__('subscriptions.reactivate_modal_heading'))
+            ->modalDescription(__('subscriptions.reactivate_modal_description'))
+            ->modalSubmitActionLabel(__('subscriptions.reactivate_confirm_button'))
             ->action(function (BaseSubscription $record) {
                 // Tenant ownership guard
                 $academyId = auth()->user()?->academy_id;
@@ -291,8 +292,8 @@ trait HasSubscriptionActions
 
                 Notification::make()
                     ->success()
-                    ->title('تم إعادة تفعيل الاشتراك')
-                    ->body('تم إعادة تفعيل الاشتراك الملغي بنجاح.')
+                    ->title(__('subscriptions.reactivate_success'))
+                    ->body(__('subscriptions.reactivate_success_body'))
                     ->send();
             })
             ->visible(fn (BaseSubscription $record) => $record->status === SessionSubscriptionStatus::CANCELLED);
@@ -308,29 +309,29 @@ trait HasSubscriptionActions
     protected static function getExtendSubscriptionAction(): Action
     {
         return Action::make('extendSubscription')
-            ->label('تمديد فترة السماح')
+            ->label(__('subscriptions.extend_grace_label'))
             ->icon('heroicon-o-calendar-days')
             ->color('warning')
             ->requiresConfirmation()
-            ->modalHeading('تمديد فترة السماح')
-            ->modalDescription(fn (BaseSubscription $record) => 'منح الطالب فترة سماح إضافية. تاريخ انتهاء الاشتراك الأصلي ('
-                .($record->ends_at?->format('Y-m-d') ?? 'غير محدد')
-                .') لن يتغير.')
+            ->modalHeading(__('subscriptions.extend_grace_modal_heading'))
+            ->modalDescription(fn (BaseSubscription $record) => __('subscriptions.extend_grace_modal_description', [
+                'ends_at' => $record->ends_at?->format('Y-m-d') ?? __('subscriptions.not_specified'),
+            ]))
             ->schema([
                 TextInput::make('grace_days')
-                    ->label('عدد أيام فترة السماح')
+                    ->label(__('subscriptions.grace_days_label'))
                     ->numeric()
                     ->required()
                     ->minValue(1)
                     ->maxValue(365)
                     ->default(14)
-                    ->suffix('يوم')
+                    ->suffix(__('subscriptions.day_suffix'))
                     ->helperText(fn (BaseSubscription $record) => $record->ends_at
-                        ? 'سيتم حساب فترة السماح من '
+                        ? __('subscriptions.grace_calculated_from')
                             .(isset($record->metadata['grace_period_ends_at'])
-                                ? 'نهاية فترة السماح الحالية: '.Carbon::parse($record->metadata['grace_period_ends_at'])->format('Y-m-d')
-                                : 'تاريخ انتهاء الاشتراك: '.$record->ends_at->format('Y-m-d'))
-                        : 'عدد الأيام الإضافية'),
+                                ? __('subscriptions.grace_current_ends').Carbon::parse($record->metadata['grace_period_ends_at'])->format('Y-m-d')
+                                : __('subscriptions.subscription_ends_at_prefix').$record->ends_at->format('Y-m-d'))
+                        : __('subscriptions.additional_days')),
             ])
             ->action(function (BaseSubscription $record, array $data) {
                 // Tenant ownership guard
@@ -381,8 +382,11 @@ trait HasSubscriptionActions
 
                 Notification::make()
                     ->success()
-                    ->title('تم تمديد فترة السماح')
-                    ->body("تم منح فترة سماح {$graceDays} يوم حتى {$gracePeriodEndsAt->format('Y-m-d')}")
+                    ->title(__('subscriptions.extend_grace_success'))
+                    ->body(__('subscriptions.extend_grace_success_body', [
+                        'days' => $graceDays,
+                        'date' => $gracePeriodEndsAt->format('Y-m-d'),
+                    ]))
                     ->send();
             })
             ->visible(fn (BaseSubscription $record) => in_array($record->status, [
@@ -400,13 +404,13 @@ trait HasSubscriptionActions
     protected static function getCancelAction(): Action
     {
         return Action::make('cancel')
-            ->label('إلغاء الاشتراك')
+            ->label(__('subscriptions.cancel_label'))
             ->icon('heroicon-o-x-circle')
             ->color('danger')
             ->requiresConfirmation()
-            ->modalHeading('إلغاء الاشتراك')
-            ->modalDescription('سيتم إلغاء الاشتراك وإلغاء جميع الجلسات المجدولة القادمة.')
-            ->modalSubmitActionLabel('نعم، إلغاء الاشتراك')
+            ->modalHeading(__('subscriptions.cancel_modal_heading'))
+            ->modalDescription(__('subscriptions.cancel_modal_description'))
+            ->modalSubmitActionLabel(__('subscriptions.cancel_confirm_button'))
             ->action(function (BaseSubscription $record) {
                 // Tenant ownership guard
                 $academyId = auth()->user()?->academy_id;
@@ -434,8 +438,8 @@ trait HasSubscriptionActions
                     DB::afterCommit(function () use ($cancelledSessions) {
                         Notification::make()
                             ->success()
-                            ->title('تم إلغاء الاشتراك')
-                            ->body("تم إلغاء الاشتراك و {$cancelledSessions} جلسة مجدولة.")
+                            ->title(__('subscriptions.cancel_success'))
+                            ->body(__('subscriptions.cancel_success_body', ['count' => $cancelledSessions]))
                             ->send();
                     });
                 });
@@ -454,52 +458,52 @@ trait HasSubscriptionActions
     protected static function getCreateCircleAction(): Action
     {
         return Action::make('createCircle')
-            ->label('إنشاء حلقة')
+            ->label(__('subscriptions.create_circle_label'))
             ->icon('heroicon-o-plus-circle')
             ->color('primary')
             ->requiresConfirmation()
-            ->modalHeading('إنشاء حلقة فردية')
-            ->modalDescription('سيتم إنشاء حلقة فردية وربطها بهذا الاشتراك.')
+            ->modalHeading(__('subscriptions.create_circle_modal_heading'))
+            ->modalDescription(__('subscriptions.create_circle_modal_description'))
             ->schema([
                 Select::make('specialization')
-                    ->label('التخصص')
+                    ->label(__('subscriptions.specialization_label'))
                     ->options([
-                        'memorization' => 'حفظ',
-                        'recitation' => 'تلاوة',
-                        'interpretation' => 'تفسير',
-                        'tajweed' => 'تجويد',
-                        'complete' => 'شامل',
+                        'memorization' => __('subscriptions.specialization_memorization'),
+                        'recitation' => __('subscriptions.specialization_recitation'),
+                        'interpretation' => __('subscriptions.specialization_interpretation'),
+                        'tajweed' => __('subscriptions.specialization_tajweed'),
+                        'complete' => __('subscriptions.specialization_complete'),
                     ])
                     ->default('memorization')
                     ->required(),
 
                 Select::make('memorization_level')
-                    ->label('مستوى الحفظ')
+                    ->label(__('subscriptions.memorization_level_label'))
                     ->options([
-                        'beginner' => 'مبتدئ',
-                        'intermediate' => 'متوسط',
-                        'advanced' => 'متقدم',
+                        'beginner' => __('subscriptions.level_beginner'),
+                        'intermediate' => __('subscriptions.level_intermediate'),
+                        'advanced' => __('subscriptions.level_advanced'),
                     ])
                     ->default('beginner')
                     ->required(),
 
                 TextInput::make('name')
-                    ->label('اسم الحلقة (اختياري)')
-                    ->placeholder('يتم إنشاؤه تلقائياً إذا تُرك فارغاً')
+                    ->label(__('subscriptions.circle_name_label'))
+                    ->placeholder(__('subscriptions.circle_name_placeholder'))
                     ->maxLength(255),
 
                 Textarea::make('description')
-                    ->label('وصف الحلقة (اختياري)')
+                    ->label(__('subscriptions.circle_description_label'))
                     ->rows(2)
                     ->maxLength(500),
 
                 TagsInput::make('learning_objectives')
-                    ->label('أهداف التعلم (اختياري)')
-                    ->placeholder('أضف هدفاً تعليمياً')
+                    ->label(__('subscriptions.learning_objectives_label'))
+                    ->placeholder(__('subscriptions.learning_objectives_placeholder'))
                     ->reorderable(),
 
                 Select::make('default_duration_minutes')
-                    ->label('مدة الجلسة الافتراضية')
+                    ->label(__('subscriptions.default_session_duration_label'))
                     ->options(SessionDuration::options()),
             ])
             ->fillForm(fn (BaseSubscription $record) => [
@@ -563,15 +567,15 @@ trait HasSubscriptionActions
 
                     Notification::make()
                         ->info()
-                        ->title('تم تفعيل الاشتراك تلقائياً')
-                        ->body('تم تفعيل الاشتراك لأن الدفع مؤكد والحلقة تم إنشاؤها.')
+                        ->title(__('subscriptions.auto_activated_title'))
+                        ->body(__('subscriptions.auto_activated_body'))
                         ->send();
                 }
 
                 Notification::make()
                     ->success()
-                    ->title('تم إنشاء الحلقة')
-                    ->body("تم إنشاء الحلقة الفردية: {$circle->circle_code}")
+                    ->title(__('subscriptions.create_circle_success'))
+                    ->body(__('subscriptions.create_circle_success_body', ['code' => $circle->circle_code]))
                     ->send();
             })
             ->visible(fn (BaseSubscription $record) => $record instanceof QuranSubscription
@@ -589,13 +593,13 @@ trait HasSubscriptionActions
     protected static function getCancelPendingAction(): Action
     {
         return Action::make('cancelPending')
-            ->label('إلغاء الطلب المعلق')
+            ->label(__('subscriptions.cancel_pending_label'))
             ->icon('heroicon-o-x-circle')
             ->color('danger')
             ->requiresConfirmation()
-            ->modalHeading('إلغاء طلب الاشتراك المعلق')
-            ->modalDescription('هل أنت متأكد من إلغاء طلب الاشتراك هذا؟ هذا الإجراء لا يمكن التراجع عنه.')
-            ->modalSubmitActionLabel('نعم، إلغاء الطلب')
+            ->modalHeading(__('subscriptions.cancel_pending_modal_heading'))
+            ->modalDescription(__('subscriptions.cancel_pending_modal_description'))
+            ->modalSubmitActionLabel(__('subscriptions.cancel_pending_confirm_button'))
             ->action(function (BaseSubscription $record) {
                 // Tenant ownership guard
                 $academyId = auth()->user()?->academy_id;
@@ -613,13 +617,13 @@ trait HasSubscriptionActions
 
                 // Cancel associated pending payments
                 $record->payments()
-                    ->where('status', 'pending')
-                    ->update(['status' => 'cancelled']);
+                    ->where('status', PaymentStatus::PENDING)
+                    ->update(['status' => PaymentStatus::CANCELLED]);
 
                 Notification::make()
                     ->success()
-                    ->title('تم إلغاء الطلب')
-                    ->body('تم إلغاء طلب الاشتراك بنجاح.')
+                    ->title(__('subscriptions.cancel_pending_success'))
+                    ->body(__('subscriptions.cancel_pending_success_body'))
                     ->send();
             })
             ->visible(fn (BaseSubscription $record) => $record->isPending()
@@ -632,13 +636,13 @@ trait HasSubscriptionActions
     protected static function getBulkCancelPendingAction(): BulkAction
     {
         return BulkAction::make('bulkCancelPending')
-            ->label('إلغاء الطلبات المعلقة المحددة')
+            ->label(__('subscriptions.bulk_cancel_pending_label'))
             ->icon('heroicon-o-x-circle')
             ->color('danger')
             ->requiresConfirmation()
-            ->modalHeading('إلغاء طلبات الاشتراك المعلقة')
-            ->modalDescription('سيتم إلغاء جميع طلبات الاشتراك المعلقة المحددة. هذا الإجراء لا يمكن التراجع عنه.')
-            ->modalSubmitActionLabel('نعم، إلغاء الطلبات')
+            ->modalHeading(__('subscriptions.bulk_cancel_pending_modal_heading'))
+            ->modalDescription(__('subscriptions.bulk_cancel_pending_modal_description'))
+            ->modalSubmitActionLabel(__('subscriptions.bulk_cancel_pending_confirm_button'))
             ->action(function (Collection $records) {
                 $cancelledCount = 0;
                 $pendingStatus = static::getPendingStatus();
@@ -649,8 +653,8 @@ trait HasSubscriptionActions
                         $record->cancelAsDuplicateOrExpired(config('subscriptions.cancellation_reasons.admin'));
 
                         $record->payments()
-                            ->where('status', 'pending')
-                            ->update(['status' => 'cancelled']);
+                            ->where('status', PaymentStatus::PENDING)
+                            ->update(['status' => PaymentStatus::CANCELLED]);
 
                         $cancelledCount++;
                     }
@@ -658,8 +662,8 @@ trait HasSubscriptionActions
 
                 Notification::make()
                     ->success()
-                    ->title('تم إلغاء الطلبات')
-                    ->body("تم إلغاء {$cancelledCount} طلب اشتراك بنجاح.")
+                    ->title(__('subscriptions.bulk_cancel_pending_success'))
+                    ->body(__('subscriptions.bulk_cancel_pending_success_body', ['count' => $cancelledCount]))
                     ->send();
             })
             ->deselectRecordsAfterCompletion();
@@ -668,6 +672,32 @@ trait HasSubscriptionActions
     // ========================================
     // RENEWAL & RESUBSCRIBE ACTIONS
     // ========================================
+
+    /**
+     * Shared form schema for renew and resubscribe actions.
+     */
+    private static function getRenewalFormSchema(): array
+    {
+        return [
+            Select::make('billing_cycle')
+                ->label(__('subscriptions.select_billing_cycle'))
+                ->options([
+                    'monthly' => __('enums.billing_cycle.monthly'),
+                    'quarterly' => __('enums.billing_cycle.quarterly'),
+                    'yearly' => __('enums.billing_cycle.yearly'),
+                ])
+                ->default(fn (BaseSubscription $record) => $record->billing_cycle->value)
+                ->required(),
+            Select::make('activate_mode')
+                ->label(__('subscriptions.activation_mode'))
+                ->options([
+                    'pending' => __('subscriptions.create_as_pending'),
+                    'immediate' => __('subscriptions.activate_immediately'),
+                ])
+                ->default('pending')
+                ->required(),
+        ];
+    }
 
     /**
      * Renew action — creates a new subscription from an active/expiring one.
@@ -689,25 +719,7 @@ trait HasSubscriptionActions
 
                 return __('subscriptions.confirm_payment_description');
             })
-            ->schema([
-                Select::make('billing_cycle')
-                    ->label(__('subscriptions.select_billing_cycle'))
-                    ->options([
-                        'monthly' => __('enums.billing_cycle.monthly'),
-                        'quarterly' => __('enums.billing_cycle.quarterly'),
-                        'yearly' => __('enums.billing_cycle.yearly'),
-                    ])
-                    ->default(fn (BaseSubscription $record) => $record->billing_cycle->value)
-                    ->required(),
-                Select::make('activate_mode')
-                    ->label(__('subscriptions.activation_mode'))
-                    ->options([
-                        'pending' => __('subscriptions.create_as_pending'),
-                        'immediate' => __('subscriptions.activate_immediately'),
-                    ])
-                    ->default('pending')
-                    ->required(),
-            ])
+            ->schema(static::getRenewalFormSchema())
             ->action(function (BaseSubscription $record, array $data) {
                 $academyId = auth()->user()?->academy_id;
                 if ($academyId !== null && $record->academy_id !== $academyId) {
@@ -748,25 +760,7 @@ trait HasSubscriptionActions
             ->color('success')
             ->requiresConfirmation()
             ->modalHeading(__('subscriptions.resubscribe'))
-            ->schema([
-                Select::make('billing_cycle')
-                    ->label(__('subscriptions.select_billing_cycle'))
-                    ->options([
-                        'monthly' => __('enums.billing_cycle.monthly'),
-                        'quarterly' => __('enums.billing_cycle.quarterly'),
-                        'yearly' => __('enums.billing_cycle.yearly'),
-                    ])
-                    ->default(fn (BaseSubscription $record) => $record->billing_cycle->value)
-                    ->required(),
-                Select::make('activate_mode')
-                    ->label(__('subscriptions.activation_mode'))
-                    ->options([
-                        'pending' => __('subscriptions.create_as_pending'),
-                        'immediate' => __('subscriptions.activate_immediately'),
-                    ])
-                    ->default('pending')
-                    ->required(),
-            ])
+            ->schema(static::getRenewalFormSchema())
             ->action(function (BaseSubscription $record, array $data) {
                 $academyId = auth()->user()?->academy_id;
                 if ($academyId !== null && $record->academy_id !== $academyId) {
@@ -862,11 +856,11 @@ trait HasSubscriptionActions
     protected static function getPendingSubscriptionsFilter(): SelectFilter
     {
         return SelectFilter::make('pending_status')
-            ->label('حالة الطلب')
+            ->label(__('subscriptions.request_status_label'))
             ->options([
-                'all_pending' => 'جميع الطلبات المعلقة',
-                'expired_pending' => 'طلبات منتهية الصلاحية',
-                'valid_pending' => 'طلبات صالحة',
+                'all_pending' => __('subscriptions.filter_all_pending'),
+                'expired_pending' => __('subscriptions.filter_expired_pending'),
+                'valid_pending' => __('subscriptions.filter_valid_pending'),
             ])
             ->query(function (Builder $query, array $data): Builder {
                 if (empty($data['value'])) {
@@ -901,7 +895,7 @@ trait HasSubscriptionActions
         $hours = config('subscriptions.pending.expires_after_hours', 48);
 
         return Filter::make('expired_pending')
-            ->label("طلبات منتهية (> {$hours} ساعة)")
+            ->label(__('subscriptions.filter_expired_hours', ['hours' => $hours]))
             ->query(function (Builder $query): Builder {
                 $pendingStatus = static::getPendingStatus();
                 $hours = config('subscriptions.pending.expires_after_hours', 48);
