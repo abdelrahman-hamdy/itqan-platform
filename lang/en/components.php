@@ -832,6 +832,10 @@ return [
             'languages_label' => 'Languages',
             'view_profile' => 'View Profile',
             'open_lesson' => 'Open Lesson',
+            'year_experience' => 'year experience',
+            'subjects_count' => 'subjects',
+            'specialization_label' => 'Specialization',
+            'view_details' => 'View Details',
         ],
         'learning_section' => [
             'section_title' => 'Section Title',

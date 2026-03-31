@@ -3,6 +3,8 @@
 @php
   $isSubscribed = $teacher->is_subscribed ?? false;
   $subscription = $teacher->my_subscription ?? null;
+  $rating = $teacher->average_rating ?? $teacher->rating ?? 0;
+  $studentsCount = $teacher->total_students ?? 0;
   $teacherSubjects = collect($teacher->subject_ids ?? [])->map(function($id) use ($subjects) {
     return $subjects->firstWhere('id', $id);
   })->filter();
@@ -11,205 +13,129 @@
   })->filter();
 @endphp
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover flex flex-col">
-  <!-- Card Header -->
-  <div class="flex items-center gap-3 mb-4">
-    <!-- Teacher Avatar -->
-    <x-avatar
-      :user="$teacher"
-      size="lg"
-      userType="academic_teacher"
-      :gender="$teacher->gender ?? 'male'"
-      class="flex-shrink-0" />
-
-    <!-- Name and Info -->
-    <div class="flex-1 min-w-0">
-      <!-- Name Row -->
-      <div class="flex items-center justify-between gap-2 mb-2">
-        <h3 class="font-bold text-gray-900 text-lg leading-tight">
-          {{ $teacher->full_name ?? __('components.cards.academic_teacher.default_name') }}
-        </h3>
-        <!-- Status Badge -->
-        @if($isSubscribed)
-        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 flex-shrink-0">
-          <i class="ri-check-line me-1"></i>
-          {{ __('components.cards.academic_teacher.my_teacher') }}
-        </span>
-        @endif
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 card-hover flex flex-col overflow-hidden">
+  {{-- Section 1: Colored Header — My Teacher + Name/Rating + Avatar --}}
+  <div class="relative bg-violet-50 pe-4 sm:pe-6 ps-36 sm:ps-40 min-h-[100px] flex flex-col justify-end pb-3">
+    {{-- Avatar: vertically centered on bottom border, positioned at start side --}}
+    <div class="absolute start-4 sm:start-6 -bottom-8 z-10">
+      <div class="rounded-full border-4 border-white">
+        <x-avatar
+          :user="$teacher"
+          size="lg"
+          userType="academic_teacher"
+          :gender="$teacher->gender ?? $teacher->user?->gender ?? 'male'"
+          class="flex-shrink-0" />
       </div>
+    </div>
 
-      <!-- Info Row -->
-      <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-2 text-sm text-gray-600">
-          @if($teacher->educational_qualification)
-          <div class="flex items-center gap-1">
-            <i class="ri-graduation-cap-line text-violet-600"></i>
-            <span class="truncate">{{ $teacher->educational_qualification instanceof \App\Enums\EducationalQualification ? $teacher->educational_qualification->label() : \App\Enums\EducationalQualification::getLabel($teacher->educational_qualification) }}</span>
-          </div>
-          @endif
-          @if($teacher->educational_qualification && $teacher->teaching_experience_years)
-          <span class="text-gray-300">•</span>
-          @endif
-          @if($teacher->teaching_experience_years)
-          <div class="flex items-center gap-1">
-            <i class="ri-time-line text-violet-600"></i>
-            <span>{{ $teacher->teaching_experience_years }} {{ __('components.cards.academic_teacher.years_experience') }}</span>
-          </div>
-          @endif
-        </div>
-        <!-- Rating and Students -->
-        <div class="flex items-center gap-2 flex-shrink-0">
-          <div class="flex items-center">
-            <i class="ri-star-fill text-yellow-400 text-base"></i>
-            <span class="text-sm font-semibold text-gray-700 ms-1">
-              {{ number_format($teacher->average_rating ?? $teacher->rating ?? 4.8, 1) }}
-            </span>
-          </div>
-          @if($teacher->total_students ?? 0)
-          <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-          <span class="text-xs text-gray-600">{{ $teacher->total_students }} {{ __('components.cards.academic_teacher.students_count') }}</span>
-          @endif
-        </div>
+    {{-- My Teacher Badge (floated to end/left in RTL) --}}
+    @if($isSubscribed)
+    <div class="mb-2 flex justify-end">
+      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500 text-white shadow-sm">
+        <i class="ri-check-line me-1"></i>
+        {{ __('components.cards.academic_teacher.my_teacher') }}
+      </span>
+    </div>
+    @endif
+
+    {{-- Name + Rating (stuck to bottom, full width beside avatar) --}}
+    <div class="flex items-end justify-between gap-3">
+      <h3 class="font-bold text-gray-900 text-lg leading-tight truncate">
+        {{ $teacher->full_name ?? __('components.cards.academic_teacher.default_name') }}
+      </h3>
+      <div class="flex items-center gap-1 flex-shrink-0">
+        <x-reviews.star-rating
+          :rating="$rating"
+          :total-reviews="$teacher->total_reviews ?? null"
+          size="sm"
+        />
       </div>
     </div>
   </div>
 
-  <!-- Bio -->
-  @if($teacher->bio_arabic || $teacher->bio_english)
-  <p class="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
-    {{ $teacher->bio_arabic ?? $teacher->bio_english }}
-  </p>
-  @endif
-
-  <!-- Details Grid -->
-  <div class="mb-6 bg-gray-50 rounded-lg p-4">
-    @if($isSubscribed && $subscription)
-      <!-- Subscription Info for Subscribed Students -->
-      <div class="space-y-3">
-        <!-- Sessions Info -->
-        <div class="flex items-center text-sm">
-          <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center me-3 shadow-sm">
-            <i class="ri-video-line text-green-600"></i>
-          </div>
-          <div class="flex-1">
-            <p class="text-xs text-gray-500 mb-0.5">{{ __('components.cards.academic_teacher.sessions_label') }}</p>
-            <p class="font-semibold text-gray-900">
-              {{ $subscription->total_sessions_completed ?? 0 }} {{ __('components.cards.academic_teacher.sessions_progress') }} {{ $subscription->total_sessions ?? 0 }} {{ __('components.cards.academic_teacher.session_unit') }}
-            </p>
-          </div>
-        </div>
-
-        <!-- Progress -->
-        <div class="flex items-center text-sm">
-          <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center me-3 shadow-sm">
-            <i class="ri-calendar-check-line text-green-600"></i>
-          </div>
-          <div class="flex-1">
-            <p class="text-xs text-gray-500 mb-0.5">{{ __('components.cards.academic_teacher.progress_label') }}</p>
-            <div class="flex items-center gap-2">
-              <div class="flex-1 bg-gray-200 rounded-full h-1.5">
-                <div class="bg-green-600 h-1.5 rounded-full transition-all"
-                     style="width: {{ $subscription->progress_percentage ?? 0 }}%"></div>
-              </div>
-              <span class="text-xs font-semibold text-gray-900">{{ $subscription->progress_percentage ?? 0 }}%</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Subject Info -->
-        @if($subscription->subject_name)
-        <div class="flex items-center text-sm">
-          <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center me-3 shadow-sm">
-            <i class="ri-book-line text-green-600"></i>
-          </div>
-          <div class="flex-1">
-            <p class="text-xs text-gray-500 mb-0.5">{{ __('components.cards.academic_teacher.subject_label') }}</p>
-            <p class="font-semibold text-gray-900">{{ $subscription->subject_name }}</p>
-          </div>
-        </div>
+  {{-- Section 2: Main Info Area (ps + pt clears avatar overflow from header) --}}
+  <div class="px-4 sm:px-6 pt-10 flex-1 flex flex-col">
+    {{-- Key Details --}}
+    <div class="space-y-2.5 mb-3">
+      {{-- Qualification + Experience Row --}}
+      <div class="flex flex-wrap items-center gap-2">
+        @if($teacher->educational_qualification)
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-violet-100 text-violet-800">
+          <i class="ri-graduation-cap-line me-1"></i>
+          {{ $teacher->educational_qualification instanceof \App\Enums\EducationalQualification ? $teacher->educational_qualification->label() : \App\Enums\EducationalQualification::getLabel($teacher->educational_qualification) }}
+        </span>
+        @endif
+        @if($teacher->teaching_experience_years)
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+          <i class="ri-briefcase-line me-1 text-violet-600"></i>
+          {{ $teacher->teaching_experience_years }}
+          {{ $teacher->teaching_experience_years == 1 ? __('components.cards.academic_teacher.year_experience') : __('components.cards.academic_teacher.years_experience') }}
+        </span>
         @endif
       </div>
-    @else
-      <!-- Default Info for Non-subscribed -->
-      <!-- Row 1: Subjects & Grade Levels (2 columns) -->
-      <div class="grid grid-cols-2 gap-3 mb-3">
-        <!-- Subjects -->
-        @if($teacherSubjects->count() > 0)
-      <div class="flex items-center text-sm">
-        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center me-2 shadow-sm flex-shrink-0">
-          <i class="ri-book-line text-violet-600"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-xs text-gray-500 mb-0.5">{{ __('components.cards.academic_teacher.subjects_label') }}</p>
-          <div class="flex flex-wrap gap-1">
-            @if($teacherSubjects->count() > 1)
-              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-800 truncate">
-                {{ $teacherSubjects->first()->name }}
-              </span>
-              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                +{{ $teacherSubjects->count() - 1 }}
-              </span>
-            @else
-              <span class="text-xs font-medium text-gray-900 truncate">{{ $teacherSubjects->first()->name }}</span>
-            @endif
-          </div>
+
+      {{-- Subjects --}}
+      @if($teacherSubjects->count() > 0)
+      <div class="flex items-center text-sm text-gray-600">
+        <i class="ri-book-line me-1.5 text-violet-600"></i>
+        <div class="flex flex-wrap gap-1">
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-800 truncate">
+            {{ $teacherSubjects->first()->name }}
+          </span>
+          @if($teacherSubjects->count() > 1)
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+            +{{ $teacherSubjects->count() - 1 }}
+          </span>
+          @endif
         </div>
       </div>
       @endif
 
-      <!-- Grade Levels -->
+      {{-- Grade Levels --}}
       @if($teacherGradeLevels->count() > 0)
-      <div class="flex items-center text-sm">
-        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center me-2 shadow-sm flex-shrink-0">
-          <i class="ri-file-list-3-line text-violet-600"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-xs text-gray-500 mb-0.5">{{ __('components.cards.academic_teacher.grades_label') }}</p>
-          <div class="flex flex-wrap gap-1">
-            @if($teacherGradeLevels->count() > 1)
-              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-800 truncate">
-                {{ $teacherGradeLevels->first()->name }}
-              </span>
-              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                +{{ $teacherGradeLevels->count() - 1 }}
-              </span>
-            @else
-              <span class="text-xs font-medium text-gray-900 truncate">{{ $teacherGradeLevels->first()->name }}</span>
-            @endif
-          </div>
+      <div class="flex items-center text-sm text-gray-600">
+        <i class="ri-file-list-3-line me-1.5 text-violet-600"></i>
+        <div class="flex flex-wrap gap-1">
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-800 truncate">
+            {{ $teacherGradeLevels->first()->name }}
+          </span>
+          @if($teacherGradeLevels->count() > 1)
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+            +{{ $teacherGradeLevels->count() - 1 }}
+          </span>
+          @endif
         </div>
       </div>
       @endif
-      </div>
 
-      <!-- Minimum Price (Full width with better styling) -->
-      @if(!empty($teacher->minimum_price))
-      <div class="pt-3 border-t border-gray-200">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2 text-sm text-gray-600">
-            <i class="ri-price-tag-3-line text-violet-600"></i>
-            <span>{{ __('components.cards.academic_teacher.starts_from') }}</span>
-          </div>
-          <div class="flex items-baseline gap-1">
-            <span class="text-2xl font-bold text-violet-600">{{ number_format($teacher->minimum_price) }}</span>
-            <span class="text-sm text-violet-500">{{ getCurrencySymbol() }}/{{ __('components.cards.academic_teacher.per_month') }}</span>
-          </div>
-        </div>
+      {{-- Students Count --}}
+      @if($studentsCount > 0)
+      <div class="flex items-center text-sm text-gray-600">
+        <i class="ri-group-line me-1.5 text-violet-600"></i>
+        <span>{{ $studentsCount }} {{ __('components.cards.academic_teacher.students_count') }}</span>
       </div>
       @endif
+    </div>
+
+    {{-- Bio --}}
+    @if($teacher->bio_arabic || $teacher->bio_english)
+    <p class="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed">
+      {{ $teacher->bio_arabic ?? $teacher->bio_english }}
+    </p>
     @endif
-  </div>
 
-  <!-- Languages -->
-  @if($teacher->languages && is_array($teacher->languages) && count($teacher->languages) > 0)
-  <div class="mb-6">
-    <div class="flex items-center gap-2">
-      <span class="text-xs font-medium text-gray-500">{{ __('components.cards.academic_teacher.languages_label') }}:</span>
+    {{-- Languages --}}
+    @if($teacher->languages && is_array($teacher->languages) && count($teacher->languages) > 0)
+    <div class="mb-3">
       <div class="flex flex-wrap gap-1.5">
         @foreach(array_slice($teacher->languages, 0, 3) as $lang)
-        <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800">
+        <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700">
           <i class="ri-global-line me-1"></i>
-          {{ $lang }}
+          @php
+            try { $langLabel = \App\Enums\TeachingLanguage::from($lang)->label(); }
+            catch (\ValueError $e) { $langLabel = $lang; }
+          @endphp
+          {{ $langLabel }}
         </span>
         @endforeach
         @if(count($teacher->languages) > 3)
@@ -219,43 +145,65 @@
         @endif
       </div>
     </div>
-  </div>
-  @endif
-
-  <!-- Spacer to push buttons to bottom -->
-  <div class="flex-grow"></div>
-
-  <!-- Action Buttons -->
-  <div class="flex items-center gap-2 mt-auto">
-    <!-- View Profile Button (Violet - Always shown) -->
-    <a href="{{ route('academic-teachers.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'teacherId' => $teacher->id]) }}"
-       class="inline-block bg-violet-600 text-white px-5 py-3.5 rounded-lg text-sm font-semibold hover:bg-violet-700 transition-colors">
-      <i class="ri-eye-line me-1"></i>
-      {{ __('components.cards.academic_teacher.view_profile') }}
-    </a>
-
-    <!-- Additional Buttons for Subscribed Teachers -->
-    @if($isSubscribed && $subscription)
-      <!-- Open Subscription Button (Subtle Violet) -->
-      <a href="{{ route('student.academic-subscriptions.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'subscriptionId' => $subscription->id]) }}"
-         class="inline-block px-5 py-3.5 bg-violet-50 border-2 border-violet-200 rounded-lg text-sm font-semibold text-violet-700 hover:bg-violet-100 transition-colors">
-        <i class="ri-book-open-line me-1"></i>
-        {{ __('components.cards.academic_teacher.open_lesson') }}
-      </a>
-
-      <!-- Chat Button (Supervised) -->
-      @if($teacher->user && $teacher->user->hasSupervisor())
-        <x-chat.supervised-chat-button
-            :teacher="$teacher->user"
-            :student="auth()->user()"
-            entityType="academic_lesson"
-            :entityId="$subscription->id"
-            variant="icon-only"
-            size="lg"
-            class="px-5"
-            style="height: 52px;"
-        />
-      @endif
     @endif
+
+    {{-- Subscribed State Panel --}}
+    @if($isSubscribed && $subscription)
+    <div class="bg-violet-50 rounded-lg p-3 mb-3 border border-violet-100">
+      <div class="flex items-center justify-between text-sm mb-2">
+        <span class="text-violet-700 font-medium">
+          <i class="ri-play-circle-line me-1"></i>
+          {{ $subscription->total_sessions_completed ?? 0 }} {{ __('components.cards.academic_teacher.sessions_progress') }} {{ $subscription->total_sessions ?? 0 }} {{ __('components.cards.academic_teacher.session_unit') }}
+        </span>
+        <span class="text-xs font-bold text-violet-800">{{ $subscription->progress_percentage ?? 0 }}%</span>
+      </div>
+      <div class="bg-violet-200 rounded-full h-1.5">
+        <div class="bg-violet-600 h-1.5 rounded-full transition-all"
+             style="width: {{ $subscription->progress_percentage ?? 0 }}%"></div>
+      </div>
+    </div>
+    @endif
+
+    {{-- Spacer --}}
+    <div class="flex-grow"></div>
+
+    {{-- Section 3: Action Buttons --}}
+    <div class="pb-4 sm:pb-6 pt-3 mt-auto">
+      @if($isSubscribed && $subscription)
+        {{-- Subscribed: Open Lesson + Chat icon + Profile icon --}}
+        <div class="flex items-center gap-2">
+          <a href="{{ route('student.academic-subscriptions.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'subscriptionId' => $subscription->id]) }}"
+             class="flex-1 inline-flex items-center justify-center gap-1.5 bg-violet-600 text-white h-11 px-4 rounded-lg text-sm font-semibold hover:bg-violet-700 transition-colors">
+            <i class="ri-book-open-line"></i>
+            {{ __('components.cards.academic_teacher.open_lesson') }}
+          </a>
+
+          @if($teacher->user && $teacher->user->hasSupervisor())
+            <x-chat.supervised-chat-button
+                :teacher="$teacher->user"
+                :student="auth()->user()"
+                entityType="academic_lesson"
+                :entityId="$subscription->id"
+                variant="icon-only"
+                size="md"
+                class="!w-11 !h-11 !p-0 !rounded-lg !bg-blue-50 !border !border-blue-200 !text-blue-600 hover:!bg-blue-100"
+            />
+          @endif
+
+          <a href="{{ route('academic-teachers.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'teacherId' => $teacher->id]) }}"
+             class="w-11 h-11 inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-violet-600 transition-colors flex-shrink-0"
+             title="{{ __('components.cards.academic_teacher.view_profile') }}">
+            <i class="ri-user-line text-lg"></i>
+          </a>
+        </div>
+      @else
+        {{-- Not subscribed: View Profile full-width --}}
+        <a href="{{ route('academic-teachers.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'teacherId' => $teacher->id]) }}"
+           class="w-full inline-flex items-center justify-center gap-1.5 bg-violet-600 text-white h-11 rounded-lg text-sm font-semibold hover:bg-violet-700 transition-colors">
+          <i class="ri-eye-line"></i>
+          {{ __('components.cards.academic_teacher.view_profile') }}
+        </a>
+      @endif
+    </div>
   </div>
 </div>

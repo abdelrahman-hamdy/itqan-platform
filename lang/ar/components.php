@@ -700,6 +700,10 @@ return [
             'languages_label' => 'اللغات',
             'view_profile' => 'عرض الملف الشخصي',
             'open_lesson' => 'فتح الدرس',
+            'year_experience' => 'سنة خبرة',
+            'subjects_count' => 'مواد',
+            'specialization_label' => 'التخصص',
+            'view_details' => 'عرض التفاصيل',
         ],
         'individual_subscription' => [
             'individual_sessions' => 'جلسات فردية (1 على 1]',
