@@ -23,13 +23,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1 md:mb-2">
             <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.calendar.page_title') }}</h1>
             @if($selectedTeacher)
-            <div class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-white text-gray-700 border border-gray-200 shadow-sm">
-                <i class="ri-global-line text-blue-500"></i>
-                <span>{{ __('student.calendar.all_times_in_country', ['country' => auth()->user()->academy?->country?->label() ?? __('enums.country.SA')]) }}</span>
-                <span class="text-gray-300">|</span>
-                <i class="ri-time-line text-blue-500"></i>
-                <span id="live-clock" class="font-semibold text-gray-900 tabular-nums"></span>
-            </div>
+            <x-ui.timezone-clock />
             @endif
         </div>
         <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.calendar.page_subtitle') }}</p>
@@ -128,18 +122,6 @@
         const eventsRoute = @js($eventsRoute);
         const rescheduleRoute = @js($rescheduleRoute);
         const teacherId = @js($selectedTeacherId);
-
-        // Live clock
-        function updateLiveClock() {
-            const el = document.getElementById('live-clock');
-            if (!el) return;
-            el.textContent = new Date().toLocaleTimeString('ar-SA', {
-                timeZone: academyTimezone,
-                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-            });
-        }
-        updateLiveClock();
-        setInterval(updateLiveClock, 1000);
 
         // Stats update
         const stats = @js($stats);

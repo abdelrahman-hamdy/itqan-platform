@@ -18,11 +18,7 @@
             <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __($t.'page_title') }}</h1>
             <p class="mt-1 text-sm md:text-base text-gray-600">{{ __($t.'page_subtitle') }}</p>
         </div>
-        <div class="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 whitespace-nowrap shrink-0">
-            <i class="ri-time-line text-amber-600"></i>
-            <span class="font-medium">{{ nowInAcademyTimezone()->translatedFormat('h:i A') }}</span>
-            <span class="text-amber-600/70">({{ getAcademyTimezone() }})</span>
-        </div>
+        <x-ui.timezone-clock />
     </div>
 
     {{-- Stats Bar --}}
