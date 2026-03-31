@@ -82,13 +82,14 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
         // Prepare form data
         $formData = $academy->toArray();
 
-        // Load academic settings
+        // Load academic settings — merge Spatie model values into the Academy JSON column data
+        // so that all keys (default_individual_session_prices, auto_approve_reviews, etc.) are preserved
         Log::info('Loading academic settings for academy ID', ['academy_id' => $academy->id]);
         $academicSettings = AcademicSettings::getForAcademy($academy->id);
-        $formData['academic_settings'] = [
+        $formData['academic_settings'] = array_merge($formData['academic_settings'] ?? [], [
             'available_languages' => $academicSettings->available_languages ?? ['arabic', 'english'],
             'default_package_ids' => $academicSettings->default_package_ids ?? [],
-        ];
+        ]);
 
         // Load meeting settings data
         $academySettings = AcademySettings::getForAcademy($academy);

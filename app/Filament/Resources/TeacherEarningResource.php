@@ -227,16 +227,16 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                     // Get all teachers with composite keys (type_id format)
                     $options = [];
 
-                    $quranTeachers = QuranTeacherProfile::with('user')->get();
+                    $quranTeachers = QuranTeacherProfile::with('user')->whereNotNull('user_id')->get();
                     foreach ($quranTeachers as $teacher) {
                         $key = 'quran_'.$teacher->id;
-                        $options[$key] = $teacher->user->name.' (قرآن)';
+                        $options[$key] = $teacher->user?->name.' (قرآن)';
                     }
 
-                    $academicTeachers = AcademicTeacherProfile::with('user')->get();
+                    $academicTeachers = AcademicTeacherProfile::with('user')->whereNotNull('user_id')->get();
                     foreach ($academicTeachers as $teacher) {
                         $key = 'academic_'.$teacher->id;
-                        $options[$key] = $teacher->user->name.' (أكاديمي)';
+                        $options[$key] = $teacher->user?->name.' (أكاديمي)';
                     }
 
                     return $options;
