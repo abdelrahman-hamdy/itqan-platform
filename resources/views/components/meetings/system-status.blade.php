@@ -34,7 +34,7 @@
                 {{ __('meetings.system.grant_permission') }}
             </button>
             {{-- Hint for 'denied' state: guide user to browser settings --}}
-            <button data-role="camera-reset" onclick="window._sysStatusOpenSiteSettings()" class="px-3 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors cursor-pointer hidden">
+            <button data-role="camera-reset" class="px-3 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors cursor-pointer hidden">
                 {{ __('meetings.system.reset_in_browser') }}
             </button>
         </div>
@@ -53,7 +53,7 @@
             <button data-role="mic-btn" class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer hidden">
                 {{ __('meetings.system.grant_permission') }}
             </button>
-            <button data-role="mic-reset" onclick="window._sysStatusOpenSiteSettings()" class="px-3 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors cursor-pointer hidden">
+            <button data-role="mic-reset" class="px-3 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors cursor-pointer hidden">
                 {{ __('meetings.system.reset_in_browser') }}
             </button>
         </div>
@@ -230,12 +230,12 @@
     if (camBtn) camBtn.addEventListener('click', function() { requestMedia('camera', { video: true }); });
     if (micBtn) micBtn.addEventListener('click', function() { requestMedia('mic', { audio: true }); });
 
-    // Reset button: show inline instructions (browser blocks chrome:// URLs from JS)
-    window._sysStatusOpenSiteSettings = function() {
-        var msg = root.querySelector('[data-role="reset-instructions"]');
-        if (msg) {
-            msg.classList.toggle('hidden');
-        }
-    };
+    // Reset buttons: toggle inline instructions
+    var instructions = root.querySelector('[data-role="reset-instructions"]');
+    var camReset = el('camera-reset');
+    var micReset = el('mic-reset');
+    function toggleInstructions() { if (instructions) instructions.classList.toggle('hidden'); }
+    if (camReset) camReset.addEventListener('click', toggleInstructions);
+    if (micReset) micReset.addEventListener('click', toggleInstructions);
 })();
 </script>
