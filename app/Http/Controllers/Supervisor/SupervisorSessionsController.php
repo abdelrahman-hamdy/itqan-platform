@@ -34,13 +34,14 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         $statusFilter = $request->query('status');
         $dateFilter = $request->query('date', 'all');
         $teacherId = $request->query('teacher_id');
+        $studentId = $request->query('student_id');
         $search = $request->query('search');
 
         // Get sessions based on tab
         if ($tab === 'all') {
-            $sessions = $this->getAllSessions($statusFilter, $dateFilter, $teacherId, $search, $request);
+            $sessions = $this->getAllSessions($statusFilter, $dateFilter, $teacherId, $studentId, $search, $request);
         } else {
-            $sessions = $this->getFilteredSessions($tab, $statusFilter, $dateFilter, $teacherId, $search, $request);
+            $sessions = $this->getFilteredSessions($tab, $statusFilter, $dateFilter, $teacherId, $studentId, $search, $request);
         }
 
         // Stats
@@ -52,16 +53,24 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         // Teachers list for filter
         $teachers = $this->getTeachersList();
 
+        $students = $this->getStudentsList();
+        $studentName = $studentId
+            ? collect($students)->firstWhere('id', (int) $studentId)['name'] ?? null
+            : null;
+
         return view('supervisor.sessions.index', [
             'sessions' => $sessions,
             'activeTab' => $tab,
             'statusFilter' => $statusFilter,
             'dateFilter' => $dateFilter,
             'teacherId' => $teacherId,
+            'studentId' => $studentId,
+            'studentName' => $studentName,
             'search' => $search,
             'stats' => $stats,
             'tabCounts' => $tabCounts,
             'teachers' => $teachers,
+            'students' => $students,
             'statusOptions' => SessionStatus::options(),
         ]);
     }
@@ -222,18 +231,18 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     /**
      * Get all sessions across types (merged + paginated).
      */
-    private function getAllSessions(?string $status, string $date, ?string $teacherId, ?string $search, Request $request): LengthAwarePaginator
+    private function getAllSessions(?string $status, string $date, ?string $teacherId, ?string $studentId, ?string $search, Request $request): LengthAwarePaginator
     {
         $perPage = 20;
         $page = (int) $request->query('page', 1);
 
-        $quranSessions = $this->buildQuery('quran', $status, $date, $teacherId, $search)->get()
+        $quranSessions = $this->buildQuery('quran', $status, $date, $teacherId, $studentId, $search)->get()
             ->each(fn ($s) => $s->setAttribute('_type', 'quran'));
 
-        $academicSessions = $this->buildQuery('academic', $status, $date, $teacherId, $search)->get()
+        $academicSessions = $this->buildQuery('academic', $status, $date, $teacherId, $studentId, $search)->get()
             ->each(fn ($s) => $s->setAttribute('_type', 'academic'));
 
-        $interactiveSessions = $this->buildQuery('interactive', $status, $date, $teacherId, $search)->get()
+        $interactiveSessions = $this->buildQuery('interactive', $status, $date, $teacherId, $studentId, $search)->get()
             ->each(fn ($s) => $s->setAttribute('_type', 'interactive'));
 
         $all = $quranSessions->concat($academicSessions)->concat($interactiveSessions);
@@ -253,9 +262,9 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     /**
      * Get sessions for a specific tab (single query with pagination).
      */
-    private function getFilteredSessions(string $tab, ?string $status, string $date, ?string $teacherId, ?string $search, Request $request): LengthAwarePaginator
+    private function getFilteredSessions(string $tab, ?string $status, string $date, ?string $teacherId, ?string $studentId, ?string $search, Request $request): LengthAwarePaginator
     {
-        $query = $this->buildQuery($tab, $status, $date, $teacherId, $search);
+        $query = $this->buildQuery($tab, $status, $date, $teacherId, $studentId, $search);
 
         return $query
             ->orderByRaw("CASE WHEN status IN ('ready', 'ongoing') THEN 0 WHEN scheduled_at >= NOW() THEN 1 ELSE 2 END")
@@ -273,7 +282,7 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     /**
      * Build a query for a specific session type with filters.
      */
-    private function buildQuery(string $type, ?string $status, string $date, ?string $teacherId, ?string $search): Builder
+    private function buildQuery(string $type, ?string $status, string $date, ?string $teacherId, ?string $studentId, ?string $search): Builder
     {
         $query = match ($type) {
             'academic' => $this->getAcademicQuery(),
@@ -301,6 +310,11 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         // Teacher filter
         if ($teacherId) {
             $this->applyTeacherFilter($query, $type, (int) $teacherId);
+        }
+
+        // Student filter
+        if ($studentId) {
+            $this->applyStudentFilter($query, $type, (int) $studentId);
         }
 
         // Search filter
@@ -368,6 +382,17 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             'academic' => $query->whereHas('academicTeacher', fn ($q) => $q->where('user_id', $teacherUserId)),
             'interactive' => $query->whereHas('course.assignedTeacher', fn ($q) => $q->where('user_id', $teacherUserId)),
             default => $query->where('quran_teacher_id', $teacherUserId),
+        };
+    }
+
+    /**
+     * Apply student filter to query.
+     */
+    private function applyStudentFilter(Builder $query, string $type, int $studentUserId): void
+    {
+        match ($type) {
+            'interactive' => $query->whereHas('course.enrollments.student', fn ($q) => $q->where('user_id', $studentUserId)),
+            default => $query->where('student_id', $studentUserId),
         };
     }
 
@@ -476,6 +501,40 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         }
 
         return User::whereIn('id', $allIds)
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+            ])
+            ->toArray();
+    }
+
+    /**
+     * Get combined students list for filter dropdown.
+     */
+    private function getStudentsList(): array
+    {
+        $quranQuery = QuranSession::query();
+        $academicQuery = AcademicSession::query();
+
+        if (! $this->isAdminUser()) {
+            $quranQuery->whereIn('quran_teacher_id', $this->getAssignedQuranTeacherIds());
+            $academicQuery->whereIn('academic_teacher_id', $this->getAssignedAcademicTeacherProfileIds());
+        }
+
+        $quranStudentIds = $quranQuery->distinct()->pluck('student_id')->filter()->toArray();
+        $academicStudentIds = $academicQuery->distinct()->pluck('student_id')->filter()->toArray();
+
+        $allIds = array_unique(array_merge($quranStudentIds, $academicStudentIds));
+
+        if (empty($allIds)) {
+            return [];
+        }
+
+        return User::query()
+            ->select('id', 'name')
+            ->whereIn('id', $allIds)
             ->orderBy('name')
             ->get()
             ->map(fn ($user) => [

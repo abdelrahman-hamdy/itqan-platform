@@ -700,6 +700,9 @@ return [
         'filter_date_month' => 'هذا الشهر',
         'filter_status' => 'الحالة',
         'filter_teacher' => 'المعلم',
+        'filter_student' => 'الطالب',
+        'all_students' => 'جميع الطلاب',
+        'filtering_by_student' => 'تصفية جلسات الطالب: :name',
         'search_placeholder' => 'بحث بكود الجلسة أو اسم المعلم أو الطالب...',
         'clear_filters' => 'مسح الفلاتر',
 

@@ -84,7 +84,7 @@
                     ];
                 @endphp
                 @foreach($tabs as $tabKey => $tabConfig)
-                    <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $tabKey, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'search' => $search]) }}"
+                    <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $tabKey, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search]) }}"
                        class="whitespace-nowrap border-b-2 py-3 px-3 md:px-4 text-sm font-medium transition-colors flex items-center gap-1.5
                            {{ $activeTab === $tabKey
                                ? 'border-'.$tabConfig['color'].'-500 text-'.$tabConfig['color'].'-600'
@@ -103,7 +103,7 @@
             <div class="flex flex-wrap items-center gap-2">
                 <span class="text-xs font-medium text-gray-500">{{ __($t.'col_scheduled') }}:</span>
                 @foreach(['all' => __($t.'filter_date_all'), 'today' => __($t.'filter_date_today'), 'week' => __($t.'filter_date_week'), 'month' => __($t.'filter_date_month')] as $dateVal => $dateLabel)
-                    <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateVal, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'search' => $search]) }}"
+                    <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateVal, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search]) }}"
                        class="px-3 py-1 text-xs font-medium rounded-full transition-colors
                            {{ $dateFilter === $dateVal ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
                         {{ $dateLabel }}
@@ -116,12 +116,12 @@
                 {{-- Status dropdown --}}
                 <select onchange="if(this.value !== '') { window.location.href = this.value; }"
                     class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:w-44">
-                    <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'teacher_id' => $teacherId, 'search' => $search]) }}"
+                    <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search]) }}"
                         {{ !$statusFilter ? 'selected' : '' }}>
                         {{ __($t.'filter_status') }}: {{ __($t.'filter_date_all') }}
                     </option>
                     @foreach(\App\Enums\SessionStatus::cases() as $statusEnum)
-                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusEnum->value, 'teacher_id' => $teacherId, 'search' => $search]) }}"
+                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusEnum->value, 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search]) }}"
                             {{ $statusFilter === $statusEnum->value ? 'selected' : '' }}>
                             {{ $statusEnum->label() }}
                         </option>
@@ -132,14 +132,31 @@
                 @if(!empty($teachers))
                 <select onchange="if(this.value !== '') { window.location.href = this.value; }"
                     class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:w-48">
-                    <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'search' => $search]) }}"
+                    <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'student_id' => $studentId, 'search' => $search]) }}"
                         {{ !$teacherId ? 'selected' : '' }}>
                         {{ __('supervisor.common.all_teachers') }}
                     </option>
                     @foreach($teachers as $teacher)
-                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacher['id'], 'search' => $search]) }}"
+                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacher['id'], 'student_id' => $studentId, 'search' => $search]) }}"
                             {{ $teacherId == $teacher['id'] ? 'selected' : '' }}>
                             {{ $teacher['name'] }}
+                        </option>
+                    @endforeach
+                </select>
+                @endif
+
+                {{-- Student dropdown --}}
+                @if(!empty($students))
+                <select onchange="if(this.value !== '') { window.location.href = this.value; }"
+                    class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:w-48">
+                    <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'search' => $search]) }}"
+                        {{ !$studentId ? 'selected' : '' }}>
+                        {{ __($t.'all_students') }}
+                    </option>
+                    @foreach($students as $student)
+                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'student_id' => $student['id'], 'search' => $search]) }}"
+                            {{ $studentId == $student['id'] ? 'selected' : '' }}>
+                            {{ $student['name'] }}
                         </option>
                     @endforeach
                 </select>
@@ -151,6 +168,7 @@
                     <input type="hidden" name="date" value="{{ $dateFilter }}">
                     @if($statusFilter)<input type="hidden" name="status" value="{{ $statusFilter }}">@endif
                     @if($teacherId)<input type="hidden" name="teacher_id" value="{{ $teacherId }}">@endif
+                    @if($studentId)<input type="hidden" name="student_id" value="{{ $studentId }}">@endif
                     <div class="relative flex-1">
                         <i class="ri-search-line absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
                         <input type="text" name="search" value="{{ $search }}"
@@ -163,7 +181,7 @@
                 </form>
 
                 {{-- Clear filters --}}
-                @if($statusFilter || $dateFilter !== 'all' || $teacherId || $search)
+                @if($statusFilter || $dateFilter !== 'all' || $teacherId || $studentId || $search)
                     <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab]) }}"
                        class="px-3 py-2 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors whitespace-nowrap">
                         <i class="ri-close-line me-0.5"></i>
@@ -173,6 +191,19 @@
             </div>
         </div>
     </div>
+
+    {{-- Student filter banner --}}
+    @if($studentId && $studentName)
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+            <i class="ri-user-line"></i>
+            <span>{{ __($t.'filtering_by_student', ['name' => $studentName]) }}</span>
+            <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'search' => $search]) }}"
+               class="ms-auto inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded transition-colors">
+                <i class="ri-close-line"></i>
+                {{ __($t.'clear_filters') }}
+            </a>
+        </div>
+    @endif
 
     {{-- Sessions Table / List --}}
     @if($sessions->isNotEmpty())

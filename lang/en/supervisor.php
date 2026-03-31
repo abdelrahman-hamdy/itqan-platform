@@ -700,6 +700,9 @@ return [
         'filter_date_month' => 'This Month',
         'filter_status' => 'Status',
         'filter_teacher' => 'Teacher',
+        'filter_student' => 'Student',
+        'all_students' => 'All Students',
+        'filtering_by_student' => 'Filtering sessions for student: :name',
         'search_placeholder' => 'Search by session code, teacher or student name...',
         'clear_filters' => 'Clear Filters',
 
