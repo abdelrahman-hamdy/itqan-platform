@@ -252,6 +252,12 @@ return [
 
     // System Status (for device/browser checks)
     'system' => [
+        'title' => 'System Status',
+        'camera' => 'Browser Camera',
+        'microphone' => 'Browser Microphone',
+        'connection_status' => 'Connection Status',
+        'browser_compatibility' => 'Browser Compatibility',
+        'grant_permission' => 'Grant Permission',
         'allowed' => 'Allowed',
         'denied' => 'Denied',
         'needs_permission' => 'Needs permission',

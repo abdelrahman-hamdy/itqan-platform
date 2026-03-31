@@ -1,7 +1,6 @@
 {{--
     System Status Component
     Shows camera, microphone, network, and browser compatibility status
-    Uses Alpine.js for self-contained permission handling
 --}}
 
 @props([
@@ -15,11 +14,23 @@
         micState: 'checking',
         networkOnline: navigator.onLine,
         browserCompatible: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && (window.RTCPeerConnection || window.webkitRTCPeerConnection)),
+        _onOnline: null,
+        _onOffline: null,
 
         async init() {
-            await this.checkCameraPermission();
-            await this.checkMicPermission();
-            this.watchNetwork();
+            await Promise.all([
+                this.checkCameraPermission(),
+                this.checkMicPermission(),
+            ]);
+            this._onOnline = () => { this.networkOnline = true; };
+            this._onOffline = () => { this.networkOnline = false; };
+            window.addEventListener('online', this._onOnline);
+            window.addEventListener('offline', this._onOffline);
+        },
+
+        destroy() {
+            window.removeEventListener('online', this._onOnline);
+            window.removeEventListener('offline', this._onOffline);
         },
 
         async checkCameraPermission() {
@@ -62,11 +73,6 @@
             }
         },
 
-        watchNetwork() {
-            window.addEventListener('online', () => { this.networkOnline = true; });
-            window.addEventListener('offline', () => { this.networkOnline = false; });
-        },
-
         stateIcon(state) {
             if (state === 'granted') return 'ri-check-line text-green-600';
             if (state === 'denied') return 'ri-close-line text-red-600';
@@ -81,12 +87,12 @@
             return 'bg-gray-100';
         },
 
-        stateText(state, type) {
+        stateText(state) {
             const t = window.meetingTranslations?.system || {};
-            if (state === 'granted') return t.allowed || 'مسموح';
-            if (state === 'denied') return t.denied || 'مرفوض';
-            if (state === 'prompt') return t.needs_permission || 'يحتاج إذن';
-            return 'جاري التحقق...';
+            if (state === 'granted') return t.allowed || '{{ __('meetings.system.allowed') }}';
+            if (state === 'denied') return t.denied || '{{ __('meetings.system.denied') }}';
+            if (state === 'prompt') return t.needs_permission || '{{ __('meetings.system.needs_permission') }}';
+            return '{{ __('meetings.system.unknown') }}';
         },
 
         stateTextClass(state) {
@@ -103,7 +109,7 @@
 >
     <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
         <i class="ri-shield-check-line text-gray-600"></i>
-        {{ __('meetings.system.title', [], 'ar') ?: 'حالة النظام' }}
+        {{ __('meetings.system.title') }}
     </h3>
     <div class="space-y-3">
         <!-- Camera Permission -->
@@ -113,8 +119,8 @@
                     <i :class="stateIcon(cameraState)"></i>
                 </div>
                 <div>
-                    <div class="text-sm font-medium text-gray-900">{{ __('meetings.system.camera', [], 'ar') ?: 'كاميرا المتصفح' }}</div>
-                    <div :class="stateTextClass(cameraState)" x-text="stateText(cameraState, 'camera')"></div>
+                    <div class="text-sm font-medium text-gray-900">{{ __('meetings.system.camera') }}</div>
+                    <div :class="stateTextClass(cameraState)" x-text="stateText(cameraState)"></div>
                 </div>
             </div>
             <button
@@ -123,7 +129,7 @@
                 @click="requestCamera()"
                 class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer"
             >
-                {{ __('meetings.system.grant_permission', [], 'ar') ?: 'منح الإذن' }}
+                {{ __('meetings.system.grant_permission') }}
             </button>
         </div>
 
@@ -134,8 +140,8 @@
                     <i :class="stateIcon(micState)"></i>
                 </div>
                 <div>
-                    <div class="text-sm font-medium text-gray-900">{{ __('meetings.system.microphone', [], 'ar') ?: 'ميكروفون المتصفح' }}</div>
-                    <div :class="stateTextClass(micState)" x-text="stateText(micState, 'mic')"></div>
+                    <div class="text-sm font-medium text-gray-900">{{ __('meetings.system.microphone') }}</div>
+                    <div :class="stateTextClass(micState)" x-text="stateText(micState)"></div>
                 </div>
             </div>
             <button
@@ -144,7 +150,7 @@
                 @click="requestMic()"
                 class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer"
             >
-                {{ __('meetings.system.grant_permission', [], 'ar') ?: 'منح الإذن' }}
+                {{ __('meetings.system.grant_permission') }}
             </button>
         </div>
 
@@ -156,11 +162,11 @@
                     <i :class="networkOnline ? 'ri-wifi-line text-green-600' : 'ri-wifi-off-line text-red-600'"></i>
                 </div>
                 <div>
-                    <div class="text-sm font-medium text-gray-900">{{ __('meetings.system.connection_status', [], 'ar') ?: 'حالة الاتصال' }}</div>
+                    <div class="text-sm font-medium text-gray-900">{{ __('meetings.system.connection_status') }}</div>
                     <div :class="networkOnline ? 'text-xs text-green-600' : 'text-xs text-red-600'"
                          x-text="networkOnline
-                            ? (window.meetingTranslations?.system?.connected || 'متصل')
-                            : (window.meetingTranslations?.system?.not_connected || 'غير متصل')">
+                            ? (window.meetingTranslations?.system?.connected || '{{ __('meetings.system.connected') }}')
+                            : (window.meetingTranslations?.system?.not_connected || '{{ __('meetings.system.not_connected') }}')">
                     </div>
                 </div>
             </div>
@@ -174,11 +180,11 @@
                     <i :class="browserCompatible ? 'ri-check-line text-green-600' : 'ri-error-warning-line text-red-600'"></i>
                 </div>
                 <div>
-                    <div class="text-sm font-medium text-gray-900">{{ __('meetings.system.browser_compatibility', [], 'ar') ?: 'توافق المتصفح' }}</div>
+                    <div class="text-sm font-medium text-gray-900">{{ __('meetings.system.browser_compatibility') }}</div>
                     <div :class="browserCompatible ? 'text-xs text-green-600' : 'text-xs text-red-600'"
                          x-text="browserCompatible
-                            ? (window.meetingTranslations?.system?.compatible || 'متوافق')
-                            : (window.meetingTranslations?.system?.not_compatible || 'غير متوافق')">
+                            ? (window.meetingTranslations?.system?.compatible || '{{ __('meetings.system.compatible') }}')
+                            : (window.meetingTranslations?.system?.not_compatible || '{{ __('meetings.system.not_compatible') }}')">
                     </div>
                 </div>
             </div>

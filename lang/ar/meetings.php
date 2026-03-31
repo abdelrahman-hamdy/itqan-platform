@@ -252,6 +252,12 @@ return [
 
     // System Status (for device/browser checks)
     'system' => [
+        'title' => 'حالة النظام',
+        'camera' => 'كاميرا المتصفح',
+        'microphone' => 'ميكروفون المتصفح',
+        'connection_status' => 'حالة الاتصال',
+        'browser_compatibility' => 'توافق المتصفح',
+        'grant_permission' => 'منح الإذن',
         'allowed' => 'مسموح',
         'denied' => 'مرفوض',
         'needs_permission' => 'يحتاج إذن',
