@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use Exception;
 use App\Contracts\RecordingCapable;
 use App\Enums\RecordingStatus;
-use App\Models\InteractiveCourseSession;
+use App\Models\SessionRecording;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -41,21 +41,21 @@ class StopExpiredRecordingsCommand extends Command
         $stoppedCount = 0;
         $errorCount = 0;
 
-        // Find InteractiveCourseSession instances with active recordings
-        $sessionsWithActiveRecordings = InteractiveCourseSession::query()
-            ->whereHas('recordings', function ($query) {
-                $query->where('status', RecordingStatus::RECORDING->value);
-            })
-            ->with(['recordings' => function ($query) {
-                $query->where('status', RecordingStatus::RECORDING->value);
-            }])
+        // Find ALL active recordings (any session type) via SessionRecording directly
+        $activeRecordings = SessionRecording::where('status', RecordingStatus::RECORDING)
+            ->with('recordable')
             ->get();
 
-        Log::info('[RECORDINGS] Found sessions with active recordings', [
-            'count' => $sessionsWithActiveRecordings->count(),
+        Log::info('[RECORDINGS] Found active recordings', [
+            'count' => $activeRecordings->count(),
         ]);
 
-        foreach ($sessionsWithActiveRecordings as $session) {
+        foreach ($activeRecordings as $recordingRecord) {
+            $session = $recordingRecord->recordable;
+
+            if (! $session) {
+                continue;
+            }
             // Calculate session end time
             $scheduledEndTime = $session->scheduled_at
                 ? $session->scheduled_at->copy()->addMinutes($session->duration_minutes ?? 60)

@@ -242,6 +242,7 @@ class LiveKitWebhookController extends Controller
 
             // Only record during actual session time (not preparation or grace period)
             $session->refresh();
+            $session->loadMissing(['individualCircle', 'circle']);
             if ($session->scheduled_at && now()->lt($session->scheduled_at)) {
                 Log::debug('Auto-recording skipped: Session scheduled time not yet reached', [
                     'session_id' => $session->id,

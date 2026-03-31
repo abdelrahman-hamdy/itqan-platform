@@ -12,4 +12,7 @@ return [
     'expires_in' => 'Expires in',
     'days' => 'days',
     'today' => 'Today',
+    'recording_settings' => 'Recording Settings',
+    'enable_audio_recording' => 'Audio recording for sessions',
+    'enable_audio_recording_help' => 'Enable automatic audio recording for sessions in this circle',
 ];

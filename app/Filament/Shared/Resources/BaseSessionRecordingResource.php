@@ -206,12 +206,19 @@ abstract class BaseSessionRecordingResource extends BaseResource
                     if (! $record->completed_at || $record->status !== RecordingStatus::COMPLETED) {
                         return null;
                     }
-                    $daysLeft = 7 - (int) $record->completed_at->diffInDays(now());
+                    $daysLeft = config('recordings.retention_days', 7) - (int) $record->completed_at->diffInDays(now());
 
                     return $daysLeft > 0 ? $daysLeft.' '.__('recordings.days') : __('recordings.today');
                 })
                 ->badge()
-                ->color(fn (?string $state): string => $state && (str_contains($state, '1 ') || $state === __('recordings.today')) ? 'danger' : 'warning'),
+                ->color(function (SessionRecording $record): string {
+                    if (! $record->completed_at || $record->status !== RecordingStatus::COMPLETED) {
+                        return 'gray';
+                    }
+                    $daysLeft = config('recordings.retention_days', 7) - (int) $record->completed_at->diffInDays(now());
+
+                    return $daysLeft <= 1 ? 'danger' : 'warning';
+                }),
 
             // Created At
             TextColumn::make('created_at')
@@ -400,10 +407,16 @@ abstract class BaseSessionRecordingResource extends BaseResource
         $query = static::getModel()::query()
             ->with([
                 'recordable',
+                // InteractiveCourseSession relationships
                 'recordable.course',
                 'recordable.course.assignedTeacher',
                 'recordable.course.assignedTeacher.user',
                 'recordable.course.academy',
+                // QuranSession relationships
+                'recordable.quranTeacher',
+                'recordable.circle',
+                'recordable.individualCircle',
+                'recordable.academy',
             ])
             // Show recordings for supported session types (morph aliases, not FQCNs)
             ->whereIn('recordable_type', [

@@ -224,8 +224,8 @@ abstract class BaseQuranCircleResource extends Resource
                                 ->helperText('تفعيل أو إلغاء تفعيل الحلقة')
                                 ->default(true),
                             Toggle::make('recording_enabled')
-                                ->label('تسجيل صوتي للجلسات')
-                                ->helperText('تفعيل التسجيل الصوتي التلقائي لجلسات هذه الحلقة')
+                                ->label(__('recordings.enable_audio_recording'))
+                                ->helperText(__('recordings.enable_audio_recording_help'))
                                 ->default(false),
                         ]),
                 ]),

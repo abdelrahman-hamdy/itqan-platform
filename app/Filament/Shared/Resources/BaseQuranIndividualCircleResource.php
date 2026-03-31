@@ -112,11 +112,11 @@ abstract class BaseQuranIndividualCircleResource extends Resource
             ->hidden(fn ($record) => $record && static::isSubscriptionSuspended($record));
 
         // Recording settings (admin only)
-        $schema[] = Section::make('إعدادات التسجيل')
+        $schema[] = Section::make(__('recordings.recording_settings'))
             ->schema([
                 Toggle::make('recording_enabled')
-                    ->label('تسجيل صوتي للجلسات')
-                    ->helperText('تفعيل التسجيل الصوتي التلقائي لجلسات هذه الحلقة')
+                    ->label(__('recordings.enable_audio_recording'))
+                    ->helperText(__('recordings.enable_audio_recording_help'))
                     ->default(false),
             ])
             ->collapsed()

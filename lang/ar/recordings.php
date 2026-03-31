@@ -12,4 +12,7 @@ return [
     'expires_in' => 'يُحذف بعد',
     'days' => 'أيام',
     'today' => 'اليوم',
+    'recording_settings' => 'إعدادات التسجيل',
+    'enable_audio_recording' => 'تسجيل صوتي للجلسات',
+    'enable_audio_recording_help' => 'تفعيل التسجيل الصوتي التلقائي لجلسات هذه الحلقة',
 ];

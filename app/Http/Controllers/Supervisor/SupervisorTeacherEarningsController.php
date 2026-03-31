@@ -38,6 +38,11 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
         $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $teachersList, $currentTeacherId ? (int) $currentTeacherId : null);
 
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
         $currentMonth = $request->input('month');
         $currentStatus = $request->input('status', 'all');
         $startDate = $request->input('start_date');
@@ -115,6 +120,11 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         }
 
         $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $teachersList, $currentTeacherId ? (int) $currentTeacherId : null);
+
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
 
         $currentMonth = $request->input('month');
         $startDate = $request->input('start_date');
