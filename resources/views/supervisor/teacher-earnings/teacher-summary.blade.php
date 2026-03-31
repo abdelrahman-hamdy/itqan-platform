@@ -178,10 +178,7 @@
                                             <span class="text-sm font-medium {{ $colorClass }}">{{ number_format($summary[$sourceKey]['amount'], 2) }} {{ $earningsCurrencySymbol }}</span>
                                             @foreach($summary[$sourceKey]['details'] as $detail)
                                                 <p class="text-xs text-gray-400 mt-0.5">
-                                                    {{ $detail['sessions_count'] }} × {{ number_format($detail['rate'] ?? 0, 2) }}
-                                                    @if(count($summary[$sourceKey]['details']) > 1)
-                                                        <span class="text-gray-300">({{ $methodLabels[$detail['method']] ?? $detail['method'] }})</span>
-                                                    @endif
+                                                    {{ $detail['sessions_count'] }} × {{ $detail['duration_minutes'] }} {{ __('supervisor.teacher_earnings.minutes_short') }} × {{ number_format($detail['rate_per_session'], 2) }} {{ $earningsCurrencySymbol }}
                                                 </p>
                                             @endforeach
                                         @else

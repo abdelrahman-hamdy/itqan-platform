@@ -12,7 +12,6 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class SupervisorTeacherEarningsController extends BaseSupervisorWebController
@@ -118,26 +117,17 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         $query = TeacherEarning::where('academy_id', $academyId)->where($scopeQuery);
         $this->applyMonthFilter($query, $currentMonth);
 
-        $rawEarnings = (clone $query)
-            ->select(
-                'teacher_type',
-                'teacher_id',
-                'session_type',
-                'calculation_method',
-                DB::raw('SUM(amount) as total_amount'),
-                DB::raw('COUNT(*) as sessions_count')
-            )
-            ->groupBy('teacher_type', 'teacher_id', 'session_type', 'calculation_method')
-            ->get();
+        // Load individual earnings to preserve per-session duration and rate info
+        $allEarnings = (clone $query)->get();
 
         $teacherSummaries = [];
-        foreach ($rawEarnings as $row) {
-            $key = $row->teacher_type.'_'.$row->teacher_id;
+        foreach ($allEarnings as $earning) {
+            $key = $earning->teacher_type.'_'.$earning->teacher_id;
 
             if (! isset($teacherSummaries[$key])) {
                 $teacherSummaries[$key] = [
-                    'teacher_type' => $row->teacher_type,
-                    'teacher_id' => $row->teacher_id,
+                    'teacher_type' => $earning->teacher_type,
+                    'teacher_id' => $earning->teacher_id,
                     'quran_individual' => ['amount' => 0, 'details' => []],
                     'quran_group' => ['amount' => 0, 'details' => []],
                     'academic' => ['amount' => 0, 'details' => []],
@@ -147,29 +137,48 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
                 ];
             }
 
-            $teacherSummaries[$key]['total'] += $row->total_amount;
-            $teacherSummaries[$key]['sessions_count'] += $row->sessions_count;
+            $amount = (float) $earning->amount;
+            $meta = $earning->calculation_metadata ?? [];
+            $durationMinutes = $meta['duration_minutes'] ?? 60;
 
-            $detail = [
-                'method' => $row->calculation_method,
-                'sessions_count' => $row->sessions_count,
-                'amount' => $row->total_amount,
-            ];
+            $teacherSummaries[$key]['total'] += $amount;
+            $teacherSummaries[$key]['sessions_count']++;
 
-            if ($row->session_type === QuranSession::class) {
-                $isGroup = in_array($row->calculation_method, ['group_rate', 'per_student']);
+            // Determine source category
+            if ($earning->session_type === QuranSession::class) {
+                $isGroup = in_array($earning->calculation_method, ['group_rate', 'per_student']);
                 $source = $isGroup ? 'quran_group' : 'quran_individual';
-            } elseif ($row->session_type === AcademicSession::class) {
+            } elseif ($earning->session_type === AcademicSession::class) {
                 $source = 'academic';
-            } elseif ($row->session_type === InteractiveCourseSession::class) {
+            } elseif ($earning->session_type === InteractiveCourseSession::class) {
                 $source = 'interactive';
             } else {
                 continue;
             }
 
-            $teacherSummaries[$key][$source]['amount'] += $row->total_amount;
-            $teacherSummaries[$key][$source]['details'][] = $detail;
+            $teacherSummaries[$key][$source]['amount'] += $amount;
+
+            // Group details by duration + rate for compact display (e.g., "3 × 30 min × 50 EGP")
+            $detailKey = $durationMinutes.'_'.$amount;
+            if (! isset($teacherSummaries[$key][$source]['details'][$detailKey])) {
+                $teacherSummaries[$key][$source]['details'][$detailKey] = [
+                    'duration_minutes' => $durationMinutes,
+                    'rate_per_session' => $amount,
+                    'sessions_count' => 0,
+                    'amount' => 0,
+                ];
+            }
+            $teacherSummaries[$key][$source]['details'][$detailKey]['sessions_count']++;
+            $teacherSummaries[$key][$source]['details'][$detailKey]['amount'] += $amount;
         }
+
+        // Convert detail maps to arrays for blade iteration
+        foreach ($teacherSummaries as &$summary) {
+            foreach (['quran_individual', 'quran_group', 'academic', 'interactive'] as $source) {
+                $summary[$source]['details'] = array_values($summary[$source]['details']);
+            }
+        }
+        unset($summary);
 
         usort($teacherSummaries, fn ($a, $b) => $b['total'] <=> $a['total']);
 
