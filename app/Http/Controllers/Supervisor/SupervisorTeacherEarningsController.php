@@ -124,11 +124,10 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
                 'teacher_id',
                 'session_type',
                 'calculation_method',
-                'rate_snapshot',
                 DB::raw('SUM(amount) as total_amount'),
                 DB::raw('COUNT(*) as sessions_count')
             )
-            ->groupBy('teacher_type', 'teacher_id', 'session_type', 'calculation_method', 'rate_snapshot')
+            ->groupBy('teacher_type', 'teacher_id', 'session_type', 'calculation_method')
             ->get();
 
         $teacherSummaries = [];
@@ -153,7 +152,6 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
             $detail = [
                 'method' => $row->calculation_method,
-                'rate' => $row->rate_snapshot,
                 'sessions_count' => $row->sessions_count,
                 'amount' => $row->total_amount,
             ];
