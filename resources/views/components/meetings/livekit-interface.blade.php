@@ -1911,7 +1911,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             try {
                 
-                const response = await fetch('/api/meetings/attendance/leave', {
+                const response = await fetch('/api/sessions/meeting/leave', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2207,7 +2207,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (attendanceTracker.isTracking) {
                 // Send leave event synchronously (best effort)
-                navigator.sendBeacon('/api/meetings/attendance/leave', JSON.stringify({
+                navigator.sendBeacon('/api/sessions/meeting/leave', JSON.stringify({
                     session_id: attendanceTracker.sessionId,
                     room_name: attendanceTracker.roomName,
                 }));
