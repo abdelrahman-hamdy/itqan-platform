@@ -98,9 +98,7 @@ readonly class CalendarEvent
      */
     public static function fromInteractiveCourseSession($session): self
     {
-        $scheduledAt = $session->scheduled_date && $session->scheduled_time
-            ? Carbon::parse($session->scheduled_date.' '.$session->scheduled_time)
-            : Carbon::parse($session->scheduled_at ?? now());
+        $scheduledAt = Carbon::parse($session->scheduled_at ?? now());
 
         return new self(
             id: 'interactive-'.$session->id,

@@ -109,8 +109,7 @@ class QuranSession extends BaseSession
     public function getCasts(): array
     {
         return array_merge(parent::getCasts(), [
-            'scheduled_date'  => 'date',
-            'some_int_field'  => 'integer',
+            'some_child_field' => 'integer',
         ]);
     }
 }

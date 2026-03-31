@@ -85,18 +85,6 @@ trait CalendarWidgetBehavior
      */
     protected function getScheduledAt($session): ?Carbon
     {
-        // InteractiveCourseSession might use scheduled_date + scheduled_time
-        if ($session instanceof InteractiveCourseSession) {
-            if ($session->scheduled_at) {
-                return Carbon::parse($session->scheduled_at);
-            }
-            if ($session->scheduled_date && $session->scheduled_time) {
-                return Carbon::parse($session->scheduled_date.' '.$session->scheduled_time);
-            }
-
-            return null;
-        }
-
         return $session->scheduled_at ? Carbon::parse($session->scheduled_at) : null;
     }
 

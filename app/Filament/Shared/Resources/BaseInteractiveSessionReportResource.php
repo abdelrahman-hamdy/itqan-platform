@@ -214,7 +214,7 @@ abstract class BaseInteractiveSessionReportResource extends BaseResource
                 ->sortable()
                 ->limit(25),
 
-            TextColumn::make('session.scheduled_date')
+            TextColumn::make('session.scheduled_at')
                 ->label('تاريخ الجلسة')
                 ->date('Y-m-d')
                 ->sortable()

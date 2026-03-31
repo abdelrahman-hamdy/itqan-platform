@@ -143,5 +143,12 @@ return [
         \App\Jobs\CalculateSessionEarningsJob::class,
         // Spatie Health queue check job (platform-wide, not tenant-specific)
         \Spatie\Health\Jobs\HealthQueueJob::class,
+        // Listeners/jobs dispatched from CLI/webhook contexts without tenant —
+        // they resolve models by ID and don't need Spatie tenant context
+        \App\Listeners\FinalizeAttendanceListener::class,
+        \App\Listeners\SyncSupervisorChatMembershipListener::class,
+        \App\Jobs\CreateSessionMeetingJob::class,
+        \App\Jobs\ProcessDelayedLeaveEvent::class,
+        \App\Jobs\CalculateSessionForAttendance::class,
     ],
 ];

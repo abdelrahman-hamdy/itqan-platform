@@ -239,8 +239,8 @@ class SessionDetailResource extends JsonResource
         }
 
         return [
-            'scheduled_date' => $this->scheduled_date?->format('Y-m-d'),
-            'scheduled_time' => $this->scheduled_time,
+            'scheduled_date' => $this->scheduled_at?->format('Y-m-d'),
+            'scheduled_time' => $this->scheduled_at?->format('H:i'),
         ];
     }
 

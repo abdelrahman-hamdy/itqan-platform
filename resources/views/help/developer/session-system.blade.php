@@ -68,7 +68,7 @@
                     </td>
                     <td>
                         Planned start time, actual start/end times, planned vs real duration.
-                        <em>InteractiveCourseSession is the exception — it uses <code>scheduled_date</code> + <code>scheduled_time</code> separately.</em>
+                        <em>All session types use <code>scheduled_at</code> (full datetime).</em>
                     </td>
                 </tr>
                 <tr>

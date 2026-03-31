@@ -75,7 +75,7 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
                     ->required()
                     ->searchable()
                     ->preload()
-                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->course?->name.' - '.$record->scheduled_date?->format('Y-m-d')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->course?->name.' - '.$record->scheduled_at?->format('Y-m-d')
                     ),
 
                 Select::make('student_id')
@@ -142,7 +142,7 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
             SelectFilter::make('session_id')
                 ->label('الجلسة')
                 ->relationship('session', 'id')
-                ->getOptionLabelFromRecordUsing(fn ($record) => $record->course?->name.' - '.$record->scheduled_date?->format('Y-m-d')
+                ->getOptionLabelFromRecordUsing(fn ($record) => $record->course?->name.' - '.$record->scheduled_at?->format('Y-m-d')
                 )
                 ->searchable()
                 ->preload(),

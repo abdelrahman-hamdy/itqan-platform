@@ -83,7 +83,7 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
             $interactiveRecords = $interactiveQuery->get()->map(function ($att) {
                 return [
                     'id' => $att->id,
-                    'date' => $att->session?->scheduled_at ?? $att->session?->scheduled_date,
+                    'date' => $att->session?->scheduled_at,
                     'student' => $att->student,
                     'teacher_name' => $att->session?->course?->assignedTeacher?->user?->name ?? '',
                     'session_type' => 'interactive',

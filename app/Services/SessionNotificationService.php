@@ -99,7 +99,7 @@ class SessionNotificationService
                     $session->teacher,
                     NotificationType::MEETING_ROOM_READY,
                     $readyData,
-                    route('manage.sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
+                    route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => 'quran', 'sessionId' => $session->id])
                 );
             }
         } catch (Exception $e) {
@@ -137,7 +137,7 @@ class SessionNotificationService
                     $session->academicTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
                     $readyData,
-                    route('manage.sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
+                    route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => 'academic', 'sessionId' => $session->id])
                 );
             }
         } catch (Exception $e) {
@@ -196,7 +196,7 @@ class SessionNotificationService
                     $session->course->assignedTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
                     ['session_title' => $sessionTitle],
-                    route('manage.sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
+                    route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => 'interactive', 'sessionId' => $session->id])
                 );
             }
         } catch (Exception $e) {

@@ -107,7 +107,7 @@ abstract class BaseReportService
         }
 
         return $sessions->filter(function ($session) use ($dateRange) {
-            $sessionDate = $session->scheduled_at ?? $session->scheduled_date;
+            $sessionDate = $session->scheduled_at;
 
             if (! $sessionDate) {
                 return false;

@@ -47,7 +47,7 @@ class ViewInteractiveSessionReport extends ViewRecord
                                     ->label('الطالب'),
                                 TextEntry::make('session.course.name')
                                     ->label('الدورة'),
-                                TextEntry::make('session.scheduled_date')
+                                TextEntry::make('session.scheduled_at')
                                     ->label('تاريخ الجلسة')
                                     ->date('Y-m-d'),
                             ]),

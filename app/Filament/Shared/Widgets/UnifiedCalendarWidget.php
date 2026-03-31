@@ -7,8 +7,6 @@ namespace App\Filament\Shared\Widgets;
 use RuntimeException;
 use Exception;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Illuminate\Contracts\View\View;
 use App\Enums\CalendarSessionType;
@@ -557,38 +555,14 @@ class UnifiedCalendarWidget extends FullCalendarWidget
                         ->default($record?->title)
                         ->maxLength(255),
 
-                    Grid::make(2)
-                        ->schema([
-                            DatePicker::make('scheduled_date')
-                                ->label('تاريخ الجلسة')
-                                ->default($scheduledAt?->format('Y-m-d'))
-                                ->required()
-                                ->native(false)
-                                ->timezone($timezone)
-                                ->displayFormat('Y/m/d')
-                                ->closeOnDateSelection(),
-
-                            Select::make('scheduled_time')
-                                ->label('وقت الجلسة')
-                                ->default($scheduledAt?->format('H:i'))
-                                ->required()
-                                ->options(function () {
-                                    $options = [];
-                                    for ($hour = 0; $hour <= 23; $hour++) {
-                                        foreach (['00', '30'] as $minute) {
-                                            $time = sprintf('%02d:%s', $hour, $minute);
-                                            $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
-                                            $period = $hour >= 12 ? 'م' : 'ص';
-                                            $display = sprintf('%d:%s %s', $hour12, $minute, $period);
-                                            $options[$time] = $display;
-                                        }
-                                    }
-                                    return $options;
-                                })
-                                ->searchable()
-                                ->optionsLimit(50)
-                                ->native(false),
-                        ]),
+                    Forms\Components\DateTimePicker::make('scheduled_at')
+                        ->label('موعد الجلسة')
+                        ->default($scheduledAt?->format('Y-m-d H:i'))
+                        ->required()
+                        ->native(false)
+                        ->timezone($timezone)
+                        ->displayFormat('Y/m/d H:i')
+                        ->seconds(false),
 
                     Select::make('duration_minutes')
                         ->label('مدة الجلسة')
@@ -614,7 +588,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
 
                 // Build the new scheduled_at datetime in the academy timezone
                 $scheduledAtLocal = Carbon::parse(
-                    $data['scheduled_date'].' '.$data['scheduled_time'],
+                    $data['scheduled_at'],
                     $timezone
                 );
 

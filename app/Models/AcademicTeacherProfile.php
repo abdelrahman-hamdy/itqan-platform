@@ -155,7 +155,7 @@ class AcademicTeacherProfile extends Model
      */
     public function subscriptions(): HasMany
     {
-        return $this->hasMany(AcademicSubscription::class, 'academic_teacher_id');
+        return $this->hasMany(AcademicSubscription::class, 'teacher_id');
     }
 
     /**
@@ -183,7 +183,7 @@ class AcademicTeacherProfile extends Model
         return $this->hasManyThrough(
             User::class,
             AcademicSubscription::class,
-            'academic_teacher_id', // Foreign key on academic_subscriptions
+            'teacher_id',           // Foreign key on academic_subscriptions
             'id',                   // Foreign key on users
             'id',                   // Local key on academic_teacher_profiles
             'student_id'           // Local key on academic_subscriptions

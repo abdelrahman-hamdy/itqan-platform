@@ -94,7 +94,7 @@ class AcademicTeacherController extends Controller
                 'academy:id,name,logo',
                 'subjects:id,name,name_en,category,field',
                 'gradeLevels:id,name,name_en,level',
-                'privateSessions:id,subscription_id,scheduled_date,status',
+                'privateSessions:id,subscription_id,scheduled_at,status',
                 'interactiveCourses:id,title,status,start_date',
                 'recordedCourses:id,title,status',
                 'students:id,user_id',
@@ -287,7 +287,7 @@ class AcademicTeacherController extends Controller
             // التحقق من عدم وجود جلسات نشطة
             $activeSessions = $teacher->privateSessions()
                 ->where('status', SessionStatus::SCHEDULED->value)
-                ->where('scheduled_date', '>=', now())
+                ->where('scheduled_at', '>=', now())
                 ->count();
 
             if ($activeSessions > 0) {

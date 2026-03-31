@@ -514,16 +514,15 @@ class TeacherProfileController extends Controller
                     SessionStatus::SCHEDULED,
                     SessionStatus::READY,
                 ])
-                ->where('scheduled_date', '>=', now()->toDateString())
-                ->orderBy('scheduled_date')
-                ->orderBy('scheduled_time')
+                ->where('scheduled_at', '>=', now())
+                ->orderBy('scheduled_at')
                 ->limit(5)
                 ->get()
                 ->map(fn ($session) => [
                     'id' => $session->id,
                     'type' => 'interactive',
                     'title' => $session->title ?? $session->course?->title ?? 'دورة تفاعلية',
-                    'scheduled_at' => $session->scheduled_date?->setTimeFromTimeString($session->scheduled_time ?? '00:00:00'),
+                    'scheduled_at' => $session->scheduled_at,
                     'duration' => $session->duration_minutes,
                     'status' => $session->status->value,
                 ]);

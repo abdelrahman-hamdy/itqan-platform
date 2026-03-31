@@ -178,7 +178,7 @@ class QuranSessionResource extends BaseQuranSessionResource
 
             TextColumn::make('student.name')
                 ->label('الطالب')
-                ->searchable()
+                ->searchable(query: fn ($query, string $search) => $query->whereHas('student', fn ($q) => $q->where('name', 'like', "%{$search}%")))
                 ->sortable(),
 
             TextColumn::make('session_type')

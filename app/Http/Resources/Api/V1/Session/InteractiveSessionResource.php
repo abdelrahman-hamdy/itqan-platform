@@ -27,17 +27,12 @@ class InteractiveSessionResource extends SessionResource
      */
     public function toArray(Request $request): array
     {
-        // Note: InteractiveCourseSession uses scheduled_date + scheduled_time
-        // instead of scheduled_at
         $baseArray = parent::toArray($request);
 
-        // Replace scheduled_at with date/time fields
-        unset($baseArray['scheduled_at']);
-
         return array_merge($baseArray, [
-            // Scheduling (different from base sessions)
-            'scheduled_date' => $this->resource->scheduled_date?->format('Y-m-d'),
-            'scheduled_time' => $this->resource->scheduled_time,
+            // Scheduling - keep API keys for backward compatibility
+            'scheduled_date' => $this->resource->scheduled_at?->format('Y-m-d'),
+            'scheduled_time' => $this->resource->scheduled_at?->format('H:i'),
 
             // Course
             'course' => $this->whenLoaded('course', [

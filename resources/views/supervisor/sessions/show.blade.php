@@ -347,9 +347,6 @@
                         </div>
                         @php
                             $scheduledAt = $session->scheduled_at;
-                            if (! $scheduledAt && $sessionType === 'interactive' && $session->scheduled_date) {
-                                $scheduledAt = \Carbon\Carbon::parse($session->scheduled_date . ' ' . ($session->scheduled_time ?? '00:00'));
-                            }
                         @endphp
                         @if($scheduledAt)
                             <div x-data="sessionCountdown({{ $scheduledAt->getTimestampMs() }})">

@@ -63,8 +63,7 @@
                                         <div class="min-w-0 flex-1">
                                             <p class="text-sm font-medium text-gray-900">{{ $session->title ?? __('teacher.circles.tabs.sessions') }}</p>
                                             <p class="text-xs text-gray-500">
-                                                {{ $session->scheduled_date?->format('Y/m/d') }}
-                                                @if($session->scheduled_time) · {{ $session->scheduled_time }} @endif
+                                                {{ $session->scheduled_at?->format('Y/m/d H:i') }}
                                             </p>
                                         </div>
                                         @php
