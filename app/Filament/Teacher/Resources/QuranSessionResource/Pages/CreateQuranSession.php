@@ -3,8 +3,10 @@
 namespace App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 
 use App\Enums\SessionStatus;
-use App\Filament\Teacher\Resources\QuranSessionResource;
 use App\Filament\Pages\BaseCreateRecord as CreateRecord;
+use App\Filament\Teacher\Resources\QuranSessionResource;
+use App\Services\SessionConflictService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class CreateQuranSession extends CreateRecord
@@ -24,6 +26,15 @@ class CreateQuranSession extends CreateRecord
 
         // Set default status
         $data['status'] = $data['status'] ?? SessionStatus::SCHEDULED->value;
+
+        // Validate scheduling conflicts
+        if (! empty($data['scheduled_at'])) {
+            app(SessionConflictService::class)->validate(
+                (int) $data['quran_teacher_id'],
+                Carbon::parse($data['scheduled_at']),
+                (int) ($data['duration_minutes'] ?? 60),
+            );
+        }
 
         return $data;
     }

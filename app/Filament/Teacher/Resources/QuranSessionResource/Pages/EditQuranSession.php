@@ -2,12 +2,13 @@
 
 namespace App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 
-use Filament\Actions\ViewAction;
-use Filament\Actions\DeleteAction;
-use App\Models\QuranSession;
-use App\Filament\Teacher\Resources\QuranSessionResource;
-use Filament\Actions;
 use App\Filament\Pages\BaseEditRecord as EditRecord;
+use App\Filament\Teacher\Resources\QuranSessionResource;
+use App\Models\QuranSession;
+use App\Services\SessionConflictService;
+use Carbon\Carbon;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\ViewAction;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -16,6 +17,20 @@ use Illuminate\Support\Facades\Auth;
 class EditQuranSession extends EditRecord
 {
     protected static string $resource = QuranSessionResource::class;
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if (! empty($data['scheduled_at']) && $this->record->scheduled_at?->toDateTimeString() !== Carbon::parse($data['scheduled_at'])->toDateTimeString()) {
+            app(SessionConflictService::class)->validate(
+                (int) $this->record->quran_teacher_id,
+                Carbon::parse($data['scheduled_at']),
+                (int) ($data['duration_minutes'] ?? $this->record->duration_minutes ?? 60),
+                $this->record->id,
+            );
+        }
+
+        return $data;
+    }
 
     protected function getHeaderActions(): array
     {

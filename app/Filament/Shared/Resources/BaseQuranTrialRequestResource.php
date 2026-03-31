@@ -9,6 +9,7 @@ use App\Enums\TrialRequestStatus;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
 use App\Services\AcademyContextService;
+use App\Services\SessionConflictService;
 use App\Services\SessionNamingService;
 use App\Services\SessionTransitionService;
 use Carbon\Carbon;
@@ -423,6 +424,13 @@ abstract class BaseQuranTrialRequestResource extends Resource
                 return;
             }
 
+            // Validate no scheduling conflicts and quarter-hour constraint
+            app(SessionConflictService::class)->validate(
+                $record->teacher->user_id,
+                $scheduledAtUtc,
+                30 // Trial sessions are 30 minutes
+            );
+
             // Generate unique session code (use academy timezone for display in code)
             $sessionCode = 'TR-'.str_pad($record->teacher_id, 3, '0', STR_PAD_LEFT).'-'.$scheduledAtLocal->format('Ymd-Hi');
 
@@ -508,6 +516,14 @@ abstract class BaseQuranTrialRequestResource extends Resource
         }
 
         $scheduledAtUtc = Carbon::parse($data['scheduled_at']);
+
+        // Validate no scheduling conflicts and quarter-hour constraint
+        app(SessionConflictService::class)->validate(
+            $session->quran_teacher_id,
+            $scheduledAtUtc,
+            $session->duration_minutes ?? 30,
+            $session->id
+        );
 
         $transitionService = app(SessionTransitionService::class);
         $success = $transitionService->transitionToScheduledFromAbsent(

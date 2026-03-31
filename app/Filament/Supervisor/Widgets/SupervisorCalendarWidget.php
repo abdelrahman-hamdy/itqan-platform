@@ -137,6 +137,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
 
         return [
             'timeZone' => $timezone,
+            'now' => AcademyContextService::nowInAcademyTimezone()->toIso8601String(),
             'locale' => 'ar',
             'direction' => 'rtl',
             'initialView' => 'dayGridMonth',

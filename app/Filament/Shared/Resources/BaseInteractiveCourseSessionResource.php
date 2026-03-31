@@ -141,6 +141,7 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
                             ->required()
                             ->native(false)
                             ->seconds(false)
+                            ->minutesStep(15)
                             ->timezone(fn () => AcademyContextService::getTimezone())
                             ->displayFormat('Y-m-d H:i'),
 

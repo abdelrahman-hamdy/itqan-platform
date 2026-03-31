@@ -100,4 +100,8 @@ return [
         'forgiven_at' => 'Forgiven At',
         'forgiven_by' => 'Forgiven By',
     ],
+
+    'validation' => [
+        'quarter_hour_only' => 'Session time must be on a quarter hour (00, 15, 30, 45)',
+    ],
 ];

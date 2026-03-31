@@ -2,32 +2,30 @@
 
 namespace App\Filament\Shared\Resources;
 
-use Filament\Schemas\Components\Section;
-use Illuminate\Database\Eloquent\Model;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Actions\Action;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
+use App\Filament\Resources\BaseResource;
 use App\Models\AcademicSession;
 use App\Services\AcademyContextService;
-use Filament\Forms;
+use Filament\Actions\Action;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use App\Filament\Resources\BaseResource;
-use Filament\Tables;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Base Academic Session Resource
@@ -39,7 +37,7 @@ abstract class BaseAcademicSessionResource extends BaseResource
 {
     protected static ?string $model = AcademicSession::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-calendar-days';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-calendar-days';
 
     protected static ?string $modelLabel = 'جلسة أكاديمية';
 
@@ -151,6 +149,7 @@ abstract class BaseAcademicSessionResource extends BaseResource
                             ->required()
                             ->native(false)
                             ->seconds(false)
+                            ->minutesStep(15)
                             ->timezone(AcademyContextService::getTimezone())
                             ->displayFormat('Y-m-d H:i')
                             ->helperText(function () {

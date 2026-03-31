@@ -2,24 +2,23 @@
 
 namespace App\Filament\Shared\Resources;
 
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Tables\Enums\FiltersLayout;
 use App\Enums\QuranSurah;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Filament\Resources\BaseResource;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
-use Filament\Forms;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -36,7 +35,7 @@ abstract class BaseQuranSessionResource extends BaseResource
 {
     protected static ?string $model = QuranSession::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-book-open';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-book-open';
 
     protected static ?string $modelLabel = 'جلسة قرآن';
 
@@ -160,15 +159,17 @@ abstract class BaseQuranSessionResource extends BaseResource
                             ->timezone(AcademyContextService::getTimezone())
                             ->native(false)
                             ->seconds(false)
+                            ->minutesStep(15)
                             ->displayFormat('Y-m-d H:i')
                             ->helperText(function () {
                                 $tz = AcademyContextService::getTimezone();
-                                $label = match($tz) {
+                                $label = match ($tz) {
                                     'Asia/Riyadh' => 'توقيت السعودية (GMT+3)',
                                     'Africa/Cairo' => 'توقيت مصر (GMT+2)',
                                     'Asia/Dubai' => 'توقيت الإمارات (GMT+4)',
                                     default => $tz,
                                 };
+
                                 return "⏰ الأوقات بـ {$label}";
                             })
                             ->required(),

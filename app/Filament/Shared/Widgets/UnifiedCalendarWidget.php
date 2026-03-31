@@ -146,6 +146,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
         return [
             // Timezone - CRITICAL for correct time display
             'timeZone' => $timezone,
+            'now' => AcademyContextService::nowInAcademyTimezone()->toIso8601String(),
             'locale' => 'ar',
             'direction' => 'rtl',
 
