@@ -472,6 +472,12 @@
             joined_successfully: @json(__('meetings.connection.joined_successfully')),
             joined_may_need_camera: @json(__('meetings.connection.joined_may_need_camera')),
             mic_access_denied: @json(__('meetings.connection.mic_access_denied')),
+            mic_blocked_chrome: @json(__('meetings.connection.mic_blocked_chrome')),
+            mic_blocked_safari: @json(__('meetings.connection.mic_blocked_safari')),
+            mic_blocked_firefox: @json(__('meetings.connection.mic_blocked_firefox')),
+            mic_blocked_generic: @json(__('meetings.connection.mic_blocked_generic')),
+            mic_not_found_instructions: @json(__('meetings.connection.mic_not_found_instructions')),
+            reload_page: @json(__('meetings.connection.reload_page')),
             camera_access_denied: @json(__('meetings.connection.camera_access_denied')),
             permission_denied: @json(__('meetings.connection.permission_denied')),
             joined_teacher_mic_on: @json(__('meetings.connection.joined_teacher_mic_on')),
@@ -543,7 +549,7 @@
         return new Promise((resolve, reject) => {
             // Use official latest version from CDN
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js';
+            script.src = 'https://cdn.jsdelivr.net/npm/livekit-client@2.17.3/dist/livekit-client.umd.min.js';
             script.crossOrigin = 'anonymous';
 
             script.onload = () => {

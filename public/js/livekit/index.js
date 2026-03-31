@@ -586,32 +586,86 @@ class LiveKitMeeting {
         // MICROPHONE: ON for teachers, OFF for students
         try {
             // Request permission then IMMEDIATELY release the stream to free the device lock.
-            // Without this, the orphaned stream can prevent LiveKit SDK from acquiring the mic.
             const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             audioStream.getTracks().forEach(track => track.stop());
 
             if (isTeacher) {
                 await localParticipant.setMicrophoneEnabled(true);
             }
-            // Students start muted by default — no SDK call needed
             mediaPermissionsGranted = true;
+            this.hideMicBlockedBanner();
         } catch (audioError) {
-            if (audioError.name === 'NotAllowedError') {
-                this.showNotification(t('connection.mic_access_denied'), 'warning');
+            if (audioError.name === 'NotAllowedError' || audioError.name === 'NotFoundError') {
+                this.showMicBlockedBanner(audioError.name);
             }
         }
 
-        // Camera starts OFF — permission will be requested when user clicks "Enable Camera".
-        // Skipping pre-check avoids camera light flicker on Safari/iOS.
-
-        if (!mediaPermissionsGranted) {
-            this.showNotification(t('permissions.no_media_permissions'), 'info');
-        } else {
+        if (mediaPermissionsGranted) {
             const statusMsg = isTeacher
                 ? t('connection.joined_teacher_mic_on')
                 : t('connection.joined_student_muted');
             this.showNotification(statusMsg, 'success');
         }
+    }
+
+    /**
+     * Show a prominent banner when mic permission is blocked.
+     * Provides browser-specific instructions to unblock.
+     */
+    showMicBlockedBanner(errorType) {
+        // Remove existing banner if any
+        this.hideMicBlockedBanner();
+
+        const isNotFound = errorType === 'NotFoundError';
+        const banner = document.createElement('div');
+        banner.id = 'mic-blocked-banner';
+        banner.className = 'fixed top-0 left-0 right-0 z-[9999] bg-red-600 text-white px-4 py-3 shadow-lg';
+        banner.setAttribute('dir', 'auto');
+
+        const isChrome = /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
+        const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+        const isFirefox = /Firefox/.test(navigator.userAgent);
+
+        let instructions = '';
+        if (isNotFound) {
+            instructions = t('connection.mic_not_found_instructions') ||
+                'No microphone detected. Please connect a microphone and refresh the page.';
+        } else if (isChrome) {
+            instructions = t('connection.mic_blocked_chrome') ||
+                'Click the lock/tune icon in the address bar → Site settings → Microphone → Allow, then reload.';
+        } else if (isSafari) {
+            instructions = t('connection.mic_blocked_safari') ||
+                'Safari → Settings → Websites → Microphone → Allow for this site, then reload.';
+        } else if (isFirefox) {
+            instructions = t('connection.mic_blocked_firefox') ||
+                'Click the lock icon in the address bar → Clear permission for microphone, then reload.';
+        } else {
+            instructions = t('connection.mic_blocked_generic') ||
+                'Open browser settings → Site permissions → Microphone → Allow for this site, then reload.';
+        }
+
+        banner.innerHTML = `
+            <div class="max-w-4xl mx-auto flex items-start gap-3">
+                <i class="ri-mic-off-line text-2xl mt-0.5 shrink-0"></i>
+                <div class="flex-1 min-w-0">
+                    <p class="font-bold text-sm">${t('connection.mic_access_denied') || 'Microphone access denied'}</p>
+                    <p class="text-xs mt-1 opacity-90">${instructions}</p>
+                </div>
+                <button onclick="location.reload()" class="shrink-0 bg-white text-red-600 px-3 py-1.5 rounded text-xs font-bold hover:bg-red-50 transition-colors">
+                    ${t('connection.reload_page') || 'Reload'}
+                </button>
+                <button onclick="this.closest('#mic-blocked-banner').remove()" class="shrink-0 text-white/80 hover:text-white p-1">
+                    <i class="ri-close-line text-lg"></i>
+                </button>
+            </div>
+        `;
+
+        document.body.prepend(banner);
+    }
+
+    hideMicBlockedBanner() {
+        const existing = document.getElementById('mic-blocked-banner');
+        if (existing) existing.remove();
     }
 
     /**
