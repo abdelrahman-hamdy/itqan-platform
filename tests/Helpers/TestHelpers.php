@@ -146,8 +146,7 @@ class TestHelpers
         $sessionData = array_merge([
             'interactive_course_id' => $course->id,
             'status' => static::mapStatus($status),
-            'scheduled_date' => static::getScheduledAtForStatus($status)->toDateString(),
-            'scheduled_time' => static::getScheduledAtForStatus($status)->format('H:i:s'),
+            'scheduled_at' => static::getScheduledAtForStatus($status),
             'duration_minutes' => 90,
         ], $overrides);
 

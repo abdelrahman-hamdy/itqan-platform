@@ -326,7 +326,7 @@ class StudentReportController extends Controller
             }
 
             $attendances = MeetingAttendance::where('session_id', $sessionId)
-                ->get(['user_id', 'first_join_time', 'last_leave_time', 'total_duration_minutes']);
+                ->get(['user_id', 'first_join_time', 'last_leave_time', 'total_duration_minutes', 'join_leave_cycles', 'session_type']);
 
             $result = [];
             foreach ($attendances as $attendance) {

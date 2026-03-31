@@ -590,8 +590,7 @@ class GenerateTestData extends Command
                 ],
                 [
                     'title' => 'Session '.($i + 1).': '.($i < 2 ? 'Algebra Basics' : 'Geometry Introduction'),
-                    'scheduled_date' => now()->addDays(7 + ($i * 3)),
-                    'scheduled_time' => '18:00',
+                    'scheduled_at' => now()->addDays(7 + ($i * 3))->setTime(18, 0),
                     'duration_minutes' => 60,
                     'status' => $i < 1 ? SessionStatus::COMPLETED->value : SessionStatus::SCHEDULED->value,
                 ]
