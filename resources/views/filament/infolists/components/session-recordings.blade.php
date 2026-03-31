@@ -36,24 +36,18 @@
 
         {{-- Completed Recordings --}}
         @foreach($completedRecordings->sortByDesc('completed_at') as $recording)
-            <div class="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                {{-- Video Player --}}
-                @if($recording->isAvailable())
-                    <div class="relative aspect-video bg-black">
-                        <video
-                            class="w-full h-full"
-                            controls
-                            preload="metadata"
-                            playsinline
-                        >
-                            <source src="{{ route('recordings.stream', ['recordingId' => $recording->id]) }}" type="video/mp4">
-                            {{ __('recordings.browser_not_supported') }}
-                        </video>
-                    </div>
-                @endif
-
-                {{-- Recording Info --}}
-                <div class="flex items-center justify-between flex-wrap gap-2 px-4 py-3">
+            @if($recording->isAvailable())
+                <button type="button"
+                    x-data
+                    @click="$dispatch('open-audio-player', {
+                        streamUrl: '{{ route('recordings.stream', ['recordingId' => $recording->id]) }}',
+                        downloadUrl: '{{ route('recordings.download', ['recordingId' => $recording->id]) }}',
+                        date: '{{ $recording->started_at ? toAcademyTimezone($recording->started_at)->format('Y/m/d H:i') : '' }}',
+                        duration: '{{ $recording->formatted_duration }}',
+                        size: '{{ $recording->formatted_file_size }}'
+                    })"
+                    class="w-full flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer text-start"
+                >
                     <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                         @if($recording->started_at)
                             <span class="flex items-center gap-1">
@@ -74,15 +68,9 @@
                             </span>
                         @endif
                     </div>
-
-                    <a href="{{ route('recordings.download', ['recordingId' => $recording->id]) }}"
-                       class="inline-flex items-center gap-1.5 rounded-lg bg-primary-50 dark:bg-primary-950/20 px-3 py-1.5 text-sm font-medium text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-950/40 transition-colors"
-                       target="_blank">
-                        <x-heroicon-o-arrow-down-tray class="w-4 h-4" />
-                        {{ __('recordings.download') }}
-                    </a>
-                </div>
-            </div>
+                    <x-heroicon-o-play-circle class="w-6 h-6 text-primary-600 dark:text-primary-400" />
+                </button>
+            @endif
         @endforeach
     @endif
 
@@ -90,3 +78,6 @@
         <p class="text-xs text-gray-400 mt-2">{{ __('recordings.retention_notice') }}</p>
     @endif
 </div>
+
+{{-- Audio Player Modal --}}
+<x-recordings.audio-player-modal />

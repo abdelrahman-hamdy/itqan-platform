@@ -251,4 +251,7 @@ function showNotification(type, message) {
 </script>
 @endpush
 @endif
+
+{{-- Audio Player Modal (shared, rendered once) --}}
+<x-recordings.audio-player-modal />
 @endif

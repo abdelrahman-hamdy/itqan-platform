@@ -18,4 +18,7 @@ return [
     'show_to_teacher' => 'Show recording to teacher',
     'show_to_student' => 'Show recording to student',
     'recorded_badge' => 'Recorded',
+    'player_title' => 'Session Recording',
+    'loading_player' => 'Loading player...',
+    'download_recording' => 'Download Recording',
 ];

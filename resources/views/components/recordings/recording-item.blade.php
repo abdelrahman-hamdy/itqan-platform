@@ -93,22 +93,21 @@
         @if($showActions)
             <div class="flex items-center gap-2 flex-shrink-0">
                 @if($isAvailable)
-                    <!-- Stream/Watch Button -->
-                    <a href="{{ route('recordings.stream', ['recordingId' => $recording->id]) }}"
-                       target="_blank"
-                       class="inline-flex items-center gap-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors text-sm">
+                    <!-- Play Button (opens audio modal) -->
+                    <button type="button"
+                        @click="$dispatch('open-audio-player', {
+                            streamUrl: '{{ route('recordings.stream', ['recordingId' => $recording->id]) }}',
+                            downloadUrl: '{{ route('recordings.download', ['recordingId' => $recording->id]) }}',
+                            date: '{{ $startedAt?->format('Y/m/d') }}',
+                            duration: '{{ $recording->formatted_duration }}',
+                            size: '{{ $recording->formatted_file_size }}'
+                        })"
+                        class="inline-flex items-center gap-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors text-sm">
                         <i class="ri-play-circle-line"></i>
                         <span class="hidden sm:inline">{{ __('components.recordings.recording_item.watch') }}</span>
-                    </a>
+                    </button>
 
                     @if($viewType === 'teacher')
-                        <!-- Download Button -->
-                        <a href="{{ route('recordings.download', ['recordingId' => $recording->id]) }}"
-                           class="inline-flex items-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm">
-                            <i class="ri-download-line"></i>
-                            <span class="hidden sm:inline">{{ __('components.recordings.recording_item.download') }}</span>
-                        </a>
-
                         <!-- Delete Button -->
                         <button type="button"
                                 onclick="confirmDeleteRecording({{ $recording->id }}, '{{ addslashes($recording->display_name) }}')"

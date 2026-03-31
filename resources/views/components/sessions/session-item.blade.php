@@ -126,8 +126,8 @@ use App\Enums\SessionStatus;
                     @if($session instanceof \App\Contracts\RecordingCapable
                         && $session->hasCompletedRecordings()
                         && $session->shouldShowRecordingToUser(auth()->user()))
-                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-50 text-red-600 text-[10px] md:text-xs font-medium">
-                            <i class="ri-mic-line"></i>
+                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[10px] md:text-xs">
+                            <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3"/></svg>
                             {{ __('recordings.recorded_badge') }}
                         </span>
                     @endif

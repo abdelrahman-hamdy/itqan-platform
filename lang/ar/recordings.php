@@ -18,4 +18,7 @@ return [
     'show_to_teacher' => 'عرض التسجيل للمعلم',
     'show_to_student' => 'عرض التسجيل للطالب',
     'recorded_badge' => 'مُسجّلة',
+    'player_title' => 'تسجيل الجلسة',
+    'loading_player' => 'جاري تحميل المشغّل...',
+    'download_recording' => 'تحميل التسجيل',
 ];
