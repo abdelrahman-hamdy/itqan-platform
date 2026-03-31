@@ -2,23 +2,21 @@
 
 namespace App\Filament\Resources\AcademyGeneralSettingsResource\Pages;
 
-use Exception;
-use Filament\Schemas\Schema;
-use Filament\Actions\Action;
 use App\Filament\Resources\AcademyGeneralSettingsResource;
 use App\Models\AcademicSettings;
 use App\Models\Academy;
 use App\Models\AcademySettings;
 use App\Services\AcademyContextService;
-use Filament\Actions;
+use Exception;
+use Filament\Actions\Action;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redirect;
 
 /**
  * @property \Filament\Schemas\Schema $form
@@ -146,15 +144,28 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
                     'name_en' => $data['name_en'] ?? null,
                     'country' => $data['country'],
                     'currency' => $data['currency'],
+                    'teacher_earnings_currency' => $data['teacher_earnings_currency'] ?? null,
                     'timezone' => $data['timezone'],
                     'notification_settings' => [
                         'email_enabled' => $data['notification_settings']['email_enabled'] ?? false,
                         'email_from_name' => $data['notification_settings']['email_from_name'] ?? $academy->name,
                         'email_categories' => $data['notification_settings']['email_categories'] ?? [],
                     ],
+                    'academic_settings' => array_merge($academy->academic_settings ?? [], [
+                        'available_languages' => $data['academic_settings']['available_languages'] ?? [],
+                        'default_package_ids' => $data['academic_settings']['default_package_ids'] ?? [],
+                        'default_individual_session_prices' => $data['academic_settings']['default_individual_session_prices'] ?? [],
+                        'auto_approve_reviews' => $data['academic_settings']['auto_approve_reviews'] ?? true,
+                    ]),
+                    'quran_settings' => array_merge($academy->quran_settings ?? [], [
+                        'available_languages' => $data['quran_settings']['available_languages'] ?? [],
+                        'default_package_ids' => $data['quran_settings']['default_package_ids'] ?? [],
+                        'default_individual_session_prices' => $data['quran_settings']['default_individual_session_prices'] ?? [],
+                        'default_group_session_prices' => $data['quran_settings']['default_group_session_prices'] ?? [],
+                    ]),
                 ]);
 
-                // Update academic settings
+                // Update academic settings (Spatie settings model)
                 Log::info('Saving academic settings for academy ID', ['academy_id' => $academy->id]);
                 $academicSettings = AcademicSettings::getForAcademy($academy->id);
                 $academicSettings->update([
