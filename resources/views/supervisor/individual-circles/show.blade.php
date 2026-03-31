@@ -153,7 +153,7 @@
                                 <label class="inline-flex items-center gap-2 cursor-pointer">
                                     <input type="hidden" name="show_recording_to_teacher" value="0">
                                     <input type="checkbox" name="show_recording_to_teacher" value="1"
-                                           {{ old('show_recording_to_teacher', $circle->show_recording_to_teacher ?? true) ? 'checked' : '' }}
+                                           {{ old('show_recording_to_teacher', $circle->show_recording_to_teacher ?? false) ? 'checked' : '' }}
                                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
                                     <span class="text-sm text-gray-700">{{ __('recordings.show_to_teacher') }}</span>
                                 </label>

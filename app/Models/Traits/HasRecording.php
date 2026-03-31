@@ -258,7 +258,7 @@ trait HasRecording
         }
 
         if (in_array($user->user_type, [UserType::ACADEMIC_TEACHER->value, UserType::QURAN_TEACHER->value])) {
-            return (bool) ($parent->show_recording_to_teacher ?? true);
+            return (bool) ($parent->show_recording_to_teacher ?? false);
         }
 
         if ($user->user_type === UserType::STUDENT->value) {
