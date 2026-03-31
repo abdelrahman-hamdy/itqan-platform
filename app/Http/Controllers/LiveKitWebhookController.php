@@ -240,8 +240,11 @@ class LiveKitWebhookController extends Controller
                 return;
             }
 
-            // Check if session's scheduled time has started
-            if ($session->scheduled_at && now()->lt($session->scheduled_at)) {
+            // Allow recording if session is already ONGOING (participant joined early),
+            // otherwise require scheduled time to have started
+            $session->refresh();
+            if ($session->status !== SessionStatus::ONGOING
+                && $session->scheduled_at && now()->lt($session->scheduled_at)) {
                 Log::debug('Auto-recording skipped: Session scheduled time not yet reached', [
                     'session_id' => $session->id,
                     'scheduled_at' => $session->scheduled_at,
@@ -524,11 +527,9 @@ class LiveKitWebhookController extends Controller
             // Clear any cached attendance status
             Cache::forget("attendance_status_{$session->id}_{$userId}");
 
-            // Try to start recording when first participant joins
-            $participantCount = $data['room']['num_participants'] ?? 0;
-            if ($participantCount == 1) {
-                $this->tryStartAutoRecording($session, $roomName);
-            }
+            // Try to start auto-recording on every join (idempotent — tryStartAutoRecording
+            // checks isRecording() internally, so duplicate calls are safe)
+            $this->tryStartAutoRecording($session, $roomName);
 
         } catch (QueryException $e) {
             if ($e->getCode() === '23000') {
