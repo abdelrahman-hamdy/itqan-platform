@@ -98,12 +98,16 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
             'schedule_time' => 'nullable|string',
             'status' => 'required|in:0,1',
             'recording_enabled' => 'required|in:0,1',
+            'show_recording_to_teacher' => 'required|in:0,1',
+            'show_recording_to_student' => 'required|in:0,1',
             'supervisor_notes' => 'nullable|string|max:2000',
             'admin_notes' => 'nullable|string|max:1000',
         ]);
 
         $validated['status'] = (bool) $validated['status'];
         $validated['recording_enabled'] = (bool) $validated['recording_enabled'];
+        $validated['show_recording_to_teacher'] = (bool) $validated['show_recording_to_teacher'];
+        $validated['show_recording_to_student'] = (bool) $validated['show_recording_to_student'];
 
         // Supervisors can only edit supervisor_notes; admins can only edit admin_notes
         if ($this->isAdminUser()) {

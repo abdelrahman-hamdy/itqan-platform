@@ -60,8 +60,10 @@
             </form>
         </div>
 
-            <!-- Session Recordings Section -->
-            @if($session instanceof \App\Contracts\RecordingCapable)
+            <!-- Session Recordings Section (gated by visibility toggle) -->
+            @if($session instanceof \App\Contracts\RecordingCapable
+                && method_exists($session, 'shouldShowRecordingToUser')
+                && $session->shouldShowRecordingToUser(auth()->user()))
                 <x-recordings.session-recordings
                     :session="$session"
                     view-type="teacher"

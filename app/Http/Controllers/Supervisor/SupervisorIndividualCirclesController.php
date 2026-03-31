@@ -96,12 +96,16 @@ class SupervisorIndividualCirclesController extends BaseSupervisorWebController
             'description' => 'nullable|string|max:500',
             'quran_teacher_id' => ['required', Rule::in($quranTeacherIds)],
             'recording_enabled' => 'nullable|in:0,1',
+            'show_recording_to_teacher' => 'nullable|in:0,1',
+            'show_recording_to_student' => 'nullable|in:0,1',
             'supervisor_notes' => 'nullable|string|max:2000',
             'admin_notes' => 'nullable|string|max:1000',
         ]);
 
-        if (isset($validated['recording_enabled'])) {
-            $validated['recording_enabled'] = (bool) $validated['recording_enabled'];
+        foreach (['recording_enabled', 'show_recording_to_teacher', 'show_recording_to_student'] as $boolField) {
+            if (isset($validated[$boolField])) {
+                $validated[$boolField] = (bool) $validated[$boolField];
+            }
         }
 
         // Role-based notes: admin can't edit supervisor_notes, supervisor can't edit admin_notes

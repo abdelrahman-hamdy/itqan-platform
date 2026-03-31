@@ -15,4 +15,7 @@ return [
     'recording_settings' => 'إعدادات التسجيل',
     'enable_audio_recording' => 'تسجيل صوتي للجلسات',
     'enable_audio_recording_help' => 'تفعيل التسجيل الصوتي التلقائي لجلسات هذه الحلقة',
+    'show_to_teacher' => 'عرض التسجيل للمعلم',
+    'show_to_student' => 'عرض التسجيل للطالب',
+    'recorded_badge' => 'مُسجّلة',
 ];

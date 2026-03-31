@@ -2,24 +2,24 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Collection;
-use ValueError;
-use Exception;
-use Carbon\Carbon;
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\DifficultyLevel;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\WeekDays;
 use App\Models\Traits\ScopedToAcademy;
+use Carbon\Carbon;
+use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+use ValueError;
 
 /**
  * QuranCircle Model
@@ -95,6 +95,8 @@ class QuranCircle extends Model
         'last_session_at',
         'next_session_at',
         'recording_enabled',
+        'show_recording_to_teacher',
+        'show_recording_to_student',
         'attendance_required',
         'makeup_sessions_allowed',
         'certificates_enabled',
@@ -118,6 +120,8 @@ class QuranCircle extends Model
         'monthly_fee' => 'decimal:2',
         'status' => 'boolean',
         'recording_enabled' => 'boolean',
+        'show_recording_to_teacher' => 'boolean',
+        'show_recording_to_student' => 'boolean',
         'attendance_required' => 'boolean',
         'makeup_sessions_allowed' => 'boolean',
         'certificates_enabled' => 'boolean',

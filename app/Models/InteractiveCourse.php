@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
-use App\Services\AcademyContextService;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\EnrollmentStatus;
 use App\Enums\InteractiveCourseStatus;
 use App\Models\Traits\ScopedToAcademy;
+use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -53,6 +53,8 @@ class InteractiveCourse extends Model
         'certificate_enabled',
         'certificate_template_style',
         'recording_enabled',
+        'show_recording_to_teacher',
+        'show_recording_to_student',
         'supervisor_notes',
     ];
 
@@ -79,6 +81,8 @@ class InteractiveCourse extends Model
         'certificate_enabled' => 'boolean',
         'certificate_template_style' => CertificateTemplateStyle::class,
         'recording_enabled' => 'boolean',
+        'show_recording_to_teacher' => 'boolean',
+        'show_recording_to_student' => 'boolean',
         'avg_rating' => 'decimal:2',
         'total_reviews' => 'integer',
     ];

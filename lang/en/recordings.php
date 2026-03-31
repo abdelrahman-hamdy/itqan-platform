@@ -15,4 +15,7 @@ return [
     'recording_settings' => 'Recording Settings',
     'enable_audio_recording' => 'Audio recording for sessions',
     'enable_audio_recording_help' => 'Enable automatic audio recording for sessions in this circle',
+    'show_to_teacher' => 'Show recording to teacher',
+    'show_to_student' => 'Show recording to student',
+    'recorded_badge' => 'Recorded',
 ];

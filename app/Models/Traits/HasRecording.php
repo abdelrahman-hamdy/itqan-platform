@@ -2,14 +2,14 @@
 
 namespace App\Models\Traits;
 
-use Illuminate\Database\Eloquent\Collection;
-use Exception;
 use App\Enums\RecordingStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Models\SessionRecording;
 use App\Models\User;
 use App\Services\RecordingService;
+use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\Log;
 
@@ -218,6 +218,67 @@ trait HasRecording
         }
 
         return false;
+    }
+
+    /**
+     * Check if recordings should be shown to a specific user based on the parent
+     * entity's visibility toggles (show_recording_to_teacher / show_recording_to_student).
+     * Admins/supervisors always see recordings.
+     */
+    public function shouldShowRecordingToUser(User $user): bool
+    {
+        // Admins and supervisors always see recordings
+        if (in_array($user->user_type, [
+            UserType::SUPER_ADMIN->value,
+            UserType::ADMIN->value,
+            UserType::SUPERVISOR->value,
+        ])) {
+            return true;
+        }
+
+        // Get the parent entity that holds visibility settings
+        $parent = $this->getRecordingVisibilityParent();
+
+        if (! $parent) {
+            return false;
+        }
+
+        // Teacher check
+        if (in_array($user->user_type, [UserType::ACADEMIC_TEACHER->value, UserType::QURAN_TEACHER->value])) {
+            return (bool) ($parent->show_recording_to_teacher ?? true);
+        }
+
+        // Student check
+        if ($user->user_type === UserType::STUDENT->value) {
+            return (bool) ($parent->show_recording_to_student ?? false);
+        }
+
+        return false;
+    }
+
+    /**
+     * Get the parent entity that holds recording visibility settings.
+     * Override in child classes if the parent is different.
+     */
+    protected function getRecordingVisibilityParent(): ?object
+    {
+        // InteractiveCourseSession → course
+        if (method_exists($this, 'course') && $this->course) {
+            return $this->course;
+        }
+
+        // QuranSession → circle or individualCircle
+        if (property_exists($this, 'session_type') || isset($this->attributes['session_type'])) {
+            $sessionType = $this->session_type ?? null;
+            if ($sessionType === 'individual' && method_exists($this, 'individualCircle')) {
+                return $this->individualCircle;
+            }
+            if (method_exists($this, 'circle')) {
+                return $this->circle;
+            }
+        }
+
+        return null;
     }
 
     /**
