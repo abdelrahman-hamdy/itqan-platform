@@ -2,21 +2,19 @@
 
 namespace App\Filament\Shared\Resources;
 
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Actions\Action;
 use App\Enums\RecordingStatus;
+use App\Filament\Resources\BaseResource;
 use App\Models\InteractiveCourseSession;
 use App\Models\SessionRecording;
 use App\Services\AcademyContextService;
-use Filament\Infolists;
-use App\Filament\Resources\BaseResource;
-use Filament\Tables;
+use Filament\Actions\Action;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -38,7 +36,7 @@ abstract class BaseSessionRecordingResource extends BaseResource
     // by scopeEloquentQuery() in each child resource.
     protected static bool $isScopedToTenant = false;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-video-camera';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-video-camera';
 
     protected static ?string $modelLabel = 'تسجيل جلسة';
 
@@ -392,8 +390,8 @@ abstract class BaseSessionRecordingResource extends BaseResource
                 'recordable.course.assignedTeacher.user',
                 'recordable.course.academy',
             ])
-            // Only show InteractiveCourseSession recordings (as per requirement)
-            ->where('recordable_type', InteractiveCourseSession::class);
+            // Only show InteractiveCourseSession recordings — use morph alias, not FQCN
+            ->where('recordable_type', (new InteractiveCourseSession)->getMorphClass());
 
         return static::scopeEloquentQuery($query);
     }
