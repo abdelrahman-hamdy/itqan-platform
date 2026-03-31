@@ -5,8 +5,7 @@
 ])
 
 @php
-    // Handle both enum objects and raw strings
-    $statusValue = is_object($status) && method_exists($status, 'value') ? $status->value : (string) $status;
+    $statusValue = $status instanceof \BackedEnum ? $status->value : (string) $status;
 
     $sizeClasses = match($size) {
         'sm' => 'px-1.5 py-0.5 text-[10px]',
