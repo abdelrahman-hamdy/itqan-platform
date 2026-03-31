@@ -82,6 +82,11 @@ return [
 
     // Forgiveness actions (admin pardoning absence)
     'actions' => [
+        'view_circle' => 'View Circle',
+        'view_individual_circle' => 'View Individual Circle',
+        'view_lesson' => 'View Lesson',
+        'view_course' => 'View Course',
+        'view_subscription' => 'View Subscription',
         'forgive' => 'Forgive Absence',
         'forgive_heading' => 'Forgive Student Absence',
         'forgive_description' => 'This will return the session to the subscription quota and delete teacher earnings for this session.',

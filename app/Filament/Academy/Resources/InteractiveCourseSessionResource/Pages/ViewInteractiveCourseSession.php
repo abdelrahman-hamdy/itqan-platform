@@ -4,7 +4,9 @@ namespace App\Filament\Academy\Resources\InteractiveCourseSessionResource\Pages;
 
 use App\Filament\Academy\Resources\InteractiveCourseSessionResource;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use App\Filament\Resources\InteractiveCourseResource;
 use App\Filament\Shared\Actions\MeetingActions;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 
@@ -18,6 +20,13 @@ class ViewInteractiveCourseSession extends ViewRecord
             EditAction::make()
                 ->label('تعديل'),
             MeetingActions::viewMeeting('interactive'),
+            Action::make('view_entity')
+                ->label(__('sessions.actions.view_course'))
+                ->icon('heroicon-o-arrow-top-right-on-square')
+                ->color('success')
+                ->url(fn ($record) => InteractiveCourseResource::getUrl('edit', ['record' => $record->course_id]))
+                ->openUrlInNewTab()
+                ->visible(fn ($record) => (bool) $record->course_id),
             DeleteAction::make()
                 ->label('حذف'),
         ];

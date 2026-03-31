@@ -97,6 +97,11 @@ return [
 
     // Forgiveness actions (admin pardoning absence)
     'actions' => [
+        'view_circle' => 'عرض الحلقة',
+        'view_individual_circle' => 'عرض الحلقة الفردية',
+        'view_lesson' => 'عرض الدرس',
+        'view_course' => 'عرض الدورة',
+        'view_subscription' => 'عرض الاشتراك',
         'forgive' => 'إعفاء الطالب',
         'forgive_heading' => 'إعفاء الطالب من الغياب',
         'forgive_description' => 'سيتم إرجاع الجلسة لرصيد الاشتراك وحذف مستحقات المعلم عن هذه الجلسة.',
