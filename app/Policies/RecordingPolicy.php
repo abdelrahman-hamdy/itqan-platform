@@ -119,14 +119,14 @@ class RecordingPolicy
             return $course && $course->assigned_teacher_id === $user->academicTeacherProfile?->id;
         }
 
-        // For QuranSession
+        // For QuranSession (uses quran_teacher_id which stores user IDs)
         if ($session instanceof QuranSession) {
-            return $session->teacher_id === $user->id;
+            return $session->quran_teacher_id === $user->id;
         }
 
-        // For AcademicSession
+        // For AcademicSession (uses academic_teacher_id which stores profile IDs)
         if ($session instanceof AcademicSession) {
-            return $session->teacher_id === $user->id;
+            return $session->academic_teacher_id === $user->academicTeacherProfile?->id;
         }
 
         return false;
