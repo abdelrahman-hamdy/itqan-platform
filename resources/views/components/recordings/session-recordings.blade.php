@@ -106,7 +106,7 @@
                             <h4 class="font-semibold text-red-900">{{ __('components.recordings.session_recordings.recording_now') }}</h4>
                             @if($activeRecording->started_at)
                                 <p class="text-sm text-red-700">
-                                    {{ __('components.recordings.session_recordings.started_at') }} {{ \App\Helpers\TimeHelper::toSaudiTime($activeRecording->started_at)->format('H:i') }}
+                                    {{ __('components.recordings.session_recordings.started_at') }} {{ toAcademyTimezone($activeRecording->started_at)->format('H:i') }}
                                 </p>
                             @endif
                         </div>

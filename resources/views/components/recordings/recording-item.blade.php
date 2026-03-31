@@ -11,9 +11,8 @@
     $isProcessing = $recording->isProcessing();
     $hasFailed = $recording->hasFailed();
 
-    // Format dates using TimeHelper if available
-    $startedAt = $recording->started_at ? \App\Helpers\TimeHelper::toSaudiTime($recording->started_at) : null;
-    $completedAt = $recording->completed_at ? \App\Helpers\TimeHelper::toSaudiTime($recording->completed_at) : null;
+    $startedAt = $recording->started_at ? toAcademyTimezone($recording->started_at) : null;
+    $completedAt = $recording->completed_at ? toAcademyTimezone($recording->completed_at) : null;
 @endphp
 
 <div class="group {{ $compact ? 'p-3' : 'p-4' }} bg-gray-50 rounded-lg border border-gray-200 hover:border-primary/30 hover:bg-gray-100/50 transition-all duration-200">

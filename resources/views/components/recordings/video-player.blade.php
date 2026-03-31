@@ -10,7 +10,7 @@
     $streamUrl = $isAvailable ? route('recordings.stream', ['recordingId' => $recording->id]) : null;
     $downloadUrl = $isAvailable ? route('recordings.download', ['recordingId' => $recording->id]) : null;
 
-    $startedAt = $recording->started_at ? \App\Helpers\TimeHelper::toSaudiTime($recording->started_at) : null;
+    $startedAt = $recording->started_at ? toAcademyTimezone($recording->started_at) : null;
 @endphp
 
 <div {{ $attributes->merge(['class' => 'bg-black rounded-xl overflow-hidden shadow-lg']) }}>
