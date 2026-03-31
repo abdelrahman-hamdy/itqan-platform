@@ -92,7 +92,8 @@
 <script>
 (function() {
     var root = document.getElementById('{{ $componentId }}');
-    if (!root) return;
+    if (!root) { console.error('system-status: root not found'); return; }
+    console.log('system-status: script running, root found');
     var el = function(sel) { return root.querySelector('[data-role="' + sel + '"]'); };
 
     var t = {
@@ -130,22 +131,14 @@
             icon.innerHTML = '<i class="ri-close-line text-red-600"></i>';
             text.classList.add('text-red-600');
             text.textContent = t.denied;
-            if (btn) {
-                btn.classList.remove('hidden');
-                btn.textContent = t.reset;
-                btn.className = 'px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors cursor-pointer';
-            }
+            if (btn) btn.classList.remove('hidden');
             if (hint) hint.classList.remove('hidden');
         } else if (state === 'prompt') {
             icon.classList.add('bg-yellow-100');
             icon.innerHTML = '<i class="ri-question-line text-yellow-600"></i>';
             text.classList.add('text-yellow-600');
             text.textContent = t.needs_permission;
-            if (btn) {
-                btn.classList.remove('hidden');
-                btn.textContent = t.grant;
-                btn.className = 'px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer';
-            }
+            if (btn) btn.classList.remove('hidden');
             if (hint) hint.classList.add('hidden');
         } else {
             icon.classList.add('bg-gray-100');
@@ -160,28 +153,29 @@
     async function checkPermission(type, name) {
         try {
             var result = await navigator.permissions.query({ name: name });
+            console.log('system-status: ' + type + ' permission = ' + result.state);
             updateStatus(type, result.state);
-            result.addEventListener('change', function() { updateStatus(type, result.state); });
+            result.addEventListener('change', function() {
+                console.log('system-status: ' + type + ' changed to ' + result.state);
+                updateStatus(type, result.state);
+            });
         } catch (e) {
+            console.log('system-status: ' + type + ' query failed, defaulting to prompt', e);
             updateStatus(type, 'prompt');
         }
     }
 
     async function requestMedia(type, constraints) {
-        var btn = el(type + '-btn');
-        var origText = btn ? btn.textContent : '';
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = '...';
-        }
+        console.log('system-status: requestMedia called for ' + type);
         try {
             var stream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log('system-status: ' + type + ' granted');
             updateStatus(type, 'granted');
             stream.getTracks().forEach(function(track) { track.stop(); });
         } catch (e) {
+            console.log('system-status: ' + type + ' request failed', e.name, e.message);
             updateStatus(type, 'denied');
         }
-        if (btn) btn.disabled = false;
     }
 
     function updateNetwork() {
@@ -233,7 +227,8 @@
     // Button click handlers
     var camBtn = el('camera-btn');
     var micBtn = el('mic-btn');
-    if (camBtn) camBtn.addEventListener('click', function() { requestMedia('camera', { video: true }); });
-    if (micBtn) micBtn.addEventListener('click', function() { requestMedia('mic', { audio: true }); });
+    console.log('system-status: camBtn=' + !!camBtn + ', micBtn=' + !!micBtn);
+    if (camBtn) camBtn.addEventListener('click', function() { console.log('system-status: camera btn clicked'); requestMedia('camera', { video: true }); });
+    if (micBtn) micBtn.addEventListener('click', function() { console.log('system-status: mic btn clicked'); requestMedia('mic', { audio: true }); });
 })();
 </script>
