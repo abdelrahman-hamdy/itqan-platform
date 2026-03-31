@@ -334,7 +334,7 @@ trait HasMeetings
     /**
      * Get the session type value matching the meeting_attendances.session_type enum.
      */
-    protected function getAttendanceSessionType(): string
+    public function getAttendanceSessionType(): string
     {
         if ($this instanceof QuranSession) {
             return $this->session_type ?? 'individual';
