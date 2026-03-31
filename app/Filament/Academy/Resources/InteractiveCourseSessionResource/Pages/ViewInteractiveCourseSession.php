@@ -6,11 +6,10 @@ use App\Filament\Academy\Resources\InteractiveCourseSessionResource;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
 use App\Filament\Resources\InteractiveCourseResource;
 use App\Filament\Shared\Actions\MeetingActions;
+use App\Filament\Shared\Resources\BaseInteractiveCourseSessionResource;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
-use Filament\Infolists\Components\ViewEntry;
-use Filament\Schemas\Components\Section;
 
 class ViewInteractiveCourseSession extends ViewRecord
 {
@@ -37,13 +36,7 @@ class ViewInteractiveCourseSession extends ViewRecord
     protected function getFooterSchemas(): array
     {
         return [
-            Section::make(__('recordings.session_recordings'))
-                ->icon('heroicon-o-video-camera')
-                ->schema([
-                    ViewEntry::make('recordings_view')
-                        ->view('filament.infolists.components.session-recordings'),
-                ])
-                ->visible(fn ($record) => $record instanceof \App\Contracts\RecordingCapable && $record->isRecordingEnabled()),
+            BaseInteractiveCourseSessionResource::getRecordingSection(),
         ];
     }
 }

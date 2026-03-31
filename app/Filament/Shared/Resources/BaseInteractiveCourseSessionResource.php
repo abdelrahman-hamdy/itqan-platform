@@ -2,31 +2,31 @@
 
 namespace App\Filament\Shared\Resources;
 
-use Filament\Schemas\Components\Section;
-use Illuminate\Database\Eloquent\Model;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\FileUpload;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Actions\Action;
+use App\Contracts\RecordingCapable;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
+use App\Filament\Resources\BaseResource;
 use App\Models\InteractiveCourseSession;
 use App\Services\AcademyContextService;
-use Filament\Forms;
-use App\Filament\Resources\BaseResource;
-use Filament\Tables;
+use Filament\Actions\Action;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\ViewEntry;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Base Interactive Course Session Resource
@@ -38,7 +38,7 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
 {
     protected static ?string $model = InteractiveCourseSession::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $modelLabel = 'جلسة دورة تفاعلية';
 
@@ -402,6 +402,21 @@ abstract class BaseInteractiveCourseSessionResource extends BaseResource
             ]);
 
         return static::scopeEloquentQuery($query);
+    }
+
+    /**
+     * Recording section for session view pages.
+     * Shared across all panels (Academy, AcademicTeacher, Supervisor, SuperAdmin).
+     */
+    public static function getRecordingSection(): Section
+    {
+        return Section::make(__('recordings.session_recordings'))
+            ->icon('heroicon-o-video-camera')
+            ->schema([
+                ViewEntry::make('recordings_view')
+                    ->view('filament.infolists.components.session-recordings'),
+            ])
+            ->visible(fn ($record) => $record instanceof RecordingCapable && $record->isRecordingEnabled());
     }
 
     public static function getRelations(): array

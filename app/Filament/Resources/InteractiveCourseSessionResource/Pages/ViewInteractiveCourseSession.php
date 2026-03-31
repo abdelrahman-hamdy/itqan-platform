@@ -6,11 +6,11 @@ use App\Enums\SessionStatus;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
 use App\Filament\Resources\InteractiveCourseSessionResource;
 use App\Filament\Shared\Actions\MeetingActions;
+use App\Filament\Shared\Resources\BaseInteractiveCourseSessionResource;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -140,13 +140,7 @@ class ViewInteractiveCourseSession extends ViewRecord
                     ->collapsible()
                     ->visible(fn ($record) => $record->homework_assigned),
 
-                Section::make(__('recordings.session_recordings'))
-                    ->icon('heroicon-o-video-camera')
-                    ->schema([
-                        ViewEntry::make('recordings_view')
-                            ->view('filament.infolists.components.session-recordings'),
-                    ])
-                    ->visible(fn ($record) => $record instanceof \App\Contracts\RecordingCapable && $record->isRecordingEnabled()),
+                BaseInteractiveCourseSessionResource::getRecordingSection(),
 
                 Section::make('معلومات النظام')
                     ->schema([

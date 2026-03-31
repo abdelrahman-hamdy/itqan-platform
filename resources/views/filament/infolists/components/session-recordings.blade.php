@@ -1,29 +1,15 @@
 @php
-    $record = $getRecord();
-    $supportsRecording = $record instanceof \App\Contracts\RecordingCapable;
+    use App\Enums\RecordingStatus;
 
-    if ($supportsRecording) {
-        $recordings = $record->getRecordings();
-        $completedRecordings = $recordings->where('status.value', 'completed');
-        $processingRecordings = $recordings->where('status.value', 'processing');
-        $activeRecording = $record->getActiveRecording();
-        $isRecordingEnabled = $record->isRecordingEnabled();
-    } else {
-        $recordings = collect();
-        $completedRecordings = collect();
-        $processingRecordings = collect();
-        $activeRecording = null;
-        $isRecordingEnabled = false;
-    }
+    $record = $getRecord();
+    $recordings = $record->getRecordings();
+    $completedRecordings = $recordings->filter(fn ($r) => $r->status === RecordingStatus::COMPLETED);
+    $processingRecordings = $recordings->filter(fn ($r) => $r->status === RecordingStatus::PROCESSING);
+    $activeRecording = $recordings->filter(fn ($r) => $r->status === RecordingStatus::RECORDING)->sortByDesc('created_at')->first();
 @endphp
 
 <div class="space-y-4">
-    @if(!$supportsRecording || !$isRecordingEnabled)
-        <div class="flex items-center gap-2 text-sm text-gray-500">
-            <x-heroicon-o-video-camera-slash class="w-5 h-5" />
-            <span>{{ __('recordings.not_enabled') }}</span>
-        </div>
-    @elseif($recordings->isEmpty())
+    @if($recordings->isEmpty())
         <div class="flex items-center gap-2 text-sm text-gray-500">
             <x-heroicon-o-film class="w-5 h-5" />
             <span>{{ __('recordings.no_recordings_yet') }}</span>
