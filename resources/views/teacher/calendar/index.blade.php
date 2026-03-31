@@ -120,6 +120,7 @@
             direction: 'rtl',
             locale: 'ar',
             timeZone: 'UTC',
+            now: utcToAcademyLocal(new Date().toISOString()),
             initialView: 'dayGridMonth',
             headerToolbar: {
                 start: 'prev,next today',
