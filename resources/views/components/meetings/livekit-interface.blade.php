@@ -678,8 +678,12 @@
         }
     }
 
-    // Initialize timer immediately
-    initializeSessionTimer();
+    // Defer initialization until DOM elements exist (timer HTML is rendered after this script block)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeSessionTimer);
+    } else {
+        initializeSessionTimer();
+    }
     @endif
 
     /**
