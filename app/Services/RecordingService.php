@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use Exception;
-use Illuminate\Database\Eloquent\Collection;
 use App\Contracts\RecordingCapable;
 use App\Contracts\RecordingServiceInterface;
 use App\Enums\RecordingStatus;
 use App\Models\SessionRecording;
+use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -244,11 +244,15 @@ class RecordingService implements RecordingServiceInterface
         // Get first file (for room composite, there's usually only one)
         $file = is_array($fileList) && isset($fileList[0]) ? $fileList[0] : $fileList;
 
+        // LiveKit sends duration in nanoseconds — convert to seconds
+        $durationNs = $file['duration'] ?? $egressInfo['duration'] ?? null;
+        $durationSeconds = $durationNs ? (int) round($durationNs / 1_000_000_000) : null;
+
         return [
             'file_path' => $file['filename'] ?? $file['location'] ?? null,
             'file_name' => basename($file['filename'] ?? ''),
             'file_size' => $file['size'] ?? null,
-            'duration' => $file['duration'] ?? $egressInfo['duration'] ?? null,
+            'duration' => $durationSeconds,
         ];
     }
 
