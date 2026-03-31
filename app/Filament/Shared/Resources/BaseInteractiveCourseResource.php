@@ -5,6 +5,7 @@ namespace App\Filament\Shared\Resources;
 use App\Enums\DifficultyLevel;
 use App\Enums\InteractiveCourseStatus;
 use App\Enums\SessionDuration;
+use App\Enums\WeekDays;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
@@ -370,6 +371,9 @@ abstract class BaseInteractiveCourseResource extends Resource
                         'الأحد' => '16:00 - 17:00',
                         'الثلاثاء' => '16:00 - 17:00',
                     ])
+                    ->afterStateHydrated(function ($component, $state) {
+                        $component->state(static::normalizeScheduleState($state));
+                    })
                     ->columnSpanFull(),
             ]);
     }
@@ -586,6 +590,52 @@ abstract class BaseInteractiveCourseResource extends Resource
                 ->trueLabel('منشور')
                 ->falseLabel('غير منشور'),
         ];
+    }
+
+    // ========================================
+    // Schedule Normalization
+    // ========================================
+
+    /**
+     * Normalize schedule state from various stored formats into a localized key-value map.
+     *
+     * Handles: array-of-objects [{"day":"monday","time":"10:00"}],
+     * key-value with English keys {"monday":"10:00"}, and already-Arabic keys.
+     */
+    public static function normalizeScheduleState(mixed $state): array
+    {
+        if (! is_array($state) || empty($state)) {
+            return $state ?? [];
+        }
+
+        $dayTranslations = collect(WeekDays::cases())
+            ->mapWithKeys(fn (WeekDays $day) => [strtolower($day->value) => $day->label()])
+            ->toArray();
+
+        // Array-of-objects format: [{"day":"monday","time":"10:00"}, ...]
+        if (array_is_list($state) && isset($state[0]['day'])) {
+            $normalized = [];
+            foreach ($state as $item) {
+                $dayKey = strtolower($item['day'] ?? '');
+                $label = $dayTranslations[$dayKey] ?? $item['day'];
+                $time = $item['time'] ?? $item['start_time'] ?? '';
+                if (isset($item['end_time'])) {
+                    $time .= ' - '.$item['end_time'];
+                }
+                $normalized[$label] = $time;
+            }
+
+            return $normalized;
+        }
+
+        // Key-value format with potentially English keys: {"monday":"10:00"}
+        $normalized = [];
+        foreach ($state as $key => $value) {
+            $lowerKey = strtolower($key);
+            $normalized[$dayTranslations[$lowerKey] ?? $key] = $value;
+        }
+
+        return $normalized;
     }
 
     // ========================================

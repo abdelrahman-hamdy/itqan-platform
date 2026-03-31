@@ -2,41 +2,39 @@
 
 namespace App\Filament\Supervisor\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\KeyValue;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Toggle;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Actions\ActionGroup;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\Action;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages\ListMonitoredInteractiveCourses;
-use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages\CreateMonitoredInteractiveCourse;
-use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages\ViewMonitoredInteractiveCourse;
-use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages\EditMonitoredInteractiveCourse;
 use App\Enums\DifficultyLevel;
 use App\Enums\InteractiveCourseStatus;
 use App\Enums\SessionDuration;
-use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages;
+use App\Filament\Shared\Resources\BaseInteractiveCourseResource;
+use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages\CreateMonitoredInteractiveCourse;
+use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages\EditMonitoredInteractiveCourse;
+use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages\ListMonitoredInteractiveCourses;
+use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages\ViewMonitoredInteractiveCourse;
 use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -49,7 +47,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
 {
     protected static ?string $model = InteractiveCourse::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-video-camera';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-video-camera';
 
     protected static ?string $navigationLabel = 'الدورات التفاعلية';
 
@@ -57,7 +55,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'الدورات التفاعلية';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'الدورات التفاعلية';
+    protected static string|\UnitEnum|null $navigationGroup = 'الدورات التفاعلية';
 
     protected static ?int $navigationSort = 1;
 
@@ -262,6 +260,9 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                                 'الأحد' => '16:00 - 17:00',
                                 'الثلاثاء' => '16:00 - 17:00',
                             ])
+                            ->afterStateHydrated(function ($component, $state) {
+                                $component->state(BaseInteractiveCourseResource::normalizeScheduleState($state));
+                            })
                             ->columnSpanFull(),
                     ]),
 
