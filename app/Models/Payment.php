@@ -153,6 +153,15 @@ class Payment extends Model
     }
 
     /**
+     * Scope: Filter payments by polymorphic payable (subscription).
+     */
+    public function scopeForPayable($query, string $payableType, int $payableId)
+    {
+        return $query->where('payable_type', $payableType)
+            ->where('payable_id', $payableId);
+    }
+
+    /**
      * Scope to filter by academy (tenant isolation)
      */
     public function scopeForAcademy($query, int $academyId)
@@ -399,7 +408,7 @@ class Payment extends Model
         return $this;
     }
 
-    private function generateReceiptNumber(): string
+    public function generateReceiptNumber(): string
     {
         return 'REC-'.$this->academy_id.'-'.$this->id.'-'.time();
     }

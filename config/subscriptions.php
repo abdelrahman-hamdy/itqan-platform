@@ -20,7 +20,7 @@ return [
 
     'pending' => [
         // Hours after which a pending subscription expires if not paid
-        'expires_after_hours' => env('SUBSCRIPTION_PENDING_EXPIRY_HOURS', 48),
+        'expires_after_hours' => env('SUBSCRIPTION_PENDING_EXPIRY_HOURS', 24),
 
         // Extra buffer time (in minutes) for slow webhooks before considering expired
         'grace_period_minutes' => env('SUBSCRIPTION_GRACE_PERIOD_MINUTES', 30),
@@ -75,5 +75,9 @@ return [
         'admin' => 'ألغي بواسطة الإدارة',
         'payment_failed' => 'فشل في معالجة الدفع',
     ],
+
+    // Legacy pause reason used before the sessions_exhausted metadata flag was introduced.
+    // Used only for backwards-compatible detection in returnSession() and data migrations.
+    'legacy_sessions_exhausted_pause_reason' => 'انتهت الجلسات المتاحة - في انتظار التجديد',
 
 ];

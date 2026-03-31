@@ -18,7 +18,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 /**
  * QuranSubscription Model
@@ -335,8 +334,8 @@ class QuranSubscription extends BaseSubscription
     public function getSubscriptionTypeLabel(): string
     {
         return $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL
-            ? 'اشتراك قرآن فردي'
-            : 'اشتراك حلقة قرآن';
+            ? __('subscriptions.type_quran_individual')
+            : __('subscriptions.type_quran_group');
     }
 
     /**
@@ -360,7 +359,7 @@ class QuranSubscription extends BaseSubscription
      */
     public function getTeacher(): ?User
     {
-        return $this->quran_teacher_id ? User::find($this->quran_teacher_id) : null;
+        return $this->quranTeacherUser;
     }
 
     /**
@@ -499,88 +498,7 @@ class QuranSubscription extends BaseSubscription
     // SESSION MANAGEMENT METHODS
     // ========================================
 
-    /**
-     * Use a session from the subscription
-     */
-    public function useSession(): self
-    {
-        return DB::transaction(function () {
-            $subscription = static::lockForUpdate()->find($this->id);
-
-            if (! $subscription) {
-                throw new Exception('الاشتراك غير موجود');
-            }
-
-            if ($subscription->sessions_remaining <= 0) {
-                Log::warning("QuranSubscription {$subscription->id} has no remaining sessions, allowing over-usage", [
-                    'subscription_id' => $subscription->id,
-                    'sessions_remaining' => $subscription->sessions_remaining,
-                    'sessions_used' => $subscription->sessions_used,
-                ]);
-            }
-
-            $subscription->update([
-                'sessions_used' => $subscription->sessions_used + 1,
-                'sessions_remaining' => max(0, $subscription->sessions_remaining - 1),
-                'total_sessions_completed' => $subscription->total_sessions_completed + 1,
-                'last_session_at' => now(),
-            ]);
-
-            // Refresh to get the actual persisted value after update (avoids stale in-memory value)
-            $subscription->refresh();
-
-            // When sessions run out, pause the subscription (awaiting renewal)
-            if ($subscription->sessions_remaining <= 0) {
-                $subscription->update([
-                    'status' => SessionSubscriptionStatus::PAUSED,
-                    'progress_percentage' => 100,
-                    'paused_at' => now(),
-                    'pause_reason' => 'انتهت الجلسات المتاحة - في انتظار التجديد',
-                ]);
-            }
-
-            $this->refresh();
-
-            return $this;
-        });
-    }
-
-    /**
-     * Return a session to the subscription (reverse of useSession)
-     * Called when a session is cancelled after being counted
-     */
-    public function returnSession(): self
-    {
-        return DB::transaction(function () {
-            $subscription = static::lockForUpdate()->find($this->id);
-
-            if (! $subscription) {
-                throw new Exception('الاشتراك غير موجود');
-            }
-
-            $subscription->update([
-                'sessions_used' => max(0, $subscription->sessions_used - 1),
-                'sessions_remaining' => $subscription->sessions_remaining + 1,
-                'total_sessions_completed' => max(0, $subscription->total_sessions_completed - 1),
-            ]);
-
-            // If subscription was paused due to exhaustion, reactivate
-            if ($subscription->status === SessionSubscriptionStatus::PAUSED
-                && $subscription->pause_reason === 'انتهت الجلسات المتاحة - في انتظار التجديد') {
-                $subscription->update([
-                    'status' => SessionSubscriptionStatus::ACTIVE,
-                    'paused_at' => null,
-                    'pause_reason' => null,
-                ]);
-            }
-
-            Log::info("Session returned to Quran subscription {$subscription->id}");
-
-            $this->refresh();
-
-            return $this;
-        });
-    }
+    // useSession() and returnSession() are inherited from BaseSubscription
 
     /**
      * Update progress percentage based on completed sessions.

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use InvalidArgumentException;
 use App\Contracts\SubscriptionServiceInterface;
 use App\Enums\BillingCycle;
 use App\Enums\SessionSubscriptionStatus;
@@ -14,7 +13,9 @@ use App\Services\Subscription\SubscriptionAnalyticsService;
 use App\Services\Subscription\SubscriptionCreationService;
 use App\Services\Subscription\SubscriptionMaintenanceService;
 use App\Services\Subscription\SubscriptionQueryService;
+use App\Services\Subscription\SubscriptionRenewalService;
 use Illuminate\Database\Eloquent\Collection;
+use InvalidArgumentException;
 
 /**
  * SubscriptionService
@@ -37,6 +38,7 @@ use Illuminate\Database\Eloquent\Collection;
  * - Repository Pattern: Centralized data access
  *
  * This class is a thin delegate — all logic lives in the Subscription sub-services:
+ *
  * @see SubscriptionQueryService
  * @see SubscriptionCreationService
  * @see SubscriptionAnalyticsService
@@ -58,6 +60,7 @@ class SubscriptionService implements SubscriptionServiceInterface
         private readonly SubscriptionCreationService $creationService,
         private readonly SubscriptionAnalyticsService $analyticsService,
         private readonly SubscriptionMaintenanceService $maintenanceService,
+        private readonly SubscriptionRenewalService $renewalService,
     ) {}
 
     /**
@@ -401,5 +404,43 @@ class SubscriptionService implements SubscriptionServiceInterface
     public function getPendingSubscriptionsStats(?int $academyId = null): array
     {
         return $this->analyticsService->getPendingSubscriptionsStats($academyId);
+    }
+
+    // ========================================
+    // SUBSCRIPTION RENEWAL
+    // ========================================
+
+    /**
+     * Renew a subscription, optionally changing package or billing cycle.
+     *
+     * @param  array  $options  Keys: package_id, billing_cycle, teacher_id, activate_immediately, amount
+     */
+    public function renew(BaseSubscription $subscription, array $options = []): BaseSubscription
+    {
+        return $this->renewalService->renew($subscription, $options);
+    }
+
+    /**
+     * Resubscribe from a dormant (cancelled/expired) subscription.
+     */
+    public function resubscribe(BaseSubscription $subscription, array $options = []): BaseSubscription
+    {
+        return $this->renewalService->resubscribe($subscription, $options);
+    }
+
+    /**
+     * Check if a subscription can be renewed.
+     */
+    public function canRenewSubscription(BaseSubscription $subscription): bool
+    {
+        return $this->renewalService->canRenew($subscription);
+    }
+
+    /**
+     * Get available renewal options (packages, billing cycles, pricing).
+     */
+    public function getRenewalOptions(BaseSubscription $subscription): array
+    {
+        return $this->renewalService->getRenewalOptions($subscription);
     }
 }

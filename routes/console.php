@@ -153,11 +153,11 @@ Schedule::command('subscriptions:send-expiry-reminders')
     ->description('Send expiry reminders for subscriptions expiring soon');
 
 // Cancel expired pending subscriptions
-// Runs every 6 hours to clean up pending subscriptions not paid within 48 hours
+// Runs every 2 hours to clean up pending subscriptions not paid within 24 hours
 // Prevents users from accumulating stale pending subscriptions
 Schedule::command('subscriptions:cleanup-expired-pending --force')
     ->name('cleanup-expired-pending-subscriptions')
-    ->everySixHours()
+    ->everyTwoHours()
     ->withoutOverlapping()
     ->runInBackground()
     ->description('Cancel pending subscriptions not paid within the configured time limit');

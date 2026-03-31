@@ -225,17 +225,8 @@ class SubscriptionQueryService
         ];
     }
 
-    /**
-     * Resolve the model class string for a subscription type.
-     * Mirrors SubscriptionService::getModelClass() without the full service dependency.
-     */
     private function resolveModelClass(string $type): string
     {
-        return match ($type) {
-            'quran' => QuranSubscription::class,
-            'academic' => AcademicSubscription::class,
-            'course' => CourseSubscription::class,
-            default => throw new \InvalidArgumentException("Unknown subscription type: {$type}"),
-        };
+        return SubscriptionTypeResolver::resolveModelClass($type);
     }
 }

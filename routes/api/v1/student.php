@@ -116,6 +116,11 @@ Route::middleware(['api.is.student', 'ability:student:*'])->group(function () {
             ->where('type', 'quran|academic|course')
             ->middleware('throttle:5,1')
             ->name('api.v1.student.subscriptions.cancel');
+
+        Route::post('/{type}/{id}/renew', [SubscriptionController::class, 'renew'])
+            ->where('type', 'quran|quran_group|academic')
+            ->middleware('throttle:5,1')
+            ->name('api.v1.student.subscriptions.renew');
     });
 
     // Homework

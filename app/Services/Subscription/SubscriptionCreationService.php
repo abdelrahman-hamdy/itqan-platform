@@ -2,7 +2,6 @@
 
 namespace App\Services\Subscription;
 
-use InvalidArgumentException;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -240,24 +239,13 @@ class SubscriptionCreationService
         return $cancelledCount;
     }
 
-    /**
-     * Get the model class for a subscription type
-     */
     private function getModelClass(string $type): string
     {
-        return match ($type) {
-            self::TYPE_QURAN => QuranSubscription::class,
-            self::TYPE_ACADEMIC => AcademicSubscription::class,
-            self::TYPE_COURSE => CourseSubscription::class,
-            default => throw new InvalidArgumentException("Unknown subscription type: {$type}"),
-        };
+        return SubscriptionTypeResolver::resolveModelClass($type);
     }
 
-    /**
-     * Check if a subscription type uses session-based status
-     */
     private function isSessionBased(string $type): bool
     {
-        return in_array($type, [self::TYPE_QURAN, self::TYPE_ACADEMIC]);
+        return SubscriptionTypeResolver::isSessionBased($type);
     }
 }

@@ -185,8 +185,17 @@ class StudentQuranController extends Controller
                 ->with(['package', 'quranTeacherUser'])
                 ->first();
 
-            // If no subscription exists for this enrollment, create one
+            // If no subscription exists for this enrollment, create one with duplicate handling
             if (! $subscription) {
+                // Cancel any stale pending subscriptions for the same combination
+                app(\App\Services\Subscription\SubscriptionCreationService::class)
+                    ->cancelDuplicatePending(
+                        'quran',
+                        $academy->id,
+                        $user->id,
+                        ['quran_teacher_id' => $circle->quran_teacher_id, 'subscription_type' => 'group']
+                    );
+
                 $subscription = QuranSubscription::create([
                     'academy_id' => $academy->id,
                     'student_id' => $user->id,

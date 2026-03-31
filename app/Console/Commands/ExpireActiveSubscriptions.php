@@ -58,6 +58,13 @@ class ExpireActiveSubscriptions extends Command
                         continue;
                     }
 
+                    // Skip if there is a pending renewal subscription
+                    if ($subscription->hasPendingRenewal()) {
+                        $stats['skipped_grace']++;
+
+                        continue;
+                    }
+
                     if ($dryRun) {
                         $this->line("  [DRY RUN] Would expire Quran subscription #{$subscription->id} (ends_at: {$subscription->ends_at})");
                         $stats['quran']++;
@@ -93,6 +100,13 @@ class ExpireActiveSubscriptions extends Command
             ->chunkById(100, function ($subscriptions) use ($dryRun, $now, &$stats) {
                 foreach ($subscriptions as $subscription) {
                     if ($this->isInGracePeriod($subscription, $now)) {
+                        $stats['skipped_grace']++;
+
+                        continue;
+                    }
+
+                    // Skip if there is a pending renewal subscription
+                    if ($subscription->hasPendingRenewal()) {
                         $stats['skipped_grace']++;
 
                         continue;

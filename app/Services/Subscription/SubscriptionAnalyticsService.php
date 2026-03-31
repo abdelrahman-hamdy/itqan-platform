@@ -183,16 +183,8 @@ class SubscriptionAnalyticsService
         return $stats;
     }
 
-    /**
-     * Get the model class for a subscription type
-     */
     private function getModelClass(string $type): string
     {
-        return match ($type) {
-            self::TYPE_QURAN => QuranSubscription::class,
-            self::TYPE_ACADEMIC => AcademicSubscription::class,
-            self::TYPE_COURSE => CourseSubscription::class,
-            default => throw new \InvalidArgumentException("Unknown subscription type: {$type}"),
-        };
+        return SubscriptionTypeResolver::resolveModelClass($type);
     }
 }

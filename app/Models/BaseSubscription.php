@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -85,6 +87,7 @@ abstract class BaseSubscription extends Model
         // Core subscription fields
         'academy_id',
         'student_id',
+        'previous_subscription_id',
         'subscription_code',
         'status',
 
@@ -237,6 +240,32 @@ abstract class BaseSubscription extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'student_id');
+    }
+
+    /**
+     * Get the previous subscription in the renewal chain.
+     */
+    public function previousSubscription(): BelongsTo
+    {
+        return $this->belongsTo(static::class, 'previous_subscription_id');
+    }
+
+    /**
+     * Get the subscription that renewed this one (if any).
+     */
+    public function renewedBySubscription(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(static::class, 'previous_subscription_id');
+    }
+
+    /**
+     * Check if this subscription has a pending renewal.
+     */
+    public function hasPendingRenewal(): bool
+    {
+        return static::where('previous_subscription_id', $this->id)
+            ->where('status', SessionSubscriptionStatus::PENDING)
+            ->exists();
     }
 
     /**
@@ -413,6 +442,7 @@ abstract class BaseSubscription extends Model
         return in_array($this->status, [
             SessionSubscriptionStatus::ACTIVE,
             SessionSubscriptionStatus::PAUSED,
+            SessionSubscriptionStatus::SUSPENDED,
             SessionSubscriptionStatus::EXPIRED,
         ]);
     }
@@ -496,6 +526,14 @@ abstract class BaseSubscription extends Model
         }
 
         return max(0, now()->diffInDays($this->ends_at, false));
+    }
+
+    /**
+     * Check if all sessions have been used up (but subscription period may still be active).
+     */
+    public function getIsSessionsExhaustedAttribute(): bool
+    {
+        return ! empty(($this->metadata ?? [])['sessions_exhausted']);
     }
 
     /**
@@ -585,7 +623,7 @@ abstract class BaseSubscription extends Model
     public function cancel(?string $reason = null): self
     {
         if (! $this->canCancel()) {
-            throw new Exception('Cannot cancel subscription in current state');
+            throw new Exception(__('subscriptions.errors.cannot_cancel'));
         }
 
         $this->update([
@@ -604,7 +642,7 @@ abstract class BaseSubscription extends Model
     public function pause(?string $reason = null): self
     {
         if (! $this->canPause()) {
-            throw new Exception('Cannot pause subscription in current state');
+            throw new Exception(__('subscriptions.errors.cannot_pause'));
         }
 
         $this->update([
@@ -622,7 +660,7 @@ abstract class BaseSubscription extends Model
     public function resume(): self
     {
         if (! $this->canResume()) {
-            throw new Exception('Cannot resume subscription in current state');
+            throw new Exception(__('subscriptions.errors.cannot_resume'));
         }
 
         $this->update([
@@ -640,7 +678,7 @@ abstract class BaseSubscription extends Model
     public function enableAutoRenewal(): self
     {
         if (! $this->billing_cycle->supportsAutoRenewal()) {
-            throw new Exception('This billing cycle does not support auto-renewal');
+            throw new Exception(__('subscriptions.errors.no_auto_renewal_support'));
         }
 
         $this->update(['auto_renew' => true]);
@@ -704,11 +742,11 @@ abstract class BaseSubscription extends Model
     public function issueCertificate(): self
     {
         if ($this->certificate_issued) {
-            throw new Exception('Certificate already issued');
+            throw new Exception(__('subscriptions.errors.certificate_already_issued'));
         }
 
         if (! $this->isCertificateEligible()) {
-            throw new Exception('Subscription not eligible for certificate');
+            throw new Exception(__('subscriptions.errors.certificate_not_eligible'));
         }
 
         $this->update([
@@ -745,21 +783,45 @@ abstract class BaseSubscription extends Model
     {
         $inGracePeriod = $this->isInGracePeriod();
         $needsRenewal = $this->needsRenewal();
+        $sessionsExhausted = $this->is_sessions_exhausted;
+
+        // Determine display state priority: grace period > sessions exhausted > normal status
+        if ($inGracePeriod) {
+            $label = __('subscriptions.grace_period_label', [], 'ar');
+            $labelEn = __('subscriptions.grace_period_label', [], 'en');
+            $icon = 'heroicon-o-exclamation-triangle';
+            $color = 'warning';
+            $badgeClasses = 'bg-orange-100 text-orange-800';
+        } elseif ($sessionsExhausted && $this->isActive()) {
+            $label = __('subscriptions.sessions_exhausted');
+            $labelEn = __('subscriptions.sessions_exhausted', [], 'en');
+            $icon = 'heroicon-o-check-badge';
+            $color = 'warning';
+            $badgeClasses = 'bg-amber-100 text-amber-800';
+        } else {
+            $label = $this->status->label();
+            $labelEn = $this->status->labelEn();
+            $icon = $this->status->icon();
+            $color = $this->status->color();
+            $badgeClasses = $this->status->badgeClasses();
+        }
 
         return [
             'status' => $this->status->value,
-            'label' => $inGracePeriod ? 'فترة سماح' : $this->status->label(),
-            'label_en' => $inGracePeriod ? 'Grace Period' : $this->status->labelEn(),
-            'icon' => $inGracePeriod ? 'heroicon-o-exclamation-triangle' : $this->status->icon(),
-            'color' => $inGracePeriod ? 'warning' : $this->status->color(),
-            'badge_classes' => $inGracePeriod ? 'bg-orange-100 text-orange-800' : $this->status->badgeClasses(),
+            'label' => $label,
+            'label_en' => $labelEn,
+            'icon' => $icon,
+            'color' => $color,
+            'badge_classes' => $badgeClasses,
             'can_access' => $this->canAccess(),
-            'can_renew' => $this->canRenew(),
+            'can_renew' => $this->canRenew() || $sessionsExhausted,
             'can_cancel' => $this->canCancel(),
             'is_expiring_soon' => $this->isExpiringSoon(),
             'days_remaining' => $this->days_remaining,
             'in_grace_period' => $inGracePeriod,
             'needs_renewal' => $needsRenewal,
+            'sessions_exhausted' => $sessionsExhausted,
+            'renewal_message' => $sessionsExhausted ? __('subscriptions.sessions_exhausted_message') : null,
             'grace_period_ends_at' => $this->getGracePeriodEndsAt()?->format('Y-m-d'),
             'paid_until' => $this->ends_at?->format('Y-m-d'),
         ];
@@ -838,6 +900,101 @@ abstract class BaseSubscription extends Model
      * Must be implemented by each child class
      */
     abstract public function getSessions();
+
+    // ========================================
+    // SESSION USAGE METHODS
+    // ========================================
+
+    /**
+     * Consume one session from the subscription.
+     * Consolidates counters + exhaustion metadata into a single UPDATE.
+     */
+    public function useSession(): self
+    {
+        return DB::transaction(function () {
+            $subscription = static::lockForUpdate()->find($this->id);
+
+            if (! $subscription) {
+                throw new Exception(__('subscriptions.subscription_not_found'));
+            }
+
+            if ($subscription->sessions_remaining <= 0) {
+                Log::warning(class_basename(static::class)." {$subscription->id} has no remaining sessions, allowing over-usage", [
+                    'subscription_id' => $subscription->id,
+                    'sessions_remaining' => $subscription->sessions_remaining,
+                ]);
+            }
+
+            $newRemaining = max(0, $subscription->sessions_remaining - 1);
+
+            $updateData = [
+                'sessions_used' => $subscription->sessions_used + 1,
+                'sessions_remaining' => $newRemaining,
+                'total_sessions_completed' => $subscription->total_sessions_completed + 1,
+                'last_session_at' => now(),
+            ];
+
+            if ($newRemaining <= 0) {
+                $metadata = $subscription->metadata ?? [];
+                $metadata['sessions_exhausted'] = true;
+                $metadata['sessions_exhausted_at'] = now()->toDateTimeString();
+                $updateData['progress_percentage'] = 100;
+                $updateData['metadata'] = $metadata;
+            }
+
+            $subscription->update($updateData);
+
+            $this->refresh();
+
+            return $this;
+        });
+    }
+
+    /**
+     * Return a session to the subscription (reverse of useSession).
+     * Called when a session is cancelled after being counted.
+     */
+    public function returnSession(): self
+    {
+        return DB::transaction(function () {
+            $subscription = static::lockForUpdate()->find($this->id);
+
+            if (! $subscription) {
+                throw new Exception(__('subscriptions.subscription_not_found'));
+            }
+
+            $newRemaining = $subscription->sessions_remaining + 1;
+
+            $updateData = [
+                'sessions_used' => max(0, $subscription->sessions_used - 1),
+                'sessions_remaining' => $newRemaining,
+                'total_sessions_completed' => max(0, $subscription->total_sessions_completed - 1),
+            ];
+
+            // Clear sessions_exhausted flag if sessions are available again
+            $metadata = $subscription->metadata ?? [];
+            if (! empty($metadata['sessions_exhausted']) && $newRemaining > 0) {
+                unset($metadata['sessions_exhausted'], $metadata['sessions_exhausted_at']);
+                $updateData['metadata'] = $metadata ?: null;
+            }
+
+            // Legacy: If subscription was paused due to old exhaustion logic, reactivate in same UPDATE
+            if ($subscription->status === SessionSubscriptionStatus::PAUSED
+                && $subscription->pause_reason === config('subscriptions.legacy_sessions_exhausted_pause_reason')) {
+                $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
+                $updateData['paused_at'] = null;
+                $updateData['pause_reason'] = null;
+            }
+
+            $subscription->update($updateData);
+
+            Log::info('Session returned to '.class_basename(static::class)." {$subscription->id}");
+
+            $this->refresh();
+
+            return $this;
+        });
+    }
 
     // ========================================
     // SESSION TRACKING ABSTRACT METHODS

@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\View\View;
-use Illuminate\Pagination\LengthAwarePaginator;
-use App\Models\QuranSubscription;
-use Illuminate\Http\RedirectResponse;
-use Log;
-use DB;
-use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionPaymentStatus;
 use App\Models\Academy;
 use App\Models\QuranCircle;
+use App\Models\QuranSubscription;
+use DB;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
+use Log;
 
 class UnifiedQuranCircleController extends Controller
 {
@@ -279,6 +279,15 @@ class UnifiedQuranCircleController extends Controller
             $subscription = DB::transaction(function () use ($circle, $user, $academy) {
                 Log::info('[CircleEnroll] Inside transaction - creating subscription');
 
+                // Cancel any stale pending subscriptions for the same combination
+                app(\App\Services\Subscription\SubscriptionCreationService::class)
+                    ->cancelDuplicatePending(
+                        'quran',
+                        $academy->id,
+                        $user->id,
+                        ['quran_teacher_id' => $circle->quran_teacher_id, 'subscription_type' => 'group']
+                    );
+
                 $sub = QuranSubscription::create([
                     'academy_id' => $academy->id,
                     'student_id' => $user->id,
@@ -341,6 +350,15 @@ class UnifiedQuranCircleController extends Controller
                 'makeup_sessions_used' => 0,
                 'current_level' => 'beginner',
             ]);
+
+            // Cancel any stale pending subscriptions for the same combination
+            app(\App\Services\Subscription\SubscriptionCreationService::class)
+                ->cancelDuplicatePending(
+                    'quran',
+                    $academy->id,
+                    $user->id,
+                    ['quran_teacher_id' => $circle->quran_teacher_id, 'subscription_type' => 'group']
+                );
 
             // Create a free subscription
             QuranSubscription::create([

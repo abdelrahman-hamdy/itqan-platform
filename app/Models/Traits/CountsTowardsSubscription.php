@@ -3,9 +3,9 @@
 namespace App\Models\Traits;
 
 use App\Enums\SessionStatus;
-use Exception;
-use App\Models\QuranSubscription;
 use App\Models\AcademicSubscription;
+use App\Models\QuranSubscription;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -123,15 +123,8 @@ trait CountsTowardsSubscription
 
             if (! $alreadyCounted) {
                 try {
-                    // Lock the subscription row to prevent double-spending
-                    // Two concurrent processes could both read the same balance before either decrements
-                    $lockedSub = $subscription::lockForUpdate()->find($subscription->id);
-                    if (! $lockedSub) {
-                        throw new Exception("Subscription {$subscription->id} not found during counting");
-                    }
-
-                    // Deduct one session from subscription
-                    $lockedSub->useSession();
+                    // Deduct one session from subscription (useSession() acquires its own lock)
+                    $subscription->useSession();
 
                     // Mark this session as counted to prevent double-counting
                     $session->update(['subscription_counted' => true]);

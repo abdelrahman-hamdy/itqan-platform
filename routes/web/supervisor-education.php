@@ -121,6 +121,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Subscriptions
         Route::get('/subscriptions', [SupervisorSubscriptionsController::class, 'index'])->name('subscriptions.index');
+        Route::get('/subscriptions/create', \App\Livewire\Supervisor\CreateFullSubscription::class)->name('subscriptions.create');
         Route::get('/subscriptions/{type}/{subscription}', [SupervisorSubscriptionsController::class, 'show'])->name('subscriptions.show')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/activate', [SupervisorSubscriptionsController::class, 'activate'])->name('subscriptions.activate')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/pause', [SupervisorSubscriptionsController::class, 'pause'])->name('subscriptions.pause')->whereIn('type', ['quran', 'academic']);
@@ -128,6 +129,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/subscriptions/{type}/{subscription}/extend', [SupervisorSubscriptionsController::class, 'extend'])->name('subscriptions.extend')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/cancel-extension', [SupervisorSubscriptionsController::class, 'cancelExtension'])->name('subscriptions.cancel-extension')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/cancel', [SupervisorSubscriptionsController::class, 'cancel'])->name('subscriptions.cancel')->whereIn('type', ['quran', 'academic']);
+        Route::post('/subscriptions/{type}/{subscription}/renew', [SupervisorSubscriptionsController::class, 'renew'])->name('subscriptions.renew')->whereIn('type', ['quran', 'academic']);
+        Route::post('/subscriptions/{type}/{subscription}/resubscribe', [SupervisorSubscriptionsController::class, 'resubscribe'])->name('subscriptions.resubscribe')->whereIn('type', ['quran', 'academic']);
 
         // Payments (admin-only)
         Route::get('/payments', [SupervisorPaymentsController::class, 'index'])->name('payments.index');
