@@ -324,7 +324,7 @@
                             <div>
                                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ $duration->label() }}</label>
                                 <div class="relative">
-                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">ر.س</span>
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{{ getTeacherEarningsCurrencySymbol() }}</span>
                                     <input type="number" step="0.01" min="0"
                                            name="individual_session_prices[{{ $duration->value }}]"
                                            value="{{ old("individual_session_prices.{$duration->value}", $teacher->quranTeacherProfile?->individual_session_prices[$duration->value] ?? $teacher->academicTeacherProfile?->individual_session_prices[$duration->value] ?? '') }}"
@@ -345,7 +345,7 @@
                             <div>
                                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ $duration->label() }}</label>
                                 <div class="relative">
-                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">ر.س</span>
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{{ getTeacherEarningsCurrencySymbol() }}</span>
                                     <input type="number" step="0.01" min="0"
                                            name="group_session_prices[{{ $duration->value }}]"
                                            value="{{ old("group_session_prices.{$duration->value}", $teacher->quranTeacherProfile?->group_session_prices[$duration->value] ?? '') }}"

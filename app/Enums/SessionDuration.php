@@ -117,13 +117,16 @@ enum SessionDuration: int
      *
      * @param  string  $fieldPrefix  e.g. 'individual_session_prices' or 'quran_settings.default_group_session_prices'
      * @param  string|null  $placeholder  e.g. __('filament.academy_default')
+     * @param  string|null  $currencySymbol  Currency prefix. Defaults to teacher earnings currency.
      */
-    public static function priceInputGrid(string $fieldPrefix, ?string $placeholder = null): array
+    public static function priceInputGrid(string $fieldPrefix, ?string $placeholder = null, ?string $currencySymbol = null): array
     {
+        $symbol = $currencySymbol ?? getTeacherEarningsCurrencySymbol();
+
         return collect(self::cases())->map(fn (self $duration) => \Filament\Forms\Components\TextInput::make("{$fieldPrefix}.{$duration->value}")
             ->label($duration->label())
             ->numeric()
-            ->prefix('ر.س')
+            ->prefix($symbol)
             ->minValue(0)
             ->when($placeholder, fn ($input) => $input->placeholder($placeholder))
         )->toArray();

@@ -47,6 +47,46 @@ if (! function_exists('getAcademyCurrency')) {
     }
 }
 
+if (! function_exists('getTeacherEarningsCurrency')) {
+    /**
+     * Get the teacher earnings currency for the current academy.
+     * Falls back to the academy's general currency if not set.
+     */
+    function getTeacherEarningsCurrency(?Academy $academy = null): Currency
+    {
+        if (! $academy) {
+            $user = auth()->user();
+            $academy = $user?->academy;
+
+            if (! $academy && class_exists(AcademyContextService::class)) {
+                $academy = AcademyContextService::getCurrentAcademy();
+            }
+        }
+
+        if ($academy) {
+            if ($academy->teacher_earnings_currency instanceof Currency) {
+                return $academy->teacher_earnings_currency;
+            }
+
+            if ($academy->teacher_earnings_currency) {
+                return Currency::tryFrom($academy->teacher_earnings_currency) ?? getAcademyCurrency($academy);
+            }
+        }
+
+        return getAcademyCurrency($academy);
+    }
+}
+
+if (! function_exists('getTeacherEarningsCurrencySymbol')) {
+    /**
+     * Get the currency symbol for teacher earnings display.
+     */
+    function getTeacherEarningsCurrencySymbol(?Academy $academy = null): string
+    {
+        return getCurrencySymbol(getTeacherEarningsCurrency($academy));
+    }
+}
+
 if (! function_exists('getCurrencyCode')) {
     /**
      * Get the currency code (ISO 4217)

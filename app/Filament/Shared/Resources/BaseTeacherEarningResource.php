@@ -122,7 +122,7 @@ abstract class BaseTeacherEarningResource extends Resource
                         TextInput::make('amount')
                             ->label('المبلغ')
                             ->numeric()
-                            ->prefix(getCurrencySymbol())
+                            ->prefix(getTeacherEarningsCurrencySymbol())
                             ->disabled(),
 
                         TextInput::make('calculation_method')
@@ -164,7 +164,7 @@ abstract class BaseTeacherEarningResource extends Resource
                                 $lines = [];
                                 foreach ($record->rate_snapshot as $key => $value) {
                                     $label = $labels[$key] ?? $key;
-                                    $lines[] = "{$label}: ".number_format($value, 2).' '.getCurrencySymbol();
+                                    $lines[] = "{$label}: ".number_format($value, 2).' '.getTeacherEarningsCurrencySymbol();
                                 }
 
                                 return implode(' | ', $lines) ?: '-';
@@ -291,7 +291,7 @@ abstract class BaseTeacherEarningResource extends Resource
 
             TextColumn::make('amount')
                 ->label('المبلغ')
-                ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
+                ->money(fn ($record) => $record->academy?->teacher_earnings_currency?->value ?? $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                 ->sortable()
                 ->toggleable(),
 

@@ -274,6 +274,8 @@ return [
         'group_session_prices' => 'Group Session Prices',
         'academy_default_placeholder' => 'Academy Default',
         'legacy_pricing' => 'Legacy Pricing',
+        'teacher_earnings_currency' => 'Teacher Earnings Currency',
+        'teacher_earnings_currency_help' => 'Currency used for teacher earnings. Leave blank to use academy currency.',
     ],
 
     'students' => [

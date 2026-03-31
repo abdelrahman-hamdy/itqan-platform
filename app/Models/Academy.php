@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use InvalidArgumentException;
-use App\Services\Payment\DTOs\AcademyPaymentSettings;
 use App\Constants\DefaultAcademy;
 use App\Enums\Country;
 use App\Enums\Currency;
@@ -11,12 +9,14 @@ use App\Enums\GradientPalette;
 use App\Enums\TailwindColor;
 use App\Enums\Timezone;
 use App\Enums\UserType;
+use App\Services\Payment\DTOs\AcademyPaymentSettings;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use InvalidArgumentException;
 
 class Academy extends Model
 {
@@ -36,6 +36,7 @@ class Academy extends Model
         'country',
         'timezone',
         'currency',
+        'teacher_earnings_currency',
         'academic_settings',
         'quran_settings',
         'notification_settings',
@@ -71,6 +72,7 @@ class Academy extends Model
         'active_subscriptions' => 'integer',
         'country' => Country::class,
         'currency' => Currency::class,
+        'teacher_earnings_currency' => Currency::class,
         'timezone' => Timezone::class,
         'brand_color' => TailwindColor::class,
         'gradient_palette' => GradientPalette::class,

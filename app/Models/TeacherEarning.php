@@ -140,7 +140,7 @@ class TeacherEarning extends Model
      */
     public function getFormattedAmountAttribute(): string
     {
-        return number_format($this->amount, 2).' '.getCurrencySymbol();
+        return number_format($this->amount, 2).' '.getTeacherEarningsCurrencySymbol($this->academy);
     }
 
     /**

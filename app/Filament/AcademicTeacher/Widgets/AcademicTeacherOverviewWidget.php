@@ -161,12 +161,12 @@ class AcademicTeacherOverviewWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
                 ->color($pendingHomework > 0 ? 'danger' : 'gray'),
 
-            Stat::make('أرباح هذا الشهر', number_format($thisMonthEarnings, 2).' '.getCurrencySymbol())
+            Stat::make('أرباح هذا الشهر', number_format($thisMonthEarnings, 2).' '.getTeacherEarningsCurrencySymbol())
                 ->description('الشهر الحالي')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color($thisMonthEarnings > 0 ? 'success' : 'gray'),
 
-            Stat::make('إجمالي الأرباح', number_format($allTimeEarnings, 2).' '.getCurrencySymbol())
+            Stat::make('إجمالي الأرباح', number_format($allTimeEarnings, 2).' '.getTeacherEarningsCurrencySymbol())
                 ->description('كل الأوقات')
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('info'),

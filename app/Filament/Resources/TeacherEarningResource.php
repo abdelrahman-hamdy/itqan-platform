@@ -158,7 +158,7 @@ class TeacherEarningResource extends BaseTeacherEarningResource
 
             TextColumn::make('amount')
                 ->label('المبلغ')
-                ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
+                ->money(fn ($record) => $record->academy?->teacher_earnings_currency?->value ?? $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                 ->sortable(),
 
             TextColumn::make('teacher_type')
@@ -355,11 +355,11 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                             TextInput::make('amount_from')
                                 ->label('من')
                                 ->numeric()
-                                ->prefix(getCurrencySymbol()),
+                                ->prefix(getTeacherEarningsCurrencySymbol()),
                             TextInput::make('amount_to')
                                 ->label('إلى')
                                 ->numeric()
-                                ->prefix(getCurrencySymbol()),
+                                ->prefix(getTeacherEarningsCurrencySymbol()),
                         ]),
                 ])
                 ->query(function (Builder $query, array $data): Builder {
@@ -377,12 +377,12 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                     $indicators = [];
 
                     if ($data['amount_from'] ?? null) {
-                        $indicators[] = Indicator::make('من: '.number_format($data['amount_from'], 2).' '.getCurrencySymbol())
+                        $indicators[] = Indicator::make('من: '.number_format($data['amount_from'], 2).' '.getTeacherEarningsCurrencySymbol())
                             ->removeField('amount_from');
                     }
 
                     if ($data['amount_to'] ?? null) {
-                        $indicators[] = Indicator::make('إلى: '.number_format($data['amount_to'], 2).' '.getCurrencySymbol())
+                        $indicators[] = Indicator::make('إلى: '.number_format($data['amount_to'], 2).' '.getTeacherEarningsCurrencySymbol())
                             ->removeField('amount_to');
                     }
 

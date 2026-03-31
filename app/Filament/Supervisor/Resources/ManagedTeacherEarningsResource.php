@@ -254,11 +254,11 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
                             TextInput::make('amount_from')
                                 ->label('من')
                                 ->numeric()
-                                ->prefix(getCurrencySymbol()),
+                                ->prefix(getTeacherEarningsCurrencySymbol()),
                             TextInput::make('amount_to')
                                 ->label('إلى')
                                 ->numeric()
-                                ->prefix(getCurrencySymbol()),
+                                ->prefix(getTeacherEarningsCurrencySymbol()),
                         ]),
                 ])
                 ->query(function (Builder $query, array $data): Builder {
@@ -276,12 +276,12 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
                     $indicators = [];
 
                     if ($data['amount_from'] ?? null) {
-                        $indicators[] = Indicator::make('من: '.number_format($data['amount_from'], 2).' '.getCurrencySymbol())
+                        $indicators[] = Indicator::make('من: '.number_format($data['amount_from'], 2).' '.getTeacherEarningsCurrencySymbol())
                             ->removeField('amount_from');
                     }
 
                     if ($data['amount_to'] ?? null) {
-                        $indicators[] = Indicator::make('إلى: '.number_format($data['amount_to'], 2).' '.getCurrencySymbol())
+                        $indicators[] = Indicator::make('إلى: '.number_format($data['amount_to'], 2).' '.getTeacherEarningsCurrencySymbol())
                             ->removeField('amount_to');
                     }
 

@@ -65,7 +65,7 @@ class EarningsStatsWidget extends BaseWidget
             ->whereMonth('earning_month', now()->month)
             ->count();
 
-        $currency = getAcademyCurrency()->value;
+        $currency = getTeacherEarningsCurrency()->value;
 
         return [
             Stat::make('أرباح هذا الشهر', number_format($thisMonth, 2).' '.$currency)

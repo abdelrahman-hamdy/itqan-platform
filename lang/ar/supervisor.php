@@ -274,6 +274,8 @@ return [
         'group_session_prices' => 'أسعار جلسات الحلقات',
         'academy_default_placeholder' => 'افتراضي الأكاديمية',
         'legacy_pricing' => 'الأسعار القديمة',
+        'teacher_earnings_currency' => 'عملة أرباح المعلمين',
+        'teacher_earnings_currency_help' => 'العملة المستخدمة لأرباح المعلمين. اتركه فارغاً لاستخدام عملة الأكاديمية.',
     ],
 
     'students' => [

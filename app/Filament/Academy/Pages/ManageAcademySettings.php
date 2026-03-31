@@ -2,6 +2,7 @@
 
 namespace App\Filament\Academy\Pages;
 
+use App\Enums\Currency;
 use App\Enums\UserType;
 use App\Models\Academy;
 use Filament\Actions\Action;
@@ -143,16 +144,16 @@ class ManageAcademySettings extends Page implements HasForms
 
                         Select::make('currency')
                             ->label('العملة')
-                            ->options([
-                                'SAR' => 'ريال سعودي (SAR)',
-                                'EGP' => 'جنيه مصري (EGP)',
-                                'AED' => 'درهم إماراتي (AED)',
-                                'KWD' => 'دينار كويتي (KWD)',
-                                'QAR' => 'ريال قطري (QAR)',
-                                'BHD' => 'دينار بحريني (BHD)',
-                            ])
+                            ->options(Currency::toArray())
                             ->required()
                             ->searchable(),
+
+                        Select::make('teacher_earnings_currency')
+                            ->label('عملة أرباح المعلمين')
+                            ->options(Currency::toArray())
+                            ->searchable()
+                            ->placeholder('استخدام عملة الأكاديمية')
+                            ->helperText('العملة المستخدمة لأرباح المعلمين. اتركه فارغاً لاستخدام عملة الأكاديمية.'),
                     ])
                     ->columns(2),
             ])
@@ -178,7 +179,7 @@ class ManageAcademySettings extends Page implements HasForms
             'name', 'name_en', 'description',
             'logo', 'favicon',
             'email', 'phone',
-            'timezone', 'currency',
+            'timezone', 'currency', 'teacher_earnings_currency',
         ];
         $data = array_intersect_key($data, array_flip($allowedFields));
 

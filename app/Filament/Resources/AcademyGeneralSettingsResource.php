@@ -133,6 +133,13 @@ class AcademyGeneralSettingsResource extends BaseResource
                                     ->helperText('العملة المستخدمة في جميع المعاملات المالية')
                                     ->enum(Currency::class),
 
+                                Select::make('teacher_earnings_currency')
+                                    ->label('عملة أرباح المعلمين')
+                                    ->options(Currency::toArray())
+                                    ->searchable()
+                                    ->placeholder('استخدام عملة الأكاديمية')
+                                    ->helperText('العملة المستخدمة لأرباح المعلمين. اتركه فارغاً لاستخدام عملة الأكاديمية.'),
+
                                 Select::make('timezone')
                                     ->label('المنطقة الزمنية')
                                     ->options(Timezone::toArray())

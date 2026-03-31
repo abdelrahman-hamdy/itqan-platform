@@ -2,6 +2,7 @@
 
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+    $earningsCurrencySymbol = getTeacherEarningsCurrencySymbol();
 
     $hasActiveFilters = ($currentTeacherId ?? null) || ($currentMonth ?? null);
     $filterCount = (($currentTeacherId ?? null) ? 1 : 0) + (($currentMonth ?? null) ? 1 : 0);
@@ -174,7 +175,7 @@
                                 @foreach($sourceColumns as $sourceKey => $colorClass)
                                     <td class="px-3 py-4 text-center">
                                         @if($summary[$sourceKey]['amount'] > 0)
-                                            <span class="text-sm font-medium {{ $colorClass }}">{{ number_format($summary[$sourceKey]['amount'], 2) }}</span>
+                                            <span class="text-sm font-medium {{ $colorClass }}">{{ number_format($summary[$sourceKey]['amount'], 2) }} {{ $earningsCurrencySymbol }}</span>
                                             @foreach($summary[$sourceKey]['details'] as $detail)
                                                 <p class="text-xs text-gray-400 mt-0.5">
                                                     {{ $detail['sessions_count'] }} × {{ number_format($detail['rate'] ?? 0, 2) }}
@@ -193,7 +194,7 @@
                                     <span class="text-sm text-gray-600">{{ $summary['sessions_count'] }}</span>
                                 </td>
                                 <td class="px-4 md:px-6 py-4 text-center whitespace-nowrap">
-                                    <span class="text-sm font-bold text-gray-900">{{ number_format($summary['total'], 2) }}</span>
+                                    <span class="text-sm font-bold text-gray-900">{{ number_format($summary['total'], 2) }} {{ $earningsCurrencySymbol }}</span>
                                 </td>
                             </tr>
                         @endforeach
@@ -204,25 +205,25 @@
                             <td class="px-4 md:px-6 py-3 text-sm font-bold text-gray-900">{{ __('supervisor.teacher_earnings.summary_total') }}</td>
                             <td class="px-3 py-3 text-center text-sm font-bold text-green-700">
                                 @php $totalQI = collect($teacherSummaries)->sum(fn($s) => $s['quran_individual']['amount']); @endphp
-                                {{ $totalQI > 0 ? number_format($totalQI, 2) : '-' }}
+                                {{ $totalQI > 0 ? number_format($totalQI, 2) . ' ' . getTeacherEarningsCurrencySymbol() : '-' }}
                             </td>
                             <td class="px-3 py-3 text-center text-sm font-bold text-emerald-700">
                                 @php $totalQG = collect($teacherSummaries)->sum(fn($s) => $s['quran_group']['amount']); @endphp
-                                {{ $totalQG > 0 ? number_format($totalQG, 2) : '-' }}
+                                {{ $totalQG > 0 ? number_format($totalQG, 2) . ' ' . getTeacherEarningsCurrencySymbol() : '-' }}
                             </td>
                             <td class="px-3 py-3 text-center text-sm font-bold text-violet-700">
                                 @php $totalAc = collect($teacherSummaries)->sum(fn($s) => $s['academic']['amount']); @endphp
-                                {{ $totalAc > 0 ? number_format($totalAc, 2) : '-' }}
+                                {{ $totalAc > 0 ? number_format($totalAc, 2) . ' ' . getTeacherEarningsCurrencySymbol() : '-' }}
                             </td>
                             <td class="px-3 py-3 text-center text-sm font-bold text-blue-700">
                                 @php $totalIC = collect($teacherSummaries)->sum(fn($s) => $s['interactive']['amount']); @endphp
-                                {{ $totalIC > 0 ? number_format($totalIC, 2) : '-' }}
+                                {{ $totalIC > 0 ? number_format($totalIC, 2) . ' ' . getTeacherEarningsCurrencySymbol() : '-' }}
                             </td>
                             <td class="px-3 py-3 text-center text-sm font-bold text-gray-700">
                                 {{ collect($teacherSummaries)->sum('sessions_count') }}
                             </td>
                             <td class="px-4 md:px-6 py-3 text-center text-sm font-bold text-gray-900">
-                                {{ number_format(collect($teacherSummaries)->sum('total'), 2) }}
+                                {{ number_format(collect($teacherSummaries)->sum('total'), 2) }} {{ $earningsCurrencySymbol }}
                             </td>
                         </tr>
                     </tfoot>
