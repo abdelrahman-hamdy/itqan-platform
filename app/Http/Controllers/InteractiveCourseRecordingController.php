@@ -2,12 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Exception;
-use Log;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Illuminate\Http\RedirectResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
-use Http;
 use App\Enums\SessionStatus;
 use App\Http\Requests\StartRecordingRequest;
 use App\Http\Requests\StopRecordingRequest;
@@ -15,10 +9,16 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\InteractiveCourseSession;
 use App\Models\SessionRecording;
 use App\Services\RecordingService;
+use Exception;
+use Http;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Log;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InteractiveCourseRecordingController extends Controller
 {
@@ -333,10 +333,12 @@ class InteractiveCourseRecordingController extends Controller
                     abort(404, __('errors.recording_download_failed_server'));
                 }
 
+                $contentType = $recording->file_format === 'ogg' ? 'audio/ogg' : 'video/mp4';
+
                 return response()->stream(function () use ($response) {
                     echo $response->body();
                 }, 200, [
-                    'Content-Type' => 'video/mp4',
+                    'Content-Type' => $contentType,
                     'Content-Disposition' => 'inline; filename="'.($recording->file_name ?? 'recording.mp4').'"',
                     'Accept-Ranges' => 'bytes',
                 ]);
@@ -355,9 +357,10 @@ class InteractiveCourseRecordingController extends Controller
             abort(404, __('errors.recording_file_not_found'));
         }
 
-        // Stream the file with proper headers for video playback
+        $contentType = $recording->file_format === 'ogg' ? 'audio/ogg' : 'video/mp4';
+
         return Storage::response($recording->file_path, $recording->file_name ?? 'recording.mp4', [
-            'Content-Type' => 'video/mp4',
+            'Content-Type' => $contentType,
             'Accept-Ranges' => 'bytes',
         ]);
     }

@@ -39,7 +39,7 @@ class LiveKitRecordingManager
 
             // Build file path for local storage on LiveKit server
             $audioOnly = $options['audio_only'] ?? false;
-            $extension = $audioOnly ? '.m4a' : '.mp4';
+            $extension = $audioOnly ? '.ogg' : '.mp4';
             $filename = $options['filename'] ?? sprintf('recording-%s-%s', $roomName, now()->timestamp);
             $filepath = sprintf(
                 '%s/%s%s',

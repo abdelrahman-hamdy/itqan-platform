@@ -3,8 +3,9 @@
 namespace App\Services;
 
 use App\Enums\SessionStatus;
-use Exception;
 use App\Models\BaseSession;
+use App\Models\MeetingAttendanceEvent;
+use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -85,17 +86,37 @@ class SessionSchedulerService
         $graceMinutes = $this->settingsService->getGracePeriodMinutes($session);
         $graceDeadline = $session->scheduled_at->copy()->addMinutes($graceMinutes);
 
-        // Use eager-loaded collection to avoid N+1 queries (2 DB queries → 0)
+        // SAFETY: Never mark absent if attendance hasn't been calculated yet.
+        // The race condition: cron runs before CalculateSessionForAttendance job finishes,
+        // sees total_duration_minutes=0, and prematurely marks the session ABSENT.
         $attendances = $session->relationLoaded('meetingAttendances')
             ? $session->meetingAttendances
             : $session->meetingAttendances()->get();
 
-        $hasStudentParticipation = $attendances
-            ->where('user_type', 'student')
+        $studentAttendances = $attendances->where('user_type', 'student');
+
+        // If any student attendance record exists but isn't calculated yet, WAIT — don't mark absent
+        if ($studentAttendances->where('is_calculated', false)->isNotEmpty()) {
+            return false;
+        }
+
+        // If any student has a first_join_time, they DID join — never mark absent
+        if ($studentAttendances->whereNotNull('first_join_time')->isNotEmpty()) {
+            return false;
+        }
+
+        // Fallback: check raw webhook events in case MeetingAttendance failed to create
+        if (MeetingAttendanceEvent::where('session_id', $session->id)
+            ->where('event_type', 'joined')
+            ->exists()) {
+            return false;
+        }
+
+        // Only mark absent if grace period passed AND no student participation evidence at all
+        $hasStudentParticipation = $studentAttendances
             ->where('total_duration_minutes', '>', 0)
             ->isNotEmpty();
 
-        // Check if no teacher participation (for logging purposes)
         $hasTeacherParticipation = $attendances
             ->where('user_type', 'teacher')
             ->where('total_duration_minutes', '>', 0)
