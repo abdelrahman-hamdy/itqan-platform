@@ -175,6 +175,23 @@ class SupervisorParentsController extends BaseSupervisorWebController
         return redirect()->back()->with('success', __('supervisor.parents.status_updated'));
     }
 
+    public function verifyEmail(Request $request, $subdomain, User $parent): RedirectResponse
+    {
+        if (! $this->canManageParents()) {
+            abort(403);
+        }
+
+        $this->ensureParentBelongsToScope($parent);
+
+        if ($parent->hasVerifiedEmail()) {
+            return redirect()->back()->with('info', __('supervisor.parents.email_already_verified'));
+        }
+
+        $parent->markEmailAsVerified();
+
+        return redirect()->back()->with('success', __('supervisor.parents.email_verified_success'));
+    }
+
     public function resetPassword(Request $request, $subdomain, User $parent): RedirectResponse
     {
         if (! $this->canResetPasswords()) {

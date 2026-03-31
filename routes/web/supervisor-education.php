@@ -74,6 +74,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/parents', [SupervisorParentsController::class, 'store'])->name('parents.store');
         Route::post('/parents/{parent}/toggle-status', [SupervisorParentsController::class, 'toggleStatus'])->name('parents.toggle-status');
         Route::post('/parents/{parent}/reset-password', [SupervisorParentsController::class, 'resetPassword'])->name('parents.reset-password');
+        Route::post('/parents/{parent}/verify-email', [SupervisorParentsController::class, 'verifyEmail'])->name('parents.verify-email');
         Route::delete('/parents/{parent}', [SupervisorParentsController::class, 'destroy'])->name('parents.destroy');
 
         // Supervisors (admin-only management)
