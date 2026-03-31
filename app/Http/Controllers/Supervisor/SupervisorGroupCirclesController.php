@@ -97,11 +97,13 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
             'schedule_days.*' => Rule::in($weekDayValues),
             'schedule_time' => 'nullable|string',
             'status' => 'required|in:0,1',
+            'recording_enabled' => 'required|in:0,1',
             'supervisor_notes' => 'nullable|string|max:2000',
             'admin_notes' => 'nullable|string|max:1000',
         ]);
 
         $validated['status'] = (bool) $validated['status'];
+        $validated['recording_enabled'] = (bool) $validated['recording_enabled'];
 
         // Supervisors can only edit supervisor_notes; admins can only edit admin_notes
         if ($this->isAdminUser()) {

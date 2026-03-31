@@ -242,7 +242,20 @@
                                 </div>
                             </div>
 
-                            {{-- Section 4: Status & Notes --}}
+                            {{-- Section 4: Recording --}}
+                            <div class="border-t border-gray-100 pt-4">
+                                <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('recordings.recording_settings') }}</h4>
+                                <label class="inline-flex items-center gap-2 cursor-pointer">
+                                    <input type="hidden" name="recording_enabled" value="0">
+                                    <input type="checkbox" name="recording_enabled" value="1"
+                                           {{ old('recording_enabled', $circle->recording_enabled) ? 'checked' : '' }}
+                                           class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                                    <span class="text-sm text-gray-700">{{ __('recordings.enable_audio_recording') }}</span>
+                                </label>
+                                <p class="text-xs text-gray-500 mt-1">{{ __('recordings.enable_audio_recording_help') }}</p>
+                            </div>
+
+                            {{-- Section 5: Status & Notes --}}
                             <div class="border-t border-gray-100 pt-4">
                                 <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('supervisor.group_circles.status_and_notes') }}</h4>
                                 <div class="space-y-3">
