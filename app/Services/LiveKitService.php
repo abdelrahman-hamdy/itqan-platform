@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Exception;
 use App\Contracts\LiveKitServiceInterface;
 use App\Models\Academy;
 use App\Models\User;
@@ -11,6 +10,7 @@ use App\Services\LiveKit\LiveKitRoomManager;
 use App\Services\LiveKit\LiveKitTokenGenerator;
 use App\Services\LiveKit\LiveKitWebhookHandler;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -173,6 +173,16 @@ class LiveKitService implements LiveKitServiceInterface
     public function startRecording(string $roomName, array $options = []): array
     {
         return $this->recordingManager->startRecording($roomName, $options);
+    }
+
+    /**
+     * Start audio-only track composite recording
+     *
+     * Delegates to LiveKitRecordingManager
+     */
+    public function startTrackRecording(string $roomName, array $options = []): array
+    {
+        return $this->recordingManager->startTrackRecording($roomName, $options);
     }
 
     /**

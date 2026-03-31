@@ -8,6 +8,7 @@ use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
 use App\Filament\Resources\QuranSessionResource;
 use App\Filament\Shared\Actions\MeetingActions;
+use App\Filament\Shared\Resources\BaseInteractiveCourseSessionResource;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Infolists\Components\IconEntry;
@@ -227,6 +228,8 @@ class ViewQuranSession extends ViewRecord
                     ])
                     ->collapsible()
                     ->collapsed(),
+
+                BaseInteractiveCourseSessionResource::getRecordingSection(),
 
                 Section::make('معلومات النظام')
                     ->schema([

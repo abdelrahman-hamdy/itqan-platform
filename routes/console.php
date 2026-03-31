@@ -121,6 +121,14 @@ Schedule::command('recordings:stop-expired')
     ->runInBackground()
     ->description('Stop recordings for sessions that have reached their scheduled end time');
 
+// RECORDING: Auto-delete recordings older than 7 days
+Schedule::command('recordings:cleanup --days=7')
+    ->name('cleanup-expired-recordings')
+    ->dailyAt('03:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Delete session recordings older than 7 days');
+
 // ════════════════════════════════════════════════════════════════
 // SUBSCRIPTION MANAGEMENT
 // ════════════════════════════════════════════════════════════════

@@ -8,6 +8,7 @@ use App\Filament\Academy\Resources\QuranSubscriptionResource;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
 use App\Filament\Resources\QuranCircleResource;
 use App\Filament\Shared\Actions\MeetingActions;
+use App\Filament\Shared\Resources\BaseInteractiveCourseSessionResource;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -43,6 +44,13 @@ class ViewQuranSession extends ViewRecord
                 ->visible(fn ($record) => (bool) $record->quran_subscription_id),
             DeleteAction::make()
                 ->label('حذف'),
+        ];
+    }
+
+    protected function getFooterSchemas(): array
+    {
+        return [
+            BaseInteractiveCourseSessionResource::getRecordingSection(),
         ];
     }
 }

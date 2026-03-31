@@ -3,24 +3,24 @@
 namespace App\Filament\Shared\Resources;
 
 use App\Enums\SessionSubscriptionStatus;
-use Filament\Forms\Components\Placeholder;
-use Filament\Schemas\Components\Section;
-use Illuminate\Database\Eloquent\Model;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Grid;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Tables\Columns\IconColumn;
 use App\Models\QuranIndividualCircle;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 
 /**
@@ -33,7 +33,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
 {
     protected static ?string $model = QuranIndividualCircle::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user';
 
     protected static ?string $modelLabel = 'حلقة فردية';
 
@@ -109,6 +109,17 @@ abstract class BaseQuranIndividualCircleResource extends Resource
 
         // Add progress tracking section (shared)
         $schema[] = static::getProgressTrackingFormSection()
+            ->hidden(fn ($record) => $record && static::isSubscriptionSuspended($record));
+
+        // Recording settings (admin only)
+        $schema[] = Section::make('إعدادات التسجيل')
+            ->schema([
+                Toggle::make('recording_enabled')
+                    ->label('تسجيل صوتي للجلسات')
+                    ->helperText('تفعيل التسجيل الصوتي التلقائي لجلسات هذه الحلقة')
+                    ->default(false),
+            ])
+            ->collapsed()
             ->hidden(fn ($record) => $record && static::isSubscriptionSuspended($record));
 
         // Add additional sections from child classes

@@ -5,6 +5,7 @@ namespace App\Filament\Shared\Resources;
 use App\Enums\RecordingStatus;
 use App\Filament\Resources\BaseResource;
 use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
 use App\Models\SessionRecording;
 use App\Services\AcademyContextService;
 use Filament\Actions\Action;
@@ -198,6 +199,20 @@ abstract class BaseSessionRecordingResource extends BaseResource
                 ->sortable()
                 ->toggleable(isToggledHiddenByDefault: true),
 
+            // Retention countdown
+            TextColumn::make('expires_in')
+                ->label(__('recordings.expires_in'))
+                ->getStateUsing(function (SessionRecording $record): ?string {
+                    if (! $record->completed_at || $record->status !== RecordingStatus::COMPLETED) {
+                        return null;
+                    }
+                    $daysLeft = 7 - (int) $record->completed_at->diffInDays(now());
+
+                    return $daysLeft > 0 ? $daysLeft.' '.__('recordings.days') : __('recordings.today');
+                })
+                ->badge()
+                ->color(fn (?string $state): string => $state && (str_contains($state, '1 ') || $state === __('recordings.today')) ? 'danger' : 'warning'),
+
             // Created At
             TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')
@@ -390,8 +405,11 @@ abstract class BaseSessionRecordingResource extends BaseResource
                 'recordable.course.assignedTeacher.user',
                 'recordable.course.academy',
             ])
-            // Only show InteractiveCourseSession recordings — use morph alias, not FQCN
-            ->where('recordable_type', (new InteractiveCourseSession)->getMorphClass());
+            // Show recordings for supported session types (morph aliases, not FQCNs)
+            ->whereIn('recordable_type', [
+                (new InteractiveCourseSession)->getMorphClass(),
+                (new QuranSession)->getMorphClass(),
+            ]);
 
         return static::scopeEloquentQuery($query);
     }

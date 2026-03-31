@@ -240,11 +240,9 @@ class LiveKitWebhookController extends Controller
                 return;
             }
 
-            // Allow recording if session is already ONGOING (participant joined early),
-            // otherwise require scheduled time to have started
+            // Only record during actual session time (not preparation or grace period)
             $session->refresh();
-            if ($session->status !== SessionStatus::ONGOING
-                && $session->scheduled_at && now()->lt($session->scheduled_at)) {
+            if ($session->scheduled_at && now()->lt($session->scheduled_at)) {
                 Log::debug('Auto-recording skipped: Session scheduled time not yet reached', [
                     'session_id' => $session->id,
                     'scheduled_at' => $session->scheduled_at,

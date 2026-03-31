@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Contracts\RecordingCapable;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Models\Traits\CountsTowardsSubscription;
+use App\Models\Traits\HasRecording;
 use App\Services\AcademyContextService;
 use App\Services\LiveKitService;
 use App\Services\NotificationService;
@@ -71,9 +73,10 @@ use Illuminate\Support\Facades\Log;
  * @see BaseSession Parent class with common session fields
  * @see CountsTowardsSubscription Trait for subscription logic
  */
-class QuranSession extends BaseSession
+class QuranSession extends BaseSession implements RecordingCapable
 {
     use CountsTowardsSubscription;
+    use HasRecording;
 
     /**
      * Quran-specific fillable fields (merged with parent in constructor)
@@ -1536,6 +1539,42 @@ class QuranSession extends BaseSession
 
         return $participants;
     }
+
+    // ========================================
+    // Recording (Audio-Only)
+    // ========================================
+
+    public function isRecordingEnabled(): bool
+    {
+        if ($this->session_type === 'individual') {
+            return (bool) $this->individualCircle?->recording_enabled;
+        }
+
+        if (in_array($this->session_type, ['group', 'circle'])) {
+            return (bool) $this->circle?->recording_enabled;
+        }
+
+        return false;
+    }
+
+    public function getRecordingConfiguration(): array
+    {
+        return [
+            'room_name' => $this->getRecordingRoomName(),
+            'filename' => $this->getRecordingFilename(),
+            'storage_path' => $this->getRecordingStoragePath(),
+            'metadata' => $this->getRecordingMetadata(),
+            'audio_only' => true,
+            'video_only' => false,
+            'preset' => 'AUDIO_ONLY',
+            'audio_bitrate' => 64000,
+            'audio_frequency' => 44100,
+        ];
+    }
+
+    // ========================================
+    // Meeting Configuration
+    // ========================================
 
     /**
      * Get extended meeting configuration specific to Quran sessions

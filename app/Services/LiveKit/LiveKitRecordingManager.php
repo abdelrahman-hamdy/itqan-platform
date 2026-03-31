@@ -241,21 +241,29 @@ class LiveKitRecordingManager
             }
 
             $filename = $trackOptions['filename'] ?? sprintf('track-recording-%s-%s', $roomName, now()->timestamp);
+            $extension = ($trackOptions['audio_only'] ?? false) ? '.m4a' : '.mp4';
             $filepath = sprintf(
-                '%s/%s',
+                '%s/%s%s',
                 rtrim($trackOptions['storage_path'] ?? '/recordings', '/'),
-                $filename
+                $filename,
+                $extension
             );
+
+            $fileOutput = ['filepath' => $filepath];
+
+            // Audio quality options
+            if (isset($trackOptions['audio_bitrate'])) {
+                $fileOutput['audio_bitrate'] = $trackOptions['audio_bitrate'];
+            }
+            if (isset($trackOptions['audio_frequency'])) {
+                $fileOutput['audio_frequency'] = $trackOptions['audio_frequency'];
+            }
 
             $payload = [
                 'room_name' => $roomName,
                 'audio_only' => $trackOptions['audio_only'] ?? false,
                 'video_only' => $trackOptions['video_only'] ?? false,
-                'file_outputs' => [
-                    [
-                        'filepath' => $filepath,
-                    ],
-                ],
+                'file_outputs' => [$fileOutput],
             ];
 
             Log::info('Starting LiveKit track recording', [

@@ -8,4 +8,8 @@ return [
     'processing' => 'Processing recording...',
     'browser_not_supported' => 'Your browser does not support video playback.',
     'download' => 'Download',
+    'retention_notice' => 'Recordings are automatically deleted 7 days after completion',
+    'expires_in' => 'Expires in',
+    'days' => 'days',
+    'today' => 'Today',
 ];

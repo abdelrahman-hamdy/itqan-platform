@@ -2,22 +2,21 @@
 
 namespace App\Filament\Shared\Resources;
 
-use Filament\Schemas\Components\Component;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Tables\Enums\FiltersLayout;
 use App\Enums\DifficultyLevel;
 use App\Enums\WeekDays;
 use App\Models\QuranCircle;
-use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -34,7 +33,7 @@ abstract class BaseQuranCircleResource extends Resource
 {
     protected static ?string $model = QuranCircle::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-users';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-users';
 
     protected static ?string $navigationLabel = 'حلقات القرآن الجماعية';
 
@@ -224,6 +223,10 @@ abstract class BaseQuranCircleResource extends Resource
                                 ->label('حالة الحلقة')
                                 ->helperText('تفعيل أو إلغاء تفعيل الحلقة')
                                 ->default(true),
+                            Toggle::make('recording_enabled')
+                                ->label('تسجيل صوتي للجلسات')
+                                ->helperText('تفعيل التسجيل الصوتي التلقائي لجلسات هذه الحلقة')
+                                ->default(false),
                         ]),
                 ]),
         ];

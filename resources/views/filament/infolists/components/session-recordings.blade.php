@@ -85,4 +85,8 @@
             </div>
         @endforeach
     @endif
+
+    @if($completedRecordings->isNotEmpty())
+        <p class="text-xs text-gray-400 mt-2">{{ __('recordings.retention_notice') }}</p>
+    @endif
 </div>

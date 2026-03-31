@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
-use DB;
-use Log;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\Traits\ScopedToAcademy;
+use DB;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Log;
 
 /**
  * QuranIndividualCircle Model
@@ -49,6 +49,7 @@ class QuranIndividualCircle extends Model
         'total_reviewed_surahs',
         'default_duration_minutes',
         'is_active',
+        'recording_enabled',
         'started_at',
         'completed_at',
         'last_session_at',
@@ -69,6 +70,7 @@ class QuranIndividualCircle extends Model
         'total_reviewed_surahs' => 'integer',
         'default_duration_minutes' => 'integer',
         'is_active' => 'boolean',
+        'recording_enabled' => 'boolean',
         'learning_objectives' => 'array',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
