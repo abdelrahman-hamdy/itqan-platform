@@ -331,7 +331,7 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     private function getQuranQuery(): Builder
     {
         $query = QuranSession::query()
-            ->with(['quranTeacher', 'student', 'circle', 'individualCircle']);
+            ->with(['quranTeacher', 'student', 'circle', 'individualCircle', 'trialRequest.student']);
 
         if (! $this->isAdminUser()) {
             $teacherIds = $this->getAssignedQuranTeacherIds();

@@ -12,7 +12,11 @@
     $studentName = match($type) {
         'academic' => $session->student?->name ?? '-',
         'interactive' => $session->course?->title ?? '-',
-        default => $session->circle?->name ?? $session->student?->name ?? '-',
+        default => $session->circle?->name
+            ?? $session->student?->name
+            ?? $session->trialRequest?->student?->name
+            ?? $session->trialRequest?->student_name
+            ?? '-',
     };
 
     $typeConfig = match($type) {
