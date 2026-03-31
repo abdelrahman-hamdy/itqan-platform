@@ -35,7 +35,6 @@ use App\Filament\Resources\QuranSubscriptionResource;
 use App\Filament\Resources\QuranTeacherProfileResource;
 use App\Filament\Resources\QuranTrialRequestResource;
 use App\Filament\Resources\RecordedCourseResource;
-use App\Filament\Resources\SessionRecordingResource;
 use App\Filament\Resources\StudentProfileResource;
 use App\Filament\Resources\StudentProgressResource;
 use App\Filament\Resources\StudentSessionReportResource;
@@ -210,9 +209,6 @@ class AdminPanelProvider extends PanelProvider
             AcademicSubscriptionResource::class,
             AcademicSessionResource::class,
             InteractiveCourseSessionResource::class,
-
-            // تسجيلات الجلسات - Session Recordings
-            SessionRecordingResource::class,
 
             // إدارة الدورات المسجلة - Recorded Courses
             RecordedCourseResource::class,
