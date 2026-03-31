@@ -54,6 +54,35 @@
     $currentUser = auth()->user();
     $isSupervisor = $currentUser->hasRole('supervisor');
     $isAdmin = $currentUser->isAdmin(); // admin or super_admin
+
+    // Entity & subscription URLs for navigation buttons
+    $entityUrl = match($sessionType) {
+        'quran' => $session->session_type === 'individual' && $session->individual_circle_id
+            ? route('manage.individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individual_circle_id])
+            : ($session->circle_id ? route('manage.group-circles.show', ['subdomain' => $subdomain, 'circle' => $session->circle_id]) : null),
+        'academic' => $session->academic_subscription_id
+            ? route('manage.academic-lessons.show', ['subdomain' => $subdomain, 'subscription' => $session->academic_subscription_id])
+            : null,
+        'interactive' => $session->course_id
+            ? route('manage.interactive-courses.show', ['subdomain' => $subdomain, 'course' => $session->course_id])
+            : null,
+    };
+    $entityLabel = match($sessionType) {
+        'quran' => $session->session_type === 'individual'
+            ? __('sessions.actions.view_individual_circle')
+            : __('sessions.actions.view_circle'),
+        'academic' => __('sessions.actions.view_lesson'),
+        'interactive' => __('sessions.actions.view_course'),
+    };
+    $subscriptionUrl = match($sessionType) {
+        'quran' => $session->quran_subscription_id
+            ? route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => 'quran', 'subscription' => $session->quran_subscription_id])
+            : null,
+        'academic' => $session->academic_subscription_id
+            ? route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => 'academic', 'subscription' => $session->academic_subscription_id])
+            : null,
+        default => null,
+    };
 @endphp
 
 <div x-data="sessionDetail()" class="space-y-6">
@@ -86,7 +115,7 @@
     @endif
 
     {{-- Action Bar --}}
-    @if(($canObserve && $isLive) || $status->canCancel() || $status->canForgive() || $filamentUrl)
+    @if(($canObserve && $isLive) || $status->canCancel() || $status->canForgive() || $filamentUrl || $entityUrl || $subscriptionUrl)
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
         <div class="flex flex-wrap items-center gap-3">
             {{-- Observer / Participant Mode Toggle --}}
@@ -103,6 +132,22 @@
                         {{ __('supervisor.observation.participant_mode') }}
                     </a>
                 </div>
+            @endif
+
+            {{-- View linked entity (circle, lesson, course) --}}
+            @if($entityUrl)
+                <a href="{{ $entityUrl }}" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-green-50 hover:bg-green-100 text-green-700 transition-colors cursor-pointer">
+                    <i class="ri-arrow-right-up-line"></i>
+                    {{ $entityLabel }}
+                </a>
+            @endif
+
+            {{-- View linked subscription --}}
+            @if($subscriptionUrl)
+                <a href="{{ $subscriptionUrl }}" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors cursor-pointer">
+                    <i class="ri-bank-card-line"></i>
+                    {{ __('sessions.actions.view_subscription') }}
+                </a>
             @endif
 
             {{-- Cancel button --}}
