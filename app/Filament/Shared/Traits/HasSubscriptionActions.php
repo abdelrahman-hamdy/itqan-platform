@@ -84,26 +84,29 @@ trait HasSubscriptionActions
     protected static function getConfirmPaymentAction(): Action
     {
         return Action::make('confirmPayment')
-            ->label('تأكيد الدفع')
+            ->label(__('subscriptions.confirm_payment'))
             ->icon('heroicon-o-check-badge')
             ->color('success')
             ->requiresConfirmation()
-            ->modalHeading('تأكيد دفع الاشتراك')
+            ->modalHeading(__('subscriptions.confirm_subscription_payment'))
             ->modalDescription(function (BaseSubscription $record) {
                 $metadata = $record->metadata ?? [];
                 if (isset($metadata['grace_period_ends_at'])) {
                     $gracePeriodEnd = Carbon::parse($metadata['grace_period_ends_at'])->format('Y-m-d');
 
-                    return "الاشتراك في فترة سماح حتى {$gracePeriodEnd}. تأكيد الدفع سيبدأ فترة اشتراك جديدة من تاريخ الانتهاء الأصلي ({$record->ends_at?->format('Y-m-d')}).";
+                    return __('subscriptions.confirm_payment_grace_period', [
+                        'grace_end' => $gracePeriodEnd,
+                        'ends_at' => $record->ends_at?->format('Y-m-d'),
+                    ]);
                 }
 
-                return 'سيتم تأكيد الدفع وتفعيل الاشتراك إذا كان معلقاً أو ملغياً.';
+                return __('subscriptions.confirm_payment_description');
             })
-            ->modalSubmitActionLabel('تأكيد الدفع')
+            ->modalSubmitActionLabel(__('subscriptions.confirm_payment'))
             ->schema([
                 TextInput::make('payment_reference')
-                    ->label('مرجع الدفع (اختياري)')
-                    ->placeholder('رقم الإيصال أو مرجع التحويل')
+                    ->label(__('subscriptions.payment_reference_label'))
+                    ->placeholder(__('subscriptions.payment_reference_placeholder'))
                     ->maxLength(255),
             ])
             ->action(function (BaseSubscription $record, array $data) {
@@ -117,84 +120,27 @@ trait HasSubscriptionActions
 
                     return;
                 }
-                DB::transaction(function () use ($record, $data) {
-                    $updateData = [
-                        'payment_status' => SubscriptionPaymentStatus::PAID,
-                        'last_payment_date' => now(),
-                    ];
 
-                    // If PENDING, SUSPENDED, or CANCELLED, activate the subscription
-                    if (in_array($record->status, [
-                        SessionSubscriptionStatus::PENDING,
-                        SessionSubscriptionStatus::SUSPENDED,
-                        SessionSubscriptionStatus::CANCELLED,
-                    ])) {
-                        $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
-
-                        // Clear cancellation fields if reactivating from CANCELLED.
-                        // Do NOT re-enable auto_renew — the student cancelled deliberately
-                        // and should opt back in manually.
-                        if ($record->status === SessionSubscriptionStatus::CANCELLED) {
-                            $updateData['cancelled_at'] = null;
-                            $updateData['cancellation_reason'] = null;
-                            $updateData['auto_renew'] = false;
-                        }
-
-                        // If no start date or dates expired, reset them
-                        if (! $record->starts_at || $record->ends_at?->isPast()) {
-                            $updateData['starts_at'] = now();
-                            $updateData['ends_at'] = $record->calculateEndDate(now());
-                        }
-
-                        // If grace period was active, calculate new period from ends_at (which was never modified)
-                        $metadata = $record->metadata ?? [];
-                        if (isset($metadata['grace_period_ends_at'])) {
-                            $updateData['starts_at'] = $record->ends_at;
-                            $updateData['ends_at'] = $record->billing_cycle
-                                ? $record->billing_cycle->calculateEndDate($record->ends_at)
-                                : ($record->ends_at ?? now())->copy()->addMonth();
-
-                            // For Academic: sync end_date
-                            if ($record instanceof AcademicSubscription) {
-                                $updateData['end_date'] = $updateData['ends_at'];
-                            }
-
-                            // Clear grace period metadata
-                            unset($metadata['grace_period_ends_at']);
-                            $updateData['metadata'] = $metadata ?: null;
-                        }
-                    }
-
-                    // Activate linked circle if reactivating
-                    if (($updateData['status'] ?? null) === SessionSubscriptionStatus::ACTIVE
-                        && $record instanceof QuranSubscription
-                        && $record->education_unit_id) {
-                        $record->educationUnit?->update(['is_active' => true]);
-                    }
-
-                    // Store payment reference in admin notes if provided
-                    if (! empty($data['payment_reference'])) {
-                        $note = sprintf(
-                            '[%s] تأكيد دفع بواسطة %s - المرجع: %s',
-                            now()->format('Y-m-d H:i'),
-                            auth()->user()->name,
-                            $data['payment_reference']
+                try {
+                    app(\App\Services\Payment\PaymentReconciliationService::class)
+                        ->confirmPaymentAndActivate(
+                            $record,
+                            $data['payment_reference'] ?? null,
                         );
-                        $updateData['admin_notes'] = $record->admin_notes
-                            ? $record->admin_notes."\n\n".$note
-                            : $note;
-                    }
 
-                    $record->update($updateData);
-
-                    DB::afterCommit(function () {
-                        Notification::make()
-                            ->success()
-                            ->title('تم تأكيد الدفع')
-                            ->body('تم تأكيد الدفع وتفعيل الاشتراك بنجاح.')
-                            ->send();
-                    });
-                }); // end DB::transaction
+                    Notification::make()
+                        ->success()
+                        ->title(__('subscriptions.payment_confirmed_title'))
+                        ->body(__('subscriptions.payment_confirmed_and_activated'))
+                        ->send();
+                } catch (\Exception $e) {
+                    report($e);
+                    Notification::make()
+                        ->danger()
+                        ->title(__('subscriptions.payment_confirmation_failed'))
+                        ->body(__('subscriptions.generic_error'))
+                        ->send();
+                }
             })
             ->visible(fn (BaseSubscription $record) => in_array($record->payment_status, [
                 SubscriptionPaymentStatus::PENDING,
@@ -720,6 +666,136 @@ trait HasSubscriptionActions
     }
 
     // ========================================
+    // RENEWAL & RESUBSCRIBE ACTIONS
+    // ========================================
+
+    /**
+     * Renew action — creates a new subscription from an active/expiring one.
+     * Supports package change and billing cycle change.
+     */
+    protected static function getRenewAction(): Action
+    {
+        return Action::make('renewSubscription')
+            ->label(__('subscriptions.renew_subscription'))
+            ->icon('heroicon-o-arrow-path')
+            ->color('primary')
+            ->requiresConfirmation()
+            ->modalHeading(__('subscriptions.renew_subscription'))
+            ->modalDescription(function (BaseSubscription $record) {
+                $remaining = method_exists($record, 'getSessionsRemaining') ? $record->getSessionsRemaining() : 0;
+                if ($remaining > 0) {
+                    return __('subscriptions.sessions_carryover', ['count' => $remaining]);
+                }
+
+                return __('subscriptions.confirm_payment_description');
+            })
+            ->schema([
+                Select::make('billing_cycle')
+                    ->label(__('subscriptions.select_billing_cycle'))
+                    ->options([
+                        'monthly' => __('enums.billing_cycle.monthly'),
+                        'quarterly' => __('enums.billing_cycle.quarterly'),
+                        'yearly' => __('enums.billing_cycle.yearly'),
+                    ])
+                    ->default(fn (BaseSubscription $record) => $record->billing_cycle->value)
+                    ->required(),
+                Select::make('activate_mode')
+                    ->label(__('subscriptions.activation_mode'))
+                    ->options([
+                        'pending' => __('subscriptions.create_as_pending'),
+                        'immediate' => __('subscriptions.activate_immediately'),
+                    ])
+                    ->default('pending')
+                    ->required(),
+            ])
+            ->action(function (BaseSubscription $record, array $data) {
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    Notification::make()->danger()->title(__('common.unauthorized'))->send();
+
+                    return;
+                }
+
+                try {
+                    $new = app(\App\Services\Subscription\SubscriptionRenewalService::class)
+                        ->renew($record, [
+                            'billing_cycle' => $data['billing_cycle'],
+                            'activate_immediately' => $data['activate_mode'] === 'immediate',
+                        ]);
+
+                    Notification::make()
+                        ->success()
+                        ->title(__('subscriptions.renewal_success'))
+                        ->body(__('subscriptions.renewal_success')." (#{$new->subscription_code})")
+                        ->send();
+                } catch (\Exception $e) {
+                    report($e);
+                    Notification::make()->danger()->title(__('subscriptions.payment_confirmation_failed'))->body(__('subscriptions.generic_error'))->send();
+                }
+            })
+            ->visible(fn (BaseSubscription $record) => app(\App\Services\Subscription\SubscriptionRenewalService::class)->canRenew($record));
+    }
+
+    /**
+     * Resubscribe action — creates a new subscription from a cancelled/expired one.
+     * Checks teacher availability and uses current pricing.
+     */
+    protected static function getResubscribeAction(): Action
+    {
+        return Action::make('resubscribe')
+            ->label(__('subscriptions.resubscribe'))
+            ->icon('heroicon-o-arrow-uturn-left')
+            ->color('success')
+            ->requiresConfirmation()
+            ->modalHeading(__('subscriptions.resubscribe'))
+            ->schema([
+                Select::make('billing_cycle')
+                    ->label(__('subscriptions.select_billing_cycle'))
+                    ->options([
+                        'monthly' => __('enums.billing_cycle.monthly'),
+                        'quarterly' => __('enums.billing_cycle.quarterly'),
+                        'yearly' => __('enums.billing_cycle.yearly'),
+                    ])
+                    ->default(fn (BaseSubscription $record) => $record->billing_cycle->value)
+                    ->required(),
+                Select::make('activate_mode')
+                    ->label(__('subscriptions.activation_mode'))
+                    ->options([
+                        'pending' => __('subscriptions.create_as_pending'),
+                        'immediate' => __('subscriptions.activate_immediately'),
+                    ])
+                    ->default('pending')
+                    ->required(),
+            ])
+            ->action(function (BaseSubscription $record, array $data) {
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    Notification::make()->danger()->title(__('common.unauthorized'))->send();
+
+                    return;
+                }
+
+                try {
+                    $new = app(\App\Services\Subscription\SubscriptionRenewalService::class)
+                        ->resubscribe($record, [
+                            'billing_cycle' => $data['billing_cycle'],
+                            'activate_immediately' => $data['activate_mode'] === 'immediate',
+                        ]);
+
+                    Notification::make()
+                        ->success()
+                        ->title(__('subscriptions.resubscribe_success'))
+                        ->body(__('subscriptions.resubscribe_success')." (#{$new->subscription_code})")
+                        ->send();
+                } catch (\Exception $e) {
+                    report($e);
+                    Notification::make()->danger()->title(__('subscriptions.payment_confirmation_failed'))->body(__('subscriptions.generic_error'))->send();
+                }
+            })
+            ->visible(fn (BaseSubscription $record) => app(\App\Services\Subscription\SubscriptionRenewalService::class)->canResubscribe($record));
+    }
+
+    // ========================================
     // ACTION AGGREGATORS
     // ========================================
 
@@ -730,6 +806,8 @@ trait HasSubscriptionActions
     {
         return [
             static::getConfirmPaymentAction(),
+            static::getRenewAction(),
+            static::getResubscribeAction(),
             static::getReactivateAction(),
             static::getPauseAction(),
             static::getResumeAction(),
@@ -746,6 +824,8 @@ trait HasSubscriptionActions
     {
         $actions = [
             static::getConfirmPaymentAction(),
+            static::getRenewAction(),
+            static::getResubscribeAction(),
             static::getReactivateAction(),
             static::getPauseAction(),
             static::getResumeAction(),

@@ -34,7 +34,35 @@ class LiveKitConnection {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.intentionalDisconnect = false;
+    }
 
+    /**
+     * Build LiveKit connection options with codec, simulcast, and audio defaults
+     */
+    getConnectionOptions() {
+        return {
+            publishDefaults: {
+                videoCodec: 'vp9',
+                simulcast: true,
+                videoSimulcastLayers: [
+                    { resolution: window.LiveKit.VideoPresets.h180.resolution, maxBitrate: 150000 },
+                    { resolution: window.LiveKit.VideoPresets.h360.resolution, maxBitrate: 500000 },
+                    { resolution: window.LiveKit.VideoPresets.h540.resolution, maxBitrate: 800000 },
+                ],
+                dtx: true,
+                audioBitrate: 32000,
+            },
+            dynacast: true,
+            adaptiveStream: true,
+            videoCaptureDefaults: {
+                resolution: window.LiveKit.VideoPresets.h540.resolution,
+            },
+            audioCaptureDefaults: {
+                autoGainControl: true,
+                echoCancellation: true,
+                noiseSuppression: true,
+            },
+        };
     }
 
     /**
@@ -185,33 +213,7 @@ class LiveKitConnection {
         this.isConnecting = true;
 
         try {
-            // LiveKit optimization: VP9 codec + Dynacast + Adaptive Stream + Simulcast
-            // These optimizations reduce bandwidth by 70-90% and server CPU by 60-70%
-            const connectionOptions = {
-                publishDefaults: {
-                    videoCodec: 'vp9',
-                    simulcast: true,
-                    videoSimulcastLayers: [
-                        { resolution: window.LiveKit.VideoPresets.h180.resolution, maxBitrate: 150000 },
-                        { resolution: window.LiveKit.VideoPresets.h360.resolution, maxBitrate: 500000 },
-                        { resolution: window.LiveKit.VideoPresets.h540.resolution, maxBitrate: 800000 },
-                    ],
-                    dtx: true,
-                    audioBitrate: 32000,
-                },
-                dynacast: true,
-                adaptiveStream: true,
-                videoCaptureDefaults: {
-                    resolution: window.LiveKit.VideoPresets.h540.resolution,
-                },
-                audioCaptureDefaults: {
-                    autoGainControl: true,
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                },
-            };
-
-            await this.room.connect(serverUrl, token, connectionOptions);
+            await this.room.connect(serverUrl, token, this.getConnectionOptions());
             this.localParticipant = this.room.localParticipant;
         } catch (error) {
             this.isConnecting = false;
@@ -276,34 +278,8 @@ class LiveKitConnection {
                 throw new Error('Failed to get fresh token for reconnection');
             }
 
-            // Reconnect with fresh token and optimization options
             const serverUrl = this.config.serverUrl || 'wss://test-rn3dlic1.livekit.cloud';
-
-            const connectionOptions = {
-                publishDefaults: {
-                    videoCodec: 'vp9',
-                    simulcast: true,
-                    videoSimulcastLayers: [
-                        { resolution: window.LiveKit.VideoPresets.h180.resolution, maxBitrate: 150000 },
-                        { resolution: window.LiveKit.VideoPresets.h360.resolution, maxBitrate: 500000 },
-                        { resolution: window.LiveKit.VideoPresets.h540.resolution, maxBitrate: 800000 },
-                    ],
-                    dtx: true,
-                    audioBitrate: 32000,
-                },
-                dynacast: true,
-                adaptiveStream: true,
-                videoCaptureDefaults: {
-                    resolution: window.LiveKit.VideoPresets.h540.resolution,
-                },
-                audioCaptureDefaults: {
-                    autoGainControl: true,
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                },
-            };
-
-            await this.room.connect(serverUrl, token, connectionOptions);
+            await this.room.connect(serverUrl, token, this.getConnectionOptions());
 
         } catch (error) {
             this.isConnecting = false;

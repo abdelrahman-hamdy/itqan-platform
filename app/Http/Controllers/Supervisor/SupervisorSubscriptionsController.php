@@ -344,4 +344,66 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             }
         }
     }
+
+    /**
+     * Renew an active/expiring subscription.
+     */
+    public function renew(Request $request, $subdomain, string $type, int $subscription): RedirectResponse
+    {
+        return $this->performRenewalAction($request, $subdomain, $type, $subscription, 'renew');
+    }
+
+    /**
+     * Resubscribe from a cancelled/expired subscription.
+     */
+    public function resubscribe(Request $request, $subdomain, string $type, int $subscription): RedirectResponse
+    {
+        return $this->performRenewalAction($request, $subdomain, $type, $subscription, 'resubscribe');
+    }
+
+    /**
+     * Shared logic for renew and resubscribe actions.
+     */
+    private function performRenewalAction(Request $request, $subdomain, string $type, int $subscriptionId, string $mode): RedirectResponse
+    {
+        if (! $this->isAdminUser()) {
+            abort(403);
+        }
+
+        $sub = $this->resolveSubscription($type, $subscriptionId);
+        $this->ensureSubscriptionInScope($sub, $type);
+
+        $validator = Validator::make($request->all(), [
+            'billing_cycle' => 'required|in:monthly,quarterly,yearly',
+            'activate_mode' => 'required|in:pending,immediate',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->with('error', $validator->errors()->first());
+        }
+
+        try {
+            $service = app(\App\Services\Subscription\SubscriptionRenewalService::class);
+            $options = [
+                'billing_cycle' => $request->billing_cycle,
+                'activate_immediately' => $request->activate_mode === 'immediate',
+            ];
+
+            $new = $mode === 'resubscribe'
+                ? $service->resubscribe($sub, $options)
+                : $service->renew($sub, $options);
+
+            $successKey = $mode === 'resubscribe' ? 'subscriptions.resubscribe_success' : 'subscriptions.renewal_success';
+
+            return redirect()->route('manage.subscriptions.show', [
+                'subdomain' => $subdomain,
+                'type' => $type,
+                'subscription' => $new->id,
+            ])->with('success', __($successKey));
+        } catch (\Exception $e) {
+            report($e);
+
+            return redirect()->back()->with('error', __('subscriptions.generic_error'));
+        }
+    }
 }

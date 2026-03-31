@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PaymentStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\UserType;
 use App\Models\AcademicSubscription;
@@ -109,6 +110,21 @@ class AcademicSubscriptionPaymentController extends Controller
 
         try {
             $finalPrice = $subscription->final_price ?? $subscription->monthly_price;
+
+            // Check for an existing pending payment with a valid gateway URL (idempotency)
+            $existingPayment = Payment::forPayable(AcademicSubscription::class, $subscription->id)
+                ->where('status', PaymentStatus::PENDING)
+                ->where('payment_gateway', $gateway)
+                ->where('created_at', '>', now()->subHour())
+                ->latest()
+                ->first();
+
+            if ($existingPayment) {
+                $redirectUrl = $existingPayment->redirect_url ?? $existingPayment->iframe_url;
+                if ($redirectUrl) {
+                    return redirect()->away($redirectUrl);
+                }
+            }
 
             DB::beginTransaction();
 

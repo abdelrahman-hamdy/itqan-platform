@@ -576,6 +576,73 @@ class SubscriptionController extends Controller
     }
 
     /**
+     * Renew or resubscribe to a subscription.
+     */
+    public function renew(Request $request, string $type, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $subscription = $this->findSubscription($user, $type, $id);
+
+        if (! $subscription) {
+            return $this->error(__('subscriptions.subscription_not_found'), 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'package_id' => 'nullable|integer',
+            'billing_cycle' => 'nullable|in:monthly,quarterly,yearly',
+            'mode' => 'nullable|in:renew,resubscribe',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error($validator->errors()->first(), 422);
+        }
+
+        $renewalService = app(\App\Services\Subscription\SubscriptionRenewalService::class);
+        $mode = $request->input('mode', 'renew');
+
+        try {
+            $options = array_filter([
+                'package_id' => $request->package_id,
+                'billing_cycle' => $request->billing_cycle,
+            ]);
+
+            $new = $mode === 'resubscribe'
+                ? $renewalService->resubscribe($subscription, $options)
+                : $renewalService->renew($subscription, $options);
+
+            return $this->success([
+                'subscription' => $this->formatSubscription($new, $type),
+                'renewal_options' => $renewalService->getRenewalOptions($new),
+            ], __('subscriptions.renewal_success'));
+        } catch (\Exception $e) {
+            report($e);
+
+            return $this->error(__('subscriptions.generic_error'), 422);
+        }
+    }
+
+    /**
+     * Find a subscription owned by the given user.
+     */
+    protected function findSubscription($user, string $type, int $id)
+    {
+        $modelClass = match ($type) {
+            'quran', 'quran_group' => \App\Models\QuranSubscription::class,
+            'academic' => \App\Models\AcademicSubscription::class,
+            'course' => \App\Models\CourseSubscription::class,
+            default => null,
+        };
+
+        if (! $modelClass) {
+            return null;
+        }
+
+        return $modelClass::where('id', $id)
+            ->where('student_id', $user->id)
+            ->first();
+    }
+
+    /**
      * Format subscription for list view.
      */
     protected function formatSubscription($subscription, string $type): array
@@ -620,6 +687,9 @@ class SubscriptionController extends Controller
                 'avatar' => $teacher->user->avatar ? asset('storage/'.$teacher->user->avatar) : null,
             ] : null,
             'sessions' => $this->getSessionStats($subscription, $type),
+            'sessions_exhausted' => $subscription->is_sessions_exhausted ?? false,
+            'renewal_available' => ($subscription->is_sessions_exhausted ?? false)
+                || (method_exists($subscription, 'canRenew') && $subscription->canRenew()),
             'in_grace_period' => method_exists($subscription, 'isInGracePeriod') ? $subscription->isInGracePeriod() : false,
             'needs_renewal' => method_exists($subscription, 'needsRenewal') ? $subscription->needsRenewal() : false,
             'grace_period_ends_at' => method_exists($subscription, 'getGracePeriodEndsAt')

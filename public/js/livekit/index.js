@@ -601,24 +601,8 @@ class LiveKitMeeting {
             }
         }
 
-        // CAMERA: OFF for everyone — just check permission without acquiring device
-        try {
-            const result = await navigator.permissions.query({ name: 'camera' });
-            if (result.state === 'granted' || result.state === 'prompt') {
-                mediaPermissionsGranted = true;
-            }
-        } catch (permError) {
-            // Permissions API not supported — acquire and immediately release
-            try {
-                const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                videoStream.getTracks().forEach(track => track.stop());
-                mediaPermissionsGranted = true;
-            } catch (videoError) {
-                if (videoError.name === 'NotAllowedError') {
-                    this.showNotification(t('connection.camera_access_denied'), 'warning');
-                }
-            }
-        }
+        // Camera starts OFF — permission will be requested when user clicks "Enable Camera".
+        // Skipping pre-check avoids camera light flicker on Safari/iOS.
 
         if (!mediaPermissionsGranted) {
             this.showNotification(t('permissions.no_media_permissions'), 'info');
