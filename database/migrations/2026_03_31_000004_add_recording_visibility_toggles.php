@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $tables = ['quran_group_circles', 'quran_individual_circles', 'interactive_courses'];
+        $tables = ['quran_circles', 'quran_individual_circles', 'interactive_courses'];
 
         foreach ($tables as $table) {
             Schema::table($table, function (Blueprint $table) {
@@ -20,7 +20,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        $tables = ['quran_group_circles', 'quran_individual_circles', 'interactive_courses'];
+        $tables = ['quran_circles', 'quran_individual_circles', 'interactive_courses'];
 
         foreach ($tables as $table) {
             Schema::table($table, function (Blueprint $table) {
