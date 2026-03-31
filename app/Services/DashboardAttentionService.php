@@ -79,7 +79,7 @@ class DashboardAttentionService
 
         // Derive additional ID sets for supervisor scoping.
         // QuranTeacherProfile IDs → for QuranTrialRequest.teacher_id, TeacherReview.reviewable_id
-        // Academic teacher User IDs → for homework.teacher_id, SessionRequest.teacher_id, RecordedCourse.created_by
+        // Academic teacher User IDs → for homework.teacher_id, SessionRequest.teacher_id
         $quranTeacherProfileIds = [];
         $academicTeacherUserIds = [];
 
@@ -329,13 +329,11 @@ class DashboardAttentionService
         // Course reviews: polymorphic reviewable → InteractiveCourse or RecordedCourse
         $courseReviews = CourseReview::where('academy_id', $academyId)
             ->where('is_approved', false)
-            ->when(! $isAdmin, function ($q) use ($academicTeacherProfileIds, $academicTeacherUserIds) {
-                $q->where(function ($q) use ($academicTeacherProfileIds, $academicTeacherUserIds) {
+            ->when(! $isAdmin, function ($q) use ($academicTeacherProfileIds) {
+                $q->where(function ($q) use ($academicTeacherProfileIds) {
                     $q->whereHasMorph('reviewable', [InteractiveCourse::class], function ($q) use ($academicTeacherProfileIds) {
                         $q->whereIn('assigned_teacher_id', $academicTeacherProfileIds ?: [0]);
-                    })->orWhereHasMorph('reviewable', [RecordedCourse::class], function ($q) use ($academicTeacherUserIds) {
-                        $q->whereIn('created_by', $academicTeacherUserIds ?: [0]);
-                    });
+                    })->orWhereHasMorph('reviewable', [RecordedCourse::class]);
                 });
             })->count();
 
@@ -482,13 +480,11 @@ class DashboardAttentionService
 
         $courseReviews = CourseReview::where('academy_id', $academyId)
             ->where('is_approved', false)
-            ->when(! $isAdmin, function ($q) use ($academicTeacherProfileIds, $academicTeacherUserIds) {
-                $q->where(function ($q) use ($academicTeacherProfileIds, $academicTeacherUserIds) {
+            ->when(! $isAdmin, function ($q) use ($academicTeacherProfileIds) {
+                $q->where(function ($q) use ($academicTeacherProfileIds) {
                     $q->whereHasMorph('reviewable', [InteractiveCourse::class], function ($q) use ($academicTeacherProfileIds) {
                         $q->whereIn('assigned_teacher_id', $academicTeacherProfileIds ?: [0]);
-                    })->orWhereHasMorph('reviewable', [RecordedCourse::class], function ($q) use ($academicTeacherUserIds) {
-                        $q->whereIn('created_by', $academicTeacherUserIds ?: [0]);
-                    });
+                    })->orWhereHasMorph('reviewable', [RecordedCourse::class]);
                 });
             })
             ->with(['user', 'reviewable'])

@@ -91,22 +91,9 @@ class RecordedCourse extends Model implements HasMedia
     }
 
     /**
-     * Get the teacher/instructor who created this course
-     * Note: Recorded courses don't have a direct teacher assignment
-     * The creator is often the teacher
+     * Note: Recorded courses no longer have a direct teacher/creator column
+     * (created_by was dropped in migration 2026_01_02_012037).
      */
-    public function teacher(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    /**
-     * Alias for teacher (instructor = teacher for recorded courses)
-     */
-    public function instructor(): BelongsTo
-    {
-        return $this->teacher();
-    }
 
     public function lessons(): HasMany
     {

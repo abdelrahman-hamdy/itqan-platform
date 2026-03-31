@@ -230,8 +230,6 @@ class CourseReview extends Model
             $instructor = null;
             if ($this->reviewable instanceof InteractiveCourse && $this->reviewable->assignedTeacher) {
                 $instructor = $this->reviewable->assignedTeacher->user;
-            } elseif ($this->reviewable instanceof RecordedCourse && $this->reviewable->instructor) {
-                $instructor = $this->reviewable->instructor;
             }
 
             if (! $instructor) {

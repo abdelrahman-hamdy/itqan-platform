@@ -417,8 +417,7 @@ class UnifiedSubscriptionFetchingService
         return match ($type) {
             'quran' => $subscription->quranTeacher?->name,
             'academic' => $subscription->academicTeacher?->user?->name,
-            'course' => $subscription->interactiveCourse?->assignedTeacher?->user?->name
-                ?? $subscription->recordedCourse?->teacher?->name,
+            'course' => $subscription->interactiveCourse?->assignedTeacher?->user?->name,
             default => null,
         };
     }
