@@ -1498,6 +1498,7 @@ return [
         ],
         'recording_item' => [
             'watch' => 'مشاهدة',
+            'listen' => 'استماع',
             'download' => 'تحميل',
             'delete' => 'حذف',
             'recording_in_progress' => 'جاري التسجيل',

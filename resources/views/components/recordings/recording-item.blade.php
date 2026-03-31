@@ -93,8 +93,8 @@
         @if($showActions)
             <div class="flex items-center gap-2 flex-shrink-0">
                 @if($isAvailable)
-                    <!-- Play Button (opens audio modal) -->
-                    <button type="button"
+                    <!-- Listen Button (opens audio modal) -->
+                    <button type="button" x-data
                         @click="$dispatch('open-audio-player', {
                             streamUrl: '{{ route('recordings.stream', ['recordingId' => $recording->id]) }}',
                             downloadUrl: '{{ route('recordings.download', ['recordingId' => $recording->id]) }}',
@@ -102,9 +102,9 @@
                             duration: '{{ $recording->formatted_duration }}',
                             size: '{{ $recording->formatted_file_size }}'
                         })"
-                        class="inline-flex items-center gap-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors text-sm">
-                        <i class="ri-play-circle-line"></i>
-                        <span class="hidden sm:inline">{{ __('components.recordings.recording_item.watch') }}</span>
+                        class="inline-flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                        <i class="ri-headphone-line"></i>
+                        <span class="hidden sm:inline">{{ __('components.recordings.recording_item.listen') }}</span>
                     </button>
 
                     @if($viewType === 'teacher')

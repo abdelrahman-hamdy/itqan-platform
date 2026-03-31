@@ -1637,6 +1637,7 @@ return [
         ],
         'recording_item' => [
             'watch' => 'Watch',
+            'listen' => 'Listen',
             'download' => 'Download',
             'delete' => 'Delete',
             'recording_in_progress' => 'Recording in progress',
