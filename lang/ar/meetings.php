@@ -258,6 +258,8 @@ return [
         'connection_status' => 'حالة الاتصال',
         'browser_compatibility' => 'توافق المتصفح',
         'grant_permission' => 'منح الإذن',
+        'reset_in_browser' => 'أعد تعيين الإذن من إعدادات المتصفح',
+        'click_lock_icon' => 'اضغط على أيقونة القفل في شريط العنوان ← أعد تعيين الأذونات',
         'allowed' => 'مسموح',
         'denied' => 'مرفوض',
         'needs_permission' => 'يحتاج إذن',

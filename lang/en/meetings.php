@@ -258,6 +258,8 @@ return [
         'connection_status' => 'Connection Status',
         'browser_compatibility' => 'Browser Compatibility',
         'grant_permission' => 'Grant Permission',
+        'reset_in_browser' => 'Reset permission in browser settings',
+        'click_lock_icon' => 'Click the lock icon in the address bar → Reset permissions',
         'allowed' => 'Allowed',
         'denied' => 'Denied',
         'needs_permission' => 'Needs permission',

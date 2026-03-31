@@ -1,7 +1,7 @@
 {{--
     System Status Component
     Shows camera, microphone, network, and browser compatibility status
-    Uses vanilla JS (no Alpine/Livewire dependency) with inline script
+    Uses vanilla JS with inline script (no Alpine/Livewire dependency)
 --}}
 
 @props([
@@ -30,9 +30,14 @@
                     <div class="text-xs text-gray-600" data-role="camera-text">{{ __('meetings.system.unknown') }}</div>
                 </div>
             </div>
-            <button data-role="camera-btn" onclick="window._systemStatus.requestCamera()" class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer hidden">
-                {{ __('meetings.system.grant_permission') }}
-            </button>
+            <div class="flex flex-col items-end gap-1">
+                <button data-role="camera-btn" class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer hidden">
+                    {{ __('meetings.system.grant_permission') }}
+                </button>
+                <span data-role="camera-hint" class="text-[10px] text-gray-400 hidden max-w-[160px] text-left leading-tight">
+                    {{ __('meetings.system.click_lock_icon') }}
+                </span>
+            </div>
         </div>
 
         <!-- Microphone Permission -->
@@ -46,9 +51,14 @@
                     <div class="text-xs text-gray-600" data-role="mic-text">{{ __('meetings.system.unknown') }}</div>
                 </div>
             </div>
-            <button data-role="mic-btn" onclick="window._systemStatus.requestMic()" class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer hidden">
-                {{ __('meetings.system.grant_permission') }}
-            </button>
+            <div class="flex flex-col items-end gap-1">
+                <button data-role="mic-btn" class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer hidden">
+                    {{ __('meetings.system.grant_permission') }}
+                </button>
+                <span data-role="mic-hint" class="text-[10px] text-gray-400 hidden max-w-[160px] text-left leading-tight">
+                    {{ __('meetings.system.click_lock_icon') }}
+                </span>
+            </div>
         </div>
 
         <!-- Network Status -->
@@ -82,7 +92,8 @@
 <script>
 (function() {
     var root = document.getElementById('{{ $componentId }}');
-    var $ = function(sel) { return root.querySelector('[data-role="' + sel + '"]'); };
+    if (!root) return;
+    var el = function(sel) { return root.querySelector('[data-role="' + sel + '"]'); };
 
     var t = {
         allowed: @json(__('meetings.system.allowed')),
@@ -93,12 +104,15 @@
         not_connected: @json(__('meetings.system.not_connected')),
         compatible: @json(__('meetings.system.compatible')),
         not_compatible: @json(__('meetings.system.not_compatible')),
+        grant: @json(__('meetings.system.grant_permission')),
+        reset: @json(__('meetings.system.reset_in_browser')),
     };
 
     function updateStatus(type, state) {
-        var icon = $(type + '-icon');
-        var text = $(type + '-text');
-        var btn = $(type + '-btn');
+        var icon = el(type + '-icon');
+        var text = el(type + '-text');
+        var btn = el(type + '-btn');
+        var hint = el(type + '-hint');
         if (!icon || !text) return;
 
         icon.className = 'w-8 h-8 rounded-full flex items-center justify-center';
@@ -110,28 +124,39 @@
             text.classList.add('text-green-600');
             text.textContent = t.allowed;
             if (btn) btn.classList.add('hidden');
+            if (hint) hint.classList.add('hidden');
         } else if (state === 'denied') {
             icon.classList.add('bg-red-100');
             icon.innerHTML = '<i class="ri-close-line text-red-600"></i>';
             text.classList.add('text-red-600');
             text.textContent = t.denied;
-            if (btn) btn.classList.remove('hidden');
+            if (btn) {
+                btn.classList.remove('hidden');
+                btn.textContent = t.reset;
+                btn.className = 'px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors cursor-pointer';
+            }
+            if (hint) hint.classList.remove('hidden');
         } else if (state === 'prompt') {
             icon.classList.add('bg-yellow-100');
             icon.innerHTML = '<i class="ri-question-line text-yellow-600"></i>';
             text.classList.add('text-yellow-600');
             text.textContent = t.needs_permission;
-            if (btn) btn.classList.remove('hidden');
+            if (btn) {
+                btn.classList.remove('hidden');
+                btn.textContent = t.grant;
+                btn.className = 'px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer';
+            }
+            if (hint) hint.classList.add('hidden');
         } else {
             icon.classList.add('bg-gray-100');
             icon.innerHTML = '<i class="ri-loader-4-line text-gray-400 animate-spin"></i>';
             text.classList.add('text-gray-600');
             text.textContent = t.unknown;
             if (btn) btn.classList.add('hidden');
+            if (hint) hint.classList.add('hidden');
         }
     }
 
-    // Check permissions
     async function checkPermission(type, name) {
         try {
             var result = await navigator.permissions.query({ name: name });
@@ -142,8 +167,13 @@
         }
     }
 
-    // Request media
     async function requestMedia(type, constraints) {
+        var btn = el(type + '-btn');
+        var origText = btn ? btn.textContent : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '...';
+        }
         try {
             var stream = await navigator.mediaDevices.getUserMedia(constraints);
             updateStatus(type, 'granted');
@@ -151,12 +181,12 @@
         } catch (e) {
             updateStatus(type, 'denied');
         }
+        if (btn) btn.disabled = false;
     }
 
-    // Network status
     function updateNetwork() {
-        var icon = $('network-icon');
-        var text = $('network-text');
+        var icon = el('network-icon');
+        var text = el('network-text');
         if (!icon || !text) return;
         icon.className = 'w-8 h-8 rounded-full flex items-center justify-center';
         text.className = 'text-xs';
@@ -175,8 +205,8 @@
 
     // Browser compatibility
     var compatible = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && (window.RTCPeerConnection || window.webkitRTCPeerConnection));
-    var bIcon = $('browser-icon');
-    var bText = $('browser-text');
+    var bIcon = el('browser-icon');
+    var bText = el('browser-text');
     if (bIcon && bText) {
         bIcon.className = 'w-8 h-8 rounded-full flex items-center justify-center';
         bText.className = 'text-xs';
@@ -200,10 +230,10 @@
     window.addEventListener('online', updateNetwork);
     window.addEventListener('offline', updateNetwork);
 
-    // Expose request functions for onclick handlers
-    window._systemStatus = {
-        requestCamera: function() { requestMedia('camera', { video: true }); },
-        requestMic: function() { requestMedia('mic', { audio: true }); },
-    };
+    // Button click handlers
+    var camBtn = el('camera-btn');
+    var micBtn = el('mic-btn');
+    if (camBtn) camBtn.addEventListener('click', function() { requestMedia('camera', { video: true }); });
+    if (micBtn) micBtn.addEventListener('click', function() { requestMedia('mic', { audio: true }); });
 })();
 </script>
