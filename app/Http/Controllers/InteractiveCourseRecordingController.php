@@ -248,7 +248,7 @@ class InteractiveCourseRecordingController extends Controller
         // Get the session
         $courseSession = $recording->recordable;
 
-        if (! $courseSession instanceof InteractiveCourseSession) {
+        if (! $courseSession instanceof \App\Contracts\RecordingCapable) {
             abort(400, __('errors.recording_type_invalid'));
         }
 
@@ -297,7 +297,7 @@ class InteractiveCourseRecordingController extends Controller
         // Get the session
         $courseSession = $recording->recordable;
 
-        if (! $courseSession instanceof InteractiveCourseSession) {
+        if (! $courseSession instanceof \App\Contracts\RecordingCapable) {
             abort(400, __('errors.recording_type_invalid'));
         }
 
