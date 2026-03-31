@@ -705,6 +705,7 @@ return [
         'filtering_by_student' => 'Filtering sessions for student: :name',
         'search_placeholder' => 'Search by session code, teacher or student name...',
         'clear_filters' => 'Clear Filters',
+        'results' => 'results',
 
         // Table columns
         'col_status' => 'Status',

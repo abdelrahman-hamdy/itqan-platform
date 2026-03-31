@@ -183,8 +183,11 @@
                     </button>
                 </form>
 
-                {{-- Clear filters --}}
+                {{-- Clear filters + result count --}}
                 @if($statusFilter || $dateFilter !== 'all' || $teacherId || $studentId || $search)
+                    <span class="px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg whitespace-nowrap">
+                        {{ $sessions->total() }} {{ __($t.'results') }}
+                    </span>
                     <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab]) }}"
                        class="px-3 py-2 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors whitespace-nowrap">
                         <i class="ri-close-line me-0.5"></i>

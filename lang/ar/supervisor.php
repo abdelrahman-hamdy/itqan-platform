@@ -705,6 +705,7 @@ return [
         'filtering_by_student' => 'تصفية جلسات الطالب: :name',
         'search_placeholder' => 'بحث بكود الجلسة أو اسم المعلم أو الطالب...',
         'clear_filters' => 'مسح الفلاتر',
+        'results' => 'نتيجة',
 
         // Table columns
         'col_status' => 'الحالة',
