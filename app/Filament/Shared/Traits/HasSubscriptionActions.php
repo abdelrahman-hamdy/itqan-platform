@@ -3,6 +3,7 @@
 namespace App\Filament\Shared\Traits;
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -553,12 +554,7 @@ trait HasSubscriptionActions
 
                 Select::make('default_duration_minutes')
                     ->label('مدة الجلسة الافتراضية')
-                    ->options([
-                        30 => '30 دقيقة',
-                        45 => '45 دقيقة',
-                        60 => '60 دقيقة',
-                        90 => '90 دقيقة',
-                    ]),
+                    ->options(SessionDuration::options()),
             ])
             ->fillForm(fn (BaseSubscription $record) => [
                 'default_duration_minutes' => $record->session_duration_minutes,

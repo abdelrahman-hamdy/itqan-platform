@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Supervisor;
 
 use App\Constants\DefaultAcademy;
+use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\SessionsMonitoringController;
 use App\Models\AcademicSession;
@@ -11,13 +12,13 @@ use App\Models\QuranSession;
 use App\Models\QuranSessionHomework;
 use App\Models\User;
 use App\Services\AcademyContextService;
-use App\Services\CalendarService;
 use App\Services\Calendar\SessionStrategyFactory;
+use App\Services\CalendarService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use InvalidArgumentException;
 
@@ -38,7 +39,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
 
         $teachers = collect();
 
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $quranTeachers = User::whereIn('id', $quranTeacherIds)->get()->map(fn ($u) => [
                 'id' => $u->id,
                 'name' => $u->name,
@@ -48,7 +49,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
             $teachers = $teachers->merge($quranTeachers);
         }
 
-        if (!empty($academicTeacherIds)) {
+        if (! empty($academicTeacherIds)) {
             $academicTeachers = User::whereIn('id', $academicTeacherIds)->get()->map(fn ($u) => [
                 'id' => $u->id,
                 'name' => $u->name,
@@ -405,7 +406,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
             'source' => ['required', 'string', 'in:quran_session,circle_session,course_session,academic_session'],
             'session_id' => ['required', 'integer'],
             'scheduled_at' => ['nullable', 'date'],
-            'duration_minutes' => ['nullable', 'integer', 'in:30,45,60,90,120'],
+            'duration_minutes' => ['nullable', 'integer', Rule::in(SessionDuration::values())],
             'teacher_notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -548,7 +549,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
         $academicSessions = collect();
         $interactiveSessions = collect();
 
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $query = \App\Models\QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->with(['quranTeacher', 'student', 'circle', 'individualCircle', 'meeting']);
             $this->applyDateFilter($query, $dateFilter);
@@ -559,7 +560,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
                 ->limit(50)->get();
         }
 
-        if (!empty($academicTeacherProfileIds)) {
+        if (! empty($academicTeacherProfileIds)) {
             $query = \App\Models\AcademicSession::whereIn('academic_teacher_id', $academicTeacherProfileIds)
                 ->with(['academicTeacher.user', 'student', 'meeting']);
             $this->applyDateFilter($query, $dateFilter);
@@ -630,7 +631,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
                 ? __('calendar.formatting.session_with_student', ['name' => $session->student->name])
                 : __('calendar.formatting.session'),
             'course_session' => ($session->course?->title ?? __('calendar.formatting.educational_course'))
-                . ' - ' . ($session->title ?? __('calendar.formatting.session')),
+                .' - '.($session->title ?? __('calendar.formatting.session')),
             default => __('calendar.formatting.session'),
         };
     }

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SessionDuration;
 use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
@@ -31,7 +32,7 @@ class AcademicSubscriptionFactory extends Factory
             'subscription_code' => 'ACD-'.rand(1, 999).'-'.strtoupper(Str::random(6)),
             'subscription_type' => 'private', // Valid enum: private, group
             'sessions_per_week' => fake()->numberBetween(1, 5),
-            'session_duration_minutes' => fake()->randomElement([30, 45, 60, 90]),
+            'session_duration_minutes' => fake()->randomElement(SessionDuration::values()),
             'monthly_amount' => fake()->randomFloat(2, 200, 2000),
             'final_monthly_amount' => fake()->randomFloat(2, 200, 2000),
             'currency' => 'SAR',

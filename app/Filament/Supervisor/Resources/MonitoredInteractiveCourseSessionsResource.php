@@ -2,6 +2,7 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Shared\Tables\SessionTableColumns;
@@ -42,7 +43,7 @@ class MonitoredInteractiveCourseSessionsResource extends BaseSupervisorResource
 {
     protected static ?string $model = InteractiveCourseSession::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-video-camera';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-video-camera';
 
     protected static ?string $navigationLabel = 'جلسات الدورات';
 
@@ -50,7 +51,7 @@ class MonitoredInteractiveCourseSessionsResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'جلسات الدورات';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'الدورات التفاعلية';
+    protected static string|\UnitEnum|null $navigationGroup = 'الدورات التفاعلية';
 
     protected static ?int $navigationSort = 5;
 
@@ -77,14 +78,8 @@ class MonitoredInteractiveCourseSessionsResource extends BaseSupervisorResource
 
                         Select::make('duration_minutes')
                             ->label('مدة الجلسة')
-                            ->options([
-                                30 => '30 دقيقة',
-                                45 => '45 دقيقة',
-                                60 => '60 دقيقة',
-                                90 => '90 دقيقة',
-                                120 => '120 دقيقة',
-                            ])
-                            ->default(60)
+                            ->options(SessionDuration::options())
+                            ->default(SessionDuration::SIXTY_MINUTES->value)
                             ->required(),
                     ])->columns(2),
 

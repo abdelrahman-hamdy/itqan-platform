@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SessionDuration;
 use App\Models\Academy;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
@@ -33,7 +34,7 @@ class QuranCircleScheduleFactory extends Factory
                 ['day' => 'thursday', 'time' => '16:00'],
             ],
             'timezone' => 'Asia/Riyadh',
-            'default_duration_minutes' => 60,
+            'default_duration_minutes' => SessionDuration::SIXTY_MINUTES->value,
             'is_active' => false,
             'schedule_starts_at' => Carbon::now(),
             'schedule_ends_at' => Carbon::now()->addMonths(3),

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\LessonStatus;
+use App\Enums\SessionDuration;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
@@ -34,7 +35,7 @@ class AcademicIndividualLessonFactory extends Factory
             'sessions_scheduled' => 0,
             'sessions_completed' => 0,
             'sessions_remaining' => fake()->numberBetween(8, 24),
-            'default_duration_minutes' => 60,
+            'default_duration_minutes' => SessionDuration::SIXTY_MINUTES->value,
             'status' => LessonStatus::ACTIVE,
             'recording_enabled' => false,
         ];

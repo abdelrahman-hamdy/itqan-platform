@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseSession;
@@ -24,7 +25,7 @@ class InteractiveCourseSessionFactory extends Factory
             'title' => fake()->sentence(3),
             'session_number' => fake()->numberBetween(1, 20),
             'scheduled_at' => now()->addDays(fake()->numberBetween(1, 30)),
-            'duration_minutes' => 60,
+            'duration_minutes' => SessionDuration::SIXTY_MINUTES->value,
             'status' => SessionStatus::SCHEDULED,
             'attendance_count' => 0,
             'homework_assigned' => false,

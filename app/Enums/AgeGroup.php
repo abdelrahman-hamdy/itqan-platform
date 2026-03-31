@@ -77,11 +77,11 @@ enum AgeGroup: string
     public function recommendedSessionDuration(): int
     {
         return match ($this) {
-            self::CHILDREN => 30,    // Shorter attention span
-            self::YOUTH => 45,       // Medium duration
-            self::ADULTS => 60,      // Full hour sessions
-            self::SENIORS => 45,     // Moderate duration
-            self::MIXED => 45,       // Moderate for mixed groups
+            self::CHILDREN => SessionDuration::THIRTY_MINUTES->value,
+            self::YOUTH => SessionDuration::FORTY_FIVE_MINUTES->value,
+            self::ADULTS => SessionDuration::SIXTY_MINUTES->value,
+            self::SENIORS => SessionDuration::FORTY_FIVE_MINUTES->value,
+            self::MIXED => SessionDuration::FORTY_FIVE_MINUTES->value,
         };
     }
 

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SessionDuration;
 use App\Models\Academy;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSubscription;
@@ -30,7 +31,7 @@ class QuranIndividualCircleFactory extends Factory
             'sessions_remaining' => function (array $attributes) {
                 return $attributes['total_sessions'];
             },
-            'default_duration_minutes' => 45,
+            'default_duration_minutes' => SessionDuration::FORTY_FIVE_MINUTES->value,
             'is_active' => true,
             'started_at' => now(),
         ];

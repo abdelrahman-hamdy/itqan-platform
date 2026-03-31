@@ -5,6 +5,7 @@ namespace App\Livewire\Supervisor;
 use App\Enums\LearningGoal;
 use App\Enums\QuranLearningLevel;
 use App\Enums\TimeSlot;
+use App\Enums\TrialRequestStatus;
 use App\Enums\UserType;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
@@ -82,10 +83,7 @@ class CreateTrialRequestModal extends Component
             $this->student_name = $user->name ?? '';
             $this->phone = $user->phone ?? '';
             $this->email = $user->email ?? '';
-
-            // Compute age from StudentProfile birth_date
-            $profile = StudentProfile::where('user_id', $user->id)->first();
-            $this->student_age = $profile?->birth_date?->age;
+            $this->student_age = StudentProfile::where('user_id', $user->id)->first()?->birth_date?->age;
         }
     }
 
@@ -107,7 +105,7 @@ class CreateTrialRequestModal extends Component
             'preferred_time' => $this->preferred_time ?: null,
             'learning_goals' => ! empty($this->learning_goals) ? $this->learning_goals : null,
             'notes' => $this->notes ?: null,
-            'status' => 'pending',
+            'status' => TrialRequestStatus::PENDING,
             'created_by' => auth()->id(),
         ]);
 

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SessionDuration;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\User;
@@ -28,7 +29,7 @@ class MeetingAttendanceFactory extends Factory
             'attendance_calculated_at' => null,
             'attendance_status' => 'absent',
             'attendance_percentage' => 0,
-            'session_duration_minutes' => 60,
+            'session_duration_minutes' => SessionDuration::SIXTY_MINUTES->value,
             'session_start_time' => $this->faker->dateTimeBetween('-1 hour', 'now'),
             'session_end_time' => $this->faker->dateTimeBetween('now', '+1 hour'),
             'join_count' => 0,

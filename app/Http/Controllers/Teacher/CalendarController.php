@@ -2,22 +2,24 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use App\Constants\DefaultAcademy;
+use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
-use App\Constants\DefaultAcademy;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\QuranSessionHomework;
 use App\Services\AcademyContextService;
-use App\Services\CalendarService;
 use App\Services\Calendar\SessionStrategyFactory;
+use App\Services\CalendarService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use InvalidArgumentException;
 
@@ -133,19 +135,19 @@ class CalendarController extends Controller
         $todayInAcademy = Carbon::now(AcademyContextService::getTimezone())->toDateString();
 
         // For trial items, schedule_days is auto-derived from the selected date on the frontend
-        $itemType        = $request->input('item_type');
+        $itemType = $request->input('item_type');
         $scheduleDaysRules = $itemType === 'trial'
             ? ['array']
             : ['required', 'array', 'min:1'];
 
         $validated = $request->validate([
-            'item_id'            => ['required', 'integer'],
-            'item_type'          => ['required', 'string', 'in:group,individual,trial,private_lesson,interactive_course'],
-            'schedule_days'      => $scheduleDaysRules,
-            'schedule_days.*'    => ['string', 'in:Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday'],
-            'schedule_time'      => ['required', 'string', 'regex:/^\d{2}:\d{2}$/'],
+            'item_id' => ['required', 'integer'],
+            'item_type' => ['required', 'string', 'in:group,individual,trial,private_lesson,interactive_course'],
+            'schedule_days' => $scheduleDaysRules,
+            'schedule_days.*' => ['string', 'in:Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday'],
+            'schedule_time' => ['required', 'string', 'regex:/^\d{2}:\d{2}$/'],
             'schedule_start_date' => ['required', 'date', "after_or_equal:{$todayInAcademy}"],
-            'session_count'      => ['required', 'integer', 'min:1'],
+            'session_count' => ['required', 'integer', 'min:1'],
         ]);
 
         $user = Auth::user();
@@ -428,7 +430,7 @@ class CalendarController extends Controller
             'source' => ['required', 'string', 'in:quran_session,circle_session,course_session,academic_session'],
             'session_id' => ['required', 'integer'],
             'scheduled_at' => ['nullable', 'date'],
-            'duration_minutes' => ['nullable', 'integer', 'in:30,45,60,90,120'],
+            'duration_minutes' => ['nullable', 'integer', Rule::in(SessionDuration::values())],
             'teacher_notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -595,7 +597,7 @@ class CalendarController extends Controller
                 ? __('calendar.formatting.session_with_student', ['name' => $session->student->name])
                 : __('calendar.formatting.session'),
             'course_session' => ($session->course?->title ?? __('calendar.formatting.educational_course'))
-                . ' - ' . ($session->title ?? __('calendar.formatting.session')),
+                .' - '.($session->title ?? __('calendar.formatting.session')),
             default => __('calendar.formatting.session'),
         };
     }

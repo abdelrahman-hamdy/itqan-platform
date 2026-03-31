@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\SessionDuration;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateQuranCircleRequest extends FormRequest
 {
@@ -37,7 +39,7 @@ class UpdateQuranCircleRequest extends FormRequest
             'day_of_week' => 'required|in:saturday,sunday,monday,tuesday,wednesday,thursday,friday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
-            'duration_minutes' => 'required|integer|in:30,60',
+            'duration_minutes' => ['required', 'integer', Rule::in(SessionDuration::values())],
             'curriculum_focus' => 'nullable|array',
             'learning_objectives' => 'nullable|array',
             'prerequisites' => 'nullable|string|max:500',
@@ -96,7 +98,7 @@ class UpdateQuranCircleRequest extends FormRequest
             'end_time.after' => 'وقت النهاية يجب أن يكون بعد وقت البداية',
             'duration_minutes.required' => 'مدة الجلسة مطلوبة',
             'duration_minutes.integer' => 'مدة الجلسة يجب أن تكون رقماً صحيحاً',
-            'duration_minutes.in' => 'مدة الجلسة يجب أن تكون 30 أو 60 دقيقة',
+            'duration_minutes.in' => 'مدة الجلسة يجب أن تكون إحدى القيم المسموح بها: '.implode('، ', array_map(fn ($case) => $case->label(), SessionDuration::cases())),
             'curriculum_focus.array' => 'تركيز المنهج يجب أن يكون مصفوفة',
             'learning_objectives.array' => 'أهداف التعلم يجب أن تكون مصفوفة',
             'prerequisites.max' => 'المتطلبات الأساسية يجب ألا تتجاوز 500 حرف',

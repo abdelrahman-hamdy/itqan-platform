@@ -17,7 +17,7 @@ class ScheduleSessionRequest extends FormRequest
             'title' => 'nullable|string|max:255',
             'description' => 'nullable|string|max:1000',
             'scheduled_at' => 'required|date|after:now',
-            'duration_minutes' => 'nullable|integer|min:30|max:180',
+            'duration_minutes' => 'nullable|integer|min:15|max:180',
         ];
     }
 
@@ -32,7 +32,7 @@ class ScheduleSessionRequest extends FormRequest
             'scheduled_at.date' => 'وقت الجلسة غير صحيح',
             'scheduled_at.after' => 'وقت الجلسة يجب أن يكون في المستقبل',
             'duration_minutes.integer' => 'المدة يجب أن تكون رقم',
-            'duration_minutes.min' => 'المدة يجب أن تكون 30 دقيقة على الأقل',
+            'duration_minutes.min' => 'المدة يجب أن تكون 15 دقيقة على الأقل',
             'duration_minutes.max' => 'المدة يجب ألا تتجاوز 180 دقيقة',
         ];
     }

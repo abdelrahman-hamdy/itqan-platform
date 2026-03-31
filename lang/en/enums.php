@@ -58,9 +58,11 @@ return [
         'expired' => 'Expired',
     ],
     'session_duration' => [
+        'fifteen_minutes' => '15 minutes',
         'thirty_minutes' => '30 minutes',
         'forty_five_minutes' => '45 minutes',
         'sixty_minutes' => '1 hour',
+        'ninety_minutes' => '1.5 hours',
     ],
     'difficulty_level' => [
         'beginner' => 'Beginner',

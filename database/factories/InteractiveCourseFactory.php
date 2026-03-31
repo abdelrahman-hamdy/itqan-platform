@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\InteractiveCourseStatus;
+use App\Enums\SessionDuration;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
@@ -37,7 +38,7 @@ class InteractiveCourseFactory extends Factory
             'max_students' => fake()->numberBetween(10, 30),
             'duration_weeks' => fake()->numberBetween(4, 16),
             'sessions_per_week' => fake()->numberBetween(1, 3),
-            'session_duration_minutes' => fake()->randomElement([45, 60, 90]),
+            'session_duration_minutes' => fake()->randomElement(SessionDuration::values()),
             'total_sessions' => fake()->numberBetween(8, 24),
             'student_price' => fake()->randomFloat(2, 200, 2000),
             'teacher_payment' => fake()->randomFloat(2, 100, 500),

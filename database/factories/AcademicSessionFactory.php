@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicTeacherProfile;
@@ -29,7 +30,7 @@ class AcademicSessionFactory extends Factory
             'session_type' => 'individual',
             'status' => SessionStatus::SCHEDULED,
             'scheduled_at' => now()->addDays(fake()->numberBetween(1, 30)),
-            'duration_minutes' => 60,
+            'duration_minutes' => SessionDuration::SIXTY_MINUTES->value,
             'subscription_counted' => false,
             'recording_enabled' => false,
             'homework_assigned' => false,

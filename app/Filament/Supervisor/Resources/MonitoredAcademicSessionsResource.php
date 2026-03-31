@@ -3,6 +3,7 @@
 namespace App\Filament\Supervisor\Resources;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Shared\Tables\SessionTableColumns;
@@ -44,7 +45,7 @@ class MonitoredAcademicSessionsResource extends BaseSupervisorResource
 {
     protected static ?string $model = AcademicSession::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $navigationLabel = 'جلسات أكاديمية';
 
@@ -52,7 +53,7 @@ class MonitoredAcademicSessionsResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'جلسات أكاديمية';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'الدروس الأكاديمية';
+    protected static string|\UnitEnum|null $navigationGroup = 'الدروس الأكاديمية';
 
     protected static ?int $navigationSort = 5;
 
@@ -79,14 +80,8 @@ class MonitoredAcademicSessionsResource extends BaseSupervisorResource
 
                         Select::make('duration_minutes')
                             ->label('مدة الجلسة')
-                            ->options([
-                                30 => '30 دقيقة',
-                                45 => '45 دقيقة',
-                                60 => '60 دقيقة',
-                                90 => '90 دقيقة',
-                                120 => '120 دقيقة',
-                            ])
-                            ->default(60)
+                            ->options(SessionDuration::options())
+                            ->default(SessionDuration::SIXTY_MINUTES->value)
                             ->required(),
                     ])->columns(2),
 

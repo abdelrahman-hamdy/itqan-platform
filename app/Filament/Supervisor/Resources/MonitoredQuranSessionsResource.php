@@ -2,6 +2,7 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Filament\Shared\Actions\MeetingActions;
 use App\Filament\Shared\Tables\SessionTableColumns;
@@ -43,7 +44,7 @@ class MonitoredQuranSessionsResource extends BaseSupervisorResource
 {
     protected static ?string $model = QuranSession::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-book-open';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-book-open';
 
     protected static ?string $navigationLabel = 'جلسات القرآن';
 
@@ -51,7 +52,7 @@ class MonitoredQuranSessionsResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'جلسات القرآن';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة القرآن';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 5;
 
@@ -78,14 +79,8 @@ class MonitoredQuranSessionsResource extends BaseSupervisorResource
 
                         Select::make('duration_minutes')
                             ->label('مدة الجلسة')
-                            ->options([
-                                30 => '30 دقيقة',
-                                45 => '45 دقيقة',
-                                60 => '60 دقيقة',
-                                90 => '90 دقيقة',
-                                120 => '120 دقيقة',
-                            ])
-                            ->default(60)
+                            ->options(SessionDuration::options())
+                            ->default(SessionDuration::SIXTY_MINUTES->value)
                             ->required(),
                     ])->columns(2),
 

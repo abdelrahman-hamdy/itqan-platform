@@ -9,9 +9,11 @@ namespace App\Enums;
  * Used by subscription packages and session creation forms.
  *
  * Available durations:
+ * - FIFTEEN_MINUTES: 15-minute sessions
  * - THIRTY_MINUTES: 30-minute sessions
  * - FORTY_FIVE_MINUTES: 45-minute sessions
  * - SIXTY_MINUTES: 60-minute (1 hour) sessions
+ * - NINETY_MINUTES: 90-minute (1.5 hours) sessions
  *
  * The integer value represents the duration in minutes.
  *
@@ -21,16 +23,20 @@ namespace App\Enums;
  */
 enum SessionDuration: int
 {
+    case FIFTEEN_MINUTES = 15;
     case THIRTY_MINUTES = 30;
     case FORTY_FIVE_MINUTES = 45;
     case SIXTY_MINUTES = 60;
+    case NINETY_MINUTES = 90;
 
     public function label(): string
     {
         $key = match ($this) {
+            self::FIFTEEN_MINUTES => 'fifteen_minutes',
             self::THIRTY_MINUTES => 'thirty_minutes',
             self::FORTY_FIVE_MINUTES => 'forty_five_minutes',
             self::SIXTY_MINUTES => 'sixty_minutes',
+            self::NINETY_MINUTES => 'ninety_minutes',
         };
 
         return __('enums.session_duration.'.$key);
@@ -42,9 +48,11 @@ enum SessionDuration: int
     public function labelEn(): string
     {
         return match ($this) {
+            self::FIFTEEN_MINUTES => '15 minutes',
             self::THIRTY_MINUTES => '30 minutes',
             self::FORTY_FIVE_MINUTES => '45 minutes',
             self::SIXTY_MINUTES => '1 hour',
+            self::NINETY_MINUTES => '1.5 hours',
         };
     }
 
@@ -78,9 +86,11 @@ enum SessionDuration: int
         }
 
         return match ($minutes) {
+            15 => self::FIFTEEN_MINUTES,
             30 => self::THIRTY_MINUTES,
             45 => self::FORTY_FIVE_MINUTES,
             60 => self::SIXTY_MINUTES,
+            90 => self::NINETY_MINUTES,
             default => null,
         };
     }

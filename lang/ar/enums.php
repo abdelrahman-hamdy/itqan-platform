@@ -46,9 +46,11 @@ return [
         'expired' => 'منتهي',
     ],
     'session_duration' => [
+        'fifteen_minutes' => '15 دقيقة',
         'thirty_minutes' => '30 دقيقة',
         'forty_five_minutes' => '45 دقيقة',
         'sixty_minutes' => 'ساعة واحدة',
+        'ninety_minutes' => 'ساعة ونصف',
     ],
     'difficulty_level' => [
         'beginner' => 'مبتدئ',

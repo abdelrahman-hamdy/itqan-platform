@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Models\Academy;
 use App\Models\QuranSession;
@@ -32,7 +33,7 @@ class QuranSessionFactory extends Factory
             'session_type' => 'individual',
             'status' => SessionStatus::SCHEDULED,
             'scheduled_at' => $scheduledAt,
-            'duration_minutes' => 45,
+            'duration_minutes' => SessionDuration::FORTY_FIVE_MINUTES->value,
             'title' => 'Quran Memorization Session',
             'session_code' => 'QS-'.fake()->unique()->numberBetween(10000, 99999),
         ];

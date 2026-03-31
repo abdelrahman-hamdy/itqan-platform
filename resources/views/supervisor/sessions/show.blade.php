@@ -57,22 +57,22 @@
 
     // Entity & subscription URLs for navigation buttons
     $entityUrl = match($sessionType) {
-        'quran' => $session->session_type === 'individual' && $session->individual_circle_id
-            ? route('manage.individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individual_circle_id])
-            : ($session->circle_id ? route('manage.group-circles.show', ['subdomain' => $subdomain, 'circle' => $session->circle_id]) : null),
         'academic' => $session->academic_subscription_id
             ? route('manage.academic-lessons.show', ['subdomain' => $subdomain, 'subscription' => $session->academic_subscription_id])
             : null,
         'interactive' => $session->course_id
             ? route('manage.interactive-courses.show', ['subdomain' => $subdomain, 'course' => $session->course_id])
             : null,
+        default => $session->session_type === 'individual' && $session->individual_circle_id
+            ? route('manage.individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individual_circle_id])
+            : ($session->circle_id ? route('manage.group-circles.show', ['subdomain' => $subdomain, 'circle' => $session->circle_id]) : null),
     };
     $entityLabel = match($sessionType) {
-        'quran' => $session->session_type === 'individual'
-            ? __('sessions.actions.view_individual_circle')
-            : __('sessions.actions.view_circle'),
         'academic' => __('sessions.actions.view_lesson'),
         'interactive' => __('sessions.actions.view_course'),
+        default => $session->session_type === 'individual'
+            ? __('sessions.actions.view_individual_circle')
+            : __('sessions.actions.view_circle'),
     };
     $subscriptionUrl = match($sessionType) {
         'quran' => $session->quran_subscription_id

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\SessionDuration;
 use App\Enums\UserType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -31,7 +32,7 @@ class StoreQuranCircleRequest extends FormRequest
                 'required',
                 Rule::exists('users', 'id')->where(function ($query) {
                     $query->where('user_type', UserType::QURAN_TEACHER->value)
-                          ->where('academy_id', $this->user()?->academy_id);
+                        ->where('academy_id', $this->user()?->academy_id);
                 }),
             ],
             'name' => 'required|string|max:100',
@@ -46,7 +47,7 @@ class StoreQuranCircleRequest extends FormRequest
             'day_of_week' => 'required|in:saturday,sunday,monday,tuesday,wednesday,thursday,friday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
-            'duration_minutes' => 'required|integer|in:30,60',
+            'duration_minutes' => ['required', 'integer', Rule::in(SessionDuration::values())],
             'specialization' => 'required|in:memorization,recitation,interpretation,arabic_language,complete',
             'curriculum_focus' => 'nullable|array',
             'learning_objectives' => 'nullable|array',
@@ -110,7 +111,7 @@ class StoreQuranCircleRequest extends FormRequest
             'end_time.after' => 'وقت النهاية يجب أن يكون بعد وقت البداية',
             'duration_minutes.required' => 'مدة الجلسة مطلوبة',
             'duration_minutes.integer' => 'مدة الجلسة يجب أن تكون رقماً صحيحاً',
-            'duration_minutes.in' => 'مدة الجلسة يجب أن تكون 30 أو 60 دقيقة',
+            'duration_minutes.in' => 'مدة الجلسة يجب أن تكون إحدى القيم المسموح بها: '.implode('، ', array_map(fn ($case) => $case->label(), SessionDuration::cases())),
             'specialization.required' => 'التخصص مطلوب',
             'specialization.in' => 'التخصص المحدد غير صالح',
             'curriculum_focus.array' => 'تركيز المنهج يجب أن يكون مصفوفة',

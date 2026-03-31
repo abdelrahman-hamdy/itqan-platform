@@ -26,7 +26,7 @@ class ScheduleGroupCircleSessionRequest extends FormRequest
             'title' => 'nullable|string|max:255',
             'description' => 'nullable|string|max:1000',
             'scheduled_at' => 'required|date|after:now',
-            'duration_minutes' => 'nullable|integer|min:30|max:180',
+            'duration_minutes' => 'nullable|integer|min:15|max:180',
         ];
     }
 }

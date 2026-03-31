@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SessionDuration;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\Academy;
 use App\Models\QuranSubscription;
@@ -35,7 +36,7 @@ class QuranSubscriptionFactory extends Factory
             'package_name_ar' => fake()->randomElement(['الأساسي', 'المتوسط', 'المتميز']),
             'package_name_en' => fake()->randomElement(['Basic', 'Standard', 'Premium']),
             'package_sessions_per_week' => fake()->randomElement([1, 2, 3, 4]),
-            'package_session_duration_minutes' => fake()->randomElement([30, 45, 60]),
+            'package_session_duration_minutes' => fake()->randomElement(SessionDuration::values()),
             'total_sessions' => $totalSessions,
             'total_price' => $totalPrice,
             'currency' => 'SAR',

@@ -97,7 +97,7 @@
                     @if(!in_array($statusValue, ['cancelled', 'completed']))
                         <form action="{{ route('manage.trial-sessions.cancel', ['subdomain' => $subdomain, 'trialRequest' => $trialRequest->id]) }}"
                               method="POST"
-                              onsubmit="return confirm('{{ __('supervisor.trial_sessions.confirm_cancel') }}')">
+                              onsubmit="return confirm(@json(__('supervisor.trial_sessions.confirm_cancel')))">
                             @csrf
                             <button type="submit"
                                 class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-colors">
