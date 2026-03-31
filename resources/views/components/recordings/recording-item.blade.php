@@ -107,8 +107,8 @@
                         <span class="hidden sm:inline">{{ __('components.recordings.recording_item.listen') }}</span>
                     </button>
 
-                    @if($viewType === 'teacher')
-                        <!-- Delete Button -->
+                    @if(in_array($viewType, ['admin', 'supervisor']))
+                        <!-- Delete Button (admin/supervisor only) -->
                         <button type="button"
                                 onclick="confirmDeleteRecording({{ $recording->id }}, '{{ addslashes($recording->display_name) }}')"
                                 class="inline-flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm">

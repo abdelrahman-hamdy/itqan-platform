@@ -163,8 +163,8 @@
                 </div>
             @endif
 
-            <!-- Recording Stats (Teacher Only) -->
-            @if($viewType === 'teacher' && $recordingStats && $completedRecordings->count() > 0)
+            <!-- Recording Stats (Admin/Supervisor Only) -->
+            @if(in_array($viewType, ['admin', 'supervisor']) && $recordingStats && $completedRecordings->count() > 0)
                 <div class="mt-4 pt-4 border-t border-gray-200">
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                         <div class="bg-gray-50 rounded-lg p-3">
@@ -190,8 +190,8 @@
     @endif
 </div>
 
-@if($viewType === 'teacher')
-<!-- Delete Confirmation Script -->
+@if(in_array($viewType, ['admin', 'supervisor']))
+<!-- Delete Confirmation Script (admin/supervisor only) -->
 @push('scripts')
 <script>
 function confirmDeleteRecording(recordingId, recordingName) {
