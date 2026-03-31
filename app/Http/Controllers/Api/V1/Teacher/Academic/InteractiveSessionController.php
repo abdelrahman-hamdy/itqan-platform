@@ -409,7 +409,6 @@ class InteractiveSessionController extends Controller
                 if (! in_array($studentId, $existingAttendanceUserIds)) {
                     $session->attendances()->create([
                         'student_id' => $studentId,
-                        'academy_id' => $session->academy_id,
                         'attendance_status' => 'absent',
                         'notes' => $request->reason,
                     ]);

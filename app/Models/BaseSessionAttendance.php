@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use App\Enums\AttendanceStatus;
 use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -50,7 +50,6 @@ abstract class BaseSessionAttendance extends Model
     protected static array $baseFillable = [
         'session_id',
         'student_id',
-        'academy_id',  // Required for tenant scoping
         'attendance_status',
         'join_time',
         'leave_time',

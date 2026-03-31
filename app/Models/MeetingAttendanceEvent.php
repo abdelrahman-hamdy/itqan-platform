@@ -28,12 +28,15 @@ class MeetingAttendanceEvent extends Model
         'leave_event_id',
         'raw_webhook_data',
         'termination_reason',
+        'closed_at',
+        'closed_by_event_id',
     ];
 
     protected $casts = [
         'event_type' => MeetingEventType::class,
         'event_timestamp' => 'datetime',
         'left_at' => 'datetime',
+        'closed_at' => 'datetime',
         'raw_webhook_data' => 'array',
         'duration_minutes' => 'integer',
     ];

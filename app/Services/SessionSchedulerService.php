@@ -107,9 +107,18 @@ class SessionSchedulerService
         }
 
         // Fallback: check raw webhook events in case MeetingAttendance failed to create
-        if (MeetingAttendanceEvent::where('session_id', $session->id)
+        $hasRawJoinEvents = MeetingAttendanceEvent::where('session_id', $session->id)
             ->where('event_type', MeetingEventType::JOINED)
-            ->exists()) {
+            ->exists();
+
+        if ($hasRawJoinEvents) {
+            Log::warning('Prevented false absent: raw join events exist but MeetingAttendance missing/incomplete', [
+                'session_id' => $session->id,
+                'session_type' => $this->settingsService->getSessionType($session),
+                'student_attendance_count' => $studentAttendances->count(),
+                'first_join_times' => $studentAttendances->pluck('first_join_time')->toArray(),
+            ]);
+
             return false;
         }
 
