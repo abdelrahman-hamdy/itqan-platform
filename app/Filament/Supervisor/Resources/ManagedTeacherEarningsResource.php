@@ -63,13 +63,13 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
             $query->where(function ($q) use ($profileIds, $hasQuran, $hasAcademic) {
                 if ($hasQuran) {
                     $q->orWhere(function ($sq) use ($profileIds) {
-                        $sq->where('teacher_type', QuranTeacherProfile::class)
+                        $sq->where('teacher_type', 'quran_teacher')
                             ->whereIn('teacher_id', $profileIds['quran']);
                     });
                 }
                 if ($hasAcademic) {
                     $q->orWhere(function ($sq) use ($profileIds) {
-                        $sq->where('teacher_type', AcademicTeacherProfile::class)
+                        $sq->where('teacher_type', 'academic_teacher')
                             ->whereIn('teacher_id', $profileIds['academic']);
                     });
                 }
@@ -173,13 +173,13 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
                         return $query->where(function ($query) use ($quranIds, $academicIds) {
                             if (! empty($quranIds)) {
                                 $query->orWhere(function ($q) use ($quranIds) {
-                                    $q->where('teacher_type', QuranTeacherProfile::class)
+                                    $q->where('teacher_type', 'quran_teacher')
                                         ->whereIn('teacher_id', $quranIds);
                                 });
                             }
                             if (! empty($academicIds)) {
                                 $query->orWhere(function ($q) use ($academicIds) {
-                                    $q->where('teacher_type', AcademicTeacherProfile::class)
+                                    $q->where('teacher_type', 'academic_teacher')
                                         ->whereIn('teacher_id', $academicIds);
                                 });
                             }
@@ -192,8 +192,8 @@ class ManagedTeacherEarningsResource extends BaseTeacherEarningResource
             SelectFilter::make('teacher_type')
                 ->label('نوع المعلم')
                 ->options([
-                    QuranTeacherProfile::class => 'معلم قرآن',
-                    AcademicTeacherProfile::class => 'معلم أكاديمي',
+                    'quran_teacher' => 'معلم قرآن',
+                    'academic_teacher' => 'معلم أكاديمي',
                 ])
                 ->multiple(),
 

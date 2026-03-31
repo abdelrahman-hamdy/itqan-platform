@@ -2,8 +2,6 @@
 
 namespace App\Filament\Shared\Resources;
 
-use App\Models\AcademicTeacherProfile;
-use App\Models\QuranTeacherProfile;
 use App\Models\TeacherEarning;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -164,7 +162,7 @@ abstract class BaseTeacherEarningResource extends Resource
                                 $lines = [];
                                 foreach ($record->rate_snapshot as $key => $value) {
                                     $label = $labels[$key] ?? $key;
-                                    $lines[] = "{$label}: ".number_format($value, 2).' '.getTeacherEarningsCurrencySymbol();
+                                    $lines[] = "{$label}: ".number_format($value, 2).' '.getTeacherEarningsCurrencySymbol($record?->academy);
                                 }
 
                                 return implode(' | ', $lines) ?: '-';
@@ -336,8 +334,8 @@ abstract class BaseTeacherEarningResource extends Resource
             SelectFilter::make('teacher_type')
                 ->label('نوع المعلم')
                 ->options([
-                    QuranTeacherProfile::class => 'معلم قرآن',
-                    AcademicTeacherProfile::class => 'معلم أكاديمي',
+                    'quran_teacher' => 'معلم قرآن',
+                    'academic_teacher' => 'معلم أكاديمي',
                 ]),
 
             TernaryFilter::make('is_finalized')
@@ -444,8 +442,8 @@ abstract class BaseTeacherEarningResource extends Resource
     protected static function formatTeacherType(?string $type): string
     {
         return match ($type) {
-            QuranTeacherProfile::class => 'معلم قرآن',
-            AcademicTeacherProfile::class => 'معلم أكاديمي',
+            'quran_teacher' => 'معلم قرآن',
+            'academic_teacher' => 'معلم أكاديمي',
             default => $type ?? '-',
         };
     }
@@ -456,8 +454,8 @@ abstract class BaseTeacherEarningResource extends Resource
     protected static function formatTeacherTypeShort(?string $type): string
     {
         return match ($type) {
-            QuranTeacherProfile::class => 'قرآن',
-            AcademicTeacherProfile::class => 'أكاديمي',
+            'quran_teacher' => 'قرآن',
+            'academic_teacher' => 'أكاديمي',
             default => $type ?? '-',
         };
     }
@@ -468,8 +466,8 @@ abstract class BaseTeacherEarningResource extends Resource
     protected static function getTeacherTypeColor(?string $type): string
     {
         return match ($type) {
-            QuranTeacherProfile::class => 'success',
-            AcademicTeacherProfile::class => 'info',
+            'quran_teacher' => 'success',
+            'academic_teacher' => 'info',
             default => 'gray',
         };
     }
