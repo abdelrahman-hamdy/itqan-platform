@@ -83,6 +83,13 @@
                 </div>
             @endif
 
+            {{-- Session Recordings --}}
+            @if($session instanceof \App\Contracts\RecordingCapable
+                && $session->status === \App\Enums\SessionStatus::COMPLETED
+                && $session->shouldShowRecordingToUser(auth()->user()))
+                <x-recordings.session-recordings :session="$session" view-type="student" />
+            @endif
+
             {{-- Homework Section --}}
             @if($session->homework && $session->homework->count() > 0)
                 @php

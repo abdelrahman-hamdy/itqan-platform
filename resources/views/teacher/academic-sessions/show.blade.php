@@ -28,6 +28,12 @@
             />
         </div>
 
+        <!-- Session Recordings -->
+        @if($session instanceof \App\Contracts\RecordingCapable
+            && $session->shouldShowRecordingToUser(auth()->user()))
+            <x-recordings.session-recordings :session="$session" view-type="teacher" />
+        @endif
+
         <!-- Session Content Management (for teachers) -->
         @if($viewType === 'teacher')
             <!-- Session Content Form -->

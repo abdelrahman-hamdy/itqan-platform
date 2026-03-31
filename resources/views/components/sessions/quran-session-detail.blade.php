@@ -103,6 +103,16 @@
                 </div>
             @endif
 
+            <!-- Session Recordings (gated by visibility toggle) -->
+            @if($session instanceof \App\Contracts\RecordingCapable
+                && $session->status === \App\Enums\SessionStatus::COMPLETED
+                && $session->shouldShowRecordingToUser(auth()->user()))
+                <x-recordings.session-recordings
+                    :session="$session"
+                    :view-type="$viewType"
+                />
+            @endif
+
             <!-- Homework Management (Teacher/Admin) or Homework Display (Student/Supervisor) -->
             @if(in_array($viewType, ['teacher', 'admin']))
                 @livewire('quran-homework-manager', ['sessionId' => $session->id], key('homework-'.$session->id))

@@ -29,6 +29,13 @@
             />
         </div>
 
+            <!-- Session Recordings -->
+            @if($session instanceof \App\Contracts\RecordingCapable
+                && $session->status === \App\Enums\SessionStatus::COMPLETED
+                && $session->shouldShowRecordingToUser(auth()->user()))
+                <x-recordings.session-recordings :session="$session" view-type="student" />
+            @endif
+
             <!-- Session Progress & Content -->
             @if($session->status === \App\Enums\SessionStatus::COMPLETED)
                 <!-- Academic Homework Display -->
