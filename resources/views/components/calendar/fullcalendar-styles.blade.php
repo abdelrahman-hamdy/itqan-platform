@@ -1,5 +1,8 @@
 {{-- Shared FullCalendar CSS overrides (RTL, theme, status colors, responsive) --}}
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+{{-- Flatpickr for session edit modal (academy-timezone-aware today highlight) --}}
+<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <style>
     /* FullCalendar RTL & theme overrides */
     .fc {

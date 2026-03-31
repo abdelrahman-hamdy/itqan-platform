@@ -147,11 +147,36 @@
                 <div class="p-5 space-y-4">
                     <h4 class="text-sm font-bold text-gray-900 mb-3"><i class="ri-edit-line me-1 text-blue-600"></i>{{ __('teacher.calendar.edit_session') }}</h4>
 
-                    <!-- Date/Time -->
+                    <!-- Date/Time (Flatpickr for academy-timezone-aware today highlight) -->
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.modal_date') }} + {{ __('teacher.calendar.modal_time') }}</label>
-                        <input type="datetime-local" x-model="editData.scheduled_at"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <input type="text" x-ref="editDatetime" readonly
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer"
+                               x-init="$nextTick(() => {
+                                   if (!$refs.editDatetime) return;
+                                   const tz = @js(\App\Services\AcademyContextService::getTimezone());
+                                   const academyToday = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+                                   const fp = flatpickr($refs.editDatetime, {
+                                       enableTime: true,
+                                       time_24hr: false,
+                                       dateFormat: 'Y-m-dTH:i',
+                                       altInput: true,
+                                       altFormat: 'Y-m-d h:i K',
+                                       minuteIncrement: 15,
+                                       defaultDate: editData.scheduled_at || null,
+                                       onDayCreate: function(dObj, dStr, fp, dayElem) {
+                                           dayElem.classList.remove('today');
+                                           const dayDate = dayElem.dateObj.toLocaleDateString('en-CA');
+                                           if (dayDate === academyToday) {
+                                               dayElem.classList.add('today');
+                                           }
+                                       },
+                                       onChange: function(selectedDates, dateStr) {
+                                           editData.scheduled_at = dateStr;
+                                       }
+                                   });
+                                   $watch('editMode', v => { if (!v && fp) fp.destroy(); });
+                               })">
                     </div>
 
                     <!-- Duration -->
