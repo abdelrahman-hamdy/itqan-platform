@@ -1,4 +1,5 @@
-{{-- Audio Player Modal with WaveSurfer.js waveform --}}
+{{-- Audio Player Modal with WaveSurfer.js waveform (render once per page) --}}
+@once
 <div
     x-data="{
         open: false,
@@ -166,3 +167,4 @@
         </div>
     </div>
 </div>
+@endonce
