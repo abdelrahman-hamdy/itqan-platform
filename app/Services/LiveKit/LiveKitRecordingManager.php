@@ -38,24 +38,32 @@ class LiveKitRecordingManager
             }
 
             // Build file path for local storage on LiveKit server
+            $audioOnly = $options['audio_only'] ?? false;
+            $extension = $audioOnly ? '.m4a' : '.mp4';
             $filename = $options['filename'] ?? sprintf('recording-%s-%s', $roomName, now()->timestamp);
             $filepath = sprintf(
-                '%s/%s.mp4',
+                '%s/%s%s',
                 rtrim($options['storage_path'] ?? '/recordings', '/'),
-                $filename
+                $filename,
+                $extension
             );
 
             // Prepare Egress request payload for room composite recording
             $payload = [
                 'room_name' => $roomName,
+                'audio_only' => $audioOnly,
                 'file' => [
                     'filepath' => $filepath,
                 ],
-                'options' => [
+            ];
+
+            // Video options (not needed for audio-only)
+            if (! $audioOnly) {
+                $payload['options'] = [
                     'preset' => $options['preset'] ?? 'HD',
                     'layout' => $options['layout'] ?? 'grid',
-                ],
-            ];
+                ];
+            }
 
             // Add metadata if provided
             if (! empty($options['metadata'])) {

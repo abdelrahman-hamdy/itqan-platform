@@ -53,19 +53,12 @@ class RecordingService implements RecordingServiceInterface
             // Get recording configuration from session
             $config = $session->getRecordingConfiguration();
 
-            // Start recording via LiveKit Egress API
-            // Use track composite for audio-only (lightweight), room composite for video
-            if ($config['audio_only'] ?? false) {
-                $egressResponse = $this->liveKitService->startTrackRecording(
-                    $config['room_name'],
-                    $config
-                );
-            } else {
-                $egressResponse = $this->liveKitService->startRecording(
-                    $config['room_name'],
-                    $config
-                );
-            }
+            // Start recording via LiveKit Room Composite Egress
+            // For audio-only, the egress skips video rendering (much lighter CPU)
+            $egressResponse = $this->liveKitService->startRecording(
+                $config['room_name'],
+                $config
+            );
 
             // Create recording record
             $recording = SessionRecording::create([
