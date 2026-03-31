@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -46,6 +47,11 @@ return new class extends Migration
                         'metadata' => json_encode($metadata),
                         'updated_at' => now(),
                     ]);
+
+                // Clear student dashboard cache (raw DB bypasses Eloquent events)
+                Cache::forget("student:dashboard:{$sub->student_id}");
+                Cache::forget("student:private_sessions:{$sub->student_id}:{$sub->academy_id}");
+                Cache::forget("student:circles:{$sub->student_id}:{$sub->academy_id}");
 
                 $fixedCount++;
             }
