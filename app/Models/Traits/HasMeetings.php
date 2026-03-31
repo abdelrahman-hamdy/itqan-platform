@@ -337,7 +337,9 @@ trait HasMeetings
     public function getAttendanceSessionType(): string
     {
         if ($this instanceof QuranSession) {
-            return $this->session_type ?? 'individual';
+            // DB enum only allows: individual, group, academic, interactive
+            // Trial sessions are individual in practice
+            return in_array($this->session_type, ['individual', 'group']) ? $this->session_type : 'individual';
         }
 
         if ($this instanceof AcademicSession) {

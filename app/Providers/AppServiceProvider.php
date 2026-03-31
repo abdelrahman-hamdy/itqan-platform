@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Contracts\AcademicSessionMeetingServiceInterface;
+use App\Contracts\AttendanceEventServiceInterface;
 use App\Contracts\AutoMeetingCreationServiceInterface;
 use App\Contracts\ChatPermissionServiceInterface;
 use App\Contracts\CircleEnrollmentServiceInterface;
@@ -100,6 +101,7 @@ use App\Policies\SubscriptionPolicy;
 use App\Policies\TeacherEarningPolicy;
 use App\Policies\TeacherProfilePolicy;
 use App\Services\AcademicSessionMeetingService;
+use App\Services\AttendanceEventService;
 use App\Services\AutoMeetingCreationService;
 use App\Services\ChatPermissionService;
 use App\Services\CircleEnrollmentService;
@@ -187,6 +189,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SessionMeetingServiceInterface::class, SessionMeetingService::class);
         $this->app->bind(AcademicSessionMeetingServiceInterface::class, AcademicSessionMeetingService::class);
         $this->app->bind(InteractiveCourseSessionMeetingServiceInterface::class, InteractiveCourseSessionMeetingService::class);
+        $this->app->bind(AttendanceEventServiceInterface::class, AttendanceEventService::class);
 
         // Override Filament's RedirectToTenantController to fix Livewire redirect return type issue
         $this->app->bind(
