@@ -268,6 +268,12 @@ return [
         'month_summary' => 'Month Summary',
         'total_sessions' => 'Total Sessions',
         'completed' => 'Completed',
+        'session_pricing' => 'Session Pricing',
+        'session_pricing_description' => 'Set the session price for each duration. Leave blank to use the academy default.',
+        'individual_session_prices' => 'Individual Session Prices',
+        'group_session_prices' => 'Group Session Prices',
+        'academy_default_placeholder' => 'Academy Default',
+        'legacy_pricing' => 'Legacy Pricing',
     ],
 
     'students' => [

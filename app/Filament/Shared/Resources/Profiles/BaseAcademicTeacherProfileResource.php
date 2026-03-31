@@ -4,6 +4,7 @@ namespace App\Filament\Shared\Resources\Profiles;
 
 use App\Enums\EducationalQualification;
 use App\Enums\Gender;
+use App\Enums\SessionDuration;
 use App\Enums\TeachingLanguage;
 use App\Enums\WeekDays;
 use App\Filament\Concerns\TenantAwareFileUpload;
@@ -110,10 +111,17 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
                 ]),
             ]),
 
-            Section::make('التسعير')->schema([
-                TextInput::make('session_price_individual')->label('سعر الجلسة الفردية')
-                    ->numeric()->prefix('ر.س')->minValue(0),
-            ]),
+            Section::make(__('filament.pricing'))
+                ->schema([
+                    Grid::make(3)->schema(SessionDuration::priceInputGrid('individual_session_prices', __('filament.academy_default'))),
+                ])->description(__('filament.pricing_description')),
+
+            Section::make(__('filament.legacy_pricing'))
+                ->collapsed()
+                ->schema([
+                    TextInput::make('session_price_individual')->label('سعر الجلسة الفردية')
+                        ->numeric()->prefix('ر.س')->minValue(0),
+                ]),
 
             Section::make('المحتوى التعريفي')->schema([
                 Textarea::make('bio_arabic')->label('نبذة مختصرة (عربي)')->rows(3)->maxLength(1000),

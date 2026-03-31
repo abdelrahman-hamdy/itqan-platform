@@ -268,6 +268,12 @@ return [
         'month_summary' => 'ملخص الشهر',
         'total_sessions' => 'إجمالي الجلسات',
         'completed' => 'مكتملة',
+        'session_pricing' => 'تسعير الجلسات',
+        'session_pricing_description' => 'حدد سعر الجلسة لكل مدة. اترك الحقل فارغاً لاستخدام السعر الافتراضي للأكاديمية.',
+        'individual_session_prices' => 'أسعار الجلسات الفردية',
+        'group_session_prices' => 'أسعار جلسات الحلقات',
+        'academy_default_placeholder' => 'افتراضي الأكاديمية',
+        'legacy_pricing' => 'الأسعار القديمة',
     ],
 
     'students' => [

@@ -29,6 +29,9 @@ use Throwable;
  */
 class EarningsCalculationService implements EarningsCalculationServiceInterface
 {
+    /** Cached result from the last getSessionPriceForDuration() call, used by getRateSnapshot/getCalculationMetadata */
+    protected ?array $lastRateResult = null;
+
     /**
      * {@inheritdoc}
      */
@@ -227,14 +230,14 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
     }
 
     /**
-     * Calculate earnings for Quran sessions
+     * Calculate earnings for Quran sessions (duration-aware pricing)
      */
     protected function calculateQuranSessionEarnings(QuranSession $session): ?float
     {
         $cacheKey = "teacher:quran_profile:{$session->quranTeacher?->id}";
 
         $teacher = Cache::remember($cacheKey, now()->addHours(1), function () use ($session) {
-            return $session->quranTeacher?->quranTeacherProfile;
+            return $session->quranTeacher?->quranTeacherProfile?->load('academy');
         });
 
         if (! $teacher) {
@@ -243,58 +246,46 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
             return null;
         }
 
-        if ($session->session_type === 'individual') {
-            $amount = $teacher->session_price_individual;
+        $durationMinutes = $session->duration_minutes ?? 60;
+        $type = $session->session_type === 'individual' ? 'individual' : 'group';
 
-            if ($amount === null || $amount <= 0) {
-                report(new InvalidArgumentException(
-                    "Invalid session_price_individual for Quran teacher {$teacher->id}: ".
-                    var_export($amount, true)." (session: {$session->id})"
-                ));
-                Log::error('Invalid Quran individual session price', [
-                    'session_id' => $session->id,
-                    'teacher_id' => $teacher->id,
-                    'session_price_individual' => $amount,
-                ]);
-
-                return null;
-            }
-
-            return (float) $amount;
+        if ($session->session_type !== 'individual' && ! in_array($session->session_type, ['group', 'circle'])) {
+            return null;
         }
 
-        if (in_array($session->session_type, ['group', 'circle'])) {
-            $amount = $teacher->session_price_group;
+        $result = $teacher->getSessionPriceForDuration($durationMinutes, $type);
+        $amount = $result['amount'];
 
-            if ($amount === null || $amount <= 0) {
-                report(new InvalidArgumentException(
-                    "Invalid session_price_group for Quran teacher {$teacher->id}: ".
-                    var_export($amount, true)." (session: {$session->id})"
-                ));
-                Log::error('Invalid Quran group session price', [
-                    'session_id' => $session->id,
-                    'teacher_id' => $teacher->id,
-                    'session_price_group' => $amount,
-                ]);
+        $this->lastRateResult = $result;
 
-                return null;
-            }
+        if ($amount === null || $amount <= 0) {
+            report(new InvalidArgumentException(
+                "No valid {$type} session price for Quran teacher {$teacher->id} ".
+                "at {$durationMinutes}min (source: {$result['source']}, session: {$session->id})"
+            ));
+            Log::error('Invalid Quran session price for duration', [
+                'session_id' => $session->id,
+                'teacher_id' => $teacher->id,
+                'duration_minutes' => $durationMinutes,
+                'type' => $type,
+                'rate_source' => $result['source'],
+            ]);
 
-            return (float) $amount;
+            return null;
         }
 
-        return null;
+        return $amount;
     }
 
     /**
-     * Calculate earnings for Academic sessions
+     * Calculate earnings for Academic sessions (duration-aware pricing)
      */
     protected function calculateAcademicSessionEarnings(AcademicSession $session): ?float
     {
         $cacheKey = "teacher:academic_profile:{$session->academic_teacher_id}";
 
         $teacher = Cache::remember($cacheKey, now()->addHours(1), function () use ($session) {
-            return $session->academicTeacher;
+            return $session->academicTeacher?->load('academy');
         });
 
         if (! $teacher) {
@@ -303,23 +294,28 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
             return null;
         }
 
-        $amount = $teacher->session_price_individual;
+        $durationMinutes = $session->duration_minutes ?? 60;
+        $result = $teacher->getSessionPriceForDuration($durationMinutes);
+        $amount = $result['amount'];
+
+        $this->lastRateResult = $result;
 
         if ($amount === null || $amount <= 0) {
             report(new InvalidArgumentException(
-                "Invalid session_price_individual for Academic teacher {$teacher->id}: ".
-                var_export($amount, true)." (session: {$session->id})"
+                "No valid session price for Academic teacher {$teacher->id} ".
+                "at {$durationMinutes}min (source: {$result['source']}, session: {$session->id})"
             ));
-            Log::error('Invalid Academic session price', [
+            Log::error('Invalid Academic session price for duration', [
                 'session_id' => $session->id,
                 'teacher_id' => $teacher->id,
-                'session_price_individual' => $amount,
+                'duration_minutes' => $durationMinutes,
+                'rate_source' => $result['source'],
             ]);
 
             return null;
         }
 
-        return (float) $amount;
+        return $amount;
     }
 
     /**
@@ -636,20 +632,21 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
     }
 
     /**
-     * Get rate snapshot for audit trail
+     * Get rate snapshot for audit trail (returns array for duration-based rates)
      */
-    protected function getRateSnapshot(BaseSession $session): ?float
+    protected function getRateSnapshot(BaseSession $session): mixed
     {
-        if ($session instanceof QuranSession) {
-            $teacher = $session->quranTeacher?->quranTeacherProfile;
+        if (($session instanceof QuranSession || $session instanceof AcademicSession) && $this->lastRateResult) {
+            $durationMinutes = $session->duration_minutes ?? 60;
 
-            return $session->session_type === 'individual'
-                ? $teacher?->session_price_individual
-                : $teacher?->session_price_group;
-        }
-
-        if ($session instanceof AcademicSession) {
-            return $session->academicTeacher?->session_price_individual;
+            return [
+                'amount' => $this->lastRateResult['amount'] ?? null,
+                'source' => $this->lastRateResult['source'] ?? 'none',
+                'duration_minutes' => $durationMinutes,
+                'type' => $session instanceof QuranSession
+                    ? ($session->session_type === 'individual' ? 'individual' : 'group')
+                    : 'individual',
+            ];
         }
 
         if ($session instanceof InteractiveCourseSession) {
@@ -678,9 +675,12 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
             'amount' => $amount,
         ];
 
-        if ($session instanceof QuranSession) {
-            $metadata['session_type_detail'] = $session->session_type;
-            $metadata['teacher_rate'] = $this->getRateSnapshot($session);
+        if ($session instanceof QuranSession || $session instanceof AcademicSession) {
+            $metadata['duration_minutes'] = $session->duration_minutes ?? 60;
+            $metadata['rate_source'] = $this->lastRateResult['source'] ?? 'none';
+            if ($session instanceof QuranSession) {
+                $metadata['session_type_detail'] = $session->session_type;
+            }
         }
 
         if ($session instanceof InteractiveCourseSession) {

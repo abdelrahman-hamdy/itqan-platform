@@ -38,6 +38,7 @@ class AcademicTeacherProfile extends Model
         'available_time_start',
         'available_time_end',
         'session_price_individual',
+        'individual_session_prices',
         'languages',
         // Activation fields removed - use User.active_status instead
         'notes',
@@ -59,6 +60,7 @@ class AcademicTeacherProfile extends Model
         'total_reviews' => 'integer',
         'teaching_experience_years' => 'integer',
         'session_price_individual' => 'decimal:2',
+        'individual_session_prices' => 'array',
         'total_students' => 'integer',
         'total_courses_created' => 'integer',
         'available_time_start' => 'datetime:H:i',
@@ -294,6 +296,39 @@ class AcademicTeacherProfile extends Model
             ->where('academy_id', $this->academy_id)
             ->where('is_active', true)
             ->get();
+    }
+
+    /**
+     * Get the session price for a specific duration, with fallback chain:
+     * 1. Teacher's duration-specific rate
+     * 2. Academy default rate
+     * 3. Old flat rate (backward compatibility)
+     * 4. null
+     *
+     * @return array{amount: float|null, source: string}
+     */
+    public function getSessionPriceForDuration(int $durationMinutes): array
+    {
+        $prices = $this->individual_session_prices;
+        $key = (string) $durationMinutes;
+
+        // 1. Teacher's duration-specific rate
+        if (is_array($prices) && isset($prices[$key]) && $prices[$key] !== null && $prices[$key] !== '') {
+            return ['amount' => (float) $prices[$key], 'source' => 'teacher_duration_rate'];
+        }
+
+        // 2. Academy default rate
+        $defaults = $this->academy?->academic_settings['default_individual_session_prices'] ?? null;
+        if (is_array($defaults) && isset($defaults[$key]) && $defaults[$key] !== null && $defaults[$key] !== '') {
+            return ['amount' => (float) $defaults[$key], 'source' => 'academy_default'];
+        }
+
+        // 3. Old flat rate (backward compatibility)
+        if ($this->session_price_individual !== null && $this->session_price_individual > 0) {
+            return ['amount' => (float) $this->session_price_individual, 'source' => 'flat_rate_fallback'];
+        }
+
+        return ['amount' => null, 'source' => 'none'];
     }
 
     /**

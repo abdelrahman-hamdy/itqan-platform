@@ -262,6 +262,14 @@ return [
         'no_records' => 'لا توجد سجلات',
     ],
 
+    // Pricing
+    'pricing' => 'التسعير',
+    'individual_session_prices' => 'أسعار الجلسات الفردية',
+    'group_session_prices' => 'أسعار جلسات الحلقات',
+    'pricing_description' => 'اترك الحقل فارغاً لاستخدام السعر الافتراضي للأكاديمية',
+    'academy_default' => 'افتراضي الأكاديمية',
+    'legacy_pricing' => 'الأسعار القديمة',
+
     // Trial Request Reschedule
     'trial_reschedule' => [
         'label' => 'إعادة جدولة',

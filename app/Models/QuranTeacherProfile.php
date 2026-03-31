@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use App\Enums\EducationalQualification;
-use Illuminate\Support\Collection;
 use App\Enums\CircleEnrollmentStatus;
+use App\Enums\EducationalQualification;
 use App\Models\Traits\CascadesSoftDeleteToUser;
 use App\Models\Traits\HasReviews;
 use App\Models\Traits\ScopedToAcademy;
@@ -14,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class QuranTeacherProfile extends Model
@@ -43,6 +43,8 @@ class QuranTeacherProfile extends Model
         // These are system-calculated via HasReviews trait, never user-supplied
         'session_price_individual',
         'session_price_group',
+        'individual_session_prices',
+        'group_session_prices',
     ];
 
     protected $casts = [
@@ -59,6 +61,8 @@ class QuranTeacherProfile extends Model
         'total_sessions' => 'integer',
         'session_price_individual' => 'decimal:2',
         'session_price_group' => 'decimal:2',
+        'individual_session_prices' => 'array',
+        'group_session_prices' => 'array',
         'teaching_experience_years' => 'integer',
         'available_time_start' => 'datetime:H:i',
         'available_time_end' => 'datetime:H:i',
@@ -208,6 +212,43 @@ class QuranTeacherProfile extends Model
     public function getDisplayNameAttribute(): string
     {
         return $this->full_name.' ('.$this->teacher_code.')';
+    }
+
+    /**
+     * Get the session price for a specific duration, with fallback chain:
+     * 1. Teacher's duration-specific rate
+     * 2. Academy default rate
+     * 3. Old flat rate (backward compatibility)
+     * 4. null
+     *
+     * @param  string  $type  'individual' or 'group'
+     * @return array{amount: float|null, source: string}
+     */
+    public function getSessionPriceForDuration(int $durationMinutes, string $type = 'individual'): array
+    {
+        $pricesField = $type === 'group' ? 'group_session_prices' : 'individual_session_prices';
+        $prices = $this->{$pricesField};
+        $key = (string) $durationMinutes;
+
+        // 1. Teacher's duration-specific rate
+        if (is_array($prices) && isset($prices[$key]) && $prices[$key] !== null && $prices[$key] !== '') {
+            return ['amount' => (float) $prices[$key], 'source' => 'teacher_duration_rate'];
+        }
+
+        // 2. Academy default rate
+        $settingsKey = $type === 'group' ? 'default_group_session_prices' : 'default_individual_session_prices';
+        $defaults = $this->academy?->quran_settings[$settingsKey] ?? null;
+        if (is_array($defaults) && isset($defaults[$key]) && $defaults[$key] !== null && $defaults[$key] !== '') {
+            return ['amount' => (float) $defaults[$key], 'source' => 'academy_default'];
+        }
+
+        // 3. Old flat rate (backward compatibility)
+        $flatRate = $type === 'group' ? $this->session_price_group : $this->session_price_individual;
+        if ($flatRate !== null && $flatRate > 0) {
+            return ['amount' => (float) $flatRate, 'source' => 'flat_rate_fallback'];
+        }
+
+        return ['amount' => null, 'source' => 'none'];
     }
 
     /**

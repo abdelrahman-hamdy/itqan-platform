@@ -304,6 +304,61 @@
                 </div>
             </div>
 
+            {{-- Session Pricing --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">{{ __('supervisor.teachers.session_pricing') }}</h3>
+                        <p class="text-sm text-gray-500">{{ __('supervisor.teachers.session_pricing_description') }}</p>
+                    </div>
+                </div>
+
+                {{-- Individual Session Prices --}}
+                <div class="mb-6">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ __('supervisor.teachers.individual_session_prices') }}</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                        @foreach(\App\Enums\SessionDuration::cases() as $duration)
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $duration->label() }}</label>
+                                <div class="relative">
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">ر.س</span>
+                                    <input type="number" step="0.01" min="0"
+                                           name="individual_session_prices[{{ $duration->value }}]"
+                                           value="{{ old("individual_session_prices.{$duration->value}", $teacher->quranTeacherProfile?->individual_session_prices[$duration->value] ?? $teacher->academicTeacherProfile?->individual_session_prices[$duration->value] ?? '') }}"
+                                           placeholder="{{ __('supervisor.teachers.academy_default_placeholder') }}"
+                                           class="w-full pe-10 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Group Session Prices (Quran teachers only) --}}
+                @if($teacher->user_type === \App\Enums\UserType::QURAN_TEACHER->value)
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ __('supervisor.teachers.group_session_prices') }}</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                        @foreach(\App\Enums\SessionDuration::cases() as $duration)
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $duration->label() }}</label>
+                                <div class="relative">
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">ر.س</span>
+                                    <input type="number" step="0.01" min="0"
+                                           name="group_session_prices[{{ $duration->value }}]"
+                                           value="{{ old("group_session_prices.{$duration->value}", $teacher->quranTeacherProfile?->group_session_prices[$duration->value] ?? '') }}"
+                                           placeholder="{{ __('supervisor.teachers.academy_default_placeholder') }}"
+                                           class="w-full pe-10 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+            </div>
+
             {{-- Quran-specific: Certifications --}}
             @if($isQuran)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">

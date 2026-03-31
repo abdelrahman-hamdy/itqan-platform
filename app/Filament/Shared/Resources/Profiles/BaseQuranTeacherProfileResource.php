@@ -4,6 +4,7 @@ namespace App\Filament\Shared\Resources\Profiles;
 
 use App\Enums\EducationalQualification;
 use App\Enums\Gender;
+use App\Enums\SessionDuration;
 use App\Enums\TeachingLanguage;
 use App\Enums\WeekDays;
 use App\Filament\Concerns\TenantAwareFileUpload;
@@ -95,14 +96,30 @@ abstract class BaseQuranTeacherProfileResource extends Resource
                 Toggle::make('offers_trial_sessions')->label('يقدم جلسات تجريبية')->default(false),
             ]),
 
-            Section::make('التسعير')->schema([
-                Grid::make(2)->schema([
-                    TextInput::make('session_price_individual')->label('سعر الجلسة الفردية')
-                        ->numeric()->prefix('ر.س')->minValue(0),
-                    TextInput::make('session_price_group')->label('سعر جلسة الحلقة')
-                        ->numeric()->prefix('ر.س')->minValue(0),
+            Section::make(__('filament.pricing'))
+                ->schema([
+                    Section::make(__('filament.individual_session_prices'))
+                        ->description(__('filament.pricing_description'))
+                        ->schema([
+                            Grid::make(3)->schema(SessionDuration::priceInputGrid('individual_session_prices', __('filament.academy_default'))),
+                        ]),
+                    Section::make(__('filament.group_session_prices'))
+                        ->description(__('filament.pricing_description'))
+                        ->schema([
+                            Grid::make(3)->schema(SessionDuration::priceInputGrid('group_session_prices', __('filament.academy_default'))),
+                        ]),
                 ]),
-            ]),
+
+            Section::make(__('filament.legacy_pricing'))
+                ->collapsed()
+                ->schema([
+                    Grid::make(2)->schema([
+                        TextInput::make('session_price_individual')->label('سعر الجلسة الفردية')
+                            ->numeric()->prefix('ر.س')->minValue(0),
+                        TextInput::make('session_price_group')->label('سعر جلسة الحلقة')
+                            ->numeric()->prefix('ر.س')->minValue(0),
+                    ]),
+                ]),
 
             Section::make('المحتوى التعريفي')->schema([
                 Textarea::make('bio_arabic')->label('نبذة مختصرة (عربي)')->rows(3)->maxLength(1000),

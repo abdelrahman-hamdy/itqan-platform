@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\Country;
 use App\Enums\Currency;
 use App\Enums\NotificationCategory;
+use App\Enums\SessionDuration;
 use App\Enums\TeachingLanguage;
 use App\Enums\Timezone;
 use App\Enums\UserType;
@@ -196,6 +197,12 @@ class AcademyGeneralSettingsResource extends BaseResource
                                 return "الباقات المختارة ستظهر تلقائياً في ملف المعلم الجديد. يوجد {$count} باقة متاحة للاختيار.";
                             })
                             ->columns(2),
+
+                        Section::make('الأسعار الافتراضية للمعلمين الأكاديميين')
+                            ->description('تُستخدم عندما لا يكون لدى المعلم سعر محدد لمدة الجلسة')
+                            ->schema([
+                                Grid::make(3)->schema(SessionDuration::priceInputGrid('academic_settings.default_individual_session_prices')),
+                            ])->collapsible()->collapsed(),
                     ]),
 
                 Section::make('إعدادات القرآن')
@@ -249,6 +256,19 @@ class AcademyGeneralSettingsResource extends BaseResource
                                 return "الباقات المختارة ستظهر تلقائياً في ملف معلم القرآن الجديد. يوجد {$count} باقة متاحة للاختيار.";
                             })
                             ->columns(2),
+
+                        Section::make('الأسعار الافتراضية لمعلمي القرآن')
+                            ->description('تُستخدم عندما لا يكون لدى المعلم سعر محدد لمدة الجلسة')
+                            ->schema([
+                                Section::make('أسعار الجلسات الفردية الافتراضية')
+                                    ->schema([
+                                        Grid::make(3)->schema(SessionDuration::priceInputGrid('quran_settings.default_individual_session_prices')),
+                                    ]),
+                                Section::make('أسعار جلسات الحلقات الافتراضية')
+                                    ->schema([
+                                        Grid::make(3)->schema(SessionDuration::priceInputGrid('quran_settings.default_group_session_prices')),
+                                    ]),
+                            ])->collapsible()->collapsed(),
                     ]),
 
                 Section::make('إعدادات الاجتماعات')

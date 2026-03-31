@@ -424,6 +424,11 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             $rules['certifications.*'] = 'string|max:255';
         }
 
+        $rules['individual_session_prices'] = 'nullable|array';
+        $rules['individual_session_prices.*'] = 'nullable|numeric|min:0';
+        $rules['group_session_prices'] = 'nullable|array';
+        $rules['group_session_prices.*'] = 'nullable|numeric|min:0';
+
         $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
@@ -452,6 +457,8 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                 'educational_qualification' => $request->education_level,
                 'teaching_experience_years' => $request->years_experience,
                 'certifications' => $request->certifications ?? [],
+                'individual_session_prices' => $this->cleanPricesArray($request->input('individual_session_prices', [])),
+                'group_session_prices' => $this->cleanPricesArray($request->input('group_session_prices', [])),
             ]);
         }
 
@@ -464,6 +471,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                 'subject_ids' => $request->subjects ?? [],
                 'grade_level_ids' => $request->grade_levels ?? [],
                 'available_days' => $request->available_days ?? [],
+                'individual_session_prices' => $this->cleanPricesArray($request->input('individual_session_prices', [])),
             ]);
         }
 
@@ -623,6 +631,26 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'recentSessions' => $recentSessions,
             'isAdmin' => $isAdmin,
         ]);
+    }
+
+    private function cleanPricesArray(?array $prices): ?array
+    {
+        if (empty($prices)) {
+            return null;
+        }
+
+        $validDurations = \App\Enums\SessionDuration::values();
+        $cleaned = [];
+        foreach ($prices as $duration => $price) {
+            if (! in_array((int) $duration, $validDurations, true)) {
+                continue;
+            }
+            if ($price !== null && $price !== '') {
+                $cleaned[(string) $duration] = (float) $price;
+            }
+        }
+
+        return empty($cleaned) ? null : $cleaned;
     }
 
     private function ensureTeacherBelongsToScope(User $teacher): void

@@ -262,6 +262,14 @@ return [
         'no_records' => 'No records found',
     ],
 
+    // Pricing
+    'pricing' => 'Pricing',
+    'individual_session_prices' => 'Individual Session Prices',
+    'group_session_prices' => 'Group Session Prices',
+    'pricing_description' => 'Leave empty to use the academy default price',
+    'academy_default' => 'Academy default',
+    'legacy_pricing' => 'Legacy Pricing',
+
     // Trial Request Reschedule
     'trial_reschedule' => [
         'label' => 'Reschedule',

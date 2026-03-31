@@ -110,4 +110,22 @@ enum SessionDuration: int
     {
         return array_column(self::cases(), 'value');
     }
+
+    /**
+     * Generate Filament TextInput fields for duration-based pricing.
+     * Used by teacher profile resources and academy settings.
+     *
+     * @param  string  $fieldPrefix  e.g. 'individual_session_prices' or 'quran_settings.default_group_session_prices'
+     * @param  string|null  $placeholder  e.g. __('filament.academy_default')
+     */
+    public static function priceInputGrid(string $fieldPrefix, ?string $placeholder = null): array
+    {
+        return collect(self::cases())->map(fn (self $duration) => \Filament\Forms\Components\TextInput::make("{$fieldPrefix}.{$duration->value}")
+            ->label($duration->label())
+            ->numeric()
+            ->prefix('ر.س')
+            ->minValue(0)
+            ->when($placeholder, fn ($input) => $input->placeholder($placeholder))
+        )->toArray();
+    }
 }

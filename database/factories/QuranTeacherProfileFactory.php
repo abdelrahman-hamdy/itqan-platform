@@ -39,6 +39,20 @@ class QuranTeacherProfileFactory extends Factory
             'total_sessions' => fake()->numberBetween(0, 500),
             'session_price_individual' => fake()->randomFloat(2, 30, 100),
             'session_price_group' => fake()->randomFloat(2, 20, 60),
+            'individual_session_prices' => [
+                '15' => fake()->randomFloat(2, 15, 40),
+                '30' => fake()->randomFloat(2, 25, 60),
+                '45' => fake()->randomFloat(2, 35, 80),
+                '60' => fake()->randomFloat(2, 45, 100),
+                '90' => fake()->randomFloat(2, 60, 150),
+            ],
+            'group_session_prices' => [
+                '15' => fake()->randomFloat(2, 10, 25),
+                '30' => fake()->randomFloat(2, 15, 40),
+                '45' => fake()->randomFloat(2, 20, 50),
+                '60' => fake()->randomFloat(2, 25, 60),
+                '90' => fake()->randomFloat(2, 35, 90),
+            ],
         ];
     }
 
