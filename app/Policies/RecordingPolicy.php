@@ -45,7 +45,7 @@ class RecordingPolicy
         }
 
         // Session teacher can view recordings of their sessions
-        if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
+        if ($user->hasRole([UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, 'teacher'])) {
             return $this->isSessionTeacher($user, $recording);
         }
 
