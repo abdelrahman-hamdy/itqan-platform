@@ -3,11 +3,12 @@
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
 
-    $hasActiveFilters = $currentTeacherId || $currentMonth || ($currentStatus && $currentStatus !== 'all');
+    $hasActiveFilters = $currentTeacherId || $currentMonth || ($currentStatus && $currentStatus !== 'all') || ($startDate ?? null) || ($endDate ?? null);
 
     $filterCount = ($currentTeacherId ? 1 : 0)
         + ($currentMonth ? 1 : 0)
-        + ($currentStatus && $currentStatus !== 'all' ? 1 : 0);
+        + ($currentStatus && $currentStatus !== 'all' ? 1 : 0)
+        + (($startDate ?? null) || ($endDate ?? null) ? 1 : 0);
 @endphp
 
 <div>
@@ -106,7 +107,7 @@
             </button>
             <div x-show="open" x-collapse>
                 <form method="GET" action="{{ route('manage.teacher-earnings.index', ['subdomain' => $subdomain]) }}" class="px-4 md:px-6 pb-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                         {{-- Teacher --}}
                         <div>
                             <label for="teacher_id" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teacher_earnings.filter_teacher') }}</label>
@@ -139,7 +140,22 @@
                                 <option value="disputed" {{ $currentStatus === 'disputed' ? 'selected' : '' }}>{{ __('supervisor.teacher_earnings.status_disputed') }}</option>
                             </select>
                         </div>
+
+                        {{-- Start Date --}}
+                        <div>
+                            <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teacher_earnings.filter_start_date') }}</label>
+                            <input type="date" name="start_date" id="start_date" value="{{ $startDate ?? '' }}"
+                                class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+
+                        {{-- End Date --}}
+                        <div>
+                            <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teacher_earnings.filter_end_date') }}</label>
+                            <input type="date" name="end_date" id="end_date" value="{{ $endDate ?? '' }}"
+                                class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
                     </div>
+                    <p class="text-xs text-gray-400 mt-2">{{ __('supervisor.teacher_earnings.date_range_hint') }}</p>
                     <div class="flex flex-wrap items-center gap-3 mt-4">
                         <button type="submit"
                             class="cursor-pointer min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-sm font-medium">

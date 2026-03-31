@@ -40,6 +40,8 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
         $currentMonth = $request->input('month');
         $currentStatus = $request->input('status', 'all');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
         $statsBase = TeacherEarning::where('academy_id', $academyId)->where($scopeQuery);
 
@@ -65,7 +67,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
                 },
             ]);
 
-        $this->applyMonthFilter($earningsQuery, $currentMonth);
+        $this->applyDateFilters($earningsQuery, $currentMonth, $startDate, $endDate);
 
         if ($currentStatus === 'finalized') {
             $earningsQuery->finalized();
@@ -86,6 +88,8 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             'currentTeacherId' => $currentTeacherId,
             'currentMonth' => $currentMonth,
             'currentStatus' => $currentStatus,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
             'activeTab' => 'details',
         ]);
     }
@@ -113,9 +117,11 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $teachersList, $currentTeacherId ? (int) $currentTeacherId : null);
 
         $currentMonth = $request->input('month');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
         $query = TeacherEarning::where('academy_id', $academyId)->where($scopeQuery);
-        $this->applyMonthFilter($query, $currentMonth);
+        $this->applyDateFilters($query, $currentMonth, $startDate, $endDate);
 
         // Load individual earnings to preserve per-session duration and rate info
         $allEarnings = (clone $query)->get();
@@ -189,6 +195,8 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             'teachers' => $teachersList,
             'currentTeacherId' => $currentTeacherId,
             'currentMonth' => $currentMonth,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
             'activeTab' => 'summary',
         ]);
     }
@@ -368,8 +376,23 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             ->toArray();
     }
 
-    private function applyMonthFilter($query, ?string $month): void
+    /**
+     * Apply date filters. Date range takes priority over month filter.
+     */
+    private function applyDateFilters($query, ?string $month, ?string $startDate = null, ?string $endDate = null): void
     {
+        // Date range takes priority over month filter
+        if ($startDate || $endDate) {
+            if ($startDate) {
+                $query->where('session_completed_at', '>=', Carbon::parse($startDate)->startOfDay());
+            }
+            if ($endDate) {
+                $query->where('session_completed_at', '<=', Carbon::parse($endDate)->endOfDay());
+            }
+
+            return;
+        }
+
         if (! $month) {
             return;
         }
