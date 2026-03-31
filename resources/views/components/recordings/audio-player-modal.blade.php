@@ -97,7 +97,7 @@
     class="fixed inset-0 z-[9999]"
 >
     {{-- Backdrop --}}
-    <div class="fixed inset-0 bg-black/40" x-show="open" x-transition.opacity @click="open = false"></div>
+    <div class="fixed inset-0 bg-black/60" x-show="open" x-transition.opacity @click="open = false"></div>
 
     {{-- Modal wrapper — click on padding area closes --}}
     <div class="fixed inset-0 flex items-center justify-center p-4" x-show="open" x-transition @click="open = false">
@@ -129,15 +129,15 @@
 
             {{-- Controls --}}
             <div class="flex items-center justify-center gap-5 py-3">
-                <button @click="skip(-10)" class="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"/></svg>
+                <button @click="skip(10)" class="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 transition-colors" title="+10s">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z"/></svg>
                 </button>
                 <button @click="toggle()" class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow hover:bg-blue-700 transition-colors">
                     <svg x-show="!playing" class="w-6 h-6 ms-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                     <svg x-show="playing" x-cloak class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                 </button>
-                <button @click="skip(10)" class="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z"/></svg>
+                <button @click="skip(-10)" class="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 transition-colors" title="-10s">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"/></svg>
                 </button>
             </div>
 
