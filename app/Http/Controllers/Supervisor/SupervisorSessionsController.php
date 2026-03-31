@@ -533,7 +533,7 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         }
 
         return User::query()
-            ->select('id', 'name')
+            ->select('id', 'first_name', 'last_name')
             ->whereIn('id', $allIds)
             ->orderBy('name')
             ->get()
