@@ -9,6 +9,8 @@ use App\Filament\Shared\Actions\MeetingActions;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Infolists\Components\ViewEntry;
+use Filament\Schemas\Components\Section;
 
 class ViewInteractiveCourseSession extends ViewRecord
 {
@@ -29,6 +31,19 @@ class ViewInteractiveCourseSession extends ViewRecord
                 ->visible(fn ($record) => (bool) $record->course_id),
             DeleteAction::make()
                 ->label('حذف'),
+        ];
+    }
+
+    protected function getFooterSchemas(): array
+    {
+        return [
+            Section::make(__('recordings.session_recordings'))
+                ->icon('heroicon-o-video-camera')
+                ->schema([
+                    ViewEntry::make('recordings_view')
+                        ->view('filament.infolists.components.session-recordings'),
+                ])
+                ->visible(fn ($record) => $record instanceof \App\Contracts\RecordingCapable && $record->isRecordingEnabled()),
         ];
     }
 }
