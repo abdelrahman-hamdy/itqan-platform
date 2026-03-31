@@ -57,8 +57,15 @@ class LiveKitRecordingManager
                 ],
             ];
 
-            // Video options (not needed for audio-only)
-            if (! $audioOnly) {
+            if ($audioOnly) {
+                // Audio encoding options (128kbps Opus at 48kHz — good speech quality)
+                $payload['advanced'] = [
+                    'audio_codec' => 'OPUS',
+                    'audio_bitrate' => $options['audio_bitrate'] ?? 128000,
+                    'audio_frequency' => $options['audio_frequency'] ?? 48000,
+                ];
+            } else {
+                // Video options
                 $payload['options'] = [
                     'preset' => $options['preset'] ?? 'HD',
                     'layout' => $options['layout'] ?? 'grid',

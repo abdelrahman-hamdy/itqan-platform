@@ -1567,8 +1567,8 @@ class QuranSession extends BaseSession implements RecordingCapable
             'audio_only' => true,
             'video_only' => false,
             'preset' => 'AUDIO_ONLY',
-            'audio_bitrate' => 64000,
-            'audio_frequency' => 44100,
+            'audio_bitrate' => 128000,
+            'audio_frequency' => 48000,
         ];
     }
 
