@@ -210,8 +210,7 @@ class RecordedCourse extends Model implements HasMedia
             return 'مجاني';
         }
 
-        // Get currency from academy or use default SAR
-        $currency = $this->academy?->currency ?? config('currencies.default', 'SAR');
+        $currency = $this->academy?->currency?->value ?? config('currencies.default', 'SAR');
 
         return number_format($this->price, 0).' '.$currency;
     }
