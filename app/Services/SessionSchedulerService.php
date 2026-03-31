@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
 use App\Models\BaseSession;
 use App\Models\MeetingAttendanceEvent;
@@ -107,7 +108,7 @@ class SessionSchedulerService
 
         // Fallback: check raw webhook events in case MeetingAttendance failed to create
         if (MeetingAttendanceEvent::where('session_id', $session->id)
-            ->where('event_type', 'joined')
+            ->where('event_type', MeetingEventType::JOINED)
             ->exists()) {
             return false;
         }
