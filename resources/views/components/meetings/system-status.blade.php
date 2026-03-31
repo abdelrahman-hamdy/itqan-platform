@@ -9,6 +9,7 @@
 
 @php
     $componentId = 'system-status-' . uniqid();
+    $modalId = 'reset-modal-' . uniqid();
 @endphp
 
 <!-- System Status -->
@@ -29,11 +30,9 @@
                     <div class="text-xs text-gray-600" data-role="camera-text">{{ __('meetings.system.unknown') }}</div>
                 </div>
             </div>
-            {{-- Button for 'prompt' state --}}
             <button data-role="camera-btn" class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer hidden">
                 {{ __('meetings.system.grant_permission') }}
             </button>
-            {{-- Hint for 'denied' state: guide user to browser settings --}}
             <button data-role="camera-reset" class="px-3 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors cursor-pointer hidden">
                 {{ __('meetings.system.reset_in_browser') }}
             </button>
@@ -83,17 +82,64 @@
                 </div>
             </div>
         </div>
-        {{-- Reset instructions (hidden by default, toggled by reset button) --}}
-        <div data-role="reset-instructions" class="hidden p-3 bg-orange-50 rounded-lg border border-orange-200 text-sm text-orange-800 space-y-2">
-            <div class="font-semibold flex items-center gap-1">
-                <i class="ri-information-line"></i>
-                {{ __('meetings.system.how_to_reset_title') }}
+    </div>
+</div>
+
+<!-- Permission Reset Modal -->
+<div id="{{ $modalId }}" class="fixed inset-0 z-50 hidden">
+    {{-- Backdrop --}}
+    <div data-role="modal-backdrop" class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"></div>
+    {{-- Modal content --}}
+    <div class="flex items-center justify-center min-h-full p-4">
+        <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-auto overflow-hidden transform transition-all">
+            {{-- Header --}}
+            <div class="bg-gradient-to-l from-orange-500 to-amber-500 px-6 py-5 text-white">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <i class="ri-lock-unlock-line text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold">{{ __('meetings.system.how_to_reset_title') }}</h3>
+                    </div>
+                    <button data-role="modal-close" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors cursor-pointer">
+                        <i class="ri-close-line text-lg"></i>
+                    </button>
+                </div>
+                <p class="text-sm text-white/80 mt-2">{{ __('meetings.system.modal_subtitle') }}</p>
             </div>
-            <ol class="list-decimal list-inside space-y-1 text-xs">
-                <li>{{ __('meetings.system.how_to_reset_step1') }}</li>
-                <li>{{ __('meetings.system.how_to_reset_step2') }}</li>
-                <li>{{ __('meetings.system.how_to_reset_step3') }}</li>
-            </ol>
+            {{-- Steps --}}
+            <div class="px-6 py-5 space-y-4">
+                {{-- Step 1 --}}
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">1</div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-900">{{ __('meetings.system.how_to_reset_step1_title') }}</div>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ __('meetings.system.how_to_reset_step1') }}</p>
+                    </div>
+                </div>
+                {{-- Step 2 --}}
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">2</div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-900">{{ __('meetings.system.how_to_reset_step2_title') }}</div>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ __('meetings.system.how_to_reset_step2') }}</p>
+                    </div>
+                </div>
+                {{-- Step 3 --}}
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">3</div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-900">{{ __('meetings.system.how_to_reset_step3_title') }}</div>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ __('meetings.system.how_to_reset_step3') }}</p>
+                    </div>
+                </div>
+            </div>
+            {{-- Footer --}}
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                <button data-role="modal-close-btn" class="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer">
+                    {{ __('meetings.system.modal_got_it') }}
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -101,6 +147,7 @@
 <script>
 (function() {
     var root = document.getElementById('{{ $componentId }}');
+    var modal = document.getElementById('{{ $modalId }}');
     if (!root) return;
     var el = function(sel) { return root.querySelector('[data-role="' + sel + '"]'); };
 
@@ -137,7 +184,6 @@
             icon.innerHTML = '<i class="ri-close-line text-red-600"></i>';
             text.classList.add('text-red-600');
             text.textContent = t.denied;
-            // Show reset button, hide grant button (getUserMedia can't override browser denial)
             if (btn) btn.classList.add('hidden');
             if (resetBtn) resetBtn.classList.remove('hidden');
         } else if (state === 'prompt') {
@@ -145,7 +191,6 @@
             icon.innerHTML = '<i class="ri-question-line text-yellow-600"></i>';
             text.classList.add('text-yellow-600');
             text.textContent = t.needs_permission;
-            // Show grant button (getUserMedia will trigger the browser prompt)
             if (btn) btn.classList.remove('hidden');
             if (resetBtn) resetBtn.classList.add('hidden');
         } else {
@@ -224,18 +269,25 @@
     window.addEventListener('online', updateNetwork);
     window.addEventListener('offline', updateNetwork);
 
-    // Grant button: triggers browser permission prompt (only works when state is 'prompt')
+    // Grant buttons
     var camBtn = el('camera-btn');
     var micBtn = el('mic-btn');
     if (camBtn) camBtn.addEventListener('click', function() { requestMedia('camera', { video: true }); });
     if (micBtn) micBtn.addEventListener('click', function() { requestMedia('mic', { audio: true }); });
 
-    // Reset buttons: toggle inline instructions
-    var instructions = root.querySelector('[data-role="reset-instructions"]');
+    // Modal open/close
+    function openModal() { if (modal) modal.classList.remove('hidden'); }
+    function closeModal() { if (modal) modal.classList.add('hidden'); }
+
     var camReset = el('camera-reset');
     var micReset = el('mic-reset');
-    function toggleInstructions() { if (instructions) instructions.classList.toggle('hidden'); }
-    if (camReset) camReset.addEventListener('click', toggleInstructions);
-    if (micReset) micReset.addEventListener('click', toggleInstructions);
+    if (camReset) camReset.addEventListener('click', openModal);
+    if (micReset) micReset.addEventListener('click', openModal);
+
+    if (modal) {
+        modal.querySelector('[data-role="modal-backdrop"]').addEventListener('click', closeModal);
+        modal.querySelector('[data-role="modal-close"]').addEventListener('click', closeModal);
+        modal.querySelector('[data-role="modal-close-btn"]').addEventListener('click', closeModal);
+    }
 })();
 </script>
