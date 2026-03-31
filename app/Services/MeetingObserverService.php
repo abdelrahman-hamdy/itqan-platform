@@ -11,12 +11,14 @@ use App\Models\BaseSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\User;
+use App\Services\LiveKit\LiveKitRoomManager;
 use App\Services\LiveKit\LiveKitTokenGenerator;
 
 class MeetingObserverService implements MeetingObserverServiceInterface
 {
     public function __construct(
-        private LiveKitTokenGenerator $tokenGenerator
+        private LiveKitTokenGenerator $tokenGenerator,
+        private LiveKitRoomManager $roomManager
     ) {}
 
     /**
@@ -72,6 +74,20 @@ class MeetingObserverService implements MeetingObserverServiceInterface
             ],
             'observer'
         );
+    }
+
+    /**
+     * Check if the LiveKit room has active (non-observer) participants.
+     */
+    public function hasActiveParticipants(string $roomName): bool
+    {
+        try {
+            $rooms = $this->roomManager->listRooms([$roomName]);
+
+            return ! empty($rooms) && ($rooms[0]['participant_count'] ?? 0) > 0;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     /**

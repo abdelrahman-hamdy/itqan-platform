@@ -886,6 +886,9 @@ return [
         'participant_mode' => 'Participant Mode',
         'mode_observer_description' => 'Watch the session silently without being seen by participants',
         'mode_participant_description' => 'Join the session as an active participant with audio and video',
+        'waiting_for_participants' => 'Waiting for participants to join the session',
+        'waiting_auto_retry' => 'Will automatically retry when a participant joins',
+        'checking_room' => 'Checking room status...',
     ],
 
     'teacher_earnings' => [

@@ -37,6 +37,18 @@ class MeetingObserverController extends Controller
             return $this->error(__('supervisor.observation.session_not_active'), 422);
         }
 
+        // Check if the room has active participants — observers can only join occupied rooms
+        if (! $this->observerService->hasActiveParticipants($session->meeting_room_name)) {
+            return $this->success([
+                'access_token' => null,
+                'server_url' => config('livekit.server_url'),
+                'room_name' => $session->meeting_room_name,
+                'is_observer' => true,
+                'waiting' => true,
+                'message' => __('supervisor.observation.waiting_for_participants'),
+            ]);
+        }
+
         $token = $this->observerService->generateObserverToken(
             $session->meeting_room_name,
             $user

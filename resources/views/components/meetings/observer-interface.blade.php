@@ -65,6 +65,17 @@
                 </div>
             </div>
 
+            {{-- Waiting for participants --}}
+            <div id="observer-waiting" class="hidden flex flex-col items-center py-8">
+                <i class="ri-user-search-line text-6xl text-amber-400 mb-4"></i>
+                <p class="text-gray-700 text-lg font-semibold mb-2">{{ __('supervisor.observation.waiting_for_participants') }}</p>
+                <p class="text-gray-500 text-sm mb-4">{{ __('supervisor.observation.waiting_auto_retry') }}</p>
+                <div class="flex items-center gap-2 text-amber-600">
+                    <i class="ri-loader-4-line animate-spin"></i>
+                    <span class="text-sm">{{ __('supervisor.observation.checking_room') }}</span>
+                </div>
+            </div>
+
             {{-- Error --}}
             <div id="observer-error" class="hidden flex flex-col items-center py-8">
                 <i class="ri-error-warning-line text-6xl text-red-400 mb-4"></i>
@@ -205,11 +216,14 @@
     const joinBtn = document.getElementById('observer-join-btn');
     const leaveBtn = document.getElementById('observer-leave-btn');
     const retryBtn = document.getElementById('observer-retry-btn');
+    const waitingEl = document.getElementById('observer-waiting');
+    let waitingRetryTimer = null;
 
     function showState(state) {
         idleEl.classList.add('hidden');
         connectingEl.classList.add('hidden');
         errorEl.classList.add('hidden');
+        if (waitingEl) waitingEl.classList.add('hidden');
         videoGridEl.classList.add('hidden');
         statusEl.classList.remove('hidden');
 
@@ -217,6 +231,8 @@
             idleEl.classList.remove('hidden');
         } else if (state === 'connecting') {
             connectingEl.classList.remove('hidden');
+        } else if (state === 'waiting') {
+            if (waitingEl) waitingEl.classList.remove('hidden');
         } else if (state === 'error') {
             errorEl.classList.remove('hidden');
         } else if (state === 'connected') {
@@ -454,10 +470,18 @@
 
     async function connect() {
         showState('connecting');
+        if (waitingRetryTimer) { clearTimeout(waitingRetryTimer); waitingRetryTimer = null; }
 
         try {
             await loadLiveKitSDK();
             const tokenData = await fetchObserverToken();
+
+            // Room has no participants yet — wait and auto-retry
+            if (tokenData.data && tokenData.data.waiting) {
+                showState('waiting');
+                waitingRetryTimer = setTimeout(() => connect(), 5000);
+                return;
+            }
 
             room = new window.LiveKit.Room({
                 adaptiveStream: true,

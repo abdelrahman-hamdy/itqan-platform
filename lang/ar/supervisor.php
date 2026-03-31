@@ -886,6 +886,9 @@ return [
         'participant_mode' => 'وضع المشاركة',
         'mode_observer_description' => 'شاهد الجلسة بصمت دون أن يراك المشاركون',
         'mode_participant_description' => 'انضم للجلسة كمشارك نشط بالصوت والفيديو',
+        'waiting_for_participants' => 'في انتظار دخول المشاركين للجلسة',
+        'waiting_auto_retry' => 'سيتم المحاولة تلقائياً عند دخول أحد المشاركين',
+        'checking_room' => 'جارِ التحقق من الغرفة...',
     ],
 
     'teacher_earnings' => [
