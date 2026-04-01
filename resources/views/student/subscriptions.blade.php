@@ -48,7 +48,7 @@
                 ? route('individual-circles.show', ['subdomain' => $subdomain, 'circle' => $sub->individualCircle->id])
                 : null,
             'created_at' => $sub->created_at,
-            'can_cancel' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
+            'can_cancel' => $statusEnum === SessionSubscriptionStatus::PENDING && $paymentStatusEnum === SubscriptionPaymentStatus::PENDING,
             'can_delete' => in_array($statusEnum, [SessionSubscriptionStatus::CANCELLED, SessionSubscriptionStatus::PENDING]),
             'can_pay' => $sub->payment_status === SubscriptionPaymentStatus::PENDING,
             'pay_url' => $sub->payment_status === SubscriptionPaymentStatus::PENDING
@@ -105,7 +105,7 @@
                 ? route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circle->id])
                 : null,
             'created_at' => $sub->created_at,
-            'can_cancel' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
+            'can_cancel' => $statusEnum === SessionSubscriptionStatus::PENDING && $paymentStatusEnum === SubscriptionPaymentStatus::PENDING,
             'can_delete' => in_array($statusEnum, [SessionSubscriptionStatus::CANCELLED, SessionSubscriptionStatus::PENDING]),
             'can_pay' => $sub->payment_status === SubscriptionPaymentStatus::PENDING,
             'pay_url' => $sub->payment_status === SubscriptionPaymentStatus::PENDING
@@ -159,7 +159,7 @@
             'billing_cycle' => $sub->billing_cycle,
             'href' => route('student.academic-subscriptions.show', ['subdomain' => $subdomain, 'subscriptionId' => $sub->id]),
             'created_at' => $sub->created_at,
-            'can_cancel' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
+            'can_cancel' => $statusEnum === SessionSubscriptionStatus::PENDING && $paymentStatusEnum === SubscriptionPaymentStatus::PENDING,
             'can_delete' => in_array($statusEnum, [SessionSubscriptionStatus::CANCELLED, SessionSubscriptionStatus::PENDING]),
             'can_pay' => $sub->payment_status === SubscriptionPaymentStatus::PENDING,
             'pay_url' => $sub->payment_status === SubscriptionPaymentStatus::PENDING

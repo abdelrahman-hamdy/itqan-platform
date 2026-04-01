@@ -130,6 +130,8 @@ return [
         'certificate_already_issued' => 'Certificate has already been issued.',
         'certificate_not_eligible' => 'Subscription is not eligible for a certificate.',
         'invalid_package' => 'The selected package is not available.',
+        'cannot_cancel_paid' => 'Cannot cancel a paid subscription. It will expire automatically at the end date.',
+        'cancel_reason_student' => 'Cancelled by student',
         'cannot_delete_package_with_subscriptions' => 'Cannot delete package with linked subscriptions. Deactivate it instead.',
         'delete_subscription' => 'Delete Subscription',
         'delete_subscription_heading' => 'Permanently Delete Subscription',

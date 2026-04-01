@@ -136,6 +136,8 @@ return [
         'certificate_already_issued' => 'تم إصدار الشهادة مسبقاً.',
         'certificate_not_eligible' => 'الاشتراك غير مؤهل للحصول على شهادة.',
         'invalid_package' => 'الباقة المحددة غير متاحة.',
+        'cannot_cancel_paid' => 'لا يمكن إلغاء اشتراك مدفوع. سينتهي الاشتراك تلقائياً في تاريخ الانتهاء.',
+        'cancel_reason_student' => 'إلغاء من قبل الطالب',
         'cannot_delete_package_with_subscriptions' => 'لا يمكن حذف الباقة لوجود اشتراكات مرتبطة بها. يمكنك تعطيلها بدلاً من ذلك.',
         'delete_subscription' => 'حذف الاشتراك',
         'delete_subscription_heading' => 'حذف الاشتراك نهائياً',

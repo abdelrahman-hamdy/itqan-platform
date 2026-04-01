@@ -137,14 +137,22 @@ class StudentSubscriptionService
         if (! $subscription) {
             return [
                 'success' => false,
-                'error' => 'الاشتراك غير موجود',
+                'error' => __('subscriptions.subscription_not_found'),
             ];
         }
 
-        // Update subscription status to cancelled
+        // Students can only cancel PENDING (unpaid) subscriptions
+        // ACTIVE + PAID subscriptions expire naturally at ends_at
+        if ($subscription->payment_status === \App\Enums\SubscriptionPaymentStatus::PAID) {
+            return [
+                'success' => false,
+                'error' => __('subscriptions.errors.cannot_cancel_paid'),
+            ];
+        }
+
         $subscription->status = SessionSubscriptionStatus::CANCELLED;
         $subscription->cancelled_at = now();
-        $subscription->cancellation_reason = 'إلغاء من قبل الطالب';
+        $subscription->cancellation_reason = __('subscriptions.cancel_reason_student');
         $subscription->auto_renew = false;
         $subscription->save();
 

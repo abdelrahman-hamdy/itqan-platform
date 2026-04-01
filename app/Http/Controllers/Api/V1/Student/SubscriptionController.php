@@ -419,6 +419,11 @@ class SubscriptionController extends Controller
             return $this->notFound(__('Subscription not found or cannot be cancelled.'));
         }
 
+        // Students can only cancel PENDING (unpaid) subscriptions
+        if ($subscription->payment_status === \App\Enums\SubscriptionPaymentStatus::PAID) {
+            return $this->error(__('subscriptions.errors.cannot_cancel_paid'), 403);
+        }
+
         $subscription->update([
             'status' => SessionSubscriptionStatus::CANCELLED->value,
             'cancelled_at' => now(),
