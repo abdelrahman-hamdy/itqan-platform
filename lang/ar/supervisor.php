@@ -1211,6 +1211,17 @@ return [
         'sessions_exhausted_badge' => 'الجلسات مكتملة',
         'payment_reference_label' => 'مرجع الدفع (اختياري)',
         'payment_reference_placeholder' => 'رقم الإيصال أو مرجع التحويل',
+        'action_cancel_pending' => 'إلغاء الطلب المعلق',
+        'confirm_cancel_pending' => 'هل أنت متأكد من إلغاء طلب الاشتراك المعلق؟',
+        'cancel_pending_success' => 'تم إلغاء الطلب المعلق بنجاح',
+        'not_pending' => 'هذا الاشتراك ليس معلقاً',
+        'action_delete' => 'حذف نهائي',
+        'confirm_delete' => 'سيتم حذف الاشتراك وجميع البيانات المرتبطة (الجلسات، الحلقة، المدفوعات) بشكل نهائي. لا يمكن التراجع.',
+        'delete_success' => 'تم حذف الاشتراك وجميع البيانات المرتبطة بنجاح',
+        'action_create_circle' => 'إنشاء حلقة',
+        'create_circle_title' => 'إنشاء حلقة فردية',
+        'circle_created' => 'تم إنشاء الحلقة بنجاح',
+        'circle_already_exists' => 'هذا الاشتراك مرتبط بحلقة بالفعل',
     ],
 
     'payments' => [

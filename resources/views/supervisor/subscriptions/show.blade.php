@@ -238,6 +238,52 @@
                             <i class="ri-calendar-close-line"></i>{{ __('supervisor.subscriptions.action_cancel_extension') }}
                         </button>
                     @endif
+
+                    {{-- Cancel Pending (only when PENDING) --}}
+                    @if($subscription->isPending())
+                        <form id="show-cancel-pending-form" method="POST" action="{{ route('manage.subscriptions.cancel-pending', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
+                            @csrf
+                        </form>
+                        <button type="button"
+                            onclick="window.confirmAction({
+                                title: @js(__('supervisor.subscriptions.action_cancel_pending')),
+                                message: @js(__('supervisor.subscriptions.confirm_cancel_pending')),
+                                confirmText: @js(__('supervisor.subscriptions.action_cancel_pending')),
+                                isDangerous: true,
+                                icon: 'ri-close-circle-line',
+                                onConfirm: () => document.getElementById('show-cancel-pending-form').submit()
+                            })"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors cursor-pointer">
+                            <i class="ri-close-circle-line"></i>{{ __('supervisor.subscriptions.action_cancel_pending') }}
+                        </button>
+                    @endif
+
+                    {{-- Create Circle (Quran individual without circle) --}}
+                    @if($type === 'quran' && ($subscription->subscription_type ?? '') === 'individual' && !$subscription->education_unit_id)
+                        <button type="button"
+                            onclick="document.getElementById('show-create-circle-modal').classList.remove('hidden')"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 transition-colors cursor-pointer">
+                            <i class="ri-add-circle-line"></i>{{ __('supervisor.subscriptions.action_create_circle') }}
+                        </button>
+                    @endif
+
+                    {{-- Delete Subscription (admin only, dangerous) --}}
+                    <form id="show-delete-form" method="POST" action="{{ route('manage.subscriptions.destroy', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
+                        @csrf
+                        @method('DELETE')
+                    </form>
+                    <button type="button"
+                        onclick="window.confirmAction({
+                            title: @js(__('supervisor.subscriptions.action_delete')),
+                            message: @js(__('supervisor.subscriptions.confirm_delete')),
+                            confirmText: @js(__('supervisor.subscriptions.action_delete')),
+                            isDangerous: true,
+                            icon: 'ri-delete-bin-line',
+                            onConfirm: () => document.getElementById('show-delete-form').submit()
+                        })"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-700 text-white rounded-lg text-sm hover:bg-red-800 transition-colors cursor-pointer">
+                        <i class="ri-delete-bin-line"></i>{{ __('supervisor.subscriptions.action_delete') }}
+                    </button>
                 </div>
             </div>
         </div>
@@ -497,6 +543,56 @@
                     <button type="button" onclick="document.getElementById('show-resubscribe-form').submit()"
                         class="cursor-pointer inline-flex items-center justify-center min-h-[48px] md:min-h-[44px] px-6 py-3 md:py-2.5 text-base md:text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl transition-all shadow-md">
                         {{ __('supervisor.subscriptions.action_resubscribe') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
+
+{{-- Create Circle Modal (Quran individual only) --}}
+@if(($isAdmin ?? false) && $type === 'quran' && ($subscription->subscription_type ?? '') === 'individual' && !$subscription->education_unit_id)
+    <div id="show-create-circle-modal" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
+        <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+            <div class="relative bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+                <div class="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-gray-300 z-10"></div>
+                <div class="p-6 pb-4 pt-8 md:pt-6">
+                    <div class="mx-auto flex items-center justify-center w-16 h-16 md:w-14 md:h-14 rounded-full bg-primary-100 mb-4">
+                        <i class="ri-add-circle-line text-3xl md:text-2xl text-primary-600"></i>
+                    </div>
+                    <h3 class="text-lg md:text-xl font-bold text-center text-gray-900 mb-2">{{ __('supervisor.subscriptions.create_circle_title') }}</h3>
+                    <form method="POST" action="{{ route('manage.subscriptions.create-circle', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}" id="show-create-circle-form">
+                        @csrf
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.specialization_label') }}</label>
+                                <select name="specialization" class="w-full rounded-lg border-gray-300 text-sm" required>
+                                    <option value="memorization">{{ __('subscriptions.specialization_memorization') }}</option>
+                                    <option value="recitation">{{ __('subscriptions.specialization_recitation') }}</option>
+                                    <option value="tajweed">{{ __('subscriptions.specialization_tajweed') }}</option>
+                                    <option value="complete">{{ __('subscriptions.specialization_complete') }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.memorization_level_label') }}</label>
+                                <select name="memorization_level" class="w-full rounded-lg border-gray-300 text-sm" required>
+                                    @foreach (\App\Enums\QuranLearningLevel::cases() as $level)
+                                        <option value="{{ $level->value }}">{{ $level->label() }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">
+                    <button type="button" onclick="document.getElementById('show-create-circle-modal').classList.add('hidden')"
+                        class="cursor-pointer inline-flex items-center justify-center min-h-[48px] md:min-h-[44px] px-6 py-3 md:py-2.5 text-base md:text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl transition-all">
+                        {{ __('common.cancel') }}
+                    </button>
+                    <button type="button" onclick="document.getElementById('show-create-circle-form').submit()"
+                        class="cursor-pointer inline-flex items-center justify-center min-h-[48px] md:min-h-[44px] px-6 py-3 md:py-2.5 text-base md:text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-all shadow-md">
+                        {{ __('supervisor.subscriptions.action_create_circle') }}
                     </button>
                 </div>
             </div>

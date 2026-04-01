@@ -1211,6 +1211,17 @@ return [
         'sessions_exhausted_badge' => 'Sessions Completed',
         'payment_reference_label' => 'Payment Reference (optional)',
         'payment_reference_placeholder' => 'Receipt number or transfer reference',
+        'action_cancel_pending' => 'Cancel Pending',
+        'confirm_cancel_pending' => 'Are you sure you want to cancel this pending subscription?',
+        'cancel_pending_success' => 'Pending subscription cancelled successfully',
+        'not_pending' => 'This subscription is not pending',
+        'action_delete' => 'Delete Permanently',
+        'confirm_delete' => 'This will permanently delete the subscription and all related data (sessions, circle, payments). This cannot be undone.',
+        'delete_success' => 'Subscription and all related data deleted successfully',
+        'action_create_circle' => 'Create Circle',
+        'create_circle_title' => 'Create Individual Circle',
+        'circle_created' => 'Circle created successfully',
+        'circle_already_exists' => 'This subscription already has a linked circle',
     ],
 
     'payments' => [

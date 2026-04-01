@@ -433,4 +433,109 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             return redirect()->back()->with('error', __('subscriptions.generic_error'));
         }
     }
+
+    /**
+     * Cancel a pending subscription and its payments.
+     */
+    public function cancelPending(Request $request, $subdomain, string $type, int $subscription): RedirectResponse
+    {
+        if (! $this->isAdminUser()) {
+            abort(403);
+        }
+
+        $sub = $this->resolveSubscription($type, $subscription);
+        $this->ensureSubscriptionInScope($sub, $type);
+
+        if (! $sub->isPending()) {
+            return redirect()->back()->with('error', __('supervisor.subscriptions.not_pending'));
+        }
+
+        $sub->cancelAsDuplicateOrExpired(config('subscriptions.cancellation_reasons.admin'));
+        $sub->payments()->where('status', 'pending')->update(['status' => 'cancelled']);
+
+        return redirect()->back()->with('success', __('supervisor.subscriptions.cancel_pending_success'));
+    }
+
+    /**
+     * Permanently delete a subscription and all linked data.
+     */
+    public function destroy(Request $request, $subdomain, string $type, int $subscription): RedirectResponse
+    {
+        if (! $this->isAdminUser()) {
+            abort(403);
+        }
+
+        $sub = $this->resolveSubscription($type, $subscription);
+        $this->ensureSubscriptionInScope($sub, $type);
+
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($sub) {
+                // Delete session reports first
+                if (method_exists($sub, 'sessions')) {
+                    $sessionIds = $sub->sessions()->withTrashed()->pluck('id');
+                    if ($sessionIds->isNotEmpty()) {
+                        \App\Models\StudentSessionReport::whereIn('session_id', $sessionIds)->delete();
+                    }
+                    $sub->sessions()->withTrashed()->forceDelete();
+                }
+
+                // Delete linked circle/lesson
+                if ($sub instanceof \App\Models\QuranSubscription && $sub->education_unit_id) {
+                    $sub->educationUnit?->forceDelete();
+                }
+                if ($sub instanceof \App\Models\AcademicSubscription) {
+                    $sub->lesson?->forceDelete();
+                }
+
+                $sub->payments()->withTrashed()->forceDelete();
+                $sub->forceDelete();
+            });
+
+            return redirect()->route('manage.subscriptions.index', ['subdomain' => $subdomain])
+                ->with('success', __('supervisor.subscriptions.delete_success'));
+        } catch (\Exception $e) {
+            report($e);
+
+            return redirect()->back()->with('error', __('subscriptions.generic_error'));
+        }
+    }
+
+    /**
+     * Create a circle for a Quran individual subscription.
+     */
+    public function createCircle(Request $request, $subdomain, string $type, int $subscription): RedirectResponse
+    {
+        if (! $this->isAdminUser()) {
+            abort(403);
+        }
+
+        $sub = $this->resolveSubscription($type, $subscription);
+        $this->ensureSubscriptionInScope($sub, $type);
+
+        if (! ($sub instanceof \App\Models\QuranSubscription) || $sub->subscription_type !== 'individual' || $sub->education_unit_id) {
+            return redirect()->back()->with('error', __('supervisor.subscriptions.circle_already_exists'));
+        }
+
+        $request->validate([
+            'specialization' => 'required|in:memorization,recitation,tajweed,complete',
+            'memorization_level' => 'required|string',
+        ]);
+
+        $circle = \App\Models\QuranIndividualCircle::create([
+            'academy_id' => $sub->academy_id,
+            'quran_teacher_id' => $sub->quran_teacher_id,
+            'student_id' => $sub->student_id,
+            'subscription_id' => $sub->id,
+            'specialization' => $request->specialization,
+            'memorization_level' => $request->memorization_level,
+            'total_sessions' => $sub->total_sessions,
+            'sessions_remaining' => $sub->sessions_remaining,
+            'default_duration_minutes' => $sub->session_duration_minutes ?? 60,
+            'is_active' => $sub->isActive(),
+        ]);
+
+        $sub->linkToEducationUnit($circle);
+
+        return redirect()->back()->with('success', __('supervisor.subscriptions.circle_created'));
+    }
 }
