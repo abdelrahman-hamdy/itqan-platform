@@ -86,12 +86,8 @@ class BaseSessionObserver
             // If session is READY but rescheduled to a future date beyond the preparation
             // window, reset it back to SCHEDULED. Without this, a session rescheduled from
             // today to next week would stay in "ready" status indefinitely.
-            $currentStatus = is_string($session->status)
-                ? SessionStatus::from($session->status)
-                : $session->status;
-
-            if ($currentStatus === SessionStatus::READY && $newTime instanceof Carbon) {
-                $preparationMinutes = config('business.sessions.preparation_minutes', 10);
+            if ($session->status === SessionStatus::READY && $newTime) {
+                $preparationMinutes = $session->getPreparationMinutes();
                 $preparationTime = $newTime->copy()->subMinutes($preparationMinutes);
 
                 if (now()->lt($preparationTime)) {

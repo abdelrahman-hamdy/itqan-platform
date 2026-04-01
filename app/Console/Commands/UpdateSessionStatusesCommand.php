@@ -2,12 +2,12 @@
 
 namespace App\Console\Commands;
 
-use Exception;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\CronJobLogger;
 use App\Services\UnifiedSessionStatusService;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -375,7 +375,7 @@ class UpdateSessionStatusesCommand extends Command
         $processedCount = 0;
 
         // Process in chunks to prevent memory issues
-        $query->with(['academy', 'academicTeacher', 'student'])
+        $query->with(['academy', 'academicTeacher', 'student', 'meetingAttendances'])
             ->chunkById(50, function ($sessions) use (&$stats, &$processedCount, $isDryRun, $isVerbose) {
                 // Process status transitions using the unified service
                 if ($isDryRun) {
