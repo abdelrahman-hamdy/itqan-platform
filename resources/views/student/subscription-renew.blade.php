@@ -128,12 +128,12 @@
                             };
                             $isCurrentCycle = $currentBillingCycle === $cycle;
                         @endphp
-                        <label class="cursor-pointer" @click="selectedCycle = '{{ $cycle }}'">
+                        <label class="cursor-pointer h-full" @click="selectedCycle = '{{ $cycle }}'">
                             <input type="radio" name="billing_cycle" value="{{ $cycle }}"
                                    {{ $isCurrentCycle ? 'checked' : '' }}
                                    x-model="selectedCycle"
                                    class="peer sr-only">
-                            <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all">
+                            <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all h-full flex flex-col justify-center">
                                 <div class="text-sm font-medium text-gray-600">{{ $cycleLabel }}</div>
                                 <div class="text-xl font-bold text-gray-900 mt-1" x-text="formatPrice(getPrice('{{ $cycle }}'))">
                                     {{ number_format($options['packages'][0]['monthly_price'] ?? 0, 2) }}
