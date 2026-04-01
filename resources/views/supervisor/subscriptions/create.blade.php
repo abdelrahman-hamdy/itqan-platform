@@ -177,26 +177,33 @@
                         </div>
                     </template>
 
-                    <template x-if="!selected">
-                        <div class="border rounded-lg overflow-hidden">
+                    @if(!$teacher_id)
+                        @php
+                            // Batch-load teacher profiles with users for <x-avatar>
+                            $profileModel = $isQuranType ? \App\Models\QuranTeacherProfile::class : \App\Models\AcademicTeacherProfile::class;
+                            $teacherProfileModels = $profileModel::whereIn('id', collect($filteredTeachers)->pluck('id'))
+                                ->with('user')->get()->keyBy('id');
+                        @endphp
+                        <div class="border rounded-lg overflow-hidden" x-data="{ q: '' }">
                             <div class="p-2 border-b bg-gray-50">
-                                <input type="text" x-model="searchQuery" class="w-full rounded-lg border-gray-300 text-sm" placeholder="{{ __('subscriptions.search_teacher_placeholder') }}">
+                                <input type="text" x-model="q" class="w-full rounded-lg border-gray-300 text-sm" placeholder="{{ __('subscriptions.search_teacher_placeholder') }}">
                             </div>
                             <div class="max-h-48 overflow-y-auto p-1 space-y-0.5">
-                                <template x-for="t in filtered" :key="t.id">
-                                    <button type="button" @click="select(t)" class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 text-start">
-                                        <div class="w-8 h-8 rounded-full {{ $teacherUserType === 'quran_teacher' ? 'bg-yellow-100' : 'bg-violet-100' }} flex items-center justify-center flex-shrink-0">
-                                            <i class="{{ $teacherUserType === 'quran_teacher' ? 'ri-book-read-line text-yellow-600' : 'ri-graduation-cap-line text-violet-600' }} text-sm"></i>
-                                        </div>
-                                        <span class="text-sm font-medium text-gray-900" x-text="t.name"></span>
+                                @forelse ($filteredTeachers as $t)
+                                    @php $tUser = $teacherProfileModels->get($t['id'])?->user; @endphp
+                                    <button type="button"
+                                            x-show="!q || '{{ mb_strtolower($t['name']) }}'.includes(q.toLowerCase())"
+                                            @click="selected = {{ Js::from($t) }}; searchQuery = ''; $wire.call('selectTeacher', {{ $t['id'] }})"
+                                            class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 text-start">
+                                        @if($tUser)<x-avatar :user="$tUser" size="xs" :userType="$teacherUserType" />@endif
+                                        <span class="text-sm font-medium text-gray-900">{{ $t['name'] }}</span>
                                     </button>
-                                </template>
-                                <template x-if="filtered.length === 0">
+                                @empty
                                     <div class="p-3 text-sm text-gray-500 text-center">{{ __('subscriptions.no_teachers_available') }}</div>
-                                </template>
+                                @endforelse
                             </div>
                         </div>
-                    </template>
+                    @endif
                     @error('teacher_id') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
