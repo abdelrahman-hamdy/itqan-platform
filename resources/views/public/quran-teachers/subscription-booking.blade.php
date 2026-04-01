@@ -1,34 +1,47 @@
-<x-subscription.page-layout
-    :academy="$academy"
-    :title="__('public.booking.top_bar.new_subscription') . ' - ' . $package->getDisplayName() . ' - ' . $teacher->full_name">
+<x-layouts.student>
 
-    <x-booking.top-bar
-        :academy="$academy"
-        :title="__('public.booking.top_bar.new_subscription')"
-        :backRoute="route('quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id])" />
+@php
+    $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain;
+@endphp
 
-    {{-- Flash Messages are handled by x-subscription.messages inside booking-form --}}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => __('student.subscriptions.page_title'), 'url' => route('student.subscriptions', ['subdomain' => $subdomain])],
+            ['label' => __('public.booking.top_bar.new_subscription')],
+        ]"
+        view-type="student"
+    />
 
-    <section class="py-8">
-        <div class="container mx-auto px-4 max-w-4xl">
-
-            {{-- Teacher & Package Info --}}
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <x-subscription.teacher-info-card :teacher="$teacher" teacherType="quran" />
-                <x-subscription.package-info-card :package="$package" packageType="quran" :selectedPeriod="$selectedPeriod ?? 'monthly'" />
-            </div>
-
-            {{-- Subscription Form --}}
-            <x-subscription.booking-form
-                type="quran"
-                :teacher="$teacher"
-                :package="$package"
-                :academy="$academy"
-                :formAction="route('quran-teachers.subscribe.submit', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id, 'packageId' => $package->id])"
-                :cancelUrl="route('quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id])"
-                :selectedPeriod="$selectedPeriod ?? 'monthly'" />
-
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-6">
+        {{-- Header --}}
+        <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-l from-indigo-50 to-white">
+            <h1 class="text-xl font-bold text-gray-900">
+                {{ __('public.booking.top_bar.new_subscription') }}
+            </h1>
+            <p class="text-sm text-gray-600 mt-1">
+                {{ __('public.booking.quran.form.subtitle') }}
+            </p>
         </div>
-    </section>
 
-</x-subscription.page-layout>
+        {{-- Info Sections (compact, collapsible) --}}
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 space-y-4">
+            <x-subscription.teacher-info-card :teacher="$teacher" teacherType="quran" :compact="true" />
+            <div class="border-t border-gray-200"></div>
+            <x-subscription.package-info-card :package="$package" packageType="quran" :selectedPeriod="$selectedPeriod ?? 'monthly'" :compact="true" :academy="$academy" />
+            <div class="border-t border-gray-200"></div>
+            <x-subscription.student-info :user="auth()->user()" :compact="true" />
+        </div>
+
+        {{-- Booking Form --}}
+        <x-subscription.booking-form
+            type="quran"
+            :teacher="$teacher"
+            :package="$package"
+            :academy="$academy"
+            :formAction="route('quran-teachers.subscribe.submit', ['subdomain' => $subdomain, 'teacherId' => $teacher->id, 'packageId' => $package->id])"
+            :selectedPeriod="$selectedPeriod ?? 'monthly'" />
+    </div>
+</div>
+
+</x-layouts.student>

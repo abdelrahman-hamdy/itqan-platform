@@ -1,34 +1,49 @@
-<x-subscription.page-layout
-    :academy="$academy"
-    :title="__('public.booking.academic.title', ['default' => 'اشتراك أكاديمي جديد']) . ' - ' . $package->name . ' - ' . $teacher->user->name">
+<x-layouts.student>
 
-    <x-booking.top-bar
-        :academy="$academy"
-        :title="__('public.booking.academic.title', ['default' => 'اشتراك أكاديمي جديد'])"
-        :backRoute="route('public.academic-packages.teacher', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id])" />
+@php
+    $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain;
+@endphp
 
-    <section class="py-8">
-        <div class="container mx-auto px-4 max-w-4xl">
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => __('student.subscriptions.page_title'), 'url' => route('student.subscriptions', ['subdomain' => $subdomain])],
+            ['label' => __('public.booking.academic.title')],
+        ]"
+        view-type="student"
+    />
 
-            {{-- Teacher & Package Info --}}
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <x-subscription.teacher-info-card :teacher="$teacher" teacherType="academic" />
-                <x-subscription.package-info-card :package="$package" packageType="academic" :selectedPeriod="$selectedPeriod ?? 'monthly'" />
-            </div>
-
-            {{-- Subscription Form --}}
-            <x-subscription.booking-form
-                type="academic"
-                :teacher="$teacher"
-                :package="$package"
-                :academy="$academy"
-                :subjects="$teacher->subjects->pluck('name', 'id')->toArray()"
-                :gradeLevels="$teacher->gradeLevels->pluck('name', 'id')->toArray()"
-                :formAction="route('public.academic-packages.subscribe.submit', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id, 'packageId' => $package->id])"
-                :cancelUrl="route('public.academic-packages.teacher', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id])"
-                :selectedPeriod="$selectedPeriod ?? 'monthly'" />
-
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-6">
+        {{-- Header --}}
+        <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-l from-indigo-50 to-white">
+            <h1 class="text-xl font-bold text-gray-900">
+                {{ __('public.booking.academic.title') }}
+            </h1>
+            <p class="text-sm text-gray-600 mt-1">
+                {{ __('public.booking.academic.subtitle') }}
+            </p>
         </div>
-    </section>
 
-</x-subscription.page-layout>
+        {{-- Info Sections (compact, collapsible) --}}
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 space-y-4">
+            <x-subscription.teacher-info-card :teacher="$teacher" teacherType="academic" :compact="true" />
+            <div class="border-t border-gray-200"></div>
+            <x-subscription.package-info-card :package="$package" packageType="academic" :selectedPeriod="$selectedPeriod ?? 'monthly'" :compact="true" :academy="$academy" />
+            <div class="border-t border-gray-200"></div>
+            <x-subscription.student-info :user="auth()->user()" :compact="true" />
+        </div>
+
+        {{-- Booking Form --}}
+        <x-subscription.booking-form
+            type="academic"
+            :teacher="$teacher"
+            :package="$package"
+            :academy="$academy"
+            :subjects="$teacher->subjects->pluck('name', 'id')->toArray()"
+            :gradeLevels="$teacher->gradeLevels->pluck('name', 'id')->toArray()"
+            :formAction="route('public.academic-packages.subscribe.submit', ['subdomain' => $subdomain, 'teacher' => $teacher->id, 'packageId' => $package->id])"
+            :selectedPeriod="$selectedPeriod ?? 'monthly'" />
+    </div>
+</div>
+
+</x-layouts.student>

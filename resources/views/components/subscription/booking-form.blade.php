@@ -3,7 +3,6 @@
     'package',
     'type',                      // 'quran' | 'academic'
     'formAction',
-    'cancelUrl',
     'academy',
     'subjects' => [],            // academic only
     'gradeLevels' => [],         // academic only
@@ -46,13 +45,6 @@
     $effectiveQuarterly = $package->getEffectivePriceForBillingCycle('quarterly') ?? $quarterlyPrice;
     $effectiveYearly = $package->getEffectivePriceForBillingCycle('yearly') ?? $yearlyPrice;
 
-    // Pre-compute discount percentages
-    $saleDiscounts = [
-        'monthly' => $package->getDiscountPercentage('monthly'),
-        'quarterly' => $package->getDiscountPercentage('quarterly'),
-        'yearly' => $package->getDiscountPercentage('yearly'),
-    ];
-
     // Savings percentages (quarterly/yearly vs monthly baseline)
     $quarterlyFullPrice = $monthlyPrice * 3;
     $yearlyFullPrice = $monthlyPrice * 12;
@@ -62,26 +54,7 @@
 
 @livewire('payment.payment-gateway-modal', ['academyId' => $academy->id])
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <div class="mb-6">
-        <h3 class="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-            @if($isQuran)
-                <i class="ri-vip-crown-line text-primary"></i>
-                {{ __('public.booking.quran.form.title') }}
-            @else
-                <i class="ri-graduation-cap-line text-primary"></i>
-                {{ __('public.booking.academic.title') }}
-            @endif
-        </h3>
-        <p class="text-gray-600">
-            @if($isQuran)
-                {{ __('public.booking.quran.form.subtitle') }}
-            @else
-                {{ __('public.booking.academic.subtitle') }}
-            @endif
-        </p>
-    </div>
-
+<div class="px-6 py-6">
     <form action="{{ $formAction }}" method="POST" class="space-y-6"
           x-data="{
               billingCycle: '{{ old('billing_cycle', $selectedPeriod) ?: 'monthly' }}',
@@ -119,58 +92,51 @@
                   return labels[this.billingCycle] || labels.monthly;
               }
           }"
->
+    >
         @csrf
         <input type="hidden" name="teacher_id" value="{{ $teacher->id }}">
         <input type="hidden" name="package_id" value="{{ $package->id }}">
         <input type="hidden" name="academy_id" value="{{ $academy->id }}">
         <input type="hidden" name="payment_gateway" id="payment_gateway_input">
 
-        {{-- Error/Success Messages --}}
-        <x-subscription.messages />
-
-        {{-- Student Info Display --}}
-        <x-subscription.student-info :user="auth()->user()" />
-
         {{-- Billing Cycle --}}
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-3">
+            <label class="block text-sm font-semibold text-gray-700 mb-3">
                 {{ __('public.booking.quran.form.billing_cycle') }}
             </label>
-            {{-- Hidden input for form submission --}}
-            <input type="hidden" name="billing_cycle" :value="billingCycle">
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {{-- Monthly --}}
-                <div @click="billingCycle = 'monthly'"
-                     class="cursor-pointer h-full p-4 border-2 rounded-lg transition-all"
-                     :class="billingCycle === 'monthly' ? 'border-primary bg-primary/5 ring-2 ring-primary' : 'border-gray-200 hover:border-gray-300'">
-                    <div class="h-full flex flex-col items-center justify-between text-center">
-                        <div class="text-base font-semibold text-gray-900">{{ BillingCycle::MONTHLY->label() }}</div>
-                        <div class="my-2 flex items-baseline gap-1 flex-wrap justify-center" dir="ltr">
-                            <span class="text-xl font-bold text-primary">{{ number_format($saleMonthlyPrice ?? $monthlyPrice) }} {{ $currency }}</span>
-                            <span class="text-sm text-gray-500">{{ __('public.booking.quran.package_info.per_month') }}</span>
+                <label class="cursor-pointer h-full">
+                    <input type="radio" name="billing_cycle" value="monthly"
+                           x-model="billingCycle"
+                           class="peer sr-only">
+                    <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all h-full flex flex-col justify-center">
+                        <div class="text-sm font-medium text-gray-600">{{ BillingCycle::MONTHLY->label() }}</div>
+                        <div class="text-xl font-bold text-gray-900 mt-1" dir="ltr">
+                            {{ number_format($saleMonthlyPrice ?? $monthlyPrice) }} {{ $currency }}
                         </div>
-                        <div class="h-5">
+                        <div class="text-xs text-gray-500">{{ __('public.booking.quran.package_info.per_month') }}</div>
+                        <div class="h-4 mt-1">
                             @if($saleMonthlyPrice)
                                 <span class="text-[11px] text-gray-400">{{ __('components.packages.instead_of', ['price' => number_format($monthlyPrice) . ' ' . $currency]) }}</span>
                             @endif
                         </div>
                     </div>
-                </div>
+                </label>
 
                 {{-- Quarterly --}}
                 @if($package->quarterly_price)
-                    <div @click="billingCycle = 'quarterly'"
-                         class="cursor-pointer h-full p-4 border-2 rounded-lg transition-all"
-                         :class="billingCycle === 'quarterly' ? 'border-primary bg-primary/5 ring-2 ring-primary' : 'border-gray-200 hover:border-gray-300'">
-                        <div class="h-full flex flex-col items-center justify-between text-center">
-                            <div class="text-base font-semibold text-gray-900">{{ BillingCycle::QUARTERLY->label() }}</div>
-                            <div class="my-2 flex items-baseline gap-1 flex-wrap justify-center" dir="ltr">
-                                <span class="text-xl font-bold text-primary">{{ number_format($saleQuarterlyPrice ?? $quarterlyPrice) }} {{ $currency }}</span>
-                                <span class="text-sm text-gray-500">{{ __('public.booking.quran.package_info.per_quarter') }}</span>
+                    <label class="cursor-pointer h-full">
+                        <input type="radio" name="billing_cycle" value="quarterly"
+                               x-model="billingCycle"
+                               class="peer sr-only">
+                        <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all h-full flex flex-col justify-center">
+                            <div class="text-sm font-medium text-gray-600">{{ BillingCycle::QUARTERLY->label() }}</div>
+                            <div class="text-xl font-bold text-gray-900 mt-1" dir="ltr">
+                                {{ number_format($saleQuarterlyPrice ?? $quarterlyPrice) }} {{ $currency }}
                             </div>
-                            <div class="h-5">
+                            <div class="text-xs text-gray-500">{{ __('public.booking.quran.package_info.per_quarter') }}</div>
+                            <div class="h-4 mt-1">
                                 @if($saleQuarterlyPrice)
                                     <span class="text-[11px] text-gray-400">{{ __('components.packages.instead_of', ['price' => number_format($quarterlyPrice) . ' ' . $currency]) }}</span>
                                 @elseif($quarterlySavings > 0)
@@ -178,21 +144,22 @@
                                 @endif
                             </div>
                         </div>
-                    </div>
+                    </label>
                 @endif
 
                 {{-- Yearly --}}
                 @if($package->yearly_price)
-                    <div @click="billingCycle = 'yearly'"
-                         class="cursor-pointer h-full p-4 border-2 rounded-lg transition-all"
-                         :class="billingCycle === 'yearly' ? 'border-primary bg-primary/5 ring-2 ring-primary' : 'border-gray-200 hover:border-gray-300'">
-                        <div class="h-full flex flex-col items-center justify-between text-center">
-                            <div class="text-base font-semibold text-gray-900">{{ BillingCycle::YEARLY->label() }}</div>
-                            <div class="my-2 flex items-baseline gap-1 flex-wrap justify-center" dir="ltr">
-                                <span class="text-xl font-bold text-primary">{{ number_format($saleYearlyPrice ?? $yearlyPrice) }} {{ $currency }}</span>
-                                <span class="text-sm text-gray-500">{{ __('public.booking.quran.package_info.per_year') }}</span>
+                    <label class="cursor-pointer h-full">
+                        <input type="radio" name="billing_cycle" value="yearly"
+                               x-model="billingCycle"
+                               class="peer sr-only">
+                        <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all h-full flex flex-col justify-center">
+                            <div class="text-sm font-medium text-gray-600">{{ BillingCycle::YEARLY->label() }}</div>
+                            <div class="text-xl font-bold text-gray-900 mt-1" dir="ltr">
+                                {{ number_format($saleYearlyPrice ?? $yearlyPrice) }} {{ $currency }}
                             </div>
-                            <div class="h-5">
+                            <div class="text-xs text-gray-500">{{ __('public.booking.quran.package_info.per_year') }}</div>
+                            <div class="h-4 mt-1">
                                 @if($saleYearlyPrice)
                                     <span class="text-[11px] text-gray-400">{{ __('components.packages.instead_of', ['price' => number_format($yearlyPrice) . ' ' . $currency]) }}</span>
                                 @elseif($yearlySavings > 0)
@@ -200,7 +167,7 @@
                                 @endif
                             </div>
                         </div>
-                    </div>
+                    </label>
                 @endif
             </div>
             @error('billing_cycle')
@@ -212,11 +179,11 @@
         @if($isQuran)
             {{-- Quran: Current Level --}}
             <div>
-                <label for="current_level" class="block text-sm font-medium text-gray-700 mb-2">
+                <label for="current_level" class="block text-sm font-semibold text-gray-700 mb-2">
                     {{ __('public.booking.quran.form.current_level_label') }} *
                 </label>
                 <select id="current_level" name="current_level" required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary @error('current_level') border-red-500 @enderror">
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 @error('current_level') border-red-500 @enderror">
                     <option value="">{{ __('public.booking.quran.form.select_level') }}</option>
                     @foreach(QuranLearningLevel::cases() as $level)
                         <option value="{{ $level->value }}" {{ old('current_level') == $level->value ? 'selected' : '' }}>
@@ -231,7 +198,7 @@
 
             {{-- Quran: Learning Goals --}}
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
                     {{ __('public.booking.quran.form.learning_goals_label') }} *
                 </label>
                 <div class="space-y-2">
@@ -239,8 +206,8 @@
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" name="learning_goals[]" value="{{ $goal->value }}"
                                    {{ in_array($goal->value, old('learning_goals', [])) ? 'checked' : '' }}
-                                   class="text-primary focus:ring-primary border-gray-300 rounded">
-                            <span>{{ $goal->label() }}</span>
+                                   class="text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                            <span class="text-sm">{{ $goal->label() }}</span>
                         </label>
                     @endforeach
                 </div>
@@ -250,15 +217,14 @@
             </div>
         @else
             {{-- Academic: Subject & Grade Level --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {{-- Subject Selection --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="subject_id" class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                        <i class="ri-book-line text-primary"></i>
+                    <label for="subject_id" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                        <i class="ri-book-line text-indigo-500"></i>
                         {{ __('public.booking.academic.subject') }} *
                     </label>
                     <select id="subject_id" name="subject_id" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary @error('subject_id') border-red-500 @enderror">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 @error('subject_id') border-red-500 @enderror">
                         <option value="">{{ __('public.booking.academic.select_subject') }}</option>
                         @foreach($subjects as $subjectId => $subjectName)
                             <option value="{{ $subjectId }}" {{ old('subject_id') == $subjectId ? 'selected' : '' }}>
@@ -271,14 +237,13 @@
                     @enderror
                 </div>
 
-                {{-- Grade Level Selection --}}
                 <div>
-                    <label for="grade_level_id" class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                    <label for="grade_level_id" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
                         <i class="ri-school-line text-green-500"></i>
                         {{ __('public.booking.academic.grade_level') }} *
                     </label>
                     <select id="grade_level_id" name="grade_level_id" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary @error('grade_level_id') border-red-500 @enderror">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 @error('grade_level_id') border-red-500 @enderror">
                         <option value="">{{ __('public.booking.academic.select_grade_level') }}</option>
                         @foreach($gradeLevels as $gradeLevelId => $gradeLevelName)
                             <option value="{{ $gradeLevelId }}" {{ old('grade_level_id') == $gradeLevelId ? 'selected' : '' }}>
@@ -293,23 +258,23 @@
             </div>
         @endif
 
-        {{-- Preferred Schedule (Shared) --}}
+        {{-- Preferred Schedule --}}
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-3">
+            <label class="block text-sm font-semibold text-gray-700 mb-3">
                 {{ __('public.booking.quran.form.preferred_schedule') }}
             </label>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                 @foreach(WeekDays::cases() as $day)
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" name="preferred_days[]" value="{{ $day->value }}"
                                {{ in_array($day->value, old('preferred_days', [])) ? 'checked' : '' }}
-                               class="text-primary focus:ring-primary border-gray-300 rounded">
+                               class="text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                         <span class="text-sm">{{ $day->label() }}</span>
                     </label>
                 @endforeach
             </div>
 
-            <select name="preferred_time" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+            <select name="preferred_time" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500">
                 <option value="">{{ __('public.booking.quran.form.preferred_time') }}</option>
                 @foreach(TimeSlot::cases() as $slot)
                     <option value="{{ $slot->value }}" {{ old('preferred_time') == $slot->value ? 'selected' : '' }}>
@@ -319,32 +284,31 @@
             </select>
         </div>
 
-        {{-- Additional Notes (Shared) --}}
+        {{-- Additional Notes --}}
         <div>
-            <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="notes" class="block text-sm font-semibold text-gray-700 mb-2">
                 {{ __('public.booking.quran.form.notes') }}
             </label>
-            <textarea id="notes" name="notes" rows="4"
+            <textarea id="notes" name="notes" rows="3"
                       placeholder="{{ __('public.booking.quran.form.notes_placeholder') }}"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">{{ old('notes') }}</textarea>
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500">{{ old('notes') }}</textarea>
         </div>
 
-        {{-- Pricing Summary (Shared) --}}
-        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
-            <h4 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <i class="ri-calculator-line text-primary"></i>
+        {{-- Pricing Summary --}}
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+            <h4 class="font-semibold text-gray-900 mb-3 flex items-center gap-2 text-sm">
+                <i class="ri-calculator-line text-indigo-600"></i>
                 {{ __('public.booking.quran.form.cost_summary') }}
             </h4>
-            <div class="space-y-2">
-                {{-- Original price with strikethrough when sale is active --}}
-                <div x-show="currentHasSale" x-cloak class="flex justify-between items-center text-gray-400 text-sm">
+            <div class="space-y-2 text-sm">
+                <div x-show="currentHasSale" x-cloak class="flex justify-between items-center text-gray-400">
                     <span>{{ __('components.packages.original_price') }}</span>
-                    <span dir="ltr">
+                    <span dir="ltr" class="line-through">
                         <span x-text="currentOriginalPrice.toLocaleString()"></span>
                         {{ $currency }}
                     </span>
                 </div>
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center text-gray-700">
                     <span>
                         {{ __('public.booking.quran.form.package_price') }}
                         (<span x-text="periodLabel"></span>)
@@ -354,9 +318,9 @@
                         {{ $currency }}
                     </span>
                 </div>
-                <div class="border-t border-gray-300 pt-2 flex justify-between items-center font-bold text-lg">
+                <div class="border-t border-gray-200 pt-2 flex justify-between items-center font-bold">
                     <span>{{ __('public.booking.quran.form.total') }}</span>
-                    <span class="text-primary" dir="ltr">
+                    <span class="text-indigo-600 text-lg" dir="ltr">
                         <span x-text="currentPrice.toLocaleString()"></span>
                         {{ $currency }}
                     </span>
@@ -364,20 +328,12 @@
             </div>
         </div>
 
-        {{-- Submit Buttons (Shared) --}}
-        <div class="flex flex-col sm:flex-row gap-4">
-            <button type="submit"
-                    class="flex-1 bg-primary text-white py-3 px-6 rounded-lg font-medium hover:opacity-90 transition-colors flex items-center justify-center gap-2">
-                <i class="ri-secure-payment-line"></i>
-                {{ __('public.booking.quran.form.submit') }}
-            </button>
-
-            <a href="{{ $cancelUrl }}"
-               class="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                <i class="ri-arrow-go-back-line"></i>
-                <span>{{ __('public.booking.quran.form.cancel') }}</span>
-            </a>
-        </div>
+        {{-- Submit Button --}}
+        <button type="submit"
+                class="w-full min-h-[48px] px-6 py-3 bg-indigo-600 text-white rounded-xl text-base font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
+            <i class="ri-secure-payment-line ms-2"></i>
+            {{ __('public.booking.quran.form.submit') }}
+        </button>
     </form>
 </div>
 
@@ -394,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (existingError) existingError.remove();
 
         const errorDiv = document.createElement('div');
-        errorDiv.className = 'validation-error bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6';
+        errorDiv.className = 'validation-error bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6';
         errorDiv.innerHTML = `
             <div class="flex gap-2">
                 <i class="ri-error-warning-line text-red-500 mt-0.5"></i>

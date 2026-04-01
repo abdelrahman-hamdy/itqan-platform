@@ -425,7 +425,8 @@ class UnifiedQuranTeacherController extends Controller
             abort(404, 'Academy not found');
         }
 
-        $teacher = QuranTeacherProfile::where('id', $teacherId)
+        $teacher = QuranTeacherProfile::with('user')
+            ->where('id', $teacherId)
             ->where('academy_id', $academy->id)
             ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->first();
