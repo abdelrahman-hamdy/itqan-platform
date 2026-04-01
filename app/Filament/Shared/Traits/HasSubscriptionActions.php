@@ -78,7 +78,7 @@ trait HasSubscriptionActions
     /**
      * Confirm Payment action (replaces Activate).
      *
-     * Sets payment as PAID. If subscription was PENDING, SUSPENDED, or CANCELLED,
+     * Sets payment as PAID. If subscription was PENDING or CANCELLED,
      * activates it. If grace period was active (original_ends_at stored),
      * recalculates ends_at from original date.
      */
@@ -369,11 +369,8 @@ trait HasSubscriptionActions
 
                 $updateData = ['metadata' => $metadata];
 
-                // If subscription is EXPIRED or SUSPENDED, transition to ACTIVE
-                if (in_array($record->status, [
-                    SessionSubscriptionStatus::EXPIRED,
-                    SessionSubscriptionStatus::SUSPENDED,
-                ])) {
+                // If subscription is EXPIRED, transition to ACTIVE
+                if ($record->status === SessionSubscriptionStatus::EXPIRED) {
                     $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
                 }
 
@@ -393,7 +390,6 @@ trait HasSubscriptionActions
                 SessionSubscriptionStatus::ACTIVE,
                 SessionSubscriptionStatus::PAUSED,
                 SessionSubscriptionStatus::EXPIRED,
-                SessionSubscriptionStatus::SUSPENDED,
             ]) && auth()->user()->hasRole(['super_admin', 'admin']));
     }
 

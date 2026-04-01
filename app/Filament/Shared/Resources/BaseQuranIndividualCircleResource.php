@@ -406,7 +406,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
             return false;
         }
 
-        return $subscription->status === SessionSubscriptionStatus::SUSPENDED;
+        return $subscription->status === SessionSubscriptionStatus::EXPIRED;
     }
 
     /**

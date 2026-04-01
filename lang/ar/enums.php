@@ -8,6 +8,7 @@ return [
         'ongoing' => 'جارية الآن',
         'completed' => 'مكتملة',
         'cancelled' => 'ملغية',
+        'suspended' => 'معلقة',
         'absent' => 'غياب الطالب',
         'forgiven' => 'معفو عنها',
     ],

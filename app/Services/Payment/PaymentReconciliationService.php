@@ -156,10 +156,9 @@ class PaymentReconciliationService
             'last_payment_date' => now(),
         ];
 
-        // If PENDING, SUSPENDED, or CANCELLED, activate the subscription
+        // If PENDING or CANCELLED, activate the subscription
         if (in_array($subscription->status, [
             SessionSubscriptionStatus::PENDING,
-            SessionSubscriptionStatus::SUSPENDED,
             SessionSubscriptionStatus::CANCELLED,
         ])) {
             $updateData['status'] = SessionSubscriptionStatus::ACTIVE;

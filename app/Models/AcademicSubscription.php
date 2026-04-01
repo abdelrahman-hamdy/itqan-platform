@@ -1154,7 +1154,7 @@ class AcademicSubscription extends BaseSubscription
 
         $newStatus = match ($this->status) {
             SessionSubscriptionStatus::ACTIVE => LessonStatus::ACTIVE,
-            SessionSubscriptionStatus::CANCELLED, SessionSubscriptionStatus::SUSPENDED => LessonStatus::CANCELLED,
+            SessionSubscriptionStatus::CANCELLED => LessonStatus::CANCELLED,
             default => LessonStatus::PENDING,
         };
 

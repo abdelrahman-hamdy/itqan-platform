@@ -3,22 +3,21 @@
 namespace App\Filament\Shared\Resources;
 
 use App\Enums\SessionSubscriptionStatus;
-use Filament\Forms\Components\Placeholder;
-use Filament\Schemas\Components\Section;
-use Illuminate\Database\Eloquent\Model;
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Repeater;
 use App\Models\AcademicIndividualLesson;
 use App\Services\AcademyContextService;
 use Filament\Facades\Filament;
-use Filament\Forms;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Base Academic Individual Lesson Resource
@@ -30,7 +29,7 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
 {
     protected static ?string $model = AcademicIndividualLesson::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $modelLabel = 'درس فردي';
 
@@ -184,7 +183,7 @@ abstract class BaseAcademicIndividualLessonResource extends Resource
             return false;
         }
 
-        return $subscription->status === SessionSubscriptionStatus::SUSPENDED;
+        return $subscription->status === SessionSubscriptionStatus::EXPIRED;
     }
 
     /**

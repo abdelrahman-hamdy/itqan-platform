@@ -25,6 +25,7 @@ enum SessionStatus: string
     case ONGOING = 'ongoing';              // Currently happening
     case COMPLETED = 'completed';          // Finished successfully
     case CANCELLED = 'cancelled';          // Cancelled by teacher/admin
+    case SUSPENDED = 'suspended';          // Held due to subscription expiry/pause (recoverable)
     case ABSENT = 'absent';                // Student didn't attend (individual only)
     case FORGIVEN = 'forgiven';            // Admin pardoned absence (individual only)
 
@@ -48,6 +49,7 @@ enum SessionStatus: string
             self::ONGOING => 'ri-live-line',
             self::COMPLETED => 'ri-check-circle-line',
             self::CANCELLED => 'ri-close-circle-line',
+            self::SUSPENDED => 'ri-pause-circle-line',
             self::ABSENT => 'ri-user-x-line',
             self::FORGIVEN => 'ri-heart-line',
         };
@@ -65,6 +67,7 @@ enum SessionStatus: string
             self::ONGOING => 'primary',
             self::COMPLETED => 'success',
             self::CANCELLED => 'danger',
+            self::SUSPENDED => 'warning',
             self::ABSENT => 'warning',
             self::FORGIVEN => 'info',
         };
@@ -82,6 +85,7 @@ enum SessionStatus: string
             self::ONGOING => '#06B6D4',      // cyan-500
             self::COMPLETED => '#22c55e',    // green-500
             self::CANCELLED => '#ef4444',    // red-500
+            self::SUSPENDED => '#f97316',    // orange-500
             self::ABSENT => '#f59e0b',       // amber-500
             self::FORGIVEN => '#60A5FA',     // blue-400
         };
@@ -143,6 +147,7 @@ enum SessionStatus: string
         return in_array($this, [
             self::COMPLETED,
             self::CANCELLED,
+            self::SUSPENDED,
             self::ABSENT,
             self::FORGIVEN,
         ]);

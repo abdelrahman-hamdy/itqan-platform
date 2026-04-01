@@ -3,16 +3,14 @@
 namespace App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages;
 
 use App\Enums\SessionSubscriptionStatus;
+use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource;
+use App\Filament\Pages\BaseViewRecord as ViewRecord;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Placeholder;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
 use Filament\Infolists\Components\TextEntry;
-use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource;
-use Filament\Actions;
-use Filament\Infolists;
-use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
 class ViewAcademicIndividualLesson extends ViewRecord
 {
@@ -123,6 +121,6 @@ class ViewAcademicIndividualLesson extends ViewRecord
             return false;
         }
 
-        return $subscription->status === SessionSubscriptionStatus::SUSPENDED;
+        return $subscription->status === SessionSubscriptionStatus::EXPIRED;
     }
 }

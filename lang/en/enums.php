@@ -8,6 +8,7 @@ return [
         'ongoing' => 'Ongoing',
         'completed' => 'Completed',
         'cancelled' => 'Cancelled',
+        'suspended' => 'Suspended',
         'absent' => 'Student Absent',
         'forgiven' => 'Forgiven',
     ],

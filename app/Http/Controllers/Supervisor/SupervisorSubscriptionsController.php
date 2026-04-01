@@ -248,8 +248,8 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
         $updateData = ['metadata' => $metadata];
 
-        // If subscription is EXPIRED or SUSPENDED, transition to ACTIVE so the student regains access
-        if (in_array($subscription->status, [SessionSubscriptionStatus::EXPIRED, SessionSubscriptionStatus::SUSPENDED])) {
+        // If subscription is EXPIRED, transition to ACTIVE so the student regains access
+        if ($subscription->status === SessionSubscriptionStatus::EXPIRED) {
             $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
         }
 
