@@ -270,7 +270,7 @@ class CreateFullSubscription extends Component
                 'billing_cycle' => $this->billing_cycle,
                 'amount' => $this->finalPrice,
                 'discount' => $this->discount,
-                'payment_method' => $this->paid_externally ? 'manual' : 'pending',
+                'payment_method' => $this->paid_externally ? 'cash' : 'bank_transfer',
                 'payment_reference' => $this->payment_reference,
                 'consumed_sessions' => $this->consumed_sessions,
                 'memorization_level' => $this->memorization_level,

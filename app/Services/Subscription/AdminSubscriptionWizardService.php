@@ -133,7 +133,7 @@ class AdminSubscriptionWizardService
             'user_id' => $subscription->student_id,
             'payable_type' => $subscription::class,
             'payable_id' => $subscription->id,
-            'payment_method' => $data['payment_method'] ?? 'manual',
+            'payment_method' => $data['payment_method'] ?? 'cash',
             'payment_gateway' => 'manual',
             'payment_type' => 'subscription',
             'amount' => $subscription->final_price,

@@ -133,7 +133,7 @@ class PaymentReconciliationService
             'user_id' => $subscription->student_id,
             'payable_type' => $subscription::class,
             'payable_id' => $subscription->id,
-            'payment_method' => 'manual',
+            'payment_method' => 'cash',
             'payment_gateway' => 'manual',
             'amount' => $subscription->final_price ?? $subscription->getPriceForBillingCycle(),
             'currency' => $subscription->currency ?? 'SAR',
