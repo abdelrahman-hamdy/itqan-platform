@@ -50,28 +50,21 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.student_label') }}</label>
 
-                    @if (!empty($selectedStudent))
-                        {{-- Selected student chip --}}
-                        <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                            <div class="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
-                                @if ($selectedStudent['avatar'])
-                                    <img src="{{ $selectedStudent['avatar'] }}" class="w-full h-full object-cover" alt="">
-                                @else
-                                    <div class="w-full h-full flex items-center justify-center text-gray-500">
-                                        <i class="ri-user-line text-lg"></i>
-                                    </div>
-                                @endif
+                    @if ($student_id)
+                        @php $studentUser = \App\Models\User::find($student_id); @endphp
+                        @if ($studentUser)
+                            <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                <x-avatar :user="$studentUser" size="xs" userType="student" />
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-gray-900 truncate">{{ $selectedStudentName }}</div>
+                                    <div class="text-xs text-gray-500 truncate">{{ $selectedStudentEmail }}</div>
+                                </div>
+                                <button type="button" wire:click="clearStudent" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                    <i class="ri-close-line text-lg"></i>
+                                </button>
                             </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="font-semibold text-gray-900 truncate">{{ $selectedStudent['name'] }}</div>
-                                <div class="text-xs text-gray-500 truncate">{{ $selectedStudent['email'] }}</div>
-                            </div>
-                            <button type="button" wire:click="clearStudent" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                                <i class="ri-close-line text-lg"></i>
-                            </button>
-                        </div>
+                        @endif
                     @else
-                        {{-- Search input --}}
                         <div class="relative">
                             <input type="text" wire:model.live.debounce.300ms="student_search"
                                    class="w-full rounded-lg border-gray-300 pe-10"
@@ -82,23 +75,18 @@
                         </div>
                         @if (count($searchResults) > 0)
                             <div class="mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto z-10 relative">
-                                @foreach ($searchResults as $result)
-                                    <button wire:click="selectStudent({{ $result['id'] }})"
-                                            class="w-full text-start px-3 py-2.5 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-50 last:border-0">
-                                        <div class="w-9 h-9 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
-                                            @if ($result['avatar'])
-                                                <img src="{{ $result['avatar'] }}" class="w-full h-full object-cover" alt="">
-                                            @else
-                                                <div class="w-full h-full flex items-center justify-center text-gray-500">
-                                                    <i class="ri-user-line"></i>
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="min-w-0">
-                                            <div class="text-sm font-medium text-gray-900 truncate">{{ $result['name'] }}</div>
-                                            <div class="text-xs text-gray-500 truncate">{{ $result['email'] }}</div>
-                                        </div>
-                                    </button>
+                                @foreach ($searchResults as $resultId)
+                                    @php $resultUser = \App\Models\User::find($resultId); @endphp
+                                    @if ($resultUser)
+                                        <button wire:click="selectStudent({{ $resultId }})"
+                                                class="w-full text-start px-3 py-2.5 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-50 last:border-0">
+                                            <x-avatar :user="$resultUser" size="xs" userType="student" />
+                                            <div class="min-w-0">
+                                                <div class="text-sm font-medium text-gray-900 truncate">{{ trim($resultUser->first_name.' '.$resultUser->last_name) }}</div>
+                                                <div class="text-xs text-gray-500 truncate">{{ $resultUser->email }}</div>
+                                            </div>
+                                        </button>
+                                    @endif
                                 @endforeach
                             </div>
                         @endif
@@ -110,27 +98,26 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.teacher_label') }}</label>
 
-                    @if (!empty($selectedTeacher))
-                        {{-- Selected teacher chip --}}
-                        <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                            <div class="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
-                                @if ($selectedTeacher['avatar'] ?? null)
-                                    <img src="{{ $selectedTeacher['avatar'] }}" class="w-full h-full object-cover" alt="">
-                                @else
-                                    <div class="w-full h-full flex items-center justify-center text-gray-400">
-                                        <i class="ri-user-line text-lg"></i>
-                                    </div>
-                                @endif
+                    @if ($teacher_id)
+                        @php
+                            $teacherProfile = in_array($subscription_type, ['quran_individual', 'quran_group'])
+                                ? \App\Models\QuranTeacherProfile::with('user')->find($teacher_id)
+                                : \App\Models\AcademicTeacherProfile::with('user')->find($teacher_id);
+                            $teacherUser = $teacherProfile?->user;
+                            $teacherUserType = in_array($subscription_type, ['quran_individual', 'quran_group']) ? 'quran_teacher' : 'academic_teacher';
+                        @endphp
+                        @if ($teacherUser)
+                            <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                <x-avatar :user="$teacherUser" size="xs" :userType="$teacherUserType" />
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-gray-900 truncate">{{ trim($teacherUser->first_name.' '.$teacherUser->last_name) }}</div>
+                                </div>
+                                <button type="button" wire:click="clearTeacher" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                    <i class="ri-close-line text-lg"></i>
+                                </button>
                             </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="font-semibold text-gray-900 truncate">{{ $selectedTeacher['name'] }}</div>
-                            </div>
-                            <button type="button" wire:click="clearTeacher" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                                <i class="ri-close-line text-lg"></i>
-                            </button>
-                        </div>
+                        @endif
                     @else
-                        {{-- Teacher search + list --}}
                         <div class="border rounded-lg overflow-hidden">
                             <div class="p-2 border-b bg-gray-50">
                                 <div class="relative">
@@ -143,18 +130,19 @@
                                 </div>
                             </div>
                             <div class="max-h-48 overflow-y-auto p-1 space-y-0.5">
+                                @php $teacherUserType = in_array($subscription_type, ['quran_individual', 'quran_group']) ? 'quran_teacher' : 'academic_teacher'; @endphp
                                 @forelse ($filteredTeachers as $teacher)
+                                    @php
+                                        $tProfile = in_array($subscription_type, ['quran_individual', 'quran_group'])
+                                            ? \App\Models\QuranTeacherProfile::with('user')->find($teacher['id'])
+                                            : \App\Models\AcademicTeacherProfile::with('user')->find($teacher['id']);
+                                        $tUser = $tProfile?->user;
+                                    @endphp
                                     <button type="button" wire:click="selectTeacher({{ $teacher['id'] }})"
                                             class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors text-start">
-                                        <div class="w-9 h-9 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
-                                            @if ($teacher['avatar'] ?? null)
-                                                <img src="{{ $teacher['avatar'] }}" class="w-full h-full object-cover" alt="">
-                                            @else
-                                                <div class="w-full h-full flex items-center justify-center text-gray-500">
-                                                    <i class="ri-user-line"></i>
-                                                </div>
-                                            @endif
-                                        </div>
+                                        @if ($tUser)
+                                            <x-avatar :user="$tUser" size="xs" :userType="$teacherUserType" />
+                                        @endif
                                         <span class="text-sm font-medium text-gray-900">{{ $teacher['name'] }}</span>
                                     </button>
                                 @empty
@@ -193,7 +181,6 @@
                     </select>
                 </div>
 
-                {{-- Price (read-only) + Discount + Final --}}
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-gray-600">{{ __('subscriptions.package_price_label') }}</span>

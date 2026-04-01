@@ -27,13 +27,13 @@ class CreateFullSubscription extends Component
 
     public string $student_search = '';
 
-    public array $selectedStudent = []; // {id, name, email, avatar}
+    public string $selectedStudentName = '';
+
+    public string $selectedStudentEmail = '';
 
     public ?int $teacher_id = null;
 
     public string $teacher_search = '';
-
-    public array $selectedTeacher = []; // {id, name, avatar}
 
     public array $filteredTeachers = [];
 
@@ -96,7 +96,6 @@ class CreateFullSubscription extends Component
     public function updatedSubscriptionType(): void
     {
         $this->teacher_id = null;
-        $this->selectedTeacher = [];
         $this->teacher_search = '';
         $this->package_id = null;
         $this->amount = 0;
@@ -146,13 +145,7 @@ class CreateFullSubscription extends Component
                         ->orWhere('email', 'like', "%{$this->student_search}%");
                 })
                 ->limit(10)
-                ->get()
-                ->map(fn ($u) => [
-                    'id' => $u->id,
-                    'name' => $u->first_name.' '.$u->last_name,
-                    'email' => $u->email,
-                    'avatar' => $u->avatar ? asset('storage/'.$u->avatar) : null,
-                ])
+                ->pluck('id')
                 ->toArray();
         } else {
             $this->searchResults = [];
@@ -166,12 +159,8 @@ class CreateFullSubscription extends Component
             ->first();
         if ($student) {
             $this->student_id = $student->id;
-            $this->selectedStudent = [
-                'id' => $student->id,
-                'name' => $student->first_name.' '.$student->last_name,
-                'email' => $student->email,
-                'avatar' => $student->avatar ? asset('storage/'.$student->avatar) : null,
-            ];
+            $this->selectedStudentName = trim($student->first_name.' '.$student->last_name);
+            $this->selectedStudentEmail = $student->email ?? '';
             $this->student_search = '';
             $this->searchResults = [];
         }
@@ -180,7 +169,8 @@ class CreateFullSubscription extends Component
     public function clearStudent(): void
     {
         $this->student_id = null;
-        $this->selectedStudent = [];
+        $this->selectedStudentName = '';
+        $this->selectedStudentEmail = '';
         $this->student_search = '';
     }
 
@@ -201,7 +191,7 @@ class CreateFullSubscription extends Component
         $teacher = collect($this->availableTeachers)->firstWhere('id', $id);
         if ($teacher) {
             $this->teacher_id = $id;
-            $this->selectedTeacher = $teacher;
+            $this->teacher_search = '';
             $this->loadPackages();
         }
     }
@@ -209,7 +199,6 @@ class CreateFullSubscription extends Component
     public function clearTeacher(): void
     {
         $this->teacher_id = null;
-        $this->selectedTeacher = [];
         $this->teacher_search = '';
         $this->filteredTeachers = $this->availableTeachers;
         $this->package_id = null;
