@@ -29,6 +29,13 @@
 
         {{-- ═══ STEP 1 ═══ --}}
         @if ($currentStep === 1)
+            @php
+                // Shared variables for step 1
+                $isQuranType = in_array($subscription_type, ['quran_individual', 'quran_group']);
+                $teacherUserType = $isQuranType ? 'quran_teacher' : 'academic_teacher';
+                // Batch-load User models for search results (for <x-avatar> component)
+                $searchUserModels = !empty($searchResults) ? \App\Models\User::whereIn('id', collect($searchResults)->pluck('id'))->get()->keyBy('id') : collect();
+            @endphp
             <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step1_title') }}</h2>
             <div class="space-y-5">
 
@@ -60,7 +67,23 @@
                 }">
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.student_label') }}</label>
 
-                    <template x-if="selected">
+                    {{-- Server-rendered chip (with <x-avatar>) when student is already selected --}}
+                    @if($student_id)
+                        @php $selectedStudentUser = \App\Models\User::find($student_id); @endphp
+                        @if($selectedStudentUser)
+                            <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                <x-avatar :user="$selectedStudentUser" size="xs" userType="student" />
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-gray-900 truncate text-sm">{{ $selectedStudentName }}</div>
+                                    <div class="text-xs text-gray-500 truncate">{{ $selectedStudentEmail }}</div>
+                                </div>
+                                <button type="button" @click="clear()" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><i class="ri-close-line text-lg"></i></button>
+                            </div>
+                        @endif
+                    @endif
+
+                    {{-- Alpine instant chip (client-side, before server re-renders) --}}
+                    <template x-if="selected && !{{ $student_id ? 'true' : 'false' }}">
                         <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                             <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                                 <i class="ri-user-line text-blue-600 text-sm"></i>
@@ -82,11 +105,10 @@
                             @if (count($searchResults) > 0)
                                 <div class="mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto z-10 relative">
                                     @foreach ($searchResults as $r)
+                                        @php $searchUser = $searchUserModels->get($r['id']); @endphp
                                         <button type="button" @click="select({{ $r['id'] }}, {{ Js::from($r['name']) }}, {{ Js::from($r['email']) }})"
                                                 class="w-full text-start px-3 py-2.5 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-50 last:border-0">
-                                            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                                <i class="ri-user-line text-blue-600 text-sm"></i>
-                                            </div>
+                                            @if($searchUser)<x-avatar :user="$searchUser" size="xs" userType="student" />@endif
                                             <div class="min-w-0">
                                                 <div class="text-sm font-medium text-gray-900 truncate">{{ $r['name'] }}</div>
                                                 <div class="text-xs text-gray-500 truncate">{{ $r['email'] }}</div>
@@ -101,10 +123,7 @@
                 </div>
 
                 {{-- Teacher (Alpine instant selection) --}}
-                @php
-                    $teacherUserType = in_array($subscription_type, ['quran_individual', 'quran_group']) ? 'quran_teacher' : 'academic_teacher';
-                    $selectedTeacherData = $teacher_id ? collect($availableTeachers)->firstWhere('id', $teacher_id) : null;
-                @endphp
+                @php $selectedTeacherData = $teacher_id ? collect($availableTeachers)->firstWhere('id', $teacher_id) : null; @endphp
                 <div x-data="{
                     selected: @js($selectedTeacherData),
                     searchQuery: '',
@@ -126,7 +145,27 @@
                 }">
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.teacher_label') }}</label>
 
-                    <template x-if="selected">
+                    {{-- Server-rendered teacher chip with <x-avatar> --}}
+                    @if($teacher_id)
+                        @php
+                            $selectedTeacherProfile = $isQuranType
+                                ? \App\Models\QuranTeacherProfile::with('user')->find($teacher_id)
+                                : \App\Models\AcademicTeacherProfile::with('user')->find($teacher_id);
+                            $selectedTeacherUser = $selectedTeacherProfile?->user;
+                        @endphp
+                        @if($selectedTeacherUser)
+                            <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                <x-avatar :user="$selectedTeacherUser" size="xs" :userType="$teacherUserType" />
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-gray-900 truncate text-sm">{{ trim($selectedTeacherUser->first_name.' '.$selectedTeacherUser->last_name) }}</div>
+                                </div>
+                                <button type="button" @click="clear()" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><i class="ri-close-line text-lg"></i></button>
+                            </div>
+                        @endif
+                    @endif
+
+                    {{-- Alpine instant teacher chip (before server re-renders) --}}
+                    <template x-if="selected && !{{ $teacher_id ? 'true' : 'false' }}">
                         <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                             <div class="w-8 h-8 rounded-full {{ $teacherUserType === 'quran_teacher' ? 'bg-yellow-100' : 'bg-violet-100' }} flex items-center justify-center flex-shrink-0">
                                 <i class="{{ $teacherUserType === 'quran_teacher' ? 'ri-book-read-line text-yellow-600' : 'ri-graduation-cap-line text-violet-600' }} text-sm"></i>
