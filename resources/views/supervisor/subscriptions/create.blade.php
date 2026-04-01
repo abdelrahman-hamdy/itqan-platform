@@ -82,7 +82,7 @@
                             @if (count($searchResults) > 0)
                                 <div class="mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto z-10 relative">
                                     @foreach ($searchResults as $r)
-                                        <button type="button" @click="select({{ $r['id'] }}, '{{ addslashes($r['name']) }}', '{{ addslashes($r['email']) }}')"
+                                        <button type="button" @click="select({{ $r['id'] }}, {{ Js::from($r['name']) }}, {{ Js::from($r['email']) }})"
                                                 class="w-full text-start px-3 py-2.5 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-50 last:border-0">
                                             <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                                                 <i class="ri-user-line text-blue-600 text-sm"></i>
