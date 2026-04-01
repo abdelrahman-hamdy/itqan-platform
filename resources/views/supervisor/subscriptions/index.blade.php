@@ -19,9 +19,18 @@
     />
 
     <!-- Page Header -->
-    <div class="mb-6 md:mb-8">
-        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.subscriptions.page_title') }}</h1>
-        <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.subscriptions.page_subtitle') }}</p>
+    <div class="mb-6 md:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.subscriptions.page_title') }}</h1>
+            <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.subscriptions.page_subtitle') }}</p>
+        </div>
+        @if($isAdmin ?? false)
+            <a href="{{ route('manage.subscriptions.create', ['subdomain' => $subdomain]) }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors text-sm font-semibold shadow-sm whitespace-nowrap">
+                <i class="ri-add-circle-line text-lg"></i>
+                {{ __('supervisor.subscriptions.action_create') }}
+            </a>
+        @endif
     </div>
 
     <!-- Stats -->
@@ -236,6 +245,12 @@
                                         <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $sub['status']->badgeClasses() }}">
                                             {{ $sub['status']->label() }}
                                         </span>
+                                        @if($sub['model']->is_sessions_exhausted)
+                                            <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
+                                                <i class="ri-check-double-line"></i>
+                                                {{ __('supervisor.subscriptions.sessions_exhausted_badge') }}
+                                            </span>
+                                        @endif
                                         @if($sub['model']->isInGracePeriod())
                                             @php
                                                 $graceMeta = $sub['model']->metadata ?? [];

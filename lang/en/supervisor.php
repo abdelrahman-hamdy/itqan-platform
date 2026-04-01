@@ -1191,6 +1191,26 @@ return [
         'confirm_cancel_extension' => 'Are you sure you want to cancel the extension? The student will lose access if the original subscription period has ended.',
         'extension_cancelled' => 'Extension cancelled successfully',
         'no_active_extension' => 'No active extension for this subscription',
+
+        // New subscription actions
+        'action_create' => 'Create Subscription',
+        'action_renew' => 'Renew',
+        'action_resubscribe' => 'Resubscribe',
+        'action_confirm_payment' => 'Confirm Payment',
+        'renew_title' => 'Renew Subscription',
+        'renew_message' => 'Renew subscription for student :name with a new billing cycle.',
+        'resubscribe_title' => 'Resubscribe',
+        'resubscribe_message' => 'Create a new subscription for student :name.',
+        'confirm_payment_title' => 'Confirm Payment',
+        'confirm_payment_message' => 'Confirm payment received for student :name and activate the subscription.',
+        'billing_cycle_label' => 'Billing Cycle',
+        'activation_mode_label' => 'Activation Mode',
+        'mode_immediate' => 'Activate Immediately',
+        'mode_pending' => 'Pending (requires payment)',
+        'sessions_carryover_message' => ':count remaining sessions will carry over to the new subscription.',
+        'sessions_exhausted_badge' => 'Sessions Completed',
+        'payment_reference_label' => 'Payment Reference (optional)',
+        'payment_reference_placeholder' => 'Receipt number or transfer reference',
     ],
 
     'payments' => [

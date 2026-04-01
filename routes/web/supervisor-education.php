@@ -129,6 +129,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/subscriptions/{type}/{subscription}/extend', [SupervisorSubscriptionsController::class, 'extend'])->name('subscriptions.extend')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/cancel-extension', [SupervisorSubscriptionsController::class, 'cancelExtension'])->name('subscriptions.cancel-extension')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/cancel', [SupervisorSubscriptionsController::class, 'cancel'])->name('subscriptions.cancel')->whereIn('type', ['quran', 'academic']);
+        Route::post('/subscriptions/{type}/{subscription}/confirm-payment', [SupervisorSubscriptionsController::class, 'confirmPayment'])->name('subscriptions.confirm-payment')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/renew', [SupervisorSubscriptionsController::class, 'renew'])->name('subscriptions.renew')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/resubscribe', [SupervisorSubscriptionsController::class, 'resubscribe'])->name('subscriptions.resubscribe')->whereIn('type', ['quran', 'academic']);
 

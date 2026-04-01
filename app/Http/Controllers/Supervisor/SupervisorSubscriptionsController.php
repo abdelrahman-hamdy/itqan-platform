@@ -406,4 +406,31 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             return redirect()->back()->with('error', __('subscriptions.generic_error'));
         }
     }
+
+    /**
+     * Confirm payment for a pending subscription.
+     */
+    public function confirmPayment(Request $request, $subdomain, string $type, int $subscriptionId): RedirectResponse
+    {
+        if (! $this->isAdminUser()) {
+            abort(403);
+        }
+
+        $sub = $this->resolveSubscription($type, $subscriptionId);
+        $this->ensureSubscriptionInScope($sub, $type);
+
+        try {
+            app(\App\Services\Payment\PaymentReconciliationService::class)
+                ->confirmPaymentAndActivate(
+                    $sub,
+                    $request->input('payment_reference'),
+                );
+
+            return redirect()->back()->with('success', __('subscriptions.payment_confirmed_and_activated'));
+        } catch (\Exception $e) {
+            report($e);
+
+            return redirect()->back()->with('error', __('subscriptions.generic_error'));
+        }
+    }
 }

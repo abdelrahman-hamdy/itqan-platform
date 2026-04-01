@@ -1191,6 +1191,26 @@ return [
         'confirm_cancel_extension' => 'هل أنت متأكد من إلغاء التمديد؟ سيفقد الطالب الوصول إذا كانت فترة الاشتراك الأصلية قد انتهت.',
         'extension_cancelled' => 'تم إلغاء التمديد بنجاح',
         'no_active_extension' => 'لا يوجد تمديد نشط لهذا الاشتراك',
+
+        // New subscription actions
+        'action_create' => 'إنشاء اشتراك',
+        'action_renew' => 'تجديد',
+        'action_resubscribe' => 'إعادة اشتراك',
+        'action_confirm_payment' => 'تأكيد الدفع',
+        'renew_title' => 'تجديد الاشتراك',
+        'renew_message' => 'تجديد اشتراك الطالب :name بدورة فوترة جديدة.',
+        'resubscribe_title' => 'إعادة الاشتراك',
+        'resubscribe_message' => 'إعادة اشتراك الطالب :name باشتراك جديد.',
+        'confirm_payment_title' => 'تأكيد الدفع',
+        'confirm_payment_message' => 'تأكيد استلام الدفع لاشتراك الطالب :name وتفعيل الاشتراك.',
+        'billing_cycle_label' => 'دورة الفوترة',
+        'activation_mode_label' => 'طريقة التفعيل',
+        'mode_immediate' => 'تفعيل فوري',
+        'mode_pending' => 'معلق (يتطلب دفع)',
+        'sessions_carryover_message' => ':count جلسة متبقية سيتم ترحيلها للاشتراك الجديد.',
+        'sessions_exhausted_badge' => 'الجلسات مكتملة',
+        'payment_reference_label' => 'مرجع الدفع (اختياري)',
+        'payment_reference_placeholder' => 'رقم الإيصال أو مرجع التحويل',
     ],
 
     'payments' => [
