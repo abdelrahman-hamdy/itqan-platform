@@ -99,6 +99,7 @@ return [
     'actions' => [
         'view_circle' => 'عرض الحلقة',
         'view_individual_circle' => 'عرض الحلقة الفردية',
+        'view_trial_request' => 'عرض طلب التجربة',
         'view_lesson' => 'عرض الدرس',
         'view_course' => 'عرض الدورة',
         'view_subscription' => 'عرض الاشتراك',

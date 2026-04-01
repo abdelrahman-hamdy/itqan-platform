@@ -28,6 +28,8 @@
         $studentUsers = $session->course->enrolledStudents->map(fn ($enrollment) => $enrollment->student?->user)->filter();
     } elseif ($sessionType === 'quran' && $session->circle) {
         $studentUsers = collect($session->circle->students ?? []);
+    } elseif ($sessionType === 'quran' && $session->session_type === 'trial') {
+        $studentUsers = $session->getStudentsForSession();
     } elseif ($sessionType === 'academic') {
         $studentUsers = collect([$session->student])->filter();
     } else {
@@ -63,16 +65,20 @@
         'interactive' => $session->course_id
             ? route('manage.interactive-courses.show', ['subdomain' => $subdomain, 'course' => $session->course_id])
             : null,
-        default => $session->session_type === 'individual' && $session->individual_circle_id
-            ? route('manage.individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individual_circle_id])
-            : ($session->circle_id ? route('manage.group-circles.show', ['subdomain' => $subdomain, 'circle' => $session->circle_id]) : null),
+        default => $session->session_type === 'trial' && $session->trial_request_id
+            ? route('manage.trial-sessions.show', ['subdomain' => $subdomain, 'trialRequest' => $session->trial_request_id])
+            : ($session->session_type === 'individual' && $session->individual_circle_id
+                ? route('manage.individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individual_circle_id])
+                : ($session->circle_id ? route('manage.group-circles.show', ['subdomain' => $subdomain, 'circle' => $session->circle_id]) : null)),
     };
     $entityLabel = match($sessionType) {
         'academic' => __('sessions.actions.view_lesson'),
         'interactive' => __('sessions.actions.view_course'),
-        default => $session->session_type === 'individual'
-            ? __('sessions.actions.view_individual_circle')
-            : __('sessions.actions.view_circle'),
+        default => $session->session_type === 'trial'
+            ? __('sessions.actions.view_trial_request')
+            : ($session->session_type === 'individual'
+                ? __('sessions.actions.view_individual_circle')
+                : __('sessions.actions.view_circle')),
     };
     $subscriptionUrl = match($sessionType) {
         'quran' => $session->quran_subscription_id

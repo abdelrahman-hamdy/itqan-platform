@@ -84,6 +84,7 @@ return [
     'actions' => [
         'view_circle' => 'View Circle',
         'view_individual_circle' => 'View Individual Circle',
+        'view_trial_request' => 'View Trial Request',
         'view_lesson' => 'View Lesson',
         'view_course' => 'View Course',
         'view_subscription' => 'View Subscription',
