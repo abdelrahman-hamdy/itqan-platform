@@ -217,14 +217,14 @@ class CreateFullSubscription extends Component
 
         if (in_array($this->subscription_type, ['quran_individual', 'quran_group'])) {
             $this->availableTeachers = QuranTeacherProfile::where('academy_id', $academyId)
-                ->whereHas('user', fn ($q) => $q->where('is_active', true))
+                ->whereHas('user', fn ($q) => $q->where('active_status', true))
                 ->with('user')
                 ->get()
                 ->map(fn ($t) => ['id' => $t->id, 'name' => $t->user?->name ?? '-'])
                 ->toArray();
         } else {
             $this->availableTeachers = AcademicTeacherProfile::where('academy_id', $academyId)
-                ->whereHas('user', fn ($q) => $q->where('is_active', true))
+                ->whereHas('user', fn ($q) => $q->where('active_status', true))
                 ->with('user')
                 ->get()
                 ->map(fn ($t) => ['id' => $t->id, 'name' => $t->user?->name ?? '-'])

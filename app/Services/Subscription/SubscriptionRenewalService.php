@@ -351,7 +351,7 @@ class SubscriptionRenewalService
             $currentTeacherId = $teacherId ?? $old->quran_teacher_id;
             if ($currentTeacherId) {
                 $teacherProfile = QuranTeacherProfile::find($currentTeacherId);
-                if (! $teacherProfile || ! $teacherProfile->is_active) {
+                if (! $teacherProfile || ! $teacherProfile->user?->active_status) {
                     if (! $teacherId) {
                         throw new Exception(__('subscriptions.teacher_unavailable_select_new'));
                     }
