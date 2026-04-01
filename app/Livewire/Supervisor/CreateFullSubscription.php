@@ -141,7 +141,8 @@ class CreateFullSubscription extends Component
                 ->where('user_type', 'student')
                 ->where(fn ($q) => $q->where('name', 'like', "%{$this->student_search}%")->orWhere('email', 'like', "%{$this->student_search}%"))
                 ->limit(10)
-                ->pluck('id')
+                ->get()
+                ->map(fn ($u) => ['id' => $u->id, 'name' => trim($u->first_name.' '.$u->last_name), 'email' => $u->email, 'user_id' => $u->id])
                 ->toArray();
         } else {
             $this->searchResults = [];

@@ -100,6 +100,7 @@ return [
     'payment_method_manual' => 'يدوي',
     'payment_method_bank' => 'تحويل بنكي',
     'payment_method_cash' => 'نقدي',
+    'payment_method_mada' => 'مدى',
     'payment_method_other' => 'أخرى',
     'payment_notes_label' => 'ملاحظات الدفع',
     'consumed_sessions_label' => 'الجلسات المستهلكة مسبقاً',

@@ -94,6 +94,7 @@ return [
     'payment_method_manual' => 'Manual',
     'payment_method_bank' => 'Bank Transfer',
     'payment_method_cash' => 'Cash',
+    'payment_method_mada' => 'Mada',
     'payment_method_other' => 'Other',
     'payment_notes_label' => 'Payment Notes',
     'consumed_sessions_label' => 'Previously Consumed Sessions',

@@ -29,6 +29,23 @@
 
         {{-- ═══ STEP 1 ═══ --}}
         @if ($currentStep === 1)
+            @php
+                // Batch-load all needed users to avoid N+1 queries
+                $allUserIds = collect($searchResults)->pluck('id')->merge(
+                    $student_id ? [$student_id] : []
+                )->unique()->filter()->values()->toArray();
+                $allTeacherProfileIds = collect($filteredTeachers)->pluck('id')
+                    ->merge($teacher_id ? [$teacher_id] : [])->unique()->filter()->values()->toArray();
+
+                $userModels = !empty($allUserIds) ? \App\Models\User::whereIn('id', $allUserIds)->get()->keyBy('id') : collect();
+
+                $isQuranType = in_array($subscription_type, ['quran_individual', 'quran_group']);
+                $profileModel = $isQuranType ? \App\Models\QuranTeacherProfile::class : \App\Models\AcademicTeacherProfile::class;
+                $teacherProfiles = !empty($allTeacherProfileIds)
+                    ? $profileModel::whereIn('id', $allTeacherProfileIds)->with('user')->get()->keyBy('id')
+                    : collect();
+                $teacherUserType = $isQuranType ? 'quran_teacher' : 'academic_teacher';
+            @endphp
             <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step1_title') }}</h2>
             <div class="space-y-5">
 
@@ -46,7 +63,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.student_label') }}</label>
                     @if ($student_id)
-                        @php $studentUser = \App\Models\User::find($student_id); @endphp
+                        @php $studentUser = $userModels->get($student_id); @endphp
                         @if ($studentUser)
                             <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                                 <x-avatar :user="$studentUser" size="xs" userType="student" />
@@ -64,14 +81,14 @@
                         </div>
                         @if (count($searchResults) > 0)
                             <div class="mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto z-10 relative">
-                                @foreach ($searchResults as $rid)
-                                    @php $ru = \App\Models\User::find($rid); @endphp
+                                @foreach ($searchResults as $result)
+                                    @php $ru = $userModels->get($result['id']); @endphp
                                     @if ($ru)
-                                        <button wire:click="selectStudent({{ $rid }})" class="w-full text-start px-3 py-2.5 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-50 last:border-0">
+                                        <button wire:click="selectStudent({{ $result['id'] }})" class="w-full text-start px-3 py-2.5 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-50 last:border-0">
                                             <x-avatar :user="$ru" size="xs" userType="student" />
                                             <div class="min-w-0">
-                                                <div class="text-sm font-medium text-gray-900 truncate">{{ trim($ru->first_name.' '.$ru->last_name) }}</div>
-                                                <div class="text-xs text-gray-500 truncate">{{ $ru->email }}</div>
+                                                <div class="text-sm font-medium text-gray-900 truncate">{{ $result['name'] }}</div>
+                                                <div class="text-xs text-gray-500 truncate">{{ $result['email'] }}</div>
                                             </div>
                                         </button>
                                     @endif
@@ -89,12 +106,7 @@
                         $teacherUserType = in_array($subscription_type, ['quran_individual', 'quran_group']) ? 'quran_teacher' : 'academic_teacher';
                     @endphp
                     @if ($teacher_id)
-                        @php
-                            $tp = in_array($subscription_type, ['quran_individual', 'quran_group'])
-                                ? \App\Models\QuranTeacherProfile::with('user')->find($teacher_id)
-                                : \App\Models\AcademicTeacherProfile::with('user')->find($teacher_id);
-                            $tu = $tp?->user;
-                        @endphp
+                        @php $tp = $teacherProfiles->get($teacher_id); $tu = $tp?->user; @endphp
                         @if ($tu)
                             <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                                 <x-avatar :user="$tu" size="xs" :userType="$teacherUserType" />
@@ -111,12 +123,7 @@
                             </div>
                             <div class="max-h-48 overflow-y-auto p-1 space-y-0.5">
                                 @forelse ($filteredTeachers as $t)
-                                    @php
-                                        $tpModel = in_array($subscription_type, ['quran_individual', 'quran_group'])
-                                            ? \App\Models\QuranTeacherProfile::with('user')->find($t['id'])
-                                            : \App\Models\AcademicTeacherProfile::with('user')->find($t['id']);
-                                        $tUser = $tpModel?->user;
-                                    @endphp
+                                    @php $tUser = $teacherProfiles->get($t['id'])?->user; @endphp
                                     <button type="button" wire:click="selectTeacher({{ $t['id'] }})" class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 text-start">
                                         @if ($tUser) <x-avatar :user="$tUser" size="xs" :userType="$teacherUserType" /> @endif
                                         <span class="text-sm font-medium text-gray-900">{{ $t['name'] }}</span>
@@ -221,7 +228,7 @@
                         <select wire:model="payment_method" class="w-full rounded-lg border-gray-300">
                             <option value="cash">{{ __('subscriptions.payment_method_cash') }}</option>
                             <option value="bank_transfer">{{ __('subscriptions.payment_method_bank') }}</option>
-                            <option value="mada">مدى</option>
+                            <option value="mada">{{ __('subscriptions.payment_method_mada') }}</option>
                             <option value="stc_pay">STC Pay</option>
                             <option value="apple_pay">Apple Pay</option>
                             <option value="urpay">UrPay</option>
