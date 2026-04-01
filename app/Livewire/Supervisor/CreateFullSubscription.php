@@ -51,8 +51,6 @@ class CreateFullSubscription extends Component
     // Step 3
     public string $payment_source = 'outside'; // 'outside' or 'inside'
 
-    public string $payment_method = 'cash';
-
     public string $payment_reference = '';
 
     // Step 4
@@ -258,7 +256,7 @@ class CreateFullSubscription extends Component
                 'billing_cycle' => $this->billing_cycle,
                 'amount' => $this->finalPrice,
                 'discount' => $this->discount,
-                'payment_method' => $this->payment_source === 'outside' ? $this->payment_method : 'bank_transfer',
+                'payment_method' => $this->payment_source === 'outside' ? 'bank_transfer' : 'bank_transfer',
                 'payment_reference' => $this->payment_reference,
                 'memorization_level' => $this->memorization_level,
                 'specialization' => $this->specialization,

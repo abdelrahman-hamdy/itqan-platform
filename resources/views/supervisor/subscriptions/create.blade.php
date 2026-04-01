@@ -291,17 +291,6 @@
                 </div>
                 @if ($payment_source === 'outside')
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.payment_method_label') }}</label>
-                        <select wire:model="payment_method" class="w-full rounded-lg border-gray-300">
-                            <option value="cash">{{ __('subscriptions.payment_method_cash') }}</option>
-                            <option value="bank_transfer">{{ __('subscriptions.payment_method_bank') }}</option>
-                            <option value="mada">{{ __('subscriptions.payment_method_mada') }}</option>
-                            <option value="stc_pay">STC Pay</option>
-                            <option value="apple_pay">Apple Pay</option>
-                            <option value="urpay">UrPay</option>
-                        </select>
-                    </div>
-                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.payment_reference_label') }}</label>
                         <input type="text" wire:model="payment_reference" class="w-full rounded-lg border-gray-300" placeholder="{{ __('subscriptions.payment_reference_placeholder') }}">
                     </div>
