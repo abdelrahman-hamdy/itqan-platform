@@ -2,11 +2,13 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -15,10 +17,9 @@ use Illuminate\Support\Facades\Log;
  * Transitions ACTIVE subscriptions to EXPIRED when their ends_at date has passed.
  * Respects grace periods — subscriptions with an active grace period are skipped.
  *
- * Usage:
- *   php artisan subscriptions:expire-active
- *   php artisan subscriptions:expire-active --dry-run
- *   php artisan subscriptions:expire-active --force
+ * On expiry:
+ * - Deactivates linked circle/lesson
+ * - Suspends future scheduled sessions (recoverable on reactivation)
  */
 class ExpireActiveSubscriptions extends Command
 {
@@ -31,7 +32,6 @@ class ExpireActiveSubscriptions extends Command
     public function handle(): int
     {
         $dryRun = $this->option('dry-run');
-        $force = $this->option('force');
 
         $this->info('Scanning for active subscriptions past their end date...');
         $this->newLine();
@@ -45,33 +45,19 @@ class ExpireActiveSubscriptions extends Command
 
         $now = now();
 
-        // Process both subscription types with shared logic
         $types = [
             'quran' => QuranSubscription::class,
             'academic' => AcademicSubscription::class,
         ];
 
         foreach ($types as $type => $modelClass) {
-            // Pre-fetch IDs that have a pending renewal (single query instead of N+1)
-            $idsWithPendingRenewal = $modelClass::withoutGlobalScopes()
-                ->where('status', SessionSubscriptionStatus::PENDING)
-                ->whereNotNull('previous_subscription_id')
-                ->pluck('previous_subscription_id')
-                ->flip();
-
             $modelClass::withoutGlobalScopes()
                 ->where('status', SessionSubscriptionStatus::ACTIVE)
                 ->whereNotNull('ends_at')
                 ->where('ends_at', '<', $now)
-                ->chunkById(100, function ($subscriptions) use ($dryRun, $now, &$stats, $type, $idsWithPendingRenewal) {
+                ->chunkById(100, function ($subscriptions) use ($dryRun, $now, &$stats, $type) {
                     foreach ($subscriptions as $subscription) {
                         if ($this->isInGracePeriod($subscription, $now)) {
-                            $stats['skipped_grace']++;
-
-                            continue;
-                        }
-
-                        if ($idsWithPendingRenewal->has($subscription->id)) {
                             $stats['skipped_grace']++;
 
                             continue;
@@ -85,7 +71,17 @@ class ExpireActiveSubscriptions extends Command
                         }
 
                         try {
-                            $subscription->update(['status' => SessionSubscriptionStatus::EXPIRED]);
+                            DB::transaction(function () use ($subscription) {
+                                // 1. Set subscription to EXPIRED
+                                $subscription->update(['status' => SessionSubscriptionStatus::EXPIRED]);
+
+                                // 2. Deactivate linked circle/lesson
+                                $this->deactivateLinkedEntities($subscription);
+
+                                // 3. Suspend future scheduled sessions
+                                $this->suspendFutureSessions($subscription);
+                            });
+
                             $stats[$type]++;
 
                             Log::info('Subscription auto-expired', [
@@ -113,7 +109,6 @@ class ExpireActiveSubscriptions extends Command
             return Command::SUCCESS;
         }
 
-        // Display results
         $this->table(
             ['Type', 'Expired'],
             [
@@ -141,8 +136,43 @@ class ExpireActiveSubscriptions extends Command
     }
 
     /**
-     * Check if a subscription is currently in an active grace period.
+     * Deactivate linked circle (Quran) or lesson (Academic).
      */
+    private function deactivateLinkedEntities($subscription): void
+    {
+        // Quran: deactivate individual circle
+        if ($subscription instanceof QuranSubscription && $subscription->education_unit_id) {
+            $subscription->educationUnit?->update(['is_active' => false]);
+        }
+
+        // Academic: deactivate lesson
+        if ($subscription instanceof AcademicSubscription) {
+            $subscription->lesson?->update(['is_active' => false]);
+        }
+    }
+
+    /**
+     * Suspend future scheduled/unscheduled sessions (recoverable on reactivation).
+     */
+    private function suspendFutureSessions($subscription): void
+    {
+        if (! method_exists($subscription, 'sessions')) {
+            return;
+        }
+
+        $subscription->sessions()
+            ->whereIn('status', [
+                SessionStatus::SCHEDULED->value,
+                SessionStatus::UNSCHEDULED->value,
+                SessionStatus::READY->value,
+            ])
+            ->where(function ($q) {
+                $q->where('scheduled_at', '>', now())
+                    ->orWhereNull('scheduled_at');
+            })
+            ->update(['status' => SessionStatus::SUSPENDED->value]);
+    }
+
     private function isInGracePeriod($subscription, Carbon $now): bool
     {
         $metadata = $subscription->metadata ?? [];

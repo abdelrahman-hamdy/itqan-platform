@@ -658,13 +658,42 @@ abstract class BaseSubscription extends Model
             throw new Exception(__('subscriptions.errors.cannot_resume'));
         }
 
-        $this->update([
+        $updateData = [
             'status' => SessionSubscriptionStatus::ACTIVE,
-            'paused_at' => null,
             'pause_reason' => null,
-        ]);
+        ];
+
+        // Extend ends_at by the paused duration (time compensation)
+        if ($this->paused_at && $this->ends_at) {
+            $pausedDuration = now()->diffInSeconds($this->paused_at);
+            $updateData['ends_at'] = $this->ends_at->addSeconds($pausedDuration);
+            if ($this->next_billing_date) {
+                $updateData['next_billing_date'] = $this->next_billing_date->addSeconds($pausedDuration);
+            }
+        }
+
+        $updateData['paused_at'] = null;
+
+        $this->update($updateData);
+
+        // Restore SUSPENDED sessions back to SCHEDULED
+        $this->restoreSuspendedSessions();
 
         return $this;
+    }
+
+    /**
+     * Restore sessions that were suspended due to subscription pause/expiry.
+     */
+    public function restoreSuspendedSessions(): void
+    {
+        if (! method_exists($this, 'sessions')) {
+            return;
+        }
+
+        $this->sessions()
+            ->where('status', \App\Enums\SessionStatus::SUSPENDED->value)
+            ->update(['status' => \App\Enums\SessionStatus::SCHEDULED->value]);
     }
 
     /**
