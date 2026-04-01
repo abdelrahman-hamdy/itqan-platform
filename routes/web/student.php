@@ -54,6 +54,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/subscriptions', [StudentSubscriptionController::class, 'subscriptions'])->name('student.subscriptions');
         Route::patch('/subscriptions/{type}/{id}/cancel', [StudentSubscriptionController::class, 'cancelSubscription'])->name('student.subscriptions.cancel');
         Route::delete('/subscriptions/{type}/{id}', [StudentSubscriptionController::class, 'deleteSubscription'])->name('student.subscriptions.delete');
+        Route::get('/subscriptions/{type}/{id}/renew', [StudentSubscriptionController::class, 'showRenewForm'])->name('student.subscriptions.renew');
+        Route::post('/subscriptions/{type}/{id}/renew', [StudentSubscriptionController::class, 'processRenew'])->name('student.subscriptions.renew.process');
 
         /*
         |--------------------------------------------------------------------------

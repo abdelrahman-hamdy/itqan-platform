@@ -66,6 +66,23 @@ return [
         'individual_subscription' => 'Individual Subscription',
         'quran_circle' => 'Quran Circle',
         'subject_not_specified' => 'Subject Not Specified',
+
+        // Renewal
+        'sessions_exhausted' => 'Sessions Completed',
+        'renew' => 'Renew',
+        'renew_now' => 'Renew Now',
+        'resubscribe' => 'Resubscribe',
+        'renew_title' => 'Renew Subscription',
+        'renew_desc' => 'Select a billing cycle for your new subscription and proceed to payment.',
+        'resubscribe_title' => 'Resubscribe',
+        'resubscribe_desc' => 'Resubscribe with the same teacher on a new billing cycle.',
+        'teacher_label' => 'Teacher',
+        'package_label' => 'Package',
+        'sessions_carryover' => ':count remaining sessions will carry over',
+        'select_billing_cycle' => 'Select Billing Cycle',
+        'current_cycle' => 'Current',
+        'proceed_to_payment' => 'Proceed to Payment',
+        'page_title' => 'Subscriptions',
     ],
     'interactive_course' => [
         'courses_index' => 'Interactive Courses',

@@ -56,6 +56,10 @@
                 : null,
             'model' => $sub,
             'model_type' => 'quran',
+            'sessions_exhausted' => $sub->is_sessions_exhausted,
+            'can_renew' => $sub->canRenew() || $sub->is_sessions_exhausted,
+            'can_resubscribe' => in_array($statusEnum, [SessionSubscriptionStatus::CANCELLED, SessionSubscriptionStatus::EXPIRED]),
+            'renew_url' => route('student.subscriptions.renew', ['subdomain' => $subdomain, 'type' => 'quran', 'id' => $sub->id]),
         ]);
     }
 
@@ -109,6 +113,10 @@
                 : null,
             'model' => $sub,
             'model_type' => 'quran',
+            'sessions_exhausted' => $sub->is_sessions_exhausted,
+            'can_renew' => $sub->canRenew() || $sub->is_sessions_exhausted,
+            'can_resubscribe' => in_array($statusEnum, [SessionSubscriptionStatus::CANCELLED, SessionSubscriptionStatus::EXPIRED]),
+            'renew_url' => route('student.subscriptions.renew', ['subdomain' => $subdomain, 'type' => 'quran', 'id' => $sub->id]),
         ]);
     }
 
@@ -159,6 +167,10 @@
                 : null,
             'model' => $sub,
             'model_type' => 'academic',
+            'sessions_exhausted' => $sub->is_sessions_exhausted,
+            'can_renew' => $sub->canRenew() || $sub->is_sessions_exhausted,
+            'can_resubscribe' => in_array($statusEnum, [SessionSubscriptionStatus::CANCELLED, SessionSubscriptionStatus::EXPIRED]),
+            'renew_url' => route('student.subscriptions.renew', ['subdomain' => $subdomain, 'type' => 'academic', 'id' => $sub->id]),
         ]);
     }
 
@@ -373,6 +385,12 @@
                                                 {{ $subscription['payment_status_label'] }}
                                             </span>
                                         @endif
+                                        @if($subscription['sessions_exhausted'] ?? false)
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                                <i class="ri-check-double-line"></i>
+                                                {{ __('student.subscriptions.sessions_exhausted') }}
+                                            </span>
+                                        @endif
                                     </div>
                                     <p class="text-sm text-gray-600 mt-0.5">{{ $subscription['subtitle'] }}</p>
                                     @if(isset($subscription['amount']) && isset($subscription['payment_status']))
@@ -417,6 +435,20 @@
                                         <i class="ri-delete-bin-line ms-2"></i>
                                         {{ __('student.subscriptions.delete') }}
                                     </button>
+                                @endif
+
+                                @if(!$isParent && ($subscription['can_renew'] ?? false) && isset($subscription['renew_url']))
+                                    <a href="{{ $subscription['renew_url'] }}"
+                                       class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-indigo-600 text-white rounded-xl md:rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+                                        <i class="ri-refresh-line ms-2"></i>
+                                        {{ __('student.subscriptions.renew') }}
+                                    </a>
+                                @elseif(!$isParent && ($subscription['can_resubscribe'] ?? false) && isset($subscription['renew_url']))
+                                    <a href="{{ $subscription['renew_url'] }}?mode=resubscribe"
+                                       class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-teal-600 text-white rounded-xl md:rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors">
+                                        <i class="ri-arrow-go-back-line ms-2"></i>
+                                        {{ __('student.subscriptions.resubscribe') }}
+                                    </a>
                                 @endif
                             </div>
                         </div>

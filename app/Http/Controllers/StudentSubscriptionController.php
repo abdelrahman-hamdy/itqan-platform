@@ -142,4 +142,109 @@ class StudentSubscriptionController extends Controller
         return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
             ->with('success', $result['message']);
     }
+
+    /**
+     * Show the renewal form for a subscription.
+     */
+    public function showRenewForm(Request $request, string $subdomain, string $type, string $id)
+    {
+        $user = Auth::user();
+        $academy = $user->academy;
+
+        $subscription = $this->resolveStudentSubscription($user, $type, $id);
+        if (! $subscription) {
+            return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                ->with('error', __('subscriptions.subscription_not_found'));
+        }
+
+        $renewalService = app(\App\Services\Subscription\SubscriptionRenewalService::class);
+        $mode = $request->query('mode', 'renew');
+
+        if ($mode === 'resubscribe' && ! $renewalService->canResubscribe($subscription)) {
+            return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                ->with('error', __('subscriptions.cannot_resubscribe'));
+        }
+
+        if ($mode === 'renew' && ! $renewalService->canRenew($subscription)) {
+            return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                ->with('error', __('subscriptions.cannot_renew'));
+        }
+
+        $options = $renewalService->getRenewalOptions($subscription);
+
+        return view('student.subscription-renew', [
+            'subscription' => $subscription,
+            'type' => $type,
+            'mode' => $mode,
+            'options' => $options,
+            'academy' => $academy,
+        ]);
+    }
+
+    /**
+     * Process the renewal and redirect to payment.
+     */
+    public function processRenew(Request $request, string $subdomain, string $type, string $id): RedirectResponse
+    {
+        $user = Auth::user();
+        $subdomain = $user->academy->subdomain ?? DefaultAcademy::subdomain();
+
+        $subscription = $this->resolveStudentSubscription($user, $type, $id);
+        if (! $subscription) {
+            return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                ->with('error', __('subscriptions.subscription_not_found'));
+        }
+
+        $request->validate([
+            'billing_cycle' => 'required|in:monthly,quarterly,yearly',
+            'mode' => 'nullable|in:renew,resubscribe',
+        ]);
+
+        $renewalService = app(\App\Services\Subscription\SubscriptionRenewalService::class);
+        $mode = $request->input('mode', 'renew');
+
+        try {
+            $options = [
+                'billing_cycle' => $request->billing_cycle,
+                'package_id' => $request->package_id,
+            ];
+
+            $new = $mode === 'resubscribe'
+                ? $renewalService->resubscribe($subscription, $options)
+                : $renewalService->renew($subscription, $options);
+
+            // Redirect to payment page for the new pending subscription
+            $paymentRoute = $type === 'academic'
+                ? 'academic.subscription.payment'
+                : 'quran.subscription.payment';
+
+            return redirect()->route($paymentRoute, [
+                'subdomain' => $subdomain,
+                'subscription' => $new->id,
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Find a subscription owned by the current student.
+     */
+    private function resolveStudentSubscription($user, string $type, string $id)
+    {
+        $modelClass = match ($type) {
+            'quran' => QuranSubscription::class,
+            'academic' => \App\Models\AcademicSubscription::class,
+            default => null,
+        };
+
+        if (! $modelClass) {
+            return null;
+        }
+
+        return $modelClass::where('id', $id)
+            ->where('student_id', $user->id)
+            ->where('academy_id', $user->academy_id)
+            ->first();
+    }
 }

@@ -70,6 +70,23 @@ return [
         'individual_subscription' => 'اشتراك فردي',
         'quran_circle' => 'حلقة قرآنية',
         'subject_not_specified' => 'مادة غير محددة',
+
+        // Renewal
+        'sessions_exhausted' => 'الجلسات مكتملة',
+        'renew' => 'تجديد',
+        'renew_now' => 'جدد الآن',
+        'resubscribe' => 'إعادة اشتراك',
+        'renew_title' => 'تجديد الاشتراك',
+        'renew_desc' => 'اختر دورة الفوترة للاشتراك الجديد ثم تابع للدفع.',
+        'resubscribe_title' => 'إعادة الاشتراك',
+        'resubscribe_desc' => 'أعد الاشتراك مع نفس المعلم بدورة فوترة جديدة.',
+        'teacher_label' => 'المعلم',
+        'package_label' => 'الباقة',
+        'sessions_carryover' => ':count جلسة متبقية سيتم ترحيلها',
+        'select_billing_cycle' => 'اختر دورة الفوترة',
+        'current_cycle' => 'الدورة الحالية',
+        'proceed_to_payment' => 'متابعة للدفع',
+        'page_title' => 'الاشتراكات',
     ],
     'trial_request' => [
         'page_title' => 'تفاصيل الجلسة التجريبية',

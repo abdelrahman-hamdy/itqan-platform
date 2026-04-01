@@ -233,9 +233,22 @@
         <!-- Renewal Warning/Message -->
         @if($renewalMessage)
             <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div class="flex items-start">
-                    <i class="ri-information-line text-yellow-600 text-lg ms-2 rtl:ms-2 ltr:me-2 mt-0.5"></i>
-                    <p class="text-sm text-yellow-800">{{ $renewalMessage }}</p>
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-start">
+                        <i class="ri-information-line text-yellow-600 text-lg ms-2 rtl:ms-2 ltr:me-2 mt-0.5"></i>
+                        <p class="text-sm text-yellow-800">{{ $renewalMessage }}</p>
+                    </div>
+                    @if($subscription && ($subscription->canRenew() || $subscription->is_sessions_exhausted))
+                        @php
+                            $renewType = $subscription instanceof \App\Models\QuranSubscription ? 'quran' : 'academic';
+                            $renewSubdomain = request()->route('subdomain') ?? auth()->user()->academy?->subdomain;
+                        @endphp
+                        <a href="{{ route('student.subscriptions.renew', ['subdomain' => $renewSubdomain, 'type' => $renewType, 'id' => $subscription->id]) }}"
+                           class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap flex-shrink-0">
+                            <i class="ri-refresh-line"></i>
+                            {{ __('student.subscriptions.renew_now') }}
+                        </a>
+                    @endif
                 </div>
             </div>
         @endif

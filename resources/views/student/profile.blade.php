@@ -54,6 +54,11 @@
                 } else {
                   $statusDisplay = $status; // Use enum default
                 }
+              } elseif ($subscription->is_sessions_exhausted) {
+                $statusDisplay = (object)[
+                  'label' => __('student.subscriptions.sessions_exhausted'),
+                  'badgeClasses' => 'bg-amber-100 text-amber-800'
+                ];
               } else {
                 $statusDisplay = $status; // Use enum for other statuses
               }
