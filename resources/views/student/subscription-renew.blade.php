@@ -10,7 +10,6 @@
     $isResubscribe = $mode === 'resubscribe';
     $currentPackageId = $options['current']['package_id'] ?? null;
     $currentBillingCycle = $options['current']['billing_cycle'] ?? 'monthly';
-    $packagesJson = json_encode($options['packages']);
 @endphp
 
 <div class="max-w-2xl mx-auto px-4 py-8">
@@ -24,7 +23,7 @@
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-6"
          x-data="{
-            packages: {{ $packagesJson }},
+            packages: {{ Js::from($options['packages']) }},
             selectedPackageId: {{ $currentPackageId ?? 'null' }},
             selectedCycle: '{{ $currentBillingCycle }}',
             get selectedPackage() {
