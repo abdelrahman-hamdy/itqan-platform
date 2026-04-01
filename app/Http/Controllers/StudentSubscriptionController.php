@@ -198,17 +198,28 @@ class StudentSubscriptionController extends Controller
 
         $request->validate([
             'billing_cycle' => 'required|in:monthly,quarterly,yearly',
+            'package_id' => 'nullable|integer',
             'mode' => 'nullable|in:renew,resubscribe',
         ]);
 
         $renewalService = app(\App\Services\Subscription\SubscriptionRenewalService::class);
         $mode = $request->input('mode', 'renew');
 
+        // Validate package_id against available packages (same academy, active only)
+        $packageId = $request->package_id;
+        if ($packageId) {
+            $availableOptions = $renewalService->getRenewalOptions($subscription);
+            $validPackageIds = collect($availableOptions['packages'])->pluck('id')->all();
+            if (! in_array($packageId, $validPackageIds)) {
+                return redirect()->back()->with('error', __('subscriptions.errors.invalid_package'));
+            }
+        }
+
         try {
-            // Students renew with same package — no package_id from user input (security)
-            $options = [
+            $options = array_filter([
                 'billing_cycle' => $request->billing_cycle,
-            ];
+                'package_id' => $packageId,
+            ]);
 
             $new = $mode === 'resubscribe'
                 ? $renewalService->resubscribe($subscription, $options)

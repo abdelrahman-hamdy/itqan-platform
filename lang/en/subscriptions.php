@@ -111,6 +111,7 @@ return [
         'no_auto_renewal_support' => 'This billing cycle does not support auto-renewal.',
         'certificate_already_issued' => 'Certificate has already been issued.',
         'certificate_not_eligible' => 'Subscription is not eligible for a certificate.',
+        'invalid_package' => 'The selected package is not available.',
     ],
 
     // Type labels

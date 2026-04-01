@@ -82,6 +82,11 @@ return [
         'select_billing_cycle' => 'Select Billing Cycle',
         'current_cycle' => 'Current',
         'proceed_to_payment' => 'Proceed to Payment',
+        'select_package' => 'Select Package',
+        'current_package' => 'Current',
+        'current_package_label' => 'Current Package',
+        'sessions_per_month' => 'sessions/month',
+        'minutes_per_session' => 'min/session',
         'page_title' => 'Subscriptions',
     ],
     'interactive_course' => [

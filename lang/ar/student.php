@@ -86,6 +86,11 @@ return [
         'select_billing_cycle' => 'اختر دورة الفوترة',
         'current_cycle' => 'الدورة الحالية',
         'proceed_to_payment' => 'متابعة للدفع',
+        'select_package' => 'اختر الباقة',
+        'current_package' => 'الباقة الحالية',
+        'current_package_label' => 'الباقة الحالية',
+        'sessions_per_month' => 'جلسة/شهر',
+        'minutes_per_session' => 'دقيقة/جلسة',
         'page_title' => 'الاشتراكات',
     ],
     'trial_request' => [

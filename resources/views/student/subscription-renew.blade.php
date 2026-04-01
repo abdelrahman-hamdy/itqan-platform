@@ -8,6 +8,9 @@
         : ($subscription->teacher?->user?->name ?? '-');
     $packageName = $subscription->package_name_ar ?? $subscription->package?->name ?? '-';
     $isResubscribe = $mode === 'resubscribe';
+    $currentPackageId = $options['current']['package_id'] ?? null;
+    $currentBillingCycle = $options['current']['billing_cycle'] ?? 'monthly';
+    $packagesJson = json_encode($options['packages']);
 @endphp
 
 <div class="max-w-2xl mx-auto px-4 py-8">
@@ -19,7 +22,28 @@
         view-type="student"
     />
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-6"
+         x-data="{
+            packages: {{ $packagesJson }},
+            selectedPackageId: {{ $currentPackageId ?? 'null' }},
+            selectedCycle: '{{ $currentBillingCycle }}',
+            get selectedPackage() {
+                return this.packages.find(p => p.id === this.selectedPackageId) || this.packages[0] || {};
+            },
+            getPrice(cycle) {
+                const pkg = this.selectedPackage;
+                switch(cycle) {
+                    case 'monthly': return pkg.monthly_price || 0;
+                    case 'quarterly': return pkg.quarterly_price || 0;
+                    case 'yearly': return pkg.yearly_price || 0;
+                    default: return 0;
+                }
+            },
+            formatPrice(price) {
+                return new Intl.NumberFormat('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(price);
+            }
+         }">
+
         {{-- Header --}}
         <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-l from-indigo-50 to-white">
             <h1 class="text-xl font-bold text-gray-900">
@@ -38,7 +62,7 @@
                     <p class="font-semibold text-gray-900">{{ $teacherName }}</p>
                 </div>
                 <div>
-                    <span class="text-gray-500">{{ __('student.subscriptions.package_label') }}</span>
+                    <span class="text-gray-500">{{ __('student.subscriptions.current_package_label') }}</span>
                     <p class="font-semibold text-gray-900">{{ $packageName }}</p>
                 </div>
             </div>
@@ -55,32 +79,67 @@
             @csrf
             <input type="hidden" name="mode" value="{{ $mode }}">
 
+            {{-- Package Selection --}}
+            @if(count($options['packages']) > 1)
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">{{ __('student.subscriptions.select_package') }}</label>
+                    <div class="grid grid-cols-1 gap-3">
+                        @foreach($options['packages'] as $pkg)
+                            <label class="cursor-pointer" @click="selectedPackageId = {{ $pkg['id'] }}">
+                                <input type="radio" name="package_id" value="{{ $pkg['id'] }}"
+                                       {{ ($currentPackageId == $pkg['id']) ? 'checked' : '' }}
+                                       x-model.number="selectedPackageId"
+                                       class="peer sr-only">
+                                <div class="flex items-center justify-between p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all">
+                                    <div>
+                                        <div class="font-semibold text-gray-900">{{ $pkg['name'] }}</div>
+                                        <div class="text-sm text-gray-500 mt-0.5">
+                                            {{ $pkg['sessions_per_month'] }} {{ __('student.subscriptions.sessions_per_month') }}
+                                            &middot; {{ $pkg['session_duration_minutes'] }} {{ __('student.subscriptions.minutes_per_session') }}
+                                        </div>
+                                    </div>
+                                    <div class="text-left">
+                                        <div class="text-lg font-bold text-gray-900">{{ number_format($pkg['monthly_price'], 2) }}</div>
+                                        <div class="text-xs text-gray-500">{{ $pkg['currency'] ?? 'SAR' }}/{{ __('student.subscriptions.billing_monthly') }}</div>
+                                    </div>
+                                    @if($currentPackageId == $pkg['id'])
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                                            {{ __('student.subscriptions.current_package') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+            @else
+                <input type="hidden" name="package_id" value="{{ $currentPackageId }}">
+            @endif
+
             {{-- Billing Cycle --}}
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-700 mb-3">{{ __('student.subscriptions.select_billing_cycle') }}</label>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     @foreach(['monthly', 'quarterly', 'yearly'] as $cycle)
                         @php
-                            $currentPkg = collect($options['packages'])->firstWhere('id', $options['current']['package_id'] ?? null)
-                                ?? ($options['packages'][0] ?? null);
-                            $price = match($cycle) {
-                                'monthly' => $currentPkg['monthly_price'] ?? 0,
-                                'quarterly' => $currentPkg['quarterly_price'] ?? 0,
-                                'yearly' => $currentPkg['yearly_price'] ?? 0,
-                            };
                             $cycleLabel = match($cycle) {
                                 'monthly' => __('student.subscriptions.billing_monthly'),
                                 'quarterly' => __('student.subscriptions.billing_quarterly'),
                                 'yearly' => __('student.subscriptions.billing_yearly'),
                             };
-                            $isCurrentCycle = ($options['current']['billing_cycle'] ?? 'monthly') === $cycle;
+                            $isCurrentCycle = $currentBillingCycle === $cycle;
                         @endphp
-                        <label class="cursor-pointer">
-                            <input type="radio" name="billing_cycle" value="{{ $cycle }}" {{ $isCurrentCycle ? 'checked' : '' }} class="peer sr-only">
+                        <label class="cursor-pointer" @click="selectedCycle = '{{ $cycle }}'">
+                            <input type="radio" name="billing_cycle" value="{{ $cycle }}"
+                                   {{ $isCurrentCycle ? 'checked' : '' }}
+                                   x-model="selectedCycle"
+                                   class="peer sr-only">
                             <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all">
-                                <div class="text-sm font-medium text-gray-600 peer-checked:text-indigo-700">{{ $cycleLabel }}</div>
-                                <div class="text-xl font-bold text-gray-900 mt-1">{{ number_format($price, 2) }}</div>
-                                <div class="text-xs text-gray-500">{{ $currentPkg['currency'] ?? 'SAR' }}</div>
+                                <div class="text-sm font-medium text-gray-600">{{ $cycleLabel }}</div>
+                                <div class="text-xl font-bold text-gray-900 mt-1" x-text="formatPrice(getPrice('{{ $cycle }}'))">
+                                    {{ number_format($options['packages'][0]['monthly_price'] ?? 0, 2) }}
+                                </div>
+                                <div class="text-xs text-gray-500" x-text="selectedPackage.currency || 'SAR'">SAR</div>
                                 @if($isCurrentCycle)
                                     <span class="inline-block mt-1 text-xs text-indigo-600 font-medium">{{ __('student.subscriptions.current_cycle') }}</span>
                                 @endif

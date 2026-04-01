@@ -117,6 +117,7 @@ return [
         'no_auto_renewal_support' => 'دورة الفوترة هذه لا تدعم التجديد التلقائي.',
         'certificate_already_issued' => 'تم إصدار الشهادة مسبقاً.',
         'certificate_not_eligible' => 'الاشتراك غير مؤهل للحصول على شهادة.',
+        'invalid_package' => 'الباقة المحددة غير متاحة.',
     ],
 
     // Type labels
