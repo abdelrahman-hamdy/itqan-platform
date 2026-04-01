@@ -11,7 +11,6 @@
         <h1 class="text-xl sm:text-2xl font-bold text-gray-900">{{ __('subscriptions.create_full_subscription') }}</h1>
     </div>
 
-    {{-- Flash Messages --}}
     @if (session('error'))
         <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">{{ session('error') }}</div>
     @endif
@@ -32,11 +31,12 @@
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
 
-        {{-- Step 1: Type & Student --}}
+        {{-- ═══ STEP 1: Type & Student & Teacher ═══ --}}
         @if ($currentStep === 1)
             <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step1_title') }}</h2>
 
-            <div class="space-y-4">
+            <div class="space-y-5">
+                {{-- Subscription Type --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.subscription_type_label') }}</label>
                     <select wire:model.live="subscription_type" class="w-full rounded-lg border-gray-300">
@@ -46,35 +46,117 @@
                     </select>
                 </div>
 
+                {{-- Student Selection --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.student_label') }}</label>
-                    <input type="text" wire:model.live.debounce.300ms="student_search" class="w-full rounded-lg border-gray-300" placeholder="{{ __('subscriptions.search_student_placeholder') }}">
-                    @if (count($searchResults) > 0)
-                        <div class="mt-1 bg-white border rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                            @foreach ($searchResults as $result)
-                                <button wire:click="selectStudent({{ $result['id'] }})" class="w-full text-start px-3 py-2 hover:bg-gray-50 text-sm">
-                                    {{ $result['name'] }} <span class="text-gray-400">({{ $result['email'] }})</span>
-                                </button>
-                            @endforeach
+
+                    @if (!empty($selectedStudent))
+                        {{-- Selected student chip --}}
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
+                                @if ($selectedStudent['avatar'])
+                                    <img src="{{ $selectedStudent['avatar'] }}" class="w-full h-full object-cover" alt="">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                        <i class="ri-user-line text-lg"></i>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-semibold text-gray-900 truncate">{{ $selectedStudent['name'] }}</div>
+                                <div class="text-xs text-gray-500 truncate">{{ $selectedStudent['email'] }}</div>
+                            </div>
+                            <button type="button" wire:click="clearStudent" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                <i class="ri-close-line text-lg"></i>
+                            </button>
                         </div>
+                    @else
+                        {{-- Search input --}}
+                        <div class="relative">
+                            <input type="text" wire:model.live.debounce.300ms="student_search"
+                                   class="w-full rounded-lg border-gray-300 pe-10"
+                                   placeholder="{{ __('subscriptions.search_student_placeholder') }}">
+                            <div class="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none">
+                                <i class="ri-search-line text-gray-400"></i>
+                            </div>
+                        </div>
+                        @if (count($searchResults) > 0)
+                            <div class="mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto z-10 relative">
+                                @foreach ($searchResults as $result)
+                                    <button wire:click="selectStudent({{ $result['id'] }})"
+                                            class="w-full text-start px-3 py-2.5 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-50 last:border-0">
+                                        <div class="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
+                                            @if ($result['avatar'])
+                                                <img src="{{ $result['avatar'] }}" class="w-full h-full object-cover" alt="">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                                    <i class="ri-user-line"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="text-sm font-medium text-gray-900 truncate">{{ $result['name'] }}</div>
+                                            <div class="text-xs text-gray-500 truncate">{{ $result['email'] }}</div>
+                                        </div>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
                     @endif
-                    @error('student_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                    @error('student_id') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
+                {{-- Teacher Selection --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.teacher_label') }}</label>
-                    <select wire:model="teacher_id" class="w-full rounded-lg border-gray-300">
-                        <option value="">{{ __('subscriptions.select_teacher') }}</option>
-                        @foreach ($availableTeachers as $teacher)
-                            <option value="{{ $teacher['id'] }}">{{ $teacher['name'] }}</option>
-                        @endforeach
-                    </select>
-                    @error('teacher_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+
+                    @if (!empty($selectedTeacher))
+                        {{-- Selected teacher chip --}}
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
+                                @if ($selectedTeacher['avatar'] ?? null)
+                                    <img src="{{ $selectedTeacher['avatar'] }}" class="w-full h-full object-cover" alt="">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                        <i class="ri-user-star-line text-lg"></i>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-semibold text-gray-900 truncate">{{ $selectedTeacher['name'] }}</div>
+                            </div>
+                            <button type="button" wire:click="clearTeacher" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                <i class="ri-close-line text-lg"></i>
+                            </button>
+                        </div>
+                    @else
+                        {{-- Teacher dropdown --}}
+                        <div class="space-y-1.5 max-h-48 overflow-y-auto border rounded-lg p-1">
+                            @forelse ($availableTeachers as $teacher)
+                                <button type="button" wire:click="selectTeacher({{ $teacher['id'] }})"
+                                        class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors text-start">
+                                    <div class="w-9 h-9 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
+                                        @if ($teacher['avatar'] ?? null)
+                                            <img src="{{ $teacher['avatar'] }}" class="w-full h-full object-cover" alt="">
+                                        @else
+                                            <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                                <i class="ri-user-star-line"></i>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900">{{ $teacher['name'] }}</span>
+                                </button>
+                            @empty
+                                <div class="p-3 text-sm text-gray-500 text-center">{{ __('subscriptions.no_teachers_available') }}</div>
+                            @endforelse
+                        </div>
+                    @endif
+                    @error('teacher_id') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
                 </div>
             </div>
         @endif
 
-        {{-- Step 2: Package & Pricing --}}
+        {{-- ═══ STEP 2: Package & Pricing ═══ --}}
         @if ($currentStep === 2)
             <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step2_title') }}</h2>
 
@@ -99,55 +181,88 @@
                     </select>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.amount_label') }}</label>
-                        <input type="number" wire:model="amount" step="0.01" min="0" class="w-full rounded-lg border-gray-300">
+                {{-- Price (read-only) + Discount + Final --}}
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">{{ __('subscriptions.package_price_label') }}</span>
+                        <span class="text-lg font-bold text-gray-900">{{ number_format($amount, 2) }} {{ auth()->user()->academy?->currency?->value ?? 'SAR' }}</span>
                     </div>
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.discount_label') }}</label>
-                        <input type="number" wire:model="discount" step="0.01" min="0" class="w-full rounded-lg border-gray-300">
+                        <label class="block text-sm text-gray-600 mb-1">{{ __('subscriptions.discount_label') }}</label>
+                        <input type="number" wire:model.live.debounce.300ms="discount"
+                               step="1" min="0" max="{{ $amount }}"
+                               class="w-full rounded-lg border-gray-300 text-sm"
+                               placeholder="0">
                     </div>
+
+                    @if ($discount > 0)
+                        <div class="flex items-center justify-between pt-2 border-t border-gray-200">
+                            <span class="text-sm font-semibold text-gray-700">{{ __('subscriptions.final_price_label') }}</span>
+                            <span class="text-lg font-bold text-green-600">{{ number_format($this->finalPrice, 2) }} {{ auth()->user()->academy?->currency?->value ?? 'SAR' }}</span>
+                        </div>
+                    @endif
                 </div>
             </div>
         @endif
 
-        {{-- Step 3: Payment Info --}}
+        {{-- ═══ STEP 3: Payment ═══ --}}
         @if ($currentStep === 3)
             <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step3_title') }}</h2>
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.payment_method_label') }}</label>
-                    <select wire:model="payment_method" class="w-full rounded-lg border-gray-300">
-                        <option value="manual">{{ __('subscriptions.payment_method_manual') }}</option>
-                        <option value="bank_transfer">{{ __('subscriptions.payment_method_bank') }}</option>
-                        <option value="cash">{{ __('subscriptions.payment_method_cash') }}</option>
-                        <option value="other">{{ __('subscriptions.payment_method_other') }}</option>
-                    </select>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('subscriptions.paid_externally_label') }}</label>
+                    <div class="flex gap-3">
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" wire:model.live="paid_externally" value="1" class="peer sr-only" checked>
+                            <div class="text-center p-3 rounded-lg border-2 border-gray-200 peer-checked:border-green-600 peer-checked:bg-green-50 transition-all">
+                                <i class="ri-check-line text-lg text-green-600 mb-1"></i>
+                                <div class="text-sm font-medium">{{ __('subscriptions.yes_paid') }}</div>
+                            </div>
+                        </label>
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" wire:model.live="paid_externally" value="0" class="peer sr-only">
+                            <div class="text-center p-3 rounded-lg border-2 border-gray-200 peer-checked:border-amber-600 peer-checked:bg-amber-50 transition-all">
+                                <i class="ri-time-line text-lg text-amber-600 mb-1"></i>
+                                <div class="text-sm font-medium">{{ __('subscriptions.not_paid_yet') }}</div>
+                            </div>
+                        </label>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.payment_reference_label') }}</label>
-                    <input type="text" wire:model="payment_reference" class="w-full rounded-lg border-gray-300" placeholder="{{ __('subscriptions.payment_reference_placeholder') }}">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.payment_notes_label') }}</label>
-                    <textarea wire:model="payment_notes" rows="2" class="w-full rounded-lg border-gray-300"></textarea>
-                </div>
+                @if ($paid_externally)
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.payment_reference_label') }}</label>
+                        <input type="text" wire:model="payment_reference" class="w-full rounded-lg border-gray-300"
+                               placeholder="{{ __('subscriptions.payment_reference_placeholder') }}">
+                    </div>
+                @endif
             </div>
         @endif
 
-        {{-- Step 4: Initial Progress --}}
+        {{-- ═══ STEP 4: Initial Progress ═══ --}}
         @if ($currentStep === 4)
             <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step4_title') }}</h2>
 
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.consumed_sessions_label') }}</label>
-                    <input type="number" wire:model="consumed_sessions" min="0" class="w-full rounded-lg border-gray-300">
+                    <input type="number" wire:model.live.debounce.300ms="consumed_sessions"
+                           min="0" max="{{ $this->maxSessions }}"
+                           class="w-full rounded-lg border-gray-300">
                     <p class="text-xs text-gray-500 mt-1">{{ __('subscriptions.consumed_sessions_help') }}</p>
+
+                    @if ($this->maxSessions > 0)
+                        @php $pct = $this->maxSessions > 0 ? round(($consumed_sessions / $this->maxSessions) * 100) : 0; @endphp
+                        <div class="mt-2 flex items-center gap-3">
+                            <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all {{ $pct >= 90 ? 'bg-red-500' : ($pct >= 50 ? 'bg-amber-500' : 'bg-blue-500') }}"
+                                     style="width: {{ $pct }}%"></div>
+                            </div>
+                            <span class="text-sm font-medium text-gray-600 whitespace-nowrap">{{ $consumed_sessions }}/{{ $this->maxSessions }} ({{ $pct }}%)</span>
+                        </div>
+                    @endif
                 </div>
 
                 @if (in_array($subscription_type, ['quran_individual', 'quran_group']))
@@ -173,7 +288,7 @@
             </div>
         @endif
 
-        {{-- Navigation Buttons --}}
+        {{-- Navigation --}}
         <div class="flex justify-between mt-6 pt-4 border-t">
             @if ($currentStep > 1)
                 <button wire:click="previousStep" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">

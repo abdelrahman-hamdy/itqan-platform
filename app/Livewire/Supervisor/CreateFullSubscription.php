@@ -2,12 +2,14 @@
 
 namespace App\Livewire\Supervisor;
 
+use App\Enums\BillingCycle;
 use App\Models\AcademicPackage;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranPackage;
 use App\Models\QuranTeacherProfile;
 use App\Models\User;
 use App\Services\Subscription\AdminSubscriptionWizardService;
+use App\Services\Subscription\PricingResolver;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -25,7 +27,11 @@ class CreateFullSubscription extends Component
 
     public string $student_search = '';
 
+    public array $selectedStudent = []; // {id, name, email, avatar}
+
     public ?int $teacher_id = null;
+
+    public array $selectedTeacher = []; // {id, name, avatar}
 
     // Step 2: Package & Pricing
     public ?int $package_id = null;
@@ -37,11 +43,9 @@ class CreateFullSubscription extends Component
     public float $discount = 0;
 
     // Step 3: Payment
-    public string $payment_method = 'manual';
+    public bool $paid_externally = true;
 
     public string $payment_reference = '';
-
-    public string $payment_notes = '';
 
     // Step 4: Initial Progress
     public int $consumed_sessions = 0;
@@ -71,13 +75,11 @@ class CreateFullSubscription extends Component
             'package_id' => 'required|integer',
             'billing_cycle' => 'required|in:monthly,quarterly,yearly',
             'amount' => 'required|numeric|min:0',
-            'payment_method' => 'required|in:manual,bank_transfer,cash,other',
         ];
     }
 
     public function mount(): void
     {
-        // Authorization: admin, super_admin, or supervisor with manage_subscriptions
         $user = auth()->user();
         if (! $user || ! ($user->hasRole(['super_admin', 'admin']) || $user->supervisorProfile?->canManageSubscriptions())) {
             abort(403);
@@ -89,8 +91,10 @@ class CreateFullSubscription extends Component
     public function updatedSubscriptionType(): void
     {
         $this->teacher_id = null;
+        $this->selectedTeacher = [];
         $this->package_id = null;
         $this->amount = 0;
+        $this->discount = 0;
         $this->loadTeachers();
         $this->availablePackages = [];
     }
@@ -103,11 +107,25 @@ class CreateFullSubscription extends Component
     public function updatedPackageId(): void
     {
         $this->calculateAmount();
+        $this->clampDiscount();
+        $this->clampConsumedSessions();
     }
 
     public function updatedBillingCycle(): void
     {
         $this->calculateAmount();
+        $this->clampDiscount();
+        $this->clampConsumedSessions();
+    }
+
+    public function updatedDiscount(): void
+    {
+        $this->clampDiscount();
+    }
+
+    public function updatedConsumedSessions(): void
+    {
+        $this->clampConsumedSessions();
     }
 
     public function updatedStudentSearch(): void
@@ -121,7 +139,13 @@ class CreateFullSubscription extends Component
                         ->orWhere('email', 'like', "%{$this->student_search}%");
                 })
                 ->limit(10)
-                ->get(['id', 'name', 'email'])
+                ->get(['id', 'name', 'email', 'avatar'])
+                ->map(fn ($u) => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                    'avatar' => $u->avatar ? asset('storage/'.$u->avatar) : null,
+                ])
                 ->toArray();
         } else {
             $this->searchResults = [];
@@ -132,12 +156,66 @@ class CreateFullSubscription extends Component
     {
         $student = User::where('id', $id)
             ->where('academy_id', auth()->user()->academy_id)
-            ->first();
+            ->first(['id', 'name', 'email', 'avatar']);
         if ($student) {
             $this->student_id = $student->id;
-            $this->student_search = $student->name;
+            $this->selectedStudent = [
+                'id' => $student->id,
+                'name' => $student->name,
+                'email' => $student->email,
+                'avatar' => $student->avatar ? asset('storage/'.$student->avatar) : null,
+            ];
+            $this->student_search = '';
             $this->searchResults = [];
         }
+    }
+
+    public function clearStudent(): void
+    {
+        $this->student_id = null;
+        $this->selectedStudent = [];
+        $this->student_search = '';
+    }
+
+    public function selectTeacher(int $id): void
+    {
+        $teacher = collect($this->availableTeachers)->firstWhere('id', $id);
+        if ($teacher) {
+            $this->teacher_id = $id;
+            $this->selectedTeacher = $teacher;
+            $this->loadPackages();
+        }
+    }
+
+    public function clearTeacher(): void
+    {
+        $this->teacher_id = null;
+        $this->selectedTeacher = [];
+        $this->package_id = null;
+        $this->amount = 0;
+        $this->availablePackages = [];
+    }
+
+    public function getMaxSessionsProperty(): int
+    {
+        if (! $this->package_id) {
+            return 0;
+        }
+
+        $package = collect($this->availablePackages)->firstWhere('id', $this->package_id);
+        if (! $package) {
+            return 0;
+        }
+
+        $sessionsPerMonth = $package['sessions_per_month'] ?? 8;
+        $months = max(1, BillingCycle::from($this->billing_cycle)->months());
+
+        return $sessionsPerMonth * $months;
+    }
+
+    public function getFinalPriceProperty(): float
+    {
+        return max(0, $this->amount - $this->discount);
     }
 
     public function nextStep(): void
@@ -153,10 +231,6 @@ class CreateFullSubscription extends Component
                 'package_id' => 'required|integer',
                 'billing_cycle' => 'required',
                 'amount' => 'required|numeric|min:0',
-            ]);
-        } elseif ($this->currentStep === 3) {
-            $this->validate([
-                'payment_method' => 'required',
             ]);
         }
 
@@ -184,11 +258,10 @@ class CreateFullSubscription extends Component
                 'teacher_id' => $this->teacher_id,
                 'package_id' => $this->package_id,
                 'billing_cycle' => $this->billing_cycle,
-                'amount' => $this->amount,
+                'amount' => $this->finalPrice,
                 'discount' => $this->discount,
-                'payment_method' => $this->payment_method,
+                'payment_method' => $this->paid_externally ? 'manual' : 'pending',
                 'payment_reference' => $this->payment_reference,
-                'payment_notes' => $this->payment_notes,
                 'consumed_sessions' => $this->consumed_sessions,
                 'memorization_level' => $this->memorization_level,
                 'specialization' => $this->specialization,
@@ -220,14 +293,22 @@ class CreateFullSubscription extends Component
                 ->whereHas('user', fn ($q) => $q->where('active_status', true))
                 ->with('user')
                 ->get()
-                ->map(fn ($t) => ['id' => $t->id, 'name' => $t->user?->name ?? '-'])
+                ->map(fn ($t) => [
+                    'id' => $t->id,
+                    'name' => $t->user?->name ?? '-',
+                    'avatar' => $t->user?->avatar ? asset('storage/'.$t->user->avatar) : null,
+                ])
                 ->toArray();
         } else {
             $this->availableTeachers = AcademicTeacherProfile::where('academy_id', $academyId)
                 ->whereHas('user', fn ($q) => $q->where('active_status', true))
                 ->with('user')
                 ->get()
-                ->map(fn ($t) => ['id' => $t->id, 'name' => $t->user?->name ?? '-'])
+                ->map(fn ($t) => [
+                    'id' => $t->id,
+                    'name' => $t->user?->name ?? '-',
+                    'avatar' => $t->user?->avatar ? asset('storage/'.$t->user->avatar) : null,
+                ])
                 ->toArray();
         }
     }
@@ -260,11 +341,24 @@ class CreateFullSubscription extends Component
             return;
         }
 
-        $this->amount = \App\Services\Subscription\PricingResolver::resolvePriceFromPackage(
+        $this->amount = PricingResolver::resolvePriceFromPackage(
             $package,
-            \App\Enums\BillingCycle::from($this->billing_cycle),
+            BillingCycle::from($this->billing_cycle),
             useSalePrices: false,
         );
+    }
+
+    private function clampDiscount(): void
+    {
+        $this->discount = max(0, min($this->discount, $this->amount));
+    }
+
+    private function clampConsumedSessions(): void
+    {
+        $max = $this->maxSessions;
+        if ($max > 0) {
+            $this->consumed_sessions = max(0, min($this->consumed_sessions, $max));
+        }
     }
 
     public function render()
