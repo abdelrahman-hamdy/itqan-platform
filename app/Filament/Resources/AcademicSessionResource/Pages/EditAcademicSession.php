@@ -15,14 +15,16 @@ class EditAcademicSession extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        if (! empty($data['scheduled_at']) && $this->record->scheduled_at?->toDateTimeString() !== Carbon::parse($data['scheduled_at'])->toDateTimeString()) {
+        $newScheduledAt = ! empty($data['scheduled_at']) ? Carbon::parse($data['scheduled_at']) : null;
+
+        if ($newScheduledAt && $this->record->scheduled_at?->toDateTimeString() !== $newScheduledAt->toDateTimeString()) {
             $profileId = $data['academic_teacher_id'] ?? $this->record->academic_teacher_id;
             $teacherUserId = AcademicTeacherProfile::where('id', $profileId)->value('user_id');
 
             if ($teacherUserId) {
                 app(SessionConflictService::class)->validate(
                     (int) $teacherUserId,
-                    Carbon::parse($data['scheduled_at']),
+                    $newScheduledAt,
                     (int) ($data['duration_minutes'] ?? $this->record->duration_minutes ?? 60),
                     $this->record->id,
                     'academic',

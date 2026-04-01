@@ -15,9 +15,7 @@ class CreateInteractiveCourseSession extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         if (! empty($data['course_id']) && ! empty($data['scheduled_at'])) {
-            $teacherUserId = InteractiveCourse::where('id', $data['course_id'])
-                ->with('assignedTeacher:id,user_id')
-                ->first()
+            $teacherUserId = InteractiveCourse::find($data['course_id'])
                 ?->assignedTeacher?->user_id;
 
             if ($teacherUserId) {
