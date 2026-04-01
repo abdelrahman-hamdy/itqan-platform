@@ -44,17 +44,17 @@ class AdminSubscriptionWizardService
             // 1. Create subscription (ACTIVE + PAID)
             $subscription = $this->createSubscription($type, $data, $package);
 
-            // 2. Create payment record (COMPLETED)
-            $payment = $this->createPaymentRecord($subscription, $data);
+            // 2. Create payment record (skip if pending/inside platform)
+            if (! ($data['create_as_pending'] ?? false)) {
+                $payment = $this->createPaymentRecord($subscription, $data);
+                PaymentAuditLog::logCreation($payment, auth()->id());
+            }
 
             // 3. Create related entities (circle for Quran individual, lesson for Academic)
             $this->createRelatedEntities($type, $subscription, $data);
 
             // 4. Set initial progress if specified
             $this->setInitialProgress($subscription, $data);
-
-            // 5. Audit log
-            PaymentAuditLog::logCreation($payment, auth()->id());
 
             Log::info('Admin created full subscription', [
                 'subscription_id' => $subscription->id,
@@ -77,8 +77,8 @@ class AdminSubscriptionWizardService
         $baseData = [
             'academy_id' => $data['academy_id'] ?? auth()->user()->academy_id,
             'student_id' => $data['student_id'],
-            'status' => SessionSubscriptionStatus::ACTIVE,
-            'payment_status' => SubscriptionPaymentStatus::PAID,
+            'status' => ($data['create_as_pending'] ?? false) ? SessionSubscriptionStatus::PENDING : SessionSubscriptionStatus::ACTIVE,
+            'payment_status' => ($data['create_as_pending'] ?? false) ? SubscriptionPaymentStatus::PENDING : SubscriptionPaymentStatus::PAID,
             'billing_cycle' => $billingCycle,
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
@@ -104,12 +104,21 @@ class AdminSubscriptionWizardService
             'progress_percentage' => 0,
         ];
 
+        // Common optional fields
+        $baseData['learning_goals'] = $data['learning_goals'] ?? null;
+
         if ($type === 'quran_individual' || $type === 'quran_group') {
             $baseData['quran_teacher_id'] = $data['teacher_id'];
             $baseData['package_id'] = $data['package_id'];
             $baseData['subscription_type'] = $type === 'quran_group' ? 'group' : 'individual';
             $baseData['memorization_level'] = $data['memorization_level'] ?? 'beginner';
             $baseData['subscription_code'] = QuranSubscription::generateSubscriptionCode($baseData['academy_id']);
+
+            // Link group circle if provided
+            if ($type === 'quran_group' && ! empty($data['quran_circle_id'])) {
+                $baseData['education_unit_type'] = 'App\\Models\\QuranCircle';
+                $baseData['education_unit_id'] = $data['quran_circle_id'];
+            }
 
             return QuranSubscription::create($baseData);
         }

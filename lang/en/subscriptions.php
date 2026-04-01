@@ -109,6 +109,16 @@ return [
     'specialization_complete' => 'Complete',
     'previous_step' => 'Previous',
     'next_step' => 'Next',
+    'select_circle' => 'Select Circle',
+    'spots_available' => 'spots available',
+    'payment_source_label' => 'Payment Source',
+    'paid_outside' => 'Paid Outside Platform',
+    'paid_outside_desc' => 'Student paid via cash or bank transfer',
+    'paid_inside' => 'Pay via Platform',
+    'paid_inside_desc' => 'Subscription pending until online payment',
+    'pending_payment_notice' => 'Subscription will be created as pending. The student will need to pay via the payment gateway to activate it.',
+    'learning_goals_label' => 'Learning Goals (optional)',
+    'learning_goals_placeholder' => 'E.g.: Memorize Juz Amma, improve recitation...',
 
     // Lifecycle error messages
     'errors' => [

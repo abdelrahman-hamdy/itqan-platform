@@ -115,6 +115,16 @@ return [
     'specialization_complete' => 'شامل',
     'previous_step' => 'السابق',
     'next_step' => 'التالي',
+    'select_circle' => 'اختر الحلقة',
+    'spots_available' => 'مقعد متاح',
+    'payment_source_label' => 'مصدر الدفع',
+    'paid_outside' => 'دفع خارج المنصة',
+    'paid_outside_desc' => 'الطالب دفع نقداً أو تحويل بنكي',
+    'paid_inside' => 'دفع عبر المنصة',
+    'paid_inside_desc' => 'الاشتراك معلق حتى يتم الدفع أونلاين',
+    'pending_payment_notice' => 'سيتم إنشاء الاشتراك كمعلق. الطالب سيحتاج للدفع عبر بوابة الدفع لتفعيله.',
+    'learning_goals_label' => 'أهداف التعلم (اختياري)',
+    'learning_goals_placeholder' => 'مثال: حفظ جزء عم، تحسين التلاوة...',
 
     // Lifecycle error messages
     'errors' => [

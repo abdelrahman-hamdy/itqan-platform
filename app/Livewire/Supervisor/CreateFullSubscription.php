@@ -5,6 +5,7 @@ namespace App\Livewire\Supervisor;
 use App\Enums\BillingCycle;
 use App\Models\AcademicPackage;
 use App\Models\AcademicTeacherProfile;
+use App\Models\QuranCircle;
 use App\Models\QuranPackage;
 use App\Models\QuranTeacherProfile;
 use App\Models\User;
@@ -15,29 +16,30 @@ use Livewire\Component;
 
 class CreateFullSubscription extends Component
 {
-    // Step tracking
     public int $currentStep = 1;
 
     public int $totalSteps = 4;
 
-    // Step 1: Type & Student
+    // Step 1
     public string $subscription_type = 'quran_individual';
 
     public ?int $student_id = null;
-
-    public string $student_search = '';
 
     public string $selectedStudentName = '';
 
     public string $selectedStudentEmail = '';
 
+    public string $student_search = '';
+
+    public array $searchResults = [];
+
     public ?int $teacher_id = null;
 
     public string $teacher_search = '';
 
-    public array $filteredTeachers = [];
+    public ?int $quran_circle_id = null;
 
-    // Step 2: Package & Pricing
+    // Step 2
     public ?int $package_id = null;
 
     public string $billing_cycle = 'monthly';
@@ -46,29 +48,28 @@ class CreateFullSubscription extends Component
 
     public float $discount = 0;
 
-    // Step 3: Payment
-    public bool $paid_externally = true;
+    // Step 3
+    public string $payment_source = 'outside'; // 'outside' or 'inside'
+
+    public string $payment_method = 'cash';
 
     public string $payment_reference = '';
 
-    // Step 4: Initial Progress
-    public int $consumed_sessions = 0;
-
+    // Step 4
     public string $memorization_level = 'beginner';
 
     public string $specialization = 'memorization';
 
-    // Subject/Grade for academic
-    public ?int $subject_id = null;
+    public string $learning_goals = '';
 
-    public ?int $grade_level_id = null;
-
-    // Computed data
+    // Data lists
     public array $availableTeachers = [];
+
+    public array $filteredTeachers = [];
 
     public array $availablePackages = [];
 
-    public array $searchResults = [];
+    public array $availableCircles = [];
 
     protected function rules(): array
     {
@@ -88,40 +89,44 @@ class CreateFullSubscription extends Component
         if (! $user || ! ($user->hasRole(['super_admin', 'admin']) || $user->supervisorProfile?->canManageSubscriptions())) {
             abort(403);
         }
-
         $this->loadTeachers();
         $this->filteredTeachers = $this->availableTeachers;
     }
+
+    // ── Reactive updates ──
 
     public function updatedSubscriptionType(): void
     {
         $this->teacher_id = null;
         $this->teacher_search = '';
+        $this->quran_circle_id = null;
         $this->package_id = null;
         $this->amount = 0;
         $this->discount = 0;
+        $this->availableCircles = [];
+        $this->availablePackages = [];
         $this->loadTeachers();
         $this->filteredTeachers = $this->availableTeachers;
-        $this->availablePackages = [];
     }
 
-    public function updatedTeacherId(): void
+    public function updatedTeacherSearch(): void
     {
-        $this->loadPackages();
+        $search = mb_strtolower(trim($this->teacher_search));
+        $this->filteredTeachers = $search
+            ? collect($this->availableTeachers)->filter(fn ($t) => str_contains(mb_strtolower($t['name']), $search))->values()->toArray()
+            : $this->availableTeachers;
     }
 
     public function updatedPackageId(): void
     {
         $this->calculateAmount();
         $this->clampDiscount();
-        $this->clampConsumedSessions();
     }
 
     public function updatedBillingCycle(): void
     {
         $this->calculateAmount();
         $this->clampDiscount();
-        $this->clampConsumedSessions();
     }
 
     public function updatedDiscount(): void
@@ -129,21 +134,12 @@ class CreateFullSubscription extends Component
         $this->clampDiscount();
     }
 
-    public function updatedConsumedSessions(): void
-    {
-        $this->clampConsumedSessions();
-    }
-
     public function updatedStudentSearch(): void
     {
-        if (strlen($this->student_search) >= 2) {
-            $academyId = auth()->user()->academy_id;
-            $this->searchResults = User::where('academy_id', $academyId)
+        if (mb_strlen($this->student_search) >= 2) {
+            $this->searchResults = User::where('academy_id', auth()->user()->academy_id)
                 ->where('user_type', 'student')
-                ->where(function ($q) {
-                    $q->where('name', 'like', "%{$this->student_search}%")
-                        ->orWhere('email', 'like', "%{$this->student_search}%");
-                })
+                ->where(fn ($q) => $q->where('name', 'like', "%{$this->student_search}%")->orWhere('email', 'like', "%{$this->student_search}%"))
                 ->limit(10)
                 ->pluck('id')
                 ->toArray();
@@ -152,11 +148,11 @@ class CreateFullSubscription extends Component
         }
     }
 
+    // ── Selection actions ──
+
     public function selectStudent(int $id): void
     {
-        $student = User::where('id', $id)
-            ->where('academy_id', auth()->user()->academy_id)
-            ->first();
+        $student = User::where('id', $id)->where('academy_id', auth()->user()->academy_id)->first();
         if ($student) {
             $this->student_id = $student->id;
             $this->selectedStudentName = trim($student->first_name.' '.$student->last_name);
@@ -174,25 +170,14 @@ class CreateFullSubscription extends Component
         $this->student_search = '';
     }
 
-    public function updatedTeacherSearch(): void
-    {
-        if (strlen($this->teacher_search) >= 1) {
-            $this->filteredTeachers = collect($this->availableTeachers)
-                ->filter(fn ($t) => str_contains(mb_strtolower($t['name']), mb_strtolower($this->teacher_search)))
-                ->values()
-                ->toArray();
-        } else {
-            $this->filteredTeachers = $this->availableTeachers;
-        }
-    }
-
     public function selectTeacher(int $id): void
     {
-        $teacher = collect($this->availableTeachers)->firstWhere('id', $id);
-        if ($teacher) {
-            $this->teacher_id = $id;
-            $this->teacher_search = '';
-            $this->loadPackages();
+        $this->teacher_id = $id;
+        $this->teacher_search = '';
+        $this->quran_circle_id = null;
+        $this->loadPackages();
+        if ($this->subscription_type === 'quran_group') {
+            $this->loadCircles();
         }
     }
 
@@ -201,26 +186,23 @@ class CreateFullSubscription extends Component
         $this->teacher_id = null;
         $this->teacher_search = '';
         $this->filteredTeachers = $this->availableTeachers;
+        $this->quran_circle_id = null;
         $this->package_id = null;
         $this->amount = 0;
         $this->availablePackages = [];
+        $this->availableCircles = [];
     }
+
+    // ── Computed properties ──
 
     public function getMaxSessionsProperty(): int
     {
         if (! $this->package_id) {
             return 0;
         }
+        $pkg = collect($this->availablePackages)->firstWhere('id', $this->package_id);
 
-        $package = collect($this->availablePackages)->firstWhere('id', $this->package_id);
-        if (! $package) {
-            return 0;
-        }
-
-        $sessionsPerMonth = $package['sessions_per_month'] ?? 8;
-        $months = max(1, BillingCycle::from($this->billing_cycle)->months());
-
-        return $sessionsPerMonth * $months;
+        return $pkg ? ($pkg['sessions_per_month'] ?? 8) * max(1, BillingCycle::from($this->billing_cycle)->months()) : 0;
     }
 
     public function getFinalPriceProperty(): float
@@ -228,20 +210,18 @@ class CreateFullSubscription extends Component
         return max(0, $this->amount - $this->discount);
     }
 
+    // ── Navigation ──
+
     public function nextStep(): void
     {
         if ($this->currentStep === 1) {
-            $this->validate([
-                'subscription_type' => 'required',
-                'student_id' => 'required|integer',
-                'teacher_id' => 'required|integer',
-            ]);
+            $rules = ['subscription_type' => 'required', 'student_id' => 'required|integer', 'teacher_id' => 'required|integer'];
+            if ($this->subscription_type === 'quran_group') {
+                $rules['quran_circle_id'] = 'required|integer';
+            }
+            $this->validate($rules);
         } elseif ($this->currentStep === 2) {
-            $this->validate([
-                'package_id' => 'required|integer',
-                'billing_cycle' => 'required',
-                'amount' => 'required|numeric|min:0',
-            ]);
+            $this->validate(['package_id' => 'required|integer', 'billing_cycle' => 'required', 'amount' => 'required|numeric|min:0']);
         }
 
         if ($this->currentStep < $this->totalSteps) {
@@ -261,31 +241,45 @@ class CreateFullSubscription extends Component
         $this->validate();
 
         try {
-            $subscription = app(AdminSubscriptionWizardService::class)->createFullSubscription([
+            // Convert profile ID → user ID for Quran subscriptions
+            $teacherValueForService = $this->teacher_id;
+            if (in_array($this->subscription_type, ['quran_individual', 'quran_group'])) {
+                $profile = QuranTeacherProfile::find($this->teacher_id);
+                $teacherValueForService = $profile?->user_id ?? $this->teacher_id;
+            }
+
+            $data = [
                 'type' => $this->subscription_type,
                 'academy_id' => auth()->user()->academy_id,
                 'student_id' => $this->student_id,
-                'teacher_id' => $this->teacher_id,
+                'teacher_id' => $teacherValueForService,
                 'package_id' => $this->package_id,
                 'billing_cycle' => $this->billing_cycle,
                 'amount' => $this->finalPrice,
                 'discount' => $this->discount,
-                'payment_method' => $this->paid_externally ? 'cash' : 'bank_transfer',
+                'payment_method' => $this->payment_source === 'outside' ? $this->payment_method : 'bank_transfer',
                 'payment_reference' => $this->payment_reference,
-                'consumed_sessions' => $this->consumed_sessions,
                 'memorization_level' => $this->memorization_level,
                 'specialization' => $this->specialization,
-                'subject_id' => $this->subject_id,
-                'grade_level_id' => $this->grade_level_id,
-            ]);
+                'learning_goals' => $this->learning_goals,
+            ];
+
+            // If inside platform, mark as pending (student pays via gateway)
+            if ($this->payment_source === 'inside') {
+                $data['create_as_pending'] = true;
+            }
+
+            // Group circle
+            if ($this->subscription_type === 'quran_group' && $this->quran_circle_id) {
+                $data['quran_circle_id'] = $this->quran_circle_id;
+            }
+
+            $subscription = app(AdminSubscriptionWizardService::class)->createFullSubscription($data);
 
             $type = in_array($this->subscription_type, ['quran_individual', 'quran_group']) ? 'quran' : 'academic';
-            $subdomain = auth()->user()->academy?->subdomain;
-
             session()->flash('success', __('subscriptions.create_full_subscription_success'));
-
             $this->redirect(route('manage.subscriptions.show', [
-                'subdomain' => $subdomain,
+                'subdomain' => auth()->user()->academy?->subdomain,
                 'type' => $type,
                 'subscription' => $subscription->id,
             ]));
@@ -294,50 +288,51 @@ class CreateFullSubscription extends Component
         }
     }
 
+    // ── Data loaders ──
+
     private function loadTeachers(): void
     {
         $academyId = auth()->user()->academy_id;
+        $isQuran = in_array($this->subscription_type, ['quran_individual', 'quran_group']);
+        $model = $isQuran ? QuranTeacherProfile::class : AcademicTeacherProfile::class;
 
-        if (in_array($this->subscription_type, ['quran_individual', 'quran_group'])) {
-            $this->availableTeachers = QuranTeacherProfile::where('academy_id', $academyId)
-                ->whereHas('user', fn ($q) => $q->where('active_status', true))
-                ->with('user')
-                ->get()
-                ->map(fn ($t) => [
-                    'id' => $t->id,
-                    'name' => $t->user?->name ?? '-',
-                    'avatar' => $t->user?->avatar ? asset('storage/'.$t->user->avatar) : null,
-                ])
-                ->toArray();
-        } else {
-            $this->availableTeachers = AcademicTeacherProfile::where('academy_id', $academyId)
-                ->whereHas('user', fn ($q) => $q->where('active_status', true))
-                ->with('user')
-                ->get()
-                ->map(fn ($t) => [
-                    'id' => $t->id,
-                    'name' => $t->user?->name ?? '-',
-                    'avatar' => $t->user?->avatar ? asset('storage/'.$t->user->avatar) : null,
-                ])
-                ->toArray();
-        }
+        $this->availableTeachers = $model::where('academy_id', $academyId)
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
+            ->with('user')
+            ->get()
+            ->map(fn ($t) => ['id' => $t->id, 'name' => trim(($t->user?->first_name ?? '').' '.($t->user?->last_name ?? '')), 'user_id' => $t->user_id])
+            ->toArray();
     }
 
     private function loadPackages(): void
     {
         $academyId = auth()->user()->academy_id;
+        $isQuran = in_array($this->subscription_type, ['quran_individual', 'quran_group']);
+        $model = $isQuran ? QuranPackage::class : AcademicPackage::class;
 
-        if (in_array($this->subscription_type, ['quran_individual', 'quran_group'])) {
-            $this->availablePackages = QuranPackage::where('academy_id', $academyId)
-                ->where('is_active', true)
-                ->get()
-                ->toArray();
-        } else {
-            $this->availablePackages = AcademicPackage::where('academy_id', $academyId)
-                ->where('is_active', true)
-                ->get()
-                ->toArray();
+        $this->availablePackages = $model::where('academy_id', $academyId)->where('is_active', true)->get()->toArray();
+    }
+
+    private function loadCircles(): void
+    {
+        if (! $this->teacher_id) {
+            $this->availableCircles = [];
+
+            return;
         }
+
+        // Get user_id from profile_id for circle query
+        $profile = QuranTeacherProfile::find($this->teacher_id);
+        $teacherUserId = $profile?->user_id;
+
+        $this->availableCircles = $teacherUserId
+            ? QuranCircle::where('academy_id', auth()->user()->academy_id)
+                ->where('quran_teacher_id', $teacherUserId)
+                ->where('is_active', true)
+                ->get(['id', 'name', 'enrolled_students', 'max_students'])
+                ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'spots' => $c->max_students - $c->enrolled_students])
+                ->toArray()
+            : [];
     }
 
     private function calculateAmount(): void
@@ -345,17 +340,10 @@ class CreateFullSubscription extends Component
         if (! $this->package_id) {
             return;
         }
-
-        $package = collect($this->availablePackages)->firstWhere('id', $this->package_id);
-        if (! $package) {
-            return;
+        $pkg = collect($this->availablePackages)->firstWhere('id', $this->package_id);
+        if ($pkg) {
+            $this->amount = PricingResolver::resolvePriceFromPackage($pkg, BillingCycle::from($this->billing_cycle), useSalePrices: false);
         }
-
-        $this->amount = PricingResolver::resolvePriceFromPackage(
-            $package,
-            BillingCycle::from($this->billing_cycle),
-            useSalePrices: false,
-        );
     }
 
     private function clampDiscount(): void
@@ -363,17 +351,8 @@ class CreateFullSubscription extends Component
         $this->discount = max(0, min($this->discount, $this->amount));
     }
 
-    private function clampConsumedSessions(): void
-    {
-        $max = $this->maxSessions;
-        if ($max > 0) {
-            $this->consumed_sessions = max(0, min($this->consumed_sessions, $max));
-        }
-    }
-
     public function render()
     {
-        return view('supervisor.subscriptions.create')
-            ->layout('components.layouts.supervisor');
+        return view('supervisor.subscriptions.create')->layout('components.layouts.supervisor');
     }
 }

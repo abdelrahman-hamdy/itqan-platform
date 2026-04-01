@@ -19,24 +19,20 @@
     <div class="flex items-center gap-2 mb-8">
         @for ($i = 1; $i <= $totalSteps; $i++)
             <div class="flex items-center">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold {{ $currentStep >= $i ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-500' }}">
-                    {{ $i }}
-                </div>
-                @if ($i < $totalSteps)
-                    <div class="w-8 h-0.5 {{ $currentStep > $i ? 'bg-primary-600' : 'bg-gray-200' }}"></div>
-                @endif
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold {{ $currentStep >= $i ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-500' }}">{{ $i }}</div>
+                @if ($i < $totalSteps)<div class="w-8 h-0.5 {{ $currentStep > $i ? 'bg-primary-600' : 'bg-gray-200' }}"></div>@endif
             </div>
         @endfor
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
 
-        {{-- ═══ STEP 1: Type & Student & Teacher ═══ --}}
+        {{-- ═══ STEP 1 ═══ --}}
         @if ($currentStep === 1)
             <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step1_title') }}</h2>
-
             <div class="space-y-5">
-                {{-- Subscription Type --}}
+
+                {{-- Type --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.subscription_type_label') }}</label>
                     <select wire:model.live="subscription_type" class="w-full rounded-lg border-gray-300">
@@ -46,10 +42,9 @@
                     </select>
                 </div>
 
-                {{-- Student Selection --}}
+                {{-- Student --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.student_label') }}</label>
-
                     @if ($student_id)
                         @php $studentUser = \App\Models\User::find($student_id); @endphp
                         @if ($studentUser)
@@ -59,31 +54,24 @@
                                     <div class="font-semibold text-gray-900 truncate">{{ $selectedStudentName }}</div>
                                     <div class="text-xs text-gray-500 truncate">{{ $selectedStudentEmail }}</div>
                                 </div>
-                                <button type="button" wire:click="clearStudent" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                                    <i class="ri-close-line text-lg"></i>
-                                </button>
+                                <button type="button" wire:click="clearStudent" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><i class="ri-close-line text-lg"></i></button>
                             </div>
                         @endif
                     @else
                         <div class="relative">
-                            <input type="text" wire:model.live.debounce.300ms="student_search"
-                                   class="w-full rounded-lg border-gray-300 pe-10"
-                                   placeholder="{{ __('subscriptions.search_student_placeholder') }}">
-                            <div class="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none">
-                                <i class="ri-search-line text-gray-400"></i>
-                            </div>
+                            <input type="text" wire:model.live.debounce.300ms="student_search" class="w-full rounded-lg border-gray-300 pe-10" placeholder="{{ __('subscriptions.search_student_placeholder') }}">
+                            <div class="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none"><i class="ri-search-line text-gray-400"></i></div>
                         </div>
                         @if (count($searchResults) > 0)
                             <div class="mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto z-10 relative">
-                                @foreach ($searchResults as $resultId)
-                                    @php $resultUser = \App\Models\User::find($resultId); @endphp
-                                    @if ($resultUser)
-                                        <button wire:click="selectStudent({{ $resultId }})"
-                                                class="w-full text-start px-3 py-2.5 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-50 last:border-0">
-                                            <x-avatar :user="$resultUser" size="xs" userType="student" />
+                                @foreach ($searchResults as $rid)
+                                    @php $ru = \App\Models\User::find($rid); @endphp
+                                    @if ($ru)
+                                        <button wire:click="selectStudent({{ $rid }})" class="w-full text-start px-3 py-2.5 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-50 last:border-0">
+                                            <x-avatar :user="$ru" size="xs" userType="student" />
                                             <div class="min-w-0">
-                                                <div class="text-sm font-medium text-gray-900 truncate">{{ trim($resultUser->first_name.' '.$resultUser->last_name) }}</div>
-                                                <div class="text-xs text-gray-500 truncate">{{ $resultUser->email }}</div>
+                                                <div class="text-sm font-medium text-gray-900 truncate">{{ trim($ru->first_name.' '.$ru->last_name) }}</div>
+                                                <div class="text-xs text-gray-500 truncate">{{ $ru->email }}</div>
                                             </div>
                                         </button>
                                     @endif
@@ -94,56 +82,44 @@
                     @error('student_id') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
-                {{-- Teacher Selection --}}
+                {{-- Teacher --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.teacher_label') }}</label>
-
+                    @php
+                        $teacherUserType = in_array($subscription_type, ['quran_individual', 'quran_group']) ? 'quran_teacher' : 'academic_teacher';
+                    @endphp
                     @if ($teacher_id)
                         @php
-                            $teacherProfile = in_array($subscription_type, ['quran_individual', 'quran_group'])
+                            $tp = in_array($subscription_type, ['quran_individual', 'quran_group'])
                                 ? \App\Models\QuranTeacherProfile::with('user')->find($teacher_id)
                                 : \App\Models\AcademicTeacherProfile::with('user')->find($teacher_id);
-                            $teacherUser = $teacherProfile?->user;
-                            $teacherUserType = in_array($subscription_type, ['quran_individual', 'quran_group']) ? 'quran_teacher' : 'academic_teacher';
+                            $tu = $tp?->user;
                         @endphp
-                        @if ($teacherUser)
+                        @if ($tu)
                             <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                                <x-avatar :user="$teacherUser" size="xs" :userType="$teacherUserType" />
+                                <x-avatar :user="$tu" size="xs" :userType="$teacherUserType" />
                                 <div class="flex-1 min-w-0">
-                                    <div class="font-semibold text-gray-900 truncate">{{ trim($teacherUser->first_name.' '.$teacherUser->last_name) }}</div>
+                                    <div class="font-semibold text-gray-900 truncate">{{ trim($tu->first_name.' '.$tu->last_name) }}</div>
                                 </div>
-                                <button type="button" wire:click="clearTeacher" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                                    <i class="ri-close-line text-lg"></i>
-                                </button>
+                                <button type="button" wire:click="clearTeacher" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><i class="ri-close-line text-lg"></i></button>
                             </div>
                         @endif
                     @else
                         <div class="border rounded-lg overflow-hidden">
                             <div class="p-2 border-b bg-gray-50">
-                                <div class="relative">
-                                    <input type="text" wire:model.live.debounce.200ms="teacher_search"
-                                           class="w-full rounded-lg border-gray-300 text-sm pe-10"
-                                           placeholder="{{ __('subscriptions.search_teacher_placeholder') }}">
-                                    <div class="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none">
-                                        <i class="ri-search-line text-gray-400"></i>
-                                    </div>
-                                </div>
+                                <input type="text" wire:model.live.debounce.200ms="teacher_search" class="w-full rounded-lg border-gray-300 text-sm" placeholder="{{ __('subscriptions.search_teacher_placeholder') }}">
                             </div>
                             <div class="max-h-48 overflow-y-auto p-1 space-y-0.5">
-                                @php $teacherUserType = in_array($subscription_type, ['quran_individual', 'quran_group']) ? 'quran_teacher' : 'academic_teacher'; @endphp
-                                @forelse ($filteredTeachers as $teacher)
+                                @forelse ($filteredTeachers as $t)
                                     @php
-                                        $tProfile = in_array($subscription_type, ['quran_individual', 'quran_group'])
-                                            ? \App\Models\QuranTeacherProfile::with('user')->find($teacher['id'])
-                                            : \App\Models\AcademicTeacherProfile::with('user')->find($teacher['id']);
-                                        $tUser = $tProfile?->user;
+                                        $tpModel = in_array($subscription_type, ['quran_individual', 'quran_group'])
+                                            ? \App\Models\QuranTeacherProfile::with('user')->find($t['id'])
+                                            : \App\Models\AcademicTeacherProfile::with('user')->find($t['id']);
+                                        $tUser = $tpModel?->user;
                                     @endphp
-                                    <button type="button" wire:click="selectTeacher({{ $teacher['id'] }})"
-                                            class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors text-start">
-                                        @if ($tUser)
-                                            <x-avatar :user="$tUser" size="xs" :userType="$teacherUserType" />
-                                        @endif
-                                        <span class="text-sm font-medium text-gray-900">{{ $teacher['name'] }}</span>
+                                    <button type="button" wire:click="selectTeacher({{ $t['id'] }})" class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 text-start">
+                                        @if ($tUser) <x-avatar :user="$tUser" size="xs" :userType="$teacherUserType" /> @endif
+                                        <span class="text-sm font-medium text-gray-900">{{ $t['name'] }}</span>
                                     </button>
                                 @empty
                                     <div class="p-3 text-sm text-gray-500 text-center">{{ __('subscriptions.no_teachers_available') }}</div>
@@ -153,13 +129,26 @@
                     @endif
                     @error('teacher_id') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
                 </div>
+
+                {{-- Group Circle (only for quran_group) --}}
+                @if ($subscription_type === 'quran_group' && $teacher_id)
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.select_circle') }}</label>
+                        <select wire:model="quran_circle_id" class="w-full rounded-lg border-gray-300">
+                            <option value="">{{ __('subscriptions.select_circle') }}</option>
+                            @foreach ($availableCircles as $circle)
+                                <option value="{{ $circle['id'] }}">{{ $circle['name'] }} ({{ $circle['spots'] }} {{ __('subscriptions.spots_available') }})</option>
+                            @endforeach
+                        </select>
+                        @error('quran_circle_id') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+                @endif
             </div>
         @endif
 
-        {{-- ═══ STEP 2: Package & Pricing ═══ --}}
+        {{-- ═══ STEP 2 ═══ --}}
         @if ($currentStep === 2)
             <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step2_title') }}</h2>
-
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.select_package') }}</label>
@@ -186,15 +175,10 @@
                         <span class="text-sm text-gray-600">{{ __('subscriptions.package_price_label') }}</span>
                         <span class="text-lg font-bold text-gray-900">{{ number_format($amount, 2) }} {{ auth()->user()->academy?->currency?->value ?? 'SAR' }}</span>
                     </div>
-
                     <div>
                         <label class="block text-sm text-gray-600 mb-1">{{ __('subscriptions.discount_label') }}</label>
-                        <input type="number" wire:model.live.debounce.300ms="discount"
-                               step="1" min="0" max="{{ $amount }}"
-                               class="w-full rounded-lg border-gray-300 text-sm"
-                               placeholder="0">
+                        <input type="number" wire:model.live.debounce.300ms="discount" step="1" min="0" max="{{ $amount }}" class="w-full rounded-lg border-gray-300 text-sm" placeholder="0">
                     </div>
-
                     @if ($discount > 0)
                         <div class="flex items-center justify-between pt-2 border-t border-gray-200">
                             <span class="text-sm font-semibold text-gray-700">{{ __('subscriptions.final_price_label') }}</span>
@@ -208,62 +192,58 @@
         {{-- ═══ STEP 3: Payment ═══ --}}
         @if ($currentStep === 3)
             <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step3_title') }}</h2>
-
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('subscriptions.paid_externally_label') }}</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('subscriptions.payment_source_label') }}</label>
                     <div class="flex gap-3">
                         <label class="flex-1 cursor-pointer">
-                            <input type="radio" wire:model.live="paid_externally" value="1" class="peer sr-only" checked>
+                            <input type="radio" wire:model.live="payment_source" value="outside" class="peer sr-only">
                             <div class="text-center p-3 rounded-lg border-2 border-gray-200 peer-checked:border-green-600 peer-checked:bg-green-50 transition-all">
-                                <i class="ri-check-line text-lg text-green-600 mb-1"></i>
-                                <div class="text-sm font-medium">{{ __('subscriptions.yes_paid') }}</div>
+                                <i class="ri-hand-coin-line text-lg text-green-600 mb-1"></i>
+                                <div class="text-sm font-medium">{{ __('subscriptions.paid_outside') }}</div>
+                                <div class="text-xs text-gray-500 mt-0.5">{{ __('subscriptions.paid_outside_desc') }}</div>
                             </div>
                         </label>
                         <label class="flex-1 cursor-pointer">
-                            <input type="radio" wire:model.live="paid_externally" value="0" class="peer sr-only">
-                            <div class="text-center p-3 rounded-lg border-2 border-gray-200 peer-checked:border-amber-600 peer-checked:bg-amber-50 transition-all">
-                                <i class="ri-time-line text-lg text-amber-600 mb-1"></i>
-                                <div class="text-sm font-medium">{{ __('subscriptions.not_paid_yet') }}</div>
+                            <input type="radio" wire:model.live="payment_source" value="inside" class="peer sr-only">
+                            <div class="text-center p-3 rounded-lg border-2 border-gray-200 peer-checked:border-blue-600 peer-checked:bg-blue-50 transition-all">
+                                <i class="ri-bank-card-line text-lg text-blue-600 mb-1"></i>
+                                <div class="text-sm font-medium">{{ __('subscriptions.paid_inside') }}</div>
+                                <div class="text-xs text-gray-500 mt-0.5">{{ __('subscriptions.paid_inside_desc') }}</div>
                             </div>
                         </label>
                     </div>
                 </div>
 
-                @if ($paid_externally)
+                @if ($payment_source === 'outside')
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.payment_method_label') }}</label>
+                        <select wire:model="payment_method" class="w-full rounded-lg border-gray-300">
+                            <option value="cash">{{ __('subscriptions.payment_method_cash') }}</option>
+                            <option value="bank_transfer">{{ __('subscriptions.payment_method_bank') }}</option>
+                            <option value="mada">مدى</option>
+                            <option value="stc_pay">STC Pay</option>
+                            <option value="apple_pay">Apple Pay</option>
+                            <option value="urpay">UrPay</option>
+                        </select>
+                    </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.payment_reference_label') }}</label>
-                        <input type="text" wire:model="payment_reference" class="w-full rounded-lg border-gray-300"
-                               placeholder="{{ __('subscriptions.payment_reference_placeholder') }}">
+                        <input type="text" wire:model="payment_reference" class="w-full rounded-lg border-gray-300" placeholder="{{ __('subscriptions.payment_reference_placeholder') }}">
+                    </div>
+                @else
+                    <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+                        <i class="ri-information-line"></i>
+                        {{ __('subscriptions.pending_payment_notice') }}
                     </div>
                 @endif
             </div>
         @endif
 
-        {{-- ═══ STEP 4: Initial Progress ═══ --}}
+        {{-- ═══ STEP 4: Details ═══ --}}
         @if ($currentStep === 4)
             <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step4_title') }}</h2>
-
             <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.consumed_sessions_label') }}</label>
-                    <input type="number" wire:model.live.debounce.300ms="consumed_sessions"
-                           min="0" max="{{ $this->maxSessions }}"
-                           class="w-full rounded-lg border-gray-300">
-                    <p class="text-xs text-gray-500 mt-1">{{ __('subscriptions.consumed_sessions_help') }}</p>
-
-                    @if ($this->maxSessions > 0)
-                        @php $pct = $this->maxSessions > 0 ? round(($consumed_sessions / $this->maxSessions) * 100) : 0; @endphp
-                        <div class="mt-2 flex items-center gap-3">
-                            <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full transition-all {{ $pct >= 90 ? 'bg-red-500' : ($pct >= 50 ? 'bg-amber-500' : 'bg-blue-500') }}"
-                                     style="width: {{ $pct }}%"></div>
-                            </div>
-                            <span class="text-sm font-medium text-gray-600 whitespace-nowrap">{{ $consumed_sessions }}/{{ $this->maxSessions }} ({{ $pct }}%)</span>
-                        </div>
-                    @endif
-                </div>
-
                 @if (in_array($subscription_type, ['quran_individual', 'quran_group']))
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.memorization_level_label') }}</label>
@@ -273,7 +253,6 @@
                             <option value="advanced">{{ __('subscriptions.level_advanced') }}</option>
                         </select>
                     </div>
-
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.specialization_label') }}</label>
                         <select wire:model="specialization" class="w-full rounded-lg border-gray-300">
@@ -284,27 +263,24 @@
                         </select>
                     </div>
                 @endif
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.learning_goals_label') }}</label>
+                    <textarea wire:model="learning_goals" rows="3" class="w-full rounded-lg border-gray-300" placeholder="{{ __('subscriptions.learning_goals_placeholder') }}"></textarea>
+                </div>
             </div>
         @endif
 
         {{-- Navigation --}}
         <div class="flex justify-between mt-6 pt-4 border-t">
             @if ($currentStep > 1)
-                <button wire:click="previousStep" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-                    {{ __('subscriptions.previous_step') }}
-                </button>
+                <button wire:click="previousStep" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">{{ __('subscriptions.previous_step') }}</button>
             @else
                 <div></div>
             @endif
-
             @if ($currentStep < $totalSteps)
-                <button wire:click="nextStep" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
-                    {{ __('subscriptions.next_step') }}
-                </button>
+                <button wire:click="nextStep" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">{{ __('subscriptions.next_step') }}</button>
             @else
-                <button wire:click="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                    {{ __('subscriptions.create_full_subscription') }}
-                </button>
+                <button wire:click="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">{{ __('subscriptions.create_full_subscription') }}</button>
             @endif
         </div>
     </div>
