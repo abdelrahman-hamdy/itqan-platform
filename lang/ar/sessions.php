@@ -118,5 +118,10 @@ return [
 
     'validation' => [
         'quarter_hour_only' => 'يجب أن يكون موعد الجلسة على أرباع الساعة فقط (00، 15، 30، 45)',
+        'cannot_schedule_past' => 'لا يمكن جدولة جلسة في وقت ماضي',
+        'conflict_quran' => 'يوجد تعارض مع جلسة قرآن (:time - :end). يجب ترك :break دقائق على الأقل بين الجلسات.',
+        'conflict_academic' => 'يوجد تعارض مع جلسة أكاديمية (:time - :end). يجب ترك :break دقائق على الأقل بين الجلسات.',
+        'conflict_course' => 'يوجد تعارض مع جلسة دورة (:title) في (:time - :end). يجب ترك :break دقائق على الأقل بين الجلسات.',
+        'interactive_course_default' => 'دورة تفاعلية',
     ],
 ];

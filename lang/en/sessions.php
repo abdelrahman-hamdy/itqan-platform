@@ -103,5 +103,10 @@ return [
 
     'validation' => [
         'quarter_hour_only' => 'Session time must be on a quarter hour (00, 15, 30, 45)',
+        'cannot_schedule_past' => 'Cannot schedule a session in the past',
+        'conflict_quran' => 'Conflict with a Quran session (:time - :end). Must leave at least :break minutes between sessions.',
+        'conflict_academic' => 'Conflict with an academic session (:time - :end). Must leave at least :break minutes between sessions.',
+        'conflict_course' => 'Conflict with course session (:title) at (:time - :end). Must leave at least :break minutes between sessions.',
+        'interactive_course_default' => 'Interactive course',
     ],
 ];

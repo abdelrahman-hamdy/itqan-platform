@@ -2,7 +2,6 @@
 
 namespace App\Filament\Shared\Traits;
 
-use Exception;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicTeacherProfile;
@@ -10,6 +9,7 @@ use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -60,32 +60,35 @@ trait ValidatesConflicts
         // Check if trying to schedule in the past
         $timezone = AcademyContextService::getTimezone();
         if ($scheduledAt < Carbon::now($timezone)) {
-            throw new Exception('لا يمكن جدولة جلسة في وقت ماضي');
+            throw new Exception(__('sessions.validation.cannot_schedule_past'));
         }
+
+        // Resolve academic teacher profile ID once (used by both academic and interactive checks)
+        $academicTeacherId = AcademicTeacherProfile::where('user_id', $teacherId)->value('id');
 
         // Check for conflicts with Quran sessions (using effective times that include break buffer)
         $quranConflict = $this->checkQuranSessionConflicts($teacherId, $effectiveStart, $effectiveEnd, $sessionType === 'quran' ? $excludeId : null);
         if ($quranConflict) {
             $conflictTime = $quranConflict->scheduled_at->timezone($timezone)->format('Y/m/d H:i');
             $conflictEnd = $quranConflict->scheduled_at->copy()->addMinutes($quranConflict->duration_minutes ?? 60)->timezone($timezone)->format('H:i');
-            throw new Exception("يوجد تعارض مع جلسة قرآن ({$conflictTime} - {$conflictEnd}). يجب ترك {$breakMinutes} دقائق على الأقل بين الجلسات.");
+            throw new Exception(__('sessions.validation.conflict_quran', ['time' => $conflictTime, 'end' => $conflictEnd, 'break' => $breakMinutes]));
         }
 
         // Check for conflicts with Academic sessions
-        $academicConflict = $this->checkAcademicSessionConflicts($teacherId, $effectiveStart, $effectiveEnd, $sessionType === 'academic' ? $excludeId : null);
+        $academicConflict = $this->checkAcademicSessionConflictsWithProfile($academicTeacherId, $effectiveStart, $effectiveEnd, $sessionType === 'academic' ? $excludeId : null);
         if ($academicConflict) {
             $conflictTime = $academicConflict->scheduled_at->timezone($timezone)->format('Y/m/d H:i');
             $conflictEnd = $academicConflict->scheduled_at->copy()->addMinutes($academicConflict->duration_minutes ?? 60)->timezone($timezone)->format('H:i');
-            throw new Exception("يوجد تعارض مع جلسة أكاديمية ({$conflictTime} - {$conflictEnd}). يجب ترك {$breakMinutes} دقائق على الأقل بين الجلسات.");
+            throw new Exception(__('sessions.validation.conflict_academic', ['time' => $conflictTime, 'end' => $conflictEnd, 'break' => $breakMinutes]));
         }
 
         // Check for conflicts with Interactive Course sessions
-        $courseConflict = $this->checkInteractiveCourseSessionConflicts($teacherId, $effectiveStart, $effectiveEnd, $sessionType === 'interactive' ? $excludeId : null);
+        $courseConflict = $this->checkInteractiveCourseSessionConflictsWithProfile($academicTeacherId, $effectiveStart, $effectiveEnd, $sessionType === 'interactive' ? $excludeId : null);
         if ($courseConflict) {
             $conflictTime = $courseConflict->scheduled_at->timezone($timezone)->format('Y/m/d H:i');
             $conflictEnd = $courseConflict->scheduled_at->copy()->addMinutes($courseConflict->duration_minutes ?? 60)->timezone($timezone)->format('H:i');
-            $courseTitle = $courseConflict->course?->title ?? 'دورة تفاعلية';
-            throw new Exception("يوجد تعارض مع جلسة دورة ({$courseTitle}) في ({$conflictTime} - {$conflictEnd}). يجب ترك {$breakMinutes} دقائق على الأقل بين الجلسات.");
+            $courseTitle = $courseConflict->course?->title ?? __('sessions.validation.interactive_course_default');
+            throw new Exception(__('sessions.validation.conflict_course', ['title' => $courseTitle, 'time' => $conflictTime, 'end' => $conflictEnd, 'break' => $breakMinutes]));
         }
     }
 
@@ -130,12 +133,18 @@ trait ValidatesConflicts
      */
     protected function checkAcademicSessionConflicts(int $teacherId, Carbon $scheduledAt, Carbon $endTime, ?int $excludeId = null): ?AcademicSession
     {
-        // For academic sessions, we need to use the teacher profile ID.
-        // Resolve the profile from the passed $teacherId (user ID), not from Auth::user().
         $academicTeacherId = AcademicTeacherProfile::where('user_id', $teacherId)->value('id');
 
+        return $this->checkAcademicSessionConflictsWithProfile($academicTeacherId, $scheduledAt, $endTime, $excludeId);
+    }
+
+    /**
+     * Check for conflicts with Academic sessions using a pre-resolved profile ID.
+     */
+    protected function checkAcademicSessionConflictsWithProfile(?int $academicTeacherId, Carbon $scheduledAt, Carbon $endTime, ?int $excludeId = null): ?AcademicSession
+    {
         if (! $academicTeacherId) {
-            return null; // No academic teacher profile for this user, no conflict possible
+            return null;
         }
 
         return AcademicSession::where('academic_teacher_id', $academicTeacherId)
@@ -168,12 +177,18 @@ trait ValidatesConflicts
      */
     protected function checkInteractiveCourseSessionConflicts(int $teacherId, Carbon $scheduledAt, Carbon $endTime, ?int $excludeId = null): ?InteractiveCourseSession
     {
-        // For interactive courses, we need to find sessions where the teacher is assigned.
-        // Resolve the academic teacher profile ID from the passed $teacherId (user ID), not from Auth::user().
         $academicTeacherId = AcademicTeacherProfile::where('user_id', $teacherId)->value('id');
 
+        return $this->checkInteractiveCourseSessionConflictsWithProfile($academicTeacherId, $scheduledAt, $endTime, $excludeId);
+    }
+
+    /**
+     * Check for conflicts with Interactive Course sessions using a pre-resolved profile ID.
+     */
+    protected function checkInteractiveCourseSessionConflictsWithProfile(?int $academicTeacherId, Carbon $scheduledAt, Carbon $endTime, ?int $excludeId = null): ?InteractiveCourseSession
+    {
         if (! $academicTeacherId) {
-            return null; // No academic teacher profile for this user, no conflict possible
+            return null;
         }
 
         return InteractiveCourseSession::whereHas('course', function ($query) use ($academicTeacherId) {
