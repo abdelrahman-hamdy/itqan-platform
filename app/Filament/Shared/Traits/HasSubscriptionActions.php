@@ -695,12 +695,16 @@ trait HasSubscriptionActions
 
                 try {
                     DB::transaction(function () use ($record) {
-                        // Delete linked sessions
+                        // Delete session reports first (no SoftDeletes, FK to sessions)
                         if (method_exists($record, 'sessions')) {
-                            $record->sessions()->delete();
+                            $sessionIds = $record->sessions()->withTrashed()->pluck('id');
+                            if ($sessionIds->isNotEmpty()) {
+                                \App\Models\StudentSessionReport::whereIn('session_id', $sessionIds)->delete();
+                            }
+                            $record->sessions()->withTrashed()->forceDelete();
                         }
 
-                        // Delete linked circle (individual) or unenroll from group
+                        // Delete linked circle (individual)
                         if ($record instanceof QuranSubscription && $record->education_unit_id) {
                             $record->educationUnit?->forceDelete();
                         }
@@ -711,7 +715,7 @@ trait HasSubscriptionActions
                         }
 
                         // Delete linked payments
-                        $record->payments()->forceDelete();
+                        $record->payments()->withTrashed()->forceDelete();
 
                         // Force delete the subscription itself
                         $record->forceDelete();

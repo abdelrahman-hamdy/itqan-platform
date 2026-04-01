@@ -56,6 +56,7 @@ class ExpireActiveSubscriptions extends Command
                 ->where('status', SessionSubscriptionStatus::ACTIVE)
                 ->whereNotNull('ends_at')
                 ->where('ends_at', '<', $now)
+                ->with('student')
                 ->chunkById(100, function ($subscriptions) use ($dryRun, $now, &$stats, $type) {
                     foreach ($subscriptions as $subscription) {
                         if ($this->isInGracePeriod($subscription, $now)) {

@@ -666,9 +666,9 @@ abstract class BaseSubscription extends Model
         // Extend ends_at by the paused duration (time compensation)
         if ($this->paused_at && $this->ends_at) {
             $pausedDuration = now()->diffInSeconds($this->paused_at);
-            $updateData['ends_at'] = $this->ends_at->addSeconds($pausedDuration);
+            $updateData['ends_at'] = $this->ends_at->copy()->addSeconds($pausedDuration);
             if ($this->next_billing_date) {
-                $updateData['next_billing_date'] = $this->next_billing_date->addSeconds($pausedDuration);
+                $updateData['next_billing_date'] = $this->next_billing_date->copy()->addSeconds($pausedDuration);
             }
         }
 
