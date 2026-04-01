@@ -410,13 +410,13 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
     /**
      * Confirm payment for a pending subscription.
      */
-    public function confirmPayment(Request $request, $subdomain, string $type, int $subscriptionId): RedirectResponse
+    public function confirmPayment(Request $request, $subdomain, string $type, int $subscription): RedirectResponse
     {
         if (! $this->isAdminUser()) {
             abort(403);
         }
 
-        $sub = $this->resolveSubscription($type, $subscriptionId);
+        $sub = $this->resolveSubscription($type, $subscription);
         $this->ensureSubscriptionInScope($sub, $type);
 
         try {
