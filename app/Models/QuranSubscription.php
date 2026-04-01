@@ -797,18 +797,7 @@ class QuranSubscription extends BaseSubscription
                 'payment_status' => $subscription->payment_status,
             ]);
 
-            if ($subscription->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL) {
-                // Only check for duplicates if all required fields are present
-                if ($subscription->student_id && $subscription->quran_teacher_id && $subscription->academy_id) {
-                    if (static::hasActiveIndividualSubscription(
-                        $subscription->student_id,
-                        $subscription->quran_teacher_id,
-                        $subscription->academy_id
-                    )) {
-                        throw new Exception('لديك اشتراك فردي نشط بالفعل مع هذا المعلم');
-                    }
-                }
-            }
+            // Multiple subscriptions with same teacher are allowed
         });
 
         // After subscription created - send notification (NO auto-creation of circles)
