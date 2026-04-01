@@ -475,6 +475,10 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
                     $sessionIds = $sub->sessions()->withTrashed()->pluck('id');
                     if ($sessionIds->isNotEmpty()) {
                         \App\Models\StudentSessionReport::whereIn('session_id', $sessionIds)->delete();
+                        // Academic sessions may have their own report model
+                        if (class_exists(\App\Models\AcademicSessionReport::class)) {
+                            \App\Models\AcademicSessionReport::whereIn('session_id', $sessionIds)->delete();
+                        }
                     }
                     $sub->sessions()->withTrashed()->forceDelete();
                 }
