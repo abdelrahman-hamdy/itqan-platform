@@ -353,4 +353,10 @@ return [
         'body' => 'نود تذكيرك بأن اشتراكك في :subscription_name سينتهي خلال :days أيام بتاريخ :expiry_date.',
         'action_hint' => 'يرجى تجديد اشتراكك من خلال المنصة لضمان استمرار الخدمة.',
     ],
+
+    // Subscription expired
+    'subscription_expired' => [
+        'title' => 'انتهى اشتراكك',
+        'body' => 'انتهى اشتراكك في :name. يمكنك تجديده للاستمرار في التعلم.',
+    ],
 ];

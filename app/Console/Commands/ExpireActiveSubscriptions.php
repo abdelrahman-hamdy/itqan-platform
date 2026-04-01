@@ -6,6 +6,7 @@ use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
+use App\Notifications\SubscriptionExpiredNotification;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -80,6 +81,11 @@ class ExpireActiveSubscriptions extends Command
 
                                 // 3. Suspend future scheduled sessions
                                 $this->suspendFutureSessions($subscription);
+
+                                // 4. Notify the student
+                                if ($subscription->student) {
+                                    $subscription->student->notify(new SubscriptionExpiredNotification($subscription));
+                                }
                             });
 
                             $stats[$type]++;

@@ -668,6 +668,67 @@ trait HasSubscriptionActions
     }
 
     // ========================================
+    // DELETE SUBSCRIPTION ACTION (admin only)
+    // ========================================
+
+    /**
+     * Delete subscription and ALL linked data (sessions, circle, lesson, payments, reports).
+     * Hard delete — irreversible. Admin/superadmin only.
+     */
+    protected static function getDeleteSubscriptionAction(): Action
+    {
+        return Action::make('deleteSubscription')
+            ->label(__('subscriptions.delete_subscription'))
+            ->icon('heroicon-o-trash')
+            ->color('danger')
+            ->requiresConfirmation()
+            ->modalHeading(__('subscriptions.delete_subscription_heading'))
+            ->modalDescription(__('subscriptions.delete_subscription_warning'))
+            ->modalSubmitActionLabel(__('subscriptions.delete_subscription_confirm'))
+            ->action(function (BaseSubscription $record) {
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    Notification::make()->danger()->title(__('common.unauthorized'))->send();
+
+                    return;
+                }
+
+                try {
+                    DB::transaction(function () use ($record) {
+                        // Delete linked sessions
+                        if (method_exists($record, 'sessions')) {
+                            $record->sessions()->delete();
+                        }
+
+                        // Delete linked circle (individual) or unenroll from group
+                        if ($record instanceof QuranSubscription && $record->education_unit_id) {
+                            $record->educationUnit?->forceDelete();
+                        }
+
+                        // Delete linked lesson (academic)
+                        if ($record instanceof AcademicSubscription) {
+                            $record->lesson?->forceDelete();
+                        }
+
+                        // Delete linked payments
+                        $record->payments()->forceDelete();
+
+                        // Force delete the subscription itself
+                        $record->forceDelete();
+                    });
+
+                    Notification::make()
+                        ->success()
+                        ->title(__('subscriptions.delete_subscription_success'))
+                        ->send();
+                } catch (\Exception $e) {
+                    Notification::make()->danger()->title(__('subscriptions.generic_error'))->body($e->getMessage())->send();
+                }
+            })
+            ->visible(fn () => auth()->user()?->hasRole(['super_admin', 'admin']));
+    }
+
+    // ========================================
     // RENEWAL & RESUBSCRIBE ACTIONS
     // ========================================
 
@@ -806,6 +867,7 @@ trait HasSubscriptionActions
             static::getExtendSubscriptionAction(),
             static::getCancelAction(),
             static::getCancelPendingAction(),
+            static::getDeleteSubscriptionAction(),
         ];
     }
 
@@ -824,6 +886,7 @@ trait HasSubscriptionActions
             static::getExtendSubscriptionAction(),
             static::getCancelAction(),
             static::getCancelPendingAction(),
+            static::getDeleteSubscriptionAction(),
         ];
 
         // Add Create Circle for Quran subscriptions

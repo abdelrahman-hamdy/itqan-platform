@@ -353,4 +353,10 @@ return [
         'body' => 'This is a reminder that your subscription to :subscription_name will expire in :days days on :expiry_date.',
         'action_hint' => 'Please renew your subscription through the platform to continue your service.',
     ],
+
+    // Subscription expired
+    'subscription_expired' => [
+        'title' => 'Your subscription has expired',
+        'body' => 'Your subscription to :name has expired. Renew to continue learning.',
+    ],
 ];

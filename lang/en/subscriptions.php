@@ -130,6 +130,12 @@ return [
         'certificate_already_issued' => 'Certificate has already been issued.',
         'certificate_not_eligible' => 'Subscription is not eligible for a certificate.',
         'invalid_package' => 'The selected package is not available.',
+        'cannot_delete_package_with_subscriptions' => 'Cannot delete package with linked subscriptions. Deactivate it instead.',
+        'delete_subscription' => 'Delete Subscription',
+        'delete_subscription_heading' => 'Permanently Delete Subscription',
+        'delete_subscription_warning' => 'This will permanently delete the subscription and ALL related data (sessions, circle, lessons, payments, reports). This action cannot be undone.',
+        'delete_subscription_confirm' => 'Yes, Delete Permanently',
+        'delete_subscription_success' => 'Subscription and all related data deleted successfully.',
     ],
 
     // Type labels

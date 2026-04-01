@@ -136,6 +136,12 @@ return [
         'certificate_already_issued' => 'تم إصدار الشهادة مسبقاً.',
         'certificate_not_eligible' => 'الاشتراك غير مؤهل للحصول على شهادة.',
         'invalid_package' => 'الباقة المحددة غير متاحة.',
+        'cannot_delete_package_with_subscriptions' => 'لا يمكن حذف الباقة لوجود اشتراكات مرتبطة بها. يمكنك تعطيلها بدلاً من ذلك.',
+        'delete_subscription' => 'حذف الاشتراك',
+        'delete_subscription_heading' => 'حذف الاشتراك نهائياً',
+        'delete_subscription_warning' => 'سيتم حذف الاشتراك وجميع البيانات المرتبطة به (الجلسات، الحلقة، الدروس، المدفوعات، التقارير) بشكل نهائي. لا يمكن التراجع عن هذا الإجراء.',
+        'delete_subscription_confirm' => 'نعم، حذف نهائياً',
+        'delete_subscription_success' => 'تم حذف الاشتراك وجميع البيانات المرتبطة بنجاح.',
     ],
 
     // Type labels

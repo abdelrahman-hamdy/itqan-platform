@@ -60,6 +60,15 @@ class AcademicPackage extends Model
         return $this->belongsTo(Academy::class);
     }
 
+    protected static function booted(): void
+    {
+        static::deleting(function (self $package) {
+            if ($package->subscriptions()->exists()) {
+                throw new \Exception(__('subscriptions.errors.cannot_delete_package_with_subscriptions'));
+            }
+        });
+    }
+
     public function subscriptions(): HasMany
     {
         return $this->hasMany(AcademicSubscription::class, 'academic_package_id');
