@@ -83,6 +83,28 @@ class BaseSessionObserver
                 'has_meeting' => ! empty($session->meeting_room_name),
             ]);
 
+            // If session is READY but rescheduled to a future date beyond the preparation
+            // window, reset it back to SCHEDULED. Without this, a session rescheduled from
+            // today to next week would stay in "ready" status indefinitely.
+            $currentStatus = is_string($session->status)
+                ? SessionStatus::from($session->status)
+                : $session->status;
+
+            if ($currentStatus === SessionStatus::READY && $newTime instanceof Carbon) {
+                $preparationMinutes = config('business.sessions.preparation_minutes', 10);
+                $preparationTime = $newTime->copy()->subMinutes($preparationMinutes);
+
+                if (now()->lt($preparationTime)) {
+                    $session->updateQuietly(['status' => SessionStatus::SCHEDULED]);
+
+                    Log::info('Reset session status to SCHEDULED after reschedule to future date', [
+                        'session_id' => $session->id,
+                        'new_scheduled_at' => $newTime->toIso8601String(),
+                        'preparation_time' => $preparationTime->toIso8601String(),
+                    ]);
+                }
+            }
+
             // If meeting exists, dispatch a job to regenerate it with the new time.
             // Using a job avoids blocking the HTTP request with a synchronous LiveKit call.
             if (! empty($session->meeting_room_name)) {
