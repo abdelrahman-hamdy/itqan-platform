@@ -441,6 +441,69 @@
                                                 {{ __('supervisor.subscriptions.action_cancel') }}
                                             </button>
                                         @endif
+
+                                        {{-- Confirm Payment --}}
+                                        @if(in_array($sub['model']->payment_status, [\App\Enums\SubscriptionPaymentStatus::PENDING, \App\Enums\SubscriptionPaymentStatus::FAILED]))
+                                            <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}"
+                                               class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+                                                <i class="ri-check-double-line"></i>{{ __('supervisor.subscriptions.action_confirm_payment') }}
+                                            </a>
+                                        @endif
+
+                                        {{-- Renew --}}
+                                        @if($sub['model']->canRenew() || $sub['model']->is_sessions_exhausted)
+                                            <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}"
+                                               class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                                                <i class="ri-refresh-line"></i>{{ __('supervisor.subscriptions.action_renew') }}
+                                            </a>
+                                        @endif
+
+                                        {{-- Resubscribe --}}
+                                        @if(in_array($sub['status'], [\App\Enums\SessionSubscriptionStatus::CANCELLED, \App\Enums\SessionSubscriptionStatus::EXPIRED]))
+                                            <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}"
+                                               class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors">
+                                                <i class="ri-arrow-go-back-line"></i>{{ __('supervisor.subscriptions.action_resubscribe') }}
+                                            </a>
+                                        @endif
+
+                                        {{-- Cancel Pending --}}
+                                        @if($sub['model']->isPending())
+                                            <form id="cancel-pending-form-{{ $sub['id'] }}" method="POST"
+                                                  action="{{ route('manage.subscriptions.cancel-pending', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">
+                                                @csrf
+                                            </form>
+                                            <button type="button"
+                                                onclick="window.confirmAction({
+                                                    title: @js(__('supervisor.subscriptions.action_cancel_pending')),
+                                                    message: @js(__('supervisor.subscriptions.confirm_cancel_pending')),
+                                                    confirmText: @js(__('supervisor.subscriptions.action_cancel_pending')),
+                                                    isDangerous: true,
+                                                    icon: 'ri-close-circle-line',
+                                                    onConfirm: () => document.getElementById('cancel-pending-form-{{ $sub['id'] }}').submit()
+                                                })"
+                                                class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors">
+                                                <i class="ri-close-circle-line"></i>{{ __('supervisor.subscriptions.action_cancel_pending') }}
+                                            </button>
+                                        @endif
+
+                                        {{-- Delete --}}
+                                        <form id="delete-form-{{ $sub['id'] }}" method="POST"
+                                              action="{{ route('manage.subscriptions.destroy', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">
+                                            @csrf
+                                            @method('DELETE')
+                                        </form>
+                                        <button type="button"
+                                            onclick="window.confirmAction({
+                                                title: @js(__('supervisor.subscriptions.action_delete')),
+                                                message: @js(__('supervisor.subscriptions.confirm_delete')),
+                                                confirmText: @js(__('supervisor.subscriptions.action_delete')),
+                                                isDangerous: true,
+                                                icon: 'ri-delete-bin-line',
+                                                onConfirm: () => document.getElementById('delete-form-{{ $sub['id'] }}').submit()
+                                            })"
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-700 text-white hover:bg-red-800 transition-colors">
+                                            <i class="ri-delete-bin-line"></i>{{ __('supervisor.subscriptions.action_delete') }}
+                                        </button>
                                     </div>
                                 </div>
                             @endif
