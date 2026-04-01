@@ -201,7 +201,7 @@ class SupervisorDashboardController extends BaseSupervisorWebController
             $todaySessions = $todaySessions->merge($academicToday);
         }
 
-        $todaySessions = $todaySessions->sortBy('scheduled_at')->values();
+        $todaySessions = collect($todaySessions->sortBy('scheduled_at')->values()->all());
 
         return view('supervisor.dashboard', compact(
             'user',
