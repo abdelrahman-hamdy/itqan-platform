@@ -7,9 +7,9 @@ use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Course;
 use App\Models\CourseSubscription;
-use App\Models\RecordedCourse;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
+use App\Models\RecordedCourse;
 use App\Models\SubscriptionAccessLog;
 use App\Services\AcademyContextService;
 use Illuminate\Http\Request;
@@ -23,7 +23,7 @@ class MobilePurchaseController extends Controller
      * GET /api/v1/student/purchase-url/{type}/{id}
      *
      * @param  string  $type  Resource type: course, quran_teacher, academic_teacher
-     * @param  string  $id    Resource UUID
+     * @param  string  $id  Resource UUID
      */
     public function getWebUrl(Request $request, string $type, string $id)
     {
@@ -44,23 +44,14 @@ class MobilePurchaseController extends Controller
         // Verify resource exists and is purchasable
         $resource = $this->findResource($type, $id);
 
-        if (!$resource) {
+        if (! $resource) {
             return response()->json([
                 'message' => __('Resource not found'),
                 'error_code' => 'RESOURCE_NOT_FOUND',
             ], 404);
         }
 
-        // Check if user already has active subscription
-        $existingSubscription = $this->checkExistingSubscription($user, $type, $id);
-
-        if ($existingSubscription && $existingSubscription->canAccess()) {
-            return response()->json([
-                'message' => __('You already have an active subscription'),
-                'subscription' => $this->formatSubscription($existingSubscription),
-                'error_code' => 'ALREADY_SUBSCRIBED',
-            ], 200);
-        }
+        // Multiple subscriptions with same teacher are allowed — proceed directly
 
         // Generate time-limited token for web session (1 hour expiry)
         $token = $user->createToken(
@@ -101,8 +92,6 @@ class MobilePurchaseController extends Controller
      * Confirm purchase after deeplink return from web.
      *
      * POST /api/v1/student/purchase-completed
-     *
-     * @param  Request  $request
      */
     public function confirmPurchase(Request $request)
     {
@@ -115,7 +104,7 @@ class MobilePurchaseController extends Controller
         // Find subscription across all types
         $subscription = $this->findAnySubscription($validated['subscription_id']);
 
-        if (!$subscription) {
+        if (! $subscription) {
             return response()->json([
                 'message' => __('Subscription not found'),
                 'error_code' => 'SUBSCRIPTION_NOT_FOUND',

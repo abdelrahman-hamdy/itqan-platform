@@ -43,24 +43,13 @@ class QuranEnrollmentService
             return ['subscription' => null, 'payment' => null, 'redirect_url' => null, 'error' => __('payments.subscription.billing_cycle_unavailable')];
         }
 
-        // Check for existing active subscription
+        // Cancel any existing pending subscriptions for the same teacher+package
+        // (allows multiple active subscriptions with same teacher)
         $duplicateKeyValues = [
             'quran_teacher_id' => $teacher->user_id,
             'package_id' => $package->id,
         ];
 
-        $existing = $this->subscriptionService->findExistingSubscription(
-            SubscriptionService::TYPE_QURAN,
-            $academy->id,
-            $user->id,
-            $duplicateKeyValues
-        );
-
-        if ($existing['active']) {
-            return ['subscription' => null, 'payment' => null, 'redirect_url' => null, 'error' => __('payments.subscription.already_subscribed')];
-        }
-
-        // Cancel any existing pending subscriptions for this combination
         $this->subscriptionService->cancelDuplicatePending(
             SubscriptionService::TYPE_QURAN,
             $academy->id,

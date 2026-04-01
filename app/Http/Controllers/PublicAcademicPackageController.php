@@ -222,7 +222,8 @@ class PublicAcademicPackageController extends Controller
                     ->withInput();
             }
 
-            // Check for existing subscriptions using SubscriptionService
+            // Cancel any existing pending subscriptions for this combination
+            // (allows multiple active subscriptions with same teacher)
             $subscriptionService = app(SubscriptionService::class);
             $duplicateKeyValues = [
                 'teacher_id' => $teacher->id,
@@ -230,22 +231,6 @@ class PublicAcademicPackageController extends Controller
                 'subject_id' => $request->subject_id,
             ];
 
-            $existing = $subscriptionService->findExistingSubscription(
-                SubscriptionService::TYPE_ACADEMIC,
-                $academy->id,
-                $user->id,
-                $duplicateKeyValues
-            );
-
-            // Block if active subscription exists for this teacher/package/subject combination
-            if ($existing['active']) {
-                return redirect()->back()
-                    ->with('error', __('payments.subscription.already_subscribed'))
-                    ->withInput();
-            }
-
-            // Cancel any existing pending subscriptions for this combination
-            // (allows user to create a new subscription request)
             $subscriptionService->cancelDuplicatePending(
                 SubscriptionService::TYPE_ACADEMIC,
                 $academy->id,

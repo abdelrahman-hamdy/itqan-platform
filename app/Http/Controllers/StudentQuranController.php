@@ -394,7 +394,7 @@ class StudentQuranController extends Controller
             ->with(['package', 'sessions', 'individualCircle'])
             ->get();
 
-        // Group by teacher and take first (prioritized) subscription for each
+        // Group by teacher — take first for display but allow multiple active
         $subscriptionsByTeacherId = $subscriptions
             ->groupBy('quran_teacher_id')
             ->map(fn ($group) => $group->first());

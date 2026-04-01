@@ -56,14 +56,8 @@ class TrialConversionService
             return false;
         }
 
-        // Check if student already has an active subscription with this teacher
-        $hasActiveSubscription = QuranSubscription::where('student_id', $trialRequest->student_id)
-            ->where('quran_teacher_id', $trialRequest->teacher?->user_id)
-            ->where('academy_id', $trialRequest->academy_id)
-            ->whereIn('status', [SessionSubscriptionStatus::ACTIVE, SessionSubscriptionStatus::PENDING])
-            ->exists();
-
-        return ! $hasActiveSubscription;
+        // Multiple subscriptions with same teacher are allowed
+        return true;
     }
 
     /**
