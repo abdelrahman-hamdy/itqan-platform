@@ -30,7 +30,7 @@
   <button type="button" @click="expanded = !expanded" class="w-full flex items-center justify-between group">
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-indigo-100 flex-shrink-0">
-        <i class="ri-package-line text-xl text-indigo-600"></i>
+        <i class="ri-price-tag-3-line text-xl text-indigo-600"></i>
       </div>
       <div class="text-start">
         <div class="font-semibold text-gray-900 text-sm">{{ $packageName }}</div>

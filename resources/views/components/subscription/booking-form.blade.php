@@ -110,7 +110,7 @@
                     <input type="radio" name="billing_cycle" value="monthly"
                            x-model="billingCycle"
                            class="peer sr-only">
-                    <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all h-full flex flex-col justify-center">
+                    <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all h-full flex flex-col items-center justify-center">
                         <div class="text-sm font-medium text-gray-600">{{ BillingCycle::MONTHLY->label() }}</div>
                         <div class="text-xl font-bold text-gray-900 mt-1" dir="ltr">
                             {{ number_format($saleMonthlyPrice ?? $monthlyPrice) }} {{ $currency }}
@@ -130,7 +130,7 @@
                         <input type="radio" name="billing_cycle" value="quarterly"
                                x-model="billingCycle"
                                class="peer sr-only">
-                        <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all h-full flex flex-col justify-center">
+                        <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all h-full flex flex-col items-center justify-center">
                             <div class="text-sm font-medium text-gray-600">{{ BillingCycle::QUARTERLY->label() }}</div>
                             <div class="text-xl font-bold text-gray-900 mt-1" dir="ltr">
                                 {{ number_format($saleQuarterlyPrice ?? $quarterlyPrice) }} {{ $currency }}
@@ -153,7 +153,7 @@
                         <input type="radio" name="billing_cycle" value="yearly"
                                x-model="billingCycle"
                                class="peer sr-only">
-                        <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all h-full flex flex-col justify-center">
+                        <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all h-full flex flex-col items-center justify-center">
                             <div class="text-sm font-medium text-gray-600">{{ BillingCycle::YEARLY->label() }}</div>
                             <div class="text-xl font-bold text-gray-900 mt-1" dir="ltr">
                                 {{ number_format($saleYearlyPrice ?? $yearlyPrice) }} {{ $currency }}
@@ -297,29 +297,28 @@
         {{-- Pricing Summary --}}
         <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
             <h4 class="font-semibold text-gray-900 mb-3 flex items-center gap-2 text-sm">
-                <i class="ri-calculator-line text-indigo-600"></i>
+                <i class="ri-price-tag-3-line text-indigo-600"></i>
                 {{ __('public.booking.quran.form.cost_summary') }}
             </h4>
             <div class="space-y-2 text-sm">
-                <div x-show="currentHasSale" x-cloak class="flex justify-between items-center text-gray-400">
-                    <span>{{ __('components.packages.original_price') }}</span>
-                    <span dir="ltr" class="line-through">
-                        <span x-text="currentOriginalPrice.toLocaleString()"></span>
-                        {{ $currency }}
-                    </span>
+                <div x-show="currentHasSale" x-cloak>
+                    <div class="flex justify-between items-center text-gray-500">
+                        <span>{{ __('components.packages.original_price') }}</span>
+                        <span dir="ltr" class="line-through">
+                            <span x-text="currentOriginalPrice.toLocaleString()"></span>
+                            {{ $currency }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center text-green-600 mt-1">
+                        <span>{{ __('public.booking.quran.form.package_price') }} (<span x-text="periodLabel"></span>)</span>
+                        <span dir="ltr">
+                            <span x-text="currentPrice.toLocaleString()"></span>
+                            {{ $currency }}
+                        </span>
+                    </div>
                 </div>
-                <div class="flex justify-between items-center text-gray-700">
-                    <span>
-                        {{ __('public.booking.quran.form.package_price') }}
-                        (<span x-text="periodLabel"></span>)
-                    </span>
-                    <span dir="ltr">
-                        <span x-text="currentPrice.toLocaleString()"></span>
-                        {{ $currency }}
-                    </span>
-                </div>
-                <div class="border-t border-gray-200 pt-2 flex justify-between items-center font-bold">
-                    <span>{{ __('public.booking.quran.form.total') }}</span>
+                <div class="flex justify-between items-center font-bold pt-2" :class="currentHasSale && 'border-t border-gray-200'">
+                    <span class="text-gray-900">{{ __('public.booking.quran.form.total') }}</span>
                     <span class="text-indigo-600 text-lg" dir="ltr">
                         <span x-text="currentPrice.toLocaleString()"></span>
                         {{ $currency }}

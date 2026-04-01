@@ -28,9 +28,9 @@
         <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 space-y-4">
             <x-subscription.teacher-info-card :teacher="$teacher" teacherType="academic" :compact="true" />
             <div class="border-t border-gray-200"></div>
-            <x-subscription.package-info-card :package="$package" packageType="academic" :selectedPeriod="$selectedPeriod ?? 'monthly'" :compact="true" :academy="$academy" />
-            <div class="border-t border-gray-200"></div>
             <x-subscription.student-info :user="auth()->user()" :compact="true" />
+            <div class="border-t border-gray-200"></div>
+            <x-subscription.package-info-card :package="$package" packageType="academic" :selectedPeriod="$selectedPeriod ?? 'monthly'" :compact="true" :academy="$academy" />
         </div>
 
         {{-- Booking Form --}}

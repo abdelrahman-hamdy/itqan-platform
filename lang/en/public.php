@@ -167,7 +167,7 @@ return [
         ],
 
         'quran' => [
-            'title' => 'Subscription',
+            'title' => 'New Quran Subscription',
             'teacher_info' => [
                 'title' => 'Teacher Information',
                 'certified' => 'Certified Quran Teacher',
@@ -233,13 +233,13 @@ return [
                 ],
                 'notes' => 'Additional Notes',
                 'notes_placeholder' => 'Any additional information you would like to share with the teacher...',
-                'cost_summary' => 'Cost Summary',
+                'cost_summary' => 'Price Details',
                 'package_price' => 'Package Price',
                 'package_price_monthly' => 'Package Price (Monthly)',
                 'package_price_quarterly' => 'Package Price (Quarterly)',
                 'package_price_yearly' => 'Package Price (Yearly)',
                 'service_fee' => 'Service Fee',
-                'total' => 'Total',
+                'total' => 'Amount Due',
                 'payment_terms' => [
                     'title' => 'Payment and Subscription Terms:',
                     'term_1' => 'Fees will be collected at the beginning of each billing cycle',
@@ -260,7 +260,7 @@ return [
         ],
 
         'academic' => [
-            'title' => 'Academic Subscription Details',
+            'title' => 'New Academic Subscription',
             'subtitle' => 'Fill in the data below to complete the subscription process',
             'subject' => 'Academic Subject',
             'select_subject' => 'Select Subject',
