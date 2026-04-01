@@ -102,9 +102,10 @@ abstract class BaseSubscription extends Model
         'session_duration_minutes',
 
         // Pricing snapshot (all tiers from package)
-        'monthly_price',
-        'quarterly_price',
-        'yearly_price',
+        'package_price_monthly',
+        'package_price_quarterly',
+        'package_price_yearly',
+        'total_price',
         'discount_amount',
         'final_price',
         'currency',
@@ -188,13 +189,13 @@ abstract class BaseSubscription extends Model
         'certificate_issued_at' => 'datetime',
 
         // Integers
-        'sessions_per_month' => 'integer',
         'session_duration_minutes' => 'integer',
 
         // Decimals
-        'monthly_price' => 'decimal:2',
-        'quarterly_price' => 'decimal:2',
-        'yearly_price' => 'decimal:2',
+        'package_price_monthly' => 'decimal:2',
+        'package_price_quarterly' => 'decimal:2',
+        'package_price_yearly' => 'decimal:2',
+        'total_price' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'final_price' => 'decimal:2',
         'progress_percentage' => 'decimal:2',
@@ -700,9 +701,9 @@ abstract class BaseSubscription extends Model
     public function getPriceForBillingCycle(): float
     {
         return match ($this->billing_cycle) {
-            BillingCycle::MONTHLY => $this->monthly_price ?? 0,
-            BillingCycle::QUARTERLY => $this->quarterly_price ?? ($this->monthly_price * 3),
-            BillingCycle::YEARLY => $this->yearly_price ?? ($this->monthly_price * 12),
+            BillingCycle::MONTHLY => $this->package_price_monthly ?? 0,
+            BillingCycle::QUARTERLY => $this->package_price_quarterly ?? (($this->package_price_monthly ?? 0) * 3),
+            BillingCycle::YEARLY => $this->package_price_yearly ?? (($this->package_price_monthly ?? 0) * 12),
             BillingCycle::LIFETIME => $this->final_price ?? 0,
         };
     }

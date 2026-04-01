@@ -57,7 +57,7 @@
                                 @if ($selectedStudent['avatar'])
                                     <img src="{{ $selectedStudent['avatar'] }}" class="w-full h-full object-cover" alt="">
                                 @else
-                                    <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                    <div class="w-full h-full flex items-center justify-center text-gray-500">
                                         <i class="ri-user-line text-lg"></i>
                                     </div>
                                 @endif
@@ -85,11 +85,11 @@
                                 @foreach ($searchResults as $result)
                                     <button wire:click="selectStudent({{ $result['id'] }})"
                                             class="w-full text-start px-3 py-2.5 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-50 last:border-0">
-                                        <div class="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
+                                        <div class="w-9 h-9 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
                                             @if ($result['avatar'])
                                                 <img src="{{ $result['avatar'] }}" class="w-full h-full object-cover" alt="">
                                             @else
-                                                <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                                <div class="w-full h-full flex items-center justify-center text-gray-500">
                                                     <i class="ri-user-line"></i>
                                                 </div>
                                             @endif
@@ -146,7 +146,7 @@
                                 @forelse ($filteredTeachers as $teacher)
                                     <button type="button" wire:click="selectTeacher({{ $teacher['id'] }})"
                                             class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors text-start">
-                                        <div class="w-9 h-9 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
+                                        <div class="w-9 h-9 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
                                             @if ($teacher['avatar'] ?? null)
                                                 <img src="{{ $teacher['avatar'] }}" class="w-full h-full object-cover" alt="">
                                             @else
