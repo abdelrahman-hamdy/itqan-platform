@@ -60,7 +60,7 @@ class CreateFullSubscription extends Component
 
     public string $specialization = 'memorization';
 
-    public string $learning_goals = '';
+    public array $learning_goals = [];
 
     // Data lists
     public array $availableTeachers = [];
