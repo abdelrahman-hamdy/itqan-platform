@@ -63,7 +63,7 @@ class PaymentAuditLog extends Model
      */
     public static function logCreation(Payment $payment, ?int $userId = null): self
     {
-        return static::log($payment, 'created', null, $payment->status, $userId);
+        return static::log($payment, 'created', null, $payment->status instanceof \App\Enums\PaymentStatus ? $payment->status->value : (string) $payment->status, $userId);
     }
 
     /**
