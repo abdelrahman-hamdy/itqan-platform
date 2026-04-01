@@ -528,7 +528,7 @@ class DashboardAttentionService
                 'created_at' => $r->created_at,
             ]);
 
-        $allReviews = $courseReviews->merge($teacherReviews)
+        $allReviews = collect($courseReviews)->merge($teacherReviews)
             ->sortByDesc('created_at')
             ->take(10)
             ->values()
