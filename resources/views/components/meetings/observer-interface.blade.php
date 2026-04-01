@@ -381,7 +381,7 @@
         if (window.LiveKit) return;
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/livekit-client@2.17.3/dist/livekit-client.umd.min.js';
+            script.src = 'https://cdn.jsdelivr.net/npm/livekit-client@2.18.0/dist/livekit-client.umd.min.js';
             script.crossOrigin = 'anonymous';
             script.onload = () => {
                 setTimeout(() => {
