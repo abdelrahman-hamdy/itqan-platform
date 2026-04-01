@@ -59,10 +59,6 @@
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-700 mb-3">{{ __('student.subscriptions.select_billing_cycle') }}</label>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    @foreach($options['packages'] as $pkg)
-                        @php $isCurrentPkg = $pkg['id'] === ($options['current']['package_id'] ?? null); @endphp
-                    @endforeach
-
                     @foreach(['monthly', 'quarterly', 'yearly'] as $cycle)
                         @php
                             $currentPkg = collect($options['packages'])->firstWhere('id', $options['current']['package_id'] ?? null)

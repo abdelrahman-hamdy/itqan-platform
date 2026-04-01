@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Constants\DefaultAcademy;
+use App\Models\AcademicSubscription;
 use App\Models\QuranCircle;
 use App\Models\QuranSubscription;
 use App\Models\QuranTrialRequest;
@@ -146,7 +147,7 @@ class StudentSubscriptionController extends Controller
     /**
      * Show the renewal form for a subscription.
      */
-    public function showRenewForm(Request $request, string $subdomain, string $type, string $id)
+    public function showRenewForm(Request $request, string $subdomain, string $type, string $id): View|RedirectResponse
     {
         $user = Auth::user();
         $academy = $user->academy;
@@ -204,9 +205,9 @@ class StudentSubscriptionController extends Controller
         $mode = $request->input('mode', 'renew');
 
         try {
+            // Students renew with same package — no package_id from user input (security)
             $options = [
                 'billing_cycle' => $request->billing_cycle,
-                'package_id' => $request->package_id,
             ];
 
             $new = $mode === 'resubscribe'
@@ -234,7 +235,7 @@ class StudentSubscriptionController extends Controller
     {
         $modelClass = match ($type) {
             'quran' => QuranSubscription::class,
-            'academic' => \App\Models\AcademicSubscription::class,
+            'academic' => AcademicSubscription::class,
             default => null,
         };
 
