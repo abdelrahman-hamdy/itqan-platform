@@ -235,7 +235,6 @@ class SubscriptionRenewalService
             'sessions_used' => 0,
             'total_sessions_completed' => 0,
             'total_sessions_missed' => 0,
-            'sessions_per_month' => $newSessionsPerMonth,
             'session_duration_minutes' => $pricingData['session_duration_minutes'] ?? $old->session_duration_minutes,
             'progress_percentage' => 0,
             'currency' => $old->currency ?? 'SAR',

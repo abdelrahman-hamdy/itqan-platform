@@ -87,6 +87,7 @@ return [
     'teacher_label' => 'المعلم',
     'select_teacher' => 'اختر المعلم',
     'no_teachers_available' => 'لا يوجد معلمون متاحون',
+    'search_teacher_placeholder' => 'ابحث عن معلم...',
     'amount_label' => 'المبلغ',
     'discount_label' => 'الخصم',
     'package_price_label' => 'سعر الباقة',

@@ -99,7 +99,6 @@ abstract class BaseSubscription extends Model
         'package_features',
 
         // Sessions configuration (from package)
-        'sessions_per_month',
         'session_duration_minutes',
 
         // Pricing snapshot (all tiers from package)

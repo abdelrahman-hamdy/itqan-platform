@@ -118,7 +118,7 @@
                                     <img src="{{ $selectedTeacher['avatar'] }}" class="w-full h-full object-cover" alt="">
                                 @else
                                     <div class="w-full h-full flex items-center justify-center text-gray-400">
-                                        <i class="ri-user-star-line text-lg"></i>
+                                        <i class="ri-user-line text-lg"></i>
                                     </div>
                                 @endif
                             </div>
@@ -130,25 +130,37 @@
                             </button>
                         </div>
                     @else
-                        {{-- Teacher dropdown --}}
-                        <div class="space-y-1.5 max-h-48 overflow-y-auto border rounded-lg p-1">
-                            @forelse ($availableTeachers as $teacher)
-                                <button type="button" wire:click="selectTeacher({{ $teacher['id'] }})"
-                                        class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors text-start">
-                                    <div class="w-9 h-9 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
-                                        @if ($teacher['avatar'] ?? null)
-                                            <img src="{{ $teacher['avatar'] }}" class="w-full h-full object-cover" alt="">
-                                        @else
-                                            <div class="w-full h-full flex items-center justify-center text-gray-400">
-                                                <i class="ri-user-star-line"></i>
-                                            </div>
-                                        @endif
+                        {{-- Teacher search + list --}}
+                        <div class="border rounded-lg overflow-hidden">
+                            <div class="p-2 border-b bg-gray-50">
+                                <div class="relative">
+                                    <input type="text" wire:model.live.debounce.200ms="teacher_search"
+                                           class="w-full rounded-lg border-gray-300 text-sm pe-10"
+                                           placeholder="{{ __('subscriptions.search_teacher_placeholder') }}">
+                                    <div class="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none">
+                                        <i class="ri-search-line text-gray-400"></i>
                                     </div>
-                                    <span class="text-sm font-medium text-gray-900">{{ $teacher['name'] }}</span>
-                                </button>
-                            @empty
-                                <div class="p-3 text-sm text-gray-500 text-center">{{ __('subscriptions.no_teachers_available') }}</div>
-                            @endforelse
+                                </div>
+                            </div>
+                            <div class="max-h-48 overflow-y-auto p-1 space-y-0.5">
+                                @forelse ($filteredTeachers as $teacher)
+                                    <button type="button" wire:click="selectTeacher({{ $teacher['id'] }})"
+                                            class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors text-start">
+                                        <div class="w-9 h-9 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
+                                            @if ($teacher['avatar'] ?? null)
+                                                <img src="{{ $teacher['avatar'] }}" class="w-full h-full object-cover" alt="">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center text-gray-500">
+                                                    <i class="ri-user-line"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-900">{{ $teacher['name'] }}</span>
+                                    </button>
+                                @empty
+                                    <div class="p-3 text-sm text-gray-500 text-center">{{ __('subscriptions.no_teachers_available') }}</div>
+                                @endforelse
+                            </div>
                         </div>
                     @endif
                     @error('teacher_id') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror

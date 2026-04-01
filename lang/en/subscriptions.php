@@ -81,6 +81,7 @@ return [
     'teacher_label' => 'Teacher',
     'select_teacher' => 'Select Teacher',
     'no_teachers_available' => 'No teachers available',
+    'search_teacher_placeholder' => 'Search for a teacher...',
     'amount_label' => 'Amount',
     'discount_label' => 'Discount',
     'package_price_label' => 'Package Price',

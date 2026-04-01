@@ -85,7 +85,6 @@ class AdminSubscriptionWizardService
             'next_billing_date' => $endsAt,
             'last_payment_date' => now(),
             'auto_renew' => $billingCycle->supportsAutoRenewal(),
-            'sessions_per_month' => $package->sessions_per_month,
             'session_duration_minutes' => $package->session_duration_minutes,
             'total_sessions' => $package->sessions_per_month * max(1, $billingCycle->months()),
             'sessions_remaining' => $package->sessions_per_month * max(1, $billingCycle->months()),
