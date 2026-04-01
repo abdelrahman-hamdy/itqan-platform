@@ -16,12 +16,21 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-6">
         {{-- Header --}}
         <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-l from-indigo-50 to-white">
-            <h1 class="text-xl font-bold text-gray-900">
-                {{ __('public.booking.academic.title') }}
-            </h1>
-            <p class="text-sm text-gray-600 mt-1">
-                {{ __('public.booking.academic.subtitle') }}
-            </p>
+            <div class="flex items-start justify-between">
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900">
+                        {{ __('public.booking.academic.title') }}
+                    </h1>
+                    <p class="text-sm text-gray-600 mt-1">
+                        {{ __('public.booking.academic.subtitle') }}
+                    </p>
+                </div>
+                <a href="{{ route('public.academic-packages.teacher', ['subdomain' => $subdomain, 'teacher' => $teacher->id]) }}"
+                   class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-indigo-600 transition-colors mt-1">
+                    <span>{{ __('common.navigation.back') }}</span>
+                    <i class="ri-arrow-left-line"></i>
+                </a>
+            </div>
         </div>
 
         {{-- Info Sections (compact, collapsible) --}}
