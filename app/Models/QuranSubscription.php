@@ -680,7 +680,7 @@ class QuranSubscription extends BaseSubscription
             throw new Exception('Valid teacher user not found');
         }
 
-        return QuranIndividualCircle::create([
+        $circle = QuranIndividualCircle::create([
             'academy_id' => $this->academy_id,
             'quran_teacher_id' => $this->quran_teacher_id,
             'student_id' => $this->student_id,
@@ -693,6 +693,11 @@ class QuranSubscription extends BaseSubscription
             'is_active' => $this->isActive(),
             'created_by' => $this->created_by,
         ]);
+
+        // Link circle back to subscription
+        $this->linkToEducationUnit($circle);
+
+        return $circle;
     }
 
     /**
