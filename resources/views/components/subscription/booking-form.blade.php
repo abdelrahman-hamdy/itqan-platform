@@ -55,7 +55,7 @@
 @livewire('payment.payment-gateway-modal', ['academyId' => $academy->id])
 
 <div class="px-6 py-6">
-    <form action="{{ $formAction }}" method="POST" class="space-y-6"
+    <form id="subscription-booking-form" action="{{ $formAction }}" method="POST" class="space-y-6"
           x-data="{
               billingCycle: '{{ old('billing_cycle', $selectedPeriod) ?: 'monthly' }}',
               prices: {
@@ -339,7 +339,7 @@
 {{-- Client-side Validation + Gateway Selection --}}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('form');
+    const form = document.getElementById('subscription-booking-form');
     if (!form) return;
 
     let gatewaySelected = false;
