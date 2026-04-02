@@ -177,12 +177,48 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         $subscription = $this->resolveSubscription($type, $id);
         $this->ensureSubscriptionInScope($subscription, $type);
 
-        $sessions = $subscription->sessions()->latest('scheduled_at')->paginate(10);
+        // Load related data
+        $subscription->load(['student', 'payments', 'previousSubscription']);
+
+        // Session cycle filter
+        $cycle = $request->query('cycle', 'current');
+        $sessionsQuery = $subscription->sessions()->latest('scheduled_at');
+
+        if ($cycle === 'current' && $subscription->starts_at && $subscription->ends_at) {
+            $sessionsQuery->whereBetween('scheduled_at', [$subscription->starts_at, $subscription->ends_at]);
+        }
+
+        $sessions = $sessionsQuery->paginate(15);
+
+        // Count sessions per cycle for tabs
+        $currentCycleCount = 0;
+        $allSessionsCount = $subscription->sessions()->count();
+        if ($subscription->starts_at && $subscription->ends_at) {
+            $currentCycleCount = $subscription->sessions()
+                ->whereBetween('scheduled_at', [$subscription->starts_at, $subscription->ends_at])
+                ->count();
+        }
+
+        // Get teacher user for avatar
+        $teacherUser = null;
+        if ($type === 'quran' && $subscription->quran_teacher_id) {
+            $teacherUser = \App\Models\User::find($subscription->quran_teacher_id);
+        } elseif ($type === 'academic' && $subscription->teacher) {
+            $teacherUser = $subscription->teacher?->user;
+        }
+
+        // Renewal chain
+        $renewedBy = $subscription->renewedBySubscription;
 
         return view('supervisor.subscriptions.show', [
             'subscription' => $subscription,
             'type' => $type,
             'sessions' => $sessions,
+            'cycle' => $cycle,
+            'currentCycleCount' => $currentCycleCount,
+            'allSessionsCount' => $allSessionsCount,
+            'teacherUser' => $teacherUser,
+            'renewedBy' => $renewedBy,
             'isAdmin' => $this->isAdminUser(),
         ]);
     }
