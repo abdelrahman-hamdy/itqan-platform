@@ -20,7 +20,7 @@
     $typeColor = $type === 'quran' ? 'bg-green-100 text-green-700' : 'bg-violet-100 text-violet-700';
     $teacherUserType = $type === 'quran' ? 'quran_teacher' : 'academic_teacher';
 
-    $daysRemaining = $subscription->ends_at ? max(0, now()->diffInDays($subscription->ends_at, false)) : 0;
+    $daysRemaining = $subscription->ends_at ? max(0, nowInAcademyTimezone()->diffInDays(toAcademyTimezone($subscription->ends_at), false)) : 0;
     $source = $subscription->purchase_source?->value ?? ($subscription->created_by ? 'admin' : 'student');
 @endphp
 
