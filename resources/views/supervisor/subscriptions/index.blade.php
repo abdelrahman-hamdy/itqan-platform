@@ -321,6 +321,21 @@
                                     <i class="ri-eye-line"></i>
                                     {{ __('supervisor.subscriptions.action_view') }}
                                 </a>
+                                {{-- View Circle/Lesson --}}
+                                @if($sub['type'] === 'quran' && $sub['model']->education_unit_id)
+                                    @php
+                                        $circleRoute = ($sub['model']->subscription_type ?? 'individual') === 'individual'
+                                            ? route('manage.individual-circles.show', ['subdomain' => $subdomain, 'circle' => $sub['model']->education_unit_id])
+                                            : route('manage.group-circles.show', ['subdomain' => $subdomain, 'circle' => $sub['model']->education_unit_id]);
+                                    @endphp
+                                    <a href="{{ $circleRoute }}" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                                        <i class="ri-eye-line"></i>{{ __('supervisor.subscriptions.view_circle') }}
+                                    </a>
+                                @elseif($sub['type'] === 'academic')
+                                    <a href="{{ route('manage.academic-lessons.show', ['subdomain' => $subdomain, 'subscription' => $sub['id']]) }}" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                                        <i class="ri-eye-line"></i>{{ __('supervisor.subscriptions.view_lesson') }}
+                                    </a>
+                                @endif
                                 @if($isAdmin)
                                     <button @click="expanded = !expanded" type="button"
                                         class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors">
