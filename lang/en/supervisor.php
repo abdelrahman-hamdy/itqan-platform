@@ -1240,6 +1240,8 @@ return [
         'no_sessions_title' => 'No Sessions',
         'no_sessions' => 'No sessions have been created for this subscription yet.',
         'no_sessions_current_cycle' => 'No sessions in the current billing cycle.',
+        'view_circle' => 'View Circle',
+        'view_lesson' => 'View Lesson',
     ],
 
     'payments' => [

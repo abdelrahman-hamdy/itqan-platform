@@ -20,7 +20,8 @@
     $typeColor = $type === 'quran' ? 'bg-green-100 text-green-700' : 'bg-violet-100 text-violet-700';
     $teacherUserType = $type === 'quran' ? 'quran_teacher' : 'academic_teacher';
 
-    $daysRemaining = $subscription->ends_at ? max(0, nowInAcademyTimezone()->diffInDays(toAcademyTimezone($subscription->ends_at), false)) : 0;
+    $daysRemaining = $subscription->ends_at ? (int) max(0, nowInAcademyTimezone()->diffInDays(toAcademyTimezone($subscription->ends_at), false)) : 0;
+    $packageName = $subscription->package_name_ar ?? $subscription->package?->name ?? $subscription->academicPackage?->name ?? '-';
     $source = $subscription->purchase_source?->value ?? ($subscription->created_by ? 'admin' : 'student');
 @endphp
 
@@ -68,6 +69,18 @@
         {{-- Action Buttons (directly visible) --}}
         @if($isAdmin)
             <div class="flex flex-wrap gap-2">
+                {{-- View Circle/Lesson --}}
+                @if($type === 'quran' && $subscription->education_unit_id)
+                    @php
+                        $circleRoute = ($subscription->subscription_type ?? 'individual') === 'individual'
+                            ? route('manage.individual-circles.show', ['subdomain' => $subdomain, 'circle' => $subscription->education_unit_id])
+                            : route('manage.group-circles.show', ['subdomain' => $subdomain, 'circle' => $subscription->education_unit_id]);
+                    @endphp
+                    <a href="{{ $circleRoute }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 cursor-pointer"><i class="ri-eye-line"></i>{{ __('supervisor.subscriptions.view_circle') }}</a>
+                @elseif($type === 'academic')
+                    <a href="{{ route('manage.academic-lessons.show', ['subdomain' => $subdomain, 'subscription' => $subscription->id]) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 cursor-pointer"><i class="ri-eye-line"></i>{{ __('supervisor.subscriptions.view_lesson') }}</a>
+                @endif
+
                 @if($subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE)
                     <form id="show-pause-form" method="POST" action="{{ route('manage.subscriptions.pause', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">@csrf</form>
                     <button onclick="window.confirmAction({title:@js(__('supervisor.subscriptions.action_pause')),message:@js(__('supervisor.subscriptions.confirm_pause')),confirmText:@js(__('supervisor.subscriptions.action_pause')),isDangerous:false,icon:'ri-pause-circle-line',onConfirm:()=>document.getElementById('show-pause-form').submit()})" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600 cursor-pointer"><i class="ri-pause-circle-line"></i>{{ __('supervisor.subscriptions.action_pause') }}</button>
@@ -137,7 +150,7 @@
                 {{-- Package --}}
                 <div>
                     <div class="text-xs text-gray-500 mb-0.5">{{ __('supervisor.subscriptions.detail_package') }}</div>
-                    <div class="font-semibold text-gray-900">{{ $subscription->package_name_ar ?? '-' }}</div>
+                    <div class="font-semibold text-gray-900">{{ $packageName }}</div>
                     <div class="text-xs text-gray-500">{{ $subscription->sessions_per_month ?? '-' }} {{ __('subscriptions.sessions_per_month') }} &middot; {{ $subscription->session_duration_minutes ?? '-' }} {{ __('supervisor.subscriptions.minutes') }}</div>
                 </div>
 
@@ -210,9 +223,6 @@
             @if($subscription->admin_notes)
                 <div class="flex items-start gap-2 text-gray-600"><i class="ri-sticky-note-line mt-0.5"></i><span>{{ $subscription->admin_notes }}</span></div>
             @endif
-            @if($subscription->last_session_at)
-                <div class="flex items-center gap-2 text-gray-600"><i class="ri-time-line"></i>{{ __('supervisor.subscriptions.last_session') }}: {{ toAcademyTimezone($subscription->last_session_at)->format('d/m/Y H:i') }}</div>
-            @endif
         </div>
     </div>
 
@@ -272,7 +282,7 @@
 
                         {{-- Session Info --}}
                         <div class="flex-1 min-w-0">
-                            <div class="text-sm font-medium text-gray-900 truncate">{{ $session->session_code ?? '#'.$session->id }}</div>
+                            <div class="text-sm font-medium text-gray-900 truncate">{{ $session->title ?? $session->name ?? $session->session_code ?? '#'.$session->id }}</div>
                             <div class="text-xs text-gray-500">{{ $session->session_duration_minutes ?? $subscription->session_duration_minutes ?? '-' }} {{ __('supervisor.subscriptions.minutes') }}</div>
                         </div>
 

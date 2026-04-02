@@ -1240,6 +1240,8 @@ return [
         'no_sessions_title' => 'لا توجد جلسات',
         'no_sessions' => 'لم يتم إنشاء أي جلسات لهذا الاشتراك بعد.',
         'no_sessions_current_cycle' => 'لا توجد جلسات في الدورة الحالية.',
+        'view_circle' => 'عرض الحلقة',
+        'view_lesson' => 'عرض الدرس',
     ],
 
     'payments' => [
