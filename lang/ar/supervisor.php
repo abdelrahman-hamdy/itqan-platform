@@ -1242,6 +1242,7 @@ return [
         'no_sessions_current_cycle' => 'لا توجد جلسات في الدورة الحالية.',
         'view_circle' => 'عرض الحلقة',
         'view_lesson' => 'عرض الدرس',
+        'no_circle_linked' => 'لا توجد حلقة مرتبطة',
     ],
 
     'payments' => [

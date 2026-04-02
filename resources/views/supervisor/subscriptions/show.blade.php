@@ -70,13 +70,17 @@
         @if($isAdmin)
             <div class="flex flex-wrap gap-2">
                 {{-- View Circle/Lesson --}}
-                @if($type === 'quran' && $subscription->education_unit_id)
-                    @php
-                        $circleRoute = ($subscription->subscription_type ?? 'individual') === 'individual'
-                            ? route('manage.individual-circles.show', ['subdomain' => $subdomain, 'circle' => $subscription->education_unit_id])
-                            : route('manage.group-circles.show', ['subdomain' => $subdomain, 'circle' => $subscription->education_unit_id]);
-                    @endphp
-                    <a href="{{ $circleRoute }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 cursor-pointer"><i class="ri-eye-line"></i>{{ __('supervisor.subscriptions.view_circle') }}</a>
+                @if($type === 'quran')
+                    @if($subscription->education_unit_id)
+                        @php
+                            $circleRoute = ($subscription->subscription_type ?? 'individual') === 'individual'
+                                ? route('manage.individual-circles.show', ['subdomain' => $subdomain, 'circle' => $subscription->education_unit_id])
+                                : route('manage.group-circles.show', ['subdomain' => $subdomain, 'circle' => $subscription->education_unit_id]);
+                        @endphp
+                        <a href="{{ $circleRoute }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 cursor-pointer"><i class="ri-eye-line"></i>{{ __('supervisor.subscriptions.view_circle') }}</a>
+                    @else
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 text-gray-400 rounded-lg text-sm cursor-default"><i class="ri-link-unlink"></i>{{ __('supervisor.subscriptions.no_circle_linked') }}</span>
+                    @endif
                 @elseif($type === 'academic')
                     <a href="{{ route('manage.academic-lessons.show', ['subdomain' => $subdomain, 'subscription' => $subscription->id]) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 cursor-pointer"><i class="ri-eye-line"></i>{{ __('supervisor.subscriptions.view_lesson') }}</a>
                 @endif

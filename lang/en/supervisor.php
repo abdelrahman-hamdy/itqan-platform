@@ -1242,6 +1242,7 @@ return [
         'no_sessions_current_cycle' => 'No sessions in the current billing cycle.',
         'view_circle' => 'View Circle',
         'view_lesson' => 'View Lesson',
+        'no_circle_linked' => 'No circle linked',
     ],
 
     'payments' => [
