@@ -444,45 +444,28 @@
 
                                         {{-- Confirm Payment --}}
                                         @if(in_array($sub['model']->payment_status, [\App\Enums\SubscriptionPaymentStatus::PENDING, \App\Enums\SubscriptionPaymentStatus::FAILED]))
-                                            <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}"
-                                               class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+                                            <button type="button"
+                                                onclick="document.getElementById('confirm-payment-modal-{{ $sub['id'] }}').classList.remove('hidden')"
+                                                class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
                                                 <i class="ri-check-double-line"></i>{{ __('supervisor.subscriptions.action_confirm_payment') }}
-                                            </a>
+                                            </button>
                                         @endif
 
                                         {{-- Renew --}}
                                         @if($sub['model']->canRenew() || $sub['model']->is_sessions_exhausted)
-                                            <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}"
-                                               class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                                            <button type="button"
+                                                onclick="document.getElementById('renew-modal-{{ $sub['id'] }}').classList.remove('hidden')"
+                                                class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
                                                 <i class="ri-refresh-line"></i>{{ __('supervisor.subscriptions.action_renew') }}
-                                            </a>
+                                            </button>
                                         @endif
 
                                         {{-- Resubscribe --}}
                                         @if(in_array($sub['status'], [\App\Enums\SessionSubscriptionStatus::CANCELLED, \App\Enums\SessionSubscriptionStatus::EXPIRED]))
-                                            <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}"
-                                               class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors">
-                                                <i class="ri-arrow-go-back-line"></i>{{ __('supervisor.subscriptions.action_resubscribe') }}
-                                            </a>
-                                        @endif
-
-                                        {{-- Cancel Pending --}}
-                                        @if($sub['model']->isPending())
-                                            <form id="cancel-pending-form-{{ $sub['id'] }}" method="POST"
-                                                  action="{{ route('manage.subscriptions.cancel-pending', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">
-                                                @csrf
-                                            </form>
                                             <button type="button"
-                                                onclick="window.confirmAction({
-                                                    title: @js(__('supervisor.subscriptions.action_cancel_pending')),
-                                                    message: @js(__('supervisor.subscriptions.confirm_cancel_pending')),
-                                                    confirmText: @js(__('supervisor.subscriptions.action_cancel_pending')),
-                                                    isDangerous: true,
-                                                    icon: 'ri-close-circle-line',
-                                                    onConfirm: () => document.getElementById('cancel-pending-form-{{ $sub['id'] }}').submit()
-                                                })"
-                                                class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors">
-                                                <i class="ri-close-circle-line"></i>{{ __('supervisor.subscriptions.action_cancel_pending') }}
+                                                onclick="document.getElementById('resubscribe-modal-{{ $sub['id'] }}').classList.remove('hidden')"
+                                                class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors">
+                                                <i class="ri-arrow-go-back-line"></i>{{ __('supervisor.subscriptions.action_resubscribe') }}
                                             </button>
                                         @endif
 
@@ -542,6 +525,103 @@
                                             class="cursor-pointer inline-flex items-center justify-center min-h-[48px] md:min-h-[44px] px-6 py-3 md:py-2.5 text-base md:text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-all shadow-md">
                                             {{ __('supervisor.subscriptions.action_extend') }}
                                         </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Confirm Payment Modal --}}
+                    @if($isAdmin && in_array($sub['model']->payment_status, [\App\Enums\SubscriptionPaymentStatus::PENDING, \App\Enums\SubscriptionPaymentStatus::FAILED]))
+                        <div id="confirm-payment-modal-{{ $sub['id'] }}" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
+                            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
+                            <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+                                <div class="relative bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+                                    <div class="p-6 pt-8 md:pt-6">
+                                        <div class="mx-auto flex items-center justify-center w-14 h-14 rounded-full bg-emerald-100 mb-4">
+                                            <i class="ri-check-double-line text-2xl text-emerald-600"></i>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-center text-gray-900 mb-2">{{ __('supervisor.subscriptions.confirm_payment_title') }}</h3>
+                                        <form method="POST" action="{{ route('manage.subscriptions.confirm-payment', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}" id="confirm-payment-form-{{ $sub['id'] }}">
+                                            @csrf
+                                            <input type="text" name="payment_reference" class="w-full rounded-lg border-gray-300 text-sm" placeholder="{{ __('supervisor.subscriptions.payment_reference_placeholder') }}">
+                                        </form>
+                                    </div>
+                                    <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">
+                                        <button type="button" onclick="this.closest('[id^=confirm-payment-modal]').classList.add('hidden')" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl">{{ __('common.cancel') }}</button>
+                                        <button type="button" onclick="document.getElementById('confirm-payment-form-{{ $sub['id'] }}').submit()" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md">{{ __('supervisor.subscriptions.action_confirm_payment') }}</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Renew Modal --}}
+                    @if($isAdmin && ($sub['model']->canRenew() || $sub['model']->is_sessions_exhausted))
+                        <div id="renew-modal-{{ $sub['id'] }}" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
+                            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
+                            <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+                                <div class="relative bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+                                    <div class="p-6 pt-8 md:pt-6">
+                                        <div class="mx-auto flex items-center justify-center w-14 h-14 rounded-full bg-indigo-100 mb-4">
+                                            <i class="ri-refresh-line text-2xl text-indigo-600"></i>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-center text-gray-900 mb-2">{{ __('supervisor.subscriptions.renew_title') }}</h3>
+                                        <form method="POST" action="{{ route('manage.subscriptions.renew', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}" id="renew-form-{{ $sub['id'] }}">
+                                            @csrf
+                                            <div class="mb-3">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('supervisor.subscriptions.billing_cycle_label') }}</label>
+                                                <div class="flex gap-2">
+                                                    @foreach(['monthly' => __('enums.billing_cycle.monthly'), 'quarterly' => __('enums.billing_cycle.quarterly'), 'yearly' => __('enums.billing_cycle.yearly')] as $val => $lbl)
+                                                        <label class="flex-1 cursor-pointer"><input type="radio" name="billing_cycle" value="{{ $val }}" {{ $sub['model']->billing_cycle?->value === $val ? 'checked' : '' }} class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700">{{ $lbl }}</div></label>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                            <div class="flex gap-2">
+                                                <label class="flex-1 cursor-pointer"><input type="radio" name="activate_mode" value="immediate" checked class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-indigo-600 peer-checked:bg-indigo-50">{{ __('supervisor.subscriptions.mode_immediate') }}</div></label>
+                                                <label class="flex-1 cursor-pointer"><input type="radio" name="activate_mode" value="pending" class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-indigo-600 peer-checked:bg-indigo-50">{{ __('supervisor.subscriptions.mode_pending') }}</div></label>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">
+                                        <button type="button" onclick="this.closest('[id^=renew-modal]').classList.add('hidden')" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl">{{ __('common.cancel') }}</button>
+                                        <button type="button" onclick="document.getElementById('renew-form-{{ $sub['id'] }}').submit()" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md">{{ __('supervisor.subscriptions.action_renew') }}</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Resubscribe Modal --}}
+                    @if($isAdmin && in_array($sub['status'], [\App\Enums\SessionSubscriptionStatus::CANCELLED, \App\Enums\SessionSubscriptionStatus::EXPIRED]))
+                        <div id="resubscribe-modal-{{ $sub['id'] }}" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
+                            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
+                            <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+                                <div class="relative bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+                                    <div class="p-6 pt-8 md:pt-6">
+                                        <div class="mx-auto flex items-center justify-center w-14 h-14 rounded-full bg-teal-100 mb-4">
+                                            <i class="ri-arrow-go-back-line text-2xl text-teal-600"></i>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-center text-gray-900 mb-2">{{ __('supervisor.subscriptions.resubscribe_title') }}</h3>
+                                        <form method="POST" action="{{ route('manage.subscriptions.resubscribe', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}" id="resubscribe-form-{{ $sub['id'] }}">
+                                            @csrf
+                                            <div class="mb-3">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('supervisor.subscriptions.billing_cycle_label') }}</label>
+                                                <div class="flex gap-2">
+                                                    @foreach(['monthly' => __('enums.billing_cycle.monthly'), 'quarterly' => __('enums.billing_cycle.quarterly'), 'yearly' => __('enums.billing_cycle.yearly')] as $val => $lbl)
+                                                        <label class="flex-1 cursor-pointer"><input type="radio" name="billing_cycle" value="{{ $val }}" {{ $sub['model']->billing_cycle?->value === $val ? 'checked' : '' }} class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-teal-600 peer-checked:bg-teal-50 peer-checked:text-teal-700">{{ $lbl }}</div></label>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                            <div class="flex gap-2">
+                                                <label class="flex-1 cursor-pointer"><input type="radio" name="activate_mode" value="immediate" checked class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-teal-600 peer-checked:bg-teal-50">{{ __('supervisor.subscriptions.mode_immediate') }}</div></label>
+                                                <label class="flex-1 cursor-pointer"><input type="radio" name="activate_mode" value="pending" class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-teal-600 peer-checked:bg-teal-50">{{ __('supervisor.subscriptions.mode_pending') }}</div></label>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">
+                                        <button type="button" onclick="this.closest('[id^=resubscribe-modal]').classList.add('hidden')" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl">{{ __('common.cancel') }}</button>
+                                        <button type="button" onclick="document.getElementById('resubscribe-form-{{ $sub['id'] }}').submit()" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-md">{{ __('supervisor.subscriptions.action_resubscribe') }}</button>
                                     </div>
                                 </div>
                             </div>

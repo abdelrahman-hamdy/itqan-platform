@@ -1211,6 +1211,7 @@ return [
         'sessions_exhausted_badge' => 'Sessions Completed',
         'payment_reference_label' => 'Payment Reference (optional)',
         'payment_reference_placeholder' => 'Receipt number or transfer reference',
+        'cancel_success' => 'Subscription cancelled successfully',
         'action_cancel_pending' => 'Cancel Pending',
         'confirm_cancel_pending' => 'Are you sure you want to cancel this pending subscription?',
         'cancel_pending_success' => 'Pending subscription cancelled successfully',

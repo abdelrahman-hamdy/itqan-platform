@@ -300,7 +300,36 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
     public function cancel(Request $request, $subdomain, string $type, $id): RedirectResponse
     {
-        return $this->changeStatus($subdomain, $type, $id, SessionSubscriptionStatus::CANCELLED);
+        if (! $this->isAdminUser()) {
+            abort(403);
+        }
+
+        $sub = $this->resolveSubscription($type, $id);
+        $this->ensureSubscriptionInScope($sub, $type);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($sub) {
+            if ($sub->isPending()) {
+                // Pending: cancel subscription + associated pending payments
+                $sub->cancelAsDuplicateOrExpired(config('subscriptions.cancellation_reasons.admin'));
+                $sub->payments()->where('status', 'pending')->update(['status' => 'cancelled']);
+            } else {
+                // Active/Paused: cancel + suspend future sessions
+                $sub->update([
+                    'status' => SessionSubscriptionStatus::CANCELLED,
+                    'cancelled_at' => now(),
+                    'auto_renew' => false,
+                ]);
+                // Suspend future sessions (recoverable)
+                if (method_exists($sub, 'sessions')) {
+                    $sub->sessions()
+                        ->whereIn('status', [\App\Enums\SessionStatus::SCHEDULED->value, \App\Enums\SessionStatus::UNSCHEDULED->value, \App\Enums\SessionStatus::READY->value])
+                        ->where(fn ($q) => $q->where('scheduled_at', '>', now())->orWhereNull('scheduled_at'))
+                        ->update(['status' => \App\Enums\SessionStatus::SUSPENDED->value]);
+                }
+            }
+        });
+
+        return redirect()->back()->with('success', __('supervisor.subscriptions.cancel_success'));
     }
 
     // ========================================================================
@@ -435,28 +464,6 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
     }
 
     /**
-     * Cancel a pending subscription and its payments.
-     */
-    public function cancelPending(Request $request, $subdomain, string $type, int $subscription): RedirectResponse
-    {
-        if (! $this->isAdminUser()) {
-            abort(403);
-        }
-
-        $sub = $this->resolveSubscription($type, $subscription);
-        $this->ensureSubscriptionInScope($sub, $type);
-
-        if (! $sub->isPending()) {
-            return redirect()->back()->with('error', __('supervisor.subscriptions.not_pending'));
-        }
-
-        $sub->cancelAsDuplicateOrExpired(config('subscriptions.cancellation_reasons.admin'));
-        $sub->payments()->where('status', 'pending')->update(['status' => 'cancelled']);
-
-        return redirect()->back()->with('success', __('supervisor.subscriptions.cancel_pending_success'));
-    }
-
-    /**
      * Permanently delete a subscription and all linked data.
      */
     public function destroy(Request $request, $subdomain, string $type, int $subscription): RedirectResponse
@@ -502,44 +509,5 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
             return redirect()->back()->with('error', __('subscriptions.generic_error'));
         }
-    }
-
-    /**
-     * Create a circle for a Quran individual subscription.
-     */
-    public function createCircle(Request $request, $subdomain, string $type, int $subscription): RedirectResponse
-    {
-        if (! $this->isAdminUser()) {
-            abort(403);
-        }
-
-        $sub = $this->resolveSubscription($type, $subscription);
-        $this->ensureSubscriptionInScope($sub, $type);
-
-        if (! ($sub instanceof \App\Models\QuranSubscription) || $sub->subscription_type !== 'individual' || $sub->education_unit_id) {
-            return redirect()->back()->with('error', __('supervisor.subscriptions.circle_already_exists'));
-        }
-
-        $request->validate([
-            'specialization' => 'required|in:memorization,recitation,tajweed,complete',
-            'memorization_level' => 'required|string',
-        ]);
-
-        $circle = \App\Models\QuranIndividualCircle::create([
-            'academy_id' => $sub->academy_id,
-            'quran_teacher_id' => $sub->quran_teacher_id,
-            'student_id' => $sub->student_id,
-            'subscription_id' => $sub->id,
-            'specialization' => $request->specialization,
-            'memorization_level' => $request->memorization_level,
-            'total_sessions' => $sub->total_sessions,
-            'sessions_remaining' => $sub->sessions_remaining,
-            'default_duration_minutes' => $sub->session_duration_minutes ?? 60,
-            'is_active' => $sub->isActive(),
-        ]);
-
-        $sub->linkToEducationUnit($circle);
-
-        return redirect()->back()->with('success', __('supervisor.subscriptions.circle_created'));
     }
 }

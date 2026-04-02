@@ -239,34 +239,6 @@
                         </button>
                     @endif
 
-                    {{-- Cancel Pending (only when PENDING) --}}
-                    @if($subscription->isPending())
-                        <form id="show-cancel-pending-form" method="POST" action="{{ route('manage.subscriptions.cancel-pending', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
-                            @csrf
-                        </form>
-                        <button type="button"
-                            onclick="window.confirmAction({
-                                title: @js(__('supervisor.subscriptions.action_cancel_pending')),
-                                message: @js(__('supervisor.subscriptions.confirm_cancel_pending')),
-                                confirmText: @js(__('supervisor.subscriptions.action_cancel_pending')),
-                                isDangerous: true,
-                                icon: 'ri-close-circle-line',
-                                onConfirm: () => document.getElementById('show-cancel-pending-form').submit()
-                            })"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors cursor-pointer">
-                            <i class="ri-close-circle-line"></i>{{ __('supervisor.subscriptions.action_cancel_pending') }}
-                        </button>
-                    @endif
-
-                    {{-- Create Circle (Quran individual without circle) --}}
-                    @if($type === 'quran' && ($subscription->subscription_type ?? '') === 'individual' && !$subscription->education_unit_id)
-                        <button type="button"
-                            onclick="document.getElementById('show-create-circle-modal').classList.remove('hidden')"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 transition-colors cursor-pointer">
-                            <i class="ri-add-circle-line"></i>{{ __('supervisor.subscriptions.action_create_circle') }}
-                        </button>
-                    @endif
-
                     {{-- Delete Subscription (admin only, dangerous) --}}
                     <form id="show-delete-form" method="POST" action="{{ route('manage.subscriptions.destroy', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">
                         @csrf
@@ -550,8 +522,7 @@
     </div>
 @endif
 
-{{-- Create Circle Modal (Quran individual only) --}}
-@if(($isAdmin ?? false) && $type === 'quran' && ($subscription->subscription_type ?? '') === 'individual' && !$subscription->education_unit_id)
+@if(false) {{-- Create Circle Modal removed — circles are created automatically --}}
     <div id="show-create-circle-modal" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
         <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">

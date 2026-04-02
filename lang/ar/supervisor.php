@@ -1211,6 +1211,7 @@ return [
         'sessions_exhausted_badge' => 'الجلسات مكتملة',
         'payment_reference_label' => 'مرجع الدفع (اختياري)',
         'payment_reference_placeholder' => 'رقم الإيصال أو مرجع التحويل',
+        'cancel_success' => 'تم إلغاء الاشتراك بنجاح',
         'action_cancel_pending' => 'إلغاء الطلب المعلق',
         'confirm_cancel_pending' => 'هل أنت متأكد من إلغاء طلب الاشتراك المعلق؟',
         'cancel_pending_success' => 'تم إلغاء الطلب المعلق بنجاح',

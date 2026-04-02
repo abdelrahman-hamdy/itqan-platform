@@ -132,9 +132,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/subscriptions/{type}/{subscription}/confirm-payment', [SupervisorSubscriptionsController::class, 'confirmPayment'])->name('subscriptions.confirm-payment')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/renew', [SupervisorSubscriptionsController::class, 'renew'])->name('subscriptions.renew')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/resubscribe', [SupervisorSubscriptionsController::class, 'resubscribe'])->name('subscriptions.resubscribe')->whereIn('type', ['quran', 'academic']);
-        Route::post('/subscriptions/{type}/{subscription}/cancel-pending', [SupervisorSubscriptionsController::class, 'cancelPending'])->name('subscriptions.cancel-pending')->whereIn('type', ['quran', 'academic']);
         Route::delete('/subscriptions/{type}/{subscription}', [SupervisorSubscriptionsController::class, 'destroy'])->name('subscriptions.destroy')->whereIn('type', ['quran', 'academic']);
-        Route::post('/subscriptions/{type}/{subscription}/create-circle', [SupervisorSubscriptionsController::class, 'createCircle'])->name('subscriptions.create-circle')->whereIn('type', ['quran']);
 
         // Payments (admin-only)
         Route::get('/payments', [SupervisorPaymentsController::class, 'index'])->name('payments.index');
