@@ -32,6 +32,7 @@ class SupervisorProfile extends Model
         'can_manage_parents',
         'can_reset_passwords',
         'can_manage_subscriptions',
+        'can_create_subscriptions',
         'can_manage_payments',
         'can_manage_teacher_earnings',
         'can_monitor_sessions',
@@ -43,6 +44,7 @@ class SupervisorProfile extends Model
         'can_manage_parents' => 'boolean',
         'can_reset_passwords' => 'boolean',
         'can_manage_subscriptions' => 'boolean',
+        'can_create_subscriptions' => 'boolean',
         'can_manage_payments' => 'boolean',
         'can_manage_teacher_earnings' => 'boolean',
         'can_monitor_sessions' => 'boolean',
@@ -282,6 +284,11 @@ class SupervisorProfile extends Model
     public function canManageSubscriptions(): bool
     {
         return $this->can_manage_subscriptions ?? false;
+    }
+
+    public function canCreateSubscriptions(): bool
+    {
+        return $this->can_create_subscriptions ?? false;
     }
 
     public function canManagePayments(): bool

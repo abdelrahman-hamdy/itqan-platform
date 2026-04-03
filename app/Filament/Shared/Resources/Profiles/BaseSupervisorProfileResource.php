@@ -264,6 +264,9 @@ abstract class BaseSupervisorProfileResource extends Resource
                         Toggle::make('can_manage_subscriptions')
                             ->label('إدارة الاشتراكات')
                             ->helperText('عرض وتفعيل وإيقاف الاشتراكات'),
+                        Toggle::make('can_create_subscriptions')
+                            ->label('إنشاء اشتراكات جديدة')
+                            ->helperText('إنشاء اشتراكات جديدة للطلاب يدوياً'),
                         Toggle::make('can_manage_payments')
                             ->label('إدارة المدفوعات')
                             ->helperText('عرض المدفوعات وتأكيد الدفع'),

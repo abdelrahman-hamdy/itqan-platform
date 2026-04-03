@@ -24,7 +24,7 @@
             <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.subscriptions.page_title') }}</h1>
             <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.subscriptions.page_subtitle') }}</p>
         </div>
-        @if($isAdmin ?? false)
+        @if($canCreate ?? false)
             <a href="{{ route('manage.subscriptions.create', ['subdomain' => $subdomain]) }}"
                class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors text-sm font-semibold shadow-sm whitespace-nowrap">
                 <i class="ri-add-circle-line text-lg"></i>

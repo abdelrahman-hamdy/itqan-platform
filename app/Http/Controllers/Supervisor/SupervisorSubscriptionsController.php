@@ -165,6 +165,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'totalExtended' => $totalExtended,
             'filteredCount' => $filteredValues->count(),
             'isAdmin' => $isAdmin,
+            'canCreate' => $this->canCreateSubscriptions(),
         ]);
     }
 
