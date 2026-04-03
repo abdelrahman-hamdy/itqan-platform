@@ -381,7 +381,7 @@ trait OptimizedSelectOptions
 
             return QuranCircle::query()
                 ->with('teacher.user')
-                ->where('is_active', true)
+                ->where('status', true)
                 ->when($academyId, function ($query) use ($academyId) {
                     $query->where('academy_id', $academyId);
                 })

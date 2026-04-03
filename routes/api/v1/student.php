@@ -258,6 +258,9 @@ Route::middleware(['api.is.student', 'ability:student:*'])->group(function () {
 
         Route::get('/{id}', [CircleController::class, 'show'])
             ->name('api.v1.student.circles.quran.show');
+
+        Route::post('/{id}/sponsored-enrollment', [CircleController::class, 'requestSponsoredEnrollment'])
+            ->name('api.v1.student.circles.quran.sponsored-enrollment');
     });
 
     // Trial Requests

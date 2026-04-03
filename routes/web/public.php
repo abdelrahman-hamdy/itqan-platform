@@ -185,6 +185,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     // Circle Enrollment (requires authentication - handled in controller)
     Route::post('/quran-circles/{circleId}/enroll', [UnifiedQuranCircleController::class, 'enroll'])->name('quran-circles.enroll');
+    Route::post('/quran-circles/{circleId}/sponsored-enrollment', [UnifiedQuranCircleController::class, 'requestSponsoredEnrollment'])->name('quran-circles.sponsored-enrollment')->middleware('auth');
 
     /*
     |--------------------------------------------------------------------------

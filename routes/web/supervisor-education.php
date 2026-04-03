@@ -98,6 +98,11 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/group-circles', [SupervisorGroupCirclesController::class, 'index'])->name('group-circles.index');
         Route::get('/group-circles/{circle}', [SupervisorGroupCirclesController::class, 'show'])->name('group-circles.show');
         Route::put('/group-circles/{circle}', [SupervisorGroupCirclesController::class, 'update'])->name('group-circles.update');
+        Route::post('/group-circles/{circle}/toggle-status', [SupervisorGroupCirclesController::class, 'toggleStatus'])->name('group-circles.toggle-status');
+        Route::post('/group-circles/{circle}/change-teacher', [SupervisorGroupCirclesController::class, 'changeTeacher'])->name('group-circles.change-teacher');
+        Route::delete('/group-circles/{circle}', [SupervisorGroupCirclesController::class, 'destroy'])->name('group-circles.destroy');
+        Route::post('/group-circles/{circle}/sponsored-requests/{sponsoredRequest}/approve', [SupervisorGroupCirclesController::class, 'approveSponsoredRequest'])->name('group-circles.sponsored-requests.approve');
+        Route::post('/group-circles/{circle}/sponsored-requests/{sponsoredRequest}/reject', [SupervisorGroupCirclesController::class, 'rejectSponsoredRequest'])->name('group-circles.sponsored-requests.reject');
 
         // Individual Circles
         Route::get('/individual-circles', [SupervisorIndividualCirclesController::class, 'index'])->name('individual-circles.index');

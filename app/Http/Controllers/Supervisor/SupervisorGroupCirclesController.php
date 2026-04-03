@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Supervisor;
 
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\DifficultyLevel;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\WeekDays;
 use App\Models\QuranCircle;
+use App\Models\QuranSubscription;
+use App\Models\SponsoredEnrollmentRequest;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -77,13 +81,24 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
             ->orderBy('first_name')
             ->get(['id', 'first_name', 'last_name']);
 
-        return view('supervisor.group-circles.show', compact('circle', 'teacher', 'isAdmin', 'quranTeachers'));
+        $sponsoredRequests = SponsoredEnrollmentRequest::where('circle_id', $circle->id)
+            ->with(['student', 'reviewer'])
+            ->latest()
+            ->get();
+        $pendingSponsoredCount = $sponsoredRequests->where('status', SponsoredEnrollmentRequest::STATUS_PENDING)->count();
+
+        return view('supervisor.group-circles.show', compact(
+            'circle',
+            'teacher',
+            'isAdmin',
+            'quranTeachers',
+            'sponsoredRequests',
+            'pendingSponsoredCount'
+        ));
     }
 
     public function update(Request $request, $subdomain, $circleId): RedirectResponse
     {
-        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-
         $circle = $this->scopedCircleQuery()->findOrFail($circleId);
 
         $weekDayValues = WeekDays::values();
@@ -96,25 +111,26 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
             'specialization' => 'required|in:memorization,recitation,interpretation,arabic_language,complete',
             'memorization_level' => ['required', Rule::in($difficultyValues)],
             'description' => 'nullable|string|max:500',
-            'quran_teacher_id' => ['required', Rule::in($quranTeacherIds)],
             'max_students' => 'required|integer|min:1|max:20',
             'monthly_fee' => 'required|integer|min:0',
             'monthly_sessions_count' => 'required|in:4,8,12,16,20',
             'schedule_days' => 'nullable|array',
             'schedule_days.*' => Rule::in($weekDayValues),
             'schedule_time' => 'nullable|string',
-            'status' => 'required|in:0,1',
             'recording_enabled' => 'required|in:0,1',
             'show_recording_to_teacher' => 'required|in:0,1',
             'show_recording_to_student' => 'required|in:0,1',
+            'allow_sponsored_requests' => 'required|in:0,1',
+            'is_enrolled_only' => 'required|in:0,1',
             'supervisor_notes' => 'nullable|string|max:2000',
             'admin_notes' => 'nullable|string|max:1000',
         ]);
 
-        $validated['status'] = (bool) $validated['status'];
         $validated['recording_enabled'] = (bool) $validated['recording_enabled'];
         $validated['show_recording_to_teacher'] = (bool) $validated['show_recording_to_teacher'];
         $validated['show_recording_to_student'] = (bool) $validated['show_recording_to_student'];
+        $validated['allow_sponsored_requests'] = (bool) $validated['allow_sponsored_requests'];
+        $validated['is_enrolled_only'] = (bool) $validated['is_enrolled_only'];
 
         if ($this->isAdminUser()) {
             unset($validated['supervisor_notes']);
@@ -125,6 +141,101 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
         $circle->update($validated);
 
         return redirect()->back()->with('success', __('supervisor.common.updated_successfully'));
+    }
+
+    public function toggleStatus($subdomain, $circleId): RedirectResponse
+    {
+        $circle = $this->scopedCircleQuery()->findOrFail($circleId);
+
+        $circle->update(['status' => ! $circle->status]);
+
+        return redirect()->back()->with('success', __('supervisor.group_circles.status_updated'));
+    }
+
+    public function changeTeacher(Request $request, $subdomain, $circleId): RedirectResponse
+    {
+        $circle = $this->scopedCircleQuery()->findOrFail($circleId);
+
+        $request->validate([
+            'quran_teacher_id' => ['required', Rule::in($this->getAssignedQuranTeacherIds())],
+        ]);
+
+        $circle->update(['quran_teacher_id' => $request->quran_teacher_id]);
+
+        return redirect()->back()->with('success', __('supervisor.group_circles.teacher_changed'));
+    }
+
+    public function destroy($subdomain, $circleId): RedirectResponse
+    {
+        if (! $this->isAdminUser()) {
+            abort(403);
+        }
+
+        $circle = $this->scopedCircleQuery()->findOrFail($circleId);
+        $circle->delete();
+
+        return redirect()->route('manage.group-circles.index', ['subdomain' => $subdomain])
+            ->with('success', __('supervisor.group_circles.circle_deleted'));
+    }
+
+    public function approveSponsoredRequest($subdomain, $circleId, $sponsoredRequestId): RedirectResponse
+    {
+        $circle = $this->scopedCircleQuery()->findOrFail($circleId);
+
+        $sponsoredRequest = SponsoredEnrollmentRequest::where('circle_id', $circle->id)
+            ->where('id', $sponsoredRequestId)
+            ->where('status', SponsoredEnrollmentRequest::STATUS_PENDING)
+            ->firstOrFail();
+
+        DB::transaction(function () use ($circle, $sponsoredRequest) {
+            $sponsoredRequest->update([
+                'status' => SponsoredEnrollmentRequest::STATUS_APPROVED,
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
+            ]);
+
+            $circle->enrollStudent(User::findOrFail($sponsoredRequest->student_id));
+
+            QuranSubscription::create([
+                'academy_id' => $circle->academy_id,
+                'student_id' => $sponsoredRequest->student_id,
+                'education_unit_type' => QuranCircle::class,
+                'education_unit_id' => $circle->id,
+                'subscription_type' => 'group',
+                'status' => SessionSubscriptionStatus::ACTIVE,
+                'payment_status' => 'paid',
+                'total_price' => 0,
+                'is_sponsored' => true,
+                'sponsorship_reason' => __('supervisor.group_circles.sponsored_via_request'),
+                'start_date' => now(),
+                'end_date' => now()->addMonth(),
+            ]);
+        });
+
+        return redirect()->back()->with('success', __('supervisor.group_circles.request_approved'));
+    }
+
+    public function rejectSponsoredRequest(Request $request, $subdomain, $circleId, $sponsoredRequestId): RedirectResponse
+    {
+        $circle = $this->scopedCircleQuery()->findOrFail($circleId);
+
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ]);
+
+        $sponsoredRequest = SponsoredEnrollmentRequest::where('circle_id', $circle->id)
+            ->where('id', $sponsoredRequestId)
+            ->where('status', SponsoredEnrollmentRequest::STATUS_PENDING)
+            ->firstOrFail();
+
+        $sponsoredRequest->update([
+            'status' => SponsoredEnrollmentRequest::STATUS_REJECTED,
+            'reviewed_by' => auth()->id(),
+            'reviewed_at' => now(),
+            'rejection_reason' => $request->rejection_reason,
+        ]);
+
+        return redirect()->back()->with('success', __('supervisor.group_circles.request_rejected'));
     }
 
     /**

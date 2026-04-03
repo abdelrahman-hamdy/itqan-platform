@@ -36,6 +36,9 @@
                     <x-tabs.tab id="sessions" :label="__('teacher.circles.tabs.sessions')" icon="ri-calendar-line" :badge="$allSessions->count()" />
                     <x-tabs.tab id="students" :label="__('teacher.circles.tabs.students')" icon="ri-user-3-line" :badge="$totalStudents" />
                     <x-tabs.tab id="quizzes" :label="__('teacher.circles.tabs.quizzes')" icon="ri-file-list-3-line" />
+                    @if($circle->allow_sponsored_requests)
+                        <x-tabs.tab id="sponsored" :label="__('supervisor.group_circles.sponsored_requests_tab')" icon="ri-heart-line" :badge="$pendingSponsoredCount" />
+                    @endif
                     <x-tabs.tab id="certificates" :label="__('teacher.circles.tabs.certificates')" icon="ri-award-line" :badge="$studentsWithCertificates" />
                 </x-slot>
 
@@ -51,6 +54,110 @@
                     <x-tabs.panel id="quizzes">
                         <livewire:teacher-quizzes-widget :assignable="$circle" />
                     </x-tabs.panel>
+
+                    {{-- Sponsored Requests Tab --}}
+                    @if($circle->allow_sponsored_requests)
+                    <x-tabs.panel id="sponsored">
+                        @if($sponsoredRequests->count() > 0)
+                            <div class="space-y-3">
+                                @foreach($sponsoredRequests as $req)
+                                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                                        <div class="flex items-center justify-between gap-3 flex-wrap">
+                                            <div class="flex items-center gap-3">
+                                                <x-avatar :user="$req->student" size="sm" user-type="student" />
+                                                <div>
+                                                    <p class="font-medium text-gray-900 text-sm">{{ $req->student->name }}</p>
+                                                    <p class="text-xs text-gray-500">{{ __('supervisor.group_circles.requested_at') }}: {{ $req->created_at->format('Y/m/d') }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                @if($req->status === \App\Models\SponsoredEnrollmentRequest::STATUS_PENDING)
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                        {{ __('supervisor.group_circles.request_pending') }}
+                                                    </span>
+                                                @elseif($req->status === \App\Models\SponsoredEnrollmentRequest::STATUS_APPROVED)
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        {{ __('supervisor.group_circles.request_approved_status') }}
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                        {{ __('supervisor.group_circles.request_rejected_status') }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        @if($req->status === \App\Models\SponsoredEnrollmentRequest::STATUS_PENDING)
+                                            <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                                                <form method="POST" action="{{ route('manage.group-circles.sponsored-requests.approve', ['subdomain' => $subdomain, 'circle' => $circle->id, 'sponsoredRequest' => $req->id]) }}">
+                                                    @csrf
+                                                    <button type="button"
+                                                        onclick="window.confirmAction({
+                                                            title: @js(__('supervisor.group_circles.approve_request')),
+                                                            message: @js(__('supervisor.group_circles.confirm_approve_sponsored')),
+                                                            confirmText: @js(__('supervisor.group_circles.approve_request')),
+                                                            isDangerous: false,
+                                                            icon: 'ri-check-line',
+                                                            onConfirm: () => this.closest('form').submit()
+                                                        })"
+                                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors cursor-pointer">
+                                                        <i class="ri-check-line"></i>
+                                                        {{ __('supervisor.group_circles.approve_request') }}
+                                                    </button>
+                                                </form>
+
+                                                <button type="button"
+                                                    @click="$dispatch('open-modal-reject-sponsored-{{ $req->id }}')"
+                                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors cursor-pointer">
+                                                    <i class="ri-close-line"></i>
+                                                    {{ __('supervisor.group_circles.reject_request') }}
+                                                </button>
+
+                                                <x-responsive.modal id="reject-sponsored-{{ $req->id }}" :title="__('supervisor.group_circles.reject_request')" size="sm">
+                                                    <form method="POST" action="{{ route('manage.group-circles.sponsored-requests.reject', ['subdomain' => $subdomain, 'circle' => $circle->id, 'sponsoredRequest' => $req->id]) }}">
+                                                        @csrf
+                                                        <div class="space-y-4">
+                                                            <div>
+                                                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.rejection_reason') }}</label>
+                                                                <textarea name="rejection_reason" rows="3" required
+                                                                          placeholder="{{ __('supervisor.group_circles.rejection_reason_placeholder') }}"
+                                                                          class="w-full rounded-lg border-gray-300 text-sm focus:border-red-500 focus:ring-red-500"></textarea>
+                                                            </div>
+                                                        </div>
+                                                        <x-slot:footer>
+                                                            <div class="flex justify-end gap-3">
+                                                                <button type="submit"
+                                                                        class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer">
+                                                                    {{ __('supervisor.group_circles.reject_request') }}
+                                                                </button>
+                                                            </div>
+                                                        </x-slot:footer>
+                                                    </form>
+                                                </x-responsive.modal>
+                                            </div>
+                                        @endif
+
+                                        @if($req->status === \App\Models\SponsoredEnrollmentRequest::STATUS_REJECTED && $req->rejection_reason)
+                                            <div class="mt-3 pt-3 border-t border-gray-100">
+                                                <p class="text-xs text-red-600"><span class="font-medium">{{ __('supervisor.group_circles.rejection_reason') }}:</span> {{ $req->rejection_reason }}</p>
+                                                @if($req->reviewer)
+                                                    <p class="text-xs text-gray-500 mt-1">{{ __('supervisor.group_circles.reviewed_by_label') }}: {{ $req->reviewer->name }} — {{ $req->reviewed_at->format('Y/m/d') }}</p>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-8 md:py-12">
+                                <div class="w-16 h-16 md:w-20 md:h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                                    <i class="ri-heart-line text-2xl md:text-3xl text-pink-500"></i>
+                                </div>
+                                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-1 md:mb-2">{{ __('supervisor.group_circles.no_sponsored_requests') }}</h3>
+                            </div>
+                        @endif
+                    </x-tabs.panel>
+                    @endif
 
                     <x-tabs.panel id="certificates">
                         @php
@@ -121,7 +228,90 @@
             <div class="space-y-4 md:space-y-6">
                 <x-circle.info-sidebar :circle="$circle" view-type="supervisor" />
 
+                {{-- Circle Actions Widget --}}
                 @if(isset($isAdmin) || isset($quranTeachers))
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
+                    <h3 class="text-sm font-bold text-gray-900 mb-4">{{ __('supervisor.group_circles.circle_actions') }}</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {{-- Toggle Status --}}
+                        <form id="toggle-status-form" method="POST"
+                              action="{{ route('manage.group-circles.toggle-status', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
+                            @csrf
+                        </form>
+                        <button type="button"
+                            onclick="window.confirmAction({
+                                title: @js($circle->status ? __('supervisor.group_circles.deactivate') : __('supervisor.group_circles.activate')),
+                                message: @js($circle->status ? __('supervisor.group_circles.confirm_deactivate') : __('supervisor.group_circles.confirm_activate')),
+                                confirmText: @js($circle->status ? __('supervisor.group_circles.deactivate') : __('supervisor.group_circles.activate')),
+                                isDangerous: {{ $circle->status ? 'true' : 'false' }},
+                                icon: '{{ $circle->status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}',
+                                onConfirm: () => document.getElementById('toggle-status-form').submit()
+                            })"
+                            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg transition-colors cursor-pointer
+                                {{ $circle->status ? 'bg-orange-50 text-orange-700 hover:bg-orange-100' : 'bg-green-50 text-green-700 hover:bg-green-100' }}">
+                            <i class="{{ $circle->status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}"></i>
+                            {{ $circle->status ? __('supervisor.group_circles.deactivate') : __('supervisor.group_circles.activate') }}
+                        </button>
+
+                        {{-- Change Teacher --}}
+                        <button type="button"
+                            @click="$dispatch('open-modal-change-teacher')"
+                            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer">
+                            <i class="ri-user-settings-line"></i>
+                            {{ $circle->quran_teacher_id ? __('supervisor.group_circles.change_teacher') : __('supervisor.group_circles.assign_teacher') }}
+                        </button>
+
+                        {{-- Delete (admin only) --}}
+                        @if($isAdmin)
+                            <form id="delete-circle-form" method="POST"
+                                  action="{{ route('manage.group-circles.destroy', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
+                                @csrf
+                                @method('DELETE')
+                            </form>
+                            <button type="button"
+                                onclick="window.confirmAction({
+                                    title: @js(__('supervisor.group_circles.delete_circle')),
+                                    message: @js(__('supervisor.group_circles.confirm_delete')),
+                                    confirmText: @js(__('supervisor.group_circles.delete_circle')),
+                                    isDangerous: true,
+                                    icon: 'ri-delete-bin-line',
+                                    onConfirm: () => document.getElementById('delete-circle-form').submit()
+                                })"
+                                class="inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors cursor-pointer">
+                                <i class="ri-delete-bin-line"></i>
+                                {{ __('supervisor.group_circles.delete_circle') }}
+                            </button>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Change Teacher Modal --}}
+                <x-responsive.modal id="change-teacher" :title="__('supervisor.group_circles.change_teacher')" size="sm">
+                    <form method="POST" action="{{ route('manage.group-circles.change-teacher', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
+                        @csrf
+                        <div class="space-y-4">
+                            <p class="text-sm text-gray-600">{{ __('supervisor.group_circles.select_teacher') }}</p>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.quran_teacher') }}</label>
+                                <select name="quran_teacher_id" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                    @foreach($quranTeachers as $t)
+                                        <option value="{{ $t->id }}" {{ $circle->quran_teacher_id == $t->id ? 'selected' : '' }}>{{ $t->first_name }} {{ $t->last_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <x-slot:footer>
+                            <div class="flex justify-end gap-3">
+                                <button type="submit"
+                                        class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer">
+                                    {{ __('supervisor.group_circles.change_teacher') }}
+                                </button>
+                            </div>
+                        </x-slot:footer>
+                    </form>
+                </x-responsive.modal>
+
+                {{-- Edit Details Widget --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
                     <h3 class="text-sm font-bold text-gray-900 mb-4">{{ __('supervisor.common.edit_details') }}</h3>
                     <form method="POST" action="{{ route('manage.group-circles.update', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
@@ -182,14 +372,6 @@
                             <div class="border-t border-gray-100 pt-4">
                                 <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('supervisor.group_circles.circle_settings') }}</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div class="md:col-span-2">
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.quran_teacher') }}</label>
-                                        <select name="quran_teacher_id" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
-                                            @foreach($quranTeachers as $t)
-                                                <option value="{{ $t->id }}" {{ old('quran_teacher_id', $circle->quran_teacher_id) == $t->id ? 'selected' : '' }}>{{ $t->first_name }} {{ $t->last_name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.max_students') }}</label>
                                         <input type="number" name="max_students" value="{{ old('max_students', $circle->max_students) }}" min="1" max="20"
@@ -208,6 +390,24 @@
                                             @endforeach
                                         </select>
                                     </div>
+                                </div>
+                                <div class="mt-3 space-y-2">
+                                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                                        <input type="hidden" name="allow_sponsored_requests" value="0">
+                                        <input type="checkbox" name="allow_sponsored_requests" value="1"
+                                               {{ old('allow_sponsored_requests', $circle->allow_sponsored_requests) ? 'checked' : '' }}
+                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                                        <span class="text-sm text-gray-700">{{ __('supervisor.group_circles.allow_sponsored_requests') }}</span>
+                                    </label>
+                                    <p class="text-xs text-gray-500 ms-6">{{ __('supervisor.group_circles.allow_sponsored_requests_help') }}</p>
+                                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                                        <input type="hidden" name="is_enrolled_only" value="0">
+                                        <input type="checkbox" name="is_enrolled_only" value="1"
+                                               {{ old('is_enrolled_only', $circle->is_enrolled_only) ? 'checked' : '' }}
+                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                                        <span class="text-sm text-gray-700">{{ __('supervisor.group_circles.is_enrolled_only') }}</span>
+                                    </label>
+                                    <p class="text-xs text-gray-500 ms-6">{{ __('supervisor.group_circles.is_enrolled_only_help') }}</p>
                                 </div>
                             </div>
 
@@ -271,17 +471,10 @@
                                 <p class="text-xs text-gray-500 mt-1">{{ __('recordings.enable_audio_recording_help') }}</p>
                             </div>
 
-                            {{-- Section 5: Status & Notes --}}
+                            {{-- Section 5: Notes --}}
                             <div class="border-t border-gray-100 pt-4">
                                 <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('supervisor.group_circles.status_and_notes') }}</h4>
                                 <div class="space-y-3">
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.circle_status') }}</label>
-                                        <select name="status" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
-                                            <option value="1" {{ old('status', $circle->status) ? 'selected' : '' }}>{{ __('supervisor.common.active') }}</option>
-                                            <option value="0" {{ !old('status', $circle->status) ? 'selected' : '' }}>{{ __('supervisor.common.inactive') }}</option>
-                                        </select>
-                                    </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.supervisor_notes') }}</label>
                                         @if($isAdmin)

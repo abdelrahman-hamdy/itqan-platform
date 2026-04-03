@@ -25,6 +25,7 @@ class CircleController extends Controller
         $query = QuranCircle::where('academy_id', $academy->id)
             ->where('status', true)
             ->where('enrollment_status', CircleEnrollmentStatus::OPEN)
+            ->where('is_enrolled_only', false)
             ->with(['quranTeacherProfile.user']);
 
         // Filter by teacher
@@ -141,5 +142,41 @@ class CircleController extends Controller
                 'features' => $circle->features ?? [],
             ],
         ], __('Circle retrieved successfully'));
+    }
+
+    public function requestSponsoredEnrollment(Request $request, int $id): JsonResponse
+    {
+        $user = auth()->user();
+        $academy = $request->attributes->get('academy') ?? current_academy();
+
+        $circle = QuranCircle::where('id', $id)
+            ->where('academy_id', $academy->id)
+            ->where('status', true)
+            ->where('allow_sponsored_requests', true)
+            ->first();
+
+        if (! $circle) {
+            return $this->errorResponse(__('student.group_circles.not_found'), 404);
+        }
+
+        if ($circle->students()->where('users.id', $user->id)->exists()) {
+            return $this->errorResponse(__('student.group_circles.already_enrolled'), 422);
+        }
+
+        if (\App\Models\SponsoredEnrollmentRequest::where('circle_id', $circle->id)
+            ->where('student_id', $user->id)
+            ->where('status', \App\Models\SponsoredEnrollmentRequest::STATUS_PENDING)
+            ->exists()) {
+            return $this->errorResponse(__('student.group_circles.sponsored_request_pending'), 422);
+        }
+
+        \App\Models\SponsoredEnrollmentRequest::create([
+            'academy_id' => $academy->id,
+            'student_id' => $user->id,
+            'circle_id' => $circle->id,
+            'status' => \App\Models\SponsoredEnrollmentRequest::STATUS_PENDING,
+        ]);
+
+        return $this->successResponse(null, __('student.group_circles.sponsored_request_submitted'));
     }
 }

@@ -104,6 +104,8 @@ class QuranCircle extends Model
         'schedule_days',
         'supervisor_notes',
         'admin_notes',
+        'allow_sponsored_requests',
+        'is_enrolled_only',
     ];
 
     protected $casts = [
@@ -125,6 +127,8 @@ class QuranCircle extends Model
         'attendance_required' => 'boolean',
         'makeup_sessions_allowed' => 'boolean',
         'certificates_enabled' => 'boolean',
+        'allow_sponsored_requests' => 'boolean',
+        'is_enrolled_only' => 'boolean',
         'last_session_at' => 'datetime',
         'next_session_at' => 'datetime',
         'schedule_days' => 'array',
@@ -237,6 +241,11 @@ class QuranCircle extends Model
     public function quizAssignments(): MorphMany
     {
         return $this->morphMany(QuizAssignment::class, 'assignable');
+    }
+
+    public function sponsoredEnrollmentRequests(): HasMany
+    {
+        return $this->hasMany(SponsoredEnrollmentRequest::class, 'circle_id');
     }
 
     /**

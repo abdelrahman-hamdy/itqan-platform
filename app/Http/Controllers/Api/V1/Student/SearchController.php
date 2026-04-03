@@ -220,6 +220,10 @@ class SearchController extends Controller
                             ->orWhere('last_name', 'LIKE', "%{$query}%");
                     });
             })
+            ->where(function ($q) use ($enrolledCircleIds) {
+                $q->where('is_enrolled_only', false)
+                    ->orWhereIn('id', $enrolledCircleIds);
+            })
             ->with('quranTeacher')
             ->orderBy('name')
             ->limit($limit)

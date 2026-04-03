@@ -602,6 +602,10 @@ return [
         'connection_error_title' => 'Connection Error',
         'connection_error_message' => 'An error occurred. Please try again',
         'ok_button' => 'OK',
+        'request_sponsored_enrollment' => 'Request Sponsored Enrollment',
+        'sponsored_request_submitted' => 'Your sponsored enrollment request has been submitted. It will be reviewed by the administration.',
+        'sponsored_request_pending' => 'You have a pending sponsorship request for this circle',
+        'already_enrolled' => 'You are already enrolled in this circle',
     ],
     'course_detail' => [
         'circle_description' => 'Quran Circle Details',

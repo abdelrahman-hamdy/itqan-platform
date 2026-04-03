@@ -161,6 +161,7 @@ class BrowseController extends Controller
         $query = QuranCircle::where('academy_id', $academy->id)
             ->where('status', true)
             ->where('enrollment_status', CircleEnrollmentStatus::OPEN)
+            ->where('is_enrolled_only', false)
             ->with(['quranTeacherProfile.user']);
 
         if ($request->filled('gender')) {

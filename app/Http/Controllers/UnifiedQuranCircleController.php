@@ -52,6 +52,16 @@ class UnifiedQuranCircleController extends Controller
             $query->where('enrollment_status', CircleEnrollmentStatus::OPEN);
         }
 
+        // Hide enrolled-only circles from non-enrolled users
+        if ($isAuthenticated && ! empty($enrolledCircleIds)) {
+            $query->where(function ($q) use ($enrolledCircleIds) {
+                $q->where('is_enrolled_only', false)
+                    ->orWhereIn('id', $enrolledCircleIds);
+            });
+        } else {
+            $query->where('is_enrolled_only', false);
+        }
+
         // Apply filters (same for both)
         if ($request->filled('enrollment_status')) {
             if ($request->enrollment_status === 'enrolled' && $isAuthenticated) {
@@ -145,6 +155,11 @@ class UnifiedQuranCircleController extends Controller
             ->with(['academy', 'quranTeacher', 'students', 'schedule', 'sessions'])
             ->firstOrFail();
 
+        // Enrolled-only circles: hide from guests
+        if ($circle->is_enrolled_only && ! $isAuthenticated) {
+            abort(404);
+        }
+
         // Calculate statistics
         $stats = [
             'total_students' => $circle->enrolled_students ?? 0,
@@ -163,6 +178,11 @@ class UnifiedQuranCircleController extends Controller
         if ($isAuthenticated) {
             $isEnrolled = $circle->students()->where('users.id', $user->id)->exists();
             $canEnroll = ! $isEnrolled && $circle->status === true && $circle->enrollment_status === CircleEnrollmentStatus::OPEN;
+
+            // Enrolled-only circles: hide from non-enrolled users
+            if ($circle->is_enrolled_only && ! $isEnrolled) {
+                abort(404);
+            }
 
             // Get sessions and subscription for enrolled students
             if ($isEnrolled) {
@@ -395,5 +415,47 @@ class UnifiedQuranCircleController extends Controller
 
         return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
             ->with('success', __('circles.enrollment_success'));
+    }
+
+    /**
+     * Submit a sponsored enrollment request
+     */
+    public function requestSponsoredEnrollment(Request $request, $subdomain, $circleId): RedirectResponse
+    {
+        if (! Auth::check()) {
+            return redirect()->route('login', ['subdomain' => $subdomain]);
+        }
+
+        $user = Auth::user();
+        $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
+
+        $circle = QuranCircle::where('id', $circleId)
+            ->where('academy_id', $academy->id)
+            ->where('status', true)
+            ->where('allow_sponsored_requests', true)
+            ->firstOrFail();
+
+        // Check student not already enrolled
+        if ($circle->students()->where('users.id', $user->id)->exists()) {
+            return redirect()->back()->with('error', __('student.group_circles.already_enrolled'));
+        }
+
+        // Check no pending request exists
+        if (\App\Models\SponsoredEnrollmentRequest::where('circle_id', $circle->id)
+            ->where('student_id', $user->id)
+            ->where('status', \App\Models\SponsoredEnrollmentRequest::STATUS_PENDING)
+            ->exists()) {
+            return redirect()->back()->with('info', __('student.group_circles.sponsored_request_pending'));
+        }
+
+        \App\Models\SponsoredEnrollmentRequest::create([
+            'academy_id' => $academy->id,
+            'student_id' => $user->id,
+            'circle_id' => $circle->id,
+            'status' => \App\Models\SponsoredEnrollmentRequest::STATUS_PENDING,
+        ]);
+
+        return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
+            ->with('success', __('student.group_circles.sponsored_request_submitted'));
     }
 }

@@ -42,7 +42,8 @@ class CreateFullSubscription extends Component
 
     public float $amount = 0;
 
-    public float $discount = 0;
+    /** @var float|string Untyped to handle empty-string from wire:model number inputs */
+    public $discount = 0;
 
     // Step 3
     public string $payment_source = 'outside';
@@ -58,7 +59,8 @@ class CreateFullSubscription extends Component
 
     public array $learning_goals = [];
 
-    public int $consumed_sessions = 0;
+    /** @var int|string Untyped to handle empty-string from wire:model number inputs */
+    public $consumed_sessions = 0;
 
     public bool $is_recurring_discount = false;
 
@@ -148,6 +150,7 @@ class CreateFullSubscription extends Component
 
     public function updatedDiscount(): void
     {
+        $this->discount = is_numeric($this->discount) ? (float) $this->discount : 0.0;
         $this->clampDiscount();
     }
 
@@ -166,6 +169,7 @@ class CreateFullSubscription extends Component
 
     public function updatedConsumedSessions(): void
     {
+        $this->consumed_sessions = is_numeric($this->consumed_sessions) ? (int) $this->consumed_sessions : 0;
         $this->consumed_sessions = max(0, $this->consumed_sessions);
         if ($this->selectedPackageTotalSessions > 0) {
             $max = max(0, $this->selectedPackageTotalSessions - 1);

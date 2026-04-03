@@ -746,6 +746,10 @@ return [
         'connection_error_title' => 'خطأ في الاتصال',
         'connection_error_message' => 'حدث خطأ. يرجى المحاولة مرة أخرى',
         'ok_button' => 'موافق',
+        'request_sponsored_enrollment' => 'طلب تسجيل مكفول',
+        'sponsored_request_submitted' => 'تم تقديم طلب التكفل بنجاح. سيتم مراجعته من الإدارة.',
+        'sponsored_request_pending' => 'لديك طلب تكفل قيد المراجعة لهذه الحلقة',
+        'already_enrolled' => 'أنت مسجل بالفعل في هذه الحلقة',
     ],
     'course_detail' => [
         'circle_description' => 'تفاصيل حلقة القرآن',
