@@ -428,6 +428,7 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
                     'can_manage_parents' => $request->boolean('can_manage_parents'),
                     'can_reset_passwords' => $request->boolean('can_reset_passwords'),
                     'can_manage_subscriptions' => $request->boolean('can_manage_subscriptions'),
+                    'can_create_subscriptions' => $request->boolean('can_create_subscriptions'),
                     'can_manage_payments' => $request->boolean('can_manage_payments'),
                     'can_manage_teacher_earnings' => $request->boolean('can_manage_teacher_earnings'),
                     'can_monitor_sessions' => $request->boolean('can_monitor_sessions'),
