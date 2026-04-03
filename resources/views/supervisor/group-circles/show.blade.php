@@ -232,7 +232,7 @@
                 @if(isset($isAdmin) || isset($quranTeachers))
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
                     <h3 class="text-sm font-bold text-gray-900 mb-4">{{ __('supervisor.group_circles.circle_actions') }}</h3>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="flex flex-col gap-2">
                         {{-- Toggle Status --}}
                         <form id="toggle-status-form" method="POST"
                               action="{{ route('manage.group-circles.toggle-status', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
@@ -247,7 +247,7 @@
                                 icon: '{{ $circle->status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}',
                                 onConfirm: () => document.getElementById('toggle-status-form').submit()
                             })"
-                            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg transition-colors cursor-pointer
+                            class="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs md:text-sm font-medium rounded-lg transition-colors cursor-pointer
                                 {{ $circle->status ? 'bg-orange-50 text-orange-700 hover:bg-orange-100' : 'bg-green-50 text-green-700 hover:bg-green-100' }}">
                             <i class="{{ $circle->status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}"></i>
                             {{ $circle->status ? __('supervisor.group_circles.deactivate') : __('supervisor.group_circles.activate') }}
@@ -256,7 +256,7 @@
                         {{-- Change Teacher --}}
                         <button type="button"
                             @click="$dispatch('open-modal-change-teacher')"
-                            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer">
+                            class="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer">
                             <i class="ri-user-settings-line"></i>
                             {{ $circle->quran_teacher_id ? __('supervisor.group_circles.change_teacher') : __('supervisor.group_circles.assign_teacher') }}
                         </button>
@@ -277,7 +277,7 @@
                                     icon: 'ri-delete-bin-line',
                                     onConfirm: () => document.getElementById('delete-circle-form').submit()
                                 })"
-                                class="inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors cursor-pointer">
+                                class="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors cursor-pointer">
                                 <i class="ri-delete-bin-line"></i>
                                 {{ __('supervisor.group_circles.delete_circle') }}
                             </button>

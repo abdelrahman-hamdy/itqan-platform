@@ -9,6 +9,7 @@ use App\Enums\SubscriptionPaymentStatus;
 use App\Models\Academy;
 use App\Models\QuranCircle;
 use App\Models\QuranSubscription;
+use App\Models\SponsoredEnrollmentRequest;
 use DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -441,18 +442,18 @@ class UnifiedQuranCircleController extends Controller
         }
 
         // Check no pending request exists
-        if (\App\Models\SponsoredEnrollmentRequest::where('circle_id', $circle->id)
+        if (SponsoredEnrollmentRequest::where('circle_id', $circle->id)
             ->where('student_id', $user->id)
-            ->where('status', \App\Models\SponsoredEnrollmentRequest::STATUS_PENDING)
+            ->where('status', SponsoredEnrollmentRequest::STATUS_PENDING)
             ->exists()) {
             return redirect()->back()->with('info', __('student.group_circles.sponsored_request_pending'));
         }
 
-        \App\Models\SponsoredEnrollmentRequest::create([
+        SponsoredEnrollmentRequest::create([
             'academy_id' => $academy->id,
             'student_id' => $user->id,
             'circle_id' => $circle->id,
-            'status' => \App\Models\SponsoredEnrollmentRequest::STATUS_PENDING,
+            'status' => SponsoredEnrollmentRequest::STATUS_PENDING,
         ]);
 
         return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])

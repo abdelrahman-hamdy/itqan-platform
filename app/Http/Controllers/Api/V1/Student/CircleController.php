@@ -8,6 +8,7 @@ use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleEnrollment;
+use App\Models\SponsoredEnrollmentRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -163,18 +164,18 @@ class CircleController extends Controller
             return $this->errorResponse(__('student.group_circles.already_enrolled'), 422);
         }
 
-        if (\App\Models\SponsoredEnrollmentRequest::where('circle_id', $circle->id)
+        if (SponsoredEnrollmentRequest::where('circle_id', $circle->id)
             ->where('student_id', $user->id)
-            ->where('status', \App\Models\SponsoredEnrollmentRequest::STATUS_PENDING)
+            ->where('status', SponsoredEnrollmentRequest::STATUS_PENDING)
             ->exists()) {
             return $this->errorResponse(__('student.group_circles.sponsored_request_pending'), 422);
         }
 
-        \App\Models\SponsoredEnrollmentRequest::create([
+        SponsoredEnrollmentRequest::create([
             'academy_id' => $academy->id,
             'student_id' => $user->id,
             'circle_id' => $circle->id,
-            'status' => \App\Models\SponsoredEnrollmentRequest::STATUS_PENDING,
+            'status' => SponsoredEnrollmentRequest::STATUS_PENDING,
         ]);
 
         return $this->successResponse(null, __('student.group_circles.sponsored_request_submitted'));

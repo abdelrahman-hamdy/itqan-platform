@@ -4,16 +4,14 @@ namespace App\Http\Controllers\Supervisor;
 
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\DifficultyLevel;
-use App\Enums\SessionSubscriptionStatus;
 use App\Enums\WeekDays;
 use App\Models\QuranCircle;
-use App\Models\QuranSubscription;
 use App\Models\SponsoredEnrollmentRequest;
 use App\Models\User;
+use App\Services\Circle\CircleFreeEnrollmentService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -187,30 +185,20 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
             ->where('status', SponsoredEnrollmentRequest::STATUS_PENDING)
             ->firstOrFail();
 
-        DB::transaction(function () use ($circle, $sponsoredRequest) {
-            $sponsoredRequest->update([
-                'status' => SponsoredEnrollmentRequest::STATUS_APPROVED,
-                'reviewed_by' => auth()->id(),
-                'reviewed_at' => now(),
-            ]);
+        $student = User::findOrFail($sponsoredRequest->student_id);
+        $academy = $circle->academy;
 
-            $circle->enrollStudent(User::findOrFail($sponsoredRequest->student_id));
+        $sponsoredRequest->update([
+            'status' => SponsoredEnrollmentRequest::STATUS_APPROVED,
+            'reviewed_by' => auth()->id(),
+            'reviewed_at' => now(),
+        ]);
 
-            QuranSubscription::create([
-                'academy_id' => $circle->academy_id,
-                'student_id' => $sponsoredRequest->student_id,
-                'education_unit_type' => QuranCircle::class,
-                'education_unit_id' => $circle->id,
-                'subscription_type' => 'group',
-                'status' => SessionSubscriptionStatus::ACTIVE,
-                'payment_status' => 'paid',
-                'total_price' => 0,
-                'is_sponsored' => true,
-                'sponsorship_reason' => __('supervisor.group_circles.sponsored_via_request'),
-                'start_date' => now(),
-                'end_date' => now()->addMonth(),
-            ]);
-        });
+        $result = app(CircleFreeEnrollmentService::class)->enrollImmediately($student, $circle, $academy, createSubscription: true);
+
+        if (! $result['success']) {
+            return redirect()->back()->with('error', $result['error'] ?? __('supervisor.common.error_occurred'));
+        }
 
         return redirect()->back()->with('success', __('supervisor.group_circles.request_approved'));
     }
