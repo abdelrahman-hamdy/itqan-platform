@@ -311,6 +311,41 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         return $map;
     }
 
+    /**
+     * Single query per profile table: resolves profile IDs and builds user map together.
+     * Applies gender filter to both, so the teacher dropdown matches the table data.
+     */
+    private function resolveProfilesAndMap(array $quranTeacherIds, array $academicTeacherIds, ?string $gender = null): array
+    {
+        $quranProfileIds = [];
+        $academicProfileIds = [];
+        $map = [];
+
+        if (! empty($quranTeacherIds)) {
+            $profiles = QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)
+                ->when($gender, fn ($q) => $q->where('gender', $gender))
+                ->with('user')
+                ->get();
+            $quranProfileIds = $profiles->pluck('id')->toArray();
+            foreach ($profiles as $p) {
+                $map['quran_teacher_'.$p->id] = $p->user;
+            }
+        }
+
+        if (! empty($academicTeacherIds)) {
+            $profiles = AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)
+                ->when($gender, fn ($q) => $q->where('gender', $gender))
+                ->with('user')
+                ->get();
+            $academicProfileIds = $profiles->pluck('id')->toArray();
+            foreach ($profiles as $p) {
+                $map['academic_teacher_'.$p->id] = $p->user;
+            }
+        }
+
+        return [$quranProfileIds, $academicProfileIds, $map];
+    }
+
     private function buildTeachersList(array $profileUserMap): array
     {
         return collect($profileUserMap)
@@ -346,6 +381,13 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
      */
     private function buildTeacherSummaryData(Request $request): array
     {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'teacher_type' => 'nullable|in:quran,academic',
+            'gender' => 'nullable|in:male,female',
+        ]);
+
         $academyId = $this->getAcademyId();
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
         $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
@@ -353,7 +395,6 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         $currentTeacherType = $request->input('teacher_type');
         $currentGender = $request->input('gender');
 
-        // Filter by teacher type: exclude irrelevant teacher ID set
         if ($currentTeacherType === 'quran') {
             $academicTeacherIds = [];
         } elseif ($currentTeacherType === 'academic') {
@@ -362,8 +403,8 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
         $allTeacherIds = array_merge($quranTeacherIds, $academicTeacherIds);
 
-        [$quranProfileIds, $academicProfileIds] = $this->resolveProfileIds($quranTeacherIds, $academicTeacherIds, $currentGender);
-        $profileUserMap = $this->buildProfileUserMap($quranTeacherIds, $academicTeacherIds);
+        // Single query per profile table: resolve IDs and build user map together
+        [$quranProfileIds, $academicProfileIds, $profileUserMap] = $this->resolveProfilesAndMap($quranTeacherIds, $academicTeacherIds, $currentGender);
         $teachersList = $this->buildTeachersList($profileUserMap);
 
         $currentTeacherId = $request->input('teacher_id');
@@ -372,11 +413,6 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         }
 
         $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $teachersList, $currentTeacherId ? (int) $currentTeacherId : null);
-
-        $request->validate([
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
 
         $currentMonth = $request->input('month');
         $startDate = $request->input('start_date');
