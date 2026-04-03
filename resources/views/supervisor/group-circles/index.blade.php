@@ -115,10 +115,10 @@
                             <label for="status" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.common.filter_status') }}</label>
                             <select name="status" id="status" class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
                                 <option value="">{{ __('teacher.circles_list.group.all_circles') }}</option>
-                                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>{{ __('teacher.circles_list.group.active_filter') }}</option>
+                                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>{{ __('enums.circle_active_status.active') }}</option>
+                                <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>{{ __('enums.circle_active_status.inactive') }}</option>
                                 <option value="full" {{ request('status') === 'full' ? 'selected' : '' }}>{{ __('teacher.circles_list.group.full_filter') }}</option>
-                                <option value="paused" {{ request('status') === 'paused' ? 'selected' : '' }}>{{ __('teacher.circles_list.group.paused_filter') }}</option>
-                                <option value="closed" {{ request('status') === 'closed' ? 'selected' : '' }}>{{ __('teacher.circles_list.group.closed_filter') }}</option>
+                                <option value="open" {{ request('status') === 'open' ? 'selected' : '' }}>{{ __('teacher.circles_list.group.active_filter') }}</option>
                             </select>
                         </div>
                         <div>
@@ -156,12 +156,10 @@
             <div class="divide-y divide-gray-200">
                 @foreach($circles as $circle)
                     @php
-                        $statusConfig = match($circle->status) {
-                            'active' => ['class' => 'bg-green-100 text-green-800', 'text' => __('teacher.circles_list.group.status_active')],
-                            'full' => ['class' => 'bg-orange-100 text-orange-800', 'text' => __('teacher.circles_list.group.status_full')],
-                            'paused' => ['class' => 'bg-yellow-100 text-yellow-800', 'text' => __('teacher.circles_list.group.status_paused')],
-                            'closed' => ['class' => 'bg-gray-100 text-gray-800', 'text' => __('teacher.circles_list.group.status_closed')],
-                            default => ['class' => 'bg-gray-100 text-gray-800', 'text' => $circle->status ?? '']
+                        $statusConfig = match(true) {
+                            !$circle->status => ['class' => 'bg-gray-100 text-gray-800', 'text' => __('enums.circle_active_status.inactive')],
+                            $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::FULL => ['class' => 'bg-orange-100 text-orange-800', 'text' => __('teacher.circles_list.group.status_full')],
+                            default => ['class' => 'bg-green-100 text-green-800', 'text' => __('enums.circle_active_status.active')],
                         };
 
                         $metadata = [

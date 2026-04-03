@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Enums\DifficultyLevel;
 use App\Enums\WeekDays;
 use App\Models\QuranCircle;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,28 +17,30 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
 {
     public function index(Request $request, $subdomain = null): View
     {
-        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-
-        $baseQuery = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds);
+        $baseQuery = $this->scopedCircleQuery();
 
         if ($request->teacher_id) {
             $baseQuery->where('quran_teacher_id', $request->teacher_id);
         }
 
-        // Stats from DB (before search/status/date filters)
         $stats = [
             'total' => (clone $baseQuery)->count(),
-            'active' => (clone $baseQuery)->where('status', 'active')->count(),
-            'full' => (clone $baseQuery)->where('status', 'full')->count(),
+            'active' => (clone $baseQuery)->where('status', true)->count(),
+            'full' => (clone $baseQuery)->where('enrollment_status', CircleEnrollmentStatus::FULL)->count(),
             'totalStudents' => (int) (clone $baseQuery)->sum('enrolled_students'),
         ];
 
-        // Apply filters
         $query = clone $baseQuery;
         $query->with(['quranTeacher', 'schedule']);
 
         if ($request->status) {
-            $query->where('status', $request->status);
+            match ($request->status) {
+                'active' => $query->where('status', true),
+                'inactive' => $query->where('status', false),
+                'full' => $query->where('enrollment_status', CircleEnrollmentStatus::FULL),
+                'open' => $query->where('enrollment_status', CircleEnrollmentStatus::OPEN),
+                default => null,
+            };
         }
         if ($request->filled('search')) {
             $search = $request->search;
@@ -58,14 +62,16 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
 
     public function show($subdomain, $circleId): View
     {
+        $isAdmin = $this->isAdminUser();
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
 
-        $circle = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)
-            ->with(['quranTeacher', 'students', 'sessions' => fn ($q) => $q->orderBy('scheduled_at', 'desc'), 'schedule'])
+        $eagerLoad = ['quranTeacher', 'students', 'sessions' => fn ($q) => $q->orderBy('scheduled_at', 'desc'), 'schedule'];
+
+        $circle = $this->scopedCircleQuery()
+            ->with($eagerLoad)
             ->findOrFail($circleId);
 
-        $teacher = User::find($circle->quran_teacher_id);
-        $isAdmin = $this->isAdminUser();
+        $teacher = $circle->quranTeacher;
 
         $quranTeachers = User::whereIn('id', $quranTeacherIds)
             ->orderBy('first_name')
@@ -77,7 +83,8 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
     public function update(Request $request, $subdomain, $circleId): RedirectResponse
     {
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        $circle = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)->findOrFail($circleId);
+
+        $circle = $this->scopedCircleQuery()->findOrFail($circleId);
 
         $weekDayValues = WeekDays::values();
         $difficultyValues = DifficultyLevel::values();
@@ -109,7 +116,6 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
         $validated['show_recording_to_teacher'] = (bool) $validated['show_recording_to_teacher'];
         $validated['show_recording_to_student'] = (bool) $validated['show_recording_to_student'];
 
-        // Supervisors can only edit supervisor_notes; admins can only edit admin_notes
         if ($this->isAdminUser()) {
             unset($validated['supervisor_notes']);
         } else {
@@ -119,6 +125,20 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
         $circle->update($validated);
 
         return redirect()->back()->with('success', __('supervisor.common.updated_successfully'));
+    }
+
+    /**
+     * Scoped query: admins see all circles, supervisors see only their assigned teachers' circles.
+     */
+    private function scopedCircleQuery(): Builder
+    {
+        $query = QuranCircle::query();
+
+        if (! $this->isAdminUser()) {
+            $query->whereIn('quran_teacher_id', $this->getAssignedQuranTeacherIds());
+        }
+
+        return $query;
     }
 
     private function getTeachersForFilter(string $type): array
