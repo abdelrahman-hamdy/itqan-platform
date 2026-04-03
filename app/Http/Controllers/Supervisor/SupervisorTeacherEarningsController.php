@@ -8,11 +8,12 @@ use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\QuranTeacherProfile;
 use App\Models\TeacherEarning;
-use App\Models\User;
+use App\Services\TeacherEarningsExportService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 {
@@ -105,110 +106,58 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             abort(403);
         }
 
-        $academyId = $this->getAcademyId();
-        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
-        $allTeacherIds = array_merge($quranTeacherIds, $academicTeacherIds);
-
-        [$quranProfileIds, $academicProfileIds] = $this->resolveProfileIds($quranTeacherIds, $academicTeacherIds);
-        $profileUserMap = $this->buildProfileUserMap($quranTeacherIds, $academicTeacherIds);
-        $teachersList = $this->buildTeachersList($profileUserMap);
-
-        $currentTeacherId = $request->input('teacher_id');
-        if ($currentTeacherId && ! in_array((int) $currentTeacherId, $allTeacherIds)) {
-            $currentTeacherId = null;
-        }
-
-        $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $teachersList, $currentTeacherId ? (int) $currentTeacherId : null);
-
-        $request->validate([
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
-
-        $currentMonth = $request->input('month');
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
-        $query = TeacherEarning::where('academy_id', $academyId)->where($scopeQuery);
-        $this->applyDateFilters($query, $currentMonth, $startDate, $endDate);
-
-        // Load individual earnings to preserve per-session duration and rate info
-        $allEarnings = (clone $query)->get();
-
-        $teacherSummaries = [];
-        foreach ($allEarnings as $earning) {
-            $key = $earning->teacher_type.'_'.$earning->teacher_id;
-
-            if (! isset($teacherSummaries[$key])) {
-                $teacherSummaries[$key] = [
-                    'teacher_type' => $earning->teacher_type,
-                    'teacher_id' => $earning->teacher_id,
-                    'quran_individual' => ['amount' => 0, 'details' => []],
-                    'quran_group' => ['amount' => 0, 'details' => []],
-                    'academic' => ['amount' => 0, 'details' => []],
-                    'interactive' => ['amount' => 0, 'details' => []],
-                    'total' => 0,
-                    'sessions_count' => 0,
-                ];
-            }
-
-            $amount = (float) $earning->amount;
-            $meta = $earning->calculation_metadata ?? [];
-            $durationMinutes = $meta['duration_minutes'] ?? 60;
-
-            $teacherSummaries[$key]['total'] += $amount;
-            $teacherSummaries[$key]['sessions_count']++;
-
-            // Determine source category
-            if ($earning->session_type === QuranSession::class) {
-                $isGroup = in_array($earning->calculation_method, ['group_rate', 'per_student']);
-                $source = $isGroup ? 'quran_group' : 'quran_individual';
-            } elseif ($earning->session_type === AcademicSession::class) {
-                $source = 'academic';
-            } elseif ($earning->session_type === InteractiveCourseSession::class) {
-                $source = 'interactive';
-            } else {
-                continue;
-            }
-
-            $teacherSummaries[$key][$source]['amount'] += $amount;
-
-            // Group details by duration + rate for compact display (e.g., "3 × 30 min × 50 EGP")
-            $detailKey = $durationMinutes.'_'.$amount;
-            if (! isset($teacherSummaries[$key][$source]['details'][$detailKey])) {
-                $teacherSummaries[$key][$source]['details'][$detailKey] = [
-                    'duration_minutes' => $durationMinutes,
-                    'rate_per_session' => $amount,
-                    'sessions_count' => 0,
-                    'amount' => 0,
-                ];
-            }
-            $teacherSummaries[$key][$source]['details'][$detailKey]['sessions_count']++;
-            $teacherSummaries[$key][$source]['details'][$detailKey]['amount'] += $amount;
-        }
-
-        // Convert detail maps to arrays for blade iteration
-        foreach ($teacherSummaries as &$summary) {
-            foreach (['quran_individual', 'quran_group', 'academic', 'interactive'] as $source) {
-                $summary[$source]['details'] = array_values($summary[$source]['details']);
-            }
-        }
-        unset($summary);
-
-        usort($teacherSummaries, fn ($a, $b) => $b['total'] <=> $a['total']);
+        $data = $this->buildTeacherSummaryData($request);
 
         return view('supervisor.teacher-earnings.teacher-summary', [
-            'teacherSummaries' => $teacherSummaries,
-            'profileUserMap' => $profileUserMap,
-            'availableMonths' => $this->getAvailableMonths($academyId, $scopeQuery),
-            'teachers' => $teachersList,
-            'currentTeacherId' => $currentTeacherId,
-            'currentMonth' => $currentMonth,
-            'startDate' => $startDate,
-            'endDate' => $endDate,
+            'teacherSummaries' => $data['teacherSummaries'],
+            'profileUserMap' => $data['profileUserMap'],
+            'availableMonths' => $data['availableMonths'],
+            'teachers' => $data['teachersList'],
+            'currentTeacherId' => $data['currentTeacherId'],
+            'currentMonth' => $data['currentMonth'],
+            'startDate' => $data['startDate'],
+            'endDate' => $data['endDate'],
             'activeTab' => 'summary',
         ]);
+    }
+
+    public function export(Request $request, $subdomain = null): Response
+    {
+        if (! $this->canManageTeacherEarnings()) {
+            abort(403);
+        }
+
+        $data = $this->buildTeacherSummaryData($request);
+
+        if (empty($data['teacherSummaries'])) {
+            return back()->with('error', __('supervisor.teacher_earnings.export_no_data'));
+        }
+
+        $academy = auth()->user()->academy;
+        $periodLabel = $this->buildPeriodLabel($data['currentMonth'], $data['startDate'], $data['endDate']);
+
+        $meta = [
+            'academy_name' => $academy->name ?? '',
+            'currency_symbol' => getTeacherEarningsCurrencySymbol(),
+            'period_label' => $periodLabel,
+            'generated_at' => nowInAcademyTimezone()->format('Y-m-d H:i'),
+        ];
+
+        try {
+            $service = app(TeacherEarningsExportService::class);
+            $pdfContent = $service->generateSummaryPdf($data['teacherSummaries'], $data['profileUserMap'], $meta);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', __('supervisor.teacher_earnings.export_no_data'));
+        }
+
+        $filename = 'teacher-earnings-'.nowInAcademyTimezone()->format('Y-m-d').'.pdf';
+
+        return response($pdfContent)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="'.$filename.'"')
+            ->header('Content-Length', strlen($pdfContent));
     }
 
     public function dispute(Request $request, $subdomain, TeacherEarning $earning): RedirectResponse
@@ -387,11 +336,142 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
     }
 
     /**
+     * Build teacher summary data used by both teacherSummary() and export().
+     */
+    private function buildTeacherSummaryData(Request $request): array
+    {
+        $academyId = $this->getAcademyId();
+        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
+        $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
+        $allTeacherIds = array_merge($quranTeacherIds, $academicTeacherIds);
+
+        [$quranProfileIds, $academicProfileIds] = $this->resolveProfileIds($quranTeacherIds, $academicTeacherIds);
+        $profileUserMap = $this->buildProfileUserMap($quranTeacherIds, $academicTeacherIds);
+        $teachersList = $this->buildTeachersList($profileUserMap);
+
+        $currentTeacherId = $request->input('teacher_id');
+        if ($currentTeacherId && ! in_array((int) $currentTeacherId, $allTeacherIds)) {
+            $currentTeacherId = null;
+        }
+
+        $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $teachersList, $currentTeacherId ? (int) $currentTeacherId : null);
+
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
+        $currentMonth = $request->input('month');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $query = TeacherEarning::where('academy_id', $academyId)->where($scopeQuery);
+        $this->applyDateFilters($query, $currentMonth, $startDate, $endDate);
+
+        $allEarnings = (clone $query)->get();
+
+        $teacherSummaries = [];
+        foreach ($allEarnings as $earning) {
+            $key = $earning->teacher_type.'_'.$earning->teacher_id;
+
+            if (! isset($teacherSummaries[$key])) {
+                $teacherSummaries[$key] = [
+                    'teacher_type' => $earning->teacher_type,
+                    'teacher_id' => $earning->teacher_id,
+                    'quran_individual' => ['amount' => 0, 'details' => []],
+                    'quran_group' => ['amount' => 0, 'details' => []],
+                    'academic' => ['amount' => 0, 'details' => []],
+                    'interactive' => ['amount' => 0, 'details' => []],
+                    'total' => 0,
+                    'sessions_count' => 0,
+                    'total_duration_minutes' => 0,
+                ];
+            }
+
+            $amount = (float) $earning->amount;
+            $meta = $earning->calculation_metadata ?? [];
+            $durationMinutes = $meta['duration_minutes'] ?? 60;
+
+            $teacherSummaries[$key]['total'] += $amount;
+            $teacherSummaries[$key]['sessions_count']++;
+            $teacherSummaries[$key]['total_duration_minutes'] += $durationMinutes;
+
+            if ($earning->session_type === QuranSession::class) {
+                $isGroup = in_array($earning->calculation_method, ['group_rate', 'per_student']);
+                $source = $isGroup ? 'quran_group' : 'quran_individual';
+            } elseif ($earning->session_type === AcademicSession::class) {
+                $source = 'academic';
+            } elseif ($earning->session_type === InteractiveCourseSession::class) {
+                $source = 'interactive';
+            } else {
+                continue;
+            }
+
+            $teacherSummaries[$key][$source]['amount'] += $amount;
+
+            $detailKey = $durationMinutes.'_'.$amount;
+            if (! isset($teacherSummaries[$key][$source]['details'][$detailKey])) {
+                $teacherSummaries[$key][$source]['details'][$detailKey] = [
+                    'duration_minutes' => $durationMinutes,
+                    'rate_per_session' => $amount,
+                    'sessions_count' => 0,
+                    'amount' => 0,
+                ];
+            }
+            $teacherSummaries[$key][$source]['details'][$detailKey]['sessions_count']++;
+            $teacherSummaries[$key][$source]['details'][$detailKey]['amount'] += $amount;
+        }
+
+        foreach ($teacherSummaries as &$summary) {
+            foreach (['quran_individual', 'quran_group', 'academic', 'interactive'] as $source) {
+                $summary[$source]['details'] = array_values($summary[$source]['details']);
+            }
+        }
+        unset($summary);
+
+        usort($teacherSummaries, fn ($a, $b) => $b['total'] <=> $a['total']);
+
+        return [
+            'teacherSummaries' => $teacherSummaries,
+            'profileUserMap' => $profileUserMap,
+            'teachersList' => $teachersList,
+            'availableMonths' => $this->getAvailableMonths($academyId, $scopeQuery),
+            'currentTeacherId' => $currentTeacherId,
+            'currentMonth' => $currentMonth,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+    }
+
+    private function buildPeriodLabel(?string $month, ?string $startDate, ?string $endDate): string
+    {
+        if ($startDate || $endDate) {
+            $parts = [];
+            if ($startDate) {
+                $parts[] = Carbon::parse($startDate)->format('Y-m-d');
+            }
+            if ($endDate) {
+                $parts[] = Carbon::parse($endDate)->format('Y-m-d');
+            }
+
+            return implode(' - ', $parts);
+        }
+
+        if ($month) {
+            $parts = explode('-', $month);
+            if (count($parts) === 2) {
+                return Carbon::create((int) $parts[0], (int) $parts[1], 1)->locale('ar')->translatedFormat('F Y');
+            }
+        }
+
+        return __('supervisor.teacher_earnings.export_all_periods');
+    }
+
+    /**
      * Apply date filters. Date range takes priority over month filter.
      */
     private function applyDateFilters($query, ?string $month, ?string $startDate = null, ?string $endDate = null): void
     {
-        // Date range takes priority over month filter
         if ($startDate || $endDate) {
             if ($startDate) {
                 $query->where('session_completed_at', '>=', Carbon::parse($startDate)->startOfDay());

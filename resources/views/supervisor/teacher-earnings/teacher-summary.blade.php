@@ -6,14 +6,6 @@
 
     $hasActiveFilters = ($currentTeacherId ?? null) || ($currentMonth ?? null) || ($startDate ?? null) || ($endDate ?? null);
     $filterCount = (($currentTeacherId ?? null) ? 1 : 0) + (($currentMonth ?? null) ? 1 : 0) + (($startDate ?? null) || ($endDate ?? null) ? 1 : 0);
-
-    $methodLabels = [
-        'individual_rate' => __('supervisor.teacher_earnings.summary_rate_per_session'),
-        'group_rate' => __('supervisor.teacher_earnings.summary_rate_per_session'),
-        'per_session' => __('supervisor.teacher_earnings.summary_rate_per_session'),
-        'per_student' => __('supervisor.teacher_earnings.summary_rate_per_student'),
-        'fixed_amount' => __('supervisor.teacher_earnings.summary_rate_fixed'),
-    ];
 @endphp
 
 <div>
@@ -26,9 +18,16 @@
     />
 
     <!-- Page Header -->
-    <div class="mb-6 md:mb-8">
-        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.teacher_earnings.page_title') }}</h1>
-        <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.teacher_earnings.summary_page_subtitle') }}</p>
+    <div class="mb-6 md:mb-8 flex flex-wrap items-start justify-between gap-3">
+        <div>
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.teacher_earnings.page_title') }}</h1>
+            <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.teacher_earnings.summary_page_subtitle') }}</p>
+        </div>
+        <button type="button" onclick="document.getElementById('export-modal').classList.remove('hidden')"
+            class="cursor-pointer min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium">
+            <i class="ri-download-line"></i>
+            {{ __('supervisor.teacher_earnings.export_button') }}
+        </button>
     </div>
 
     @include('supervisor.teacher-earnings.partials.tab-navigation', ['activeTab' => $activeTab ?? 'summary', 'subdomain' => $subdomain])
@@ -148,6 +147,9 @@
                             <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('supervisor.teacher_earnings.summary_sessions_count') }}
                             </th>
+                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {{ __('supervisor.teacher_earnings.summary_total_hours') }}
+                            </th>
                             <th scope="col" class="px-4 md:px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
                                 {{ __('supervisor.teacher_earnings.summary_total') }}
                             </th>
@@ -205,6 +207,9 @@
                                 <td class="px-3 py-4 text-center whitespace-nowrap">
                                     <span class="text-sm text-gray-600">{{ $summary['sessions_count'] }}</span>
                                 </td>
+                                <td class="px-3 py-4 text-center whitespace-nowrap">
+                                    <span class="text-sm text-gray-600">{{ round($summary['total_duration_minutes'] / 60, 1) }} {{ __('supervisor.teacher_earnings.hours_unit') }}</span>
+                                </td>
                                 <td class="px-4 md:px-6 py-4 text-center whitespace-nowrap">
                                     <span class="text-sm font-bold text-gray-900">{{ number_format($summary['total'], 2) }} {{ $earningsCurrencySymbol }}</span>
                                 </td>
@@ -212,30 +217,41 @@
                         @endforeach
                     </tbody>
                     {{-- Totals Footer --}}
+                    @php
+                        $summaryCollection = collect($teacherSummaries);
+                        $footerTotals = [
+                            'qi' => $summaryCollection->sum(fn($s) => $s['quran_individual']['amount']),
+                            'qg' => $summaryCollection->sum(fn($s) => $s['quran_group']['amount']),
+                            'ac' => $summaryCollection->sum(fn($s) => $s['academic']['amount']),
+                            'ic' => $summaryCollection->sum(fn($s) => $s['interactive']['amount']),
+                            'sessions' => $summaryCollection->sum('sessions_count'),
+                            'hours' => round($summaryCollection->sum('total_duration_minutes') / 60, 1),
+                            'total' => $summaryCollection->sum('total'),
+                        ];
+                    @endphp
                     <tfoot class="bg-gray-50">
                         <tr>
                             <td class="px-4 md:px-6 py-3 text-sm font-bold text-gray-900">{{ __('supervisor.teacher_earnings.summary_total') }}</td>
                             <td class="px-3 py-3 text-center text-sm font-bold text-green-700">
-                                @php $totalQI = collect($teacherSummaries)->sum(fn($s) => $s['quran_individual']['amount']); @endphp
-                                {{ $totalQI > 0 ? number_format($totalQI, 2) . ' ' . getTeacherEarningsCurrencySymbol() : '-' }}
+                                {{ $footerTotals['qi'] > 0 ? number_format($footerTotals['qi'], 2) . ' ' . $earningsCurrencySymbol : '-' }}
                             </td>
                             <td class="px-3 py-3 text-center text-sm font-bold text-emerald-700">
-                                @php $totalQG = collect($teacherSummaries)->sum(fn($s) => $s['quran_group']['amount']); @endphp
-                                {{ $totalQG > 0 ? number_format($totalQG, 2) . ' ' . getTeacherEarningsCurrencySymbol() : '-' }}
+                                {{ $footerTotals['qg'] > 0 ? number_format($footerTotals['qg'], 2) . ' ' . $earningsCurrencySymbol : '-' }}
                             </td>
                             <td class="px-3 py-3 text-center text-sm font-bold text-violet-700">
-                                @php $totalAc = collect($teacherSummaries)->sum(fn($s) => $s['academic']['amount']); @endphp
-                                {{ $totalAc > 0 ? number_format($totalAc, 2) . ' ' . getTeacherEarningsCurrencySymbol() : '-' }}
+                                {{ $footerTotals['ac'] > 0 ? number_format($footerTotals['ac'], 2) . ' ' . $earningsCurrencySymbol : '-' }}
                             </td>
                             <td class="px-3 py-3 text-center text-sm font-bold text-blue-700">
-                                @php $totalIC = collect($teacherSummaries)->sum(fn($s) => $s['interactive']['amount']); @endphp
-                                {{ $totalIC > 0 ? number_format($totalIC, 2) . ' ' . getTeacherEarningsCurrencySymbol() : '-' }}
+                                {{ $footerTotals['ic'] > 0 ? number_format($footerTotals['ic'], 2) . ' ' . $earningsCurrencySymbol : '-' }}
                             </td>
                             <td class="px-3 py-3 text-center text-sm font-bold text-gray-700">
-                                {{ collect($teacherSummaries)->sum('sessions_count') }}
+                                {{ $footerTotals['sessions'] }}
+                            </td>
+                            <td class="px-3 py-3 text-center text-sm font-bold text-gray-700">
+                                {{ $footerTotals['hours'] }} {{ __('supervisor.teacher_earnings.hours_unit') }}
                             </td>
                             <td class="px-4 md:px-6 py-3 text-center text-sm font-bold text-gray-900">
-                                {{ number_format(collect($teacherSummaries)->sum('total'), 2) }} {{ $earningsCurrencySymbol }}
+                                {{ number_format($footerTotals['total'], 2) }} {{ $earningsCurrencySymbol }}
                             </td>
                         </tr>
                     </tfoot>
@@ -250,6 +266,75 @@
                 <h3 class="text-base md:text-lg font-medium text-gray-900 mb-1 md:mb-2">{{ __('supervisor.teacher_earnings.summary_no_results') }}</h3>
             </div>
         @endif
+    </div>
+</div>
+
+{{-- Export Modal --}}
+<div id="export-modal" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="document.getElementById('export-modal').classList.add('hidden')"></div>
+    <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+        <div class="relative bg-white w-full md:max-w-lg rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+            <div class="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-gray-300 z-10"></div>
+            <div class="p-6 pb-4 pt-8 md:pt-6">
+                <div class="mx-auto flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4">
+                    <i class="ri-file-download-line text-2xl text-green-600"></i>
+                </div>
+                <h3 class="text-lg font-bold text-center text-gray-900 mb-4">{{ __('supervisor.teacher_earnings.export_title') }}</h3>
+
+                <form method="POST" action="{{ route('manage.teacher-earnings.export', ['subdomain' => $subdomain]) }}">
+                    @csrf
+
+                    <input type="hidden" name="export_type" value="summary">
+
+                    {{-- Pass current filter state --}}
+                    <input type="hidden" name="month" value="{{ $currentMonth ?? '' }}">
+                    <input type="hidden" name="teacher_id" value="{{ $currentTeacherId ?? '' }}">
+                    <input type="hidden" name="start_date" value="{{ $startDate ?? '' }}">
+                    <input type="hidden" name="end_date" value="{{ $endDate ?? '' }}">
+
+                    {{-- Active filters summary --}}
+                    <div class="mb-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                        <p class="font-medium text-gray-700 mb-1">{{ __('supervisor.teacher_earnings.export_current_filters') }}:</p>
+                        <ul class="space-y-1 text-xs">
+                            <li>
+                                <span class="text-gray-500">{{ __('supervisor.teacher_earnings.filter_teacher') }}:</span>
+                                @if($currentTeacherId ?? null)
+                                    @php $selectedTeacher = collect($teachers)->firstWhere('id', $currentTeacherId); @endphp
+                                    <span class="font-medium">{{ $selectedTeacher['name'] ?? $currentTeacherId }}</span>
+                                @else
+                                    <span>{{ __('supervisor.teacher_earnings.export_all_teachers') }}</span>
+                                @endif
+                            </li>
+                            <li>
+                                <span class="text-gray-500">{{ __('supervisor.teacher_earnings.export_period_label') }}:</span>
+                                @if(($startDate ?? null) || ($endDate ?? null))
+                                    <span class="font-medium">{{ $startDate ?? '...' }} - {{ $endDate ?? '...' }}</span>
+                                @elseif($currentMonth ?? null)
+                                    @php
+                                        $selectedMonth = collect($availableMonths)->firstWhere('value', $currentMonth);
+                                    @endphp
+                                    <span class="font-medium">{{ $selectedMonth['label'] ?? $currentMonth }}</span>
+                                @else
+                                    <span>{{ __('supervisor.teacher_earnings.export_all_periods') }}</span>
+                                @endif
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="flex flex-col-reverse md:flex-row gap-3 md:justify-end">
+                        <button type="button" onclick="document.getElementById('export-modal').classList.add('hidden')"
+                            class="cursor-pointer min-h-[44px] px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl transition-colors">
+                            {{ __('common.actions.cancel') }}
+                        </button>
+                        <button type="submit"
+                            class="cursor-pointer min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-colors inline-flex items-center justify-center gap-2">
+                            <i class="ri-download-line"></i>
+                            {{ __('supervisor.teacher_earnings.export_download') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 

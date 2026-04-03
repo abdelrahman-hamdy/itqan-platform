@@ -90,6 +90,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Teacher Earnings
         Route::get('/teacher-earnings', [SupervisorTeacherEarningsController::class, 'index'])->name('teacher-earnings.index');
         Route::get('/teacher-earnings/teacher-summary', [SupervisorTeacherEarningsController::class, 'teacherSummary'])->name('teacher-earnings.teacher-summary');
+        Route::post('/teacher-earnings/export', [SupervisorTeacherEarningsController::class, 'export'])->name('teacher-earnings.export');
         Route::post('/teacher-earnings/{earning}/dispute', [SupervisorTeacherEarningsController::class, 'dispute'])->name('teacher-earnings.dispute');
         Route::post('/teacher-earnings/{earning}/resolve', [SupervisorTeacherEarningsController::class, 'resolve'])->name('teacher-earnings.resolve');
 

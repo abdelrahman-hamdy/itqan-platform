@@ -970,6 +970,22 @@ return [
         'summary_rate_per_session' => 'لكل جلسة',
         'summary_rate_per_student' => 'لكل طالب',
         'summary_rate_fixed' => 'مبلغ ثابت',
+        // Total hours
+        'summary_total_hours' => 'إجمالي الساعات',
+        'hours_unit' => 'ساعة',
+        // Export
+        'export_button' => 'تصدير PDF',
+        'export_title' => 'تصدير أرباح المعلمين',
+        'export_type_label' => 'نوع التصدير',
+        'export_type_summary' => 'ملخص المعلمين',
+        'export_current_filters' => 'الفلاتر المطبقة',
+        'export_download' => 'تحميل',
+        'export_all_teachers' => 'جميع المعلمين',
+        'export_all_periods' => 'جميع الفترات',
+        'export_period_label' => 'الفترة',
+        'export_generated_at' => 'تم التصدير بتاريخ',
+        'export_report_title' => 'تقرير أرباح المعلمين',
+        'export_no_data' => 'لا توجد بيانات للتصدير',
     ],
 
     'supervisors' => [

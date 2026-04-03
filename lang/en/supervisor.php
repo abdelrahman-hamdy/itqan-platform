@@ -970,6 +970,22 @@ return [
         'summary_rate_per_session' => 'per session',
         'summary_rate_per_student' => 'per student',
         'summary_rate_fixed' => 'fixed',
+        // Total hours
+        'summary_total_hours' => 'Total Hours',
+        'hours_unit' => 'hrs',
+        // Export
+        'export_button' => 'Export PDF',
+        'export_title' => 'Export Teacher Earnings',
+        'export_type_label' => 'Export Type',
+        'export_type_summary' => 'Teacher Summary',
+        'export_current_filters' => 'Applied Filters',
+        'export_download' => 'Download',
+        'export_all_teachers' => 'All Teachers',
+        'export_all_periods' => 'All Periods',
+        'export_period_label' => 'Period',
+        'export_generated_at' => 'Generated on',
+        'export_report_title' => 'Teacher Earnings Report',
+        'export_no_data' => 'No data to export',
     ],
 
     'supervisors' => [
