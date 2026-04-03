@@ -224,6 +224,7 @@
                                             'can_manage_parents' => ['bg-purple-100 text-purple-700', 'ri-parent-line'],
                                             'can_reset_passwords' => ['bg-red-100 text-red-700', 'ri-lock-password-line'],
                                             'can_manage_subscriptions' => ['bg-green-100 text-green-700', 'ri-vip-crown-line'],
+                                            'can_create_subscriptions' => ['bg-teal-100 text-teal-700', 'ri-add-circle-line'],
                                             'can_manage_payments' => ['bg-emerald-100 text-emerald-700', 'ri-money-dollar-circle-line'],
                                             'can_manage_teacher_earnings' => ['bg-yellow-100 text-yellow-700', 'ri-wallet-3-line'],
                                             'can_monitor_sessions' => ['bg-indigo-100 text-indigo-700', 'ri-eye-line'],
