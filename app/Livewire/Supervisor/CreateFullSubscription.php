@@ -163,8 +163,8 @@ class CreateFullSubscription extends Component
     public function updatedConsumedSessions(): void
     {
         $this->consumed_sessions = max(0, $this->consumed_sessions);
-        $max = max(0, $this->selectedPackageTotalSessions - 1);
-        if ($max > 0) {
+        if ($this->selectedPackageTotalSessions > 0) {
+            $max = max(0, $this->selectedPackageTotalSessions - 1);
             $this->consumed_sessions = min($this->consumed_sessions, $max);
         }
     }
@@ -236,13 +236,8 @@ class CreateFullSubscription extends Component
         if (! $pkg) {
             return 0;
         }
-        $multiplier = match ($this->billing_cycle) {
-            'quarterly' => 3,
-            'yearly' => 12,
-            default => 1,
-        };
 
-        return (int) (($pkg['sessions_per_month'] ?? 0) * $multiplier);
+        return (int) (($pkg['sessions_per_month'] ?? 0) * BillingCycle::from($this->billing_cycle)->sessionMultiplier());
     }
 
     public function getFinalPriceProperty(): float

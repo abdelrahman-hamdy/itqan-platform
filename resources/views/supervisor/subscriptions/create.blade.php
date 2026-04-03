@@ -214,7 +214,7 @@
                                     @forelse ($availableTeachers as $t)
                                         @php $tUser = $teacherProfileModels->get($t['id'])?->user; @endphp
                                         <button type="button"
-                                            x-show="!q || '{{ mb_strtolower($t['name']) }}'.includes(q.toLowerCase())"
+                                            x-show="!q || {{ Js::from(mb_strtolower($t['name'])) }}.includes(q.toLowerCase())"
                                             @click="select({{ Js::from($t) }})"
                                             class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 text-start transition-colors">
                                             @if($tUser)<x-avatar :user="$tUser" size="xs" :userType="$teacherUserType" />@endif
