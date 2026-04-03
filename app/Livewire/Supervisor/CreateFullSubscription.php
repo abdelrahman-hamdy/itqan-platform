@@ -58,6 +58,8 @@ class CreateFullSubscription extends Component
 
     public array $learning_goals = [];
 
+    public int $consumed_sessions = 0;
+
     // Data lists
     public array $availableTeachers = [];
 
@@ -287,6 +289,7 @@ class CreateFullSubscription extends Component
                 'memorization_level' => $this->memorization_level,
                 'specialization' => $this->specialization,
                 'learning_goals' => $this->learning_goals,
+                'consumed_sessions' => $this->consumed_sessions,
                 'is_sponsored' => $this->is_sponsored,
             ];
 

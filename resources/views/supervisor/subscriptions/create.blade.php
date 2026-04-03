@@ -406,6 +406,11 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.consumed_sessions_label') }}</label>
+                        <input type="number" wire:model="consumed_sessions" min="0" class="w-full rounded-lg border-gray-300" placeholder="0">
+                        <p class="text-xs text-gray-500 mt-1">{{ __('subscriptions.consumed_sessions_help') }}</p>
+                    </div>
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('public.booking.quran.form.learning_goals_label') }}</label>
                         <div class="space-y-2">
                             @foreach (\App\Enums\LearningGoal::cases() as $goal)
