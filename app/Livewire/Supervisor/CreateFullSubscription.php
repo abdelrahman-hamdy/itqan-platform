@@ -98,6 +98,7 @@ class CreateFullSubscription extends Component
         }
         $this->loadTeachers();
         $this->loadCircles();
+        $this->loadPackages();
     }
 
     // ── Reactive updates ──
@@ -110,9 +111,9 @@ class CreateFullSubscription extends Component
         $this->amount = 0;
         $this->discount = 0;
         $this->is_sponsored = false;
-        $this->availablePackages = [];
         $this->loadTeachers();
         $this->loadCircles();
+        $this->loadPackages();
     }
 
     public function updatedQuranCircleId(): void
