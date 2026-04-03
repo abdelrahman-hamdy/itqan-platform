@@ -25,7 +25,7 @@
      @if($closeOnEscape)
      @keydown.escape.window="open = false"
      @endif
-     class="fixed inset-0 z-50 overflow-y-auto"
+     class="fixed inset-0 z-[9998] overflow-y-auto"
      aria-labelledby="{{ $id }}-title"
      role="dialog"
      aria-modal="true">

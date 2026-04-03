@@ -12,7 +12,14 @@
         icon: '',
 
         themeClasses() {
-            if (this.theme === 'pink') return { iconBg: 'bg-pink-100', iconText: 'text-pink-600', btn: 'bg-pink-600 hover:bg-pink-700 focus:ring-pink-500' };
+            const themes = {
+                pink:   { iconBg: 'bg-pink-100',   iconText: 'text-pink-600',   btn: 'bg-pink-600 hover:bg-pink-700 focus:ring-pink-500' },
+                green:  { iconBg: 'bg-green-100',  iconText: 'text-green-600',  btn: 'bg-green-600 hover:bg-green-700 focus:ring-green-500' },
+                orange: { iconBg: 'bg-orange-100', iconText: 'text-orange-600', btn: 'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500' },
+                teal:   { iconBg: 'bg-teal-100',   iconText: 'text-teal-600',   btn: 'bg-teal-600 hover:bg-teal-700 focus:ring-teal-500' },
+                amber:  { iconBg: 'bg-amber-100',  iconText: 'text-amber-600',  btn: 'bg-amber-600 hover:bg-amber-700 focus:ring-amber-500' },
+            };
+            if (this.theme && themes[this.theme]) return themes[this.theme];
             if (this.isDangerous) return { iconBg: 'bg-red-100', iconText: 'text-red-600', btn: 'bg-red-600 hover:bg-red-700 focus:ring-red-500' };
             return { iconBg: 'bg-blue-100', iconText: 'text-blue-600', btn: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' };
         },

@@ -230,46 +230,46 @@
 
                 {{-- Circle Actions Widget --}}
                 @if(isset($isAdmin) || isset($quranTeachers))
+                @php $isOpen = $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::OPEN; @endphp
+
+                {{-- Hidden action forms --}}
+                <form id="toggle-status-form" method="POST" action="{{ route('manage.group-circles.toggle-status', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}" class="hidden">@csrf</form>
+                <form id="toggle-enrollment-form" method="POST" action="{{ route('manage.group-circles.toggle-enrollment', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}" class="hidden">@csrf</form>
+                @if($isAdmin)
+                <form id="delete-circle-form" method="POST" action="{{ route('manage.group-circles.destroy', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}" class="hidden">@csrf @method('DELETE')</form>
+                @endif
+
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
-                    <h3 class="text-sm font-bold text-gray-900 mb-4">{{ __('supervisor.group_circles.circle_actions') }}</h3>
-                    <div class="flex flex-col gap-2">
+                    <h3 class="text-sm font-bold text-gray-900 mb-3">{{ __('supervisor.group_circles.circle_actions') }}</h3>
+                    <div class="grid grid-cols-2 gap-2">
                         {{-- Toggle Status --}}
-                        <form id="toggle-status-form" method="POST"
-                              action="{{ route('manage.group-circles.toggle-status', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
-                            @csrf
-                        </form>
                         <button type="button"
                             onclick="window.confirmAction({
                                 title: @js($circle->status ? __('supervisor.group_circles.deactivate') : __('supervisor.group_circles.activate')),
                                 message: @js($circle->status ? __('supervisor.group_circles.confirm_deactivate') : __('supervisor.group_circles.confirm_activate')),
                                 confirmText: @js($circle->status ? __('supervisor.group_circles.deactivate') : __('supervisor.group_circles.activate')),
-                                isDangerous: {{ $circle->status ? 'true' : 'false' }},
+                                theme: '{{ $circle->status ? 'orange' : 'green' }}',
                                 icon: '{{ $circle->status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}',
                                 onConfirm: () => document.getElementById('toggle-status-form').submit()
                             })"
-                            class="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs md:text-sm font-medium rounded-lg transition-colors cursor-pointer
-                                {{ $circle->status ? 'bg-orange-50 text-orange-700 hover:bg-orange-100' : 'bg-green-50 text-green-700 hover:bg-green-100' }}">
+                            class="flex items-center justify-center gap-1.5 px-2 py-2.5 text-xs font-medium rounded-lg transition-colors cursor-pointer
+                                {{ $circle->status ? 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200' : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200' }}">
                             <i class="{{ $circle->status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}"></i>
                             {{ $circle->status ? __('supervisor.group_circles.deactivate') : __('supervisor.group_circles.activate') }}
                         </button>
 
                         {{-- Toggle Enrollment --}}
-                        <form id="toggle-enrollment-form" method="POST"
-                              action="{{ route('manage.group-circles.toggle-enrollment', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
-                            @csrf
-                        </form>
-                        @php $isOpen = $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::OPEN; @endphp
                         <button type="button"
                             onclick="window.confirmAction({
                                 title: @js($isOpen ? __('supervisor.group_circles.close_enrollment') : __('supervisor.group_circles.open_enrollment')),
                                 message: @js($isOpen ? __('supervisor.group_circles.confirm_close_enrollment') : __('supervisor.group_circles.confirm_open_enrollment')),
                                 confirmText: @js($isOpen ? __('supervisor.group_circles.close_enrollment') : __('supervisor.group_circles.open_enrollment')),
-                                isDangerous: {{ $isOpen ? 'true' : 'false' }},
+                                theme: '{{ $isOpen ? 'amber' : 'teal' }}',
                                 icon: '{{ $isOpen ? 'ri-door-closed-line' : 'ri-door-open-line' }}',
                                 onConfirm: () => document.getElementById('toggle-enrollment-form').submit()
                             })"
-                            class="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs md:text-sm font-medium rounded-lg transition-colors cursor-pointer
-                                {{ $isOpen ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' : 'bg-teal-50 text-teal-700 hover:bg-teal-100' }}">
+                            class="flex items-center justify-center gap-1.5 px-2 py-2.5 text-xs font-medium rounded-lg transition-colors cursor-pointer
+                                {{ $isOpen ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200' : 'bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200' }}">
                             <i class="{{ $isOpen ? 'ri-door-closed-line' : 'ri-door-open-line' }}"></i>
                             {{ $isOpen ? __('supervisor.group_circles.close_enrollment') : __('supervisor.group_circles.open_enrollment') }}
                         </button>
@@ -277,31 +277,26 @@
                         {{-- Change Teacher --}}
                         <button type="button"
                             onclick="window.dispatchEvent(new CustomEvent('open-modal-change-teacher'))"
-                            class="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer">
+                            class="flex items-center justify-center gap-1.5 px-2 py-2.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer">
                             <i class="ri-user-settings-line"></i>
                             {{ $circle->quran_teacher_id ? __('supervisor.group_circles.change_teacher') : __('supervisor.group_circles.assign_teacher') }}
                         </button>
 
                         {{-- Delete (admin only) --}}
                         @if($isAdmin)
-                            <form id="delete-circle-form" method="POST"
-                                  action="{{ route('manage.group-circles.destroy', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
-                                @csrf
-                                @method('DELETE')
-                            </form>
-                            <button type="button"
-                                onclick="window.confirmAction({
-                                    title: @js(__('supervisor.group_circles.delete_circle')),
-                                    message: @js(__('supervisor.group_circles.confirm_delete')),
-                                    confirmText: @js(__('supervisor.group_circles.delete_circle')),
-                                    isDangerous: true,
-                                    icon: 'ri-delete-bin-line',
-                                    onConfirm: () => document.getElementById('delete-circle-form').submit()
-                                })"
-                                class="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors cursor-pointer">
-                                <i class="ri-delete-bin-line"></i>
-                                {{ __('supervisor.group_circles.delete_circle') }}
-                            </button>
+                        <button type="button"
+                            onclick="window.confirmAction({
+                                title: @js(__('supervisor.group_circles.delete_circle')),
+                                message: @js(__('supervisor.group_circles.confirm_delete')),
+                                confirmText: @js(__('supervisor.group_circles.delete_circle')),
+                                isDangerous: true,
+                                icon: 'ri-delete-bin-line',
+                                onConfirm: () => document.getElementById('delete-circle-form').submit()
+                            })"
+                            class="flex items-center justify-center gap-1.5 px-2 py-2.5 text-xs font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-colors cursor-pointer">
+                            <i class="ri-delete-bin-line"></i>
+                            {{ __('supervisor.group_circles.delete_circle') }}
+                        </button>
                         @endif
                     </div>
                 </div>
