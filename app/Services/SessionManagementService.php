@@ -353,6 +353,10 @@ class SessionManagementService
 
     private function validateTimeSlotAvailable(int $teacherId, Carbon $scheduledAt, int $duration): void
     {
+        if ($scheduledAt->isPast()) {
+            throw new Exception(__('sessions.validation.cannot_schedule_past'));
+        }
+
         $endTime = $scheduledAt->copy()->addMinutes($duration);
         $nowUtc = Carbon::now('UTC');
 
