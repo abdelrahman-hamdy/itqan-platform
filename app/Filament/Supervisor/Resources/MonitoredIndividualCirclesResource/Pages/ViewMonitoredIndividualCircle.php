@@ -9,7 +9,6 @@ use App\Models\User;
 use App\Services\CircleTransferService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 
 class ViewMonitoredIndividualCircle extends ViewRecord
@@ -42,11 +41,6 @@ class ViewMonitoredIndividualCircle extends ViewRecord
                         })
                         ->searchable()
                         ->required(),
-                    Textarea::make('reason')
-                        ->label(__('circles.transfer.reason_label'))
-                        ->placeholder(__('circles.transfer.reason_placeholder'))
-                        ->rows(3)
-                        ->maxLength(500),
                 ])
                 ->modalHeading(__('circles.transfer.modal_heading'))
                 ->modalDescription(__('circles.transfer.modal_description'))
@@ -61,7 +55,7 @@ class ViewMonitoredIndividualCircle extends ViewRecord
                             circle: $record,
                             newTeacher: $newTeacher,
                             performedBy: auth()->user(),
-                            reason: $data['reason'] ?? null,
+                            reason: null,
                         );
 
                         Notification::make()
