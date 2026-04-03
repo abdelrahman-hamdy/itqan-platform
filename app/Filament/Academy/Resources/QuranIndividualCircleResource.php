@@ -80,20 +80,6 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                             ->maxLength(255)
                             ->helperText('يتم إنشاؤه تلقائياً إذا تُرك فارغاً'),
 
-                        Select::make('quran_teacher_id')
-                            ->label('المعلم')
-                            ->options(function () use ($academyId) {
-                                return User::where('academy_id', $academyId)
-                                    ->whereHas('quranTeacherProfile')
-                                    ->get()
-                                    ->mapWithKeys(fn ($user) => [
-                                        $user->id => trim(($user->first_name ?? '').' '.($user->last_name ?? '')) ?: 'معلم #'.$user->id,
-                                    ])
-                                    ->toArray();
-                            })
-                            ->searchable()
-                            ->required(),
-
                         Select::make('student_id')
                             ->label('الطالب')
                             ->options(function () use ($academyId) {

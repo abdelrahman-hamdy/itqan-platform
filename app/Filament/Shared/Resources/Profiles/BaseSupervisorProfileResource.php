@@ -305,7 +305,7 @@ abstract class BaseSupervisorProfileResource extends Resource
                         ->dehydrated(false),
                 ]),
             ])
-            ->visible(fn (string $operation): bool => $operation === 'edit')
+            ->visible(fn (string $operation): bool => in_array($operation, ['edit', 'create']))
             ->collapsible();
     }
 
