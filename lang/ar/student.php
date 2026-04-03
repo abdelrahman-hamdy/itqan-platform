@@ -749,7 +749,9 @@ return [
         'request_sponsored_enrollment' => 'طلب تسجيل مكفول',
         'sponsored_request_submitted' => 'تم تقديم طلب التكفل بنجاح. سيتم مراجعته من الإدارة.',
         'sponsored_request_pending' => 'لديك طلب تكفل قيد المراجعة لهذه الحلقة',
+        'sponsored_request_confirm_message' => 'سيتم إرسال طلب تسجيل مكفول للإدارة. عند الموافقة سيتم تسجيلك مجاناً.',
         'already_enrolled' => 'أنت مسجل بالفعل في هذه الحلقة',
+        'no_payment_gateways' => 'لا توجد بوابات دفع متاحة. يرجى التواصل مع الإدارة.',
     ],
     'course_detail' => [
         'circle_description' => 'تفاصيل حلقة القرآن',

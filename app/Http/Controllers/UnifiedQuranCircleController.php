@@ -176,6 +176,8 @@ class UnifiedQuranCircleController extends Controller
         $upcomingSessions = collect();
         $pastSessions = collect();
 
+        $hasPendingSponsoredRequest = false;
+
         if ($isAuthenticated) {
             $isEnrolled = $circle->students()->where('users.id', $user->id)->exists();
             $canEnroll = ! $isEnrolled && $circle->status === true && $circle->enrollment_status === CircleEnrollmentStatus::OPEN;
@@ -183,6 +185,14 @@ class UnifiedQuranCircleController extends Controller
             // Enrolled-only circles: hide from non-enrolled users
             if ($circle->is_enrolled_only && ! $isEnrolled) {
                 abort(404);
+            }
+
+            // Check for pending sponsored enrollment request
+            if (! $isEnrolled && $circle->allow_sponsored_requests) {
+                $hasPendingSponsoredRequest = SponsoredEnrollmentRequest::where('circle_id', $circle->id)
+                    ->where('student_id', $user->id)
+                    ->where('status', SponsoredEnrollmentRequest::STATUS_PENDING)
+                    ->exists();
             }
 
             // Get sessions and subscription for enrolled students
@@ -231,7 +241,8 @@ class UnifiedQuranCircleController extends Controller
             'isAuthenticated',
             'upcomingSessions',
             'pastSessions',
-            'subscription'
+            'subscription',
+            'hasPendingSponsoredRequest'
         ));
     }
 

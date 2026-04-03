@@ -605,7 +605,9 @@ return [
         'request_sponsored_enrollment' => 'Request Sponsored Enrollment',
         'sponsored_request_submitted' => 'Your sponsored enrollment request has been submitted. It will be reviewed by the administration.',
         'sponsored_request_pending' => 'You have a pending sponsorship request for this circle',
+        'sponsored_request_confirm_message' => 'A sponsored enrollment request will be sent to administration. Upon approval, you will be enrolled for free.',
         'already_enrolled' => 'You are already enrolled in this circle',
+        'no_payment_gateways' => 'No payment gateways available. Please contact administration.',
     ],
     'course_detail' => [
         'circle_description' => 'Quran Circle Details',

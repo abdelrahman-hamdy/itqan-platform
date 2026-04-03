@@ -150,6 +150,33 @@
                                 <i class="ri-user-add-line text-xl md:text-2xl"></i>
                                 {{ __('student.group_circle.enroll_button') }}
                             </button>
+
+                            {{-- Sponsored Enrollment Button --}}
+                            @if($circle->allow_sponsored_requests)
+                                @if(isset($hasPendingSponsoredRequest) && $hasPendingSponsoredRequest)
+                                    <p class="text-center text-sm text-amber-600 mt-2 flex items-center justify-center gap-1">
+                                        <i class="ri-time-line"></i>
+                                        {{ __('student.group_circle.sponsored_request_pending') }}
+                                    </p>
+                                @else
+                                    <form method="POST" action="{{ route('quran-circles.sponsored-enrollment', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circleId' => $circle->id]) }}" class="mt-2">
+                                        @csrf
+                                        <button type="button"
+                                            onclick="window.confirmAction({
+                                                title: @js(__('student.group_circle.request_sponsored_enrollment')),
+                                                message: @js(__('student.group_circle.sponsored_request_confirm_message')),
+                                                confirmText: @js(__('student.group_circle.request_sponsored_enrollment')),
+                                                isDangerous: false,
+                                                icon: 'ri-heart-line',
+                                                onConfirm: () => this.closest('form').submit()
+                                            })"
+                                            class="min-h-[44px] w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white py-2.5 px-4 rounded-xl font-medium text-sm hover:from-pink-600 hover:to-rose-600 transition-all shadow flex items-center justify-center gap-2">
+                                            <i class="ri-heart-line"></i>
+                                            {{ __('student.group_circle.request_sponsored_enrollment') }}
+                                        </button>
+                                    </form>
+                                @endif
+                            @endif
                             @else
                             {{-- Non-student users see disabled button --}}
                             <span class="flex items-center justify-center gap-2 w-full min-h-[48px] bg-gray-300 text-gray-500 text-center font-medium py-3 md:py-4 px-4 md:px-6 rounded-xl cursor-not-allowed">
@@ -210,7 +237,7 @@ function showEnrollModal(circleId) {
     });
 }
 
-// Listen for gateway selection
+// Listen for gateway selection and errors
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof Livewire !== 'undefined') {
         Livewire.on('gatewaySelected', ({ gateway }) => {
@@ -218,6 +245,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 enrollInCircle(pendingEnrollCircleId, gateway);
                 pendingEnrollCircleId = null;
             }
+        });
+
+        Livewire.on('gatewaySelectionError', ({ message }) => {
+            pendingEnrollCircleId = null;
+            showConfirmModal({
+                title: '{{ __('student.group_circle.enroll_error_title') }}',
+                message: message || '{{ __('student.group_circle.no_payment_gateways') }}',
+                type: 'danger',
+                confirmText: '{{ __('student.group_circle.ok_button') }}'
+            });
         });
     }
 });
