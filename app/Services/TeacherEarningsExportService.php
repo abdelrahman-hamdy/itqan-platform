@@ -18,6 +18,7 @@ class TeacherEarningsExportService
     {
         $pdf = $this->createPdf($meta);
         $pdf->AddPage();
+        $pdf->setRTL(true);
 
         $this->addHeader($pdf, $meta);
         $pdf->Ln(6);
@@ -65,7 +66,7 @@ class TeacherEarningsExportService
         $currency = $meta['currency_symbol'];
 
         // Column widths for landscape A4 (usable ~277mm with 10mm margins)
-        // LTR order: teacher name on left, total on right
+        // RTL order: teacher on right, total on left
         $colWidths = [
             'teacher' => 50,
             'quran_individual' => 34,
@@ -77,7 +78,7 @@ class TeacherEarningsExportService
             'total' => 35,
         ];
 
-        // Table header (LTR order: teacher first → total last)
+        // Table header — RTL mode places cells right-to-left
         $pdf->SetFont('dejavusans', 'B', 8);
         $pdf->SetFillColor(240, 240, 240);
 
@@ -115,14 +116,14 @@ class TeacherEarningsExportService
 
             $hours = round($summary['total_duration_minutes'] / 60, 1);
 
-            $pdf->Cell($colWidths['teacher'], 7, $teacherName, 1, 0, 'R', $fillColor);
+            $pdf->Cell($colWidths['teacher'], 7, $teacherName, 1, 0, 'C', $fillColor);
             $pdf->Cell($colWidths['quran_individual'], 7, $this->formatAmount($summary['quran_individual']['amount'], $currency), 1, 0, 'C', $fillColor);
             $pdf->Cell($colWidths['quran_group'], 7, $this->formatAmount($summary['quran_group']['amount'], $currency), 1, 0, 'C', $fillColor);
             $pdf->Cell($colWidths['academic'], 7, $this->formatAmount($summary['academic']['amount'], $currency), 1, 0, 'C', $fillColor);
             $pdf->Cell($colWidths['interactive'], 7, $this->formatAmount($summary['interactive']['amount'], $currency), 1, 0, 'C', $fillColor);
-            $pdf->Cell($colWidths['sessions'], 7, (string) $summary['sessions_count'], 1, 0, 'C', $fillColor);
-            $pdf->Cell($colWidths['hours'], 7, $hours.' '.__('supervisor.teacher_earnings.hours_unit'), 1, 0, 'C', $fillColor);
-            $pdf->Cell($colWidths['total'], 7, number_format($summary['total'], 2).' '.$currency, 1, 1, 'C', $fillColor);
+            $pdf->Cell($colWidths['sessions'], 7, $this->num($summary['sessions_count']), 1, 0, 'C', $fillColor);
+            $pdf->Cell($colWidths['hours'], 7, $this->num($hours).' '.__('supervisor.teacher_earnings.hours_unit'), 1, 0, 'C', $fillColor);
+            $pdf->Cell($colWidths['total'], 7, $this->num(number_format($summary['total'], 2)).' '.$currency, 1, 1, 'C', $fillColor);
 
             $totals['quran_individual'] += $summary['quran_individual']['amount'];
             $totals['quran_group'] += $summary['quran_group']['amount'];
@@ -141,14 +142,14 @@ class TeacherEarningsExportService
 
         $totalHours = round($totals['total_duration_minutes'] / 60, 1);
 
-        $pdf->Cell($colWidths['teacher'], 8, __('supervisor.teacher_earnings.summary_total'), 1, 0, 'R', true);
+        $pdf->Cell($colWidths['teacher'], 8, __('supervisor.teacher_earnings.summary_total'), 1, 0, 'C', true);
         $pdf->Cell($colWidths['quran_individual'], 8, $this->formatAmount($totals['quran_individual'], $currency), 1, 0, 'C', true);
         $pdf->Cell($colWidths['quran_group'], 8, $this->formatAmount($totals['quran_group'], $currency), 1, 0, 'C', true);
         $pdf->Cell($colWidths['academic'], 8, $this->formatAmount($totals['academic'], $currency), 1, 0, 'C', true);
         $pdf->Cell($colWidths['interactive'], 8, $this->formatAmount($totals['interactive'], $currency), 1, 0, 'C', true);
-        $pdf->Cell($colWidths['sessions'], 8, (string) $totals['sessions_count'], 1, 0, 'C', true);
-        $pdf->Cell($colWidths['hours'], 8, $totalHours.' '.__('supervisor.teacher_earnings.hours_unit'), 1, 0, 'C', true);
-        $pdf->Cell($colWidths['total'], 8, number_format($totals['total'], 2).' '.$currency, 1, 1, 'C', true);
+        $pdf->Cell($colWidths['sessions'], 8, $this->num($totals['sessions_count']), 1, 0, 'C', true);
+        $pdf->Cell($colWidths['hours'], 8, $this->num($totalHours).' '.__('supervisor.teacher_earnings.hours_unit'), 1, 0, 'C', true);
+        $pdf->Cell($colWidths['total'], 8, $this->num(number_format($totals['total'], 2)).' '.$currency, 1, 1, 'C', true);
     }
 
     protected function addFooter(TCPDF $pdf, array $meta): void
@@ -159,12 +160,20 @@ class TeacherEarningsExportService
         $pdf->SetTextColor(0, 0, 0);
     }
 
+    /**
+     * Wrap a number with Unicode LTR embedding marks to prevent RTL digit reversal.
+     */
+    private function num(string|int|float $number): string
+    {
+        return "\u{202A}".$number."\u{202C}";
+    }
+
     private function formatAmount(float $amount, string $currency): string
     {
         if ($amount <= 0) {
             return '-';
         }
 
-        return number_format($amount, 2).' '.$currency;
+        return $this->num(number_format($amount, 2)).' '.$currency;
     }
 }
