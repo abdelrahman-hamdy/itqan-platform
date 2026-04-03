@@ -156,7 +156,7 @@ class TeacherEarningsExportService
     {
         $pdf->SetFont('dejavusans', '', 8);
         $pdf->SetTextColor(128, 128, 128);
-        $pdf->Cell(0, 5, 'Itqan Platform - '.$meta['academy_name'], 0, 1, 'C');
+        $pdf->Cell(0, 5, $meta['academy_name'].' - '.$this->num('Itqan Platform'), 0, 1, 'C');
         $pdf->SetTextColor(0, 0, 0);
     }
 
