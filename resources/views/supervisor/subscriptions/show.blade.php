@@ -22,7 +22,7 @@
 
     $daysRemaining = $subscription->ends_at ? (int) max(0, nowInAcademyTimezone()->diffInDays(toAcademyTimezone($subscription->ends_at), false)) : 0;
     $packageName = $subscription->package_name_ar ?? $subscription->package?->name ?? $subscription->academicPackage?->name ?? '-';
-    $source = $subscription->purchase_source?->value ?? ($subscription->created_by ? 'admin' : 'student');
+    $source = $subscription->purchase_source?->value ?? 'web';
 @endphp
 
 <div class="max-w-5xl mx-auto">

@@ -108,6 +108,7 @@ class AdminSubscriptionWizardService
             'package_name_en' => $package?->name,
             'notes' => $data['notes'] ?? null,
             'progress_percentage' => 0,
+            'purchase_source' => 'admin',
         ];
 
         // Common optional fields

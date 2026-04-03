@@ -1240,7 +1240,7 @@ return [
         'circle_created' => 'Circle created successfully',
         'circle_already_exists' => 'This subscription already has a linked circle',
         'source_admin' => 'Admin Created',
-        'source_student' => 'Student Subscribed',
+        'source_student' => 'By Student',
         'detail_package' => 'Package',
         'detail_price' => 'Price',
         'detail_cycle' => 'Billing Cycle',

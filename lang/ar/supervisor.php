@@ -1240,7 +1240,7 @@ return [
         'circle_created' => 'تم إنشاء الحلقة بنجاح',
         'circle_already_exists' => 'هذا الاشتراك مرتبط بحلقة بالفعل',
         'source_admin' => 'إنشاء إداري',
-        'source_student' => 'اشتراك طالب',
+        'source_student' => 'بواسطة الطالب',
         'detail_package' => 'الباقة',
         'detail_price' => 'السعر',
         'detail_cycle' => 'دورة الفوترة',
