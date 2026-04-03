@@ -67,14 +67,7 @@ class CreateFullSubscription extends Component
 
     public function getTotalStepsProperty(): int
     {
-        // Group circles: 2 steps (type+student+circle, then sponsored/payment)
-        // Individual Quran: 4 steps (type+student+teacher, package+pricing, payment, learning details)
-        // Academic: 3 steps (type+student+teacher, package+pricing, payment)
-        return match ($this->subscription_type) {
-            'quran_group' => 2,
-            'quran_individual' => 4,
-            default => 3,
-        };
+        return count($this->stepLabels);
     }
 
     protected function rules(): array

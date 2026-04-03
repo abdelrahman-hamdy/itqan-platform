@@ -114,10 +114,7 @@
                                     placeholder="{{ __('subscriptions.search_student_placeholder') }}">
                                 {{-- Search spinner --}}
                                 <div wire:loading wire:target="student_search" class="absolute inset-y-0 end-3 flex items-center">
-                                    <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                                    </svg>
+                                    <i class="ri-loader-4-line animate-spin text-gray-400"></i>
                                 </div>
                             </div>
                             @if (count($searchResults) > 0)
@@ -162,7 +159,9 @@
                     @php
                         $selectedTeacherData = $teacher_id ? collect($availableTeachers)->firstWhere('id', $teacher_id) : null;
                         $profileModel = $isQuranType ? \App\Models\QuranTeacherProfile::class : \App\Models\AcademicTeacherProfile::class;
-                        $teacherProfileModels = $profileModel::whereIn('id', collect($availableTeachers)->pluck('id'))->with('user')->get()->keyBy('id');
+                        $teacherProfileModels = $teacher_id
+                            ? collect()
+                            : $profileModel::whereIn('id', collect($availableTeachers)->pluck('id'))->with('user')->get()->keyBy('id');
                     @endphp
                     <div x-data="{
                         selected: @js($selectedTeacherData),
@@ -430,7 +429,7 @@
                     class="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     <span wire:loading.remove wire:target="previousStep">{{ __('subscriptions.previous_step') }}</span>
                     <span wire:loading wire:target="previousStep" class="flex items-center gap-2">
-                        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                        <i class="ri-loader-4-line animate-spin"></i>
                         {{ __('subscriptions.previous_step') }}
                     </span>
                 </button>
@@ -443,7 +442,7 @@
                     class="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     <span wire:loading.remove wire:target="nextStep">{{ __('subscriptions.next_step') }}</span>
                     <span wire:loading wire:target="nextStep" class="flex items-center gap-2">
-                        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                        <i class="ri-loader-4-line animate-spin"></i>
                         {{ __('subscriptions.next_step') }}
                     </span>
                 </button>
@@ -452,7 +451,7 @@
                     class="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     <span wire:loading.remove wire:target="submit">{{ __('subscriptions.create_full_subscription') }}</span>
                     <span wire:loading wire:target="submit" class="flex items-center gap-2">
-                        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                        <i class="ri-loader-4-line animate-spin"></i>
                         {{ __('subscriptions.create_full_subscription') }}
                     </span>
                 </button>
