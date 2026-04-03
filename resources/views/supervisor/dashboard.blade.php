@@ -412,6 +412,13 @@
                         <i class="ri-file-chart-line text-lg"></i>
                         <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_reports') }}</span>
                     </a>
+                    @if($canCreateSubscriptions)
+                        <a href="{{ route('manage.subscriptions.create', ['subdomain' => $subdomain]) }}"
+                           class="flex items-center gap-3 p-3 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors">
+                            <i class="ri-add-circle-line text-lg"></i>
+                            <span class="text-sm font-medium">{{ __('supervisor.dashboard.go_to_create_subscription') }}</span>
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>

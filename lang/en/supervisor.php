@@ -100,6 +100,7 @@ return [
         'go_to_monitoring' => 'Sessions Monitoring',
         'go_to_teachers' => 'Teachers',
         'go_to_reports' => 'Reports',
+        'go_to_create_subscription' => 'Create Subscription',
         'session_with' => 'Session with :name',
     ],
 

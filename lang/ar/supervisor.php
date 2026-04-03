@@ -100,6 +100,7 @@ return [
         'go_to_monitoring' => 'مراقبة الجلسات',
         'go_to_teachers' => 'المعلمون',
         'go_to_reports' => 'التقارير',
+        'go_to_create_subscription' => 'إنشاء اشتراك',
         'session_with' => 'جلسة مع :name',
     ],
 

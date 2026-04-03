@@ -203,6 +203,8 @@ class SupervisorDashboardController extends BaseSupervisorWebController
 
         $todaySessions = collect($todaySessions->sortBy('scheduled_at')->values()->all());
 
+        $canCreateSubscriptions = $this->canCreateSubscriptions();
+
         return view('supervisor.dashboard', compact(
             'user',
             'isAdmin',
@@ -210,6 +212,7 @@ class SupervisorDashboardController extends BaseSupervisorWebController
             'monthlyStats',
             'chartData',
             'todaySessions',
+            'canCreateSubscriptions',
         ));
     }
 
