@@ -307,11 +307,11 @@
                      @open-modal-change-teacher.window="open = true"
                      @keydown.escape.window="open && (open = false)"
                      x-show="open" x-cloak
-                     class="fixed inset-0 z-[9998] overflow-y-auto">
+                     class="fixed inset-0 z-[9998]">
                     <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                          x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                         @click="open = false" class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
-                    <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4" @click="open = false">
+                         @click="open = false" class="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm"></div>
+                    <div class="fixed inset-0 z-[9999] flex items-end md:items-center justify-center p-0 md:p-4" @click="open = false">
                         <form method="POST" action="{{ route('manage.group-circles.change-teacher', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
                               x-show="open" @click.stop
                               x-transition:enter="transition ease-out duration-200"
