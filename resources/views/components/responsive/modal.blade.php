@@ -18,6 +18,7 @@
 
 <div id="{{ $id }}"
      x-data="{ open: false }"
+     x-init="$nextTick(() => document.body.appendChild($el))"
      x-show="open"
      x-cloak
      @open-modal-{{ $id }}.window="open = true"
