@@ -157,18 +157,18 @@ class CircleController extends Controller
             ->first();
 
         if (! $circle) {
-            return $this->errorResponse(__('student.group_circles.not_found'), 404);
+            return $this->errorResponse(__('student.group_circle.not_found'), 404);
         }
 
         if ($circle->students()->where('users.id', $user->id)->exists()) {
-            return $this->errorResponse(__('student.group_circles.already_enrolled'), 422);
+            return $this->errorResponse(__('student.group_circle.already_enrolled'), 422);
         }
 
         if (SponsoredEnrollmentRequest::where('circle_id', $circle->id)
             ->where('student_id', $user->id)
             ->pending()
             ->exists()) {
-            return $this->errorResponse(__('student.group_circles.sponsored_request_pending'), 422);
+            return $this->errorResponse(__('student.group_circle.sponsored_request_pending'), 422);
         }
 
         SponsoredEnrollmentRequest::create([
@@ -178,6 +178,6 @@ class CircleController extends Controller
             'status' => SponsoredEnrollmentRequest::STATUS_PENDING,
         ]);
 
-        return $this->successResponse(null, __('student.group_circles.sponsored_request_submitted'));
+        return $this->successResponse(null, __('student.group_circle.sponsored_request_submitted'));
     }
 }

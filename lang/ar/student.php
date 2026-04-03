@@ -751,6 +751,7 @@ return [
         'sponsored_request_pending' => 'لديك طلب تكفل قيد المراجعة لهذه الحلقة',
         'sponsored_request_confirm_message' => 'سيتم إرسال طلب تسجيل مكفول للإدارة. عند الموافقة سيتم تسجيلك مجاناً.',
         'already_enrolled' => 'أنت مسجل بالفعل في هذه الحلقة',
+        'not_found' => 'الحلقة غير موجودة',
         'no_payment_gateways' => 'لا توجد بوابات دفع متاحة. يرجى التواصل مع الإدارة.',
     ],
     'course_detail' => [

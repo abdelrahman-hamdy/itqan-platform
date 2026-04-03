@@ -448,7 +448,7 @@ class UnifiedQuranCircleController extends Controller
 
         // Check student not already enrolled
         if ($circle->students()->where('users.id', $user->id)->exists()) {
-            return redirect()->back()->with('error', __('student.group_circles.already_enrolled'));
+            return redirect()->back()->with('error', __('student.group_circle.already_enrolled'));
         }
 
         // Check no pending request exists
@@ -456,7 +456,7 @@ class UnifiedQuranCircleController extends Controller
             ->where('student_id', $user->id)
             ->pending()
             ->exists()) {
-            return redirect()->back()->with('info', __('student.group_circles.sponsored_request_pending'));
+            return redirect()->back()->with('info', __('student.group_circle.sponsored_request_pending'));
         }
 
         SponsoredEnrollmentRequest::create([
@@ -467,6 +467,6 @@ class UnifiedQuranCircleController extends Controller
         ]);
 
         return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
-            ->with('success', __('student.group_circles.sponsored_request_submitted'));
+            ->with('success', __('student.group_circle.sponsored_request_submitted'));
     }
 }

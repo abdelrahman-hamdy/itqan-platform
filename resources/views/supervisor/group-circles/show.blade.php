@@ -301,31 +301,58 @@
                     </div>
                 </div>
 
-                {{-- Change Teacher Modal --}}
-                <x-responsive.modal id="change-teacher" :title="__('supervisor.group_circles.change_teacher')" size="sm">
-                    <form method="POST" action="{{ route('manage.group-circles.change-teacher', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
-                        @csrf
-                        <div class="space-y-4">
-                            <p class="text-sm text-gray-600">{{ __('supervisor.group_circles.select_teacher') }}</p>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.quran_teacher') }}</label>
-                                <select name="quran_teacher_id" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
-                                    @foreach($quranTeachers as $t)
-                                        <option value="{{ $t->id }}" {{ $circle->quran_teacher_id == $t->id ? 'selected' : '' }}>{{ $t->first_name }} {{ $t->last_name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <x-slot:footer>
-                            <div class="flex justify-end gap-3">
-                                <button type="submit"
-                                        class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer">
-                                    {{ __('supervisor.group_circles.change_teacher') }}
+                {{-- Change Teacher Modal (inline Alpine) --}}
+                <div x-data="{ open: false }"
+                     x-init="$nextTick(() => document.body.appendChild($el))"
+                     @open-modal-change-teacher.window="open = true"
+                     @keydown.escape.window="open && (open = false)"
+                     x-show="open" x-cloak
+                     class="fixed inset-0 z-[9998] overflow-y-auto">
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                         @click="open = false" class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+                    <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4" @click="open = false">
+                        <form method="POST" action="{{ route('manage.group-circles.change-teacher', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
+                              x-show="open" @click.stop
+                              x-transition:enter="transition ease-out duration-200"
+                              x-transition:enter-start="opacity-0 translate-y-full md:translate-y-0 md:scale-95"
+                              x-transition:enter-end="opacity-100 translate-y-0 md:scale-100"
+                              x-transition:leave="transition ease-in duration-150"
+                              x-transition:leave-start="opacity-100 translate-y-0 md:scale-100"
+                              x-transition:leave-end="opacity-0 translate-y-full md:translate-y-0 md:scale-95"
+                              class="relative bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-xl overflow-hidden">
+                            @csrf
+                            <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-100">
+                                <div class="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-gray-300"></div>
+                                <h3 class="text-lg font-bold text-gray-900 mt-2 md:mt-0">{{ $circle->quran_teacher_id ? __('supervisor.group_circles.change_teacher') : __('supervisor.group_circles.assign_teacher') }}</h3>
+                                <button type="button" @click="open = false" class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+                                    <i class="ri-close-line text-xl"></i>
                                 </button>
                             </div>
-                        </x-slot:footer>
-                    </form>
-                </x-responsive.modal>
+                            <div class="p-4 md:p-6 space-y-4">
+                                <p class="text-sm text-gray-600">{{ __('supervisor.group_circles.select_teacher') }}</p>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.group_circles.quran_teacher') }}</label>
+                                    <select name="quran_teacher_id" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                        @foreach($quranTeachers as $t)
+                                            <option value="{{ $t->id }}" {{ $circle->quran_teacher_id == $t->id ? 'selected' : '' }}>{{ $t->first_name }} {{ $t->last_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="p-4 md:p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                                <button type="button" @click="open = false"
+                                        class="inline-flex items-center px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 text-sm font-medium rounded-lg transition-colors cursor-pointer">
+                                    {{ __('common.actions.cancel') }}
+                                </button>
+                                <button type="submit"
+                                        class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer">
+                                    {{ $circle->quran_teacher_id ? __('supervisor.group_circles.change_teacher') : __('supervisor.group_circles.assign_teacher') }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
                 {{-- Edit Details Widget --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">

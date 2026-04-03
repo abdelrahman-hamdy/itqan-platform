@@ -607,6 +607,7 @@ return [
         'sponsored_request_pending' => 'You have a pending sponsorship request for this circle',
         'sponsored_request_confirm_message' => 'A sponsored enrollment request will be sent to administration. Upon approval, you will be enrolled for free.',
         'already_enrolled' => 'You are already enrolled in this circle',
+        'not_found' => 'Circle not found',
         'no_payment_gateways' => 'No payment gateways available. Please contact administration.',
     ],
     'course_detail' => [
