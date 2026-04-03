@@ -19,13 +19,8 @@ class TeacherEarningsExportService
         $pdf = $this->createPdf($meta);
         $pdf->AddPage();
 
-        // RTL for Arabic header text only
-        $pdf->setRTL(true);
         $this->addHeader($pdf, $meta);
         $pdf->Ln(6);
-
-        // LTR for the data table — prevents TCPDF from reversing digit order in numbers
-        $pdf->setRTL(false);
         $this->addSummaryTable($pdf, $teacherSummaries, $profileUserMap, $meta);
         $pdf->Ln(8);
         $this->addFooter($pdf, $meta);
