@@ -1019,6 +1019,8 @@ return [
         'can_reset_passwords_description' => 'View and change user passwords',
         'can_manage_subscriptions' => 'Manage Subscriptions',
         'can_manage_subscriptions_description' => 'View, activate, pause, and extend subscriptions',
+        'can_create_subscriptions' => 'Create Subscriptions',
+        'can_create_subscriptions_description' => 'Create new subscriptions for students manually',
         'can_manage_payments' => 'Manage Payments',
         'can_manage_payments_description' => 'View payments and mark as completed',
         'can_manage_teacher_earnings' => 'Manage Teacher Earnings',
