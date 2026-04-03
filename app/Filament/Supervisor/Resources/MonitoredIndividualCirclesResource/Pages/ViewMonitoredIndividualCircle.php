@@ -60,7 +60,7 @@ class ViewMonitoredIndividualCircle extends ViewRecord
 
                         Notification::make()
                             ->title(__('circles.transfer.success', [
-                                'teacher_name' => trim(($newTeacher->first_name ?? '').' '.($newTeacher->last_name ?? '')),
+                                'teacher_name' => $newTeacher->name,
                             ]))
                             ->success()
                             ->send();

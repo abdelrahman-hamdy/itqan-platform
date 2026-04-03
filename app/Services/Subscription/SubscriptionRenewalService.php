@@ -274,8 +274,8 @@ class SubscriptionRenewalService
                         'package_price_quarterly' => (float) ($package->quarterly_price ?? $package->monthly_price * 3),
                         'package_price_yearly' => (float) ($package->yearly_price ?? $package->monthly_price * 12),
                         'total_price' => $finalPrice,
-                        'discount_amount' => $this->resolveDiscount($old, $options),
-                        'final_price' => max(0, $finalPrice - $this->resolveDiscount($old, $options)),
+                        'discount_amount' => $discount = $this->resolveDiscount($old, $options),
+                        'final_price' => max(0, $finalPrice - $discount),
                     ],
                 ];
             }

@@ -29,10 +29,8 @@ class CircleTeacherChangedNotification extends Notification implements ShouldQue
 
     public function toArray(object $notifiable): array
     {
-        $oldName = $this->oldTeacher
-            ? trim(($this->oldTeacher->first_name ?? '').' '.($this->oldTeacher->last_name ?? ''))
-            : '-';
-        $newName = trim(($this->newTeacher->first_name ?? '').' '.($this->newTeacher->last_name ?? ''));
+        $oldName = $this->oldTeacher?->name ?? '-';
+        $newName = $this->newTeacher->name;
 
         return [
             'type' => 'circle_teacher_changed',

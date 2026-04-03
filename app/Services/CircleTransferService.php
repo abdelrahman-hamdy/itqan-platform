@@ -8,16 +8,18 @@ use App\Models\ChatGroup;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
+use App\Models\QuranTeacherProfile;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Wirechat\Wirechat\Models\Participant;
 
 class CircleTransferService
 {
     public function __construct(
         private SupervisedChatGroupService $chatGroupService,
         private ChatPermissionService $chatPermissionService,
+        private SupervisorResolutionService $supervisorResolutionService,
     ) {}
 
     public function transfer(
@@ -28,13 +30,11 @@ class CircleTransferService
     ): void {
         $this->validate($circle, $newTeacher);
 
-        $oldTeacherId = $circle->quran_teacher_id;
+        $oldTeacher = User::findOrFail($circle->quran_teacher_id);
 
-        DB::transaction(function () use ($circle, $newTeacher, $oldTeacherId, $performedBy, $reason) {
-            // 1. Update circle
+        DB::transaction(function () use ($circle, $oldTeacher, $newTeacher, $performedBy, $reason) {
             $circle->update(['quran_teacher_id' => $newTeacher->id]);
 
-            // 2. Update active/pending subscriptions (both polymorphic and legacy FK paths)
             $activeStatuses = [SessionSubscriptionStatus::ACTIVE, SessionSubscriptionStatus::PENDING];
 
             QuranSubscription::where('education_unit_type', QuranIndividualCircle::class)
@@ -48,23 +48,19 @@ class CircleTransferService
                     ->update(['quran_teacher_id' => $newTeacher->id]);
             }
 
-            // 3. Update future scheduled sessions only
             $updatedSessions = QuranSession::where('individual_circle_id', $circle->id)
                 ->whereIn('status', array_map(fn ($s) => $s->value, SessionStatus::upcomingStatuses()))
                 ->update(['quran_teacher_id' => $newTeacher->id]);
 
-            // 4. Update chat group
-            $chatGroupUpdated = $this->transferChatGroup($circle, $oldTeacherId, $newTeacher);
+            $chatGroupUpdated = $this->transferChatGroup($circle, $oldTeacher, $newTeacher);
 
-            // 5. Clear permission caches
-            $this->clearCaches($oldTeacherId, $newTeacher->id, $circle->student_id, $circle->academy_id);
+            $this->clearCaches($oldTeacher, $newTeacher, $circle->student_id, $circle->academy_id);
 
-            // 6. Log via Spatie Activity Log
             activity('circle_transfer')
                 ->performedOn($circle)
                 ->causedBy($performedBy)
                 ->withProperties([
-                    'old_teacher_id' => $oldTeacherId,
+                    'old_teacher_id' => $oldTeacher->id,
                     'new_teacher_id' => $newTeacher->id,
                     'circle_code' => $circle->circle_code,
                     'student_id' => $circle->student_id,
@@ -75,11 +71,9 @@ class CircleTransferService
                 ->log(__('circles.transfer.log_message'));
         });
 
-        // 7. Notify student (outside transaction — non-critical)
         try {
             $student = $circle->student;
             if ($student) {
-                $oldTeacher = User::find($oldTeacherId);
                 $student->notify(new \App\Notifications\CircleTeacherChangedNotification(
                     $circle,
                     $oldTeacher,
@@ -103,18 +97,24 @@ class CircleTransferService
         if ($newTeacher->academy_id !== $circle->academy_id) {
             throw new \InvalidArgumentException(__('common.unauthorized'));
         }
+
+        $hasProfile = QuranTeacherProfile::where('user_id', $newTeacher->id)
+            ->where('academy_id', $circle->academy_id)
+            ->exists();
+
+        if (! $hasProfile || ! $newTeacher->active_status) {
+            throw new \InvalidArgumentException(__('subscriptions.no_teachers_available'));
+        }
     }
 
-    private function transferChatGroup(QuranIndividualCircle $circle, int $oldTeacherId, User $newTeacher): bool
+    private function transferChatGroup(QuranIndividualCircle $circle, User $oldTeacher, User $newTeacher): bool
     {
         $chatGroup = ChatGroup::where('quran_individual_circle_id', $circle->id)->first();
         if (! $chatGroup) {
             return false;
         }
 
-        // Swap teacher: remove old, add new as admin
-        $oldTeacher = User::find($oldTeacherId);
-        if ($oldTeacher && $chatGroup->hasMember($oldTeacher)) {
+        if ($chatGroup->hasMember($oldTeacher)) {
             $chatGroup->members()->detach($oldTeacher->id);
         }
 
@@ -122,26 +122,22 @@ class CircleTransferService
             $chatGroup->members()->attach($newTeacher->id, ['role' => 'admin']);
         }
 
-        // Update owner
         $chatGroup->update([
             'owner_id' => $newTeacher->id,
             'metadata' => array_merge($chatGroup->metadata ?? [], [
-                'teacher_name' => trim(($newTeacher->first_name ?? '').' '.($newTeacher->last_name ?? '')),
+                'teacher_name' => $newTeacher->name,
             ]),
         ]);
 
-        // Update WireChat participant if conversation exists
         if ($chatGroup->conversation_id) {
-            \Namu\WireChat\Models\Participant::where('conversation_id', $chatGroup->conversation_id)
-                ->where('participantable_id', $oldTeacherId)
+            Participant::where('conversation_id', $chatGroup->conversation_id)
+                ->where('participantable_id', $oldTeacher->id)
                 ->where('participantable_type', User::class)
                 ->update(['participantable_id' => $newTeacher->id]);
         }
 
-        // Resolve new supervisor and swap if different
         try {
-            $supervisorService = app(SupervisorResolutionService::class);
-            $newSupervisor = $supervisorService->getSupervisorForTeacher($newTeacher);
+            $newSupervisor = $this->supervisorResolutionService->getSupervisorForTeacher($newTeacher);
             if ($newSupervisor && $chatGroup->supervisor_id !== $newSupervisor->id) {
                 $this->chatGroupService->replaceSupervisor($chatGroup, $chatGroup->supervisor, $newSupervisor);
             }
@@ -155,13 +151,14 @@ class CircleTransferService
         return true;
     }
 
-    private function clearCaches(int $oldTeacherId, int $newTeacherId, int $studentId, int $academyId): void
+    private function clearCaches(User $oldTeacher, User $newTeacher, int $studentId, int $academyId): void
     {
-        $this->chatPermissionService->clearUserCache($oldTeacherId);
-        $this->chatPermissionService->clearUserCache($newTeacherId);
+        $this->chatPermissionService->clearUserCache($oldTeacher->id);
+        $this->chatPermissionService->clearUserCache($newTeacher->id);
 
-        Cache::forget("chat_perm:{$oldTeacherId}:{$studentId}:{$academyId}");
-        Cache::forget("chat_perm:{$newTeacherId}:{$studentId}:{$academyId}");
-        Cache::forget("supervisor_for_teacher_{$newTeacherId}");
+        \Illuminate\Support\Facades\Cache::forget("chat_perm:{$oldTeacher->id}:{$studentId}:{$academyId}");
+        \Illuminate\Support\Facades\Cache::forget("chat_perm:{$newTeacher->id}:{$studentId}:{$academyId}");
+
+        $this->supervisorResolutionService->clearTeacherCache($newTeacher);
     }
 }
