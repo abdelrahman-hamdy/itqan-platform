@@ -10,6 +10,7 @@ use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Wirechat\Wirechat\Models\Participant;
@@ -156,8 +157,8 @@ class CircleTransferService
         $this->chatPermissionService->clearUserCache($oldTeacher->id);
         $this->chatPermissionService->clearUserCache($newTeacher->id);
 
-        \Illuminate\Support\Facades\Cache::forget("chat_perm:{$oldTeacher->id}:{$studentId}:{$academyId}");
-        \Illuminate\Support\Facades\Cache::forget("chat_perm:{$newTeacher->id}:{$studentId}:{$academyId}");
+        Cache::forget("chat_perm:{$oldTeacher->id}:{$studentId}:{$academyId}");
+        Cache::forget("chat_perm:{$newTeacher->id}:{$studentId}:{$academyId}");
 
         $this->supervisorResolutionService->clearTeacherCache($newTeacher);
     }

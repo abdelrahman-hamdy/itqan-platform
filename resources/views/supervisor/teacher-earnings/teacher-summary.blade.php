@@ -116,10 +116,10 @@
             @php
                 $summaryCollection = collect($teacherSummaries);
                 $footerTotals = [
-                    'qi' => $summaryCollection->sum(fn($s) => $s['quran_individual']['amount']),
-                    'qg' => $summaryCollection->sum(fn($s) => $s['quran_group']['amount']),
-                    'ac' => $summaryCollection->sum(fn($s) => $s['academic']['amount']),
-                    'ic' => $summaryCollection->sum(fn($s) => $s['interactive']['amount']),
+                    'quran_individual' => $summaryCollection->sum(fn($s) => $s['quran_individual']['amount']),
+                    'quran_group' => $summaryCollection->sum(fn($s) => $s['quran_group']['amount']),
+                    'academic' => $summaryCollection->sum(fn($s) => $s['academic']['amount']),
+                    'interactive' => $summaryCollection->sum(fn($s) => $s['interactive']['amount']),
                     'sessions' => $summaryCollection->sum('sessions_count'),
                     'hours' => round($summaryCollection->sum('total_duration_minutes') / 60, 1),
                     'total' => $summaryCollection->sum('total'),
@@ -287,18 +287,11 @@
                     <tfoot class="bg-gray-50">
                         <tr>
                             <td class="px-6 py-3 text-sm font-bold text-gray-900">{{ __('supervisor.teacher_earnings.summary_total') }}</td>
-                            <td class="px-3 py-3 text-center text-sm font-bold text-green-700">
-                                {{ $footerTotals['qi'] > 0 ? number_format($footerTotals['qi'], 2) . ' ' . $earningsCurrencySymbol : '-' }}
-                            </td>
-                            <td class="px-3 py-3 text-center text-sm font-bold text-emerald-700">
-                                {{ $footerTotals['qg'] > 0 ? number_format($footerTotals['qg'], 2) . ' ' . $earningsCurrencySymbol : '-' }}
-                            </td>
-                            <td class="px-3 py-3 text-center text-sm font-bold text-violet-700">
-                                {{ $footerTotals['ac'] > 0 ? number_format($footerTotals['ac'], 2) . ' ' . $earningsCurrencySymbol : '-' }}
-                            </td>
-                            <td class="px-3 py-3 text-center text-sm font-bold text-blue-700">
-                                {{ $footerTotals['ic'] > 0 ? number_format($footerTotals['ic'], 2) . ' ' . $earningsCurrencySymbol : '-' }}
-                            </td>
+                            @foreach($sourceLabels as $sourceKey => $sourceMeta)
+                                <td class="px-3 py-3 text-center text-sm font-bold {{ $sourceMeta['text'] }}">
+                                    {{ $footerTotals[$sourceKey] > 0 ? number_format($footerTotals[$sourceKey], 2) . ' ' . $earningsCurrencySymbol : '-' }}
+                                </td>
+                            @endforeach
                             <td class="px-3 py-3 text-center text-sm font-bold text-gray-700">
                                 {{ $footerTotals['sessions'] }}
                             </td>
