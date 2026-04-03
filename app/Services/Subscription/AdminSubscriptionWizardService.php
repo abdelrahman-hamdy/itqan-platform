@@ -10,9 +10,11 @@ use App\Models\AcademicSubscription;
 use App\Models\BaseSubscription;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
+use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -179,9 +181,14 @@ class AdminSubscriptionWizardService
             ]);
 
             $subscription->linkToEducationUnit($circle);
-        }
-
-        if ($type === 'academic' && $subscription instanceof AcademicSubscription) {
+        } elseif ($type === 'quran_group' && $subscription instanceof QuranSubscription && ! empty($data['quran_circle_id'])) {
+            $circle = QuranCircle::find($data['quran_circle_id']);
+            if ($circle) {
+                $circle->enrollStudent(User::findOrFail($subscription->student_id), [
+                    'subscription_id' => $subscription->id,
+                ]);
+            }
+        } elseif ($type === 'academic' && $subscription instanceof AcademicSubscription) {
             if (method_exists($subscription, 'createLessonAndSessions')) {
                 $subscription->createLessonAndSessions();
             }

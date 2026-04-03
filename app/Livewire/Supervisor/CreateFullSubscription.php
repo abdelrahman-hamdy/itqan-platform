@@ -67,8 +67,14 @@ class CreateFullSubscription extends Component
 
     public function getTotalStepsProperty(): int
     {
-        // Group circles skip step 4 (no per-student details needed)
-        return $this->subscription_type === 'quran_group' ? 3 : 4;
+        // Group circles: 2 steps (type+student+circle, then sponsored/payment)
+        // Individual Quran: 4 steps (type+student+teacher, package+pricing, payment, learning details)
+        // Academic: 3 steps (type+student+teacher, package+pricing, payment)
+        return match ($this->subscription_type) {
+            'quran_group' => 2,
+            'quran_individual' => 4,
+            default => 3,
+        };
     }
 
     protected function rules(): array
@@ -111,6 +117,9 @@ class CreateFullSubscription extends Component
         $this->amount = 0;
         $this->discount = 0;
         $this->is_sponsored = false;
+        if ($this->subscription_type === 'quran_group') {
+            $this->billing_cycle = 'monthly';
+        }
         $this->loadTeachers();
         $this->loadCircles();
         $this->loadPackages();
@@ -149,8 +158,10 @@ class CreateFullSubscription extends Component
         if ($this->is_sponsored) {
             $this->amount = 0;
             $this->discount = 0;
-        } else {
+        } elseif ($this->subscription_type === 'quran_group') {
             $this->updatedQuranCircleId();
+        } else {
+            $this->calculateAmount();
         }
     }
 

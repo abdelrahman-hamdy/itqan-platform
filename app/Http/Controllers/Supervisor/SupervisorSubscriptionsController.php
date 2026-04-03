@@ -397,6 +397,10 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
     private function ensureSubscriptionInScope(QuranSubscription|AcademicSubscription $subscription, string $type): void
     {
+        if ($this->isAdminUser()) {
+            return;
+        }
+
         if ($type === 'quran') {
             $ids = $this->getAssignedQuranTeacherIds();
             if (! in_array($subscription->quran_teacher_id, $ids)) {

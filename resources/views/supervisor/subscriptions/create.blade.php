@@ -172,35 +172,34 @@
             </div>
         @endif
 
-        {{-- ═══ STEP 2: Package & Pricing ═══ --}}
-        @if ($currentStep === 2)
-            <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step2_title') }}</h2>
+        {{-- ═══ STEP 2 (Group Circles): Enrollment & Payment ═══ --}}
+        @if ($currentStep === 2 && $subscription_type === 'quran_group')
+            <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step3_title') }}</h2>
             <div class="space-y-4">
-                {{-- Package (not for group circles) --}}
-                @if($subscription_type !== 'quran_group')
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.select_package') }}</label>
-                        <select wire:model.live="package_id" class="w-full rounded-lg border-gray-300">
-                            <option value="">{{ __('subscriptions.select_package') }}</option>
-                            @foreach ($availablePackages as $pkg)
-                                <option value="{{ $pkg['id'] }}">{{ $pkg['name'] }} ({{ $pkg['sessions_per_month'] }} {{ __('subscriptions.sessions_per_month') }})</option>
-                            @endforeach
-                        </select>
-                        @error('package_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                @endif
 
+                {{-- Sponsored/Normal toggle --}}
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.select_billing_cycle') }}</label>
-                    <select wire:model.live="billing_cycle" class="w-full rounded-lg border-gray-300">
-                        <option value="monthly">{{ __('enums.billing_cycle.monthly') }}</option>
-                        <option value="quarterly">{{ __('enums.billing_cycle.quarterly') }}</option>
-                        <option value="yearly">{{ __('enums.billing_cycle.yearly') }}</option>
-                    </select>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('subscriptions.enrollment_type_label') }}</label>
+                    <div class="flex gap-3">
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" wire:model.live="is_sponsored" value="0" class="peer sr-only">
+                            <div class="text-center p-3 rounded-lg border-2 border-gray-200 peer-checked:border-blue-600 peer-checked:bg-blue-50 transition-all">
+                                <i class="ri-wallet-line text-lg text-blue-600 mb-1"></i>
+                                <div class="text-sm font-medium">{{ __('subscriptions.normal_enrollment') }}</div>
+                            </div>
+                        </label>
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" wire:model.live="is_sponsored" value="1" class="peer sr-only">
+                            <div class="text-center p-3 rounded-lg border-2 border-gray-200 peer-checked:border-green-600 peer-checked:bg-green-50 transition-all">
+                                <i class="ri-gift-line text-lg text-green-600 mb-1"></i>
+                                <div class="text-sm font-medium">{{ __('subscriptions.sponsored_enrollment') }}</div>
+                            </div>
+                        </label>
+                    </div>
                 </div>
 
-                {{-- Pricing (read-only for group — from circle fee) --}}
                 @if(!$is_sponsored)
+                    {{-- Price from circle fee (read-only) --}}
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
                         <div class="flex items-center justify-between">
                             <span class="text-sm text-gray-600">{{ __('subscriptions.package_price_label') }}</span>
@@ -217,44 +216,8 @@
                             </div>
                         @endif
                     </div>
-                @else
-                    <div class="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-                        <i class="ri-gift-line"></i> {{ __('subscriptions.sponsored_free_notice') }}
-                    </div>
-                @endif
-            </div>
-        @endif
 
-        {{-- ═══ STEP 3: Payment ═══ --}}
-        @if ($currentStep === 3)
-            <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step3_title') }}</h2>
-            <div class="space-y-4">
-
-                {{-- Sponsored toggle (for group circles) --}}
-                @if($subscription_type === 'quran_group')
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('subscriptions.enrollment_type_label') }}</label>
-                        <div class="flex gap-3">
-                            <label class="flex-1 cursor-pointer">
-                                <input type="radio" wire:model.live="is_sponsored" value="0" class="peer sr-only">
-                                <div class="text-center p-3 rounded-lg border-2 border-gray-200 peer-checked:border-blue-600 peer-checked:bg-blue-50 transition-all">
-                                    <i class="ri-wallet-line text-lg text-blue-600 mb-1"></i>
-                                    <div class="text-sm font-medium">{{ __('subscriptions.normal_enrollment') }}</div>
-                                </div>
-                            </label>
-                            <label class="flex-1 cursor-pointer">
-                                <input type="radio" wire:model.live="is_sponsored" value="1" class="peer sr-only">
-                                <div class="text-center p-3 rounded-lg border-2 border-gray-200 peer-checked:border-green-600 peer-checked:bg-green-50 transition-all">
-                                    <i class="ri-gift-line text-lg text-green-600 mb-1"></i>
-                                    <div class="text-sm font-medium">{{ __('subscriptions.sponsored_enrollment') }}</div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                @endif
-
-                {{-- Payment source (only for non-sponsored) --}}
-                @if(!$is_sponsored)
+                    {{-- Payment source --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('subscriptions.payment_source_label') }}</label>
                         <div class="flex gap-3">
@@ -289,6 +252,87 @@
                 @else
                     <div class="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
                         <i class="ri-gift-line"></i> {{ __('subscriptions.sponsored_enrollment_notice') }}
+                    </div>
+                @endif
+            </div>
+        @endif
+
+        {{-- ═══ STEP 2 (Individual/Academic): Package & Pricing ═══ --}}
+        @if ($currentStep === 2 && $subscription_type !== 'quran_group')
+            <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step2_title') }}</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.select_package') }}</label>
+                    <select wire:model.live="package_id" class="w-full rounded-lg border-gray-300">
+                        <option value="">{{ __('subscriptions.select_package') }}</option>
+                        @foreach ($availablePackages as $pkg)
+                            <option value="{{ $pkg['id'] }}">{{ $pkg['name'] }} ({{ $pkg['sessions_per_month'] }} {{ __('subscriptions.sessions_per_month') }})</option>
+                        @endforeach
+                    </select>
+                    @error('package_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.select_billing_cycle') }}</label>
+                    <select wire:model.live="billing_cycle" class="w-full rounded-lg border-gray-300">
+                        <option value="monthly">{{ __('enums.billing_cycle.monthly') }}</option>
+                        <option value="quarterly">{{ __('enums.billing_cycle.quarterly') }}</option>
+                        <option value="yearly">{{ __('enums.billing_cycle.yearly') }}</option>
+                    </select>
+                </div>
+
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">{{ __('subscriptions.package_price_label') }}</span>
+                        <span class="text-lg font-bold text-gray-900">{{ number_format($amount, 2) }} {{ auth()->user()->academy?->currency?->value ?? 'SAR' }}</span>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">{{ __('subscriptions.discount_label') }}</label>
+                        <input type="number" wire:model.live.debounce.300ms="discount" step="1" min="0" max="{{ $amount }}" class="w-full rounded-lg border-gray-300 text-sm" placeholder="0">
+                    </div>
+                    @if ($discount > 0)
+                        <div class="flex items-center justify-between pt-2 border-t border-gray-200">
+                            <span class="text-sm font-semibold text-gray-700">{{ __('subscriptions.final_price_label') }}</span>
+                            <span class="text-lg font-bold text-green-600">{{ number_format($this->finalPrice, 2) }} {{ auth()->user()->academy?->currency?->value ?? 'SAR' }}</span>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @endif
+
+        {{-- ═══ STEP 3 (Individual/Academic): Payment ═══ --}}
+        @if ($currentStep === 3 && $subscription_type !== 'quran_group')
+            <h2 class="text-lg font-semibold mb-4">{{ __('subscriptions.wizard_step3_title') }}</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('subscriptions.payment_source_label') }}</label>
+                    <div class="flex gap-3">
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" wire:model.live="payment_source" value="outside" class="peer sr-only">
+                            <div class="text-center p-3 rounded-lg border-2 border-gray-200 peer-checked:border-green-600 peer-checked:bg-green-50 transition-all">
+                                <i class="ri-hand-coin-line text-lg text-green-600 mb-1"></i>
+                                <div class="text-sm font-medium">{{ __('subscriptions.paid_outside') }}</div>
+                                <div class="text-xs text-gray-500 mt-0.5">{{ __('subscriptions.paid_outside_desc') }}</div>
+                            </div>
+                        </label>
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" wire:model.live="payment_source" value="inside" class="peer sr-only">
+                            <div class="text-center p-3 rounded-lg border-2 border-gray-200 peer-checked:border-blue-600 peer-checked:bg-blue-50 transition-all">
+                                <i class="ri-bank-card-line text-lg text-blue-600 mb-1"></i>
+                                <div class="text-sm font-medium">{{ __('subscriptions.paid_inside') }}</div>
+                                <div class="text-xs text-gray-500 mt-0.5">{{ __('subscriptions.paid_inside_desc') }}</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                @if ($payment_source === 'outside')
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.payment_reference_label') }}</label>
+                        <input type="text" wire:model="payment_reference" class="w-full rounded-lg border-gray-300" placeholder="{{ __('subscriptions.payment_reference_placeholder') }}">
+                    </div>
+                @else
+                    <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+                        <i class="ri-information-line"></i> {{ __('subscriptions.pending_payment_notice') }}
                     </div>
                 @endif
             </div>
