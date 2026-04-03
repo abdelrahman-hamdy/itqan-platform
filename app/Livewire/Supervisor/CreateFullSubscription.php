@@ -160,6 +160,15 @@ class CreateFullSubscription extends Component
         }
     }
 
+    public function updatedConsumedSessions(): void
+    {
+        $this->consumed_sessions = max(0, $this->consumed_sessions);
+        $max = max(0, $this->selectedPackageTotalSessions - 1);
+        if ($max > 0) {
+            $this->consumed_sessions = min($this->consumed_sessions, $max);
+        }
+    }
+
     public function updatedStudentSearch(): void
     {
         if (mb_strlen($this->student_search) >= 2) {
@@ -219,6 +228,21 @@ class CreateFullSubscription extends Component
         }
 
         return $labels;
+    }
+
+    public function getSelectedPackageTotalSessionsProperty(): int
+    {
+        $pkg = collect($this->availablePackages)->firstWhere('id', $this->package_id);
+        if (! $pkg) {
+            return 0;
+        }
+        $multiplier = match ($this->billing_cycle) {
+            'quarterly' => 3,
+            'yearly' => 12,
+            default => 1,
+        };
+
+        return (int) (($pkg['sessions_per_month'] ?? 0) * $multiplier);
     }
 
     public function getFinalPriceProperty(): float

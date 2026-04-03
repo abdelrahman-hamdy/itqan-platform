@@ -93,8 +93,15 @@
                     {{-- Selected state --}}
                     <template x-if="selected">
                         <div class="flex items-center gap-3 p-3 bg-blue-50/60 border border-blue-200 rounded-lg">
-                            <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs uppercase"
-                                 x-text="selected.name ? selected.name.charAt(0) : '?'"></div>
+                            @if($student_id)
+                                @php $selectedStudentUser = \App\Models\User::find($student_id); @endphp
+                                @if($selectedStudentUser)
+                                    <x-avatar :user="$selectedStudentUser" size="xs" userType="student" />
+                                @endif
+                            @else
+                                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs uppercase"
+                                     x-text="selected.name ? selected.name.charAt(0) : '?'"></div>
+                            @endif
                             <div class="flex-1 min-w-0">
                                 <div class="font-semibold text-gray-900 truncate text-sm" x-text="selected.name"></div>
                                 <div class="text-xs text-gray-500 truncate" x-text="selected.email"></div>
@@ -159,6 +166,10 @@
                     @php
                         $selectedTeacherData = $teacher_id ? collect($availableTeachers)->firstWhere('id', $teacher_id) : null;
                         $profileModel = $isQuranType ? \App\Models\QuranTeacherProfile::class : \App\Models\AcademicTeacherProfile::class;
+                        $selectedTeacherUser = null;
+                        if ($teacher_id) {
+                            $selectedTeacherUser = $profileModel::with('user')->find($teacher_id)?->user;
+                        }
                         $teacherProfileModels = $teacher_id
                             ? collect()
                             : $profileModel::whereIn('id', collect($availableTeachers)->pluck('id'))->with('user')->get()->keyBy('id');
@@ -177,8 +188,12 @@
                         {{-- Selected state --}}
                         <template x-if="selected">
                             <div class="flex items-center gap-3 p-3 {{ $isQuranType ? 'bg-yellow-50/60 border-yellow-200' : 'bg-violet-50/60 border-violet-200' }} border rounded-lg">
-                                <div class="w-8 h-8 rounded-full {{ $isQuranType ? 'bg-yellow-500' : 'bg-violet-500' }} flex items-center justify-center text-white font-bold text-xs uppercase"
-                                     x-text="selected.name ? selected.name.charAt(0) : '?'"></div>
+                                @if($teacher_id && $selectedTeacherUser)
+                                    <x-avatar :user="$selectedTeacherUser" size="xs" :userType="$teacherUserType" />
+                                @else
+                                    <div class="w-8 h-8 rounded-full {{ $isQuranType ? 'bg-yellow-500' : 'bg-violet-500' }} flex items-center justify-center text-white font-bold text-xs uppercase"
+                                         x-text="selected.name ? selected.name.charAt(0) : '?'"></div>
+                                @endif
                                 <div class="flex-1 min-w-0">
                                     <div class="font-semibold text-gray-900 truncate text-sm" x-text="selected.name"></div>
                                 </div>
@@ -405,10 +420,27 @@
                             <option value="complete">{{ __('subscriptions.specialization_complete') }}</option>
                         </select>
                     </div>
+                    @php
+                        $totalSessions = $this->selectedPackageTotalSessions;
+                        $maxConsumed = max(0, $totalSessions - 1);
+                        $consumedPercent = $totalSessions > 0 ? min(100, round(($consumed_sessions / $totalSessions) * 100)) : 0;
+                    @endphp
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('subscriptions.consumed_sessions_label') }}</label>
-                        <input type="number" wire:model="consumed_sessions" min="0" class="w-full rounded-lg border-gray-300" placeholder="0">
+                        <input type="number" wire:model.live.debounce.300ms="consumed_sessions" min="0" max="{{ $maxConsumed }}" class="w-full rounded-lg border-gray-300" placeholder="0">
                         <p class="text-xs text-gray-500 mt-1">{{ __('subscriptions.consumed_sessions_help') }}</p>
+                        @if($totalSessions > 0)
+                            <div class="mt-2">
+                                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                    <span>{{ $consumed_sessions }} / {{ $totalSessions }}</span>
+                                    <span>{{ $consumedPercent }}%</span>
+                                </div>
+                                <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full {{ $consumedPercent > 80 ? 'bg-red-500' : ($consumedPercent > 50 ? 'bg-yellow-500' : 'bg-primary-600') }} rounded-full transition-all duration-300"
+                                         style="width: {{ $consumedPercent }}%"></div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('public.booking.quran.form.learning_goals_label') }}</label>
