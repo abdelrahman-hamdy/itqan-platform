@@ -109,6 +109,8 @@
   <!-- Unified Confirmation Modal -->
   <x-ui.confirmation-modal />
 
+  @stack('modals')
+
   {{ $scripts ?? '' }}
   @stack('scripts')
 </body>
