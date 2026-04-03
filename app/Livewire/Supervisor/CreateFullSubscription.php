@@ -399,7 +399,7 @@ class CreateFullSubscription extends Component
         }
         $pkg = collect($this->availablePackages)->firstWhere('id', $this->package_id);
         if ($pkg) {
-            $this->amount = PricingResolver::resolvePriceFromPackage($pkg, BillingCycle::from($this->billing_cycle), useSalePrices: false);
+            $this->amount = PricingResolver::resolvePriceFromPackage($pkg, BillingCycle::from($this->billing_cycle));
         }
     }
 
