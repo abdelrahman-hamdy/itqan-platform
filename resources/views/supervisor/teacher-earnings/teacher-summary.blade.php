@@ -4,8 +4,8 @@
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
     $earningsCurrencySymbol = getTeacherEarningsCurrencySymbol();
 
-    $hasActiveFilters = ($currentTeacherId ?? null) || ($currentMonth ?? null) || ($startDate ?? null) || ($endDate ?? null);
-    $filterCount = (($currentTeacherId ?? null) ? 1 : 0) + (($currentMonth ?? null) ? 1 : 0) + (($startDate ?? null) || ($endDate ?? null) ? 1 : 0);
+    $hasActiveFilters = ($currentTeacherId ?? null) || ($currentMonth ?? null) || ($startDate ?? null) || ($endDate ?? null) || ($currentTeacherType ?? null) || ($currentGender ?? null);
+    $filterCount = (($currentTeacherId ?? null) ? 1 : 0) + (($currentMonth ?? null) ? 1 : 0) + (($startDate ?? null) || ($endDate ?? null) ? 1 : 0) + (($currentTeacherType ?? null) ? 1 : 0) + (($currentGender ?? null) ? 1 : 0);
 @endphp
 
 <div>
@@ -56,7 +56,7 @@
             </button>
             <div x-show="open" x-collapse>
                 <form method="GET" action="{{ route('manage.teacher-earnings.teacher-summary', ['subdomain' => $subdomain]) }}" class="px-4 md:px-6 pb-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                         {{-- Teacher --}}
                         <div>
                             <label for="teacher_id" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teacher_earnings.filter_teacher') }}</label>
@@ -65,6 +65,26 @@
                                 @foreach($teachers as $t)
                                     <option value="{{ $t['id'] }}" {{ ($currentTeacherId ?? null) == $t['id'] ? 'selected' : '' }}>{{ $t['name'] }}</option>
                                 @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Teacher Type --}}
+                        <div>
+                            <label for="teacher_type" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teacher_earnings.filter_teacher_type') }}</label>
+                            <select name="teacher_type" id="teacher_type" class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">{{ __('supervisor.teacher_earnings.all_types') }}</option>
+                                <option value="quran" {{ ($currentTeacherType ?? null) === 'quran' ? 'selected' : '' }}>{{ __('supervisor.teacher_earnings.source_quran') }}</option>
+                                <option value="academic" {{ ($currentTeacherType ?? null) === 'academic' ? 'selected' : '' }}>{{ __('supervisor.teacher_earnings.source_academic') }}</option>
+                            </select>
+                        </div>
+
+                        {{-- Gender --}}
+                        <div>
+                            <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teacher_earnings.filter_gender') }}</label>
+                            <select name="gender" id="gender" class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">{{ __('supervisor.teacher_earnings.all_genders') }}</option>
+                                <option value="male" {{ ($currentGender ?? null) === 'male' ? 'selected' : '' }}>{{ __('supervisor.teacher_earnings.gender_male') }}</option>
+                                <option value="female" {{ ($currentGender ?? null) === 'female' ? 'selected' : '' }}>{{ __('supervisor.teacher_earnings.gender_female') }}</option>
                             </select>
                         </div>
 
@@ -337,6 +357,8 @@
                     {{-- Pass current filter state --}}
                     <input type="hidden" name="month" value="{{ $currentMonth ?? '' }}">
                     <input type="hidden" name="teacher_id" value="{{ $currentTeacherId ?? '' }}">
+                    <input type="hidden" name="teacher_type" value="{{ $currentTeacherType ?? '' }}">
+                    <input type="hidden" name="gender" value="{{ $currentGender ?? '' }}">
                     <input type="hidden" name="start_date" value="{{ $startDate ?? '' }}">
                     <input type="hidden" name="end_date" value="{{ $endDate ?? '' }}">
 

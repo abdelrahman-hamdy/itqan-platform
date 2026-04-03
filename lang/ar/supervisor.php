@@ -986,6 +986,13 @@ return [
         'export_generated_at' => 'تم التصدير بتاريخ',
         'export_report_title' => 'تقرير أرباح المعلمين',
         'export_no_data' => 'لا توجد بيانات للتصدير',
+        // Teacher type & gender filters
+        'filter_teacher_type' => 'نوع المعلم',
+        'filter_gender' => 'الجنس',
+        'all_types' => 'جميع الأنواع',
+        'all_genders' => 'الكل',
+        'gender_male' => 'ذكر',
+        'gender_female' => 'أنثى',
     ],
 
     'supervisors' => [

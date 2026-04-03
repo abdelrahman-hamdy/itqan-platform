@@ -986,6 +986,13 @@ return [
         'export_generated_at' => 'Generated on',
         'export_report_title' => 'Teacher Earnings Report',
         'export_no_data' => 'No data to export',
+        // Teacher type & gender filters
+        'filter_teacher_type' => 'Teacher Type',
+        'filter_gender' => 'Gender',
+        'all_types' => 'All Types',
+        'all_genders' => 'All',
+        'gender_male' => 'Male',
+        'gender_female' => 'Female',
     ],
 
     'supervisors' => [
