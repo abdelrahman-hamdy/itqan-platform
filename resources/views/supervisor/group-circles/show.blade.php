@@ -253,9 +253,30 @@
                             {{ $circle->status ? __('supervisor.group_circles.deactivate') : __('supervisor.group_circles.activate') }}
                         </button>
 
+                        {{-- Toggle Enrollment --}}
+                        <form id="toggle-enrollment-form" method="POST"
+                              action="{{ route('manage.group-circles.toggle-enrollment', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
+                            @csrf
+                        </form>
+                        @php $isOpen = $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::OPEN; @endphp
+                        <button type="button"
+                            onclick="window.confirmAction({
+                                title: @js($isOpen ? __('supervisor.group_circles.close_enrollment') : __('supervisor.group_circles.open_enrollment')),
+                                message: @js($isOpen ? __('supervisor.group_circles.confirm_close_enrollment') : __('supervisor.group_circles.confirm_open_enrollment')),
+                                confirmText: @js($isOpen ? __('supervisor.group_circles.close_enrollment') : __('supervisor.group_circles.open_enrollment')),
+                                isDangerous: {{ $isOpen ? 'true' : 'false' }},
+                                icon: '{{ $isOpen ? 'ri-door-closed-line' : 'ri-door-open-line' }}',
+                                onConfirm: () => document.getElementById('toggle-enrollment-form').submit()
+                            })"
+                            class="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs md:text-sm font-medium rounded-lg transition-colors cursor-pointer
+                                {{ $isOpen ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' : 'bg-teal-50 text-teal-700 hover:bg-teal-100' }}">
+                            <i class="{{ $isOpen ? 'ri-door-closed-line' : 'ri-door-open-line' }}"></i>
+                            {{ $isOpen ? __('supervisor.group_circles.close_enrollment') : __('supervisor.group_circles.open_enrollment') }}
+                        </button>
+
                         {{-- Change Teacher --}}
                         <button type="button"
-                            @click="$dispatch('open-modal-change-teacher')"
+                            onclick="window.dispatchEvent(new CustomEvent('open-modal-change-teacher'))"
                             class="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer">
                             <i class="ri-user-settings-line"></i>
                             {{ $circle->quran_teacher_id ? __('supervisor.group_circles.change_teacher') : __('supervisor.group_circles.assign_teacher') }}

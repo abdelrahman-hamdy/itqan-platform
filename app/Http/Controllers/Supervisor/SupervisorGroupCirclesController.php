@@ -150,6 +150,19 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
         return redirect()->back()->with('success', __('supervisor.group_circles.status_updated'));
     }
 
+    public function toggleEnrollment($subdomain, $circleId): RedirectResponse
+    {
+        $circle = $this->scopedCircleQuery()->findOrFail($circleId);
+
+        $newStatus = $circle->enrollment_status === CircleEnrollmentStatus::OPEN
+            ? CircleEnrollmentStatus::CLOSED
+            : CircleEnrollmentStatus::OPEN;
+
+        $circle->update(['enrollment_status' => $newStatus]);
+
+        return redirect()->back()->with('success', __('supervisor.group_circles.enrollment_status_updated'));
+    }
+
     public function changeTeacher(Request $request, $subdomain, $circleId): RedirectResponse
     {
         $circle = $this->scopedCircleQuery()->findOrFail($circleId);
