@@ -166,7 +166,7 @@ class CircleController extends Controller
 
         if (SponsoredEnrollmentRequest::where('circle_id', $circle->id)
             ->where('student_id', $user->id)
-            ->where('status', SponsoredEnrollmentRequest::STATUS_PENDING)
+            ->pending()
             ->exists()) {
             return $this->errorResponse(__('student.group_circles.sponsored_request_pending'), 422);
         }

@@ -187,11 +187,10 @@ class UnifiedQuranCircleController extends Controller
                 abort(404);
             }
 
-            // Check for pending sponsored enrollment request
             if (! $isEnrolled && $circle->allow_sponsored_requests) {
                 $hasPendingSponsoredRequest = SponsoredEnrollmentRequest::where('circle_id', $circle->id)
                     ->where('student_id', $user->id)
-                    ->where('status', SponsoredEnrollmentRequest::STATUS_PENDING)
+                    ->pending()
                     ->exists();
             }
 
@@ -455,7 +454,7 @@ class UnifiedQuranCircleController extends Controller
         // Check no pending request exists
         if (SponsoredEnrollmentRequest::where('circle_id', $circle->id)
             ->where('student_id', $user->id)
-            ->where('status', SponsoredEnrollmentRequest::STATUS_PENDING)
+            ->pending()
             ->exists()) {
             return redirect()->back()->with('info', __('student.group_circles.sponsored_request_pending'));
         }

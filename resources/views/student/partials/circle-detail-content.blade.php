@@ -153,7 +153,7 @@
 
                             {{-- Sponsored Enrollment Button --}}
                             @if($circle->allow_sponsored_requests)
-                                @if(isset($hasPendingSponsoredRequest) && $hasPendingSponsoredRequest)
+                                @if($hasPendingSponsoredRequest)
                                     <p class="text-center text-sm text-amber-600 mt-2 flex items-center justify-center gap-1">
                                         <i class="ri-time-line"></i>
                                         {{ __('student.group_circle.sponsored_request_pending') }}
@@ -162,13 +162,13 @@
                                     <form method="POST" action="{{ route('quran-circles.sponsored-enrollment', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circleId' => $circle->id]) }}" class="mt-2">
                                         @csrf
                                         <button type="button"
-                                            onclick="window.confirmAction({
+                                            onclick="const form = this.closest('form'); window.confirmAction({
                                                 title: @js(__('student.group_circle.request_sponsored_enrollment')),
                                                 message: @js(__('student.group_circle.sponsored_request_confirm_message')),
                                                 confirmText: @js(__('student.group_circle.request_sponsored_enrollment')),
                                                 isDangerous: false,
                                                 icon: 'ri-heart-line',
-                                                onConfirm: () => this.closest('form').submit()
+                                                onConfirm: () => form.submit()
                                             })"
                                             class="min-h-[44px] w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white py-2.5 px-4 rounded-xl font-medium text-sm hover:from-pink-600 hover:to-rose-600 transition-all shadow flex items-center justify-center gap-2">
                                             <i class="ri-heart-line"></i>
