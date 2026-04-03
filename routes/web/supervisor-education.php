@@ -103,6 +103,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/individual-circles', [SupervisorIndividualCirclesController::class, 'index'])->name('individual-circles.index');
         Route::get('/individual-circles/{circle}', [SupervisorIndividualCirclesController::class, 'show'])->name('individual-circles.show');
         Route::put('/individual-circles/{circle}', [SupervisorIndividualCirclesController::class, 'update'])->name('individual-circles.update');
+        Route::post('/individual-circles/{circle}/transfer', [SupervisorIndividualCirclesController::class, 'transfer'])->name('individual-circles.transfer');
 
         // Trial Sessions
         Route::get('/trial-sessions', [SupervisorTrialSessionsController::class, 'index'])->name('trial-sessions.index');

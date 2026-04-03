@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Supervisor;
 use App\Enums\DifficultyLevel;
 use App\Models\QuranIndividualCircle;
 use App\Models\User;
+use App\Services\CircleTransferService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -94,7 +95,6 @@ class SupervisorIndividualCirclesController extends BaseSupervisorWebController
             'specialization' => ['required', Rule::in(array_keys(QuranIndividualCircle::SPECIALIZATIONS))],
             'memorization_level' => ['required', Rule::in(DifficultyLevel::values())],
             'description' => 'nullable|string|max:500',
-            'quran_teacher_id' => ['required', Rule::in($quranTeacherIds)],
             'recording_enabled' => 'nullable|in:0,1',
             'show_recording_to_teacher' => 'nullable|in:0,1',
             'show_recording_to_student' => 'nullable|in:0,1',
@@ -118,5 +118,29 @@ class SupervisorIndividualCirclesController extends BaseSupervisorWebController
         $circle->update($validated);
 
         return redirect()->back()->with('success', __('supervisor.common.updated_successfully'));
+    }
+
+    public function transfer(Request $request, $subdomain, $circleId): RedirectResponse
+    {
+        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
+        $circle = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)->findOrFail($circleId);
+
+        $validated = $request->validate([
+            'new_teacher_id' => ['required', 'integer', Rule::in($quranTeacherIds)],
+        ]);
+
+        $newTeacher = User::findOrFail($validated['new_teacher_id']);
+
+        try {
+            app(CircleTransferService::class)->transfer(
+                circle: $circle,
+                newTeacher: $newTeacher,
+                performedBy: auth()->user(),
+            );
+
+            return redirect()->back()->with('success', __('circles.transfer.success', ['teacher_name' => $newTeacher->name]));
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 }

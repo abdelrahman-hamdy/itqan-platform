@@ -83,6 +83,48 @@
             <x-circle.info-sidebar :circle="$circle" view-type="supervisor" context="individual" />
             <x-circle.subscription-details :subscription="$circle->subscription" view-type="supervisor" />
 
+            {{-- Transfer Teacher Action --}}
+            <div x-data="{ showTransfer: false }" class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
+                <h3 class="text-sm font-bold text-gray-900 mb-3">{{ __('supervisor.individual_circles.quran_teacher') }}</h3>
+                <div class="flex items-center gap-3 mb-3">
+                    @if($teacher)
+                        <x-avatar :user="$teacher" size="xs" userType="quran_teacher" />
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-semibold text-gray-900 truncate">{{ $teacher->name }}</div>
+                        </div>
+                    @endif
+                </div>
+                <button type="button" @click="showTransfer = !showTransfer"
+                    class="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors">
+                    <i class="ri-arrow-left-right-line"></i>
+                    {{ __('circles.transfer.action_label') }}
+                </button>
+
+                <div x-show="showTransfer" x-cloak x-transition class="mt-3 pt-3 border-t border-gray-100">
+                    <form method="POST" action="{{ route('manage.individual-circles.transfer', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}">
+                        @csrf
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('circles.transfer.new_teacher_label') }}</label>
+                                <select name="new_teacher_id" class="w-full rounded-lg border-gray-300 text-sm" required>
+                                    <option value="">{{ __('circles.transfer.new_teacher_placeholder') }}</option>
+                                    @foreach($quranTeachers as $t)
+                                        @if($t->id !== $circle->quran_teacher_id)
+                                            <option value="{{ $t->id }}">{{ $t->name }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+                            <p class="text-xs text-gray-500">{{ __('circles.transfer.modal_description') }}</p>
+                            <button type="submit"
+                                class="w-full px-3 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition-colors">
+                                {{ __('circles.transfer.confirm_button') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             @if(isset($isAdmin) || isset($quranTeachers))
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
                 <h3 class="text-sm font-bold text-gray-900 mb-4">{{ __('supervisor.common.edit_details') }}</h3>
@@ -124,22 +166,7 @@
                             </div>
                         </div>
 
-                        {{-- Section 2: Circle Settings --}}
-                        <div class="border-t border-gray-100 pt-4">
-                            <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('supervisor.individual_circles.circle_settings') }}</h4>
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.individual_circles.quran_teacher') }}</label>
-                                    <select name="quran_teacher_id" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
-                                        @foreach($quranTeachers as $t)
-                                            <option value="{{ $t->id }}" {{ old('quran_teacher_id', $circle->quran_teacher_id) == $t->id ? 'selected' : '' }}>{{ $t->first_name }} {{ $t->last_name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Section 3: Recording --}}
+                        {{-- Section 2: Recording --}}
                         <div class="border-t border-gray-100 pt-4">
                             <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('recordings.recording_settings') }}</h4>
                             <div class="space-y-2">
