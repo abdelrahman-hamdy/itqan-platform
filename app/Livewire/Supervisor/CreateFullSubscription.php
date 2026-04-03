@@ -60,6 +60,8 @@ class CreateFullSubscription extends Component
 
     public int $consumed_sessions = 0;
 
+    public bool $is_recurring_discount = false;
+
     // Data lists
     public array $availableTeachers = [];
 
@@ -111,6 +113,7 @@ class CreateFullSubscription extends Component
         $this->package_id = null;
         $this->amount = 0;
         $this->discount = 0;
+        $this->is_recurring_discount = false;
         $this->is_sponsored = false;
         if ($this->subscription_type === 'quran_group') {
             $this->billing_cycle = 'monthly';
@@ -153,6 +156,7 @@ class CreateFullSubscription extends Component
         if ($this->is_sponsored) {
             $this->amount = 0;
             $this->discount = 0;
+            $this->is_recurring_discount = false;
         } elseif ($this->subscription_type === 'quran_group') {
             $this->updatedQuranCircleId();
         } else {
@@ -310,6 +314,7 @@ class CreateFullSubscription extends Component
                 'learning_goals' => $this->learning_goals,
                 'consumed_sessions' => $this->consumed_sessions,
                 'is_sponsored' => $this->is_sponsored,
+                'is_recurring_discount' => $this->is_recurring_discount,
             ];
 
             if ($this->is_sponsored) {

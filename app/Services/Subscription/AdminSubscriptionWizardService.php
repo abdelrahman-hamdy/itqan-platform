@@ -102,6 +102,7 @@ class AdminSubscriptionWizardService
             'total_price' => $amount,
             'final_price' => $amount,
             'discount_amount' => $data['discount'] ?? 0,
+            'is_recurring_discount' => $data['is_recurring_discount'] ?? false,
             'currency' => $package?->currency ?? 'SAR',
             'package_name_ar' => $package?->name,
             'package_name_en' => $package?->name,

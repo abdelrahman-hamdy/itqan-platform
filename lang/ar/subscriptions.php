@@ -132,6 +132,13 @@ return [
     'sponsored_free_notice' => 'سيتم إنشاء اشتراك مكفول مجاني للطالب.',
     'sponsored_enrollment_notice' => 'سيتم تسجيل الطالب مجاناً ككفالة. لا يحتاج لدفع أي رسوم.',
 
+    // Recurring discount
+    'is_recurring_discount_label' => 'خصم متكرر (يُطبق عند التجديد)',
+    'is_recurring_discount_help' => 'عند التفعيل، سيُطبق هذا الخصم تلقائياً عند تجديد الاشتراك.',
+    'recurring_discount_badge' => 'خصم متكرر',
+    'recurring_discount_carried_forward' => 'خصم متكرر من الاشتراك السابق.',
+    'discount_optional_on_renewal' => 'خصم اختياري للاشتراك المجدد.',
+
     // Lifecycle error messages
     'errors' => [
         'cannot_cancel' => 'لا يمكن إلغاء الاشتراك في حالته الحالية.',

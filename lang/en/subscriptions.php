@@ -126,6 +126,13 @@ return [
     'sponsored_free_notice' => 'A free sponsored subscription will be created for the student.',
     'sponsored_enrollment_notice' => 'The student will be enrolled for free as a sponsored student. No payment required.',
 
+    // Recurring discount
+    'is_recurring_discount_label' => 'Recurring discount (apply on renewal)',
+    'is_recurring_discount_help' => 'When enabled, this discount will automatically apply when the subscription is renewed.',
+    'recurring_discount_badge' => 'Recurring Discount',
+    'recurring_discount_carried_forward' => 'Recurring discount from previous subscription.',
+    'discount_optional_on_renewal' => 'Optional discount for the renewed subscription.',
+
     // Lifecycle error messages
     'errors' => [
         'cannot_cancel' => 'Cannot cancel subscription in its current state.',

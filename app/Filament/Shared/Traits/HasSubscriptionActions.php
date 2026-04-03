@@ -20,6 +20,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -759,6 +760,17 @@ trait HasSubscriptionActions
                 ])
                 ->default('pending')
                 ->required(),
+            TextInput::make('discount_amount')
+                ->label(__('subscriptions.discount_label'))
+                ->numeric()
+                ->minValue(0)
+                ->default(fn (BaseSubscription $record) => $record->is_recurring_discount ? $record->discount_amount : 0)
+                ->helperText(fn (BaseSubscription $record) => $record->is_recurring_discount
+                    ? __('subscriptions.recurring_discount_carried_forward')
+                    : __('subscriptions.discount_optional_on_renewal')),
+            Toggle::make('is_recurring_discount')
+                ->label(__('subscriptions.is_recurring_discount_label'))
+                ->default(fn (BaseSubscription $record) => $record->is_recurring_discount),
         ];
     }
 
@@ -796,6 +808,8 @@ trait HasSubscriptionActions
                         ->renew($record, [
                             'billing_cycle' => $data['billing_cycle'],
                             'activate_immediately' => $data['activate_mode'] === 'immediate',
+                            'discount_amount' => (float) ($data['discount_amount'] ?? 0),
+                            'is_recurring_discount' => $data['is_recurring_discount'] ?? false,
                         ]);
 
                     Notification::make()
@@ -837,6 +851,8 @@ trait HasSubscriptionActions
                         ->resubscribe($record, [
                             'billing_cycle' => $data['billing_cycle'],
                             'activate_immediately' => $data['activate_mode'] === 'immediate',
+                            'discount_amount' => (float) ($data['discount_amount'] ?? 0),
+                            'is_recurring_discount' => $data['is_recurring_discount'] ?? false,
                         ]);
 
                     Notification::make()

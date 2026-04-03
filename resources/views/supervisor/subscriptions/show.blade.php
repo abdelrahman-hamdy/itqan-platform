@@ -63,6 +63,9 @@
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-800"><i class="ri-check-double-line"></i>{{ __('supervisor.subscriptions.sessions_exhausted_badge') }}</span>
             @endif
             <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $subscription->payment_status->badgeClasses() }}">{{ $subscription->payment_status->label() }}</span>
+            @if($subscription->is_recurring_discount && $subscription->discount_amount > 0)
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700"><i class="ri-refresh-line"></i>{{ __('subscriptions.recurring_discount_badge') }}</span>
+            @endif
             <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">{{ $source === 'admin' ? __('supervisor.subscriptions.source_admin') : __('supervisor.subscriptions.source_student') }}</span>
         </div>
 

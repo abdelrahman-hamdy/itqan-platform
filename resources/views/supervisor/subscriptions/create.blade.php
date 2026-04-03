@@ -275,6 +275,12 @@
                                 <span class="text-lg font-bold text-green-600">{{ number_format($this->finalPrice, 2) }} {{ auth()->user()->academy?->currency?->value ?? 'SAR' }}</span>
                             </div>
                         @endif
+                        @if ($discount > 0)
+                            <label class="flex items-center gap-2 cursor-pointer mt-2">
+                                <input type="checkbox" wire:model="is_recurring_discount" class="rounded border-gray-300 text-primary-600">
+                                <span class="text-sm text-gray-700">{{ __('subscriptions.is_recurring_discount_label') }}</span>
+                            </label>
+                        @endif
                     </div>
 
                     {{-- Payment source --}}
@@ -355,6 +361,12 @@
                             <span class="text-sm font-semibold text-gray-700">{{ __('subscriptions.final_price_label') }}</span>
                             <span class="text-lg font-bold text-green-600">{{ number_format($this->finalPrice, 2) }} {{ auth()->user()->academy?->currency?->value ?? 'SAR' }}</span>
                         </div>
+                    @endif
+                    @if ($discount > 0)
+                        <label class="flex items-center gap-2 cursor-pointer mt-2">
+                            <input type="checkbox" wire:model="is_recurring_discount" class="rounded border-gray-300 text-primary-600">
+                            <span class="text-sm text-gray-700">{{ __('subscriptions.is_recurring_discount_label') }}</span>
+                        </label>
                     @endif
                 </div>
             </div>

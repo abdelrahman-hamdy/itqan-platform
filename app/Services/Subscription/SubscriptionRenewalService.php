@@ -243,6 +243,9 @@ class SubscriptionRenewalService
         // Merge pricing
         $data = array_merge($data, $pricingData['price_fields']);
 
+        // Carry recurring discount flag
+        $data['is_recurring_discount'] = $options['is_recurring_discount'] ?? $old->is_recurring_discount;
+
         // Add type-specific fields
         $data = $this->addTypeSpecificFields($old, $data, $options);
 
@@ -271,8 +274,8 @@ class SubscriptionRenewalService
                         'package_price_quarterly' => (float) ($package->quarterly_price ?? $package->monthly_price * 3),
                         'package_price_yearly' => (float) ($package->yearly_price ?? $package->monthly_price * 12),
                         'total_price' => $finalPrice,
-                        'final_price' => $finalPrice,
-                        'discount_amount' => 0,
+                        'discount_amount' => $this->resolveDiscount($old, $options),
+                        'final_price' => max(0, $finalPrice - $this->resolveDiscount($old, $options)),
                     ],
                 ];
             }
@@ -280,6 +283,7 @@ class SubscriptionRenewalService
 
         // Use old subscription's snapshotted pricing
         $finalPrice = $options['amount'] ?? $old->getPriceForBillingCycle();
+        $discount = $this->resolveDiscount($old, $options);
 
         return [
             'sessions_per_month' => $old->sessions_per_month,
@@ -291,10 +295,19 @@ class SubscriptionRenewalService
                 'package_price_quarterly' => $old->package_price_quarterly,
                 'package_price_yearly' => $old->package_price_yearly,
                 'total_price' => $finalPrice,
-                'final_price' => $finalPrice,
-                'discount_amount' => 0,
+                'discount_amount' => $discount,
+                'final_price' => max(0, $finalPrice - $discount),
             ],
         ];
+    }
+
+    private function resolveDiscount(BaseSubscription $old, array $options): float
+    {
+        if (array_key_exists('discount_amount', $options)) {
+            return (float) $options['discount_amount'];
+        }
+
+        return $old->is_recurring_discount ? (float) $old->discount_amount : 0;
     }
 
     /**

@@ -107,6 +107,7 @@ abstract class BaseSubscription extends Model
         'package_price_yearly',
         'total_price',
         'discount_amount',
+        'is_recurring_discount',
         'final_price',
         'currency',
 
@@ -201,6 +202,7 @@ abstract class BaseSubscription extends Model
         'progress_percentage' => 'decimal:2',
 
         // Booleans
+        'is_recurring_discount' => 'boolean',
         'auto_renew' => 'boolean',
         'certificate_issued' => 'boolean',
 
