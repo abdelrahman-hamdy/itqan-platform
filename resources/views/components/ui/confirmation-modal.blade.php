@@ -8,7 +8,14 @@
         cancelText: '{{ __('components.ui.confirmation_modal.cancel') }}',
         confirmAction: null,
         isDangerous: false,
+        theme: null,
         icon: '',
+
+        themeClasses() {
+            if (this.theme === 'pink') return { iconBg: 'bg-pink-100', iconText: 'text-pink-600', btn: 'bg-pink-600 hover:bg-pink-700 focus:ring-pink-500' };
+            if (this.isDangerous) return { iconBg: 'bg-red-100', iconText: 'text-red-600', btn: 'bg-red-600 hover:bg-red-700 focus:ring-red-500' };
+            return { iconBg: 'bg-blue-100', iconText: 'text-blue-600', btn: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' };
+        },
 
         init() {
             this.$watch('show', value => {
@@ -27,6 +34,7 @@
             this.cancelText = data.cancelText || '{{ __('components.ui.confirmation_modal.cancel') }}';
             this.confirmAction = data.onConfirm || null;
             this.isDangerous = data.isDangerous || false;
+            this.theme = data.theme || null;
             this.icon = data.icon || '';
             this.show = true;
         },
@@ -84,18 +92,18 @@
             <div class="p-6 pb-4 pt-8 md:pt-6">
                 {{-- Icon --}}
                 <div class="mx-auto flex items-center justify-center w-16 h-16 md:w-14 md:h-14 rounded-full mb-4"
-                    :class="isDangerous ? 'bg-red-100' : 'bg-blue-100'">
+                    :class="themeClasses().iconBg">
                     {{-- Custom Icon (if provided) --}}
                     <template x-if="icon">
-                        <i :class="icon" class="text-3xl md:text-2xl" :class="isDangerous ? 'text-red-600' : 'text-blue-600'"></i>
+                        <i :class="[icon, themeClasses().iconText]" class="text-3xl md:text-2xl"></i>
                     </template>
 
                     {{-- Default Icons --}}
                     <template x-if="!icon">
-                        <svg x-show="isDangerous" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-red-600">
+                        <svg x-show="isDangerous" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8" :class="themeClasses().iconText">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
                         </svg>
-                        <svg x-show="!isDangerous" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-blue-600">
+                        <svg x-show="!isDangerous" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8" :class="themeClasses().iconText">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
                         </svg>
                     </template>
@@ -123,9 +131,7 @@
                     @click="confirm()"
                     type="button"
                     class="cursor-pointer inline-flex items-center justify-center min-h-[48px] md:min-h-[44px] px-6 py-3 md:py-2.5 text-base md:text-sm font-semibold text-white rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 shadow-md"
-                    :class="isDangerous
-                        ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
-                        : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'">
+                    :class="themeClasses().btn">
                     <span x-text="confirmText"></span>
                 </button>
             </div>

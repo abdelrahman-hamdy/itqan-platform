@@ -167,6 +167,7 @@
                                                 message: @js(__('student.group_circle.sponsored_request_confirm_message')),
                                                 confirmText: @js(__('student.group_circle.request_sponsored_enrollment')),
                                                 isDangerous: false,
+                                                theme: 'pink',
                                                 icon: 'ri-heart-line',
                                                 onConfirm: () => form.submit()
                                             })"
@@ -220,21 +221,22 @@ function showEnrollModal(circleId) {
         window.location.href = "{{ route('login', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'redirect' => url()->current()]) }}";
         return;
     @endguest
-    showConfirmModal({
-        title: '{{ __('student.group_circle.modal_enroll_title') }}',
-        message: '{{ __('student.group_circle.modal_enroll_message') }}',
-        type: 'success',
-        confirmText: '{{ __('student.group_circle.modal_enroll_confirm') }}',
-        cancelText: '{{ __('student.group_circle.modal_cancel') }}',
-        onConfirm: () => {
-            @if(isset($circle) && $circle->monthly_fee && $circle->monthly_fee > 0)
-                pendingEnrollCircleId = circleId;
-                Livewire.dispatch('openGatewaySelection');
-            @else
-                enrollInCircle(circleId, null);
-            @endif
-        }
-    });
+
+    @if(isset($circle) && $circle->monthly_fee && $circle->monthly_fee > 0)
+        // Paid circle: open payment gateway selection directly
+        pendingEnrollCircleId = circleId;
+        Livewire.dispatch('openGatewaySelection');
+    @else
+        // Free circle: confirm then enroll
+        showConfirmModal({
+            title: '{{ __('student.group_circle.modal_enroll_title') }}',
+            message: '{{ __('student.group_circle.modal_enroll_message') }}',
+            type: 'success',
+            confirmText: '{{ __('student.group_circle.modal_enroll_confirm') }}',
+            cancelText: '{{ __('student.group_circle.modal_cancel') }}',
+            onConfirm: () => enrollInCircle(circleId, null)
+        });
+    @endif
 }
 
 // Listen for gateway selection and errors
