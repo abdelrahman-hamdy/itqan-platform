@@ -18,10 +18,14 @@ class TeacherEarningsExportService
     {
         $pdf = $this->createPdf($meta);
         $pdf->AddPage();
-        $pdf->setRTL(true);
 
+        // RTL for Arabic header text only
+        $pdf->setRTL(true);
         $this->addHeader($pdf, $meta);
         $pdf->Ln(6);
+
+        // LTR for the data table — prevents TCPDF from reversing digit order in numbers
+        $pdf->setRTL(false);
         $this->addSummaryTable($pdf, $teacherSummaries, $profileUserMap, $meta);
         $pdf->Ln(8);
         $this->addFooter($pdf, $meta);
@@ -65,7 +69,8 @@ class TeacherEarningsExportService
     {
         $currency = $meta['currency_symbol'];
 
-        // Column widths for landscape A4 (usable width ~277mm with 10mm margins)
+        // Column widths for landscape A4 (usable ~277mm with 10mm margins)
+        // LTR order: teacher name on left, total on right
         $colWidths = [
             'teacher' => 50,
             'quran_individual' => 34,
@@ -77,18 +82,18 @@ class TeacherEarningsExportService
             'total' => 35,
         ];
 
-        // Table header
+        // Table header (LTR order: teacher first → total last)
         $pdf->SetFont('dejavusans', 'B', 8);
         $pdf->SetFillColor(240, 240, 240);
 
-        $pdf->Cell($colWidths['total'], 8, __('supervisor.teacher_earnings.summary_total'), 1, 0, 'C', true);
-        $pdf->Cell($colWidths['hours'], 8, __('supervisor.teacher_earnings.summary_total_hours'), 1, 0, 'C', true);
-        $pdf->Cell($colWidths['sessions'], 8, __('supervisor.teacher_earnings.summary_sessions_count'), 1, 0, 'C', true);
-        $pdf->Cell($colWidths['interactive'], 8, __('supervisor.teacher_earnings.summary_interactive'), 1, 0, 'C', true);
-        $pdf->Cell($colWidths['academic'], 8, __('supervisor.teacher_earnings.summary_academic'), 1, 0, 'C', true);
-        $pdf->Cell($colWidths['quran_group'], 8, __('supervisor.teacher_earnings.summary_quran_group'), 1, 0, 'C', true);
+        $pdf->Cell($colWidths['teacher'], 8, __('supervisor.teacher_earnings.summary_teacher_name'), 1, 0, 'C', true);
         $pdf->Cell($colWidths['quran_individual'], 8, __('supervisor.teacher_earnings.summary_quran_individual'), 1, 0, 'C', true);
-        $pdf->Cell($colWidths['teacher'], 8, __('supervisor.teacher_earnings.summary_teacher_name'), 1, 1, 'C', true);
+        $pdf->Cell($colWidths['quran_group'], 8, __('supervisor.teacher_earnings.summary_quran_group'), 1, 0, 'C', true);
+        $pdf->Cell($colWidths['academic'], 8, __('supervisor.teacher_earnings.summary_academic'), 1, 0, 'C', true);
+        $pdf->Cell($colWidths['interactive'], 8, __('supervisor.teacher_earnings.summary_interactive'), 1, 0, 'C', true);
+        $pdf->Cell($colWidths['sessions'], 8, __('supervisor.teacher_earnings.summary_sessions_count'), 1, 0, 'C', true);
+        $pdf->Cell($colWidths['hours'], 8, __('supervisor.teacher_earnings.summary_total_hours'), 1, 0, 'C', true);
+        $pdf->Cell($colWidths['total'], 8, __('supervisor.teacher_earnings.summary_total'), 1, 1, 'C', true);
 
         // Table body
         $pdf->SetFont('dejavusans', '', 8);
@@ -115,16 +120,15 @@ class TeacherEarningsExportService
 
             $hours = round($summary['total_duration_minutes'] / 60, 1);
 
-            $pdf->Cell($colWidths['total'], 7, number_format($summary['total'], 2).' '.$currency, 1, 0, 'C', $fillColor);
-            $pdf->Cell($colWidths['hours'], 7, $hours.' '.__('supervisor.teacher_earnings.hours_unit'), 1, 0, 'C', $fillColor);
-            $pdf->Cell($colWidths['sessions'], 7, $summary['sessions_count'], 1, 0, 'C', $fillColor);
-            $pdf->Cell($colWidths['interactive'], 7, $this->formatAmount($summary['interactive']['amount'], $currency), 1, 0, 'C', $fillColor);
-            $pdf->Cell($colWidths['academic'], 7, $this->formatAmount($summary['academic']['amount'], $currency), 1, 0, 'C', $fillColor);
-            $pdf->Cell($colWidths['quran_group'], 7, $this->formatAmount($summary['quran_group']['amount'], $currency), 1, 0, 'C', $fillColor);
+            $pdf->Cell($colWidths['teacher'], 7, $teacherName, 1, 0, 'R', $fillColor);
             $pdf->Cell($colWidths['quran_individual'], 7, $this->formatAmount($summary['quran_individual']['amount'], $currency), 1, 0, 'C', $fillColor);
-            $pdf->Cell($colWidths['teacher'], 7, $teacherName, 1, 1, 'R', $fillColor);
+            $pdf->Cell($colWidths['quran_group'], 7, $this->formatAmount($summary['quran_group']['amount'], $currency), 1, 0, 'C', $fillColor);
+            $pdf->Cell($colWidths['academic'], 7, $this->formatAmount($summary['academic']['amount'], $currency), 1, 0, 'C', $fillColor);
+            $pdf->Cell($colWidths['interactive'], 7, $this->formatAmount($summary['interactive']['amount'], $currency), 1, 0, 'C', $fillColor);
+            $pdf->Cell($colWidths['sessions'], 7, (string) $summary['sessions_count'], 1, 0, 'C', $fillColor);
+            $pdf->Cell($colWidths['hours'], 7, $hours.' '.__('supervisor.teacher_earnings.hours_unit'), 1, 0, 'C', $fillColor);
+            $pdf->Cell($colWidths['total'], 7, number_format($summary['total'], 2).' '.$currency, 1, 1, 'C', $fillColor);
 
-            // Accumulate totals
             $totals['quran_individual'] += $summary['quran_individual']['amount'];
             $totals['quran_group'] += $summary['quran_group']['amount'];
             $totals['academic'] += $summary['academic']['amount'];
@@ -142,14 +146,14 @@ class TeacherEarningsExportService
 
         $totalHours = round($totals['total_duration_minutes'] / 60, 1);
 
-        $pdf->Cell($colWidths['total'], 8, number_format($totals['total'], 2).' '.$currency, 1, 0, 'C', true);
-        $pdf->Cell($colWidths['hours'], 8, $totalHours.' '.__('supervisor.teacher_earnings.hours_unit'), 1, 0, 'C', true);
-        $pdf->Cell($colWidths['sessions'], 8, $totals['sessions_count'], 1, 0, 'C', true);
-        $pdf->Cell($colWidths['interactive'], 8, $this->formatAmount($totals['interactive'], $currency), 1, 0, 'C', true);
-        $pdf->Cell($colWidths['academic'], 8, $this->formatAmount($totals['academic'], $currency), 1, 0, 'C', true);
-        $pdf->Cell($colWidths['quran_group'], 8, $this->formatAmount($totals['quran_group'], $currency), 1, 0, 'C', true);
+        $pdf->Cell($colWidths['teacher'], 8, __('supervisor.teacher_earnings.summary_total'), 1, 0, 'R', true);
         $pdf->Cell($colWidths['quran_individual'], 8, $this->formatAmount($totals['quran_individual'], $currency), 1, 0, 'C', true);
-        $pdf->Cell($colWidths['teacher'], 8, __('supervisor.teacher_earnings.summary_total'), 1, 1, 'R', true);
+        $pdf->Cell($colWidths['quran_group'], 8, $this->formatAmount($totals['quran_group'], $currency), 1, 0, 'C', true);
+        $pdf->Cell($colWidths['academic'], 8, $this->formatAmount($totals['academic'], $currency), 1, 0, 'C', true);
+        $pdf->Cell($colWidths['interactive'], 8, $this->formatAmount($totals['interactive'], $currency), 1, 0, 'C', true);
+        $pdf->Cell($colWidths['sessions'], 8, (string) $totals['sessions_count'], 1, 0, 'C', true);
+        $pdf->Cell($colWidths['hours'], 8, $totalHours.' '.__('supervisor.teacher_earnings.hours_unit'), 1, 0, 'C', true);
+        $pdf->Cell($colWidths['total'], 8, number_format($totals['total'], 2).' '.$currency, 1, 1, 'C', true);
     }
 
     protected function addFooter(TCPDF $pdf, array $meta): void

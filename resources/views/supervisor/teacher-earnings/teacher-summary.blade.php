@@ -113,44 +113,120 @@
         </div>
 
         @if(count($teacherSummaries) > 0)
-            <div class="overflow-x-auto">
+            @php
+                $summaryCollection = collect($teacherSummaries);
+                $footerTotals = [
+                    'qi' => $summaryCollection->sum(fn($s) => $s['quran_individual']['amount']),
+                    'qg' => $summaryCollection->sum(fn($s) => $s['quran_group']['amount']),
+                    'ac' => $summaryCollection->sum(fn($s) => $s['academic']['amount']),
+                    'ic' => $summaryCollection->sum(fn($s) => $s['interactive']['amount']),
+                    'sessions' => $summaryCollection->sum('sessions_count'),
+                    'hours' => round($summaryCollection->sum('total_duration_minutes') / 60, 1),
+                    'total' => $summaryCollection->sum('total'),
+                ];
+
+                $sourceLabels = [
+                    'quran_individual' => ['label' => __('supervisor.teacher_earnings.summary_quran_individual'), 'color' => 'green', 'text' => 'text-green-700', 'bg' => 'bg-green-500'],
+                    'quran_group' => ['label' => __('supervisor.teacher_earnings.summary_quran_group'), 'color' => 'emerald', 'text' => 'text-emerald-700', 'bg' => 'bg-emerald-500'],
+                    'academic' => ['label' => __('supervisor.teacher_earnings.summary_academic'), 'color' => 'violet', 'text' => 'text-violet-700', 'bg' => 'bg-violet-500'],
+                    'interactive' => ['label' => __('supervisor.teacher_earnings.summary_interactive'), 'color' => 'blue', 'text' => 'text-blue-700', 'bg' => 'bg-blue-500'],
+                ];
+            @endphp
+
+            {{-- Mobile: Card Layout --}}
+            <div class="md:hidden divide-y divide-gray-200">
+                @foreach($teacherSummaries as $summary)
+                    @php
+                        $profileKey = $summary['teacher_type'] . '_' . $summary['teacher_id'];
+                        $teacherUser = $profileUserMap[$profileKey] ?? null;
+                        $teacherName = $teacherUser?->name ?? __('common.unknown');
+                    @endphp
+                    <div class="px-4 py-4">
+                        {{-- Teacher header row --}}
+                        <div class="flex items-center justify-between gap-3 mb-3">
+                            <div class="flex items-center gap-3 min-w-0">
+                                @if($teacherUser)
+                                    <x-avatar :user="$teacherUser" size="sm" />
+                                @else
+                                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <i class="ri-user-line text-gray-500 text-sm"></i>
+                                    </div>
+                                @endif
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold text-gray-900 truncate">{{ $teacherName }}</p>
+                                    <p class="text-xs text-gray-500">
+                                        {{ $summary['teacher_type'] === 'quran_teacher' ? __('supervisor.teacher_earnings.source_quran') : __('supervisor.teacher_earnings.source_academic') }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-end flex-shrink-0">
+                                <p class="text-sm font-bold text-gray-900">{{ number_format($summary['total'], 2) }} {{ $earningsCurrencySymbol }}</p>
+                            </div>
+                        </div>
+
+                        {{-- Stats row --}}
+                        <div class="flex items-center gap-4 text-xs text-gray-500 mb-2">
+                            <span class="flex items-center gap-1">
+                                <i class="ri-calendar-check-line text-gray-400"></i>
+                                {{ $summary['sessions_count'] }} {{ __('supervisor.teacher_earnings.summary_sessions_count') }}
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i class="ri-time-line text-gray-400"></i>
+                                {{ round($summary['total_duration_minutes'] / 60, 1) }} {{ __('supervisor.teacher_earnings.hours_unit') }}
+                            </span>
+                        </div>
+
+                        {{-- Source breakdown --}}
+                        <div class="grid grid-cols-2 gap-2">
+                            @foreach($sourceLabels as $sourceKey => $sourceMeta)
+                                @if($summary[$sourceKey]['amount'] > 0)
+                                    <div class="flex items-center gap-1.5 text-xs">
+                                        <span class="w-2 h-2 rounded-full {{ $sourceMeta['bg'] }} flex-shrink-0"></span>
+                                        <span class="text-gray-500">{{ $sourceMeta['label'] }}:</span>
+                                        <span class="font-medium {{ $sourceMeta['text'] }}">{{ number_format($summary[$sourceKey]['amount'], 2) }}</span>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                @endforeach
+
+                {{-- Mobile totals --}}
+                <div class="px-4 py-3 bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-bold text-gray-900">{{ __('supervisor.teacher_earnings.summary_total') }}</span>
+                        <span class="text-sm font-bold text-gray-900">{{ number_format($footerTotals['total'], 2) }} {{ $earningsCurrencySymbol }}</span>
+                    </div>
+                    <div class="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                        <span>{{ $footerTotals['sessions'] }} {{ __('supervisor.teacher_earnings.summary_sessions_count') }}</span>
+                        <span>{{ $footerTotals['hours'] }} {{ __('supervisor.teacher_earnings.hours_unit') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Desktop: Full Table --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-4 md:px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('supervisor.teacher_earnings.summary_teacher_name') }}
                             </th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                                    {{ __('supervisor.teacher_earnings.summary_quran_individual') }}
-                                </span>
-                            </th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                    {{ __('supervisor.teacher_earnings.summary_quran_group') }}
-                                </span>
-                            </th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="w-2 h-2 rounded-full bg-violet-500"></span>
-                                    {{ __('supervisor.teacher_earnings.summary_academic') }}
-                                </span>
-                            </th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                                    {{ __('supervisor.teacher_earnings.summary_interactive') }}
-                                </span>
-                            </th>
+                            @foreach($sourceLabels as $sourceKey => $sourceMeta)
+                                <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <span class="inline-flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full {{ $sourceMeta['bg'] }}"></span>
+                                        {{ $sourceMeta['label'] }}
+                                    </span>
+                                </th>
+                            @endforeach
                             <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('supervisor.teacher_earnings.summary_sessions_count') }}
                             </th>
                             <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('supervisor.teacher_earnings.summary_total_hours') }}
                             </th>
-                            <th scope="col" class="px-4 md:px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
                                 {{ __('supervisor.teacher_earnings.summary_total') }}
                             </th>
                         </tr>
@@ -163,7 +239,7 @@
                                 $teacherName = $teacherUser?->name ?? __('common.unknown');
                             @endphp
                             <tr class="hover:bg-gray-50/50 transition-colors">
-                                <td class="px-4 md:px-6 py-4 whitespace-nowrap">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center gap-3">
                                         @if($teacherUser)
                                             <x-avatar :user="$teacherUser" size="sm" />
@@ -181,18 +257,10 @@
                                     </div>
                                 </td>
 
-                                @php
-                                    $sourceColumns = [
-                                        'quran_individual' => 'text-green-700',
-                                        'quran_group' => 'text-emerald-700',
-                                        'academic' => 'text-violet-700',
-                                        'interactive' => 'text-blue-700',
-                                    ];
-                                @endphp
-                                @foreach($sourceColumns as $sourceKey => $colorClass)
+                                @foreach($sourceLabels as $sourceKey => $sourceMeta)
                                     <td class="px-3 py-4 text-center">
                                         @if($summary[$sourceKey]['amount'] > 0)
-                                            <span class="text-sm font-medium {{ $colorClass }}">{{ number_format($summary[$sourceKey]['amount'], 2) }} {{ $earningsCurrencySymbol }}</span>
+                                            <span class="text-sm font-medium {{ $sourceMeta['text'] }}">{{ number_format($summary[$sourceKey]['amount'], 2) }} {{ $earningsCurrencySymbol }}</span>
                                             @foreach($summary[$sourceKey]['details'] as $detail)
                                                 <p class="text-xs text-gray-400 mt-0.5">
                                                     {{ $detail['sessions_count'] }} × {{ $detail['duration_minutes'] }} {{ __('supervisor.teacher_earnings.minutes_short') }} × {{ number_format($detail['rate_per_session'], 2) }} {{ $earningsCurrencySymbol }}
@@ -210,28 +278,15 @@
                                 <td class="px-3 py-4 text-center whitespace-nowrap">
                                     <span class="text-sm text-gray-600">{{ round($summary['total_duration_minutes'] / 60, 1) }} {{ __('supervisor.teacher_earnings.hours_unit') }}</span>
                                 </td>
-                                <td class="px-4 md:px-6 py-4 text-center whitespace-nowrap">
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
                                     <span class="text-sm font-bold text-gray-900">{{ number_format($summary['total'], 2) }} {{ $earningsCurrencySymbol }}</span>
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
-                    {{-- Totals Footer --}}
-                    @php
-                        $summaryCollection = collect($teacherSummaries);
-                        $footerTotals = [
-                            'qi' => $summaryCollection->sum(fn($s) => $s['quran_individual']['amount']),
-                            'qg' => $summaryCollection->sum(fn($s) => $s['quran_group']['amount']),
-                            'ac' => $summaryCollection->sum(fn($s) => $s['academic']['amount']),
-                            'ic' => $summaryCollection->sum(fn($s) => $s['interactive']['amount']),
-                            'sessions' => $summaryCollection->sum('sessions_count'),
-                            'hours' => round($summaryCollection->sum('total_duration_minutes') / 60, 1),
-                            'total' => $summaryCollection->sum('total'),
-                        ];
-                    @endphp
                     <tfoot class="bg-gray-50">
                         <tr>
-                            <td class="px-4 md:px-6 py-3 text-sm font-bold text-gray-900">{{ __('supervisor.teacher_earnings.summary_total') }}</td>
+                            <td class="px-6 py-3 text-sm font-bold text-gray-900">{{ __('supervisor.teacher_earnings.summary_total') }}</td>
                             <td class="px-3 py-3 text-center text-sm font-bold text-green-700">
                                 {{ $footerTotals['qi'] > 0 ? number_format($footerTotals['qi'], 2) . ' ' . $earningsCurrencySymbol : '-' }}
                             </td>
@@ -250,7 +305,7 @@
                             <td class="px-3 py-3 text-center text-sm font-bold text-gray-700">
                                 {{ $footerTotals['hours'] }} {{ __('supervisor.teacher_earnings.hours_unit') }}
                             </td>
-                            <td class="px-4 md:px-6 py-3 text-center text-sm font-bold text-gray-900">
+                            <td class="px-6 py-3 text-center text-sm font-bold text-gray-900">
                                 {{ number_format($footerTotals['total'], 2) }} {{ $earningsCurrencySymbol }}
                             </td>
                         </tr>
