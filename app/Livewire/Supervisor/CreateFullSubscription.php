@@ -18,8 +18,6 @@ class CreateFullSubscription extends Component
 {
     public int $currentStep = 1;
 
-    public int $totalSteps = 4;
-
     // Step 1
     public string $subscription_type = 'quran_individual';
 
@@ -35,8 +33,6 @@ class CreateFullSubscription extends Component
 
     public ?int $teacher_id = null;
 
-    public string $teacher_search = '';
-
     public ?int $quran_circle_id = null;
 
     // Step 2
@@ -49,11 +45,13 @@ class CreateFullSubscription extends Component
     public float $discount = 0;
 
     // Step 3
-    public string $payment_source = 'outside'; // 'outside' or 'inside'
+    public string $payment_source = 'outside';
 
     public string $payment_reference = '';
 
-    // Step 4
+    public bool $is_sponsored = false;
+
+    // Step 4 (individual/academic only)
     public string $memorization_level = 'beginner';
 
     public string $specialization = 'memorization';
@@ -63,22 +61,33 @@ class CreateFullSubscription extends Component
     // Data lists
     public array $availableTeachers = [];
 
-    public array $filteredTeachers = [];
-
     public array $availablePackages = [];
 
     public array $availableCircles = [];
 
+    public function getTotalStepsProperty(): int
+    {
+        // Group circles skip step 4 (no per-student details needed)
+        return $this->subscription_type === 'quran_group' ? 3 : 4;
+    }
+
     protected function rules(): array
     {
-        return [
+        $rules = [
             'subscription_type' => 'required|in:quran_individual,quran_group,academic',
             'student_id' => ['required', 'integer', Rule::exists('users', 'id')->where('academy_id', auth()->user()->academy_id)],
-            'teacher_id' => 'required|integer',
-            'package_id' => 'required|integer',
             'billing_cycle' => 'required|in:monthly,quarterly,yearly',
             'amount' => 'required|numeric|min:0',
         ];
+
+        if ($this->subscription_type === 'quran_group') {
+            $rules['quran_circle_id'] = 'required|integer';
+        } else {
+            $rules['teacher_id'] = 'required|integer';
+            $rules['package_id'] = 'required|integer';
+        }
+
+        return $rules;
     }
 
     public function mount(): void
@@ -88,7 +97,7 @@ class CreateFullSubscription extends Component
             abort(403);
         }
         $this->loadTeachers();
-        $this->filteredTeachers = $this->availableTeachers;
+        $this->loadCircles();
     }
 
     // ── Reactive updates ──
@@ -96,23 +105,25 @@ class CreateFullSubscription extends Component
     public function updatedSubscriptionType(): void
     {
         $this->teacher_id = null;
-        $this->teacher_search = '';
         $this->quran_circle_id = null;
         $this->package_id = null;
         $this->amount = 0;
         $this->discount = 0;
-        $this->availableCircles = [];
+        $this->is_sponsored = false;
         $this->availablePackages = [];
         $this->loadTeachers();
-        $this->filteredTeachers = $this->availableTeachers;
+        $this->loadCircles();
     }
 
-    public function updatedTeacherSearch(): void
+    public function updatedQuranCircleId(): void
     {
-        $search = mb_strtolower(trim($this->teacher_search));
-        $this->filteredTeachers = $search
-            ? collect($this->availableTeachers)->filter(fn ($t) => str_contains(mb_strtolower($t['name']), $search))->values()->toArray()
-            : $this->availableTeachers;
+        if ($this->quran_circle_id) {
+            $circle = collect($this->availableCircles)->firstWhere('id', $this->quran_circle_id);
+            if ($circle) {
+                $this->teacher_id = $circle['teacher_user_id'] ?? null;
+                $this->amount = (float) ($circle['monthly_fee'] ?? 0);
+            }
+        }
     }
 
     public function updatedPackageId(): void
@@ -132,6 +143,16 @@ class CreateFullSubscription extends Component
         $this->clampDiscount();
     }
 
+    public function updatedIsSponsored(): void
+    {
+        if ($this->is_sponsored) {
+            $this->amount = 0;
+            $this->discount = 0;
+        } else {
+            $this->updatedQuranCircleId();
+        }
+    }
+
     public function updatedStudentSearch(): void
     {
         if (mb_strlen($this->student_search) >= 2) {
@@ -140,7 +161,7 @@ class CreateFullSubscription extends Component
                 ->where(fn ($q) => $q->where('name', 'like', "%{$this->student_search}%")->orWhere('email', 'like', "%{$this->student_search}%"))
                 ->limit(10)
                 ->get()
-                ->map(fn ($u) => ['id' => $u->id, 'name' => trim($u->first_name.' '.$u->last_name), 'email' => $u->email, 'user_id' => $u->id])
+                ->map(fn ($u) => ['id' => $u->id, 'name' => trim($u->first_name.' '.$u->last_name), 'email' => $u->email])
                 ->toArray();
         } else {
             $this->searchResults = [];
@@ -169,40 +190,7 @@ class CreateFullSubscription extends Component
         $this->student_search = '';
     }
 
-    public function selectTeacher(int $id): void
-    {
-        $this->teacher_id = $id;
-        $this->teacher_search = '';
-        $this->quran_circle_id = null;
-        $this->loadPackages();
-        if ($this->subscription_type === 'quran_group') {
-            $this->loadCircles();
-        }
-    }
-
-    public function clearTeacher(): void
-    {
-        $this->teacher_id = null;
-        $this->teacher_search = '';
-        $this->filteredTeachers = $this->availableTeachers;
-        $this->quran_circle_id = null;
-        $this->package_id = null;
-        $this->amount = 0;
-        $this->availablePackages = [];
-        $this->availableCircles = [];
-    }
-
     // ── Computed properties ──
-
-    public function getMaxSessionsProperty(): int
-    {
-        if (! $this->package_id) {
-            return 0;
-        }
-        $pkg = collect($this->availablePackages)->firstWhere('id', $this->package_id);
-
-        return $pkg ? ($pkg['sessions_per_month'] ?? 8) * max(1, BillingCycle::from($this->billing_cycle)->months()) : 0;
-    }
 
     public function getFinalPriceProperty(): float
     {
@@ -214,13 +202,18 @@ class CreateFullSubscription extends Component
     public function nextStep(): void
     {
         if ($this->currentStep === 1) {
-            $rules = ['subscription_type' => 'required', 'student_id' => 'required|integer', 'teacher_id' => 'required|integer'];
+            $rules = ['subscription_type' => 'required', 'student_id' => 'required|integer'];
             if ($this->subscription_type === 'quran_group') {
                 $rules['quran_circle_id'] = 'required|integer';
+            } else {
+                $rules['teacher_id'] = 'required|integer';
             }
             $this->validate($rules);
         } elseif ($this->currentStep === 2) {
-            $this->validate(['package_id' => 'required|integer', 'billing_cycle' => 'required', 'amount' => 'required|numeric|min:0']);
+            if ($this->subscription_type !== 'quran_group') {
+                $this->validate(['package_id' => 'required|integer']);
+            }
+            $this->validate(['billing_cycle' => 'required', 'amount' => 'required|numeric|min:0']);
         }
 
         if ($this->currentStep < $this->totalSteps) {
@@ -240,11 +233,17 @@ class CreateFullSubscription extends Component
         $this->validate();
 
         try {
-            // Convert profile ID → user ID for Quran subscriptions
+            // Convert profile ID → user ID for Quran individual/academic
             $teacherValueForService = $this->teacher_id;
-            if (in_array($this->subscription_type, ['quran_individual', 'quran_group'])) {
+            if ($this->subscription_type === 'quran_individual') {
                 $profile = QuranTeacherProfile::find($this->teacher_id);
                 $teacherValueForService = $profile?->user_id ?? $this->teacher_id;
+            }
+
+            // For group circles, teacher comes from circle
+            if ($this->subscription_type === 'quran_group' && $this->quran_circle_id) {
+                $circle = QuranCircle::find($this->quran_circle_id);
+                $teacherValueForService = $circle?->quran_teacher_id;
             }
 
             $data = [
@@ -254,21 +253,23 @@ class CreateFullSubscription extends Component
                 'teacher_id' => $teacherValueForService,
                 'package_id' => $this->package_id,
                 'billing_cycle' => $this->billing_cycle,
-                'amount' => $this->finalPrice,
+                'amount' => $this->is_sponsored ? 0 : $this->finalPrice,
                 'discount' => $this->discount,
                 'payment_method' => 'bank_transfer',
                 'payment_reference' => $this->payment_reference,
                 'memorization_level' => $this->memorization_level,
                 'specialization' => $this->specialization,
                 'learning_goals' => $this->learning_goals,
+                'is_sponsored' => $this->is_sponsored,
             ];
 
-            // If inside platform, mark as pending (student pays via gateway)
-            if ($this->payment_source === 'inside') {
+            if ($this->is_sponsored) {
+                // Sponsored = free, active immediately
+                $data['create_as_pending'] = false;
+            } elseif ($this->payment_source === 'inside') {
                 $data['create_as_pending'] = true;
             }
 
-            // Group circle
             if ($this->subscription_type === 'quran_group' && $this->quran_circle_id) {
                 $data['quran_circle_id'] = $this->quran_circle_id;
             }
@@ -303,6 +304,31 @@ class CreateFullSubscription extends Component
             ->toArray();
     }
 
+    private function loadCircles(): void
+    {
+        if ($this->subscription_type !== 'quran_group') {
+            $this->availableCircles = [];
+
+            return;
+        }
+
+        $this->availableCircles = QuranCircle::where('academy_id', auth()->user()->academy_id)
+            ->where('status', true)
+            ->with('quranTeacher')
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'teacher_name' => $c->quranTeacher?->name ?? '-',
+                'teacher_user_id' => $c->quran_teacher_id,
+                'monthly_fee' => (float) $c->monthly_fee,
+                'enrolled' => $c->enrolled_students,
+                'max' => $c->max_students,
+                'spots' => $c->max_students - $c->enrolled_students,
+            ])
+            ->toArray();
+    }
+
     private function loadPackages(): void
     {
         $academyId = auth()->user()->academy_id;
@@ -312,31 +338,9 @@ class CreateFullSubscription extends Component
         $this->availablePackages = $model::where('academy_id', $academyId)->where('is_active', true)->get()->toArray();
     }
 
-    private function loadCircles(): void
-    {
-        if (! $this->teacher_id) {
-            $this->availableCircles = [];
-
-            return;
-        }
-
-        // Get user_id from profile_id for circle query
-        $profile = QuranTeacherProfile::find($this->teacher_id);
-        $teacherUserId = $profile?->user_id;
-
-        $this->availableCircles = $teacherUserId
-            ? QuranCircle::where('academy_id', auth()->user()->academy_id)
-                ->where('quran_teacher_id', $teacherUserId)
-                ->where('is_active', true)
-                ->get(['id', 'name', 'enrolled_students', 'max_students'])
-                ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'spots' => $c->max_students - $c->enrolled_students])
-                ->toArray()
-            : [];
-    }
-
     private function calculateAmount(): void
     {
-        if (! $this->package_id) {
+        if (! $this->package_id || $this->is_sponsored) {
             return;
         }
         $pkg = collect($this->availablePackages)->firstWhere('id', $this->package_id);

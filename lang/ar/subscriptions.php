@@ -126,6 +126,11 @@ return [
     'pending_payment_notice' => 'سيتم إنشاء الاشتراك كمعلق. الطالب سيحتاج للدفع عبر بوابة الدفع لتفعيله.',
     'learning_goals_label' => 'أهداف التعلم (اختياري)',
     'learning_goals_placeholder' => 'مثال: حفظ جزء عم، تحسين التلاوة...',
+    'enrollment_type_label' => 'نوع التسجيل',
+    'normal_enrollment' => 'تسجيل عادي',
+    'sponsored_enrollment' => 'تسجيل مكفول (مجاني)',
+    'sponsored_free_notice' => 'سيتم إنشاء اشتراك مكفول مجاني للطالب.',
+    'sponsored_enrollment_notice' => 'سيتم تسجيل الطالب مجاناً ككفالة. لا يحتاج لدفع أي رسوم.',
 
     // Lifecycle error messages
     'errors' => [

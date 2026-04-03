@@ -124,6 +124,8 @@ class QuranSubscription extends BaseSubscription
         // Trial system
         'trial_used',
         'is_trial_active',
+        'is_sponsored',
+        'sponsorship_reason',
 
         // Pause support
         'paused_at',
@@ -174,6 +176,7 @@ class QuranSubscription extends BaseSubscription
 
             // Booleans
             'is_trial_active' => 'boolean',
+            'is_sponsored' => 'boolean',
 
             // Pause support
             'paused_at' => 'datetime',

@@ -120,6 +120,11 @@ return [
     'pending_payment_notice' => 'Subscription will be created as pending. The student will need to pay via the payment gateway to activate it.',
     'learning_goals_label' => 'Learning Goals (optional)',
     'learning_goals_placeholder' => 'E.g.: Memorize Juz Amma, improve recitation...',
+    'enrollment_type_label' => 'Enrollment Type',
+    'normal_enrollment' => 'Normal Enrollment',
+    'sponsored_enrollment' => 'Sponsored (Free)',
+    'sponsored_free_notice' => 'A free sponsored subscription will be created for the student.',
+    'sponsored_enrollment_notice' => 'The student will be enrolled for free as a sponsored student. No payment required.',
 
     // Lifecycle error messages
     'errors' => [

@@ -35,13 +35,15 @@ class AdminSubscriptionWizardService
     {
         return DB::transaction(function () use ($data) {
             $type = $data['type'];
-            $package = $this->findPackage($type, $data['package_id']);
 
-            if (! $package) {
+            // Group circles may not have a package — use circle fee instead
+            $package = ! empty($data['package_id']) ? $this->findPackage($type, $data['package_id']) : null;
+
+            if (! $package && $type !== 'quran_group') {
                 throw new \Exception(__('subscriptions.package_not_found'));
             }
 
-            // 1. Create subscription (ACTIVE + PAID)
+            // 1. Create subscription
             $subscription = $this->createSubscription($type, $data, $package);
 
             // 2. Create payment record (skip if pending/inside platform)
@@ -72,7 +74,8 @@ class AdminSubscriptionWizardService
         $billingCycle = \App\Enums\BillingCycle::from($data['billing_cycle']);
         $startsAt = $data['starts_at'] ?? now();
         $endsAt = $billingCycle->calculateEndDate($startsAt);
-        $amount = $data['amount'] ?? $this->getPriceFromPackage($package, $billingCycle);
+        $isSponsored = $data['is_sponsored'] ?? false;
+        $amount = $isSponsored ? 0 : ($data['amount'] ?? ($package ? $this->getPriceFromPackage($package, $billingCycle) : 0));
 
         $baseData = [
             'academy_id' => $data['academy_id'] ?? auth()->user()->academy_id,
@@ -85,21 +88,21 @@ class AdminSubscriptionWizardService
             'next_billing_date' => ($data['create_as_pending'] ?? false) ? null : $endsAt,
             'last_payment_date' => ($data['create_as_pending'] ?? false) ? null : now(),
             'auto_renew' => $billingCycle->supportsAutoRenewal(),
-            'session_duration_minutes' => $package->session_duration_minutes,
-            'total_sessions' => $package->sessions_per_month * max(1, $billingCycle->months()),
-            'sessions_remaining' => $package->sessions_per_month * max(1, $billingCycle->months()),
+            'session_duration_minutes' => $package?->session_duration_minutes ?? 60,
+            'total_sessions' => ($package?->sessions_per_month ?? 8) * max(1, $billingCycle->months()),
+            'sessions_remaining' => ($package?->sessions_per_month ?? 8) * max(1, $billingCycle->months()),
             'sessions_used' => 0,
             'total_sessions_completed' => 0,
             'total_sessions_missed' => 0,
-            'package_price_monthly' => (float) $package->monthly_price,
-            'package_price_quarterly' => (float) ($package->quarterly_price ?? $package->monthly_price * 3),
-            'package_price_yearly' => (float) ($package->yearly_price ?? $package->monthly_price * 12),
+            'package_price_monthly' => (float) ($package?->monthly_price ?? $amount),
+            'package_price_quarterly' => (float) ($package?->quarterly_price ?? ($package?->monthly_price ?? $amount) * 3),
+            'package_price_yearly' => (float) ($package?->yearly_price ?? ($package?->monthly_price ?? $amount) * 12),
             'total_price' => $amount,
             'final_price' => $amount,
             'discount_amount' => $data['discount'] ?? 0,
-            'currency' => $package->currency ?? 'SAR',
-            'package_name_ar' => $package->name,
-            'package_name_en' => $package->name,
+            'currency' => $package?->currency ?? 'SAR',
+            'package_name_ar' => $package?->name,
+            'package_name_en' => $package?->name,
             'notes' => $data['notes'] ?? null,
             'progress_percentage' => 0,
         ];
@@ -109,7 +112,8 @@ class AdminSubscriptionWizardService
 
         if ($type === 'quran_individual' || $type === 'quran_group') {
             $baseData['quran_teacher_id'] = $data['teacher_id'];
-            $baseData['package_id'] = $data['package_id'];
+            $baseData['package_id'] = $data['package_id'] ?? null;
+            $baseData['is_sponsored'] = $data['is_sponsored'] ?? false;
             $baseData['subscription_type'] = $type === 'quran_group' ? 'group' : 'individual';
             $baseData['memorization_level'] = $data['memorization_level'] ?? 'beginner';
             $baseData['subscription_code'] = QuranSubscription::generateSubscriptionCode($baseData['academy_id']);
