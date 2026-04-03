@@ -102,6 +102,10 @@ return [
             'title' => 'انتهى الاشتراك',
             'message' => 'انتهى اشتراكك في :subscription_name',
         ],
+        'circle_teacher_changed' => [
+            'title' => 'تم تغيير معلم الحلقة',
+            'message' => 'تم نقل حلقتك ":circle_name" من المعلم :old_teacher_name إلى المعلم :new_teacher_name',
+        ],
         'subscription_activated' => [
             'title' => 'تم تفعيل الاشتراك',
             'message' => 'تم تفعيل اشتراكك في :subscription_name بنجاح',

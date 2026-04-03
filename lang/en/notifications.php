@@ -102,6 +102,10 @@ return [
             'title' => 'Subscription Expired',
             'message' => 'Your subscription to :subscription_name has expired',
         ],
+        'circle_teacher_changed' => [
+            'title' => 'Circle Teacher Changed',
+            'message' => 'Your circle ":circle_name" has been transferred from :old_teacher_name to :new_teacher_name',
+        ],
         'subscription_activated' => [
             'title' => 'Subscription Activated',
             'message' => 'Your subscription to :subscription_name has been activated successfully',
