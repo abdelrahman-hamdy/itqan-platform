@@ -33,7 +33,7 @@ class CircleTransferService
 
         $oldTeacher = User::findOrFail($circle->quran_teacher_id);
 
-        DB::transaction(function () use ($circle, $oldTeacher, $newTeacher, $performedBy, $reason) {
+        $transferResult = DB::transaction(function () use ($circle, $oldTeacher, $newTeacher) {
             $circle->update(['quran_teacher_id' => $newTeacher->id]);
 
             $activeStatuses = [SessionSubscriptionStatus::ACTIVE, SessionSubscriptionStatus::PENDING];
@@ -57,6 +57,11 @@ class CircleTransferService
 
             $this->clearCaches($oldTeacher, $newTeacher, $circle->student_id, $circle->academy_id);
 
+            return ['sessions_updated' => $updatedSessions, 'chat_group_updated' => $chatGroupUpdated];
+        });
+
+        // Log transfer (non-critical — don't break the transfer if logging fails)
+        try {
             activity('circle_transfer')
                 ->performedOn($circle)
                 ->causedBy($performedBy)
@@ -66,11 +71,16 @@ class CircleTransferService
                     'circle_code' => $circle->circle_code,
                     'student_id' => $circle->student_id,
                     'reason' => $reason,
-                    'sessions_updated' => $updatedSessions,
-                    'chat_group_updated' => $chatGroupUpdated,
+                    'sessions_updated' => $transferResult['sessions_updated'],
+                    'chat_group_updated' => $transferResult['chat_group_updated'],
                 ])
                 ->log(__('circles.transfer.log_message'));
-        });
+        } catch (\Throwable $e) {
+            Log::warning('Failed to log circle transfer activity', [
+                'circle_id' => $circle->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         try {
             $student = $circle->student;

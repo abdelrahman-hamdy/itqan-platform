@@ -5,6 +5,13 @@
 @endphp
 
 <div>
+    @if(session('success'))
+        <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">{{ session('error') }}</div>
+    @endif
+
     @if($teacher)
         <x-supervisor.teacher-info-banner :teacher="$teacher" type="quran" />
     @endif
@@ -114,6 +121,7 @@
                                         @endif
                                     @endforeach
                                 </select>
+                                @error('new_teacher_id') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                             </div>
                             <p class="text-xs text-gray-500">{{ __('circles.transfer.modal_description') }}</p>
                             <button type="submit"
