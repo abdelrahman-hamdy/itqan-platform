@@ -204,6 +204,28 @@ class CreateFullSubscription extends Component
 
     // ── Computed properties ──
 
+    public function getStepLabelsProperty(): array
+    {
+        if ($this->subscription_type === 'quran_group') {
+            return [
+                1 => __('subscriptions.wizard_step1_title'),
+                2 => __('subscriptions.wizard_step3_title'),
+            ];
+        }
+
+        $labels = [
+            1 => __('subscriptions.wizard_step1_title'),
+            2 => __('subscriptions.wizard_step2_title'),
+            3 => __('subscriptions.wizard_step3_title'),
+        ];
+
+        if ($this->subscription_type === 'quran_individual') {
+            $labels[4] = __('subscriptions.wizard_step4_title');
+        }
+
+        return $labels;
+    }
+
     public function getFinalPriceProperty(): float
     {
         return max(0, $this->amount - $this->discount);
