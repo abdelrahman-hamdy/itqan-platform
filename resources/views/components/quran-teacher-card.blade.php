@@ -15,7 +15,7 @@
       class="flex-shrink-0" />
 
     <div class="flex-1 min-w-0">
-      <h3 class="font-semibold text-gray-900 mb-1 truncate">
+      <h3 class="font-semibold text-gray-900 mb-1">
         {{ $teacher->full_name ?? $teacher->user->name ?? '' }}
       </h3>
       {{-- Qualification Badge --}}

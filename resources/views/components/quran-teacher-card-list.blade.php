@@ -34,7 +34,7 @@
 
     {{-- Name + Rating (stuck to bottom, full width beside avatar) --}}
     <div class="flex items-end justify-between gap-3">
-      <h3 class="font-bold text-gray-900 text-lg leading-tight truncate">
+      <h3 class="font-bold text-gray-900 text-lg leading-tight min-w-0">
         {{ $teacher->user->full_name ?? $teacher->user->name ?? __('components.cards.quran_teacher.default_name') }}
       </h3>
       <div class="flex items-center gap-1 flex-shrink-0">
