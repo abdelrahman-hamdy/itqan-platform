@@ -43,12 +43,21 @@
       <h3 class="font-bold text-gray-900 text-lg leading-tight min-w-0">
         {{ $teacher->full_name ?? __('components.cards.academic_teacher.default_name') }}
       </h3>
-      <div class="flex items-center gap-1 flex-shrink-0">
+      {{-- Full rating (sm+) --}}
+      <div class="hidden sm:flex items-center gap-1 flex-shrink-0">
         <x-reviews.star-rating
           :rating="$rating"
           :total-reviews="$teacher->total_reviews ?? null"
           size="sm"
         />
+      </div>
+      {{-- Compact rating (mobile) --}}
+      <div class="flex sm:hidden items-center gap-1 flex-shrink-0 text-xs text-gray-600">
+        <i class="ri-star-fill text-yellow-400 text-sm"></i>
+        <span class="font-medium">{{ number_format($rating, 1) }}</span>
+        @if($teacher->total_reviews ?? null)
+          <span>({{ $teacher->total_reviews }})</span>
+        @endif
       </div>
     </div>
   </div>

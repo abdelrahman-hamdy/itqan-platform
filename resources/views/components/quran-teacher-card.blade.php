@@ -67,11 +67,22 @@
     @endif
 
     @if($rating > 0)
-      <x-reviews.star-rating
-        :rating="$rating"
-        :total-reviews="$teacher->total_reviews ?? null"
-        size="sm"
-      />
+      {{-- Full rating (sm+) --}}
+      <div class="hidden sm:block">
+        <x-reviews.star-rating
+          :rating="$rating"
+          :total-reviews="$teacher->total_reviews ?? null"
+          size="sm"
+        />
+      </div>
+      {{-- Compact rating (mobile) --}}
+      <div class="flex sm:hidden items-center gap-1 text-xs text-gray-600">
+        <i class="ri-star-fill text-yellow-400 text-sm"></i>
+        <span class="font-medium">{{ number_format($rating, 1) }}</span>
+        @if($teacher->total_reviews ?? null)
+          <span>({{ $teacher->total_reviews }})</span>
+        @endif
+      </div>
     @endif
 
     @if($teacher->offers_trial_sessions)
