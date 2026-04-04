@@ -201,12 +201,19 @@ class AdminSubscriptionWizardService
     {
         $consumed = (int) ($data['consumed_sessions'] ?? 0);
         if ($consumed > 0 && $consumed < $subscription->total_sessions) {
+            $remaining = $subscription->total_sessions - $consumed;
             $subscription->update([
                 'sessions_used' => $consumed,
-                'sessions_remaining' => $subscription->total_sessions - $consumed,
+                'sessions_remaining' => $remaining,
                 'total_sessions_completed' => $consumed,
                 'progress_percentage' => round(($consumed / $subscription->total_sessions) * 100, 2),
             ]);
+
+            // Sync circle's sessions_remaining so calendar scheduling sees the correct count
+            if ($subscription instanceof QuranSubscription) {
+                $circle = $subscription->individualCircle;
+                $circle?->update(['sessions_remaining' => $remaining]);
+            }
         }
     }
 

@@ -180,9 +180,28 @@ class QuranSessionStrategy extends AbstractSessionStrategy
             ->get()
             ->map(function ($circle) {
                 $subscription = $circle->subscription;
-                $scheduledSessions = $circle->sessions()->activeOrCompleted()->count();
                 $totalSessions = $circle->total_sessions;
-                $remainingSessions = max(0, $totalSessions - $scheduledSessions);
+
+                // Use subscription.sessions_remaining as source of truth
+                // (already accounts for consumed_sessions, completed, absent, forgiven)
+                $subscriptionRemaining = $subscription?->sessions_remaining ?? $totalSessions;
+
+                // Subtract pending sessions (created but not yet counted against subscription)
+                $pendingSessions = $circle->sessions()
+                    ->whereIn('status', [
+                        SessionStatus::SCHEDULED->value,
+                        SessionStatus::READY->value,
+                        SessionStatus::ONGOING->value,
+                    ])->count();
+
+                $remainingSessions = max(0, $subscriptionRemaining - $pendingSessions);
+
+                // Total "used" for display = all non-cancelled, non-forgiven sessions
+                $scheduledSessions = $circle->sessions()
+                    ->whereNotIn('status', [
+                        SessionStatus::CANCELLED->value,
+                        SessionStatus::FORGIVEN->value,
+                    ])->count();
 
                 $status = 'not_scheduled';
                 if ($scheduledSessions > 0) {
