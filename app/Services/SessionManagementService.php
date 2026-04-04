@@ -274,16 +274,10 @@ class SessionManagementService
     {
         // Use subscription.sessions_remaining as source of truth
         // (accounts for consumed_sessions, completed, absent, forgiven)
-        $subscription = $circle->subscription;
-        $subscriptionRemaining = $subscription?->sessions_remaining ?? $circle->total_sessions;
+        $subscriptionRemaining = $circle->subscription?->sessions_remaining ?? 0;
 
         // Subtract pending sessions (created but not yet counted against subscription)
-        $pendingSessions = $circle->sessions()
-            ->whereIn('status', [
-                SessionStatus::SCHEDULED->value,
-                SessionStatus::READY->value,
-                SessionStatus::ONGOING->value,
-            ])->count();
+        $pendingSessions = $circle->sessions()->active()->count();
 
         return max(0, $subscriptionRemaining - $pendingSessions);
     }
