@@ -1053,7 +1053,7 @@ class LiveKitMeeting {
                 this.isConnected = false;
                 if (this.isMeetingEnded(context)) {
                     this.showMeetingEndedOverlay();
-                } else if (this.connection?.reconnectAttempts >= this.connection?.maxReconnectAttempts) {
+                } else if (this.connection?.isReconnectExhausted()) {
                     this.showReconnectFailedOverlay();
                 } else {
                     this.showNotification(t('connection.disconnected'), 'error');

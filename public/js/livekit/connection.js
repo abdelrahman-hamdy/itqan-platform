@@ -34,6 +34,7 @@ class LiveKitConnection {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.intentionalDisconnect = false;
+        this.reconnectTimeoutId = null;
     }
 
     /**
@@ -242,7 +243,9 @@ class LiveKitConnection {
         this.reconnectAttempts++;
         const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 16000);
 
-        setTimeout(async () => {
+        if (this.reconnectTimeoutId) clearTimeout(this.reconnectTimeoutId);
+        this.reconnectTimeoutId = setTimeout(async () => {
+            this.reconnectTimeoutId = null;
             if (this.intentionalDisconnect || !this.room) return;
             try {
                 await this.reconnect();
@@ -368,6 +371,14 @@ class LiveKitConnection {
     }
 
     /**
+     * Check if all reconnection attempts have been exhausted
+     * @returns {boolean}
+     */
+    isReconnectExhausted() {
+        return this.reconnectAttempts >= this.maxReconnectAttempts;
+    }
+
+    /**
      * Record attendance join via unified API (fallback for webhook issues)
      */
     async recordAttendanceJoin() {
@@ -436,6 +447,11 @@ class LiveKitConnection {
      * Destroy the connection and clean up
      */
     destroy() {
+        // Clear pending reconnect timer
+        if (this.reconnectTimeoutId) {
+            clearTimeout(this.reconnectTimeoutId);
+            this.reconnectTimeoutId = null;
+        }
 
         // Record leave when destroying connection
         if (this.isConnected) {
