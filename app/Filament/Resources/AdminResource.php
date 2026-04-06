@@ -8,7 +8,6 @@ use App\Filament\Resources\AdminResource\Pages\CreateAdmin;
 use App\Filament\Resources\AdminResource\Pages\EditAdmin;
 use App\Filament\Resources\AdminResource\Pages\ListAdmins;
 use App\Filament\Resources\AdminResource\Pages\ViewAdmin;
-use App\Models\Academy;
 use App\Models\User;
 use App\Rules\PasswordRules;
 use App\Services\AcademyAdminSyncService;
@@ -148,9 +147,9 @@ class AdminResource extends BaseResource
                             ->searchable()
                             ->preload()
                             ->placeholder('اختر الأكاديمية للتعيين')
-                            ->required()
+                            ->nullable()
                             ->dehydrated(true)
-                            ->helperText('حدد الأكاديمية التي سيديرها هذا المدير'),
+                            ->helperText('اختياري - يمكنك تعيين الأكاديمية لاحقاً'),
                         Textarea::make('notes')
                             ->label('ملاحظات')
                             ->rows(3)
