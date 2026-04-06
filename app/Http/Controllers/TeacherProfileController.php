@@ -93,33 +93,30 @@ class TeacherProfileController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        // Build base query with all filters applied
+        // Build filtered base query — reused for stats and pagination
         $baseQuery = TeacherEarning::forTeacher($teacherType, $teacherId)->where('academy_id', $academyId);
         $this->applyEarningsFilters($baseQuery, $currentMonth, $startDate, $endDate, $currentSource);
 
-        // Stats from filtered query
+        // Stats: single query with conditional aggregation
+        $statsRow = (clone $baseQuery)->selectRaw('
+            COALESCE(SUM(amount), 0) as total_earnings,
+            COALESCE(SUM(CASE WHEN is_finalized = 1 THEN amount ELSE 0 END), 0) as finalized_amount,
+            COALESCE(SUM(CASE WHEN is_finalized = 0 AND is_disputed = 0 THEN amount ELSE 0 END), 0) as unpaid_amount,
+            COUNT(*) as sessions_count
+        ')->first();
+
         $stats = [
-            'totalEarnings' => (clone $baseQuery)->sum('amount'),
-            'finalizedAmount' => (clone $baseQuery)->finalized()->sum('amount'),
-            'unpaidAmount' => (clone $baseQuery)->unpaid()->sum('amount'),
-            'sessionsCount' => (clone $baseQuery)->count(),
+            'totalEarnings' => (float) $statsRow->total_earnings,
+            'finalizedAmount' => (float) $statsRow->finalized_amount,
+            'unpaidAmount' => (float) $statsRow->unpaid_amount,
+            'sessionsCount' => (int) $statsRow->sessions_count,
         ];
 
-        // Paginated earnings query (same filters + eager loading)
-        $query = TeacherEarning::forTeacher($teacherType, $teacherId)
-            ->where('academy_id', $academyId)
-            ->with([
-                'session' => function ($morphTo) {
-                    $morphTo->morphWith([
-                        QuranSession::class => ['individualCircle', 'circle', 'student'],
-                        AcademicSession::class => ['academicIndividualLesson.subject', 'student'],
-                        InteractiveCourseSession::class => ['course'],
-                    ]);
-                },
-            ]);
-        $this->applyEarningsFilters($query, $currentMonth, $startDate, $endDate, $currentSource);
-
-        $earnings = $query->orderByDesc('session_completed_at')->paginate(15);
+        // Paginated earnings with eager-loaded session relationships
+        $earnings = (clone $baseQuery)
+            ->with(['session' => fn ($morphTo) => $morphTo->morphWith($this->earningsSessionRelations())])
+            ->orderByDesc('session_completed_at')
+            ->paginate(15);
 
         // Available months and sources for filter dropdowns
         $availableMonths = $this->earningsDisplayService->getAvailableMonths($teacherType, $teacherId, $academyId);
@@ -138,6 +135,15 @@ class TeacherProfileController extends Controller
             'startDate' => $startDate,
             'endDate' => $endDate,
         ]);
+    }
+
+    private function earningsSessionRelations(): array
+    {
+        return [
+            QuranSession::class => ['individualCircle', 'circle', 'student'],
+            AcademicSession::class => ['academicIndividualLesson.subject', 'student'],
+            InteractiveCourseSession::class => ['course'],
+        ];
     }
 
     /**
@@ -203,20 +209,12 @@ class TeacherProfileController extends Controller
     {
         $allEarnings = TeacherEarning::forTeacher($teacherType, $teacherId)
             ->where('academy_id', $academyId)
-            ->with([
-                'session' => function ($morphTo) {
-                    $morphTo->morphWith([
-                        QuranSession::class => ['individualCircle', 'circle', 'student'],
-                        AcademicSession::class => ['academicIndividualLesson.subject', 'student'],
-                        InteractiveCourseSession::class => ['course'],
-                    ]);
-                },
-            ])
+            ->with(['session' => fn ($morphTo) => $morphTo->morphWith($this->earningsSessionRelations())])
             ->get();
 
         $sources = [];
         foreach ($allEarnings as $earning) {
-            $source = $this->earningsDisplayService->determineEarningSourcePublic($earning, $user);
+            $source = $this->earningsDisplayService->determineEarningSource($earning, $user);
             if (! isset($sources[$source['key']])) {
                 $sources[$source['key']] = [
                     'value' => $source['key'],

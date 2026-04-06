@@ -150,17 +150,9 @@ class TeacherEarningsDisplayService
     }
 
     /**
-     * Public wrapper for determineEarningSource.
-     */
-    public function determineEarningSourcePublic($earning, $user): array
-    {
-        return $this->determineEarningSource($earning, $user);
-    }
-
-    /**
      * Determine the source of an earning (which circle/course/class).
      */
-    protected function determineEarningSource($earning, $user): array
+    public function determineEarningSource($earning, $user): array
     {
         $session = $earning->session;
 
