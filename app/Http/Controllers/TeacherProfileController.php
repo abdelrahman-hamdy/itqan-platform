@@ -93,17 +93,19 @@ class TeacherProfileController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        // Stats (always unfiltered by source for overview)
-        $now = Carbon::now();
-        $statsBase = TeacherEarning::forTeacher($teacherType, $teacherId)->where('academy_id', $academyId);
+        // Build base query with all filters applied
+        $baseQuery = TeacherEarning::forTeacher($teacherType, $teacherId)->where('academy_id', $academyId);
+        $this->applyEarningsFilters($baseQuery, $currentMonth, $startDate, $endDate, $currentSource);
+
+        // Stats from filtered query
         $stats = [
-            'totalEarningsThisMonth' => (clone $statsBase)->forMonth($now->year, $now->month)->sum('amount'),
-            'finalizedAmount' => (clone $statsBase)->finalized()->sum('amount'),
-            'unpaidAmount' => (clone $statsBase)->unpaid()->sum('amount'),
-            'sessionsCount' => (clone $statsBase)->count(),
+            'totalEarnings' => (clone $baseQuery)->sum('amount'),
+            'finalizedAmount' => (clone $baseQuery)->finalized()->sum('amount'),
+            'unpaidAmount' => (clone $baseQuery)->unpaid()->sum('amount'),
+            'sessionsCount' => (clone $baseQuery)->count(),
         ];
 
-        // Paginated earnings query
+        // Paginated earnings query (same filters + eager loading)
         $query = TeacherEarning::forTeacher($teacherType, $teacherId)
             ->where('academy_id', $academyId)
             ->with([
@@ -115,26 +117,7 @@ class TeacherProfileController extends Controller
                     ]);
                 },
             ]);
-
-        // Date range takes priority over month
-        if ($startDate || $endDate) {
-            if ($startDate) {
-                $query->where('session_completed_at', '>=', Carbon::parse($startDate)->startOfDay());
-            }
-            if ($endDate) {
-                $query->where('session_completed_at', '<=', Carbon::parse($endDate)->endOfDay());
-            }
-        } elseif ($currentMonth) {
-            $parts = explode('-', $currentMonth);
-            if (count($parts) === 2) {
-                $query->forMonth((int) $parts[0], (int) $parts[1]);
-            }
-        }
-
-        // Source filter
-        if ($currentSource) {
-            $this->applySourceFilter($query, $currentSource);
-        }
+        $this->applyEarningsFilters($query, $currentMonth, $startDate, $endDate, $currentSource);
 
         $earnings = $query->orderByDesc('session_completed_at')->paginate(15);
 
@@ -155,6 +138,30 @@ class TeacherProfileController extends Controller
             'startDate' => $startDate,
             'endDate' => $endDate,
         ]);
+    }
+
+    /**
+     * Apply all earnings filters (date, month, source) to a query.
+     */
+    private function applyEarningsFilters($query, ?string $month, ?string $startDate, ?string $endDate, ?string $source): void
+    {
+        if ($startDate || $endDate) {
+            if ($startDate) {
+                $query->where('session_completed_at', '>=', Carbon::parse($startDate)->startOfDay());
+            }
+            if ($endDate) {
+                $query->where('session_completed_at', '<=', Carbon::parse($endDate)->endOfDay());
+            }
+        } elseif ($month) {
+            $parts = explode('-', $month);
+            if (count($parts) === 2) {
+                $query->forMonth((int) $parts[0], (int) $parts[1]);
+            }
+        }
+
+        if ($source) {
+            $this->applySourceFilter($query, $source);
+        }
     }
 
     /**

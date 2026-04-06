@@ -28,8 +28,8 @@
                     <i class="ri-money-dollar-circle-line text-blue-600"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-lg md:text-xl font-bold text-gray-900">{{ number_format($stats['totalEarningsThisMonth'], 2) }} {{ $currencySymbol }}</p>
-                    <p class="text-xs text-gray-600 truncate">{{ __('earnings.this_month') }}</p>
+                    <p class="text-lg md:text-xl font-bold text-gray-900">{{ number_format($stats['totalEarnings'], 2) }} {{ $currencySymbol }}</p>
+                    <p class="text-xs text-gray-600 truncate">{{ __('earnings.total_earnings') }}</p>
                 </div>
             </div>
         </div>
