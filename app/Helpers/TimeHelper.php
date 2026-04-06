@@ -88,7 +88,7 @@ if (! function_exists('formatTimeRemaining')) {
 
         // Check if time has passed
         if ($target->isPast()) {
-            $diffInMinutes = $now->diffInMinutes($target);
+            $diffInMinutes = (int) $now->diffInMinutes($target);
 
             return [
                 'formatted' => 'انتهت منذ '.formatTimePassed($target),
@@ -164,9 +164,9 @@ if (! function_exists('formatTimePassed')) {
         // Use academy timezone for "now"
         $now = nowInAcademyTimezone();
 
-        $days = $past->diffInDays($now);
-        $hours = $past->copy()->addDays($days)->diffInHours($now);
-        $minutes = $past->copy()->addDays($days)->addHours($hours)->diffInMinutes($now);
+        $days = (int) $past->diffInDays($now);
+        $hours = (int) $past->copy()->addDays($days)->diffInHours($now);
+        $minutes = (int) $past->copy()->addDays($days)->addHours($hours)->diffInMinutes($now);
 
         $parts = [];
 
