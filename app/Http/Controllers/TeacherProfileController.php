@@ -74,12 +74,11 @@ class TeacherProfileController extends Controller
             abort(404, 'Teacher profile not found');
         }
 
-        // Use full class name for polymorphic teacher_type column
-        $teacherType = $user->isQuranTeacher() ? QuranTeacherProfile::class : AcademicTeacherProfile::class;
+        $teacherType = $user->isQuranTeacher() ? 'quran_teacher' : 'academic_teacher';
         $teacherId = $teacherProfile->id;
         $academyId = $user->academy_id;
 
-        $currencyLabel = $academy->currency?->label() ?? 'ريال سعودي (SAR)';
+        $currencyLabel = getTeacherEarningsCurrency($academy)->label();
         $timezone = $academy->timezone?->value ?? AcademyContextService::getTimezone();
 
         $selectedMonth = $request->get('month', now()->format('Y-m'));
@@ -447,10 +446,9 @@ class TeacherProfileController extends Controller
     private function calculateMonthlyEarnings($user, $teacherProfile, $currentMonth): float
     {
         $academyId = $user->academy_id ?? 1;
-        // Use full class name for polymorphic teacher_type column
         $teacherType = $teacherProfile instanceof QuranTeacherProfile
-            ? QuranTeacherProfile::class
-            : AcademicTeacherProfile::class;
+            ? 'quran_teacher'
+            : 'academic_teacher';
 
         return $this->earningsDisplayService->calculateMonthlyEarnings(
             $teacherType,
