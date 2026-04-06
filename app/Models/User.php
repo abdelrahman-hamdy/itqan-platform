@@ -25,6 +25,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Log;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Wirechat\Wirechat\Traits\Chatable;
 
 /**
@@ -72,6 +74,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
     // Custom traits for organized functionality
     use HasRoles;
     use HasTenantContext;
+    use LogsActivity;
     use Notifiable;
     use SoftDeletes;
 
@@ -146,6 +149,14 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
     protected static function booted(): void
     {
         // No global scope - see docblock above for reasons
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['email', 'first_name', 'last_name', 'active_status', 'user_type'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 
     /**

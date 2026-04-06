@@ -15,6 +15,7 @@ use App\Models\QuranTeacherProfile;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -277,7 +278,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => ['required', 'email', Rule::unique('users', 'email')->whereNull('deleted_at')],
+            'email' => ['required', 'email', Rule::unique('users', 'email')->where('academy_id', AcademyContextService::getCurrentAcademyId())],
             'phone' => 'required|string|max:20',
             'gender' => 'required|in:male,female',
             'password' => PasswordRules::min(6)->letters()->numbers(),
@@ -419,7 +420,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($teacher->id)->whereNull('deleted_at')],
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($teacher->id)->where('academy_id', $teacher->academy_id)],
             'phone' => 'required|string|max:20',
             'gender' => 'required|in:male,female',
             'education_level' => 'required|in:diploma,bachelor,master,phd,other',
@@ -456,7 +457,18 @@ class SupervisorTeachersController extends BaseSupervisorWebController
         $teacher->last_name = $request->last_name;
         $teacher->email = $request->email;
         $teacher->phone = $request->phone;
-        $teacher->save();
+
+        try {
+            $teacher->save();
+        } catch (UniqueConstraintViolationException $e) {
+            Log::warning('Supervisor teacher update: duplicate email attempt', [
+                'teacher_id' => $teacher->id,
+                'email' => $request->email,
+                'userId' => auth()->id(),
+            ]);
+
+            return back()->withErrors(['email' => __('supervisor.teachers.email_unique')])->withInput();
+        }
 
         if ($request->hasFile('avatar')) {
             if ($teacher->avatar) {
