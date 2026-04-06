@@ -227,8 +227,11 @@ class RemoveTestAccounts extends Command
                 ->where('participantable_type', User::class)
                 ->whereIn('participantable_id', $this->allUserIds)->count(),
             'WireChat messages' => DB::table('wire_messages')
-                ->where('sendable_type', User::class)
-                ->whereIn('sendable_id', $this->allUserIds)->count(),
+                ->whereIn('participant_id', DB::table('wire_participants')
+                    ->where('participantable_type', User::class)
+                    ->whereIn('participantable_id', $this->allUserIds)
+                    ->pluck('id')
+                )->count(),
             'Notifications' => DB::table('notifications')
                 ->where('notifiable_type', User::class)
                 ->whereIn('notifiable_id', $this->allUserIds)->count(),
@@ -552,6 +555,17 @@ class RemoveTestAccounts extends Command
             fn () => ChatGroup::withoutGlobalScopes()->withTrashed()->whereIn('owner_id', $this->allUserIds)->forceDelete()
         );
 
+        // WireChat messages — must delete BEFORE participants (FK dependency)
+        $participantIds = DB::table('wire_participants')
+            ->where('participantable_type', User::class)
+            ->whereIn('participantable_id', $this->allUserIds)
+            ->pluck('id');
+
+        $this->deleteAndLog('WireChat messages',
+            DB::table('wire_messages')->whereIn('participant_id', $participantIds)->count(),
+            fn () => DB::table('wire_messages')->whereIn('participant_id', $participantIds)->delete()
+        );
+
         $this->deleteAndLog('WireChat participants',
             DB::table('wire_participants')
                 ->where('participantable_type', User::class)
@@ -559,15 +573,6 @@ class RemoveTestAccounts extends Command
             fn () => DB::table('wire_participants')
                 ->where('participantable_type', User::class)
                 ->whereIn('participantable_id', $this->allUserIds)->delete()
-        );
-
-        $this->deleteAndLog('WireChat messages',
-            DB::table('wire_messages')
-                ->where('sendable_type', User::class)
-                ->whereIn('sendable_id', $this->allUserIds)->count(),
-            fn () => DB::table('wire_messages')
-                ->where('sendable_type', User::class)
-                ->whereIn('sendable_id', $this->allUserIds)->delete()
         );
 
         $this->deleteAndLog('Notifications',
