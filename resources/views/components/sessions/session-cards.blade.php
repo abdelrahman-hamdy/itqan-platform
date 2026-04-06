@@ -40,7 +40,10 @@
         return in_array($getStatusValue($session), [SessionStatus::SCHEDULED->value, SessionStatus::READY->value, SessionStatus::ONGOING->value]);
     });
     $passedSessions = $sessions->filter(function($session) use ($getStatusValue) {
-        return in_array($getStatusValue($session), [SessionStatus::COMPLETED->value, SessionStatus::CANCELLED->value]);
+        return $getStatusValue($session) === SessionStatus::COMPLETED->value;
+    });
+    $missedSessions = $sessions->filter(function($session) use ($getStatusValue) {
+        return in_array($getStatusValue($session), array_map(fn($s) => $s->value, SessionStatus::missedStatuses()));
     });
 
     // Generate a unique ID for this component instance
@@ -69,6 +72,9 @@
             </button>
             <button class="session-tab min-h-[44px] py-3 md:py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 text-xs md:text-sm whitespace-nowrap" data-tab="passed">
                 {{ __('components.sessions.tabs.passed') }} ({{ $passedSessions->count() }})
+            </button>
+            <button class="session-tab min-h-[44px] py-3 md:py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 text-xs md:text-sm whitespace-nowrap" data-tab="missed">
+                {{ __('components.sessions.tabs.missed') }} ({{ $missedSessions->count() }})
             </button>
         </nav>
     </div>
@@ -133,6 +139,27 @@
                     title="{{ __('components.sessions.empty_states.no_completed') }}"
                     description="{{ __('components.sessions.empty_states.no_completed_message') }}"
                     color="gray"
+                    variant="compact"
+                />
+            @endif
+        </div>
+
+        <!-- Missed Sessions Tab -->
+        <div id="missed-sessions" class="session-tab-content hidden" data-tab-name="missed">
+            @if($missedSessions->count() > 0)
+                <div class="space-y-3 md:space-y-4 session-items-container">
+                    @foreach($missedSessions as $session)
+                        <div class="session-paginated-item">
+                            <x-sessions.session-item :session="$session" :circle="$circle" :view-type="$viewType" />
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <x-ui.empty-state
+                    icon="ri-close-circle-line"
+                    title="{{ __('components.sessions.empty_states.no_missed') }}"
+                    description="{{ __('components.sessions.empty_states.no_missed_message') }}"
+                    color="red"
                     variant="compact"
                 />
             @endif

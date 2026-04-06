@@ -243,6 +243,15 @@ enum SessionStatus: string
     }
 
     /**
+     * Statuses for sessions that were missed (cancelled or student absent).
+     * Common pattern: replaces whereIn('status', [CANCELLED, ABSENT])
+     */
+    public static function missedStatuses(): array
+    {
+        return [self::CANCELLED, self::ABSENT];
+    }
+
+    /**
      * Get all status values as array
      */
     public static function values(): array

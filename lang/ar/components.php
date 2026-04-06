@@ -156,6 +156,7 @@ return [
             'upcoming' => 'الجلسات القادمة',
             'unscheduled' => 'الجلسات غير المجدولة',
             'past' => 'الجلسات السابقة',
+            'missed' => 'الفائتة',
         ],
         'empty_states' => [
             'no_sessions' => 'لا توجد جلسات مسجلة',
@@ -163,7 +164,9 @@ return [
             'no_upcoming' => 'لا توجد جلسات قادمة',
             'no_upcoming_message' => 'ستظهر الجلسات القادمة هنا',
             'no_completed' => 'لا توجد جلسات مكتملة',
-            'no_completed_message' => 'ستظهر الجلسات المكتملة والملغية هنا',
+            'no_completed_message' => 'ستظهر الجلسات المكتملة هنا',
+            'no_missed' => 'لا توجد جلسات فائتة',
+            'no_missed_message' => 'ستظهر الجلسات الملغاة والتي تغيب عنها الطالب هنا',
             'no_students_enrolled' => 'لا يوجد طلاب مسجلين',
             'no_students_message' => 'لم يتم تسجيل أي طلاب في هذه الجلسة.',
         ],

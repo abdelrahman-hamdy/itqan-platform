@@ -90,6 +90,7 @@ return [
             'upcoming' => 'Upcoming Sessions',
             'unscheduled' => 'Unscheduled Sessions',
             'past' => 'Past Sessions',
+            'missed' => 'Missed',
         ],
         'empty_states' => [
             'no_sessions' => 'No Sessions Recorded Yet',
@@ -97,7 +98,9 @@ return [
             'no_upcoming' => 'No Upcoming Sessions',
             'no_upcoming_message' => 'Upcoming sessions will appear here',
             'no_completed' => 'No Completed Sessions',
-            'no_completed_message' => 'Completed and cancelled sessions will appear here',
+            'no_completed_message' => 'Completed sessions will appear here',
+            'no_missed' => 'No Missed Sessions',
+            'no_missed_message' => 'Cancelled sessions and sessions the student was absent from will appear here',
             'no_students_enrolled' => 'No students enrolled',
             'no_students_message' => 'No students have been registered for this session.',
         ],
