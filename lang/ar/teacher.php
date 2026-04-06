@@ -17,6 +17,8 @@ return [
         'completed_sessions' => 'جلسات مكتملة',
         'month_earnings' => 'أرباح هذا الشهر',
         'currency' => 'ريال سعودي',
+        'month_duration' => 'ساعات التدريس هذا الشهر',
+        'hours' => 'ساعة',
         'teacher_rating' => 'تقييم المعلم',
         'out_of_stars' => 'من 5 نجوم',
     ],

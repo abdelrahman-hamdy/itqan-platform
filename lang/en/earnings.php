@@ -118,6 +118,9 @@ return [
     'no_results_description' => 'No earnings match the selected filters',
     'view_all' => 'View All',
     'finalized_earnings' => 'Finalized Earnings',
+    'total_duration' => 'Total Session Duration',
+    'minutes' => 'min',
+    'hours_unit' => 'hrs',
     'source_other' => 'Other',
 
     // Messages

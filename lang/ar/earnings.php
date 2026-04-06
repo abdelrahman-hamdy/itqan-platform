@@ -118,6 +118,9 @@ return [
     'no_results_description' => 'لا توجد أرباح تطابق الفلاتر المحددة',
     'view_all' => 'عرض الكل',
     'finalized_earnings' => 'أرباح مؤكدة',
+    'total_duration' => 'إجمالي مدة الجلسات',
+    'minutes' => 'دقيقة',
+    'hours_unit' => 'ساعة',
     'source_other' => 'أخرى',
 
     // Messages

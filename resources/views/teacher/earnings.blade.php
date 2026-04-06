@@ -60,15 +60,15 @@
             </div>
         </div>
 
-        {{-- Sessions Count --}}
+        {{-- Total Duration --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-calendar-check-line text-indigo-600"></i>
+                    <i class="ri-time-line text-indigo-600"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-lg md:text-xl font-bold text-gray-900">{{ $stats['sessionsCount'] }}</p>
-                    <p class="text-xs text-gray-600 truncate">{{ __('earnings.sessions_count') }}</p>
+                    <p class="text-lg md:text-xl font-bold text-gray-900">{{ floor($stats['totalDurationMinutes'] / 60) }}:{{ str_pad($stats['totalDurationMinutes'] % 60, 2, '0', STR_PAD_LEFT) }}</p>
+                    <p class="text-xs text-gray-600 truncate">{{ __('earnings.total_duration') }}</p>
                 </div>
             </div>
         </div>
@@ -253,6 +253,12 @@
                                         <i class="ri-calculator-line text-gray-400"></i>
                                         {{ $earning->calculation_method_label }}
                                     </span>
+                                    @if($earning->calculation_metadata['duration_minutes'] ?? null)
+                                        <span class="flex items-center gap-1">
+                                            <i class="ri-time-line text-gray-400"></i>
+                                            {{ $earning->calculation_metadata['duration_minutes'] }} {{ __('earnings.minutes') }}
+                                        </span>
+                                    @endif
                                     @if($earning->session_completed_at)
                                         <span class="flex items-center gap-1">
                                             <i class="ri-calendar-line text-gray-400"></i>

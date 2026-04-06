@@ -11,18 +11,18 @@ $teacherStats = [
             : (isset($stats['activeCourses']) ? ($stats['activeCourses'] . ' ' . ($stats['activeCourses'] > 1 ? __('teacher.quick_stats.active_courses_plural') : __('teacher.quick_stats.active_courses'))) : null),
     ],
     [
-        'label' => __('teacher.quick_stats.month_sessions'),
-        'value' => $stats['thisMonthSessions'] ?? 0,
-        'icon' => 'ri-calendar-check-line',
+        'label' => __('teacher.quick_stats.month_duration'),
+        'value' => floor(($stats['thisMonthDuration'] ?? 0) / 60),
+        'icon' => 'ri-time-line',
         'color' => 'purple',
-        'subtitle' => ($stats['thisMonthSessions'] ?? 0) > 1 ? __('teacher.quick_stats.completed_sessions') : __('teacher.quick_stats.completed_session'),
+        'subtitle' => __('teacher.quick_stats.hours'),
     ],
     [
         'label' => __('teacher.quick_stats.month_earnings'),
         'value' => number_format($stats['monthlyEarnings'] ?? 0, 0),
         'icon' => 'ri-money-dollar-circle-line',
         'color' => 'green',
-        'subtitle' => __('teacher.quick_stats.currency'),
+        'subtitle' => $currencySymbol ?? __('teacher.quick_stats.currency'),
     ],
     [
         'label' => __('teacher.quick_stats.teacher_rating'),

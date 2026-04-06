@@ -17,6 +17,8 @@ return [
         'completed_sessions' => 'completed sessions',
         'month_earnings' => 'This Month\'s Earnings',
         'currency' => 'SAR',
+        'month_duration' => 'Teaching Hours This Month',
+        'hours' => 'hours',
         'teacher_rating' => 'Teacher Rating',
         'out_of_stars' => 'out of 5 stars',
     ],

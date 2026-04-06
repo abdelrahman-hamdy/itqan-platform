@@ -62,6 +62,7 @@ class TeacherProfileController extends Controller
             'teacherProfile' => $teacherProfile,
             'stats' => $stats,
             'academy' => $academy,
+            'currencySymbol' => getTeacherEarningsCurrencySymbol($academy),
         ]));
     }
 
@@ -98,18 +99,18 @@ class TeacherProfileController extends Controller
         $this->applyEarningsFilters($baseQuery, $currentMonth, $startDate, $endDate, $currentSource);
 
         // Stats: single query with conditional aggregation
-        $statsRow = (clone $baseQuery)->selectRaw('
+        $statsRow = (clone $baseQuery)->selectRaw("
             COALESCE(SUM(amount), 0) as total_earnings,
             COALESCE(SUM(CASE WHEN is_finalized = 1 THEN amount ELSE 0 END), 0) as finalized_amount,
             COALESCE(SUM(CASE WHEN is_finalized = 0 AND is_disputed = 0 THEN amount ELSE 0 END), 0) as unpaid_amount,
-            COUNT(*) as sessions_count
-        ')->first();
+            COALESCE(SUM(JSON_EXTRACT(calculation_metadata, '$.duration_minutes')), 0) as total_duration_minutes
+        ")->first();
 
         $stats = [
             'totalEarnings' => (float) $statsRow->total_earnings,
             'finalizedAmount' => (float) $statsRow->finalized_amount,
             'unpaidAmount' => (float) $statsRow->unpaid_amount,
-            'sessionsCount' => (int) $statsRow->sessions_count,
+            'totalDurationMinutes' => (int) $statsRow->total_duration_minutes,
         ];
 
         // Paginated earnings with eager-loaded session relationships
@@ -476,23 +477,14 @@ class TeacherProfileController extends Controller
             ->where('status', true)
             ->count();
 
-        // This month sessions - count completed and ongoing sessions
-        $thisMonthSessions = QuranSession::where('quran_teacher_id', $user->id)
-            ->whereMonth('scheduled_at', $currentMonth->month)
-            ->whereYear('scheduled_at', $currentMonth->year)
-            ->whereIn('status', [
-                SessionStatus::COMPLETED,
-                SessionStatus::ONGOING,
-            ])
-            ->count();
-
-        // Monthly earnings
+        // Monthly earnings and duration from TeacherEarning
         $monthlyEarnings = $this->calculateMonthlyEarnings($user, $teacherProfile, $currentMonth);
+        $thisMonthDuration = $this->calculateMonthlyDuration($teacherProfile, $user->academy_id, $currentMonth);
 
         return [
             'totalStudents' => $totalStudents,
             'activeCircles' => $activeCircles,
-            'thisMonthSessions' => $thisMonthSessions,
+            'thisMonthDuration' => $thisMonthDuration,
             'monthlyEarnings' => $monthlyEarnings,
             'teacherRating' => $teacherProfile->rating ?? 0,
         ];
@@ -523,34 +515,14 @@ class TeacherProfileController extends Controller
             ->where('status', 'active')
             ->count();
 
-        // This month sessions - count academic sessions and interactive course sessions
-        $academicSessionCount = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
-            ->whereMonth('scheduled_at', $currentMonth->month)
-            ->whereYear('scheduled_at', $currentMonth->year)
-            ->whereIn('status', [
-                SessionStatus::COMPLETED,
-                SessionStatus::ONGOING,
-            ])
-            ->count();
-
-        $interactiveSessionCount = InteractiveCourseSession::whereIn('course_id', $courseIds)
-            ->whereMonth('scheduled_at', $currentMonth->month)
-            ->whereYear('scheduled_at', $currentMonth->year)
-            ->whereIn('status', [
-                SessionStatus::COMPLETED,
-                SessionStatus::ONGOING,
-            ])
-            ->count();
-
-        $thisMonthSessions = $academicSessionCount + $interactiveSessionCount;
-
-        // Monthly earnings
+        // Monthly earnings and duration from TeacherEarning
         $monthlyEarnings = $this->calculateMonthlyEarnings($user, $teacherProfile, $currentMonth);
+        $thisMonthDuration = $this->calculateMonthlyDuration($teacherProfile, $user->academy_id, $currentMonth);
 
         return [
             'totalStudents' => $totalStudents,
             'activeCourses' => $activeCourses,
-            'thisMonthSessions' => $thisMonthSessions,
+            'thisMonthDuration' => $thisMonthDuration,
             'monthlyEarnings' => $monthlyEarnings,
             'teacherRating' => $teacherProfile->rating ?? 0,
         ];
@@ -572,6 +544,22 @@ class TeacherProfileController extends Controller
             $academyId,
             $currentMonth
         );
+    }
+
+    /**
+     * Calculate total teaching duration (minutes) for a teacher in a given month.
+     */
+    private function calculateMonthlyDuration($teacherProfile, int $academyId, Carbon $currentMonth): int
+    {
+        $teacherType = $teacherProfile instanceof QuranTeacherProfile
+            ? 'quran_teacher'
+            : 'academic_teacher';
+
+        return (int) TeacherEarning::forTeacher($teacherType, $teacherProfile->id)
+            ->where('academy_id', $academyId)
+            ->forMonth($currentMonth->year, $currentMonth->month)
+            ->selectRaw("COALESCE(SUM(JSON_EXTRACT(calculation_metadata, '$.duration_minutes')), 0) as total")
+            ->value('total');
     }
 
     /**
