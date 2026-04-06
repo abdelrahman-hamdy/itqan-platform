@@ -25,7 +25,6 @@ use Illuminate\Support\Facades\Log;
  * @property string $session_type
  * @property \Carbon\Carbon|null $first_join_time
  * @property \Carbon\Carbon|null $last_leave_time
- * @property \Carbon\Carbon|null $last_heartbeat_at
  * @property int|null $total_duration_minutes
  * @property array|null $join_leave_cycles
  * @property \Carbon\Carbon|null $attendance_calculated_at
@@ -68,7 +67,6 @@ class MeetingAttendance extends Model
         'session_type',
         'first_join_time',
         'last_leave_time',
-        'last_heartbeat_at',
         'total_duration_minutes',
         'join_leave_cycles',
         'attendance_calculated_at',
@@ -85,7 +83,6 @@ class MeetingAttendance extends Model
     protected $casts = [
         'first_join_time' => 'datetime',
         'last_leave_time' => 'datetime',
-        'last_heartbeat_at' => 'datetime',
         'join_leave_cycles' => 'array',
         'attendance_calculated_at' => 'datetime',
         'attendance_status' => AttendanceStatus::class,
@@ -770,35 +767,6 @@ class MeetingAttendance extends Model
         ]);
 
         return $totalDuration;
-    }
-
-    /**
-     * Update heartbeat timestamp
-     */
-    public function updateHeartbeat(): void
-    {
-        $now = AcademyContextService::nowInAcademyTimezone();
-        $this->update(['last_heartbeat_at' => $now]);
-
-        Log::debug('Heartbeat updated', [
-            'session_id' => $this->session_id,
-            'user_id' => $this->user_id,
-            'last_heartbeat_at' => $now->toISOString(),
-        ]);
-    }
-
-    /**
-     * Check if heartbeat is stale (no heartbeat for 5+ minutes)
-     */
-    public function hasStaleHeartbeat(): bool
-    {
-        if (! $this->last_heartbeat_at) {
-            return false; // No heartbeat data yet
-        }
-
-        $minutesSinceHeartbeat = $this->last_heartbeat_at->diffInMinutes(AcademyContextService::nowInAcademyTimezone());
-
-        return $minutesSinceHeartbeat > 5;
     }
 
     /**

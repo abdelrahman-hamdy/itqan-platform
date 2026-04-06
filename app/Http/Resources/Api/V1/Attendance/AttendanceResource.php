@@ -39,8 +39,6 @@ class AttendanceResource extends JsonResource
             // Attendance timing
             'first_join_time' => $this->first_join_time?->toISOString(),
             'last_leave_time' => $this->last_leave_time?->toISOString(),
-            'last_heartbeat_at' => $this->last_heartbeat_at?->toISOString(),
-
             // Duration
             'total_duration_minutes' => $this->total_duration_minutes,
             'session_duration_minutes' => $this->session_duration_minutes,

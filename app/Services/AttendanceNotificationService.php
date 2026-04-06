@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
-use Exception;
+use App\Enums\AttendanceStatus;
 use App\Enums\NotificationType;
 use App\Events\AttendanceUpdated;
-use App\Enums\AttendanceStatus;
 use App\Models\MeetingAttendance;
 use App\Models\User;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -59,7 +59,7 @@ class AttendanceNotificationService
             $this->notificationService->sendAttendanceMarkedNotification(
                 $attendance,
                 $user,
-                $attendance->attendance_status ?? AttendanceStatus::ATTENDED->value
+                $attendance->attendance_status?->value ?? AttendanceStatus::ATTENDED->value
             );
 
             // Send notifications to parents

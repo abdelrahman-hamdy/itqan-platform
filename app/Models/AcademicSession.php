@@ -614,7 +614,7 @@ class AcademicSession extends BaseSession
      * Get preparation minutes before session from academy settings
      * Overrides BaseSession hardcoded value
      */
-    protected function getPreparationMinutes(): int
+    public function getPreparationMinutes(): int
     {
         if ($this->academy && $this->academy->settings) {
             return $this->academy->settings->default_preparation_minutes ?? 10;

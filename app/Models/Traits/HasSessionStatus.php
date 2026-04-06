@@ -337,7 +337,7 @@ trait HasSessionStatus
      * Get preparation minutes before session
      * Can be overridden by child classes
      */
-    abstract protected function getPreparationMinutes(): int;
+    abstract public function getPreparationMinutes(): int;
 
     /**
      * Get ending buffer minutes after session

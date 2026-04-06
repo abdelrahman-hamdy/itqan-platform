@@ -2,20 +2,18 @@
 
 namespace App\Filament\Resources\MeetingAttendanceResource\Pages;
 
-use Filament\Actions\EditAction;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
-use App\Services\AttendanceCalculationService;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Infolists\Components\TextEntry;
-use ValueError;
-use App\Models\MeetingAttendance;
 use App\Enums\AttendanceStatus;
-use App\Filament\Resources\MeetingAttendanceResource;
-use Filament\Actions;
-use Filament\Infolists\Components;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
+use App\Filament\Resources\MeetingAttendanceResource;
+use App\Models\MeetingAttendance;
+use App\Services\AttendanceCalculationService;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use ValueError;
 
 /**
  * @property MeetingAttendance $record
@@ -144,9 +142,6 @@ class ViewMeetingAttendance extends ViewRecord
                             ->label('عدد مرات الدخول'),
                         TextEntry::make('leave_count')
                             ->label('عدد مرات الخروج'),
-                        TextEntry::make('last_heartbeat_at')
-                            ->label('آخر نبض')
-                            ->dateTime(),
                     ])->columns(3),
 
                 Section::make('دورات الدخول والخروج')

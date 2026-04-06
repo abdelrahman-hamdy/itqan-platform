@@ -2,9 +2,6 @@
 
 namespace App\Models;
 
-use DB;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Eloquent\Collection;
 use App\Contracts\RecordingCapable;
 use App\Enums\AttendanceStatus;
 use App\Enums\EnrollmentStatus;
@@ -13,9 +10,12 @@ use App\Enums\UserType;
 use App\Models\Traits\HasRecording;
 use App\Services\AcademyContextService;
 use Carbon\Carbon;
+use DB;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class InteractiveCourseSession extends BaseSession implements RecordingCapable
 {
@@ -675,7 +675,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      * Get preparation minutes before session from academy settings
      * Overrides BaseSession hardcoded value
      */
-    protected function getPreparationMinutes(): int
+    public function getPreparationMinutes(): int
     {
         if ($this->academy && $this->academy->settings) {
             return $this->academy->settings->default_preparation_minutes ?? 10;

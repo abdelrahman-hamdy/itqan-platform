@@ -435,7 +435,7 @@ abstract class BaseSession extends Model implements MeetingCapable
      * Get preparation minutes before session
      * Can be overridden by child classes
      */
-    protected function getPreparationMinutes(): int
+    public function getPreparationMinutes(): int
     {
         $academy = $this->getAcademyForSettings();
 
