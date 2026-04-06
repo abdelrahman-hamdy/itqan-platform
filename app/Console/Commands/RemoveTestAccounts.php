@@ -26,6 +26,7 @@ use App\Models\User;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class RemoveTestAccounts extends Command
 {
@@ -331,22 +332,11 @@ class RemoveTestAccounts extends Command
             fn () => DB::table('meeting_attendances')->whereIn('user_id', $this->allUserIds)->delete()
         );
 
-        // Polymorphic attendances
-        $sessionIds = $this->getAllSessionIds();
-        if ($sessionIds['quran']->isNotEmpty() || $sessionIds['academic']->isNotEmpty()) {
-            $count = DB::table('attendances')
-                ->where(function ($q) use ($sessionIds) {
-                    $q->where(function ($sub) use ($sessionIds) {
-                        $sub->where('attendanceable_type', 'App\\Models\\QuranSession')
-                            ->whereIn('attendanceable_id', $sessionIds['quran']);
-                    })->orWhere(function ($sub) use ($sessionIds) {
-                        $sub->where('attendanceable_type', 'App\\Models\\AcademicSession')
-                            ->whereIn('attendanceable_id', $sessionIds['academic']);
-                    });
-                })->count();
-
-            $this->deleteAndLog('Polymorphic attendances', $count, function () use ($sessionIds) {
-                DB::table('attendances')
+        // Polymorphic attendances (table may not exist on all environments)
+        if (Schema::hasTable('attendances')) {
+            $sessionIds = $this->getAllSessionIds();
+            if ($sessionIds['quran']->isNotEmpty() || $sessionIds['academic']->isNotEmpty()) {
+                $count = DB::table('attendances')
                     ->where(function ($q) use ($sessionIds) {
                         $q->where(function ($sub) use ($sessionIds) {
                             $sub->where('attendanceable_type', 'App\\Models\\QuranSession')
@@ -355,8 +345,21 @@ class RemoveTestAccounts extends Command
                             $sub->where('attendanceable_type', 'App\\Models\\AcademicSession')
                                 ->whereIn('attendanceable_id', $sessionIds['academic']);
                         });
-                    })->delete();
-            });
+                    })->count();
+
+                $this->deleteAndLog('Polymorphic attendances', $count, function () use ($sessionIds) {
+                    DB::table('attendances')
+                        ->where(function ($q) use ($sessionIds) {
+                            $q->where(function ($sub) use ($sessionIds) {
+                                $sub->where('attendanceable_type', 'App\\Models\\QuranSession')
+                                    ->whereIn('attendanceable_id', $sessionIds['quran']);
+                            })->orWhere(function ($sub) use ($sessionIds) {
+                                $sub->where('attendanceable_type', 'App\\Models\\AcademicSession')
+                                    ->whereIn('attendanceable_id', $sessionIds['academic']);
+                            });
+                        })->delete();
+                });
+            }
         }
 
         // Teacher earnings (polymorphic)
@@ -403,8 +406,8 @@ class RemoveTestAccounts extends Command
             );
         }
 
-        // Session meetings (polymorphic)
-        if ($sessionIds['quran']->isNotEmpty() || $sessionIds['academic']->isNotEmpty()) {
+        // Session meetings (polymorphic, table may not exist)
+        if (Schema::hasTable('base_session_meetings') && ($sessionIds['quran']->isNotEmpty() || $sessionIds['academic']->isNotEmpty())) {
             $count = DB::table('base_session_meetings')
                 ->where(function ($q) use ($sessionIds) {
                     $q->where(function ($sub) use ($sessionIds) {
@@ -423,7 +426,7 @@ class RemoveTestAccounts extends Command
                             $sub->where('meetingable_type', 'App\\Models\\QuranSession')
                                 ->whereIn('meetingable_id', $sessionIds['quran']);
                         })->orWhere(function ($sub) use ($sessionIds) {
-                            $sub->where('meetingable_type', 'App\\Models\\AcademicSession')
+                            $sub->where('attendanceable_type', 'App\\Models\\AcademicSession')
                                 ->whereIn('meetingable_id', $sessionIds['academic']);
                         });
                     })->delete();
