@@ -2,13 +2,13 @@
 
 namespace App\Services\Attendance;
 
-use Exception;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Models\MeetingAttendance;
 use App\Models\User;
 use App\Services\MeetingAttendanceService;
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -284,7 +284,7 @@ abstract class BaseReportSyncService
             } elseif ($meetingAttendance && $meetingAttendance->first_join_time) {
                 // Student has joined before but is not currently in meeting
                 // Use the stored status from MeetingAttendance (set on join) or show as "left"
-                $attendanceStatus = $meetingAttendance->attendance_status ?? AttendanceStatus::LEFT->value;
+                $attendanceStatus = $meetingAttendance->attendance_status?->value ?? AttendanceStatus::LEFT->value;
             } elseif ($sessionReport?->attendance_status) {
                 // Use session report status if available
                 $attendanceStatus = $sessionReport->attendance_status;

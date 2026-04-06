@@ -83,7 +83,7 @@ class AttendanceNotificationService
             $parents = $this->parentNotificationService->getParentsForStudent($student);
 
             foreach ($parents as $parent) {
-                $status = $attendance->attendance_status ?? AttendanceStatus::ATTENDED->value;
+                $status = $attendance->attendance_status?->value ?? AttendanceStatus::ATTENDED->value;
                 $notificationType = match ($status) {
                     AttendanceStatus::ATTENDED->value => NotificationType::ATTENDANCE_MARKED_PRESENT,
                     AttendanceStatus::ABSENT->value => NotificationType::ATTENDANCE_MARKED_ABSENT,
