@@ -84,15 +84,23 @@ return [
     ],
 
     // Filters
+    'filter' => 'تصفية',
+    'clear_filters' => 'مسح الفلاتر',
     'filter_by_month' => 'تصفية حسب الشهر',
     'filter_by_status' => 'تصفية حسب الحالة',
     'filter_by_session_type' => 'تصفية حسب نوع الجلسة',
     'filter_by_teacher_type' => 'تصفية حسب نوع المعلم',
+    'filter_month' => 'الشهر',
+    'filter_source' => 'المصدر',
+    'filter_start_date' => 'من تاريخ',
+    'filter_end_date' => 'إلى تاريخ',
     'select_month' => 'اختر الشهر',
     'select_status' => 'اختر الحالة',
     'all_statuses' => 'جميع الحالات',
     'all_months' => 'جميع الأشهر',
+    'all_sources' => 'جميع المصادر',
     'all_time' => 'كل الأوقات',
+    'date_range_hint' => 'نطاق التاريخ يتجاوز فلتر الشهر عند تحديده',
 
     // Actions
     'view_details' => 'عرض التفاصيل',
@@ -103,6 +111,14 @@ return [
     'generate_payouts' => 'إنشاء الدفعات',
     'download_pdf' => 'تحميل PDF',
     'export' => 'تصدير',
+
+    // List
+    'list_title' => 'تفاصيل الأرباح',
+    'no_results' => 'لا توجد نتائج',
+    'no_results_description' => 'لا توجد أرباح تطابق الفلاتر المحددة',
+    'view_all' => 'عرض الكل',
+    'finalized_earnings' => 'أرباح مؤكدة',
+    'source_other' => 'أخرى',
 
     // Messages
     'no_earnings_found' => 'لم يتم العثور على أرباح',

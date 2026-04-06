@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\QuranSession;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
 use App\Models\TeacherEarning;
 use Carbon\Carbon;
 
@@ -147,6 +147,14 @@ class TeacherEarningsDisplayService
             ->where('academy_id', $academyId)
             ->forMonth($month->year, $month->month)
             ->sum('amount');
+    }
+
+    /**
+     * Public wrapper for determineEarningSource.
+     */
+    public function determineEarningSourcePublic($earning, $user): array
+    {
+        return $this->determineEarningSource($earning, $user);
     }
 
     /**

@@ -84,15 +84,23 @@ return [
     ],
 
     // Filters
+    'filter' => 'Filter',
+    'clear_filters' => 'Clear Filters',
     'filter_by_month' => 'Filter by Month',
     'filter_by_status' => 'Filter by Status',
     'filter_by_session_type' => 'Filter by Session Type',
     'filter_by_teacher_type' => 'Filter by Teacher Type',
+    'filter_month' => 'Month',
+    'filter_source' => 'Source',
+    'filter_start_date' => 'Start Date',
+    'filter_end_date' => 'End Date',
     'select_month' => 'Select Month',
     'select_status' => 'Select Status',
     'all_statuses' => 'All Statuses',
     'all_months' => 'All Months',
+    'all_sources' => 'All Sources',
     'all_time' => 'All Time',
+    'date_range_hint' => 'Date range overrides month filter when set',
 
     // Actions
     'view_details' => 'View Details',
@@ -103,6 +111,14 @@ return [
     'generate_payouts' => 'Generate Payouts',
     'download_pdf' => 'Download PDF',
     'export' => 'Export',
+
+    // List
+    'list_title' => 'Earnings Details',
+    'no_results' => 'No Results',
+    'no_results_description' => 'No earnings match the selected filters',
+    'view_all' => 'View All',
+    'finalized_earnings' => 'Finalized Earnings',
+    'source_other' => 'Other',
 
     // Messages
     'no_earnings_found' => 'No earnings found',

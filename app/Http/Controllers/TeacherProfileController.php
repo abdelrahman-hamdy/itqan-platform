@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use Storage;
-use App\Models\QuranTrialRequest;
-use App\Models\QuranSubscription;
-use App\Models\QuranSession;
-use App\Models\AcademicSubscription;
-use App\Models\QuranIndividualCircle;
-use App\Models\InteractiveCourseEnrollment;
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
 use App\Constants\DefaultAcademy;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Http\Requests\UpdateTeacherProfileRequest;
+use App\Models\AcademicSession;
+use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
+use App\Models\InteractiveCourseEnrollment;
+use App\Models\InteractiveCourseSession;
 use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
+use App\Models\QuranSession;
+use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
+use App\Models\QuranTrialRequest;
+use App\Models\TeacherEarning;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use App\Services\TeacherEarningsDisplayService;
@@ -28,6 +28,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Storage;
 
 class TeacherProfileController extends Controller
 {
@@ -66,6 +67,11 @@ class TeacherProfileController extends Controller
 
     public function earnings(Request $request): View
     {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
         $user = Auth::user();
         $teacherProfile = $this->getTeacherProfile($user);
         $academy = $user->academy;
@@ -78,37 +84,142 @@ class TeacherProfileController extends Controller
         $teacherId = $teacherProfile->id;
         $academyId = $user->academy_id;
 
-        $currencyLabel = getTeacherEarningsCurrency($academy)->label();
+        $currencySymbol = getTeacherEarningsCurrencySymbol($academy);
         $timezone = $academy->timezone?->value ?? AcademyContextService::getTimezone();
 
-        $selectedMonth = $request->get('month', now()->format('Y-m'));
-        $isAllTime = $selectedMonth === 'all';
+        // Filter values
+        $currentMonth = $request->input('month');
+        $currentSource = $request->input('source');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
-        if (! $isAllTime) {
-            [$year, $month] = explode('-', $selectedMonth);
-            $year = (int) $year;
-            $month = (int) $month;
-        } else {
-            $year = null;
-            $month = null;
+        // Stats (always unfiltered by source for overview)
+        $now = Carbon::now();
+        $statsBase = TeacherEarning::forTeacher($teacherType, $teacherId)->where('academy_id', $academyId);
+        $stats = [
+            'totalEarningsThisMonth' => (clone $statsBase)->forMonth($now->year, $now->month)->sum('amount'),
+            'finalizedAmount' => (clone $statsBase)->finalized()->sum('amount'),
+            'unpaidAmount' => (clone $statsBase)->unpaid()->sum('amount'),
+            'sessionsCount' => (clone $statsBase)->count(),
+        ];
+
+        // Paginated earnings query
+        $query = TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->with([
+                'session' => function ($morphTo) {
+                    $morphTo->morphWith([
+                        QuranSession::class => ['individualCircle', 'circle', 'student'],
+                        AcademicSession::class => ['academicIndividualLesson.subject', 'student'],
+                        InteractiveCourseSession::class => ['course'],
+                    ]);
+                },
+            ]);
+
+        // Date range takes priority over month
+        if ($startDate || $endDate) {
+            if ($startDate) {
+                $query->where('session_completed_at', '>=', Carbon::parse($startDate)->startOfDay());
+            }
+            if ($endDate) {
+                $query->where('session_completed_at', '<=', Carbon::parse($endDate)->endOfDay());
+            }
+        } elseif ($currentMonth) {
+            $parts = explode('-', $currentMonth);
+            if (count($parts) === 2) {
+                $query->forMonth((int) $parts[0], (int) $parts[1]);
+            }
         }
 
+        // Source filter
+        if ($currentSource) {
+            $this->applySourceFilter($query, $currentSource);
+        }
+
+        $earnings = $query->orderByDesc('session_completed_at')->paginate(15);
+
+        // Available months and sources for filter dropdowns
         $availableMonths = $this->earningsDisplayService->getAvailableMonths($teacherType, $teacherId, $academyId);
-        $earningsStats = $this->earningsDisplayService->getEarningsStats($teacherType, $teacherId, $academyId, $year, $month);
-        $earningsBySource = $this->earningsDisplayService->getEarningsGroupedBySource($teacherType, $teacherId, $academyId, $user, $year, $month);
+        $sources = $this->buildSourcesList($teacherType, $teacherId, $academyId, $user);
 
         return view('teacher.earnings', [
-            'teacherProfile' => $teacherProfile,
-            'teacherType' => $teacherType,
             'academy' => $academy,
-            'currency' => $currencyLabel,
+            'currencySymbol' => $currencySymbol,
             'timezone' => $timezone,
-            'stats' => $earningsStats,
-            'earningsBySource' => $earningsBySource,
+            'stats' => $stats,
+            'earnings' => $earnings,
             'availableMonths' => $availableMonths,
-            'selectedMonth' => $selectedMonth,
-            'isAllTime' => $isAllTime,
+            'sources' => $sources,
+            'currentMonth' => $currentMonth,
+            'currentSource' => $currentSource,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
         ]);
+    }
+
+    /**
+     * Apply source filter to earnings query.
+     * Source format: {type}_{id} e.g. "individual_circle_5", "interactive_course_12"
+     */
+    private function applySourceFilter($query, string $source): void
+    {
+        // Parse source: last segment is the ID, everything before is the type
+        $lastUnderscore = strrpos($source, '_');
+        if ($lastUnderscore === false) {
+            return;
+        }
+
+        $sourceType = substr($source, 0, $lastUnderscore);
+        $sourceId = (int) substr($source, $lastUnderscore + 1);
+
+        if ($sourceId <= 0) {
+            return;
+        }
+
+        match ($sourceType) {
+            'individual_circle' => $query->where('session_type', QuranSession::class)
+                ->whereHas('session', fn ($q) => $q->where('individual_circle_id', $sourceId)),
+            'group_circle' => $query->where('session_type', QuranSession::class)
+                ->whereHas('session', fn ($q) => $q->where('circle_id', $sourceId)),
+            'academic_lesson' => $query->where('session_type', AcademicSession::class)
+                ->whereHas('session', fn ($q) => $q->where('academic_individual_lesson_id', $sourceId)),
+            'interactive_course' => $query->where('session_type', InteractiveCourseSession::class)
+                ->whereHas('session', fn ($q) => $q->where('course_id', $sourceId)),
+            default => null,
+        };
+    }
+
+    /**
+     * Build dynamic sources list from existing earnings for filter dropdown.
+     */
+    private function buildSourcesList(string $teacherType, int $teacherId, int $academyId, $user): array
+    {
+        $allEarnings = TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->with([
+                'session' => function ($morphTo) {
+                    $morphTo->morphWith([
+                        QuranSession::class => ['individualCircle', 'circle', 'student'],
+                        AcademicSession::class => ['academicIndividualLesson.subject', 'student'],
+                        InteractiveCourseSession::class => ['course'],
+                    ]);
+                },
+            ])
+            ->get();
+
+        $sources = [];
+        foreach ($allEarnings as $earning) {
+            $source = $this->earningsDisplayService->determineEarningSourcePublic($earning, $user);
+            if (! isset($sources[$source['key']])) {
+                $sources[$source['key']] = [
+                    'value' => $source['key'],
+                    'label' => $source['name'],
+                    'type' => $source['type'],
+                ];
+            }
+        }
+
+        return array_values($sources);
     }
 
     public function schedule(): RedirectResponse
