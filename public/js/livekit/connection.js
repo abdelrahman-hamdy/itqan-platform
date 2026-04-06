@@ -75,32 +75,9 @@ class LiveKitConnection {
             throw new Error('LiveKit SDK not loaded');
         }
 
-        // Create room with TURN servers to bypass network restrictions
-        this.room = new window.LiveKit.Room({
-            webRtcConfig: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    // Public TURN servers to bypass network restrictions
-                    {
-                        urls: 'turn:openrelay.metered.ca:80',
-                        username: 'openrelayproject',
-                        credential: 'openrelayproject'
-                    },
-                    {
-                        urls: 'turn:openrelay.metered.ca:443',
-                        username: 'openrelayproject', 
-                        credential: 'openrelayproject'
-                    },
-                    {
-                        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                        username: 'openrelayproject',
-                        credential: 'openrelayproject'
-                    }
-                ],
-                iceTransportPolicy: 'relay'
-            }
-        });
+        // Let LiveKit server provide TURN credentials automatically via signaling.
+        // No client-side ICE override needed (matches mobile app behavior).
+        this.room = new window.LiveKit.Room();
 
         this.setupRoomEventListeners();
 
@@ -254,11 +231,25 @@ class LiveKitConnection {
     }
 
     /**
-     * Handle disconnection and attempt reconnection if needed
+     * Handle disconnection and attempt reconnection if needed.
+     * This fires AFTER the LiveKit SDK's internal reconnection retries are exhausted.
+     * It gets a fresh token and creates a new connection with exponential backoff.
      */
     handleDisconnection() {
-        // Temporarily disable auto-reconnection to stop notification spam
-        // User can manually click meeting button to reconnect
+        if (this.intentionalDisconnect) return;
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) return;
+
+        this.reconnectAttempts++;
+        const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 16000);
+
+        setTimeout(async () => {
+            if (this.intentionalDisconnect || !this.room) return;
+            try {
+                await this.reconnect();
+            } catch (error) {
+                // Will re-enter handleDisconnection via state change if still disconnected
+            }
+        }, delay);
     }
 
     /**
@@ -278,7 +269,10 @@ class LiveKitConnection {
                 throw new Error('Failed to get fresh token for reconnection');
             }
 
-            const serverUrl = this.config.serverUrl || 'wss://test-rn3dlic1.livekit.cloud';
+            const serverUrl = this.config.serverUrl;
+            if (!serverUrl) {
+                throw new Error('LiveKit server URL not configured');
+            }
             await this.room.connect(serverUrl, token, this.getConnectionOptions());
 
         } catch (error) {

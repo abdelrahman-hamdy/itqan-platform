@@ -259,6 +259,8 @@
             reconnecting: @json(__('meetings.network.reconnecting')),
             reconnecting_session: @json(__('meetings.network.reconnecting_session')),
             reconnect_failed: @json(__('meetings.network.reconnect_failed')),
+            reconnect_failed_description: @json(__('meetings.network.reconnect_failed_description')),
+            rejoin_meeting: @json(__('meetings.network.rejoin_meeting')),
             reconnect_error: @json(__('meetings.network.reconnect_error')),
             connected: @json(__('meetings.network.connected')),
         },
@@ -705,9 +707,9 @@
         }
 
         // Disconnect from LiveKit room if connected
-        if (window.room && window.room.state === 'connected') {
+        if (window.meeting?.connection?.isRoomConnected()) {
             try {
-                window.room.disconnect();
+                window.meeting.connection.disconnect();
             } catch {
                 // Silent fail - room disconnect error
             }
@@ -1169,9 +1171,9 @@
                     updateAttendanceStatus()
                 ]);
 
-                // Try to reconnect LiveKit if room exists
-                if (window.room && window.room.state === 'disconnected') {
-                    
+                // Try to reconnect LiveKit if room is disconnected
+                if (window.meeting?.connection && !window.meeting.connection.isRoomConnected()) {
+
                     // Check if we have an active meeting and try to rejoin
                     const connectionStatus = document.getElementById('connectionStatus');
                     if (connectionStatus) {
@@ -1187,7 +1189,7 @@
                     if (startMeetingBtn && !startMeetingBtn.disabled) {
                         // Auto-rejoin if the meeting is still active
                         setTimeout(() => {
-                            if (window.room && window.room.state === 'disconnected') {
+                            if (window.meeting?.connection && !window.meeting.connection.isRoomConnected()) {
                                 startMeetingBtn.click();
                             }
                         }, 2000);

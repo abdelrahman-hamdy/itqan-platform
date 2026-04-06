@@ -66,7 +66,11 @@ class LiveKitMeeting {
 
             // Get token and connect to the room
             const token = await this.connection.getLiveKitToken();
-            const serverUrl = this.config.serverUrl || 'wss://test-rn3dlic1.livekit.cloud';
+            const serverUrl = this.config.serverUrl;
+            if (!serverUrl) {
+                this.showError(t('connection.failed'));
+                throw new Error('LiveKit server URL not configured');
+            }
             await this.connection.connect(serverUrl, token);
 
             // CRITICAL FIX: Setup local media with enhanced synchronization
@@ -1047,9 +1051,10 @@ class LiveKitMeeting {
                 break;
             case 'disconnected':
                 this.isConnected = false;
-                // Determine if this is a meeting-ended scenario vs unexpected disconnect
                 if (this.isMeetingEnded(context)) {
                     this.showMeetingEndedOverlay();
+                } else if (this.connection?.reconnectAttempts >= this.connection?.maxReconnectAttempts) {
+                    this.showReconnectFailedOverlay();
                 } else {
                     this.showNotification(t('connection.disconnected'), 'error');
                     this.showLoadingOverlay(t('connection.disconnected_reconnecting'));
@@ -1106,6 +1111,31 @@ class LiveKitMeeting {
                 <button onclick="window.location.reload()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg">
                     <i class="ri-arrow-go-back-line"></i>
                     ${translations.messages?.return_to_session || 'Back to session'}
+                </button>
+            </div>
+        `;
+
+        loadingOverlay.classList.remove('fade-out');
+        loadingOverlay.style.display = 'flex';
+    }
+
+    /**
+     * Show reconnection-failed overlay when all retry attempts are exhausted
+     */
+    showReconnectFailedOverlay() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (!loadingOverlay) return;
+
+        loadingOverlay.innerHTML = `
+            <div class="text-center text-white px-6">
+                <div class="w-20 h-20 mx-auto mb-6 bg-white bg-opacity-10 rounded-full flex items-center justify-center">
+                    <i class="ri-wifi-off-line text-4xl text-red-400"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">${t('network.reconnect_failed')}</h3>
+                <p class="text-gray-300 text-base mb-8 max-w-md mx-auto">${t('network.reconnect_failed_description')}</p>
+                <button onclick="window.location.reload()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg">
+                    <i class="ri-refresh-line"></i>
+                    ${t('network.rejoin_meeting')}
                 </button>
             </div>
         `;

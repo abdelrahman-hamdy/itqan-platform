@@ -169,6 +169,8 @@ return [
         'reconnecting' => 'إعادة الاتصال...',
         'reconnecting_session' => 'إعادة الاتصال بالجلسة...',
         'reconnect_failed' => 'فشل في إعادة الاتصال - يرجى إعادة تحميل الصفحة',
+        'reconnect_failed_description' => 'فشلت جميع محاولات إعادة الاتصال. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.',
+        'rejoin_meeting' => 'إعادة الانضمام للجلسة',
         'reconnect_error' => 'فشل في إعادة الاتصال',
         'connected' => 'متصل',
     ],

@@ -169,6 +169,8 @@ return [
         'reconnecting' => 'Reconnecting...',
         'reconnecting_session' => 'Reconnecting to session...',
         'reconnect_failed' => 'Reconnection failed - please reload the page',
+        'reconnect_failed_description' => 'All reconnection attempts failed. Please check your internet connection and try again.',
+        'rejoin_meeting' => 'Rejoin Meeting',
         'reconnect_error' => 'Reconnection failed',
         'connected' => 'Connected',
     ],
