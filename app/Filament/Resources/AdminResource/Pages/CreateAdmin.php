@@ -5,6 +5,7 @@ namespace App\Filament\Resources\AdminResource\Pages;
 use App\Enums\UserType;
 use App\Filament\Resources\AdminResource;
 use App\Filament\Pages\BaseCreateRecord as CreateRecord;
+use Illuminate\Database\Eloquent\Model;
 
 class CreateAdmin extends CreateRecord
 {
@@ -17,15 +18,23 @@ class CreateAdmin extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Always persist the correct user type
-        $data['user_type'] = UserType::ADMIN->value;
-
-        // Normalize active status and sync legacy status column
-        $isActive = array_key_exists('active_status', $data) ? (bool) $data['active_status'] : true;
-        $data['active_status'] = $isActive;
-        $data['status'] = $isActive ? 'active' : 'inactive';
+        // Remove guarded fields from mass-assignment data — set directly in handleRecordCreation
+        unset($data['user_type'], $data['active_status'], $data['status']);
 
         return $data;
+    }
+
+    protected function handleRecordCreation(array $data): Model
+    {
+        $record = static::getModel()::create($data);
+
+        // Set guarded fields directly (not mass-assignable for security)
+        $record->user_type = UserType::ADMIN->value;
+        $record->active_status = true;
+        $record->status = 'active';
+        $record->save();
+
+        return $record;
     }
 
     protected function getCreatedNotificationTitle(): ?string
