@@ -2,7 +2,6 @@
 
 namespace App\Services\Student;
 
-use Exception;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Models\AcademicGradeLevel;
@@ -12,6 +11,7 @@ use App\Models\InteractiveCourseEnrollment;
 use App\Models\InteractiveCourseSession;
 use App\Models\RecordedCourse;
 use App\Models\User;
+use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -43,8 +43,11 @@ class StudentCourseService
         // Get all interactive courses with student enrollment data
         $query = InteractiveCourse::where('academy_id', $academy->id)
             ->where('is_published', true)
-            ->where('enrollment_deadline', '>=', now()->toDateString())
-            ->with(['assignedTeacher', 'subject', 'gradeLevel', 'enrollments' => function ($query) use ($studentId) {
+            ->where(function ($q) {
+                $q->whereNull('enrollment_deadline')
+                    ->orWhere('enrollment_deadline', '>=', now()->toDateString());
+            })
+            ->with(['assignedTeacher.user', 'subject', 'gradeLevel', 'enrollments' => function ($query) use ($studentId) {
                 $query->where('student_id', $studentId);
             }]);
 
@@ -113,7 +116,10 @@ class StudentCourseService
         $subjects = AcademicSubject::where('academy_id', $academy->id)
             ->whereHas('interactiveCourses', function ($query) {
                 $query->where('is_published', true)
-                    ->where('enrollment_deadline', '>=', now()->toDateString());
+                    ->where(function ($q) {
+                        $q->whereNull('enrollment_deadline')
+                            ->orWhere('enrollment_deadline', '>=', now()->toDateString());
+                    });
             })
             ->orderBy('name')
             ->get();
@@ -121,7 +127,10 @@ class StudentCourseService
         $gradeLevels = AcademicGradeLevel::where('academy_id', $academy->id)
             ->whereHas('interactiveCourses', function ($query) {
                 $query->where('is_published', true)
-                    ->where('enrollment_deadline', '>=', now()->toDateString());
+                    ->where(function ($q) {
+                        $q->whereNull('enrollment_deadline')
+                            ->orWhere('enrollment_deadline', '>=', now()->toDateString());
+                    });
             })
             ->orderBy('name')
             ->get();

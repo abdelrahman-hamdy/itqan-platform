@@ -129,7 +129,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::put('/interactive-courses/{course}', [SupervisorInteractiveCoursesController::class, 'update'])->name('interactive-courses.update');
         Route::post('/interactive-courses/{course}/change-teacher', [SupervisorInteractiveCoursesController::class, 'changeTeacher'])->name('interactive-courses.change-teacher');
         Route::post('/interactive-courses/{course}/toggle-published', [SupervisorInteractiveCoursesController::class, 'togglePublished'])->name('interactive-courses.toggle-published');
-        Route::post('/interactive-courses/{course}/change-status', [SupervisorInteractiveCoursesController::class, 'changeStatus'])->name('interactive-courses.change-status');
         Route::delete('/interactive-courses/{course}', [SupervisorInteractiveCoursesController::class, 'destroy'])->name('interactive-courses.destroy');
         Route::post('/interactive-courses/{course}/enrollments', [SupervisorInteractiveCoursesController::class, 'addEnrollment'])->name('interactive-courses.add-enrollment');
         Route::delete('/interactive-courses/{course}/enrollments/{enrollment}', [SupervisorInteractiveCoursesController::class, 'removeEnrollment'])->name('interactive-courses.remove-enrollment');

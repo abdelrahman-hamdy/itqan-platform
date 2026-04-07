@@ -292,12 +292,6 @@
                 @if($canManage || $isAdmin)
                     {{-- Hidden action forms --}}
                     <form id="toggle-published-form" method="POST" action="{{ route('manage.interactive-courses.toggle-published', ['subdomain' => $subdomain, 'course' => $course->id]) }}" class="hidden">@csrf</form>
-                    @foreach(\App\Enums\InteractiveCourseStatus::cases() as $s)
-                        <form id="change-status-{{ $s->value }}-form" method="POST" action="{{ route('manage.interactive-courses.change-status', ['subdomain' => $subdomain, 'course' => $course->id]) }}" class="hidden">
-                            @csrf
-                            <input type="hidden" name="status" value="{{ $s->value }}">
-                        </form>
-                    @endforeach
                     @if($isAdmin)
                         <form id="delete-course-form" method="POST" action="{{ route('manage.interactive-courses.destroy', ['subdomain' => $subdomain, 'course' => $course->id]) }}" class="hidden">@csrf @method('DELETE')</form>
                     @endif
@@ -319,28 +313,6 @@
                                     {{ $course->is_published ? 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200' : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200' }}">
                                 <i class="{{ $course->is_published ? 'ri-eye-off-line' : 'ri-eye-line' }}"></i>
                                 {{ $course->is_published ? __('supervisor.interactive_courses.unpublish') : __('supervisor.interactive_courses.publish') }}
-                            </button>
-
-                            {{-- Change Status --}}
-                            @php
-                                $nextStatus = match($statusValue) {
-                                    'published' => ['value' => 'active', 'label' => __('supervisor.interactive_courses.activate'), 'icon' => 'ri-play-circle-line', 'class' => 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'],
-                                    'active' => ['value' => 'completed', 'label' => __('supervisor.interactive_courses.mark_completed'), 'icon' => 'ri-checkbox-circle-line', 'class' => 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'],
-                                    'completed' => ['value' => 'published', 'label' => __('supervisor.interactive_courses.reopen'), 'icon' => 'ri-restart-line', 'class' => 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'],
-                                    default => ['value' => 'published', 'label' => __('supervisor.interactive_courses.publish'), 'icon' => 'ri-check-line', 'class' => 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'],
-                                };
-                            @endphp
-                            <button type="button"
-                                onclick="window.confirmAction({
-                                    title: @js($nextStatus['label']),
-                                    message: @js(__('supervisor.interactive_courses.confirm_change_status')),
-                                    confirmText: @js($nextStatus['label']),
-                                    icon: '{{ $nextStatus['icon'] }}',
-                                    onConfirm: () => document.getElementById('change-status-{{ $nextStatus['value'] }}-form').submit()
-                                })"
-                                class="flex items-center justify-center gap-1.5 px-2 py-2.5 text-xs font-medium rounded-lg transition-colors cursor-pointer {{ $nextStatus['class'] }}">
-                                <i class="{{ $nextStatus['icon'] }}"></i>
-                                {{ $nextStatus['label'] }}
                             </button>
 
                             {{-- Delete (admin only) --}}

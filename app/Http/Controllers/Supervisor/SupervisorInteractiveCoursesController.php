@@ -281,23 +281,6 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
         return redirect()->back()->with('success', __('supervisor.interactive_courses.published_updated'));
     }
 
-    public function changeStatus(Request $request, $subdomain, $courseId): RedirectResponse
-    {
-        if (! $this->canManageInteractiveCourses()) {
-            abort(403);
-        }
-
-        $course = $this->findCourseInScope($courseId);
-
-        $request->validate([
-            'status' => 'required|in:'.implode(',', InteractiveCourseStatus::values()),
-        ]);
-
-        $course->update(['status' => $request->status]);
-
-        return redirect()->back()->with('success', __('supervisor.interactive_courses.status_updated'));
-    }
-
     public function destroy($subdomain, $courseId): RedirectResponse
     {
         if (! $this->isAdminUser()) {
