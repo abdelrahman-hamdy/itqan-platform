@@ -285,12 +285,15 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
         // Get total sessions from subscription with fallback
         $totalSessions = $this->subscription->total_sessions ?? 8;
 
-        // Calculate used sessions
-        $usedSessions = $this->subscription->sessions()
-            ->notCancelled()
-            ->count();
+        // Use sessions_remaining as source of truth (accounts for uncounted sessions
+        // where admin toggled counts_for_subscription=false and returned the slot).
+        // Subtract only active (SCHEDULED/READY/ONGOING) sessions that haven't yet
+        // completed — COMPLETED sessions are already reflected in sessions_remaining.
+        $subscriptionRemaining = $this->subscription->sessions_remaining ?? 0;
+        $pendingSessions = $this->subscription->sessions()->active()->count();
 
-        $remainingSessions = max(0, $totalSessions - $usedSessions);
+        $remainingSessions = max(0, $subscriptionRemaining - $pendingSessions);
+        $usedSessions = max(0, $totalSessions - $subscriptionRemaining);
 
         // Calculate subscription period
         $startDate = $this->subscription->starts_at ?? now();
