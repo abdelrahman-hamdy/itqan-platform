@@ -52,6 +52,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/teachers/{teacher}/edit', [SupervisorTeachersController::class, 'edit'])->name('teachers.edit');
         Route::put('/teachers/{teacher}', [SupervisorTeachersController::class, 'update'])->name('teachers.update');
         Route::post('/teachers/{teacher}/toggle-status', [SupervisorTeachersController::class, 'toggleStatus'])->name('teachers.toggle-status');
+        Route::post('/teachers/{teacher}/toggle-fully-booked', [SupervisorTeachersController::class, 'toggleFullyBooked'])->name('teachers.toggle-fully-booked');
         Route::post('/teachers/{teacher}/reset-password', [SupervisorTeachersController::class, 'resetPassword'])->name('teachers.reset-password');
         Route::post('/teachers/{teacher}/verify-email', [SupervisorTeachersController::class, 'verifyEmail'])->name('teachers.verify-email');
         Route::delete('/teachers/{teacher}', [SupervisorTeachersController::class, 'destroy'])->name('teachers.destroy');

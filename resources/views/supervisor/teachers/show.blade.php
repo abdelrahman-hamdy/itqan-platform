@@ -51,6 +51,12 @@
                     <span class="text-xs px-2.5 py-1 rounded-full {{ $teacher->active_status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                         {{ $teacher->active_status ? __('supervisor.teachers.active') : __('supervisor.teachers.inactive') }}
                     </span>
+                    @if($profile?->is_fully_booked)
+                        <span class="text-xs px-2.5 py-1 rounded-full bg-orange-100 text-orange-800 inline-flex items-center gap-1">
+                            <i class="ri-user-forbid-line"></i>
+                            {{ __('teacher.fully_booked') }}
+                        </span>
+                    @endif
                 </div>
             </div>
         </div>
@@ -423,6 +429,28 @@
                                     : 'bg-green-50 text-green-700 hover:bg-green-100' }}">
                             <i class="{{ $teacher->active_status ? 'ri-pause-circle-line' : 'ri-play-circle-line' }}"></i>
                             {{ $teacher->active_status ? __('supervisor.teachers.deactivate') : __('supervisor.teachers.activate') }}
+                        </button>
+
+                        {{-- Toggle Fully Booked --}}
+                        <form id="toggle-booked-form-{{ $teacher->id }}" method="POST"
+                              action="{{ route('manage.teachers.toggle-fully-booked', ['subdomain' => $subdomain, 'teacher' => $teacher->id]) }}">
+                            @csrf
+                        </form>
+                        <button type="button"
+                            onclick="window.confirmAction({
+                                title: @js($profile?->is_fully_booked ? __('teacher.mark_available') : __('teacher.mark_fully_booked')),
+                                message: @js($profile?->is_fully_booked ? __('supervisor.teachers.confirm_mark_available') : __('supervisor.teachers.confirm_mark_fully_booked')),
+                                confirmText: @js($profile?->is_fully_booked ? __('teacher.mark_available') : __('teacher.mark_fully_booked')),
+                                isDangerous: {{ $profile?->is_fully_booked ? 'false' : 'true' }},
+                                icon: '{{ $profile?->is_fully_booked ? 'ri-user-follow-line' : 'ri-user-forbid-line' }}',
+                                onConfirm: () => document.getElementById('toggle-booked-form-{{ $teacher->id }}').submit()
+                            })"
+                            class="cursor-pointer w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors
+                                {{ $profile?->is_fully_booked
+                                    ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                                    : 'bg-orange-50 text-orange-700 hover:bg-orange-100' }}">
+                            <i class="{{ $profile?->is_fully_booked ? 'ri-user-follow-line' : 'ri-user-forbid-line' }}"></i>
+                            {{ $profile?->is_fully_booked ? __('teacher.mark_available') : __('teacher.mark_fully_booked') }}
                         </button>
 
                         {{-- Reset Password --}}

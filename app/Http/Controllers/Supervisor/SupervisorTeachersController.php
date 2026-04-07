@@ -60,6 +60,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                         'gender' => $user->quranTeacherProfile?->gender ?? null,
                         'phone' => $user->phone ?? '',
                         'is_active' => (bool) ($user->active_status ?? false),
+                        'is_fully_booked' => (bool) ($user->quranTeacherProfile?->is_fully_booked ?? false),
                         'rating' => (float) ($user->quranTeacherProfile?->rating ?? 0),
                         'created_at' => $user->created_at,
                     ];
@@ -88,6 +89,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
                         'gender' => $user->academicTeacherProfile?->gender ?? null,
                         'phone' => $user->phone ?? '',
                         'is_active' => (bool) ($user->active_status ?? false),
+                        'is_fully_booked' => (bool) ($user->academicTeacherProfile?->is_fully_booked ?? false),
                         'rating' => (float) ($user->academicTeacherProfile?->rating ?? 0),
                         'created_at' => $user->created_at,
                     ];
@@ -193,6 +195,23 @@ class SupervisorTeachersController extends BaseSupervisorWebController
         $teacher->save();
 
         return redirect()->back()->with('success', __('supervisor.teachers.status_updated'));
+    }
+
+    public function toggleFullyBooked(Request $request, $subdomain, User $teacher): RedirectResponse
+    {
+        if (! $this->canManageTeachers()) {
+            abort(403);
+        }
+
+        $this->ensureTeacherBelongsToScope($teacher);
+
+        $profile = $teacher->quranTeacherProfile ?? $teacher->academicTeacherProfile;
+
+        if ($profile) {
+            $profile->update(['is_fully_booked' => ! $profile->is_fully_booked]);
+        }
+
+        return redirect()->back()->with('success', __('supervisor.teachers.fully_booked_updated'));
     }
 
     public function verifyEmail(Request $request, $subdomain, User $teacher): RedirectResponse
