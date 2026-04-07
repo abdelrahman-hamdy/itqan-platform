@@ -132,49 +132,53 @@ class TodaySessionsWidget extends BaseWidget
         }
         $today = today()->toDateString();
 
-        // Quran sessions
+        // Quran sessions — JOIN instead of nested subqueries for teacher name
         if (! empty($quranTeacherIds)) {
             $placeholders = implode(',', array_fill(0, count($quranTeacherIds), '?'));
             $unionParts[] = "
                 SELECT
-                    id,
-                    session_code,
-                    title,
+                    qs.id,
+                    qs.session_code,
+                    qs.title,
                     'قرآن' as type_label,
-                    scheduled_at,
-                    status,
-                    (SELECT name FROM users WHERE users.id = (SELECT user_id FROM quran_teacher_profiles WHERE quran_teacher_profiles.id = qs.quran_teacher_id)) as teacher_name
+                    qs.scheduled_at,
+                    qs.status,
+                    u.name as teacher_name
                 FROM quran_sessions qs
-                WHERE quran_teacher_id IN ({$placeholders})
-                AND DATE(scheduled_at) = ?
-                AND deleted_at IS NULL
-                AND academy_id = ?
+                LEFT JOIN quran_teacher_profiles qtp ON qtp.id = qs.quran_teacher_id
+                LEFT JOIN users u ON u.id = qtp.user_id
+                WHERE qs.quran_teacher_id IN ({$placeholders})
+                AND DATE(qs.scheduled_at) = ?
+                AND qs.deleted_at IS NULL
+                AND qs.academy_id = ?
             ";
             $bindings = array_merge($bindings, $quranTeacherIds, [$today, $academyId]);
         }
 
-        // Academic sessions
+        // Academic sessions — JOIN instead of nested subqueries
         if (! empty($academicProfileIds)) {
             $placeholders = implode(',', array_fill(0, count($academicProfileIds), '?'));
             $unionParts[] = "
                 SELECT
-                    id,
-                    session_code,
-                    title,
+                    acs.id,
+                    acs.session_code,
+                    acs.title,
                     'أكاديمي' as type_label,
-                    scheduled_at,
-                    status,
-                    (SELECT name FROM users WHERE users.id = (SELECT user_id FROM academic_teacher_profiles WHERE academic_teacher_profiles.id = acs.academic_teacher_id)) as teacher_name
+                    acs.scheduled_at,
+                    acs.status,
+                    u.name as teacher_name
                 FROM academic_sessions acs
-                WHERE academic_teacher_id IN ({$placeholders})
-                AND DATE(scheduled_at) = ?
-                AND deleted_at IS NULL
-                AND academy_id = ?
+                LEFT JOIN academic_teacher_profiles atp ON atp.id = acs.academic_teacher_id
+                LEFT JOIN users u ON u.id = atp.user_id
+                WHERE acs.academic_teacher_id IN ({$placeholders})
+                AND DATE(acs.scheduled_at) = ?
+                AND acs.deleted_at IS NULL
+                AND acs.academy_id = ?
             ";
             $bindings = array_merge($bindings, $academicProfileIds, [$today, $academyId]);
         }
 
-        // Interactive course sessions (note: uses session_number instead of session_code)
+        // Interactive course sessions — JOIN instead of nested subqueries
         if (! empty($interactiveCourseIds)) {
             $placeholders = implode(',', array_fill(0, count($interactiveCourseIds), '?'));
             $unionParts[] = "
@@ -185,9 +189,11 @@ class TodaySessionsWidget extends BaseWidget
                     'دورة' as type_label,
                     ics.scheduled_at,
                     ics.status,
-                    (SELECT name FROM users WHERE users.id = (SELECT user_id FROM academic_teacher_profiles WHERE academic_teacher_profiles.id = (SELECT assigned_teacher_id FROM interactive_courses WHERE interactive_courses.id = ics.course_id))) as teacher_name
+                    u.name as teacher_name
                 FROM interactive_course_sessions ics
                 INNER JOIN interactive_courses ic ON ics.course_id = ic.id AND ic.academy_id = ? AND ic.deleted_at IS NULL
+                LEFT JOIN academic_teacher_profiles atp ON atp.id = ic.assigned_teacher_id
+                LEFT JOIN users u ON u.id = atp.user_id
                 WHERE ics.course_id IN ({$placeholders})
                 AND DATE(ics.scheduled_at) = ?
                 AND ics.deleted_at IS NULL

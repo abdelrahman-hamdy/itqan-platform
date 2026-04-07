@@ -169,17 +169,26 @@ abstract class BaseSupervisorResource extends Resource
     }
 
     /**
+     * Cached academic teacher profile IDs (request-scoped).
+     */
+    protected static ?array $cachedAcademicProfileIds = null;
+
+    /**
      * Get academic teacher profile IDs from assigned academic teacher user IDs.
      * Used for filtering resources that reference AcademicTeacherProfile.
      */
     public static function getAssignedAcademicTeacherProfileIds(): array
     {
-        $userIds = static::getAssignedAcademicTeacherIds();
-        if (empty($userIds)) {
-            return [];
+        if (static::$cachedAcademicProfileIds !== null) {
+            return static::$cachedAcademicProfileIds;
         }
 
-        return AcademicTeacherProfile::whereIn('user_id', $userIds)
+        $userIds = static::getAssignedAcademicTeacherIds();
+        if (empty($userIds)) {
+            return static::$cachedAcademicProfileIds = [];
+        }
+
+        return static::$cachedAcademicProfileIds = AcademicTeacherProfile::whereIn('user_id', $userIds)
             ->pluck('id')
             ->toArray();
     }

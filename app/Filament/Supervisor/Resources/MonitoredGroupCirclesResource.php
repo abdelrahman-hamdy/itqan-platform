@@ -334,8 +334,7 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                 TextColumn::make('students_count')
                     ->label('المسجلون')
                     ->alignCenter()
-                    ->color('info')
-                    ->getStateUsing(fn ($record) => $record->students()->count()),
+                    ->color('info'),
 
                 TextColumn::make('max_students')
                     ->label('الحد الأقصى')

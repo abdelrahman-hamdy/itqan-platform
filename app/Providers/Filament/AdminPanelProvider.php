@@ -117,7 +117,7 @@ class AdminPanelProvider extends PanelProvider
                 AcademyContext::class,
             ])
             ->databaseNotifications()
-            ->databaseNotificationsPolling('30s')
+            ->databaseNotificationsPolling('120s')
             ->maxContentWidth(Width::Full)
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('16rem')

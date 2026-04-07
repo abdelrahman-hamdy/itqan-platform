@@ -20,6 +20,11 @@ class SupervisorInboxWidget extends Widget
     protected int|string|array $columnSpan = 1;
 
     /**
+     * Cached supervised conversation IDs (request-scoped).
+     */
+    protected ?array $cachedConversationIds = null;
+
+    /**
      * Get count of unread messages only from supervised conversations.
      */
     public function getUnreadCount(): int
@@ -31,36 +36,40 @@ class SupervisorInboxWidget extends Widget
             return 0;
         }
 
-        // Count unread messages in supervised conversations only
-        $participant = Participant::query()
+        // Get participant read-at timestamps in one query
+        $participants = Participant::query()
             ->where('participantable_id', $user->id)
             ->where('participantable_type', User::class)
             ->whereIn('conversation_id', $supervisedConversationIds)
             ->get();
 
-        $unreadCount = 0;
-        foreach ($participant as $p) {
-            if ($p->conversation_read_at) {
-                $unreadCount += Message::where('conversation_id', $p->conversation_id)
-                    ->whereNull('deleted_at')
-                    ->where('created_at', '>', $p->conversation_read_at)
-                    ->whereHas('participant', function ($q) use ($user) {
-                        $q->where('participantable_id', '!=', $user->id)
-                            ->orWhere('participantable_type', '!=', User::class);
-                    })
-                    ->count();
-            } else {
-                $unreadCount += Message::where('conversation_id', $p->conversation_id)
-                    ->whereNull('deleted_at')
-                    ->whereHas('participant', function ($q) use ($user) {
-                        $q->where('participantable_id', '!=', $user->id)
-                            ->orWhere('participantable_type', '!=', User::class);
-                    })
-                    ->count();
-            }
+        $readAtMap = $participants->pluck('conversation_read_at', 'conversation_id');
+        $participantConversationIds = $readAtMap->keys()->toArray();
+
+        if (empty($participantConversationIds)) {
+            return 0;
         }
 
-        return $unreadCount;
+        // Get user's own participant IDs to exclude own messages
+        $ownParticipantIds = $participants->pluck('id')->toArray();
+
+        // Single query to count all unread messages across conversations
+        return Message::whereIn('conversation_id', $participantConversationIds)
+            ->whereNull('deleted_at')
+            ->whereNotIn('participant_id', $ownParticipantIds)
+            ->where(function ($q) use ($readAtMap) {
+                foreach ($readAtMap as $convId => $readAt) {
+                    if ($readAt) {
+                        $q->orWhere(function ($sub) use ($convId, $readAt) {
+                            $sub->where('conversation_id', $convId)
+                                ->where('created_at', '>', $readAt);
+                        });
+                    } else {
+                        $q->orWhere('conversation_id', $convId);
+                    }
+                }
+            })
+            ->count();
     }
 
     /**
@@ -72,14 +81,13 @@ class SupervisorInboxWidget extends Widget
         $userId = $user->id;
         $userType = User::class;
 
-        // Get conversation IDs from chat groups where this user is the supervisor
         $supervisedConversationIds = $this->getSupervisedConversationIds();
 
         if (empty($supervisedConversationIds)) {
             return [];
         }
 
-        return Participant::query()
+        $participantEntries = Participant::query()
             ->where('participantable_id', $userId)
             ->where('participantable_type', $userType)
             ->whereIn('conversation_id', $supervisedConversationIds)
@@ -89,37 +97,48 @@ class SupervisorInboxWidget extends Widget
             ->orderByDesc('updated_at')
             ->take(5)
             ->get()
-            ->filter(fn ($p) => $p->conversation !== null)
-            ->map(function ($participant) use ($userId, $userType) {
+            ->filter(fn ($p) => $p->conversation !== null);
+
+        $ownParticipantIds = $participantEntries->pluck('id')->toArray();
+        $conversationIds = $participantEntries->pluck('conversation_id')->toArray();
+
+        // Load chat groups only for displayed conversations (not all supervised ones)
+        $chatGroupsByConversation = ChatGroup::whereIn('conversation_id', $conversationIds)
+            ->get()
+            ->keyBy('conversation_id');
+
+        // Batch unread check: find which conversations have newer messages
+        $readAtMap = $participantEntries->pluck('conversation_read_at', 'conversation_id');
+        $conversationsWithUnread = collect();
+
+        if (! empty($conversationIds)) {
+            $conversationsWithUnread = Message::whereIn('conversation_id', $conversationIds)
+                ->whereNull('deleted_at')
+                ->whereNotIn('participant_id', $ownParticipantIds)
+                ->where(function ($q) use ($readAtMap) {
+                    foreach ($readAtMap as $convId => $readAt) {
+                        if ($readAt) {
+                            $q->orWhere(function ($sub) use ($convId, $readAt) {
+                                $sub->where('conversation_id', $convId)
+                                    ->where('created_at', '>', $readAt);
+                            });
+                        } else {
+                            $q->orWhere('conversation_id', $convId);
+                        }
+                    }
+                })
+                ->distinct()
+                ->pluck('conversation_id');
+        }
+
+        return $participantEntries
+            ->map(function ($participant) use ($userId, $chatGroupsByConversation, $conversationsWithUnread) {
                 $conversation = $participant->conversation;
                 $otherParticipant = $conversation->participants
                     ->where('participantable_id', '!=', $userId)
                     ->first();
 
-                // Check for unread messages (messages after conversation_read_at, not sent by user)
-                $hasUnread = false;
-                if ($participant->conversation_read_at) {
-                    $hasUnread = Message::where('conversation_id', $conversation->id)
-                        ->whereNull('deleted_at')
-                        ->where('created_at', '>', $participant->conversation_read_at)
-                        ->whereHas('participant', function ($q) use ($userId, $userType) {
-                            $q->where('participantable_id', '!=', $userId)
-                                ->orWhere('participantable_type', '!=', $userType);
-                        })
-                        ->exists();
-                } else {
-                    // Never read - check if any messages from others exist
-                    $hasUnread = Message::where('conversation_id', $conversation->id)
-                        ->whereNull('deleted_at')
-                        ->whereHas('participant', function ($q) use ($userId, $userType) {
-                            $q->where('participantable_id', '!=', $userId)
-                                ->orWhere('participantable_type', '!=', $userType);
-                        })
-                        ->exists();
-                }
-
-                // Get chat group for name display
-                $chatGroup = ChatGroup::where('conversation_id', $conversation->id)->first();
+                $chatGroup = $chatGroupsByConversation->get($conversation->id);
 
                 return [
                     'id' => $conversation->id,
@@ -128,7 +147,7 @@ class SupervisorInboxWidget extends Widget
                             ? $conversation->group?->name
                             : $otherParticipant?->participantable?->name),
                     'lastMessage' => $conversation->lastMessage?->body,
-                    'unread' => $hasUnread,
+                    'unread' => $conversationsWithUnread->contains($conversation->id),
                     'time' => $conversation->lastMessage?->created_at?->diffForHumans(),
                     'type' => $chatGroup?->type,
                 ];
@@ -138,12 +157,17 @@ class SupervisorInboxWidget extends Widget
 
     /**
      * Get conversation IDs for chats where this user is the assigned supervisor.
+     * Cached per request to avoid duplicate queries.
      */
     protected function getSupervisedConversationIds(): array
     {
+        if ($this->cachedConversationIds !== null) {
+            return $this->cachedConversationIds;
+        }
+
         $user = Auth::user();
 
-        return ChatGroup::query()
+        return $this->cachedConversationIds = ChatGroup::query()
             ->where('supervisor_id', $user->id)
             ->whereNotNull('conversation_id')
             ->notArchived()

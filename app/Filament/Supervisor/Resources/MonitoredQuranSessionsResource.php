@@ -35,6 +35,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Monitored Quran Sessions Resource for Supervisor Panel
@@ -127,16 +128,18 @@ class MonitoredQuranSessionsResource extends BaseSupervisorResource
                 SelectFilter::make('individual_circle_id')
                     ->label('الحلقة الفردية')
                     ->options(function () {
-                        $teacherIds = static::getAssignedQuranTeacherIds();
+                        return Cache::remember('sup_filter_ind_circles_' . auth()->id(), 300, function () {
+                            $teacherIds = static::getAssignedQuranTeacherIds();
 
-                        return QuranIndividualCircle::query()
-                            ->when(! empty($teacherIds), fn ($q) => $q->whereIn('quran_teacher_id', $teacherIds))
-                            ->with(['student', 'quranTeacher'])
-                            ->get()
-                            ->mapWithKeys(fn ($ic) => [
-                                $ic->id => trim(($ic->student?->first_name ?? '').' '.($ic->student?->last_name ?? ''))
-                                    .' - '.trim(($ic->quranTeacher?->first_name ?? '').' '.($ic->quranTeacher?->last_name ?? '')),
-                            ]);
+                            return QuranIndividualCircle::query()
+                                ->when(! empty($teacherIds), fn ($q) => $q->whereIn('quran_teacher_id', $teacherIds))
+                                ->with(['student', 'quranTeacher'])
+                                ->get()
+                                ->mapWithKeys(fn ($ic) => [
+                                    $ic->id => trim(($ic->student?->first_name ?? '').' '.($ic->student?->last_name ?? ''))
+                                        .' - '.trim(($ic->quranTeacher?->first_name ?? '').' '.($ic->quranTeacher?->last_name ?? '')),
+                                ]);
+                        });
                     })
                     ->searchable()
                     ->placeholder('الكل'),
@@ -144,38 +147,43 @@ class MonitoredQuranSessionsResource extends BaseSupervisorResource
                 SelectFilter::make('circle_id')
                     ->label('الحلقة الجماعية')
                     ->options(function () {
-                        $academy = static::getCurrentSupervisorAcademy();
+                        return Cache::remember('sup_filter_circles_' . auth()->id(), 300, function () {
+                            $academy = static::getCurrentSupervisorAcademy();
 
-                        return QuranCircle::query()
-                            ->when($academy, fn ($q) => $q->where('academy_id', $academy->id))
-                            ->pluck('name', 'id');
+                            return QuranCircle::query()
+                                ->when($academy, fn ($q) => $q->where('academy_id', $academy->id))
+                                ->pluck('name', 'id');
+                        });
                     })
                     ->searchable()
                     ->placeholder('الكل'),
 
                 SelectFilter::make('quran_teacher_id')
                     ->label('المعلم')
-                    ->options(fn () => User::whereIn('id', static::getAssignedQuranTeacherIds())
-                        ->get()
-                        ->mapWithKeys(fn ($u) => [
-                            $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'معلم #'.$u->id,
-                        ])
-                    )
+                    ->options(fn () => Cache::remember('sup_filter_qteachers_' . auth()->id(), 300, function () {
+                        return User::whereIn('id', static::getAssignedQuranTeacherIds())
+                            ->get()
+                            ->mapWithKeys(fn ($u) => [
+                                $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'معلم #'.$u->id,
+                            ]);
+                    }))
                     ->searchable()
                     ->placeholder('الكل'),
 
                 SelectFilter::make('student_id')
                     ->label('الطالب')
                     ->options(function () {
-                        $academy = static::getCurrentSupervisorAcademy();
+                        return Cache::remember('sup_filter_students_' . auth()->id(), 300, function () {
+                            $academy = static::getCurrentSupervisorAcademy();
 
-                        return User::query()
-                            ->where('user_type', 'student')
-                            ->when($academy, fn ($q) => $q->where('academy_id', $academy->id))
-                            ->get()
-                            ->mapWithKeys(fn ($u) => [
-                                $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
-                            ]);
+                            return User::query()
+                                ->where('user_type', 'student')
+                                ->when($academy, fn ($q) => $q->where('academy_id', $academy->id))
+                                ->get()
+                                ->mapWithKeys(fn ($u) => [
+                                    $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
+                                ]);
+                        });
                     })
                     ->searchable()
                     ->placeholder('الكل'),

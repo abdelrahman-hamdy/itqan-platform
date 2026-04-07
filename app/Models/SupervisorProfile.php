@@ -230,20 +230,27 @@ class SupervisorProfile extends Model
         return trim($this->first_name.' '.$this->last_name);
     }
 
+    // Request-scoped caches to avoid redundant queries within a single request
+    protected ?array $cachedQuranTeacherIds = null;
+
+    protected ?array $cachedAcademicTeacherIds = null;
+
+    protected ?array $cachedInteractiveCourseIds = null;
+
     /**
-     * Get assigned Quran teacher IDs.
+     * Get assigned Quran teacher IDs (cached per request).
      */
     public function getAssignedQuranTeacherIds(): array
     {
-        return $this->quranTeachers()->pluck('users.id')->toArray();
+        return $this->cachedQuranTeacherIds ??= $this->quranTeachers()->pluck('users.id')->toArray();
     }
 
     /**
-     * Get assigned Academic teacher IDs.
+     * Get assigned Academic teacher IDs (cached per request).
      */
     public function getAssignedAcademicTeacherIds(): array
     {
-        return $this->academicTeachers()->pluck('users.id')->toArray();
+        return $this->cachedAcademicTeacherIds ??= $this->academicTeachers()->pluck('users.id')->toArray();
     }
 
     /**
@@ -320,10 +327,14 @@ class SupervisorProfile extends Model
      */
     public function getDerivedInteractiveCourseIds(): array
     {
+        if ($this->cachedInteractiveCourseIds !== null) {
+            return $this->cachedInteractiveCourseIds;
+        }
+
         $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
 
         if (empty($academicTeacherIds)) {
-            return [];
+            return $this->cachedInteractiveCourseIds = [];
         }
 
         // Get AcademicTeacherProfile IDs from the User IDs
@@ -332,11 +343,11 @@ class SupervisorProfile extends Model
             ->toArray();
 
         if (empty($profileIds)) {
-            return [];
+            return $this->cachedInteractiveCourseIds = [];
         }
 
         // Get all interactive courses assigned to these teacher profiles
-        return InteractiveCourse::whereIn('assigned_teacher_id', $profileIds)
+        return $this->cachedInteractiveCourseIds = InteractiveCourse::whereIn('assigned_teacher_id', $profileIds)
             ->pluck('id')
             ->toArray();
     }

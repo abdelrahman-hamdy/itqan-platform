@@ -86,7 +86,7 @@ class ConversationStatsWidget extends BaseWidget
             ->pluck('conversation_id')
             ->toArray();
 
-        // Calculate unread messages
+        // Calculate unread messages — single query instead of per-participant loop
         $unread = 0;
         if (! empty($activeConversationIds)) {
             $participants = Participant::query()
@@ -95,25 +95,32 @@ class ConversationStatsWidget extends BaseWidget
                 ->whereIn('conversation_id', $activeConversationIds)
                 ->get();
 
-            foreach ($participants as $p) {
-                if ($p->conversation_read_at) {
-                    $unread += Message::where('conversation_id', $p->conversation_id)
-                        ->whereNull('deleted_at')
-                        ->where('created_at', '>', $p->conversation_read_at)
-                        ->whereHas('participant', function ($q) use ($user) {
-                            $q->where('participantable_id', '!=', $user->id)
-                                ->orWhere('participantable_type', '!=', User::class);
-                        })
-                        ->count();
-                } else {
-                    $unread += Message::where('conversation_id', $p->conversation_id)
-                        ->whereNull('deleted_at')
-                        ->whereHas('participant', function ($q) use ($user) {
-                            $q->where('participantable_id', '!=', $user->id)
-                                ->orWhere('participantable_type', '!=', User::class);
-                        })
-                        ->count();
-                }
+            // Build a map of conversation_id => read_at timestamp
+            $readAtMap = $participants->pluck('conversation_read_at', 'conversation_id');
+            $participantConversationIds = $readAtMap->keys()->toArray();
+
+            if (! empty($participantConversationIds)) {
+                // Reuse already-fetched participants instead of a second query
+                $ownParticipantIds = $participants->pluck('id')->toArray();
+
+                // Count unread messages across all conversations in a single query
+                $unread = Message::whereIn('conversation_id', $participantConversationIds)
+                    ->whereNull('deleted_at')
+                    ->whereNotIn('participant_id', $ownParticipantIds)
+                    ->where(function ($q) use ($readAtMap) {
+                        foreach ($readAtMap as $convId => $readAt) {
+                            if ($readAt) {
+                                $q->orWhere(function ($sub) use ($convId, $readAt) {
+                                    $sub->where('conversation_id', $convId)
+                                        ->where('created_at', '>', $readAt);
+                                });
+                            } else {
+                                // Never read — all messages from others are unread
+                                $q->orWhere('conversation_id', $convId);
+                            }
+                        }
+                    })
+                    ->count();
             }
         }
 

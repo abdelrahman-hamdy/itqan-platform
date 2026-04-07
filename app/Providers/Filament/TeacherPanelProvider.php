@@ -84,7 +84,7 @@ class TeacherPanelProvider extends PanelProvider
                 FilamentAuthenticate::class,
             ])
             ->databaseNotifications()
-            ->databaseNotificationsPolling('30s')
+            ->databaseNotificationsPolling('120s')
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->maxContentWidth(Width::Full)
             ->sidebarCollapsibleOnDesktop()
