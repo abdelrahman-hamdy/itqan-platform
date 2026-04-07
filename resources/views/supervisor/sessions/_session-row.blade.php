@@ -113,8 +113,9 @@
                     @else
                         <span class="text-[10px] text-gray-300">-</span>
                     @endif
-                    <span class="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium {{ $tCounts ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600' }}">
+                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium {{ $tCounts ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600' }}">
                         <i class="{{ $tCounts ? 'ri-check-line' : 'ri-close-line' }} text-[8px]"></i>
+                        {{ $tCounts ? __('supervisor.sessions.counted') : __('supervisor.sessions.not_counted') }}
                     </span>
                 </div>
                 {{-- Student row --}}
@@ -126,8 +127,9 @@
                     @else
                         <span class="text-[10px] text-gray-300">-</span>
                     @endif
-                    <span class="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium {{ $sCounts ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600' }}">
+                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium {{ $sCounts ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600' }}">
                         <i class="{{ $sCounts ? 'ri-check-line' : 'ri-close-line' }} text-[8px]"></i>
+                        {{ $sCounts ? __('supervisor.sessions.counted') : __('supervisor.sessions.not_counted') }}
                     </span>
                 </div>
             </div>
@@ -172,19 +174,17 @@
                     {{ $tCounts ? __('supervisor.sessions.uncount_for_teacher') : __('supervisor.sessions.count_for_teacher') }}
                 </button>
                 {{-- Toggle student counting --}}
-                @if($toggleStudentUrl)
-                <button onclick="event.stopPropagation(); window.confirmAction({
+                <button onclick="event.stopPropagation(); @if($toggleStudentUrl) window.confirmAction({
                     title: '{{ $sCounts ? __("supervisor.sessions.uncount_for_student") : __("supervisor.sessions.count_for_student") }}',
                     message: '{{ $sCounts ? __("supervisor.sessions.uncount_student_confirm", ["name" => ""]) : __("supervisor.sessions.count_student_confirm", ["name" => ""]) }}',
                     isDangerous: {{ $sCounts ? 'true' : 'false' }},
                     theme: {{ $sCounts ? 'null' : "'green'" }},
                     onConfirm: () => fetch('{{ $toggleStudentUrl }}', {method:'PATCH', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'}, body:JSON.stringify({counts:{{ $sCounts ? 'false' : 'true' }}})}).then(r => r.ok && location.reload())
-                })"
+                }) @else window.location.href='{{ $showUrl }}' @endif"
                 class="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-lg transition-colors {{ $sCounts ? 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200' }}">
                     <i class="ri-user-line"></i>
                     {{ $sCounts ? __('supervisor.sessions.uncount_for_student') : __('supervisor.sessions.count_for_student') }}
                 </button>
-                @endif
             @endif
         </div>
     </td>
