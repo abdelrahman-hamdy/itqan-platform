@@ -98,8 +98,15 @@
                     </div>
                     @if($payment->payment_gateway)
                         <div>
-                            <span class="text-sm text-gray-500">{{ __('supervisor.payments.gateway') }}</span>
-                            <p class="font-medium text-gray-900">{{ $payment->payment_gateway }}</p>
+                            <span class="text-sm text-gray-500">{{ __('supervisor.payments.source') }}</span>
+                            <p class="font-medium text-gray-900 flex items-center gap-2 mt-1">
+                                @if(in_array($payment->payment_gateway, ['paymob', 'easykash', 'tap']))
+                                    <img src="{{ asset('app-design-assets/' . $payment->payment_gateway . '-logo.png') }}" alt="" class="h-5 w-auto object-contain">
+                                @else
+                                    <i class="ri-admin-line text-orange-500"></i>
+                                @endif
+                                {{ __('supervisor.payments.gateway_' . $payment->payment_gateway) }}
+                            </p>
                         </div>
                     @endif
                     @if($payment->gateway_transaction_id)

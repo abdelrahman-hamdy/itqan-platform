@@ -34,6 +34,10 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
+        if ($request->filled('payment_gateway')) {
+            $query->where('payment_gateway', $request->payment_gateway);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('user', function ($q) use ($search) {
@@ -67,6 +71,16 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
 
         $totalRevenue = Payment::where('status', PaymentStatus::COMPLETED)->sum('amount');
 
+        // Per-gateway revenue stats
+        $paymobRevenue = Payment::where('status', PaymentStatus::COMPLETED)
+            ->where('payment_gateway', 'paymob')->sum('amount');
+        $easykashRevenue = Payment::where('status', PaymentStatus::COMPLETED)
+            ->where('payment_gateway', 'easykash')->sum('amount');
+        $tapRevenue = Payment::where('status', PaymentStatus::COMPLETED)
+            ->where('payment_gateway', 'tap')->sum('amount');
+        $manualRevenue = Payment::where('status', PaymentStatus::COMPLETED)
+            ->where('payment_gateway', 'manual')->sum('amount');
+
         // Distinct payment methods for filter dropdown
         $paymentMethods = Payment::whereNotNull('payment_method')
             ->distinct()
@@ -81,6 +95,10 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
             'pendingCount',
             'completedToday',
             'totalRevenue',
+            'paymobRevenue',
+            'easykashRevenue',
+            'tapRevenue',
+            'manualRevenue',
             'paymentMethods',
             'isAdmin',
         ));

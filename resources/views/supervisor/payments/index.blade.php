@@ -5,15 +5,30 @@
 
     $hasActiveFilters = request('status')
         || request('payment_method')
+        || request('payment_gateway')
         || request('date_from')
         || request('date_to')
         || request('search');
 
     $filterCount = (request('status') ? 1 : 0)
         + (request('payment_method') ? 1 : 0)
+        + (request('payment_gateway') ? 1 : 0)
         + (request('date_from') ? 1 : 0)
         + (request('date_to') ? 1 : 0)
         + (request('search') ? 1 : 0);
+
+    $gatewayLogos = [
+        'paymob' => asset('app-design-assets/paymob-logo.png'),
+        'easykash' => asset('app-design-assets/easykash-logo.png'),
+        'tap' => asset('app-design-assets/tap-logo.png'),
+    ];
+
+    $gatewayLabels = [
+        'paymob' => __('supervisor.payments.gateway_paymob'),
+        'easykash' => __('supervisor.payments.gateway_easykash'),
+        'tap' => __('supervisor.payments.gateway_tap'),
+        'manual' => __('supervisor.payments.gateway_manual'),
+    ];
 
     $currentSort = request('sort', 'newest');
 @endphp
@@ -81,6 +96,52 @@
         @endif
     </div>
 
+    <!-- Revenue by Source -->
+    @if($isAdmin)
+    <div class="mb-6">
+        <h3 class="text-sm font-semibold text-gray-500 mb-3">{{ __('supervisor.payments.revenue_by_source') }}</h3>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            {{-- Paymob --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 border-s-4 border-s-blue-500 p-4 md:p-5">
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="{{ asset('app-design-assets/paymob-logo.png') }}" alt="Paymob" class="h-7 w-auto object-contain">
+                    <span class="text-sm text-gray-500">{{ __('supervisor.payments.gateway_paymob') }}</span>
+                </div>
+                <div class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($paymobRevenue, 2) }}</div>
+            </div>
+
+            {{-- EasyKash --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 border-s-4 border-s-emerald-500 p-4 md:p-5">
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="{{ asset('app-design-assets/easykash-logo.png') }}" alt="EasyKash" class="h-7 w-auto object-contain">
+                    <span class="text-sm text-gray-500">{{ __('supervisor.payments.gateway_easykash') }}</span>
+                </div>
+                <div class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($easykashRevenue, 2) }}</div>
+            </div>
+
+            {{-- Tap --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 border-s-4 border-s-cyan-500 p-4 md:p-5">
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="{{ asset('app-design-assets/tap-logo.png') }}" alt="Tap" class="h-7 w-auto object-contain">
+                    <span class="text-sm text-gray-500">{{ __('supervisor.payments.gateway_tap') }}</span>
+                </div>
+                <div class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($tapRevenue, 2) }}</div>
+            </div>
+
+            {{-- Manual (Admin) --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 border-s-4 border-s-orange-500 p-4 md:p-5">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="p-1.5 bg-orange-50 rounded-lg">
+                        <i class="ri-admin-line text-lg text-orange-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-500">{{ __('supervisor.payments.gateway_manual') }}</span>
+                </div>
+                <div class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($manualRevenue, 2) }}</div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- List Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
         <!-- List Header with Sort -->
@@ -132,7 +193,7 @@
                     @if(request('sort'))
                         <input type="hidden" name="sort" value="{{ request('sort') }}">
                     @endif
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                         <div>
                             <label for="search" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.payments.filter_search') }}</label>
                             <input type="text" name="search" id="search" value="{{ request('search') }}"
@@ -157,6 +218,17 @@
                                 @foreach($paymentMethods as $method)
                                     <option value="{{ $method }}" {{ request('payment_method') === $method ? 'selected' : '' }}>
                                         {{ $method }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label for="payment_gateway" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.payments.filter_source') }}</label>
+                            <select name="payment_gateway" id="payment_gateway" class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                                <option value="">{{ __('supervisor.payments.all_sources') }}</option>
+                                @foreach(['paymob', 'easykash', 'tap', 'manual'] as $gw)
+                                    <option value="{{ $gw }}" {{ request('payment_gateway') === $gw ? 'selected' : '' }}>
+                                        {{ $gatewayLabels[$gw] }}
                                     </option>
                                 @endforeach
                             </select>
@@ -200,6 +272,7 @@
                             <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.payments.amount') }}</th>
                             <th class="px-4 md:px-6 py-3 text-start font-medium">{{ __('supervisor.payments.status') }}</th>
                             <th class="px-4 md:px-6 py-3 text-start font-medium hidden md:table-cell">{{ __('supervisor.payments.method') }}</th>
+                            <th class="px-4 md:px-6 py-3 text-start font-medium hidden md:table-cell">{{ __('supervisor.payments.source') }}</th>
                             <th class="px-4 md:px-6 py-3 text-start font-medium hidden lg:table-cell">{{ __('supervisor.payments.date') }}</th>
                             <th class="px-4 md:px-6 py-3 text-start font-medium hidden lg:table-cell">{{ __('supervisor.payments.related_to') }}</th>
                         </tr>
@@ -253,6 +326,20 @@
                                 </td>
                                 <td class="px-4 md:px-6 py-3 hidden md:table-cell text-gray-600">
                                     {{ $payment->payment_method_text }}
+                                </td>
+                                <td class="px-4 md:px-6 py-3 hidden md:table-cell">
+                                    @if($payment->payment_gateway)
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-1 text-xs rounded-full bg-gray-50 text-gray-700 border border-gray-200">
+                                            @if(isset($gatewayLogos[$payment->payment_gateway]))
+                                                <img src="{{ $gatewayLogos[$payment->payment_gateway] }}" alt="" class="h-4 w-auto object-contain">
+                                            @else
+                                                <i class="ri-admin-line text-orange-500"></i>
+                                            @endif
+                                            {{ $gatewayLabels[$payment->payment_gateway] ?? __('supervisor.payments.gateway_unknown') }}
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400">-</span>
+                                    @endif
                                 </td>
                                 <td class="px-4 md:px-6 py-3 hidden lg:table-cell text-gray-600">
                                     {{ $payment->created_at?->format('Y-m-d') }}
