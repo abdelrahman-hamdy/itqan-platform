@@ -54,27 +54,28 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
 
         $payments = $query->paginate(15)->withQueryString();
 
-        $pendingCount = $applyFilters(Payment::query())->pending()->count();
-
-        $completedToday = $applyFilters(Payment::query())
-            ->where('status', PaymentStatus::COMPLETED)
-            ->whereDate('paid_at', today())
-            ->count();
-
         $isAdmin = $this->isAdminUser();
 
         $revenueThisMonth = 0;
+        $pendingCount = 0;
+        $completedToday = 0;
         $totalRevenue = 0;
         $gatewayRevenues = collect();
 
         if ($isAdmin) {
+            $pendingCount = $applyFilters(Payment::query())->pending()->count();
+
+            $completedToday = $applyFilters(Payment::query())
+                ->where('status', PaymentStatus::COMPLETED)
+                ->whereDate('paid_at', today())
+                ->count();
+
             $revenueThisMonth = $applyFilters(Payment::query())
                 ->where('status', PaymentStatus::COMPLETED)
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->sum('amount');
 
-            // Single GROUP BY query for total + per-gateway revenue
             $gatewayRevenues = $applyFilters(Payment::query())
                 ->where('status', PaymentStatus::COMPLETED)
                 ->groupBy('payment_gateway')
