@@ -93,7 +93,6 @@
                 {{ __('supervisor.sessions.cancel_session') }}
             </a>
         @endif
-        @endif
     </div>
     @endif
 </div>

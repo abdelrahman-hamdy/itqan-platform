@@ -67,13 +67,8 @@ trait CountsTowardsSubscription
      */
     public function countsTowardsSubscription(): bool
     {
-        // CANCELLED sessions never count (students cannot cancel themselves)
-        if ($this->status === SessionStatus::CANCELLED) {
-            return false;
-        }
-
-        // Use enum's default logic for other statuses
-        return $this->status->countsTowardsSubscription();
+        // Only COMPLETED sessions count. CANCELLED/SUSPENDED never count.
+        return $this->status === SessionStatus::COMPLETED;
     }
 
     /**
