@@ -233,30 +233,32 @@ trait CountsTowardsSubscription
             return;
         }
 
-        foreach ($enrollments as $enrollment) {
-            $subscription = $enrollment->activeSubscription;
-            if (! $subscription) {
-                continue;
-            }
+        // Wrap entire group in single transaction for atomicity.
+        // If any student fails, all are rolled back.
+        DB::transaction(function () use ($enrollments) {
+            foreach ($enrollments as $enrollment) {
+                $subscription = $enrollment->activeSubscription;
+                if (! $subscription) {
+                    continue;
+                }
 
-            if ($subscription->academy_id !== $this->academy_id) {
-                Log::error('Group subscription academy mismatch', [
-                    'subscription_id' => $subscription->id,
-                    'session_id' => $this->id,
-                ]);
+                if ($subscription->academy_id !== $this->academy_id) {
+                    Log::error('Group subscription academy mismatch', [
+                        'subscription_id' => $subscription->id,
+                        'session_id' => $this->id,
+                    ]);
 
-                continue;
-            }
+                    continue;
+                }
 
-            DB::transaction(function () use ($subscription, $enrollment) {
-                // Re-fetch with lock inside transaction to prevent TOCTOU double-counting
+                // Lock attendance row to prevent TOCTOU double-counting
                 $attendance = $this->attendances()
                     ->where('student_id', $enrollment->student_id)
                     ->lockForUpdate()
                     ->first();
 
                 if ($attendance && $attendance->subscription_counted_at) {
-                    return; // Already counted by another process
+                    continue; // Already counted by another process
                 }
 
                 $subscription->useSession();
@@ -266,12 +268,13 @@ trait CountsTowardsSubscription
                 }
 
                 Log::info("Group session {$this->id}: subscription {$subscription->id} decremented for student {$enrollment->student_id}");
-            });
-        }
+            }
 
-        if (! $this->subscription_counted) {
-            $this->update(['subscription_counted' => true]);
-        }
+            // Set session-level flag only after all students processed successfully
+            if (! $this->subscription_counted) {
+                $this->update(['subscription_counted' => true]);
+            }
+        });
     }
 
     /**

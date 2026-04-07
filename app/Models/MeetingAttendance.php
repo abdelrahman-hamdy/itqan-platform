@@ -78,6 +78,9 @@ class MeetingAttendance extends Model
         'join_count',
         'leave_count',
         'is_calculated',
+        'counts_for_subscription',
+        'counts_for_subscription_set_by',
+        'counts_for_subscription_set_at',
     ];
 
     protected $casts = [
@@ -94,6 +97,8 @@ class MeetingAttendance extends Model
         'join_count' => 'integer',
         'leave_count' => 'integer',
         'is_calculated' => 'boolean',
+        'counts_for_subscription' => 'boolean',
+        'counts_for_subscription_set_at' => 'datetime',
     ];
 
     /**

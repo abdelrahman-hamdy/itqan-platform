@@ -7,6 +7,7 @@ use App\Enums\SessionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
+use App\Models\TeacherEarning;
 use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
 use App\Services\TrialRequestSyncService;
@@ -84,6 +85,11 @@ class QuranSessionObserver
                 if ($session->isSubscriptionCounted()) {
                     $session->reverseSubscriptionUsage();
                 }
+
+                // Delete teacher earnings for cancelled session
+                TeacherEarning::where('session_type', QuranSession::class)
+                    ->where('session_id', $session->id)
+                    ->delete();
 
                 if ($session->session_type === 'individual' && $session->individualCircle) {
                     $session->individualCircle->handleSessionCancelled();

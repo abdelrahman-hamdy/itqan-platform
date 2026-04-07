@@ -4,9 +4,9 @@ namespace App\Services;
 
 use App\Jobs\CalculateSessionEarningsJob;
 use App\Models\BaseSession;
-use App\Models\BaseSessionAttendance;
 use App\Models\TeacherEarning;
 use Exception;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -57,31 +57,37 @@ class SessionCountingService
     /**
      * Set whether a session counts for a student's subscription.
      *
+     * Accepts both BaseSessionAttendance and MeetingAttendance models
+     * (both have counts_for_subscription, subscription_counted_at fields).
+     *
      * Side effects:
      * - true + not yet counted: apply subscription usage
      * - false + already counted: reverse subscription usage
      */
     public function setCountsForSubscription(
-        BaseSessionAttendance $attendance,
+        Model $attendance,
+        BaseSession $session,
         bool $counts,
         int $setBy
     ): void {
-        DB::transaction(function () use ($attendance, $counts, $setBy) {
+        DB::transaction(function () use ($attendance, $session, $counts, $setBy) {
             $attendance->update([
                 'counts_for_subscription' => $counts,
                 'counts_for_subscription_set_by' => $setBy,
                 'counts_for_subscription_set_at' => now(),
             ]);
 
+            $studentId = $attendance->student_id ?? $attendance->user_id;
+
             if ($counts && ! $attendance->subscription_counted_at) {
-                $this->applySubscriptionForStudent($attendance);
+                $this->applySubscriptionForStudent($attendance, $session, $studentId);
             } elseif (! $counts && $attendance->subscription_counted_at) {
-                $this->reverseSubscriptionForStudent($attendance);
+                $this->reverseSubscriptionForStudent($attendance, $session, $studentId);
             }
 
             Log::info('SessionCountingService: counts_for_subscription updated', [
                 'attendance_id' => $attendance->id,
-                'student_id' => $attendance->student_id,
+                'student_id' => $studentId,
                 'counts' => $counts,
                 'set_by' => $setBy,
             ]);
@@ -91,18 +97,13 @@ class SessionCountingService
     /**
      * Apply subscription usage for a specific student.
      */
-    private function applySubscriptionForStudent(BaseSessionAttendance $attendance): void
+    private function applySubscriptionForStudent(Model $attendance, BaseSession $session, int $studentId): void
     {
-        $session = $attendance->session;
-        if (! $session) {
-            return;
-        }
-
-        $subscription = $this->findSubscriptionForStudent($session, $attendance->student_id);
+        $subscription = $this->findSubscriptionForStudent($session, $studentId);
         if (! $subscription) {
             Log::warning('SessionCountingService: No subscription found for student', [
                 'session_id' => $session->id,
-                'student_id' => $attendance->student_id,
+                'student_id' => $studentId,
             ]);
 
             return;
@@ -114,7 +115,7 @@ class SessionCountingService
 
             Log::info('SessionCountingService: Subscription decremented', [
                 'subscription_id' => $subscription->id,
-                'student_id' => $attendance->student_id,
+                'student_id' => $studentId,
             ]);
         } catch (Exception $e) {
             Log::error('SessionCountingService: Failed to apply subscription', [
@@ -127,14 +128,9 @@ class SessionCountingService
     /**
      * Reverse subscription usage for a specific student.
      */
-    private function reverseSubscriptionForStudent(BaseSessionAttendance $attendance): void
+    private function reverseSubscriptionForStudent(Model $attendance, BaseSession $session, int $studentId): void
     {
-        $session = $attendance->session;
-        if (! $session) {
-            return;
-        }
-
-        $subscription = $this->findSubscriptionForStudent($session, $attendance->student_id);
+        $subscription = $this->findSubscriptionForStudent($session, $studentId);
         if (! $subscription) {
             return;
         }
@@ -145,7 +141,7 @@ class SessionCountingService
 
             Log::info('SessionCountingService: Subscription reversed', [
                 'subscription_id' => $subscription->id,
-                'student_id' => $attendance->student_id,
+                'student_id' => $studentId,
             ]);
         } catch (Exception $e) {
             Log::error('SessionCountingService: Failed to reverse subscription', [
@@ -160,12 +156,11 @@ class SessionCountingService
      */
     private function findSubscriptionForStudent(BaseSession $session, int $studentId)
     {
-        // Use session's existing subscription resolution logic
         if (method_exists($session, 'getSubscriptionForStudent')) {
             return $session->getSubscriptionForStudent($studentId);
         }
 
-        // Fallback: use the session-level subscription (individual sessions)
+        // Fallback: individual sessions have a single subscription
         if (method_exists($session, 'getSubscriptionForCounting')) {
             return $session->getSubscriptionForCounting();
         }

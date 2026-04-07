@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
+use App\Models\TeacherEarning;
 use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
 use Exception;
@@ -56,6 +57,11 @@ class AcademicSessionObserver
                 if ($session->isSubscriptionCounted()) {
                     $session->reverseSubscriptionUsage();
                 }
+
+                // Delete teacher earnings for cancelled session
+                TeacherEarning::where('session_type', AcademicSession::class)
+                    ->where('session_id', $session->id)
+                    ->delete();
 
                 if ($session->session_type === 'individual' && $session->academicIndividualLesson) {
                     $session->academicIndividualLesson->handleSessionCancelled();

@@ -247,6 +247,7 @@ class SessionStatusActions
                 $newValue = ! $attendance->counts_for_subscription;
                 app(SessionCountingService::class)->setCountsForSubscription(
                     $attendance,
+                    $record,
                     $newValue,
                     auth()->id()
                 );

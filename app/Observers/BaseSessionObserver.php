@@ -127,18 +127,23 @@ class BaseSessionObserver
                 'new_status' => is_string($newStatus) ? $newStatus : $newStatus->value,
             ]);
 
-            // Trigger earnings calculation when session becomes completed
+            // Earnings calculation is dispatched with a delay to let the
+            // CalculateSessionForAttendance job (triggered by LiveKit webhook)
+            // calculate teacher attendance and set counts_for_teacher first.
+            // If the attendance job already dispatched earnings, the earnings service's
+            // isAlreadyCalculated() check with lockForUpdate prevents duplicates.
             $newStatusEnum = is_string($newStatus) ? SessionStatus::from($newStatus) : $newStatus;
 
             if ($newStatusEnum === SessionStatus::COMPLETED) {
                 try {
-                    Log::info('Dispatching earnings calculation job', [
-                        'session_id' => $session->id,
-                    ]);
-
-                    dispatch(new CalculateSessionEarningsJob($session));
+                    // Delay 10 minutes: gives the attendance job time to run first
+                    // and dispatch earnings itself. For manual completions (no
+                    // LiveKit), this delayed dispatch is the only earnings trigger.
+                    // The earnings service's isAlreadyCalculated() prevents duplicates.
+                    dispatch(new CalculateSessionEarningsJob($session))
+                        ->delay(now()->addMinutes(10));
                 } catch (Exception $e) {
-                    Log::error('Failed to dispatch earnings calculation job', [
+                    Log::error('Failed to dispatch delayed earnings calculation job', [
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),
                     ]);

@@ -619,12 +619,10 @@ class SessionTransitionService
             ]);
         }
 
-        // Always count subscription usage — the trait's countsTowardsSubscription()
-        // checks counting flags (counts_for_subscription) and subscription_counted
-        // flag prevents double-counting.
-        if (method_exists($session, 'updateSubscriptionUsage')) {
-            $session->updateSubscriptionUsage();
-        }
+        // NOTE: Subscription counting is NOT done here. It is handled by
+        // CalculateSessionForAttendance job AFTER teacher attendance is determined,
+        // to avoid counting subscriptions when teacher was absent.
+        // See CalculateSessionForAttendance::calculateTeacherAttendanceAndSetFlags()
     }
 
     /**

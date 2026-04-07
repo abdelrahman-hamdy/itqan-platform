@@ -11,7 +11,6 @@ use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\User;
 use App\Services\SessionCountingService;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -231,28 +230,12 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         $validated = $request->validate(['counts' => 'required|boolean']);
         $counts = $validated['counts'];
 
-        DB::transaction(function () use ($meetingAttendance, $counts) {
-            $meetingAttendance->update([
-                'counts_for_subscription' => $counts,
-                'counts_for_subscription_set_by' => auth()->id(),
-                'counts_for_subscription_set_at' => now(),
-            ]);
-
-            // Apply subscription side effects via public trait methods
-            if ($counts && ! $meetingAttendance->subscription_counted_at) {
-                $session = $this->resolveSessionForMeetingAttendance($meetingAttendance);
-                if ($session && method_exists($session, 'updateSubscriptionUsage')) {
-                    $session->updateSubscriptionUsage();
-                    $meetingAttendance->update(['subscription_counted_at' => now()]);
-                }
-            } elseif (! $counts && $meetingAttendance->subscription_counted_at) {
-                $session = $this->resolveSessionForMeetingAttendance($meetingAttendance);
-                if ($session && method_exists($session, 'reverseSubscriptionUsage')) {
-                    $session->reverseSubscriptionUsage();
-                    $meetingAttendance->update(['subscription_counted_at' => null]);
-                }
-            }
-        });
+        app(SessionCountingService::class)->setCountsForSubscription(
+            $meetingAttendance,
+            $session,
+            $counts,
+            auth()->id()
+        );
 
         return response()->json(['success' => true, 'counts_for_subscription' => $counts]);
     }
@@ -596,20 +579,6 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         };
 
         return $query->find($id);
-    }
-
-    /**
-     * Resolve the session model from a MeetingAttendance record.
-     */
-    private function resolveSessionForMeetingAttendance(MeetingAttendance $att)
-    {
-        $sessionType = match ($att->session_type) {
-            'academic' => AcademicSession::class,
-            'interactive' => InteractiveCourseSession::class,
-            default => QuranSession::class,
-        };
-
-        return $sessionType::withoutGlobalScopes()->find($att->session_id);
     }
 
     /**

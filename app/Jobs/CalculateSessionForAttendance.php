@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\AttendanceStatus;
 use App\Events\AttendanceUpdated;
+use App\Jobs\CalculateSessionEarningsJob;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use App\Models\InteractiveCourseSession;
@@ -237,7 +238,8 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
 
                 // If teacher was absent, auto-exclude all students too (not their fault)
                 if (! $teacherCounts) {
-                    $session->attendances()
+                    MeetingAttendance::where('session_id', $session->id)
+                        ->where('user_type', 'student')
                         ->whereNull('counts_for_subscription_set_by')
                         ->update(['counts_for_subscription' => false]);
 
@@ -254,6 +256,23 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
                 'teacher_status' => $teacherStatus->value,
                 'counts_for_teacher' => $updateData['counts_for_teacher'] ?? 'admin_override',
             ]);
+
+            // Count subscription usage only when teacher is confirmed present.
+            // null means "not yet determined" — do not count.
+            if ($session->counts_for_teacher === true && method_exists($session, 'updateSubscriptionUsage')) {
+                try {
+                    $session->updateSubscriptionUsage();
+                } catch (Exception $e) {
+                    Log::error('CalculateSessionForAttendance: Failed to update subscription usage', [
+                        'session_id' => $session->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            // Dispatch earnings calculation NOW that counts_for_teacher is set.
+            // This ensures the earnings job sees the correct attendance data.
+            dispatch(new CalculateSessionEarningsJob($session));
         } catch (Exception $e) {
             Log::error('CalculateSessionForAttendance: Failed to calculate teacher attendance', [
                 'session_id' => $session->id,

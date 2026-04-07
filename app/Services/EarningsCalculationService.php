@@ -222,15 +222,16 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
 
         $attendance = MeetingAttendance::where('session_id', $session->id)
             ->where('user_id', $teacherId)
-            ->where('user_type', 'teacher')
+            ->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])
             ->where('is_calculated', true)
             ->first();
 
         if (! $attendance) {
-            // No calculated attendance record — LiveKit tracking may not have fired
-            // (offline/manual session). Fall back to session-level signals: a session
-            // that completed with an ended_at timestamp is treated as teacher-present.
-            return $session->ended_at !== null || $session->actual_duration_minutes > 0;
+            // No calculated attendance record — attendance job hasn't run yet or
+            // session was completed without LiveKit (offline/manual session).
+            // Only treat as attended if actual_duration_minutes confirms real presence.
+            // ended_at alone is not sufficient (it's always set for completed sessions).
+            return ($session->actual_duration_minutes ?? 0) > 0;
         }
 
         return ($attendance->attendance_percentage ?? 0) >= 50;
