@@ -26,19 +26,19 @@ class SupervisorIndividualCirclesController extends BaseSupervisorWebController
         // Stats from DB (before search/status/date filters)
         $stats = [
             'total' => (clone $baseQuery)->count(),
-            'active' => (clone $baseQuery)->where('is_active', true)->whereNull('completed_at')->count(),
-            'paused' => (clone $baseQuery)->where('is_active', false)->whereNull('completed_at')->count(),
+            'active' => (clone $baseQuery)->effectivelyActive()->count(),
+            'paused' => (clone $baseQuery)->effectivelyPaused()->count(),
             'completed' => (clone $baseQuery)->whereNotNull('completed_at')->count(),
         ];
 
         // Apply filters
         $query = clone $baseQuery;
-        $query->with(['quranTeacher', 'student', 'subscription.package'])->withCount('sessions');
+        $query->with(['quranTeacher', 'student', 'subscription.package', 'linkedSubscriptions'])->withCount('sessions');
 
         if ($request->status) {
             match ($request->status) {
-                'active' => $query->where('is_active', true)->whereNull('completed_at'),
-                'paused' => $query->where('is_active', false)->whereNull('completed_at'),
+                'active' => $query->effectivelyActive(),
+                'paused' => $query->effectivelyPaused(),
                 'completed' => $query->whereNotNull('completed_at'),
                 default => null,
             };

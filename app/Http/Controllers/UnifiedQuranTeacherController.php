@@ -115,7 +115,8 @@ class UnifiedQuranTeacherController extends Controller
             ->withCount(['quranSessions as total_sessions'])
             ->orderBy('rating', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate(12);
+            ->paginate(12)
+            ->appends($request->except('page'));
 
         // Add subscription info for authenticated students
         if ($isAuthenticated) {

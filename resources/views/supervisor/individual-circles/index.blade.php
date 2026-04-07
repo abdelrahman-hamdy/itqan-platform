@@ -155,13 +155,7 @@
             <div class="divide-y divide-gray-200">
                 @foreach($circles as $circle)
                     @php
-                        $isActive = $circle->is_active && !$circle->completed_at;
-                        $isCompleted = $circle->completed_at !== null;
-                        $statusConfig = match(true) {
-                            $isActive => ['class' => 'bg-green-100 text-green-800', 'text' => __('teacher.individual_circles_list.status_active')],
-                            $isCompleted => ['class' => 'bg-yellow-100 text-yellow-800', 'text' => __('teacher.individual_circles_list.status_completed')],
-                            default => ['class' => 'bg-orange-100 text-orange-800', 'text' => __('teacher.individual_circles_list.status_paused')],
-                        };
+                        $statusConfig = $circle->display_status;
 
                         $metadata = [
                             ['icon' => 'ri-user-line', 'text' => __('supervisor.common.teacher_badge', ['name' => $circle->quranTeacher?->name ?? ''])],

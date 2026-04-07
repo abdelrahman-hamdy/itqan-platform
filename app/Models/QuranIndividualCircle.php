@@ -157,10 +157,9 @@ class QuranIndividualCircle extends Model
      */
     public function getActiveSubscriptionAttribute(): ?QuranSubscription
     {
-        // First check new polymorphic linked subscriptions
-        $activeLinked = $this->linkedSubscriptions()
-            ->where('status', SessionSubscriptionStatus::ACTIVE)
-            ->first();
+        // Use loaded collection to avoid N+1 when eager-loaded
+        $activeLinked = $this->linkedSubscriptions
+            ->firstWhere('status', SessionSubscriptionStatus::ACTIVE);
 
         if ($activeLinked) {
             return $activeLinked;
@@ -233,6 +232,50 @@ class QuranIndividualCircle extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope: circles that are effectively active (subscription-aware).
+     * Active = not completed AND (has active subscription OR no subscription but is_active=true).
+     */
+    public function scopeEffectivelyActive($query)
+    {
+        return $query->whereNull('completed_at')
+            ->where(function ($q) {
+                $q->whereHas('subscription', fn ($sq) => $sq->where('status', SessionSubscriptionStatus::ACTIVE))
+                    ->orWhereHas('linkedSubscriptions', fn ($sq) => $sq->where('status', SessionSubscriptionStatus::ACTIVE))
+                    ->orWhere(function ($q2) {
+                        $q2->whereNull('subscription_id')
+                            ->whereDoesntHave('linkedSubscriptions')
+                            ->where('is_active', true);
+                    });
+            });
+    }
+
+    /**
+     * Scope: circles that are effectively paused (subscription-aware).
+     * Paused = not completed AND (has non-active subscription OR no subscription with is_active=false).
+     */
+    public function scopeEffectivelyPaused($query)
+    {
+        return $query->whereNull('completed_at')
+            ->where(function ($q) {
+                // Has subscription (legacy or linked) but none are active
+                $q->where(function ($q2) {
+                    $q2->whereHas('subscription', fn ($sq) => $sq->where('status', '!=', SessionSubscriptionStatus::ACTIVE))
+                        ->whereDoesntHave('linkedSubscriptions', fn ($sq) => $sq->where('status', SessionSubscriptionStatus::ACTIVE));
+                })->orWhere(function ($q2) {
+                    // Has only linked subscriptions, none active
+                    $q2->whereNull('subscription_id')
+                        ->whereHas('linkedSubscriptions')
+                        ->whereDoesntHave('linkedSubscriptions', fn ($sq) => $sq->where('status', SessionSubscriptionStatus::ACTIVE));
+                })->orWhere(function ($q2) {
+                    // No subscriptions at all, is_active=false
+                    $q2->whereNull('subscription_id')
+                        ->whereDoesntHave('linkedSubscriptions')
+                        ->where('is_active', false);
+                });
+            });
     }
 
     public function scopeForTeacher($query, $teacherId)
@@ -388,6 +431,34 @@ class QuranIndividualCircle extends Model
         }
 
         return $parts ? implode('، ', $parts) : 'لم يتم تحديد التقدم';
+    }
+
+    /**
+     * Get unified display status for consistent rendering across all views.
+     *
+     * Priority: completed_at → subscription status → is_active fallback.
+     *
+     * @return array{key: string, text: string, class: string, color: string}
+     */
+    public function getDisplayStatusAttribute(): array
+    {
+        if ($this->completed_at !== null) {
+            return [
+                'key' => 'completed',
+                'text' => __('teacher.individual_circles_list.status_completed'),
+                'class' => 'bg-yellow-100 text-yellow-800',
+                'color' => 'warning',
+            ];
+        }
+
+        $subscription = $this->activeSubscription ?? $this->subscription;
+        $isEffectivelyActive = $subscription && $subscription->status instanceof SessionSubscriptionStatus
+            ? $subscription->status === SessionSubscriptionStatus::ACTIVE
+            : $this->is_active;
+
+        return $isEffectivelyActive
+            ? ['key' => 'active', 'text' => __('teacher.individual_circles_list.status_active'), 'class' => 'bg-green-100 text-green-800', 'color' => 'success']
+            : ['key' => 'paused', 'text' => __('teacher.individual_circles_list.status_paused'), 'class' => 'bg-orange-100 text-orange-800', 'color' => 'warning'];
     }
 
     // Boot method to handle model events

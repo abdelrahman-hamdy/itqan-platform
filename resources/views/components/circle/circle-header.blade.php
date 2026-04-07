@@ -116,10 +116,16 @@
             $statusClass = $isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
         }
     } else {
-        // For group circles (QuranCircle has `status` boolean) or individual without subscription (`is_active` boolean)
-        $isActive = $circle->is_active ?? $circle->status ?? false;
-        $statusText = $circle->status_text ?? ($isActive ? __('components.circle.header.active') : __('components.circle.header.inactive'));
-        $statusClass = $isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+        // No subscription found — use unified display_status for individual circles, or is_active/status for group circles
+        if (($isIndividual || $isTrial) && $circle instanceof \App\Models\QuranIndividualCircle) {
+            $displayStatus = $circle->display_status;
+            $statusText = $displayStatus['text'];
+            $statusClass = $displayStatus['class'];
+        } else {
+            $isActive = $circle->is_active ?? $circle->status ?? false;
+            $statusText = $circle->status_text ?? ($isActive ? __('components.circle.header.active') : __('components.circle.header.inactive'));
+            $statusClass = $isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+        }
     }
 @endphp
 

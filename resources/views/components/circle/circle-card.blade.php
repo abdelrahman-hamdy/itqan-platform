@@ -45,9 +45,16 @@
             $statusClass = 'bg-gray-100 text-gray-800';
         }
     } else {
-        // Individual/Trial circles
-        $statusText = $circle->status ? __('components.circle.status.active') : __('components.circle.status.inactive');
-        $statusClass = $circle->status ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+        // Individual/Trial circles — use unified display_status when available
+        if ($circle instanceof \App\Models\QuranIndividualCircle) {
+            $displayStatus = $circle->display_status;
+            $statusText = $displayStatus['text'];
+            $statusClass = $displayStatus['class'];
+        } else {
+            $isActiveCircle = $circle->is_active ?? $circle->status ?? false;
+            $statusText = $isActiveCircle ? __('components.circle.status.active') : __('components.circle.status.inactive');
+            $statusClass = $isActiveCircle ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+        }
     }
 
     // Get circle title
