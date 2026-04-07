@@ -234,7 +234,9 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
             return ($session->actual_duration_minutes ?? 0) > 0;
         }
 
-        return ($attendance->attendance_percentage ?? 0) >= 50;
+        $minPresence = config('business.attendance.minimum_presence_percent', 50);
+
+        return ($attendance->attendance_percentage ?? 0) >= $minPresence;
     }
 
     /**

@@ -34,9 +34,12 @@ class ReconcileSubscriptionCounts extends Command
         $errors = 0;
 
         // Process Quran sessions
+        // Skip sessions where teacher was absent (counts_for_teacher=false)
+        // — those were intentionally not counted
         $quranSessions = QuranSession::where('status', SessionStatus::COMPLETED)
             ->where('subscription_counted', false)
             ->where('ended_at', '<', $cutoff)
+            ->where(fn ($q) => $q->whereNull('counts_for_teacher')->orWhere('counts_for_teacher', true))
             ->get();
 
         foreach ($quranSessions as $session) {
@@ -64,10 +67,11 @@ class ReconcileSubscriptionCounts extends Command
             }
         }
 
-        // Process Academic sessions
+        // Process Academic sessions (same teacher-absence guard)
         $academicSessions = AcademicSession::where('status', SessionStatus::COMPLETED)
             ->where('subscription_counted', false)
             ->where('ended_at', '<', $cutoff)
+            ->where(fn ($q) => $q->whereNull('counts_for_teacher')->orWhere('counts_for_teacher', true))
             ->get();
 
         foreach ($academicSessions as $session) {
