@@ -141,6 +141,10 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
                 'session_id' => $this->sessionId,
             ]);
 
+            // Still calculate teacher attendance and set counting flags
+            // (handles case where nobody joined — teacher absent, students not penalized)
+            $this->calculateTeacherAttendanceAndSetFlags($session);
+
             return;
         }
 

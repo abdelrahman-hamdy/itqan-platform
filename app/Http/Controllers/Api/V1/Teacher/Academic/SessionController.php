@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher\Academic;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
@@ -709,7 +710,7 @@ class SessionController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => ['required', Rule::in(['attended', 'absent', 'late', 'left'])],
+            'status' => ['required', Rule::in(AttendanceStatus::values())],
             'override_reason' => ['nullable', 'string', 'max:500'],
         ]);
 

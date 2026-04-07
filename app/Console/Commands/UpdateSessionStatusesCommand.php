@@ -145,7 +145,6 @@ class UpdateSessionStatusesCommand extends Command
     {
         $stats = [
             'scheduled_to_ready' => 0,
-            'ready_to_absent' => 0,
             'ongoing_to_completed' => 0,
             'errors' => 0,
             'details' => [],
@@ -153,7 +152,6 @@ class UpdateSessionStatusesCommand extends Command
 
         foreach ($sessions as $session) {
             try {
-                // Check for READY transition
                 if ($this->statusService->shouldTransitionToReady($session)) {
                     $stats['scheduled_to_ready']++;
                     $stats['details'][] = "Would transition {$sessionType} {$session->id} from SCHEDULED to READY";
@@ -163,20 +161,9 @@ class UpdateSessionStatusesCommand extends Command
                     }
                 }
 
-                // Check for ABSENT transition (individual sessions only)
-                if ($this->statusService->shouldTransitionToAbsent($session)) {
-                    $stats['ready_to_absent']++;
-                    $stats['details'][] = "Would transition {$sessionType} {$session->id} from READY to ABSENT";
-
-                    if ($isVerbose) {
-                        $this->info("⏰ Would mark {$sessionType} {$session->id} as ABSENT");
-                    }
-                }
-
-                // Check for auto-completion
                 if ($this->statusService->shouldAutoComplete($session)) {
                     $stats['ongoing_to_completed']++;
-                    $stats['details'][] = "Would transition {$sessionType} {$session->id} from ONGOING to COMPLETED";
+                    $stats['details'][] = "Would auto-complete {$sessionType} {$session->id}";
 
                     if ($isVerbose) {
                         $this->info("✅ Would auto-complete {$sessionType} {$session->id}");
@@ -203,7 +190,6 @@ class UpdateSessionStatusesCommand extends Command
     {
         $stats = [
             'scheduled_to_ready' => $rawStats['transitions_to_ready'] ?? 0,
-            'ready_to_absent' => $rawStats['transitions_to_absent'] ?? 0,
             'ongoing_to_completed' => $rawStats['transitions_to_completed'] ?? 0,
             'errors' => count($rawStats['errors'] ?? []),
             'details' => [],
@@ -230,7 +216,7 @@ class UpdateSessionStatusesCommand extends Command
         $this->info("\n📊 {$mode} Results:");
         $this->info('═══════════════════════════════════════════════════');
 
-        $totalTransitions = $stats['scheduled_to_ready'] + $stats['ready_to_absent'] + $stats['ongoing_to_completed'];
+        $totalTransitions = $stats['scheduled_to_ready'] + $stats['ongoing_to_completed'];
 
         if ($totalTransitions === 0 && $stats['errors'] === 0) {
             $this->info('✅ No status changes required - all sessions are in correct states');
@@ -241,11 +227,6 @@ class UpdateSessionStatusesCommand extends Command
         if ($stats['scheduled_to_ready'] > 0) {
             $verb = $isDryRun ? 'Would transition' : 'Transitioned';
             $this->info("🔄 {$verb} {$stats['scheduled_to_ready']} sessions from SCHEDULED to READY");
-        }
-
-        if ($stats['ready_to_absent'] > 0) {
-            $verb = $isDryRun ? 'Would mark' : 'Marked';
-            $this->info("⏰ {$verb} {$stats['ready_to_absent']} individual sessions as ABSENT");
         }
 
         if ($stats['ongoing_to_completed'] > 0) {
@@ -304,7 +285,6 @@ class UpdateSessionStatusesCommand extends Command
         // Initialize stats
         $stats = [
             'scheduled_to_ready' => 0,
-            'ready_to_absent' => 0,
             'ongoing_to_completed' => 0,
             'errors' => 0,
             'details' => [],
@@ -324,7 +304,6 @@ class UpdateSessionStatusesCommand extends Command
 
                 // Merge chunk stats into overall stats
                 $stats['scheduled_to_ready'] += $chunkStats['scheduled_to_ready'];
-                $stats['ready_to_absent'] += $chunkStats['ready_to_absent'];
                 $stats['ongoing_to_completed'] += $chunkStats['ongoing_to_completed'];
                 $stats['errors'] += $chunkStats['errors'];
                 $stats['details'] = array_merge($stats['details'], $chunkStats['details']);
@@ -367,7 +346,6 @@ class UpdateSessionStatusesCommand extends Command
         // Initialize stats
         $stats = [
             'scheduled_to_ready' => 0,
-            'ready_to_absent' => 0,
             'ongoing_to_completed' => 0,
             'errors' => 0,
             'details' => [],
@@ -387,7 +365,6 @@ class UpdateSessionStatusesCommand extends Command
 
                 // Merge chunk stats into overall stats
                 $stats['scheduled_to_ready'] += $chunkStats['scheduled_to_ready'];
-                $stats['ready_to_absent'] += $chunkStats['ready_to_absent'];
                 $stats['ongoing_to_completed'] += $chunkStats['ongoing_to_completed'];
                 $stats['errors'] += $chunkStats['errors'];
                 $stats['details'] = array_merge($stats['details'], $chunkStats['details']);
@@ -433,7 +410,6 @@ class UpdateSessionStatusesCommand extends Command
         // Initialize stats
         $stats = [
             'scheduled_to_ready' => 0,
-            'ready_to_absent' => 0,
             'ongoing_to_completed' => 0,
             'errors' => 0,
             'details' => [],
@@ -453,7 +429,6 @@ class UpdateSessionStatusesCommand extends Command
 
                 // Merge chunk stats into overall stats
                 $stats['scheduled_to_ready'] += $chunkStats['scheduled_to_ready'];
-                $stats['ready_to_absent'] += $chunkStats['ready_to_absent'];
                 $stats['ongoing_to_completed'] += $chunkStats['ongoing_to_completed'];
                 $stats['errors'] += $chunkStats['errors'];
                 $stats['details'] = array_merge($stats['details'], $chunkStats['details']);
@@ -477,17 +452,14 @@ class UpdateSessionStatusesCommand extends Command
         $academicStats = $totalStats['academic']['transitions'] ?? [];
         $interactiveStats = $totalStats['interactive']['transitions'] ?? [];
 
-        $quranTransitions = ($quranStats['scheduled_to_ready'] ?? 0) +
-                           ($quranStats['ready_to_absent'] ?? 0) +
-                           ($quranStats['ongoing_to_completed'] ?? 0);
+        $quranTransitions = ($quranStats['scheduled_to_ready'] ?? 0)
+            + ($quranStats['ongoing_to_completed'] ?? 0);
 
-        $academicTransitions = ($academicStats['scheduled_to_ready'] ?? 0) +
-                              ($academicStats['ready_to_absent'] ?? 0) +
-                              ($academicStats['ongoing_to_completed'] ?? 0);
+        $academicTransitions = ($academicStats['scheduled_to_ready'] ?? 0)
+            + ($academicStats['ongoing_to_completed'] ?? 0);
 
-        $interactiveTransitions = ($interactiveStats['scheduled_to_ready'] ?? 0) +
-                                 ($interactiveStats['ready_to_absent'] ?? 0) +
-                                 ($interactiveStats['ongoing_to_completed'] ?? 0);
+        $interactiveTransitions = ($interactiveStats['scheduled_to_ready'] ?? 0)
+            + ($interactiveStats['ongoing_to_completed'] ?? 0);
 
         $totalTransitions = $quranTransitions + $academicTransitions + $interactiveTransitions;
         $totalErrors = ($quranStats['errors'] ?? 0) + ($academicStats['errors'] ?? 0) + ($interactiveStats['errors'] ?? 0);
@@ -525,7 +497,6 @@ class UpdateSessionStatusesCommand extends Command
     private function displaySessionTypeResults(array $stats, bool $isDryRun, bool $isVerbose, string $type): void
     {
         $totalTransitions = ($stats['scheduled_to_ready'] ?? 0) +
-                           ($stats['ready_to_absent'] ?? 0) +
                            ($stats['ongoing_to_completed'] ?? 0);
 
         if ($totalTransitions === 0 && ($stats['errors'] ?? 0) === 0) {
@@ -537,11 +508,6 @@ class UpdateSessionStatusesCommand extends Command
         if (($stats['scheduled_to_ready'] ?? 0) > 0) {
             $verb = $isDryRun ? 'Would transition' : 'Transitioned';
             $this->info("  🔄 {$verb} {$stats['scheduled_to_ready']} {$type} sessions from SCHEDULED to READY");
-        }
-
-        if (($stats['ready_to_absent'] ?? 0) > 0) {
-            $verb = $isDryRun ? 'Would mark' : 'Marked';
-            $this->info("  ⏰ {$verb} {$stats['ready_to_absent']} {$type} individual sessions as ABSENT");
         }
 
         if (($stats['ongoing_to_completed'] ?? 0) > 0) {

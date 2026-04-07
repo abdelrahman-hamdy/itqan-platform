@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Jobs\CalculateSessionEarningsJob;
 use App\Models\QuranSession;
@@ -85,7 +86,7 @@ class FixAbsentSessionsWithAttendance extends Command
 
                     $updateData = [
                         'status' => SessionStatus::COMPLETED,
-                        'attendance_status' => 'attended',
+                        'attendance_status' => AttendanceStatus::ATTENDED->value,
                     ];
 
                     // Set started_at from teacher's first join if missing

@@ -280,7 +280,7 @@ class QuranSession extends BaseSession implements RecordingCapable
     public function scopeMissed($query)
     {
         return $query->where('status', SessionStatus::COMPLETED)
-            ->where('attendance_status', 'absent');
+            ->where('attendance_status', AttendanceStatus::ABSENT->value);
     }
 
     public function scopeThisWeek($query)

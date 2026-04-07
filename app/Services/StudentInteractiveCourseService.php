@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use Exception;
+use App\Enums\AttendanceStatus;
 use App\Enums\HomeworkSubmissionStatus;
 use App\Enums\SessionStatus;
 use App\Models\InteractiveCourse;
@@ -10,6 +10,7 @@ use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Models\InteractiveCourseSession;
 use App\Models\User;
+use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -341,7 +342,7 @@ class StudentInteractiveCourseService
                 ->where('student_id', $user->id)
                 ->first();
 
-            return $report && $report->attendance_status === 'attended';
+            return $report && $report->attendance_status === AttendanceStatus::ATTENDED->value;
         });
 
         $homeworkSubmissions = InteractiveCourseHomeworkSubmission::where('student_id', $user->id)
@@ -392,7 +393,7 @@ class StudentInteractiveCourseService
                 ->where('student_id', $user->id)
                 ->first();
 
-            return $report && $report->attendance_status === 'attended';
+            return $report && $report->attendance_status === AttendanceStatus::ATTENDED->value;
         })->count();
 
         $upcomingSessions = $sessions->filter(fn ($s) => in_array($s->status, [SessionStatus::SCHEDULED->value, SessionStatus::SCHEDULED])

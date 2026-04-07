@@ -2,13 +2,13 @@
 
 namespace App\Services\Webhook\LiveKit;
 
-use Exception;
 use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
 use App\Models\BaseSession;
 use App\Models\MeetingAttendanceEvent;
 use App\Services\MeetingAttendanceService;
 use Carbon\Carbon;
+use Exception;
 
 /**
  * Handler for LiveKit room_finished webhook events.
@@ -111,18 +111,8 @@ class RoomFinishedHandler extends AbstractLiveKitEventHandler
                 'session_type' => $session->getMeetingType(),
             ]);
 
-            // Update subscription usage if applicable
-            if (method_exists($session, 'updateSubscriptionUsage')) {
-                try {
-                    $session->updateSubscriptionUsage();
-                } catch (Exception $e) {
-                    $this->logError('Failed to update subscription usage', [
-                        'session_id' => $session->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                    report($e);
-                }
-            }
+            // Subscription usage is handled by transitionToCompleted() / observer
+            // after attendance is calculated and counting flags are set
         }
     }
 

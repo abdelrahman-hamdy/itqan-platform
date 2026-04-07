@@ -67,7 +67,7 @@ class AcademicSessionSchedulingService
             'duration_minutes' => $durationMinutes,
             'location_type' => 'online',
             'meeting_auto_generated' => true,
-            'attendance_status' => 'scheduled',
+            'attendance_status' => null,
             'is_auto_generated' => false,
             'teacher_scheduled_at' => now(),
             'scheduled_by' => Auth::id(),

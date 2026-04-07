@@ -105,7 +105,6 @@ class SessionSchedulerService
     {
         $results = [
             'transitions_to_ready' => 0,
-            'transitions_to_absent' => 0,
             'transitions_to_completed' => 0,
             'errors' => [],
         ];

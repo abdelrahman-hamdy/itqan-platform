@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\EarningsCalculationServiceInterface;
+use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\BaseSession;
@@ -210,7 +211,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
     {
         // Check teacher_attendance_status if available (new system)
         if ($session->teacher_attendance_status) {
-            return $session->teacher_attendance_status !== 'absent';
+            return $session->teacher_attendance_status !== AttendanceStatus::ABSENT->value;
         }
 
         $teacherId = $this->getTeacherId($session);
