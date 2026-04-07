@@ -231,7 +231,7 @@
         </div>
 
         <!-- Renewal Warning/Message -->
-        @if($renewalMessage)
+        @if(!$isTeacher && $renewalMessage)
             <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex items-start">
