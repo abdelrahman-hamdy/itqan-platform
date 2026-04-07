@@ -30,7 +30,6 @@
 
     $showUrl = route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
 
-    // Only resolve attendance data for completed sessions
     $attColors = $tAtt = $sAtt = $tMinutes = $sMinutes = $tCounts = $sCounts = $duration = $toggleTeacherUrl = $toggleStudentUrl = $studentMeeting = null;
     if ($isCompleted) {
         $attColors = ['attended' => 'bg-green-100 text-green-700', 'partially_attended' => 'bg-amber-100 text-amber-700', 'late' => 'bg-yellow-100 text-yellow-700', 'left' => 'bg-orange-100 text-orange-700', 'absent' => 'bg-red-100 text-red-700'];
@@ -51,7 +50,9 @@
 @endphp
 
 <tr class="hover:bg-gray-50 cursor-pointer transition-colors {{ $isLive ? 'bg-green-50/50' : '' }}"
-    onclick="window.location.href='{{ $showUrl }}'">
+    onclick="window.location.href='{{ $showUrl }}'"
+    @if($isCompleted) x-data="{ tc: {{ $tCounts ? 'true' : 'false' }}, sc: {{ $sCounts ? 'true' : 'false' }}, busy: false }" @endif
+>
     {{-- Status --}}
     <td class="px-4 py-3">
         <div class="flex items-center gap-1.5">
@@ -100,11 +101,10 @@
         @endif
     </td>
 
-    {{-- Attendance + Counting (merged column) --}}
+    {{-- Attendance + Counting --}}
     <td class="px-4 py-3 whitespace-nowrap">
         @if($isCompleted)
             <div class="space-y-1.5">
-                {{-- Teacher row --}}
                 <div class="flex items-center gap-1.5">
                     <span class="text-[10px] text-gray-400 w-10 shrink-0">{{ __('supervisor.sessions.teacher_short') }}</span>
                     @if($tAtt)
@@ -113,12 +113,12 @@
                     @else
                         <span class="text-[10px] text-gray-300">-</span>
                     @endif
-                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium {{ $tCounts ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600' }}">
-                        <i class="{{ $tCounts ? 'ri-check-line' : 'ri-close-line' }} text-[8px]"></i>
-                        {{ $tCounts ? __('supervisor.sessions.counted') : __('supervisor.sessions.not_counted') }}
+                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium transition-colors"
+                          :class="tc ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'">
+                        <i :class="tc ? 'ri-check-line' : 'ri-close-line'" class="text-[8px]"></i>
+                        <span x-text="tc ? '{{ __('supervisor.sessions.counted') }}' : '{{ __('supervisor.sessions.not_counted') }}'"></span>
                     </span>
                 </div>
-                {{-- Student row --}}
                 <div class="flex items-center gap-1.5">
                     <span class="text-[10px] text-gray-400 w-10 shrink-0">{{ __('supervisor.sessions.student_short') }}</span>
                     @if($sAtt)
@@ -127,9 +127,10 @@
                     @else
                         <span class="text-[10px] text-gray-300">-</span>
                     @endif
-                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium {{ $sCounts ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600' }}">
-                        <i class="{{ $sCounts ? 'ri-check-line' : 'ri-close-line' }} text-[8px]"></i>
-                        {{ $sCounts ? __('supervisor.sessions.counted') : __('supervisor.sessions.not_counted') }}
+                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium transition-colors"
+                          :class="sc ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'">
+                        <i :class="sc ? 'ri-check-line' : 'ri-close-line'" class="text-[8px]"></i>
+                        <span x-text="sc ? '{{ __('supervisor.sessions.counted') }}' : '{{ __('supervisor.sessions.not_counted') }}'"></span>
                     </span>
                 </div>
             </div>
@@ -161,29 +162,46 @@
                 </a>
             @endif
             @if($isCompleted)
-                {{-- Toggle teacher counting --}}
-                <button onclick="event.stopPropagation(); window.confirmAction({
-                    title: '{{ $tCounts ? __("supervisor.sessions.uncount_for_teacher") : __("supervisor.sessions.count_for_teacher") }}',
-                    message: '{{ $tCounts ? __("supervisor.sessions.uncount_teacher_confirm") : __("supervisor.sessions.count_teacher_confirm") }}',
-                    isDangerous: {{ $tCounts ? 'true' : 'false' }},
-                    theme: {{ $tCounts ? 'null' : "'green'" }},
-                    onConfirm: () => fetch('{{ $toggleTeacherUrl }}', {method:'PATCH', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'}, body:JSON.stringify({counts:{{ $tCounts ? 'false' : 'true' }}})}).then(r => r.ok && location.reload())
+                {{-- Toggle teacher --}}
+                <button @click.stop="if(busy) return; window.confirmAction({
+                    title: tc ? '{{ __("supervisor.sessions.uncount_for_teacher") }}' : '{{ __("supervisor.sessions.count_for_teacher") }}',
+                    message: tc ? '{{ __("supervisor.sessions.uncount_teacher_confirm") }}' : '{{ __("supervisor.sessions.count_teacher_confirm") }}',
+                    isDangerous: tc,
+                    theme: tc ? null : 'green',
+                    onConfirm: async () => {
+                        busy = true;
+                        try {
+                            const r = await fetch('{{ $toggleTeacherUrl }}', {method:'PATCH', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'}, body:JSON.stringify({counts:!tc})});
+                            if(r.ok) tc = !tc;
+                        } catch(e) {}
+                        busy = false;
+                    }
                 })"
-                class="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-lg transition-colors {{ $tCounts ? 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200' }}">
+                class="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-lg transition-colors"
+                :class="tc ? 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200'">
                     <i class="ri-user-star-line"></i>
-                    {{ $tCounts ? __('supervisor.sessions.uncount_for_teacher') : __('supervisor.sessions.count_for_teacher') }}
+                    <span x-text="tc ? '{{ __("supervisor.sessions.uncount_for_teacher") }}' : '{{ __("supervisor.sessions.count_for_teacher") }}'"></span>
                 </button>
-                {{-- Toggle student counting --}}
-                <button onclick="event.stopPropagation(); @if($toggleStudentUrl) window.confirmAction({
-                    title: '{{ $sCounts ? __("supervisor.sessions.uncount_for_student") : __("supervisor.sessions.count_for_student") }}',
-                    message: '{{ $sCounts ? __("supervisor.sessions.uncount_student_confirm", ["name" => ""]) : __("supervisor.sessions.count_student_confirm", ["name" => ""]) }}',
-                    isDangerous: {{ $sCounts ? 'true' : 'false' }},
-                    theme: {{ $sCounts ? 'null' : "'green'" }},
-                    onConfirm: () => fetch('{{ $toggleStudentUrl }}', {method:'PATCH', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'}, body:JSON.stringify({counts:{{ $sCounts ? 'false' : 'true' }}})}).then(r => r.ok && location.reload())
+
+                {{-- Toggle student --}}
+                <button @click.stop="@if($toggleStudentUrl) if(busy) return; window.confirmAction({
+                    title: sc ? '{{ __("supervisor.sessions.uncount_for_student") }}' : '{{ __("supervisor.sessions.count_for_student") }}',
+                    message: sc ? '{{ __("supervisor.sessions.uncount_student_confirm", ["name" => ""]) }}' : '{{ __("supervisor.sessions.count_student_confirm", ["name" => ""]) }}',
+                    isDangerous: sc,
+                    theme: sc ? null : 'green',
+                    onConfirm: async () => {
+                        busy = true;
+                        try {
+                            const r = await fetch('{{ $toggleStudentUrl }}', {method:'PATCH', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'}, body:JSON.stringify({counts:!sc})});
+                            if(r.ok) sc = !sc;
+                        } catch(e) {}
+                        busy = false;
+                    }
                 }) @else window.location.href='{{ $showUrl }}' @endif"
-                class="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-lg transition-colors {{ $sCounts ? 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200' }}">
+                class="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-lg transition-colors"
+                :class="sc ? 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200'">
                     <i class="ri-user-line"></i>
-                    {{ $sCounts ? __('supervisor.sessions.uncount_for_student') : __('supervisor.sessions.count_for_student') }}
+                    <span x-text="sc ? '{{ __("supervisor.sessions.uncount_for_student") }}' : '{{ __("supervisor.sessions.count_for_student") }}'"></span>
                 </button>
             @endif
         </div>
