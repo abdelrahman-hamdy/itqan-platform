@@ -2,10 +2,8 @@
 
 namespace App\Services;
 
-use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
 use App\Models\BaseSession;
-use App\Models\MeetingAttendanceEvent;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -60,92 +58,18 @@ class SessionSchedulerService
     }
 
     /**
-     * Check if session should transition to ABSENT (individual only)
+     * shouldTransitionToAbsent() — REMOVED
      *
-     * A session is marked ABSENT when:
-     * - It's an individual session (not group)
-     * - Grace period has passed
-     * - Student has no recorded participation
+     * The ABSENT session status has been removed. Sessions now auto-complete
+     * when their time passes, and attendance is tracked separately per user.
+     * Financial impact is controlled by counting flags (counts_for_teacher,
+     * counts_for_subscription), not by session status.
      *
-     * Note: ABSENT counts toward subscription as a no-show penalty (confirmed business rule).
-     * If teacher also didn't attend, this is logged for admin reporting.
+     * @deprecated Use shouldAutoComplete() instead — all sessions auto-complete
      */
     public function shouldTransitionToAbsent(BaseSession $session): bool
     {
-        if (! $this->settingsService->isIndividualSession($session)) {
-            return false;
-        }
-
-        if (! in_array($session->status, [SessionStatus::READY, SessionStatus::ONGOING])) {
-            return false;
-        }
-
-        if (! $session->scheduled_at) {
-            return false;
-        }
-
-        $graceMinutes = $this->settingsService->getGracePeriodMinutes($session);
-        $graceDeadline = $session->scheduled_at->copy()->addMinutes($graceMinutes);
-
-        // SAFETY: Never mark absent if attendance hasn't been calculated yet.
-        // The race condition: cron runs before CalculateSessionForAttendance job finishes,
-        // sees total_duration_minutes=0, and prematurely marks the session ABSENT.
-        $attendances = $session->relationLoaded('meetingAttendances')
-            ? $session->meetingAttendances
-            : $session->meetingAttendances()->get();
-
-        $studentAttendances = $attendances->where('user_type', 'student');
-
-        // If any student attendance record exists but isn't calculated yet, WAIT — don't mark absent
-        if ($studentAttendances->where('is_calculated', false)->isNotEmpty()) {
-            return false;
-        }
-
-        // If any student has a first_join_time, they DID join — never mark absent
-        if ($studentAttendances->whereNotNull('first_join_time')->isNotEmpty()) {
-            return false;
-        }
-
-        // Fallback: check raw webhook events in case MeetingAttendance failed to create
-        $hasRawJoinEvents = MeetingAttendanceEvent::where('session_id', $session->id)
-            ->where('event_type', MeetingEventType::JOINED)
-            ->exists();
-
-        if ($hasRawJoinEvents) {
-            Log::warning('Prevented false absent: raw join events exist but MeetingAttendance missing/incomplete', [
-                'session_id' => $session->id,
-                'session_type' => $this->settingsService->getSessionType($session),
-                'student_attendance_count' => $studentAttendances->count(),
-                'first_join_times' => $studentAttendances->pluck('first_join_time')->toArray(),
-            ]);
-
-            return false;
-        }
-
-        // Only mark absent if grace period passed AND no student participation evidence at all
-        $hasStudentParticipation = $studentAttendances
-            ->where('total_duration_minutes', '>', 0)
-            ->isNotEmpty();
-
-        $hasTeacherParticipation = $attendances
-            ->where('user_type', 'teacher')
-            ->where('total_duration_minutes', '>', 0)
-            ->isNotEmpty();
-
-        $shouldMarkAbsent = now()->gt($graceDeadline) && ! $hasStudentParticipation;
-
-        // Log when both teacher and student are absent (for admin review)
-        if ($shouldMarkAbsent && ! $hasTeacherParticipation) {
-            Log::warning('Session marked ABSENT with no teacher participation', [
-                'session_id' => $session->id,
-                'session_type' => $this->settingsService->getSessionType($session),
-                'scheduled_at' => $session->scheduled_at?->toIso8601String(),
-                'grace_deadline' => $graceDeadline->toIso8601String(),
-                'note' => 'Both teacher and student absent - review may be needed',
-            ]);
-        }
-
-        return $shouldMarkAbsent;
+        return false;
     }
 
     /**
@@ -153,7 +77,7 @@ class SessionSchedulerService
      */
     public function shouldAutoComplete(BaseSession $session): bool
     {
-        if (! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
+        if (! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY, SessionStatus::SCHEDULED])) {
             return false;
         }
 
@@ -197,16 +121,8 @@ class SessionSchedulerService
                     }
                 }
 
-                // Check for ABSENT transition FIRST (individual sessions only)
-                if ($this->shouldTransitionToAbsent($session)) {
-                    if ($this->transitionService->transitionToAbsent($session)) {
-                        $results['transitions_to_absent']++;
-
-                        continue;
-                    }
-                }
-                // Only check for auto-completion if session is not absent
-                elseif ($this->shouldAutoComplete($session)) {
+                // Auto-complete sessions whose time has passed
+                if ($this->shouldAutoComplete($session)) {
                     if ($this->transitionService->transitionToCompleted($session)) {
                         $results['transitions_to_completed']++;
                     }

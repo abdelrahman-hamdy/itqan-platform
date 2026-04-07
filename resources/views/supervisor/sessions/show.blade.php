@@ -164,13 +164,7 @@
                 </button>
             @endif
 
-            {{-- Forgive absent session button --}}
-            @if($status->canForgive())
-                <button @click="showForgiveModal = true" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors cursor-pointer">
-                    <i class="ri-heart-line"></i>
-                    {{ __('sessions.actions.forgive') }}
-                </button>
-            @endif
+            {{-- Counting controls are now in the Counting Management section below --}}
 
             {{-- View in Panel --}}
             @if($filamentUrl)
@@ -424,43 +418,111 @@
         </div>
     </div>
 
-    {{-- Forgive Confirmation Modal --}}
-    @if($status->canForgive())
-    <div x-show="showForgiveModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div x-show="showForgiveModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-                 x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 bg-black/50" @click="showForgiveModal = false"></div>
+    {{-- Counting Management Section (replaces forgiveness) --}}
+    @if($session->status === \App\Enums\SessionStatus::COMPLETED)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <i class="ri-calculator-line"></i>
+            {{ __('settings.counting_management') }}
+        </h3>
 
-            <div x-show="showForgiveModal" x-transition class="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6 z-10">
-                <div class="text-center mb-4">
-                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i class="ri-heart-line text-2xl text-blue-600"></i>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" x-data="countingControls()">
+            {{-- Teacher Side --}}
+            <div class="space-y-3">
+                <h4 class="text-sm font-medium text-gray-700">{{ __('settings.teacher_attendance') }}</h4>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm">{{ __('settings.teacher_attendance_status') }}:</span>
+                    @if($session->teacher_attendance_status)
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                            {{ $session->teacher_attendance_status === 'attended' ? 'bg-green-100 text-green-800' : '' }}
+                            {{ $session->teacher_attendance_status === 'partially_attended' ? 'bg-amber-100 text-amber-800' : '' }}
+                            {{ $session->teacher_attendance_status === 'absent' ? 'bg-red-100 text-red-800' : '' }}
+                        ">
+                            {{ __('enums.attendance_status.' . $session->teacher_attendance_status) }}
+                        </span>
+                    @else
+                        <span class="text-xs text-gray-400">{{ __('settings.auto_calculated') }}</span>
+                    @endif
+                </div>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox"
+                        :checked="countsForTeacher"
+                        @change="toggleTeacher($event.target.checked)"
+                        class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                    <span class="text-sm">{{ __('settings.counts_for_teacher') }}</span>
+                </label>
+                @if($session->counts_for_teacher_set_by)
+                    <p class="text-xs text-gray-400">{{ __('settings.override_by') }}: {{ $session->countsForTeacherSetBy?->name }}</p>
+                @endif
+            </div>
+
+            {{-- Student Side --}}
+            <div class="space-y-3">
+                <h4 class="text-sm font-medium text-gray-700">{{ __('settings.student_attendance') }}</h4>
+                @php
+                    $attendances = $session->attendances ?? collect();
+                @endphp
+                @forelse($attendances as $att)
+                    <div class="flex items-center justify-between py-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm">{{ $att->student?->name ?? __('settings.student_attendance_status') }}</span>
+                            @if($att->attendance_status)
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium
+                                    {{ $att->attendance_status === 'attended' ? 'bg-green-100 text-green-800' : '' }}
+                                    {{ $att->attendance_status === 'absent' ? 'bg-red-100 text-red-800' : '' }}
+                                    {{ $att->attendance_status === 'late' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                ">
+                                    {{ __('enums.attendance_status.' . $att->attendance_status) }}
+                                </span>
+                            @endif
+                        </div>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox"
+                                :checked="studentCounts[{{ $att->id }}] ?? true"
+                                @change="toggleStudent({{ $att->id }}, $event.target.checked)"
+                                class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                            <span class="text-xs">{{ __('settings.counts_for_subscription') }}</span>
+                        </label>
                     </div>
-                    <h3 class="text-lg font-semibold text-gray-900">{{ __('sessions.actions.forgive_heading') }}</h3>
-                    <p class="text-sm text-gray-500 mt-1">{{ __('sessions.actions.forgive_description') }}</p>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('sessions.fields.forgiven_reason') }}</label>
-                    <textarea x-model="forgivenReason" rows="3" required
-                        class="w-full text-sm rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none"></textarea>
-                </div>
-
-                <div class="flex justify-end gap-3">
-                    <button @click="showForgiveModal = false"
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer">
-                        {{ __($t.'cancel_modal_close') }}
-                    </button>
-                    <button @click="submitForgive()" :disabled="submittingForgive || !forgivenReason.trim()"
-                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 cursor-pointer">
-                        <span x-show="!submittingForgive">{{ __('sessions.actions.forgive_confirm') }}</span>
-                        <span x-show="submittingForgive" x-cloak>{{ __('supervisor.observation.saving') }}...</span>
-                    </button>
-                </div>
+                @empty
+                    <p class="text-sm text-gray-400">{{ __('settings.auto_calculated') }}</p>
+                @endforelse
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+    function countingControls() {
+        return {
+            countsForTeacher: @json($session->counts_for_teacher ?? true),
+            studentCounts: @json($attendances->pluck('counts_for_subscription', 'id')->map(fn($v) => $v ?? true)),
+            async toggleTeacher(counts) {
+                try {
+                    const res = await fetch('{{ route("manage.sessions.toggle-counts-teacher", ["subdomain" => $subdomain, "sessionType" => $sessionType, "sessionId" => $session->id]) }}', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                        body: JSON.stringify({ counts })
+                    });
+                    if (!res.ok) throw new Error('Failed');
+                    this.countsForTeacher = counts;
+                } catch (e) { this.countsForTeacher = !counts; }
+            },
+            async toggleStudent(attId, counts) {
+                try {
+                    const res = await fetch('{{ route("manage.sessions.toggle-counts-subscription", ["subdomain" => $subdomain, "sessionType" => $sessionType, "sessionId" => $session->id, "attendanceId" => "__ID__"]) }}'.replace('__ID__', attId), {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                        body: JSON.stringify({ counts })
+                    });
+                    if (!res.ok) throw new Error('Failed');
+                    this.studentCounts[attId] = counts;
+                } catch (e) { this.studentCounts[attId] = !counts; }
+            }
+        }
+    }
+    </script>
+    @endpush
     @endif
 
     {{-- Cancel Confirmation Modal --}}
@@ -508,9 +570,7 @@
 @php
     $updateUrl = route('manage.sessions.update', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]);
     $cancelUrl = route('manage.sessions.cancel', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]);
-    $forgiveUrl = in_array($sessionType, ['quran', 'academic'])
-        ? route('manage.sessions.forgive', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id])
-        : null;
+    $forgiveUrl = null; // Forgiveness removed — replaced by counting controls
     $initialNotes = $session->supervisor_notes ?? '';
     $initialAdminNotes = $session->admin_notes ?? '';
     $countdownLabels = [

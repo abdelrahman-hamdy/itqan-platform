@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher\Academic;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
@@ -97,7 +98,7 @@ class LessonController extends Controller
             'completed' => $allSessions->where('status', SessionStatus::COMPLETED)->count(),
             'scheduled' => $allSessions->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::READY])->count(),
             'cancelled' => $allSessions->where('status', SessionStatus::CANCELLED)->count(),
-            'absent' => $allSessions->where('status', SessionStatus::ABSENT)->count(),
+            'absent' => $allSessions->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
         ];
 
         // Get certificate data

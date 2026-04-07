@@ -188,7 +188,6 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                 $allSessions = $circle->sessions;
                 $countedSessions = $allSessions->whereNotIn('status', [
                     SessionStatus::CANCELLED,
-                    SessionStatus::FORGIVEN,
                 ])->count();
 
                 $status = 'not_scheduled';

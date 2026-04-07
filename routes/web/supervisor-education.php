@@ -128,6 +128,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/interactive-courses/{course}', [SupervisorInteractiveCoursesController::class, 'show'])->name('interactive-courses.show');
         Route::put('/interactive-courses/{course}', [SupervisorInteractiveCoursesController::class, 'update'])->name('interactive-courses.update');
         Route::post('/interactive-courses/{course}/change-teacher', [SupervisorInteractiveCoursesController::class, 'changeTeacher'])->name('interactive-courses.change-teacher');
+        Route::post('/interactive-courses/{course}/toggle-published', [SupervisorInteractiveCoursesController::class, 'togglePublished'])->name('interactive-courses.toggle-published');
+        Route::post('/interactive-courses/{course}/change-status', [SupervisorInteractiveCoursesController::class, 'changeStatus'])->name('interactive-courses.change-status');
         Route::delete('/interactive-courses/{course}', [SupervisorInteractiveCoursesController::class, 'destroy'])->name('interactive-courses.destroy');
         Route::post('/interactive-courses/{course}/enrollments', [SupervisorInteractiveCoursesController::class, 'addEnrollment'])->name('interactive-courses.add-enrollment');
         Route::delete('/interactive-courses/{course}/enrollments/{enrollment}', [SupervisorInteractiveCoursesController::class, 'removeEnrollment'])->name('interactive-courses.remove-enrollment');
@@ -181,8 +183,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
             ->name('sessions.update')->whereIn('sessionType', ['quran', 'academic', 'interactive']);
         Route::post('/sessions/{sessionType}/{sessionId}/cancel', [SupervisorSessionsController::class, 'cancel'])
             ->name('sessions.cancel')->whereIn('sessionType', ['quran', 'academic', 'interactive']);
-        Route::post('/sessions/{sessionType}/{sessionId}/forgive', [SupervisorSessionsController::class, 'forgive'])
-            ->name('sessions.forgive')->whereIn('sessionType', ['quran', 'academic']);
+        Route::patch('/sessions/{sessionType}/{sessionId}/counts-teacher', [SupervisorSessionsController::class, 'toggleCountsForTeacher'])
+            ->name('sessions.toggle-counts-teacher')->whereIn('sessionType', ['quran', 'academic', 'interactive']);
+        Route::patch('/sessions/{sessionType}/{sessionId}/attendance/{attendanceId}/counts-subscription', [SupervisorSessionsController::class, 'toggleCountsForSubscription'])
+            ->name('sessions.toggle-counts-subscription')->whereIn('sessionType', ['quran', 'academic', 'interactive']);
 
         // Redirect old monitoring route
         Route::get('/sessions-monitoring', fn (Request $request, $subdomain) => redirect()->route('manage.sessions.index', ['subdomain' => $subdomain] + $request->query()))->name('sessions-monitoring.index');

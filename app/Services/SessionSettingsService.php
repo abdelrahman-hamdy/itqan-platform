@@ -87,6 +87,58 @@ class SessionSettingsService
     }
 
     /**
+     * Get student full attendance threshold percentage
+     */
+    public function getStudentAttendanceThreshold(BaseSession $session): float
+    {
+        $settings = $this->getAcademySettings($session);
+
+        return (float) ($settings?->default_attendance_threshold_percentage ?? config('business.attendance.threshold_percent', 80));
+    }
+
+    /**
+     * Get student minimum presence percentage (below this = ABSENT)
+     */
+    public function getStudentMinimumPresencePercent(BaseSession $session): float
+    {
+        $settings = $this->getAcademySettings($session);
+
+        return (float) ($settings?->student_minimum_presence_percent ?? config('business.attendance.minimum_presence_percent', 50));
+    }
+
+    /**
+     * Get student left threshold percentage (below this = ABSENT, above = LEFT)
+     */
+    public function getStudentLeftThresholdPercent(BaseSession $session): float
+    {
+        $settings = $this->getAcademySettings($session);
+
+        return (float) ($settings?->student_left_threshold_percent ?? config('business.attendance.left_threshold_percent', 30));
+    }
+
+    /**
+     * Get teacher full attendance threshold percentage (>= this = ATTENDED)
+     */
+    public function getTeacherFullAttendancePercent(BaseSession $session): float
+    {
+        $settings = $this->getAcademySettings($session);
+
+        return (float) ($settings?->teacher_full_attendance_percent
+            ?? config('business.attendance.teacher_full_attendance_percent', 90));
+    }
+
+    /**
+     * Get teacher partial attendance threshold percentage (>= this = PARTIALLY_ATTENDED)
+     */
+    public function getTeacherPartialAttendancePercent(BaseSession $session): float
+    {
+        $settings = $this->getAcademySettings($session);
+
+        return (float) ($settings?->teacher_partial_attendance_percent
+            ?? config('business.attendance.teacher_partial_attendance_percent', 50));
+    }
+
+    /**
      * Get max future hours for ongoing transition
      * Prevents ONGOING status for sessions too far in the future
      */

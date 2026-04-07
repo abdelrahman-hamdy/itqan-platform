@@ -9,12 +9,19 @@ use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * LEGACY DATA COMMAND: This command is for fixing historical data from when
+ * SessionStatus::ABSENT existed. The ABSENT session status has been removed;
+ * sessions now always complete to COMPLETED status with attendance tracked
+ * separately via attendance_status. This command fixes any remaining legacy
+ * ABSENT sessions in the database.
+ */
 class FixAbsentSessionsWithAttendance extends Command
 {
     protected $signature = 'sessions:fix-absent-with-attendance
                           {--dry-run : Show what would be fixed without making changes}';
 
-    protected $description = 'Fix sessions marked ABSENT that have actual meeting attendance for both teacher and student';
+    protected $description = 'Legacy: Fix sessions marked ABSENT that have actual meeting attendance for both teacher and student';
 
     public function handle(): int
     {
@@ -42,7 +49,7 @@ class FixAbsentSessionsWithAttendance extends Command
             GROUP BY qs.id, qs.title, qs.scheduled_at, qs.duration_minutes, qs.started_at,
                      qs.quran_teacher_id, qs.student_id
             HAVING teacher_min > 0 AND student_min > 0
-        ", [SessionStatus::ABSENT->value]);
+        ", ['absent']);
 
         if (empty($candidates)) {
             $this->info('No absent sessions found with both teacher and student attendance.');
@@ -72,7 +79,7 @@ class FixAbsentSessionsWithAttendance extends Command
             try {
                 DB::transaction(function () use ($c) {
                     $session = QuranSession::withoutGlobalScopes()->lockForUpdate()->find($c->id);
-                    if (! $session || $session->status !== SessionStatus::ABSENT) {
+                    if (! $session || ($session->status instanceof SessionStatus ? $session->status->value : $session->status) !== 'absent') {
                         return;
                     }
 

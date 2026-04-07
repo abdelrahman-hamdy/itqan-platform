@@ -505,11 +505,11 @@ abstract class BaseQuranTrialRequestResource extends Resource
     {
         $session = $record->trialSession;
 
-        if (! $session || $session->status !== SessionStatus::ABSENT) {
+        if (! $session || $session->status !== SessionStatus::COMPLETED) {
             Notification::make()
                 ->danger()
                 ->title(__('filament.trial_reschedule.cannot_reschedule'))
-                ->body(__('filament.trial_reschedule.not_absent'))
+                ->body(__('filament.trial_reschedule.not_completed'))
                 ->send();
 
             return;

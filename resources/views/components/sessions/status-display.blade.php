@@ -73,8 +73,6 @@
             <div class="{{ $iconSizeClasses[$size] }} bg-blue-500 rounded-full mb-1 animate-bounce"></div>
         @elseif($statusValue === \App\Enums\SessionStatus::CANCELLED->value)
             <div class="{{ $iconSizeClasses[$size] }} bg-gray-400 rounded-full mb-1"></div>
-        @elseif($statusValue === \App\Enums\SessionStatus::ABSENT->value)
-            <div class="{{ $iconSizeClasses[$size] }} bg-red-500 rounded-full mb-1"></div>
         @else
             <div class="{{ $iconSizeClasses[$size] }} bg-gray-300 rounded-full mb-1"></div>
         @endif

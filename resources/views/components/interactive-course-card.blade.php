@@ -101,6 +101,22 @@
   </div>
   @endif
 
+  {{-- Price Display --}}
+  @if(!$isEnrolled && $course->student_price > 0)
+  <div class="flex items-center mb-4">
+    @if($course->hasDiscount())
+      <span class="text-lg font-bold text-blue-700">{{ number_format($course->sale_price) }} {{ getCurrencySymbol() }}</span>
+      <span class="text-sm text-gray-500 line-through ms-2">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
+    @else
+      <span class="text-lg font-bold text-blue-700">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
+    @endif
+  </div>
+  @elseif(!$isEnrolled)
+  <div class="flex items-center mb-4">
+    <span class="text-lg font-bold text-blue-700">{{ __('components.cards.recorded_course.free') }}</span>
+  </div>
+  @endif
+
   <!-- Spacer to push button to bottom -->
   <div class="flex-grow"></div>
 
@@ -114,7 +130,7 @@
   <a href="{{ route('interactive-courses.show', ['subdomain' => $academy->subdomain, 'courseId' => $course->id]) }}"
      class="w-full bg-blue-500 text-white px-4 py-3 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors text-center block mt-auto">
     <i class="ri-information-line me-1"></i>
-    {{ __('components.cards.interactive_course.view_details') }}{{ $course->student_price ? ' - ' . number_format($course->student_price) . ' ' . getCurrencySymbol() : '' }}
+    {{ __('components.cards.interactive_course.view_details') }}
   </a>
   @endif
 </div>

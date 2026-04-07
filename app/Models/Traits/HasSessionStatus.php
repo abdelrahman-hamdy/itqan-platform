@@ -76,25 +76,24 @@ trait HasSessionStatus
     }
 
     /**
-     * Scope: Get sessions that count towards subscription (completed or absent)
+     * Scope: Get sessions that count towards subscription.
+     * Financial impact is now controlled by counts_for_teacher and counts_for_subscription flags,
+     * but only COMPLETED sessions are countable by status.
      */
     public function scopeCountable($query)
     {
-        return $query->whereIn('status', [
-            SessionStatus::COMPLETED,
-            SessionStatus::ABSENT,
-        ]);
+        return $query->where('status', SessionStatus::COMPLETED);
     }
 
     /**
-     * Scope: Get sessions in a final state (completed, cancelled, or absent)
+     * Scope: Get sessions in a final state (completed, cancelled, or suspended)
      */
     public function scopeFinal($query)
     {
         return $query->whereIn('status', [
             SessionStatus::COMPLETED,
             SessionStatus::CANCELLED,
-            SessionStatus::ABSENT,
+            SessionStatus::SUSPENDED,
         ]);
     }
 
@@ -106,7 +105,7 @@ trait HasSessionStatus
         return $query->whereNotIn('status', [
             SessionStatus::COMPLETED,
             SessionStatus::CANCELLED,
-            SessionStatus::ABSENT,
+            SessionStatus::SUSPENDED,
         ]);
     }
 
@@ -167,10 +166,6 @@ trait HasSessionStatus
             ],
             SessionStatus::COMPLETED->value => [],
             SessionStatus::CANCELLED->value => [],
-            SessionStatus::ABSENT->value => [
-                SessionStatus::FORGIVEN->value,
-                SessionStatus::SCHEDULED->value,
-            ],
         ];
 
         $currentValue = $currentStatus instanceof SessionStatus

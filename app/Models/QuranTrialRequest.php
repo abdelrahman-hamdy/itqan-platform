@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Models\Traits\ScopedToAcademy;
@@ -256,10 +257,14 @@ class QuranTrialRequest extends Model
         return $this->status === TrialRequestStatus::PENDING;
     }
 
+    /**
+     * A trial can be rescheduled if it completed but the student was absent.
+     */
     public function canBeRescheduled(): bool
     {
         return $this->trialSession
-            && $this->trialSession->status === SessionStatus::ABSENT;
+            && $this->trialSession->status === SessionStatus::COMPLETED
+            && $this->trialSession->attendance_status === AttendanceStatus::ABSENT->value;
     }
 
     /**

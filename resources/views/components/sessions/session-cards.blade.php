@@ -27,7 +27,6 @@
         SessionStatus::COMPLETED->value => 3,
         SessionStatus::CANCELLED->value => 4,
         SessionStatus::UNSCHEDULED->value => 5,
-        SessionStatus::ABSENT->value => 6,
     ];
     $sessions = $sessions->sortBy(function($session) use ($getStatusValue, $statusPriority) {
         $priority = $statusPriority[$getStatusValue($session)] ?? 99;

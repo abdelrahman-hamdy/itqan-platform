@@ -63,7 +63,7 @@ class SessionStatusService
             return true;
         }
 
-        if (in_array($session->status, [SessionStatus::ABSENT, SessionStatus::SCHEDULED])) {
+        if ($session->status === SessionStatus::SCHEDULED) {
             $preparationStart = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
             $sessionEnd = $session->scheduled_at->copy()->addMinutes(
                 ($session->duration_minutes ?? $this->getDefaultDurationMinutes()) + $bufferMinutes
@@ -107,8 +107,6 @@ class SessionStatusService
             ],
 
             SessionStatus::SCHEDULED => $this->getScheduledStatusDisplay($session, $userRole, $canJoin, $preparationMinutes),
-
-            SessionStatus::ABSENT => $this->getAbsentStatusDisplay($userRole, $canJoin),
 
             SessionStatus::COMPLETED => [
                 'message' => __('sessions.status_display.completed_message'),

@@ -2,29 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StudentSessionReport;
-use App\Models\AcademicHomeworkSubmission;
-use BackedEnum;
-use App\Models\StudentProfile;
-use App\Models\Certificate;
-use Carbon\Carbon;
 use App\Constants\DefaultAcademy;
+use App\Contracts\QuranReportServiceInterface;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Http\Middleware\ChildSelectionMiddleware;
+use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
+use App\Models\Certificate;
 use App\Models\CourseSubscription;
 use App\Models\InteractiveCourse;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
-use App\Contracts\QuranReportServiceInterface;
+use App\Models\StudentProfile;
+use App\Models\StudentSessionReport;
 use App\Services\ParentChildVerificationService;
 use App\Services\ParentDataService;
 use App\Services\Reports\AcademicReportService;
 use App\Services\Reports\InteractiveCourseReportService;
+use BackedEnum;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -526,12 +526,8 @@ class ParentReportController extends Controller
 
             return false;
         })->count();
-        $quranAbsent = $quranSessions->filter(function ($session) use ($getStatusValue) {
-            $statusValue = $getStatusValue($session->status);
-            // Absent if session status is 'absent' OR attendance_status indicates absence
-            if ($statusValue === SessionStatus::ABSENT->value) {
-                return true;
-            }
+        $quranAbsent = $quranSessions->filter(function ($session) {
+            // Absent if attendance_status indicates absence
             $attStatus = strtolower($session->attendance_status ?? '');
 
             return $attStatus === AttendanceStatus::ABSENT->value;
@@ -556,12 +552,8 @@ class ParentReportController extends Controller
 
             return false;
         })->count();
-        $academicAbsent = $academicSessions->filter(function ($session) use ($getStatusValue) {
-            $statusValue = $getStatusValue($session->status);
-            // Absent if session status is 'absent' OR attendance_status indicates absence
-            if ($statusValue === SessionStatus::ABSENT->value) {
-                return true;
-            }
+        $academicAbsent = $academicSessions->filter(function ($session) {
+            // Absent if attendance_status indicates absence
             $attStatus = strtolower($session->attendance_status ?? '');
 
             return $attStatus === AttendanceStatus::ABSENT->value;

@@ -17,6 +17,7 @@ return [
         'late' => 'Late',
         'left' => 'Left Early',
         'absent' => 'Absent',
+        'partially_attended' => 'Partially Attended',
         'pending' => 'Pending',
         'unknown' => 'Unknown',
     ],

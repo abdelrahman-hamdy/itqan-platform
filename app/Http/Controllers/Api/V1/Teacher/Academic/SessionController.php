@@ -467,7 +467,7 @@ class SessionController extends Controller
         return $this->success([
             'session' => [
                 'id' => $session->id,
-                'status' => SessionStatus::ABSENT,
+                'status' => SessionStatus::COMPLETED,
                 'student_name' => $session->student?->name,
             ],
         ], __('Student marked as absent'));

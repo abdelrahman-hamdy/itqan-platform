@@ -448,7 +448,6 @@ class AcademicSession extends BaseSession
             SessionStatus::ONGOING->value => 'green',
             SessionStatus::COMPLETED->value => 'gray',
             SessionStatus::CANCELLED->value => 'red',
-            SessionStatus::ABSENT->value => 'amber',
             default => 'gray'
         };
     }
@@ -775,6 +774,11 @@ class AcademicSession extends BaseSession
      * Only for individual sessions where student didn't show up
      * Counts towards subscription usage
      */
+    /**
+     * Mark session as absent.
+     * Session auto-completes to COMPLETED status. Absence is tracked via attendance records.
+     * Financial impact is controlled by counts_for_teacher and counts_for_subscription flags.
+     */
     public function markAsAbsent(?string $reason = null): bool
     {
         // Can only mark as absent if:
@@ -785,9 +789,9 @@ class AcademicSession extends BaseSession
             return false;
         }
 
-        // Allow COMPLETED and ABSENT sessions to be re-marked as absent
+        // Allow COMPLETED sessions to be re-marked as absent
         // (teacher correcting attendance after the fact)
-        $allowedStatuses = [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING, SessionStatus::COMPLETED, SessionStatus::ABSENT];
+        $allowedStatuses = [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING, SessionStatus::COMPLETED];
         if (! in_array($this->status, $allowedStatuses)) {
             return false;
         }
@@ -804,7 +808,7 @@ class AcademicSession extends BaseSession
             }
 
             $session->update([
-                'status' => SessionStatus::ABSENT,
+                'status' => SessionStatus::COMPLETED,
                 'ended_at' => now(),
                 'attendance_status' => AttendanceStatus::ABSENT->value,
                 'cancellation_reason' => $reason, // Store absence reason in cancellation_reason field

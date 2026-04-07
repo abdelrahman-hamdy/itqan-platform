@@ -5,8 +5,10 @@ namespace App\Filament\Academy\Pages;
 use App\Enums\Currency;
 use App\Enums\UserType;
 use App\Models\Academy;
+use App\Models\AcademySettings;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -49,8 +51,19 @@ class ManageAcademySettings extends Page implements HasForms
     {
         /** @var Academy $academy */
         $academy = Filament::getTenant();
+        $academySettings = AcademySettings::getForAcademy($academy);
 
-        $this->form->fill($academy->toArray());
+        $data = $academy->toArray();
+        $data['attendance_settings'] = [
+            'default_late_tolerance_minutes' => $academySettings->default_late_tolerance_minutes,
+            'default_attendance_threshold_percentage' => $academySettings->default_attendance_threshold_percentage,
+            'student_minimum_presence_percent' => $academySettings->student_minimum_presence_percent,
+            'student_left_threshold_percent' => $academySettings->student_left_threshold_percent,
+            'teacher_full_attendance_percent' => $academySettings->teacher_full_attendance_percent,
+            'teacher_partial_attendance_percent' => $academySettings->teacher_partial_attendance_percent,
+        ];
+
+        $this->form->fill($data);
     }
 
     public function form(Schema $schema): Schema
@@ -156,6 +169,72 @@ class ManageAcademySettings extends Page implements HasForms
                             ->helperText('العملة المستخدمة لأرباح المعلمين. اتركه فارغاً لاستخدام عملة الأكاديمية.'),
                     ])
                     ->columns(2),
+
+                Section::make(__('settings.attendance_rules'))
+                    ->description(__('settings.attendance_rules_description'))
+                    ->schema([
+                        Fieldset::make(__('settings.student_attendance'))
+                            ->schema([
+                                TextInput::make('attendance_settings.default_late_tolerance_minutes')
+                                    ->label(__('settings.grace_period_minutes'))
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(60)
+                                    ->default(15)
+                                    ->suffix(__('settings.minutes'))
+                                    ->helperText(__('settings.grace_period_help')),
+
+                                TextInput::make('attendance_settings.default_attendance_threshold_percentage')
+                                    ->label(__('settings.full_attendance_threshold'))
+                                    ->numeric()
+                                    ->minValue(50)
+                                    ->maxValue(100)
+                                    ->default(80)
+                                    ->suffix('%')
+                                    ->helperText(__('settings.full_attendance_help')),
+
+                                TextInput::make('attendance_settings.student_minimum_presence_percent')
+                                    ->label(__('settings.minimum_presence_percent'))
+                                    ->numeric()
+                                    ->minValue(10)
+                                    ->maxValue(100)
+                                    ->default(50)
+                                    ->suffix('%')
+                                    ->helperText(__('settings.minimum_presence_help')),
+
+                                TextInput::make('attendance_settings.student_left_threshold_percent')
+                                    ->label(__('settings.left_threshold_percent'))
+                                    ->numeric()
+                                    ->minValue(5)
+                                    ->maxValue(50)
+                                    ->default(30)
+                                    ->suffix('%')
+                                    ->helperText(__('settings.left_threshold_help')),
+                            ])
+                            ->columns(2),
+
+                        Fieldset::make(__('settings.teacher_attendance'))
+                            ->schema([
+                                TextInput::make('attendance_settings.teacher_full_attendance_percent')
+                                    ->label(__('settings.teacher_full_attendance'))
+                                    ->numeric()
+                                    ->minValue(50)
+                                    ->maxValue(100)
+                                    ->default(90)
+                                    ->suffix('%')
+                                    ->helperText(__('settings.teacher_full_attendance_help')),
+
+                                TextInput::make('attendance_settings.teacher_partial_attendance_percent')
+                                    ->label(__('settings.teacher_partial_attendance'))
+                                    ->numeric()
+                                    ->minValue(10)
+                                    ->maxValue(90)
+                                    ->default(50)
+                                    ->suffix('%')
+                                    ->helperText(__('settings.teacher_partial_attendance_help')),
+                            ])
+                            ->columns(2),
+                    ]),
             ])
             ->statePath('data');
     }
@@ -174,6 +253,10 @@ class ManageAcademySettings extends Page implements HasForms
     {
         $data = $this->form->getState();
 
+        // Separate attendance settings from academy fields
+        $attendanceData = $data['attendance_settings'] ?? [];
+        unset($data['attendance_settings']);
+
         // Explicit allowlist — only update fields exposed in the form schema
         $allowedFields = [
             'name', 'name_en', 'description',
@@ -187,6 +270,22 @@ class ManageAcademySettings extends Page implements HasForms
         $academy = Filament::getTenant();
 
         $academy->update($data);
+
+        // Save attendance settings to AcademySettings
+        if (! empty($attendanceData)) {
+            $allowedAttendanceFields = [
+                'default_late_tolerance_minutes',
+                'default_attendance_threshold_percentage',
+                'student_minimum_presence_percent',
+                'student_left_threshold_percent',
+                'teacher_full_attendance_percent',
+                'teacher_partial_attendance_percent',
+            ];
+            $attendanceData = array_intersect_key($attendanceData, array_flip($allowedAttendanceFields));
+
+            $academySettings = AcademySettings::getForAcademy($academy);
+            $academySettings->update($attendanceData);
+        }
 
         Notification::make()
             ->success()

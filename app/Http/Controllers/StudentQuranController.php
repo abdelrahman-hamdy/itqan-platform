@@ -275,7 +275,6 @@ class StudentQuranController extends Controller
             return $session->scheduled_at <= $now &&
                    in_array($session->status, [
                        SessionStatus::COMPLETED,
-                       SessionStatus::ABSENT,
                        SessionStatus::CANCELLED,
                        // Include sessions that ended but might have attendance data
                    ]);

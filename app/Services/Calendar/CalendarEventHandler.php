@@ -12,7 +12,6 @@ use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
-use App\Services\SessionTransitionService;
 use App\ValueObjects\CalendarEventId;
 use Carbon\Carbon;
 use Exception;
@@ -105,20 +104,6 @@ class CalendarEventHandler
 
             // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
             $scheduledAtForStorage = AcademyContextService::toUtcForStorage($newStart);
-
-            // ABSENT sessions require the transition service for proper side-effect handling
-            if ($status === SessionStatus::ABSENT) {
-                $transitionService = app(SessionTransitionService::class);
-                $success = $transitionService->transitionToScheduledFromAbsent(
-                    $session, $scheduledAtForStorage, null, Auth::id()
-                );
-
-                if (! $success) {
-                    return EventHandlerResult::error(__('calendar.event.update_error'));
-                }
-
-                return EventHandlerResult::success(__('calendar.event.updated_successfully'));
-            }
 
             // Normal reschedule for SCHEDULED/READY sessions
             return DB::transaction(function () use ($session, $newStart, $scheduledAtForStorage) {

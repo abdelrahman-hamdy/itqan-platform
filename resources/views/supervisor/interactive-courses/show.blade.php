@@ -36,6 +36,9 @@
                 @endif
                 <div class="flex flex-wrap gap-2">
                     <span class="text-xs px-2.5 py-1 rounded-full {{ $statusClass }}">{{ $statusLabel }}</span>
+                    <span class="text-xs px-2.5 py-1 rounded-full {{ $course->is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' }}">
+                        {{ $course->is_published ? __('supervisor.interactive_courses.published') : __('supervisor.interactive_courses.unpublished') }}
+                    </span>
                     @if($course->subject)
                         <span class="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">{{ $course->subject->name }}</span>
                     @endif
@@ -143,17 +146,12 @@
                                             <p class="text-sm font-medium text-gray-900 truncate">{{ $enrollment->student?->name ?? '' }}</p>
                                             <p class="text-xs text-gray-500">{{ $enrollment->created_at?->format('Y/m/d') }}</p>
                                         </div>
-                                        <span class="text-xs px-2 py-1 rounded-full {{ $enrollStatusClass }}">
-                                            {{ $enrollStatus }}
-                                        </span>
+                                        <span class="text-xs px-2 py-1 rounded-full {{ $enrollStatusClass }}">{{ $enrollStatus }}</span>
                                         @if(isset($isAdmin) && $isAdmin)
                                             <form method="POST" action="{{ route('manage.interactive-courses.remove-enrollment', ['subdomain' => $subdomain, 'course' => $course->id, 'enrollment' => $enrollment->id]) }}"
                                                   onsubmit="return confirm('{{ __('supervisor.interactive_courses.confirm_remove') }}')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-500 hover:text-red-700 p-1">
-                                                    <i class="ri-delete-bin-line text-sm"></i>
-                                                </button>
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="text-red-500 hover:text-red-700 p-1"><i class="ri-delete-bin-line text-sm"></i></button>
                                             </form>
                                         @endif
                                     </div>
@@ -233,32 +231,117 @@
                             <div class="flex items-center gap-2"><i class="ri-play-list-line text-gray-400"></i> {{ $course->sessions->count() }} / {{ $course->total_sessions }}</div>
                         @endif
                         @if($course->student_price)
-                            <div class="flex items-center gap-2"><i class="ri-money-dollar-circle-line text-gray-400"></i> {{ number_format($course->student_price, 0) }}</div>
+                            <div class="flex items-center gap-2">
+                                <i class="ri-money-dollar-circle-line text-gray-400"></i>
+                                @if($course->hasDiscount())
+                                    <span class="font-semibold text-green-700">{{ number_format($course->sale_price, 0) }}</span>
+                                    <span class="text-xs text-gray-400 line-through">{{ number_format($course->student_price, 0) }}</span>
+                                @else
+                                    {{ number_format($course->student_price, 0) }}
+                                @endif
+                            </div>
                         @endif
                     </div>
                 </div>
 
+                {{-- Teacher Change Widget (inline expandable like individual circles) --}}
+                @if($canManage && $academicTeachers->isNotEmpty())
+                    <div x-data="{ showTransfer: false }" class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
+                        <h3 class="text-sm font-bold text-gray-900 mb-3">{{ __('supervisor.interactive_courses.teacher') }}</h3>
+                        <div class="flex items-center gap-3 mb-3">
+                            @if($teacher)
+                                <x-avatar :user="$teacher" size="xs" userType="academic_teacher" />
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-semibold text-gray-900 truncate">{{ $teacher->name }}</div>
+                                </div>
+                            @endif
+                        </div>
+                        <button type="button" @click="showTransfer = !showTransfer"
+                            class="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
+                            <i class="ri-arrow-left-right-line"></i>
+                            {{ __('supervisor.interactive_courses.change_teacher') }}
+                        </button>
+
+                        <div x-show="showTransfer" x-cloak x-transition class="mt-3 pt-3 border-t border-gray-100">
+                            <form method="POST" action="{{ route('manage.interactive-courses.change-teacher', ['subdomain' => $subdomain, 'course' => $course->id]) }}">
+                                @csrf
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.select_teacher') }}</label>
+                                        <select name="assigned_teacher_id" class="w-full rounded-lg border-gray-300 text-sm" required>
+                                            <option value="">--</option>
+                                            @foreach($academicTeachers as $t)
+                                                @php $profileId = $t->academicTeacherProfile?->id; @endphp
+                                                @if($profileId !== $course->assigned_teacher_id)
+                                                    <option value="{{ $profileId }}">{{ $t->first_name }} {{ $t->last_name }}</option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <button type="submit"
+                                        class="w-full px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                                        {{ __('supervisor.interactive_courses.change_teacher') }}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                @endif
+
                 {{-- Actions Widget --}}
                 @if($canManage || $isAdmin)
                     {{-- Hidden action forms --}}
-                    @if($isAdmin)
-                        <form id="delete-course-form" method="POST" action="{{ route('manage.interactive-courses.destroy', ['subdomain' => $subdomain, 'course' => $course->id]) }}" class="hidden">
-                            @csrf @method('DELETE')
+                    <form id="toggle-published-form" method="POST" action="{{ route('manage.interactive-courses.toggle-published', ['subdomain' => $subdomain, 'course' => $course->id]) }}" class="hidden">@csrf</form>
+                    @foreach(\App\Enums\InteractiveCourseStatus::cases() as $s)
+                        <form id="change-status-{{ $s->value }}-form" method="POST" action="{{ route('manage.interactive-courses.change-status', ['subdomain' => $subdomain, 'course' => $course->id]) }}" class="hidden">
+                            @csrf
+                            <input type="hidden" name="status" value="{{ $s->value }}">
                         </form>
+                    @endforeach
+                    @if($isAdmin)
+                        <form id="delete-course-form" method="POST" action="{{ route('manage.interactive-courses.destroy', ['subdomain' => $subdomain, 'course' => $course->id]) }}" class="hidden">@csrf @method('DELETE')</form>
                     @endif
 
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
                         <h3 class="text-sm font-bold text-gray-900 mb-3">{{ __('supervisor.interactive_courses.course_actions') }}</h3>
                         <div class="grid grid-cols-2 gap-2">
-                            {{-- Change Teacher --}}
-                            @if($canManage)
-                                <button type="button"
-                                    onclick="window.dispatchEvent(new CustomEvent('open-modal-change-teacher'))"
-                                    class="flex items-center justify-center gap-1.5 px-2 py-2.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer">
-                                    <i class="ri-user-settings-line"></i>
-                                    {{ $course->assigned_teacher_id ? __('supervisor.interactive_courses.change_teacher') : __('supervisor.interactive_courses.assign_teacher') }}
-                                </button>
-                            @endif
+                            {{-- Toggle Published --}}
+                            <button type="button"
+                                onclick="window.confirmAction({
+                                    title: @js($course->is_published ? __('supervisor.interactive_courses.unpublish') : __('supervisor.interactive_courses.publish')),
+                                    message: @js($course->is_published ? __('supervisor.interactive_courses.confirm_unpublish') : __('supervisor.interactive_courses.confirm_publish')),
+                                    confirmText: @js($course->is_published ? __('supervisor.interactive_courses.unpublish') : __('supervisor.interactive_courses.publish')),
+                                    theme: '{{ $course->is_published ? 'orange' : 'green' }}',
+                                    icon: '{{ $course->is_published ? 'ri-eye-off-line' : 'ri-eye-line' }}',
+                                    onConfirm: () => document.getElementById('toggle-published-form').submit()
+                                })"
+                                class="flex items-center justify-center gap-1.5 px-2 py-2.5 text-xs font-medium rounded-lg transition-colors cursor-pointer
+                                    {{ $course->is_published ? 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200' : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200' }}">
+                                <i class="{{ $course->is_published ? 'ri-eye-off-line' : 'ri-eye-line' }}"></i>
+                                {{ $course->is_published ? __('supervisor.interactive_courses.unpublish') : __('supervisor.interactive_courses.publish') }}
+                            </button>
+
+                            {{-- Change Status --}}
+                            @php
+                                $nextStatus = match($statusValue) {
+                                    'published' => ['value' => 'active', 'label' => __('supervisor.interactive_courses.activate'), 'icon' => 'ri-play-circle-line', 'class' => 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'],
+                                    'active' => ['value' => 'completed', 'label' => __('supervisor.interactive_courses.mark_completed'), 'icon' => 'ri-checkbox-circle-line', 'class' => 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'],
+                                    'completed' => ['value' => 'published', 'label' => __('supervisor.interactive_courses.reopen'), 'icon' => 'ri-restart-line', 'class' => 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'],
+                                    default => ['value' => 'published', 'label' => __('supervisor.interactive_courses.publish'), 'icon' => 'ri-check-line', 'class' => 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'],
+                                };
+                            @endphp
+                            <button type="button"
+                                onclick="window.confirmAction({
+                                    title: @js($nextStatus['label']),
+                                    message: @js(__('supervisor.interactive_courses.confirm_change_status')),
+                                    confirmText: @js($nextStatus['label']),
+                                    icon: '{{ $nextStatus['icon'] }}',
+                                    onConfirm: () => document.getElementById('change-status-{{ $nextStatus['value'] }}-form').submit()
+                                })"
+                                class="flex items-center justify-center gap-1.5 px-2 py-2.5 text-xs font-medium rounded-lg transition-colors cursor-pointer {{ $nextStatus['class'] }}">
+                                <i class="{{ $nextStatus['icon'] }}"></i>
+                                {{ $nextStatus['label'] }}
+                            </button>
 
                             {{-- Delete (admin only) --}}
                             @if($isAdmin)
@@ -285,8 +368,7 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
                         <h3 class="text-sm font-bold text-gray-900 mb-4">{{ __('supervisor.interactive_courses.edit_details') }}</h3>
                         <form method="POST" action="{{ route('manage.interactive-courses.update', ['subdomain' => $subdomain, 'course' => $course->id]) }}">
-                            @csrf
-                            @method('PUT')
+                            @csrf @method('PUT')
                             <div class="space-y-4">
 
                                 {{-- Basic Info --}}
@@ -302,6 +384,24 @@
                                             <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.description') }}</label>
                                             <textarea name="description" rows="2" maxlength="2000"
                                                       class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">{{ old('description', $course->description) }}</textarea>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.subject') }}</label>
+                                            <select name="subject_id" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                                <option value="">--</option>
+                                                @foreach($subjects as $subject)
+                                                    <option value="{{ $subject->id }}" {{ old('subject_id', $course->subject_id) == $subject->id ? 'selected' : '' }}>{{ $subject->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.grade_level') }}</label>
+                                            <select name="grade_level_id" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                                <option value="">--</option>
+                                                @foreach($gradeLevels as $level)
+                                                    <option value="{{ $level->id }}" {{ old('grade_level_id', $course->grade_level_id) == $level->id ? 'selected' : '' }}>{{ $level->name }}</option>
+                                                @endforeach
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -340,6 +440,23 @@
                                     </div>
                                 </div>
 
+                                {{-- Dates --}}
+                                <div class="border-t border-gray-100 pt-4">
+                                    <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('supervisor.interactive_courses.dates_schedule') }}</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.start_date') }}</label>
+                                            <input type="date" name="start_date" value="{{ old('start_date', $course->start_date?->format('Y-m-d')) }}"
+                                                   class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.enrollment_deadline') }}</label>
+                                            <input type="date" name="enrollment_deadline" value="{{ old('enrollment_deadline', $course->enrollment_deadline?->format('Y-m-d')) }}"
+                                                   class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {{-- Financial --}}
                                 <div class="border-t border-gray-100 pt-4">
                                     <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('supervisor.interactive_courses.financial_settings') }}</h4>
@@ -348,6 +465,12 @@
                                             <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.student_price') }}</label>
                                             <input type="number" name="student_price" value="{{ old('student_price', (int) $course->student_price) }}" min="0" step="0.01"
                                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.sale_price') }}</label>
+                                            <input type="number" name="sale_price" value="{{ old('sale_price', $course->sale_price ? (int) $course->sale_price : '') }}" min="0" step="0.01"
+                                                   class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                                   placeholder="{{ __('supervisor.interactive_courses.sale_price_placeholder') }}">
                                         </div>
                                         <div>
                                             <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.teacher_payment') }}</label>
@@ -365,10 +488,18 @@
                                     </div>
                                 </div>
 
-                                {{-- Recording --}}
+                                {{-- Recording & Certificate --}}
                                 <div class="border-t border-gray-100 pt-4">
                                     <h4 class="text-xs font-bold text-blue-700 mb-3">{{ __('supervisor.interactive_courses.recording_settings') }}</h4>
                                     <div class="space-y-2">
+                                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                                            <input type="hidden" name="certificate_enabled" value="0">
+                                            <input type="checkbox" name="certificate_enabled" value="1"
+                                                   {{ old('certificate_enabled', $course->certificate_enabled) ? 'checked' : '' }}
+                                                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                                            <span class="text-sm text-gray-700">{{ __('supervisor.interactive_courses.certificate_enabled') }}</span>
+                                        </label>
+                                        <br>
                                         <label class="inline-flex items-center gap-2 cursor-pointer">
                                             <input type="hidden" name="recording_enabled" value="0">
                                             <input type="checkbox" name="recording_enabled" value="1"
@@ -419,60 +550,3 @@
 </div>
 
 </x-layouts.supervisor>
-
-{{-- Change Teacher Modal --}}
-@if($canManage && $academicTeachers->isNotEmpty())
-@push('modals')
-<div x-data="{ open: false }"
-     @open-modal-change-teacher.window="open = true"
-     @keydown.escape.window="open && (open = false)"
-     x-show="open" x-cloak
-     class="fixed inset-0 z-[9998]">
-    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-         @click="open = false" class="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm"></div>
-    <div class="fixed inset-0 z-[9999] flex items-end md:items-center justify-center p-0 md:p-4" @click="open = false">
-        <form method="POST" action="{{ route('manage.interactive-courses.change-teacher', ['subdomain' => $subdomain, 'course' => $course->id]) }}"
-              x-show="open" @click.stop
-              x-transition:enter="transition ease-out duration-200"
-              x-transition:enter-start="opacity-0 translate-y-full md:translate-y-0 md:scale-95"
-              x-transition:enter-end="opacity-100 translate-y-0 md:scale-100"
-              x-transition:leave="transition ease-in duration-150"
-              x-transition:leave-start="opacity-100 translate-y-0 md:scale-100"
-              x-transition:leave-end="opacity-0 translate-y-full md:translate-y-0 md:scale-95"
-              class="relative bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-xl overflow-hidden">
-            @csrf
-            <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-100">
-                <div class="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-gray-300"></div>
-                <h3 class="text-lg font-bold text-gray-900 mt-2 md:mt-0">{{ $course->assigned_teacher_id ? __('supervisor.interactive_courses.change_teacher') : __('supervisor.interactive_courses.assign_teacher') }}</h3>
-                <button type="button" @click="open = false" class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
-                    <i class="ri-close-line text-xl"></i>
-                </button>
-            </div>
-            <div class="p-4 md:p-6 space-y-4">
-                <p class="text-sm text-gray-600">{{ __('supervisor.interactive_courses.select_teacher') }}</p>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.teacher') }}</label>
-                    <select name="assigned_teacher_id" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" required>
-                        @foreach($academicTeachers as $t)
-                            @php $profileId = $t->academicTeacherProfile?->id; @endphp
-                            <option value="{{ $profileId }}" {{ $course->assigned_teacher_id == $profileId ? 'selected' : '' }}>{{ $t->first_name }} {{ $t->last_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-            <div class="p-4 md:p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-                <button type="button" @click="open = false"
-                        class="inline-flex items-center px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 text-sm font-medium rounded-lg transition-colors cursor-pointer">
-                    {{ __('common.actions.cancel') }}
-                </button>
-                <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer">
-                    {{ $course->assigned_teacher_id ? __('supervisor.interactive_courses.change_teacher') : __('supervisor.interactive_courses.assign_teacher') }}
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-@endpush
-@endif

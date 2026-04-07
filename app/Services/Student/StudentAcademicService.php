@@ -40,13 +40,13 @@ class StudentAcademicService
                 ])
                 // ALSO include CANCELLED subscriptions that haven't reached end date yet
                 // (paid period should remain accessible until ends_at)
-                ->orWhere(function ($q) {
-                    $q->where('status', SessionSubscriptionStatus::CANCELLED->value)
-                        ->where(function ($dateQuery) {
-                            $dateQuery->where('ends_at', '>', now())
-                                ->orWhereNull('ends_at'); // Include if no end date set yet
-                        });
-                });
+                    ->orWhere(function ($q) {
+                        $q->where('status', SessionSubscriptionStatus::CANCELLED->value)
+                            ->where(function ($dateQuery) {
+                                $dateQuery->where('ends_at', '>', now())
+                                    ->orWhereNull('ends_at'); // Include if no end date set yet
+                            });
+                    });
             })
             ->with(['academicTeacher', 'academicPackage'])
             ->get();
@@ -169,7 +169,12 @@ class StudentAcademicService
         $allSessions = $subscription->sessions()->get();
         $totalSessions = $allSessions->count();
         $completedSessions = $allSessions->where('status', SessionStatus::COMPLETED)->count();
-        $missedSessions = $allSessions->where('status', SessionStatus::ABSENT)->count();
+        // Count missed sessions from attendance records (StudentSessionReport) instead of session status
+        $sessionIds = $allSessions->pluck('id');
+        $missedSessions = AcademicSessionReport::whereIn('session_id', $sessionIds)
+            ->where('student_id', $subscription->student_id)
+            ->where('attendance_status', \App\Enums\AttendanceStatus::ABSENT->value)
+            ->count();
         $attendanceRate = $subscription->attendance_rate;
 
         // Get homework/assignment data from session reports
@@ -187,11 +192,16 @@ class StudentAcademicService
         $lastSession = $allSessions->where('status', SessionStatus::COMPLETED)->sortByDesc('scheduled_at')->first();
         $nextSession = $allSessions->whereIn('status', SessionStatus::activeStatuses())->sortBy('scheduled_at')->first();
 
-        // Calculate consecutive missed sessions
+        // Calculate consecutive missed sessions from attendance records
         $consecutiveMissed = 0;
-        $sortedSessions = $allSessions->sortByDesc('scheduled_at');
+        $sortedSessions = $allSessions->where('status', SessionStatus::COMPLETED)->sortByDesc('scheduled_at');
+        $absentSessionIds = AcademicSessionReport::whereIn('session_id', $sessionIds)
+            ->where('student_id', $subscription->student_id)
+            ->where('attendance_status', \App\Enums\AttendanceStatus::ABSENT->value)
+            ->pluck('session_id')
+            ->toArray();
         foreach ($sortedSessions as $session) {
-            if ($session->status === SessionStatus::ABSENT) {
+            if (in_array($session->id, $absentSessionIds)) {
                 $consecutiveMissed++;
             } else {
                 break;
@@ -248,13 +258,13 @@ class StudentAcademicService
                     SessionSubscriptionStatus::PENDING->value,
                 ])
                 // ALSO include CANCELLED subscriptions that haven't reached end date yet
-                ->orWhere(function ($q) {
-                    $q->where('status', SessionSubscriptionStatus::CANCELLED->value)
-                        ->where(function ($dateQuery) {
-                            $dateQuery->where('ends_at', '>', now())
-                                ->orWhereNull('ends_at');
-                        });
-                });
+                    ->orWhere(function ($q) {
+                        $q->where('status', SessionSubscriptionStatus::CANCELLED->value)
+                            ->where(function ($dateQuery) {
+                                $dateQuery->where('ends_at', '>', now())
+                                    ->orWhereNull('ends_at');
+                            });
+                    });
             })
             ->with(['academicTeacher'])
             ->get();

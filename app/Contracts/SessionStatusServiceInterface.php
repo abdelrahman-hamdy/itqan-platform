@@ -63,7 +63,9 @@ interface SessionStatusServiceInterface
     /**
      * Transition session to ABSENT (individual sessions only).
      *
-     * @return bool True if transition successful, false otherwise
+     * @deprecated ABSENT status has been removed. Always returns false. Use transitionToCompleted() instead.
+     *
+     * @return bool Always returns false
      */
     public function transitionToAbsent(BaseSession $session): bool;
 
@@ -77,7 +79,9 @@ interface SessionStatusServiceInterface
     /**
      * Check if session should transition to ABSENT.
      *
-     * @return bool True if session should be marked absent
+     * @deprecated ABSENT status has been removed. Always returns false.
+     *
+     * @return bool Always returns false
      */
     public function shouldTransitionToAbsent(BaseSession $session): bool;
 

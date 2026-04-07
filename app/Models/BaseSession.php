@@ -182,6 +182,15 @@ abstract class BaseSession extends Model implements MeetingCapable
         'rescheduled_from',
         'rescheduled_to',
 
+        // Counting flags
+        'counts_for_teacher',
+        'counts_for_teacher_set_by',
+        'counts_for_teacher_set_at',
+
+        // Teacher attendance
+        'teacher_attendance_status',
+        'teacher_attendance_calculated_at',
+
         // Tracking fields
         'created_by',
         'updated_by',
@@ -229,6 +238,9 @@ abstract class BaseSession extends Model implements MeetingCapable
         'student_rating' => 'integer',
         'meeting_data' => 'array',
         'meeting_auto_generated' => 'boolean',
+        'counts_for_teacher' => 'boolean',
+        'counts_for_teacher_set_at' => 'datetime',
+        'teacher_attendance_calculated_at' => 'datetime',
     ];
 
     // ========================================

@@ -91,9 +91,6 @@ use App\Enums\SessionStatus;
                 @elseif($statusValue === SessionStatus::UNSCHEDULED->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-amber-400 rounded-full mb-0.5 md:mb-1 animate-pulse"></div>
                     <span class="text-[10px] md:text-xs text-amber-600 font-bold whitespace-nowrap">{{ __('components.sessions.status.unscheduled') }}</span>
-                @elseif($statusValue === SessionStatus::ABSENT->value)
-                    <div class="w-3 h-3 md:w-4 md:h-4 bg-red-400 rounded-full mb-0.5 md:mb-1"></div>
-                    <span class="text-[10px] md:text-xs text-red-700 font-bold">{{ __('components.sessions.status.absent') }}</span>
                 @else
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-gray-300 rounded-full mb-0.5 md:mb-1"></div>
                     <span class="text-[10px] md:text-xs text-gray-500 font-bold">{{ $statusValue }}</span>

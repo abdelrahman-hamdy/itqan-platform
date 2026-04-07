@@ -64,6 +64,10 @@ abstract class BaseSessionAttendance extends Model
         'meeting_events',
         'participation_score',
         'notes',
+        'counts_for_subscription',
+        'counts_for_subscription_set_by',
+        'counts_for_subscription_set_at',
+        'subscription_counted_at',
     ];
 
     /**
@@ -82,6 +86,9 @@ abstract class BaseSessionAttendance extends Model
         'meeting_events' => 'array',
         'participation_score' => 'decimal:1',
         'auto_duration_minutes' => 'integer',
+        'counts_for_subscription' => 'boolean',
+        'counts_for_subscription_set_at' => 'datetime',
+        'subscription_counted_at' => 'datetime',
     ];
 
     /**

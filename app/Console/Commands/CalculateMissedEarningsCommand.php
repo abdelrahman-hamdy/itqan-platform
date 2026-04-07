@@ -122,7 +122,7 @@ class CalculateMissedEarningsCommand extends Command
     {
         $cutoffDate = now()->subDays($days);
 
-        QuranSession::whereIn('status', [SessionStatus::COMPLETED, SessionStatus::ABSENT])
+        QuranSession::where('status', SessionStatus::COMPLETED)
             ->where('ended_at', '>=', $cutoffDate)
             ->whereNotNull('ended_at')
             ->chunkById(100, function ($sessions) use ($isDryRun, $isVerbose, &$results) {
@@ -172,7 +172,7 @@ class CalculateMissedEarningsCommand extends Command
     {
         $cutoffDate = now()->subDays($days);
 
-        AcademicSession::whereIn('status', [SessionStatus::COMPLETED, SessionStatus::ABSENT])
+        AcademicSession::where('status', SessionStatus::COMPLETED)
             ->where('ended_at', '>=', $cutoffDate)
             ->whereNotNull('ended_at')
             ->chunkById(100, function ($sessions) use ($isDryRun, $isVerbose, &$results) {
@@ -222,7 +222,7 @@ class CalculateMissedEarningsCommand extends Command
     {
         $cutoffDate = now()->subDays($days);
 
-        InteractiveCourseSession::whereIn('status', [SessionStatus::COMPLETED, SessionStatus::ABSENT])
+        InteractiveCourseSession::where('status', SessionStatus::COMPLETED)
             ->where('ended_at', '>=', $cutoffDate)
             ->whereNotNull('ended_at')
             ->chunkById(100, function ($sessions) use ($isDryRun, $isVerbose, &$results) {

@@ -62,6 +62,8 @@ class UnifiedSessionStatusService implements SessionStatusServiceInterface, Unif
 
     /**
      * {@inheritdoc}
+     *
+     * @deprecated ABSENT status has been removed. Returns false. Use transitionToCompleted() instead.
      */
     public function transitionToAbsent(BaseSession $session): bool
     {
@@ -78,6 +80,8 @@ class UnifiedSessionStatusService implements SessionStatusServiceInterface, Unif
 
     /**
      * {@inheritdoc}
+     *
+     * @deprecated ABSENT status has been removed. Always returns false.
      */
     public function shouldTransitionToAbsent(BaseSession $session): bool
     {

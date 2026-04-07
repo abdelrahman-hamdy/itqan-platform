@@ -51,19 +51,8 @@ class QuranSessionObserver
             $this->handleCancellation($quranSession);
         }
 
-        // Handle session forgiveness (admin pardons absence)
-        if ($quranSession->wasChanged('status') && $quranSession->status === SessionStatus::FORGIVEN) {
-            $this->handleForgiveness($quranSession);
-        }
-
-        // Handle session rescheduled from ABSENT back to SCHEDULED
-        if ($quranSession->wasChanged('status') && $quranSession->status === SessionStatus::SCHEDULED
-            && $quranSession->getOriginal('status') === SessionStatus::ABSENT) {
-            $this->reverseSessionSideEffects($quranSession, 'reschedule_from_absent');
-        }
-
-        // Update circle session counts and progress when session is completed or absent
-        if ($quranSession->wasChanged('status') && in_array($quranSession->status, [SessionStatus::COMPLETED, SessionStatus::ABSENT])) {
+        // Update circle session counts and progress when session is completed
+        if ($quranSession->wasChanged('status') && $quranSession->status === SessionStatus::COMPLETED) {
             if ($quranSession->session_type === 'individual' && $quranSession->individualCircle) {
                 $quranSession->individualCircle->updateSessionCounts();
                 $quranSession->individualCircle->updateProgress();
@@ -86,15 +75,7 @@ class QuranSessionObserver
     }
 
     /**
-     * Handle session forgiveness side-effects (admin pardons absence)
-     */
-    private function handleForgiveness(QuranSession $session): void
-    {
-        $this->reverseSessionSideEffects($session, 'forgiveness');
-    }
-
-    /**
-     * Shared logic for reversing session side-effects (cancellation or forgiveness).
+     * Shared logic for reversing session side-effects (cancellation).
      */
     private function reverseSessionSideEffects(QuranSession $session, string $action): void
     {
@@ -229,7 +210,7 @@ class QuranSessionObserver
         }
 
         $count = QuranSession::where('quran_subscription_id', $subscription->id)
-            ->whereNotIn('status', [SessionStatus::CANCELLED, SessionStatus::FORGIVEN])
+            ->whereNotIn('status', [SessionStatus::CANCELLED])
             ->count();
 
         $subscription->updateQuietly(['total_sessions_scheduled' => $count]);

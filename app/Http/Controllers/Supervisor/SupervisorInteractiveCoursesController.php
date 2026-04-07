@@ -117,8 +117,17 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
             ->latest('issued_at')
             ->get();
 
+        $subjects = collect();
+        $gradeLevels = collect();
+        if ($canManage) {
+            $academyId = $this->getAcademyId();
+            $subjects = AcademicSubject::where('academy_id', $academyId)->orderBy('name')->get();
+            $gradeLevels = AcademicGradeLevel::where('academy_id', $academyId)->orderBy('name')->get();
+        }
+
         return view('supervisor.interactive-courses.show', compact(
-            'course', 'teacher', 'isAdmin', 'canManage', 'availableStudents', 'academicTeachers', 'certificates'
+            'course', 'teacher', 'isAdmin', 'canManage', 'availableStudents',
+            'academicTeachers', 'certificates', 'subjects', 'gradeLevels'
         ));
     }
 
@@ -166,6 +175,7 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
             'max_students' => 'required|integer|min:1|max:50',
             'difficulty_level' => 'nullable|string',
             'student_price' => 'required|numeric|min:0',
+            'sale_price' => 'nullable|numeric|min:0',
             'teacher_payment' => 'nullable|numeric|min:0',
             'payment_type' => 'nullable|string|in:fixed_amount,per_student,per_session',
             'start_date' => 'required|date',
@@ -207,19 +217,26 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:2000',
+            'subject_id' => 'nullable|exists:academic_subjects,id',
+            'grade_level_id' => 'nullable|exists:academic_grade_levels,id',
             'max_students' => 'required|integer|min:1|max:50',
             'total_sessions' => 'required|integer|min:1|max:200',
             'session_duration_minutes' => 'required|integer|in:15,30,45,60,90',
             'difficulty_level' => 'nullable|string',
             'student_price' => 'required|numeric|min:0',
+            'sale_price' => 'nullable|numeric|min:0',
             'teacher_payment' => 'nullable|numeric|min:0',
             'payment_type' => 'nullable|string|in:fixed_amount,per_student,per_session',
+            'start_date' => 'nullable|date',
+            'enrollment_deadline' => 'nullable|date',
+            'certificate_enabled' => 'required|in:0,1',
             'recording_enabled' => 'required|in:0,1',
             'show_recording_to_teacher' => 'required|in:0,1',
             'show_recording_to_student' => 'required|in:0,1',
             'supervisor_notes' => 'nullable|string|max:2000',
         ]);
 
+        $validated['certificate_enabled'] = (bool) $validated['certificate_enabled'];
         $validated['recording_enabled'] = (bool) $validated['recording_enabled'];
         $validated['show_recording_to_teacher'] = (bool) $validated['show_recording_to_teacher'];
         $validated['show_recording_to_student'] = (bool) $validated['show_recording_to_student'];
@@ -250,6 +267,35 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
         $course->update(['assigned_teacher_id' => $request->assigned_teacher_id]);
 
         return redirect()->back()->with('success', __('supervisor.interactive_courses.teacher_changed'));
+    }
+
+    public function togglePublished($subdomain, $courseId): RedirectResponse
+    {
+        if (! $this->canManageInteractiveCourses()) {
+            abort(403);
+        }
+
+        $course = $this->findCourseInScope($courseId);
+        $course->update(['is_published' => ! $course->is_published]);
+
+        return redirect()->back()->with('success', __('supervisor.interactive_courses.published_updated'));
+    }
+
+    public function changeStatus(Request $request, $subdomain, $courseId): RedirectResponse
+    {
+        if (! $this->canManageInteractiveCourses()) {
+            abort(403);
+        }
+
+        $course = $this->findCourseInScope($courseId);
+
+        $request->validate([
+            'status' => 'required|in:'.implode(',', InteractiveCourseStatus::values()),
+        ]);
+
+        $course->update(['status' => $request->status]);
+
+        return redirect()->back()->with('success', __('supervisor.interactive_courses.status_updated'));
     }
 
     public function destroy($subdomain, $courseId): RedirectResponse

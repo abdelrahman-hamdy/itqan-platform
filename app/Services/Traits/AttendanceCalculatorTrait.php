@@ -31,14 +31,20 @@ trait AttendanceCalculatorTrait
      * @param  int  $graceMinutes  Grace period for late arrivals (default 15)
      * @return string One of: 'attended', 'late', 'left', 'absent'
      */
+    /**
+     * @param  float|null  $minimumPresencePercent  Min % to not be LEFT (default from config or 50%)
+     */
     protected function calculateAttendanceStatus(
         ?Carbon $firstJoinTime,
         Carbon $sessionStartTime,
         int $sessionDurationMinutes,
         int $actualAttendanceMinutes,
-        ?int $graceMinutes = null
+        ?int $graceMinutes = null,
+        ?float $minimumPresencePercent = null,
     ): string {
         $graceMinutes = $graceMinutes ?? config('business.attendance.grace_period_minutes', 15);
+        $minimumPresencePercent = $minimumPresencePercent ?? config('business.attendance.minimum_presence_percent', 50);
+
         // If never joined, definitely absent
         if (! $firstJoinTime) {
             return AttendanceStatus::ABSENT->value;
@@ -49,25 +55,58 @@ trait AttendanceCalculatorTrait
             ? ($actualAttendanceMinutes / $sessionDurationMinutes) * 100
             : 0;
 
-        // Get "left early" threshold from config (default 50%)
-        $leftEarlyThreshold = config('business.attendance.minimum_presence_percent', 50);
-
         // Stayed less than minimum threshold - left early (regardless of join time)
-        if ($attendancePercentage < $leftEarlyThreshold) {
+        if ($attendancePercentage < $minimumPresencePercent) {
             return AttendanceStatus::LEFT->value;
         }
 
-        // Stayed >= 50% - check if late
+        // Stayed >= minimum% - check if late
         $lateThreshold = $sessionStartTime->copy()->addMinutes($graceMinutes);
         $wasLate = $firstJoinTime->isAfter($lateThreshold);
 
-        // Stayed >= 50% and joined after tolerance - late
+        // Stayed >= minimum% and joined after tolerance - late
         if ($wasLate) {
             return AttendanceStatus::LATE->value;
         }
 
-        // Stayed >= 50% and joined on time - attended
+        // Stayed >= minimum% and joined on time - attended
         return AttendanceStatus::ATTENDED->value;
+    }
+
+    /**
+     * Calculate teacher attendance status with teacher-specific thresholds.
+     *
+     * Teacher attendance rules (different from students):
+     * - >= fullPercent (90%) of session time → ATTENDED
+     * - >= partialPercent (50%) of session time → PARTIALLY_ATTENDED
+     * - < partialPercent (50%) of session time → ABSENT
+     *
+     * Teachers don't have a "late" concept — only duration matters.
+     */
+    protected function calculateTeacherAttendanceStatus(
+        ?Carbon $firstJoinTime,
+        int $sessionDurationMinutes,
+        int $actualAttendanceMinutes,
+        float $fullPercent = 90.0,
+        float $partialPercent = 50.0,
+    ): string {
+        if (! $firstJoinTime) {
+            return AttendanceStatus::ABSENT->value;
+        }
+
+        $attendancePercentage = $sessionDurationMinutes > 0
+            ? ($actualAttendanceMinutes / $sessionDurationMinutes) * 100
+            : 0;
+
+        if ($attendancePercentage >= $fullPercent) {
+            return AttendanceStatus::ATTENDED->value;
+        }
+
+        if ($attendancePercentage >= $partialPercent) {
+            return AttendanceStatus::PARTIALLY_ATTENDED->value;
+        }
+
+        return AttendanceStatus::ABSENT->value;
     }
 
     /**
@@ -78,7 +117,8 @@ trait AttendanceCalculatorTrait
         Carbon $sessionStartTime,
         int $sessionDurationMinutes,
         int $actualAttendanceMinutes,
-        ?int $graceMinutes = null
+        ?int $graceMinutes = null,
+        ?float $minimumPresencePercent = null,
     ): AttendanceStatus {
         $graceMinutes = $graceMinutes ?? config('business.attendance.grace_period_minutes', 15);
         $status = $this->calculateAttendanceStatus(
@@ -86,7 +126,8 @@ trait AttendanceCalculatorTrait
             $sessionStartTime,
             $sessionDurationMinutes,
             $actualAttendanceMinutes,
-            $graceMinutes
+            $graceMinutes,
+            $minimumPresencePercent,
         );
 
         return AttendanceStatus::from($status);

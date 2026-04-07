@@ -64,11 +64,6 @@
                 'icon' => 'ri-time-line',
                 'label' => __('components.sessions.status.unscheduled')
             ],
-            SessionStatus::ABSENT->value, SessionStatus::ABSENT => [
-                'classes' => 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 border border-red-300',
-                'icon' => 'ri-user-unfollow-line',
-                'label' => __('components.sessions.status.absent')
-            ],
             default => [
                 'classes' => 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-300',
                 'icon' => 'ri-question-line',

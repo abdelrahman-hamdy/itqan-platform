@@ -28,17 +28,6 @@ class AcademicSessionObserver
             $this->handleCancellation($session);
         }
 
-        // Handle session forgiveness (admin pardons absence)
-        if ($session->wasChanged('status') && $session->status === SessionStatus::FORGIVEN) {
-            $this->handleForgiveness($session);
-        }
-
-        // Handle session rescheduled from ABSENT back to SCHEDULED
-        if ($session->wasChanged('status') && $session->status === SessionStatus::SCHEDULED
-            && $session->getOriginal('status') === SessionStatus::ABSENT) {
-            $this->reverseSessionSideEffects($session, 'reschedule_from_absent');
-        }
-
         // Use wasChanged() (not isDirty) in the 'updated' observer: after save, isDirty() is always false.
         // Deduplicate: send one notification if ANY homework field changed to a truthy value.
         $homeworkDescriptionSet = $session->wasChanged('homework_description') && ! empty($session->homework_description);
@@ -58,15 +47,7 @@ class AcademicSessionObserver
     }
 
     /**
-     * Handle session forgiveness side-effects (admin pardons absence)
-     */
-    private function handleForgiveness(AcademicSession $session): void
-    {
-        $this->reverseSessionSideEffects($session, 'forgiveness');
-    }
-
-    /**
-     * Shared logic for reversing session side-effects (cancellation or forgiveness).
+     * Shared logic for reversing session side-effects (cancellation).
      */
     private function reverseSessionSideEffects(AcademicSession $session, string $action): void
     {

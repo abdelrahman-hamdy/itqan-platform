@@ -17,6 +17,7 @@ return [
         'late' => 'متأخر',
         'left' => 'غادر مبكراً',
         'absent' => 'غائب',
+        'partially_attended' => 'حضور جزئي',
         'pending' => 'في الانتظار',
         'unknown' => 'غير محدد',
     ],

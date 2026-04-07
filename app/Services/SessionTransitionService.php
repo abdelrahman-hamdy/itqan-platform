@@ -25,9 +25,10 @@ use Illuminate\Support\Facades\Log;
  * - READY -> ONGOING
  * - ONGOING/READY -> COMPLETED
  * - SCHEDULED/READY -> CANCELLED
- * - READY/ONGOING -> ABSENT (individual sessions only)
- * - ABSENT -> FORGIVEN (admin action)
- * - ABSENT -> SCHEDULED (reschedule from absent)
+ *
+ * Sessions always auto-complete to COMPLETED status. Attendance is tracked
+ * separately per user. Financial impact is controlled by counting flags
+ * (counts_for_teacher, counts_for_subscription), not by session status.
  *
  * Each transition includes validation, side effects (meeting creation, notifications),
  * and proper error handling.
@@ -431,137 +432,52 @@ class SessionTransitionService
     }
 
     /**
-     * Transition session to ABSENT (individual sessions only)
-     * Called when student doesn't join within grace period
+     * Transition session to ABSENT — DEPRECATED.
+     *
+     * The ABSENT session status has been removed. Sessions now auto-complete
+     * to COMPLETED status. Attendance is tracked separately per user via
+     * MeetingAttendance/StudentSessionReport. Financial impact is controlled
+     * by counting flags (counts_for_teacher, counts_for_subscription).
+     *
+     * @deprecated Use transitionToCompleted() instead — all sessions auto-complete
      */
     public function transitionToAbsent(BaseSession $session): bool
     {
-        return DB::transaction(function () use ($session) {
-            // Lock the session row to prevent concurrent updates
-            $lockedSession = $session::lockForUpdate()->find($session->id);
+        Log::warning('transitionToAbsent() called but ABSENT status has been removed. Use transitionToCompleted() instead.', [
+            'session_id' => $session->id,
+            'session_type' => $this->settingsService->getSessionType($session),
+        ]);
 
-            if (! $lockedSession) {
-                Log::warning('Cannot transition to ABSENT: session not found', [
-                    'session_id' => $session->id,
-                ]);
-
-                return false;
-            }
-
-            if (! $this->settingsService->isIndividualSession($lockedSession)) {
-                Log::warning('Cannot transition to ABSENT: not an individual session', [
-                    'session_id' => $lockedSession->id,
-                    'session_type' => $this->settingsService->getSessionType($lockedSession),
-                ]);
-
-                return false;
-            }
-
-            if (! in_array($lockedSession->status, [SessionStatus::READY, SessionStatus::ONGOING])) {
-                Log::warning('Cannot transition to ABSENT: invalid current status', [
-                    'session_id' => $lockedSession->id,
-                    'session_type' => $this->settingsService->getSessionType($lockedSession),
-                    'current_status' => $lockedSession->status->value,
-                ]);
-
-                return false;
-            }
-
-            $lockedSession->update([
-                'status' => SessionStatus::ABSENT,
-                'ended_at' => now(),
-                'attendance_status' => AttendanceStatus::ABSENT->value,
-            ]);
-
-            // Refresh the original session instance
-            $session->refresh();
-
-            // Mark as absent in meeting attendance
-            $this->recordAbsentStatus($session);
-
-            // Absent sessions count towards subscription (by design)
-            if (method_exists($session, 'updateSubscriptionUsage')) {
-                $session->updateSubscriptionUsage();
-            }
-
-            // Send absent notifications
-            $this->notificationService->sendAbsentNotifications($session);
-
-            Log::info('Session transitioned to ABSENT', [
-                'session_id' => $session->id,
-                'session_type' => $this->settingsService->getSessionType($session),
-                'student_id' => $session->student_id ?? null,
-            ]);
-
-            return true;
-        });
+        return false;
     }
 
     /**
-     * Transition session from ABSENT to FORGIVEN (admin action).
-     * The status update triggers observers which handle subscription reversal
-     * and circle/lesson count updates (same pattern as transitionToCancelled).
-     * This method additionally deletes the teacher earning record.
+     * Transition session from ABSENT to FORGIVEN — DEPRECATED.
+     *
+     * The ABSENT and FORGIVEN session statuses have been removed. Attendance is
+     * now tracked separately per user. Financial impact is controlled by counting
+     * flags (counts_for_teacher, counts_for_subscription), not by session status.
+     *
+     * @deprecated ABSENT/FORGIVEN statuses no longer exist
      */
     public function transitionToForgiven(BaseSession $session, string $reason, int $forgivenBy): bool
     {
-        return DB::transaction(function () use ($session, $reason, $forgivenBy) {
-            $lockedSession = $session::lockForUpdate()->find($session->id);
+        Log::warning('transitionToForgiven() called but FORGIVEN status has been removed. Attendance is tracked separately.', [
+            'session_id' => $session->id,
+            'session_type' => $this->settingsService->getSessionType($session),
+            'forgiven_by' => $forgivenBy,
+        ]);
 
-            if (! $lockedSession) {
-                Log::warning('Cannot transition to FORGIVEN: session not found', [
-                    'session_id' => $session->id,
-                ]);
-
-                return false;
-            }
-
-            if (! $this->settingsService->isIndividualSession($lockedSession)) {
-                Log::warning('Cannot transition to FORGIVEN: not an individual session', [
-                    'session_id' => $lockedSession->id,
-                ]);
-
-                return false;
-            }
-
-            if ($lockedSession->status !== SessionStatus::ABSENT) {
-                Log::warning('Cannot transition to FORGIVEN: not in ABSENT status', [
-                    'session_id' => $lockedSession->id,
-                    'current_status' => $lockedSession->status->value ?? $lockedSession->status,
-                ]);
-
-                return false;
-            }
-
-            // Status change triggers observer (handleForgiveness) for subscription reversal
-            $lockedSession->update([
-                'status' => SessionStatus::FORGIVEN,
-                'forgiven_at' => now(),
-                'forgiven_by' => $forgivenBy,
-                'forgiven_reason' => $reason,
-            ]);
-
-            $this->deleteTeacherEarning($lockedSession, 'forgiveness');
-
-            Log::info('Session transitioned to FORGIVEN', [
-                'session_id' => $lockedSession->id,
-                'session_type' => $this->settingsService->getSessionType($lockedSession),
-                'forgiven_by' => $forgivenBy,
-            ]);
-
-            return true;
-        });
+        return false;
     }
 
     /**
-     * Transition session from ABSENT back to SCHEDULED (reschedule).
+     * Transition session from ABSENT back to SCHEDULED — DEPRECATED.
      *
-     * Reverses all side effects of the ABSENT transition:
-     * - Resets status to SCHEDULED with new scheduled_at
-     * - Subscription reversal handled by observer (same as forgiveness/cancellation)
-     * - Deletes teacher earnings
-     * - Clears meeting data (will be regenerated by cron when READY)
-     * - Cleans up ABSENT meeting attendance records
+     * The ABSENT session status has been removed. Sessions now auto-complete
+     * to COMPLETED status. This method is kept as a stub for backward compatibility.
+     *
+     * @deprecated ABSENT status no longer exists
      */
     public function transitionToScheduledFromAbsent(
         BaseSession $session,
@@ -569,62 +485,12 @@ class SessionTransitionService
         ?string $reason = null,
         ?int $rescheduledBy = null
     ): bool {
-        return DB::transaction(function () use ($session, $newScheduledAt, $reason, $rescheduledBy) {
-            $lockedSession = $session::lockForUpdate()->find($session->id);
+        Log::warning('transitionToScheduledFromAbsent() called but ABSENT status has been removed.', [
+            'session_id' => $session->id,
+            'session_type' => $this->settingsService->getSessionType($session),
+        ]);
 
-            if (! $lockedSession) {
-                Log::warning('Cannot reschedule from ABSENT: session not found', [
-                    'session_id' => $session->id,
-                ]);
-
-                return false;
-            }
-
-            if ($lockedSession->status !== SessionStatus::ABSENT) {
-                Log::warning('Cannot reschedule from ABSENT: not in ABSENT status', [
-                    'session_id' => $lockedSession->id,
-                    'current_status' => $lockedSession->status->value ?? $lockedSession->status,
-                ]);
-
-                return false;
-            }
-
-            $oldScheduledAt = $lockedSession->scheduled_at;
-
-            // Status change triggers observer for subscription reversal and trial request sync
-            $lockedSession->update([
-                'status' => SessionStatus::SCHEDULED,
-                'scheduled_at' => $newScheduledAt,
-                'rescheduled_from' => $oldScheduledAt,
-                'rescheduled_to' => $newScheduledAt,
-                'reschedule_reason' => $reason,
-                'rescheduled_by' => $rescheduledBy,
-                'rescheduled_at' => now(),
-                'ended_at' => null,
-                'started_at' => null,
-                'meeting_link' => null,
-                'meeting_room_name' => null,
-                'meeting_id' => null,
-                'meeting_expires_at' => null,
-            ]);
-
-            $this->deleteTeacherEarning($lockedSession, 'absent reschedule');
-
-            // Clean up meeting attendance records created during the ABSENT transition
-            $lockedSession->meetingAttendances()
-                ->where('attendance_status', AttendanceStatus::ABSENT->value)
-                ->delete();
-
-            Log::info('Session rescheduled from ABSENT to SCHEDULED', [
-                'session_id' => $lockedSession->id,
-                'session_type' => $this->settingsService->getSessionType($lockedSession),
-                'old_scheduled_at' => $oldScheduledAt?->toIso8601String(),
-                'new_scheduled_at' => $newScheduledAt->toIso8601String(),
-                'rescheduled_by' => $rescheduledBy,
-            ]);
-
-            return true;
-        });
+        return false;
     }
 
     /**
@@ -730,44 +596,32 @@ class SessionTransitionService
      * Handle individual session completion logic.
      * Called from FinalizeAttendanceListener after attendance is finalized so that
      * StudentSessionReport.attendance_status / MeetingAttendance.attendance_status are populated.
+     *
+     * Sessions remain in COMPLETED status regardless of attendance. Attendance is
+     * tracked separately per user via StudentSessionReport/MeetingAttendance.
+     * Financial impact is controlled by counting flags (counts_for_teacher,
+     * counts_for_subscription).
      */
     public function handleIndividualSessionCompletion(BaseSession $session): void
     {
-        // Check StudentSessionReport first (most reliable source)
+        // Session stays COMPLETED — attendance is tracked separately.
+        // Log the attendance status for auditing purposes.
         $studentReport = StudentSessionReport::where('session_id', $session->id)
             ->where('student_id', $session->student_id)
             ->first();
 
-        if ($studentReport) {
-            if ($studentReport->attendance_status === AttendanceStatus::ABSENT) {
-                $session->update(['status' => SessionStatus::ABSENT]);
-                Log::info('Individual session marked as ABSENT based on StudentSessionReport', [
-                    'session_id' => $session->id,
-                    'session_type' => $this->settingsService->getSessionType($session),
-                    'student_id' => $session->student_id,
-                    'report_status' => $studentReport->attendance_status,
-                ]);
-            }
-        } else {
-            // Fallback: Check MeetingAttendance only if no StudentSessionReport exists
-            $studentAttendance = $session->meetingAttendances()
-                ->where('user_id', $session->student_id)
-                ->where('user_type', 'student')
-                ->first();
-
-            if ($studentAttendance && $studentAttendance->attendance_status === AttendanceStatus::ABSENT) {
-                $session->update(['status' => SessionStatus::ABSENT]);
-                Log::info('Individual session marked as ABSENT based on MeetingAttendance (fallback)', [
-                    'session_id' => $session->id,
-                    'session_type' => $this->settingsService->getSessionType($session),
-                    'student_id' => $session->student_id,
-                ]);
-            }
+        if ($studentReport && $studentReport->attendance_status === AttendanceStatus::ABSENT) {
+            Log::info('Individual session completed with student marked ABSENT in attendance records', [
+                'session_id' => $session->id,
+                'session_type' => $this->settingsService->getSessionType($session),
+                'student_id' => $session->student_id,
+                'attendance_status' => $studentReport->attendance_status->value ?? $studentReport->attendance_status,
+            ]);
         }
 
         // Always count subscription usage — the trait's countsTowardsSubscription()
-        // checks session status (COMPLETED/ABSENT count, CANCELLED does not),
-        // and subscription_counted flag prevents double-counting.
+        // checks counting flags (counts_for_subscription) and subscription_counted
+        // flag prevents double-counting.
         if (method_exists($session, 'updateSubscriptionUsage')) {
             $session->updateSubscriptionUsage();
         }

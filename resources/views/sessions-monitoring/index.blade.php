@@ -219,7 +219,7 @@
                                 'bg-yellow-100 text-yellow-700' => $status === \App\Enums\SessionStatus::READY,
                                 'bg-blue-100 text-blue-700' => $status === \App\Enums\SessionStatus::SCHEDULED,
                                 'bg-gray-100 text-gray-600' => $status === \App\Enums\SessionStatus::COMPLETED,
-                                'bg-red-100 text-red-700' => $status === \App\Enums\SessionStatus::CANCELLED || $status === \App\Enums\SessionStatus::ABSENT,
+                                'bg-red-100 text-red-700' => $status === \App\Enums\SessionStatus::CANCELLED,
                             ])>
                                 {{ $status?->label() ?? '' }}
                             </span>

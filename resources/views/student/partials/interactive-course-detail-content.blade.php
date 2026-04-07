@@ -112,6 +112,18 @@
             </div>
             @endif
         </div>
+
+        {{-- Price Display --}}
+        @if($course->student_price > 0)
+        <div class="flex items-center gap-3 mt-4 md:mt-6">
+            @if($course->hasDiscount())
+                <span class="text-2xl md:text-3xl font-bold text-blue-700">{{ number_format($course->sale_price) }} {{ getCurrencySymbol() }}</span>
+                <span class="text-base md:text-lg text-gray-500 line-through">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
+            @else
+                <span class="text-2xl md:text-3xl font-bold text-blue-700">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
+            @endif
+        </div>
+        @endif
     </div>
 
     <!-- Main Content Grid -->

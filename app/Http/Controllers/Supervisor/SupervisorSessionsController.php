@@ -9,7 +9,7 @@ use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\User;
-use App\Services\SessionTransitionService;
+use App\Services\SessionCountingService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -190,38 +190,49 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     }
 
     /**
-     * Forgive absent session via AJAX (reverses subscription + deletes earnings).
+     * Toggle whether a session counts for teacher earnings.
      */
-    public function forgive(Request $request, $subdomain, string $sessionType, string $sessionId): JsonResponse
+    public function toggleCountsForTeacher(Request $request, $subdomain, string $sessionType, int $sessionId): JsonResponse
     {
-        $request->validate([
-            'forgiven_reason' => ['required', 'string', 'max:500'],
-        ]);
-
-        $session = $this->resolveSession($sessionType, $sessionId);
+        $session = $this->resolveSession($sessionType, (string) $sessionId);
 
         if (! $session) {
             return response()->json(['message' => __('supervisor.observation.session_not_found')], 404);
         }
 
-        if (! $session->status->canForgive()) {
-            return response()->json(['message' => __('sessions.actions.forgive_error')], 422);
-        }
+        $validated = $request->validate(['counts' => 'required|boolean']);
 
-        $transitionService = app(SessionTransitionService::class);
-        $success = $transitionService->transitionToForgiven(
+        app(SessionCountingService::class)->setCountsForTeacher(
             $session,
-            $request->input('forgiven_reason'),
+            $validated['counts'],
             auth()->id()
         );
 
-        if (! $success) {
-            return response()->json(['message' => __('sessions.actions.forgive_error')], 422);
+        return response()->json(['success' => true, 'counts_for_teacher' => $validated['counts']]);
+    }
+
+    /**
+     * Toggle whether a session attendance record counts for subscription.
+     */
+    public function toggleCountsForSubscription(Request $request, $subdomain, string $sessionType, int $sessionId, int $attendanceId): JsonResponse
+    {
+        $session = $this->resolveSession($sessionType, (string) $sessionId);
+
+        if (! $session) {
+            return response()->json(['message' => __('supervisor.observation.session_not_found')], 404);
         }
 
-        return response()->json([
-            'message' => __('sessions.actions.forgive_success'),
-        ]);
+        $attendance = $session->attendanceRecords()->findOrFail($attendanceId);
+
+        $validated = $request->validate(['counts' => 'required|boolean']);
+
+        app(SessionCountingService::class)->setCountsForSubscription(
+            $attendance,
+            $validated['counts'],
+            auth()->id()
+        );
+
+        return response()->json(['success' => true, 'counts_for_subscription' => $validated['counts']]);
     }
 
     // ========================================================================

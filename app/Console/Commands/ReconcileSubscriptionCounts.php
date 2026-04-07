@@ -34,10 +34,7 @@ class ReconcileSubscriptionCounts extends Command
         $errors = 0;
 
         // Process Quran sessions
-        $quranSessions = QuranSession::whereIn('status', [
-            SessionStatus::COMPLETED,
-            SessionStatus::ABSENT,
-        ])
+        $quranSessions = QuranSession::where('status', SessionStatus::COMPLETED)
             ->where('subscription_counted', false)
             ->where('ended_at', '<', $cutoff)
             ->get();
@@ -68,10 +65,7 @@ class ReconcileSubscriptionCounts extends Command
         }
 
         // Process Academic sessions
-        $academicSessions = AcademicSession::whereIn('status', [
-            SessionStatus::COMPLETED,
-            SessionStatus::ABSENT,
-        ])
+        $academicSessions = AcademicSession::where('status', SessionStatus::COMPLETED)
             ->where('subscription_counted', false)
             ->where('ended_at', '<', $cutoff)
             ->get();

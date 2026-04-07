@@ -182,7 +182,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
      */
     protected function isEligibleForEarnings(BaseSession $session): bool
     {
-        if (! in_array($session->status, [SessionStatus::COMPLETED, SessionStatus::ABSENT])) {
+        if ($session->status !== SessionStatus::COMPLETED) {
             return false;
         }
 
@@ -190,6 +190,12 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
             return false;
         }
 
+        // Use the counting flag if it has been set (auto or admin override)
+        if ($session->counts_for_teacher !== null) {
+            return (bool) $session->counts_for_teacher;
+        }
+
+        // Fallback to legacy attendance check
         if (! $this->didTeacherAttend($session)) {
             return false;
         }
@@ -202,9 +208,9 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
      */
     protected function didTeacherAttend(BaseSession $session): bool
     {
-        // ABSENT sessions: teacher was ready, student no-showed — teacher is implicitly present
-        if ($session->status === SessionStatus::ABSENT) {
-            return true;
+        // Check teacher_attendance_status if available (new system)
+        if ($session->teacher_attendance_status) {
+            return $session->teacher_attendance_status !== 'absent';
         }
 
         $teacherId = $this->getTeacherId($session);

@@ -64,7 +64,7 @@ class TrialRequestSyncService
         return match ($sessionStatus) {
             SessionStatus::SCHEDULED => TrialRequestStatus::SCHEDULED,
             SessionStatus::COMPLETED => TrialRequestStatus::COMPLETED,
-            SessionStatus::CANCELLED, SessionStatus::ABSENT => TrialRequestStatus::CANCELLED,
+            SessionStatus::CANCELLED => TrialRequestStatus::CANCELLED,
             // Don't change status for other session states
             default => null,
         };

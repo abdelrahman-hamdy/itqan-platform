@@ -65,7 +65,7 @@ trait HasSessionScheduling
      */
     public function reschedule(Carbon $newDateTime, ?string $reason = null): bool
     {
-        if ($this->isCancelled() || $this->isCompleted() || $this->status === SessionStatus::ABSENT) {
+        if ($this->isCancelled() || $this->isCompleted()) {
             return false;
         }
 

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use Exception;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Http\Controllers\Controller;
@@ -18,6 +17,7 @@ use App\Services\Attendance\AcademicReportService;
 use App\Services\Attendance\InteractiveReportService;
 use App\Services\Attendance\QuranReportService;
 use App\Services\LiveKitService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -515,7 +515,7 @@ class SessionStatusApiController extends Controller
             return true;
         }
 
-        if (in_array($session->status, [SessionStatus::ABSENT, SessionStatus::SCHEDULED])) {
+        if ($session->status === SessionStatus::SCHEDULED) {
             if ($session->scheduled_at) {
                 $preparationStart = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
                 $sessionEnd = $session->scheduled_at->copy()->addMinutes(
@@ -596,9 +596,6 @@ class SessionStatusApiController extends Controller
 
                 return [$message, 'في انتظار تحضير الاجتماع', 'bg-gray-400 cursor-not-allowed'];
 
-            case SessionStatus::ABSENT:
-                return $this->getAbsentStatusDisplay($userType, $canJoinMeeting);
-
             case SessionStatus::COMPLETED:
                 return ['تم إنهاء الجلسة بنجاح', 'الجلسة منتهية', 'bg-gray-400 cursor-not-allowed'];
 
@@ -628,34 +625,6 @@ class SessionStatusApiController extends Controller
         return ! $timeData['is_past']
             ? 'سيتم تحضير الاجتماع خلال '.$timeData['formatted']
             : 'جاري تحضير الاجتماع...';
-    }
-
-    /**
-     * Get absent status display
-     */
-    private function getAbsentStatusDisplay(string $userType, bool $canJoinMeeting): array
-    {
-        if ($canJoinMeeting) {
-            if (in_array($userType, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
-                return [
-                    'الجلسة نشطة - يمكنك بدء أو الانضمام للاجتماع',
-                    'انضم للجلسة',
-                    'bg-green-600 hover:bg-green-700',
-                ];
-            }
-
-            return [
-                'تم تسجيل غيابك ولكن يمكنك الانضمام الآن',
-                'انضم للجلسة (غائب)',
-                'bg-yellow-600 hover:bg-yellow-700',
-            ];
-        }
-
-        if (in_array($userType, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
-            return ['انتهت فترة الجلسة', 'الجلسة منتهية', 'bg-gray-400 cursor-not-allowed'];
-        }
-
-        return ['تم تسجيل غياب الطالب', 'غياب الطالب', 'bg-red-400 cursor-not-allowed'];
     }
 
     /**

@@ -134,6 +134,12 @@
                                 @error('student_price') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.sale_price') }}</label>
+                                <input type="number" name="sale_price" value="{{ old('sale_price') }}" min="0" step="0.01"
+                                       class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                       placeholder="{{ __('supervisor.interactive_courses.sale_price_placeholder') }}">
+                            </div>
+                            <div>
                                 <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.teacher_payment') }}</label>
                                 <input type="number" name="teacher_payment" value="{{ old('teacher_payment', 2000) }}" min="0" step="0.01"
                                        class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">

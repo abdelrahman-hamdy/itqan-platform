@@ -94,6 +94,14 @@ trait CountsTowardsSubscription
             return;
         }
 
+        // Group sessions: process all enrolled students individually
+        $groupEnrollments = $this->getGroupEnrollmentsForCounting();
+        if ($groupEnrollments !== null) {
+            $this->updateGroupSubscriptionUsage($groupEnrollments);
+
+            return;
+        }
+
         // Get subscription from child class's relationship
         $subscription = $this->getSubscriptionForCounting();
 
@@ -210,6 +218,78 @@ trait CountsTowardsSubscription
                 throw $e; // Re-throw to rollback the transaction
             }
         });
+    }
+
+    /**
+     * Update subscription usage for group sessions (circles with multiple students).
+     *
+     * Unlike updateSubscriptionUsage() which handles a single subscription,
+     * this method iterates over all enrolled students and decrements each
+     * student's subscription individually.
+     *
+     * Uses per-student idempotency via subscription_counted_at on attendance records
+     * instead of the session-level subscription_counted flag.
+     *
+     * @param  \Illuminate\Support\Collection  $enrollments  Collection of enrollment models with activeSubscription
+     */
+    public function updateGroupSubscriptionUsage($enrollments): void
+    {
+        if (! $this->countsTowardsSubscription()) {
+            return;
+        }
+
+        foreach ($enrollments as $enrollment) {
+            $subscription = $enrollment->activeSubscription;
+            if (! $subscription) {
+                continue;
+            }
+
+            if ($subscription->academy_id !== $this->academy_id) {
+                Log::error('Group subscription academy mismatch', [
+                    'subscription_id' => $subscription->id,
+                    'session_id' => $this->id,
+                ]);
+
+                continue;
+            }
+
+            DB::transaction(function () use ($subscription, $enrollment) {
+                // Re-fetch with lock inside transaction to prevent TOCTOU double-counting
+                $attendance = $this->attendances()
+                    ->where('student_id', $enrollment->student_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($attendance && $attendance->subscription_counted_at) {
+                    return; // Already counted by another process
+                }
+
+                $subscription->useSession();
+
+                if ($attendance) {
+                    $attendance->update(['subscription_counted_at' => now()]);
+                }
+
+                Log::info("Group session {$this->id}: subscription {$subscription->id} decremented for student {$enrollment->student_id}");
+            });
+        }
+
+        if (! $this->subscription_counted) {
+            $this->update(['subscription_counted' => true]);
+        }
+    }
+
+    /**
+     * Get group enrollments for subscription counting.
+     *
+     * Override in child classes that support group sessions (e.g., QuranSession circles).
+     * Returns null for non-group sessions, triggering the individual counting path.
+     *
+     * @return \Illuminate\Support\Collection|null
+     */
+    protected function getGroupEnrollmentsForCounting()
+    {
+        return null;
     }
 
     /**

@@ -34,6 +34,7 @@ class InteractiveCourse extends Model
         'session_duration_minutes',
         'total_sessions',
         'student_price',
+        'sale_price',
         'teacher_payment',
         'payment_type',
         'teacher_fixed_amount',
@@ -69,6 +70,7 @@ class InteractiveCourse extends Model
         'status' => InteractiveCourseStatus::class,
         'is_published' => 'boolean',
         'student_price' => 'decimal:2',
+        'sale_price' => 'decimal:2',
         'teacher_payment' => 'decimal:2',
         'teacher_fixed_amount' => 'decimal:2',
         'amount_per_student' => 'decimal:2',
@@ -86,6 +88,16 @@ class InteractiveCourse extends Model
         'avg_rating' => 'decimal:2',
         'total_reviews' => 'integer',
     ];
+
+    public function hasDiscount(): bool
+    {
+        return $this->sale_price !== null && (float) $this->sale_price > 0 && (float) $this->sale_price < (float) $this->student_price;
+    }
+
+    public function getEffectivePrice(): float
+    {
+        return $this->hasDiscount() ? (float) $this->sale_price : (float) $this->student_price;
+    }
 
     /**
      * Boot method to auto-generate course code

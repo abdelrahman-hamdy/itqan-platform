@@ -48,7 +48,7 @@ trait FormatsCalendarData
 
         // Status-based colors take precedence for certain statuses
         if ($statusEnum) {
-            if (in_array($statusEnum, [SessionStatus::CANCELLED, SessionStatus::ONGOING, SessionStatus::ABSENT])) {
+            if (in_array($statusEnum, [SessionStatus::CANCELLED, SessionStatus::ONGOING])) {
                 return $statusEnum->hexColor();
             }
         }
@@ -151,11 +151,6 @@ trait FormatsCalendarData
                 'status' => SessionStatus::CANCELLED,
                 'color' => SessionStatus::CANCELLED->hexColor(),
                 'label' => SessionStatus::CANCELLED->label(),
-            ],
-            [
-                'status' => SessionStatus::ABSENT,
-                'color' => SessionStatus::ABSENT->hexColor(),
-                'label' => SessionStatus::ABSENT->label(),
             ],
         ];
     }

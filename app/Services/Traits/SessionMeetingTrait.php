@@ -2,13 +2,13 @@
 
 namespace App\Services\Traits;
 
-use Exception;
 use App\Enums\SessionStatus;
 use App\Models\AcademySettings;
 use App\Models\BaseSession;
 use App\Models\MeetingAttendance;
 use App\Services\AcademyContextService;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -301,17 +301,17 @@ trait SessionMeetingTrait
                 $this->livekitService->endMeeting($session->meeting_room_name);
             }
 
+            // All sessions auto-complete to COMPLETED. Attendance is tracked
+            // separately per user via MeetingAttendance/StudentSessionReport.
+            $sessionStatus = SessionStatus::COMPLETED;
+
             if ($session->session_type === 'individual') {
                 $studentAttended = $this->checkStudentAttendance($session);
-                $sessionStatus = $studentAttended ? SessionStatus::COMPLETED : SessionStatus::ABSENT;
-
-                Log::info('Individual '.$this->getSessionType().' session status based on attendance', [
+                Log::info('Individual '.$this->getSessionType().' session completed, attendance tracked separately', [
                     'session_id' => $session->id,
                     'student_attended' => $studentAttended,
                     'final_status' => $sessionStatus->value,
                 ]);
-            } else {
-                $sessionStatus = SessionStatus::COMPLETED;
             }
 
             $timezone = AcademyContextService::getTimezone();

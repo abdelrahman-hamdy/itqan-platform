@@ -32,7 +32,7 @@
     );
     $pastSessions = $sessions->filter(fn($session) =>
         $session->scheduled_at <= $now &&
-        in_array($getStatusValue($session), [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value])
+        in_array($getStatusValue($session), [SessionStatus::COMPLETED->value])
     )->sortByDesc('scheduled_at'); // Sort DESC - most recent first
 @endphp
 

@@ -12,9 +12,9 @@ use Illuminate\Http\Request;
 trait HandlesAbsentReschedule
 {
     /**
-     * Handle rescheduling a session from ABSENT status via SessionTransitionService.
+     * Handle rescheduling a session from COMPLETED status via SessionTransitionService.
      *
-     * Returns a JsonResponse if the session is ABSENT (handled), or null if not ABSENT (caller should continue).
+     * Returns a JsonResponse if the session is COMPLETED (handled), or null if not COMPLETED (caller should continue).
      */
     protected function rescheduleFromAbsentIfNeeded(
         BaseSession $session,
@@ -25,7 +25,7 @@ trait HandlesAbsentReschedule
             ? $session->status
             : SessionStatus::tryFrom($session->status);
 
-        if ($status !== SessionStatus::ABSENT) {
+        if ($status !== SessionStatus::COMPLETED) {
             return null;
         }
 

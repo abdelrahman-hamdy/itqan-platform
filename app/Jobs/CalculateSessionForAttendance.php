@@ -174,12 +174,88 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
             }
         }
 
+        // Calculate teacher attendance and auto-set counting flags
+        $this->calculateTeacherAttendanceAndSetFlags($session);
+
         Log::info('CalculateSessionForAttendance: Completed', [
             'session_id' => $this->sessionId,
             'session_class' => class_basename($this->sessionClass),
             'processed' => $processed,
             'failed' => $failed,
         ]);
+    }
+
+    /**
+     * Calculate teacher attendance status and auto-set counting flags.
+     *
+     * After all student attendance is calculated, find the teacher's
+     * MeetingAttendance record, calculate their status using teacher-specific
+     * thresholds, then auto-set counts_for_teacher and counts_for_subscription.
+     */
+    private function calculateTeacherAttendanceAndSetFlags($session): void
+    {
+        try {
+            $teacherAttendance = MeetingAttendance::where('session_id', $session->id)
+                ->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])
+                ->first();
+
+            $sessionDuration = $session->duration_minutes ?? 60;
+
+            // Get teacher-specific thresholds from academy settings
+            $settingsService = app(\App\Services\SessionSettingsService::class);
+            $fullPercent = $settingsService->getTeacherFullAttendancePercent($session);
+            $partialPercent = $settingsService->getTeacherPartialAttendancePercent($session);
+
+            // Calculate teacher attendance status
+            $teacherStatus = AttendanceStatus::ABSENT;
+            if ($teacherAttendance && $teacherAttendance->first_join_time) {
+                $totalMinutes = $teacherAttendance->total_duration_minutes ?? 0;
+                $statusValue = $this->calculateTeacherAttendanceStatus(
+                    $teacherAttendance->first_join_time,
+                    $sessionDuration,
+                    $totalMinutes,
+                    $fullPercent,
+                    $partialPercent,
+                );
+                $teacherStatus = AttendanceStatus::from($statusValue);
+            }
+
+            // Store teacher attendance on session
+            $updateData = [
+                'teacher_attendance_status' => $teacherStatus->value,
+                'teacher_attendance_calculated_at' => now(),
+            ];
+
+            // Auto-set counts_for_teacher only if not already overridden by admin
+            if ($session->counts_for_teacher_set_by === null) {
+                $teacherCounts = $teacherStatus !== AttendanceStatus::ABSENT;
+                $updateData['counts_for_teacher'] = $teacherCounts;
+
+                // If teacher was absent, auto-exclude all students too (not their fault)
+                if (! $teacherCounts) {
+                    $session->attendances()
+                        ->whereNull('counts_for_subscription_set_by')
+                        ->update(['counts_for_subscription' => false]);
+
+                    Log::info('CalculateSessionForAttendance: Teacher absent, auto-excluded all students', [
+                        'session_id' => $session->id,
+                    ]);
+                }
+            }
+
+            $session->update($updateData);
+
+            Log::info('CalculateSessionForAttendance: Teacher attendance calculated', [
+                'session_id' => $session->id,
+                'teacher_status' => $teacherStatus->value,
+                'counts_for_teacher' => $updateData['counts_for_teacher'] ?? 'admin_override',
+            ]);
+        } catch (Exception $e) {
+            Log::error('CalculateSessionForAttendance: Failed to calculate teacher attendance', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

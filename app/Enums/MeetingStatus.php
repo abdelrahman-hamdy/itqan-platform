@@ -140,7 +140,7 @@ enum MeetingStatus: string
 
         return match ($sessionStatus) {
             SessionStatus::ONGOING => self::ACTIVE,
-            SessionStatus::COMPLETED, SessionStatus::ABSENT => self::ENDED,
+            SessionStatus::COMPLETED => self::ENDED,
             SessionStatus::CANCELLED => self::CANCELLED,
             default => self::READY,
         };

@@ -49,10 +49,10 @@
         App\Enums\SessionStatus::ONGOING
     ]);
 
-    // ADDITIONAL FIX: Allow students to join even if marked absent, as long as session is active
+    // Allow students to join during preparation time if session is scheduled
     if ($userType === 'student' && in_array($session->status, [
-        App\Enums\SessionStatus::ABSENT,
-        App\Enums\SessionStatus::SCHEDULED
+        App\Enums\SessionStatus::SCHEDULED,
+        App\Enums\SessionStatus::COMPLETED,
     ]) && $hasMeetingRoom) {
         // Students can join during preparation time or if session hasn't ended
         // Use academy timezone for "now" to ensure accurate comparisons
@@ -150,20 +150,6 @@
             $buttonText = __('meetings.status.session_cancelled_short');
             $buttonClass = 'bg-red-400 cursor-not-allowed';
             $buttonDisabled = true;
-            break;
-
-        case App\Enums\SessionStatus::ABSENT:
-            if ($canJoinMeeting) {
-                $meetingMessage = __('meetings.status.absent_can_join');
-                $buttonText = __('meetings.buttons.join_as_absent');
-                $buttonClass = 'bg-yellow-600 hover:bg-yellow-700';
-                $buttonDisabled = false;
-            } else {
-                $meetingMessage = __('meetings.status.student_absent');
-                $buttonText = __('meetings.status.student_absent_short');
-                $buttonClass = 'bg-red-400 cursor-not-allowed';
-                $buttonDisabled = true;
-            }
             break;
 
         case App\Enums\SessionStatus::UNSCHEDULED:
@@ -933,7 +919,6 @@
             ONGOING: 'ongoing',
             COMPLETED: 'completed',
             CANCELLED: 'cancelled',
-            ABSENT: 'absent'
         };
 
         // CRITICAL FIX: Stop timer when session is completed
@@ -967,8 +952,7 @@
             'ready': 'ri-video-on-line',
             'ongoing': 'ri-live-line',
             'completed': 'ri-check-circle-line',
-            'cancelled': 'ri-close-circle-line',
-            'absent': 'ri-user-unfollow-line'
+            'cancelled': 'ri-close-circle-line'
         };
         return icons[status] || 'ri-question-line';
     }
@@ -1457,24 +1441,8 @@
             @case('scheduled')
             @case('ready')
             @case('ongoing')
-                @if($session->session_type === 'group')
-                    <!-- Group Session: Mark as Canceled -->
-                    <button id="cancelSessionBtn"
-                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
-                            onclick="cancelSession('{{ $session->id }}')">
-                        <i class="ri-close-circle-line"></i>
-                        {{ __('meetings.management.cancel_session_teacher') }}
-                    </button>
-                @elseif($session->session_type === 'individual')
-                    <!-- Individual Session: Multiple options -->
-                    <button id="cancelSessionBtn"
-                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
-                            onclick="cancelSession('{{ $session->id }}')">
-                        <i class="ri-close-circle-line"></i>
-                        {{ __('meetings.management.cancel_session') }}
-                    </button>
-
-                @endif
+                {{-- Cancel buttons removed from teacher interface --}}
+                {{-- Teachers cannot cancel sessions; only admin/supervisor can --}}
 
                 <!-- Complete Session Button (for both types if session is ongoing) -->
                 @if((is_object($session->status) && method_exists($session->status, 'value') ? $session->status->value : $session->status) === 'ongoing')
@@ -1500,14 +1468,6 @@
                 <div class="text-red-600 flex items-center gap-2">
                     <i class="ri-close-circle-fill text-lg"></i>
                     <span class="font-medium">{{ __('meetings.management.session_cancelled') }}</span>
-                </div>
-                @break
-
-            @case('absent')
-                <!-- No actions needed for absent sessions -->
-                <div class="text-gray-600 flex items-center gap-2">
-                    <i class="ri-user-unfollow-fill text-lg"></i>
-                    <span class="font-medium">{{ __('meetings.management.student_marked_absent') }}</span>
                 </div>
                 @break
 

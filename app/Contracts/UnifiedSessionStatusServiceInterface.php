@@ -95,11 +95,12 @@ interface UnifiedSessionStatusServiceInterface
     /**
      * Transition session to ABSENT (individual sessions only).
      *
-     * Called when student doesn't join within grace period after scheduled start time.
-     * Only applicable to individual sessions. Session still counts towards subscription.
+     * @deprecated ABSENT status has been removed. Sessions now auto-complete to COMPLETED.
+     * Attendance is tracked separately. Financial impact is controlled by counting flags.
+     * Always returns false.
      *
      * @param  BaseSession  $session  The session to mark as absent
-     * @return bool True if transition was successful
+     * @return bool Always returns false
      */
     public function transitionToAbsent(BaseSession $session): bool;
 
@@ -117,11 +118,11 @@ interface UnifiedSessionStatusServiceInterface
     /**
      * Check if session should transition to ABSENT (individual only).
      *
-     * For individual sessions, checks if grace period has expired and student
-     * has not participated.
+     * @deprecated ABSENT status has been removed. Always returns false.
+     * Use shouldAutoComplete() instead.
      *
      * @param  BaseSession  $session  The session to check
-     * @return bool True if session should be marked as absent
+     * @return bool Always returns false
      */
     public function shouldTransitionToAbsent(BaseSession $session): bool;
 

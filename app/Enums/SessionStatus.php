@@ -11,7 +11,8 @@ namespace App\Enums;
  * - InteractiveCourseSession (live course sessions)
  *
  * Sessions transition through states from scheduling to completion.
- * The ABSENT status is only applicable to individual sessions.
+ * Financial impact (subscription counting, teacher earnings) is controlled
+ * by independent counting flags, not by session status.
  *
  * @see \App\Models\QuranSession
  * @see \App\Models\AcademicSession
@@ -23,11 +24,9 @@ enum SessionStatus: string
     case SCHEDULED = 'scheduled';          // Teacher has set date/time
     case READY = 'ready';                  // Meeting created, ready to start
     case ONGOING = 'ongoing';              // Currently happening
-    case COMPLETED = 'completed';          // Finished successfully
-    case CANCELLED = 'cancelled';          // Cancelled by teacher/admin
+    case COMPLETED = 'completed';          // Time passed / session finished
+    case CANCELLED = 'cancelled';          // Cancelled by admin (only admin can cancel)
     case SUSPENDED = 'suspended';          // Held due to subscription expiry/pause (recoverable)
-    case ABSENT = 'absent';                // Student didn't attend (individual only)
-    case FORGIVEN = 'forgiven';            // Admin pardoned absence (individual only)
 
     /**
      * Get the localized label for the status
@@ -50,8 +49,6 @@ enum SessionStatus: string
             self::COMPLETED => 'ri-check-circle-line',
             self::CANCELLED => 'ri-close-circle-line',
             self::SUSPENDED => 'ri-pause-circle-line',
-            self::ABSENT => 'ri-user-x-line',
-            self::FORGIVEN => 'ri-heart-line',
         };
     }
 
@@ -68,8 +65,6 @@ enum SessionStatus: string
             self::COMPLETED => 'success',
             self::CANCELLED => 'danger',
             self::SUSPENDED => 'warning',
-            self::ABSENT => 'warning',
-            self::FORGIVEN => 'info',
         };
     }
 
@@ -86,8 +81,6 @@ enum SessionStatus: string
             self::COMPLETED => '#22c55e',    // green-500
             self::CANCELLED => '#ef4444',    // red-500
             self::SUSPENDED => '#f97316',    // orange-500
-            self::ABSENT => '#f59e0b',       // amber-500
-            self::FORGIVEN => '#60A5FA',     // blue-400
         };
     }
 
@@ -108,7 +101,7 @@ enum SessionStatus: string
     }
 
     /**
-     * Check if session can be cancelled
+     * Check if session can be cancelled (admin only)
      */
     public function canCancel(): bool
     {
@@ -120,15 +113,7 @@ enum SessionStatus: string
      */
     public function canReschedule(): bool
     {
-        return $this === self::SCHEDULED || $this === self::READY || $this === self::ABSENT;
-    }
-
-    /**
-     * Check if an absent session can be forgiven by admin
-     */
-    public function canForgive(): bool
-    {
-        return $this === self::ABSENT;
+        return $this === self::SCHEDULED || $this === self::READY;
     }
 
     /**
@@ -140,7 +125,7 @@ enum SessionStatus: string
     }
 
     /**
-     * Check if session is in a final state (completed, cancelled, or absent)
+     * Check if session is in a final state
      */
     public function isFinal(): bool
     {
@@ -148,21 +133,7 @@ enum SessionStatus: string
             self::COMPLETED,
             self::CANCELLED,
             self::SUSPENDED,
-            self::ABSENT,
-            self::FORGIVEN,
         ]);
-    }
-
-    /**
-     * Check if session counts towards subscription
-     */
-    public function countsTowardsSubscription(): bool
-    {
-        return match ($this) {
-            self::COMPLETED, self::ABSENT => true,
-            self::FORGIVEN => false,
-            default => false,
-        };
     }
 
     /**
@@ -177,8 +148,6 @@ enum SessionStatus: string
             self::ONGOING,
             self::COMPLETED,
             self::CANCELLED,
-            self::ABSENT,
-            self::FORGIVEN,
         ];
     }
 
@@ -199,7 +168,6 @@ enum SessionStatus: string
 
     /**
      * Statuses for sessions that are in-progress or about to start.
-     * Includes READY so the scheduler can transition READY → ABSENT/COMPLETED.
      */
     public static function activeStatuses(): array
     {
@@ -208,7 +176,6 @@ enum SessionStatus: string
 
     /**
      * Statuses for sessions awaiting their scheduled time.
-     * Common pattern: replaces whereIn('status', [SCHEDULED, READY])
      */
     public static function upcomingStatuses(): array
     {
@@ -216,8 +183,7 @@ enum SessionStatus: string
     }
 
     /**
-     * Statuses for non-cancelled sessions (used for counting, scheduling conflicts).
-     * Common pattern: replaces whereIn('status', [SCHEDULED, ONGOING, COMPLETED])
+     * Statuses for non-cancelled sessions.
      */
     public static function nonCancelledStatuses(): array
     {
@@ -225,30 +191,27 @@ enum SessionStatus: string
     }
 
     /**
-     * Statuses for sessions that have ended (either completed or cancelled).
-     * Common pattern: replaces whereIn('status', [COMPLETED, CANCELLED])
+     * Statuses for sessions that have ended.
      */
     public static function finishedStatuses(): array
     {
-        return [self::COMPLETED, self::CANCELLED, self::FORGIVEN];
+        return [self::COMPLETED, self::CANCELLED];
     }
 
     /**
-     * Statuses for sessions that counted towards attendance/subscription.
-     * Common pattern: replaces whereIn('status', [COMPLETED, ABSENT])
+     * Statuses for sessions that completed (attended or not — check attendance separately).
      */
     public static function resolvedStatuses(): array
     {
-        return [self::COMPLETED, self::ABSENT];
+        return [self::COMPLETED];
     }
 
     /**
-     * Statuses for sessions that were missed (cancelled or student absent).
-     * Common pattern: replaces whereIn('status', [CANCELLED, ABSENT])
+     * Statuses for sessions that were missed/cancelled.
      */
     public static function missedStatuses(): array
     {
-        return [self::CANCELLED, self::ABSENT];
+        return [self::CANCELLED];
     }
 
     /**
@@ -271,25 +234,12 @@ enum SessionStatus: string
     }
 
     /**
-     * Get individual circle status options for teachers
+     * Get status options for teachers (limited — teachers cannot cancel)
      */
-    public static function teacherIndividualOptions(): array
+    public static function teacherOptions(): array
     {
         return [
             self::COMPLETED->value => self::COMPLETED->label(),
-            self::CANCELLED->value => self::CANCELLED->label(),
-            self::ABSENT->value => self::ABSENT->label(),
-        ];
-    }
-
-    /**
-     * Get group circle status options for teachers
-     */
-    public static function teacherGroupOptions(): array
-    {
-        return [
-            self::COMPLETED->value => self::COMPLETED->label(),
-            self::CANCELLED->value => self::CANCELLED->label(),
         ];
     }
 

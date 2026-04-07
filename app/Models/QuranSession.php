@@ -271,9 +271,16 @@ class QuranSession extends BaseSession implements RecordingCapable
     // Common scopes (scheduled, completed, cancelled, ongoing, today, upcoming, past)
     // are inherited from BaseSession
 
+    /**
+     * Scope: Get missed/absent sessions.
+     * Now returns COMPLETED sessions where the student was marked absent via attendance records.
+     *
+     * @deprecated Use attendance records to check for absences instead.
+     */
     public function scopeMissed($query)
     {
-        return $query->where('status', SessionStatus::ABSENT);
+        return $query->where('status', SessionStatus::COMPLETED)
+            ->where('attendance_status', 'absent');
     }
 
     public function scopeThisWeek($query)
@@ -477,14 +484,16 @@ class QuranSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * Mark session as absent (individual circles only)
+     * Mark session as absent (individual circles only).
+     * Session auto-completes to COMPLETED status. Absence is tracked via attendance records.
+     * Financial impact is controlled by counts_for_teacher and counts_for_subscription flags.
      */
     public function markAsAbsent(?string $reason = null): bool
     {
         // Prevent marking future sessions as absent
-        // Allow COMPLETED and ABSENT sessions to be re-marked as absent
+        // Allow COMPLETED sessions to be re-marked as absent
         // (teacher correcting attendance after the fact)
-        $allowedStatuses = [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING, SessionStatus::COMPLETED, SessionStatus::ABSENT];
+        $allowedStatuses = [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING, SessionStatus::COMPLETED];
         if ($this->session_type !== 'individual' ||
             ! in_array($this->status, $allowedStatuses) ||
             ($this->scheduled_at && $this->scheduled_at->isFuture())) {
@@ -501,7 +510,7 @@ class QuranSession extends BaseSession implements RecordingCapable
             }
 
             $session->update([
-                'status' => SessionStatus::ABSENT,
+                'status' => SessionStatus::COMPLETED,
                 'ended_at' => now(),
                 'attendance_status' => AttendanceStatus::ABSENT->value,
                 'attendance_notes' => $reason,
@@ -659,6 +668,23 @@ class QuranSession extends BaseSession implements RecordingCapable
         }
 
         return null;
+    }
+
+    /**
+     * Get enrollments for group subscription counting.
+     *
+     * For group/circle sessions, returns all active enrollments so each student's
+     * subscription can be decremented individually. Returns null for individual/trial sessions.
+     */
+    protected function getGroupEnrollmentsForCounting()
+    {
+        if ($this->session_type !== 'group' || ! $this->circle_id) {
+            return null;
+        }
+
+        return QuranCircleEnrollment::where('circle_id', $this->circle_id)
+            ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)
+            ->get();
     }
 
     // getStatusDisplayData() is inherited from BaseSession
@@ -1014,10 +1040,14 @@ class QuranSession extends BaseSession implements RecordingCapable
         ]);
     }
 
+    /**
+     * Mark session as no-show. Session completes to COMPLETED status;
+     * absence is tracked via attendance_status field.
+     */
     public function markAsNoShow(): self
     {
         $this->update([
-            'status' => SessionStatus::ABSENT,
+            'status' => SessionStatus::COMPLETED,
             'attendance_status' => AttendanceStatus::ABSENT,
             'ended_at' => $this->scheduled_at->addMinutes($this->duration_minutes),
         ]);

@@ -19,10 +19,11 @@ namespace App\Enums;
  */
 enum AttendanceStatus: string
 {
-    case ATTENDED = 'attended';     // Full attendance
-    case LATE = 'late';             // Arrived late but attended
-    case LEFT = 'left';             // Left early (partial attendance)
-    case ABSENT = 'absent';         // Did not attend
+    case ATTENDED = 'attended';                   // Full attendance
+    case LATE = 'late';                           // Arrived late but attended
+    case LEFT = 'left';                           // Left early (partial attendance)
+    case ABSENT = 'absent';                       // Did not attend
+    case PARTIALLY_ATTENDED = 'partially_attended'; // Partial attendance (teacher: 50-89% of session)
 
     /**
      * Get localized label for the status
@@ -42,6 +43,7 @@ enum AttendanceStatus: string
             self::LATE => 'bg-yellow-100 text-yellow-800',
             self::LEFT => 'bg-orange-100 text-orange-800',
             self::ABSENT => 'bg-red-100 text-red-800',
+            self::PARTIALLY_ATTENDED => 'bg-amber-100 text-amber-800',
         };
     }
 
@@ -55,6 +57,7 @@ enum AttendanceStatus: string
             self::LATE => 'ri-time-line',
             self::LEFT => 'ri-logout-box-line',
             self::ABSENT => 'ri-close-line',
+            self::PARTIALLY_ATTENDED => 'ri-timer-line',
         };
     }
 
@@ -68,6 +71,7 @@ enum AttendanceStatus: string
             self::LATE => 'warning',
             self::LEFT => 'primary',
             self::ABSENT => 'danger',
+            self::PARTIALLY_ATTENDED => 'warning',
         };
     }
 

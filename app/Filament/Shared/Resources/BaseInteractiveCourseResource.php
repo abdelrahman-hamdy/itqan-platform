@@ -278,6 +278,13 @@ abstract class BaseInteractiveCourseResource extends Resource
                             ->required()
                             ->prefix(getCurrencyCode()),
 
+                        TextInput::make('sale_price')
+                            ->label('سعر التخفيض')
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix(getCurrencyCode())
+                            ->helperText('اتركه فارغاً إذا لا يوجد تخفيض'),
+
                         TextInput::make('teacher_payment')
                             ->label('دفع المعلم')
                             ->numeric()
