@@ -3,6 +3,12 @@
 @php
   $user = auth()->user();
   $academy = $user ? $user->academy : null;
+
+  // Superadmins can switch academies; prefer their selected academy over their home academy
+  if ($user && $user->isSuperAdmin()) {
+      $academy = \App\Services\AcademyContextService::getCurrentAcademy() ?? $academy;
+  }
+
   $academyName = $academy ? $academy->name : __('components.navigation.app.academy_default');
   $subdomain = $academy ? $academy->subdomain : 'itqan-academy';
 

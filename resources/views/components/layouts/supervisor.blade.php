@@ -1,8 +1,12 @@
+@php
+  $currentAcademy = \App\Services\AcademyContextService::getCurrentAcademy();
+  $academyDisplayName = $currentAcademy?->name ?? __('teacher.panel.academy_default');
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 
 <head>
-  <x-app-head :title="$title ?? (auth()->user()->getUserTypeLabel() ?? __('supervisor.sidebar.supervisor')) . ' - ' . (auth()->user()->academy->name ?? __('teacher.panel.academy_default'))" :description="$description ?? __('supervisor.sidebar.supervisor_panel_description') . ' - ' . (auth()->user()->academy->name ?? __('teacher.panel.academy_default'))">
+  <x-app-head :title="$title ?? (auth()->user()->getUserTypeLabel() ?? __('supervisor.sidebar.supervisor')) . ' - ' . $academyDisplayName" :description="$description ?? __('supervisor.sidebar.supervisor_panel_description') . ' - ' . $academyDisplayName">
     <style>
       /* Card Hover Effects */
       .card-hover {
