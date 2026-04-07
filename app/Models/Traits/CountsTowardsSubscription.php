@@ -308,15 +308,5 @@ trait CountsTowardsSubscription
      *
      * @return QuranSubscription|AcademicSubscription|null
      */
-    abstract protected function getSubscriptionForCounting();
-
-    /**
-     * Public accessor for the subscription used for counting.
-     * Allows external services (SessionCountingService) to find
-     * the subscription without exposing the protected abstract method.
-     */
-    public function getSubscriptionForCountingPublic()
-    {
-        return $this->getSubscriptionForCounting();
-    }
+    abstract public function getSubscriptionForCounting();
 }

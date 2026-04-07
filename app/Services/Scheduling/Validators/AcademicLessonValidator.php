@@ -15,6 +15,8 @@ use Carbon\Carbon;
  */
 class AcademicLessonValidator implements ScheduleValidatorInterface
 {
+    private ?array $cachedLimits = null;
+
     public function __construct(
         private AcademicSubscription $subscription
     ) {}
@@ -282,6 +284,10 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
      */
     private function getSubscriptionLimits(): array
     {
+        if ($this->cachedLimits !== null) {
+            return $this->cachedLimits;
+        }
+
         // Get total sessions from subscription with fallback
         $totalSessions = $this->subscription->total_sessions ?? 8;
 
@@ -311,7 +317,7 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
         $recommendedPerWeek = (int) ceil($remainingSessions / $weeksRemaining);
         $maxPerWeek = ceil($recommendedPerWeek * 1.5); // Allow 50% more for flexibility
 
-        return [
+        return $this->cachedLimits = [
             'remaining_sessions' => $remainingSessions,
             'total_sessions' => $totalSessions,
             'used_sessions' => $usedSessions,

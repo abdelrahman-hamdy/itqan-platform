@@ -179,8 +179,8 @@ class SessionCountingService
         }
 
         // Fallback: individual sessions have a single subscription
-        if (method_exists($session, 'getSubscriptionForCountingPublic')) {
-            return $session->getSubscriptionForCountingPublic();
+        if (method_exists($session, 'getSubscriptionForCounting')) {
+            return $session->getSubscriptionForCounting();
         }
 
         return null;

@@ -834,7 +834,7 @@ class AcademicSession extends BaseSession
      *
      * @return AcademicSubscription|null
      */
-    protected function getSubscriptionForCounting()
+    public function getSubscriptionForCounting()
     {
         // Only individual sessions with academic individual lesson have subscriptions
         if ($this->session_type === 'individual' && $this->academicIndividualLesson) {

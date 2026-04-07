@@ -640,7 +640,7 @@ class QuranSession extends BaseSession implements RecordingCapable
      *
      * @return QuranSubscription|null
      */
-    protected function getSubscriptionForCounting()
+    public function getSubscriptionForCounting()
     {
         // Individual sessions: get subscription from the individual circle
         if ($this->session_type === 'individual' && $this->individualCircle) {

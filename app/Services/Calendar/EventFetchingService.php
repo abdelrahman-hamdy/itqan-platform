@@ -291,8 +291,8 @@ class EventFetchingService
             ->whereBetween('scheduled_at', [$startDate, $endDate])
             ->where('academic_teacher_id', $profile->id)
             ->with([
-                'academicTeacher:id,user_id,first_name,last_name',
-                'academicTeacher.user:id,name,email,gender',
+                'academicTeacher:id,user_id',
+                'academicTeacher.user:id,first_name,last_name,name,email,gender',
                 'student:id,first_name,last_name,name',
                 'academicIndividualLesson:id,subject_id,subscription_id',
                 'academicIndividualLesson.subject:id,name,name_en',
