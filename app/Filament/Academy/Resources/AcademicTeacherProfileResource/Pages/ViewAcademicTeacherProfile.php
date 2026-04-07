@@ -42,6 +42,14 @@ class ViewAcademicTeacherProfile extends ViewRecord
                     }
                 })
                 ->visible(fn () => $this->record->user !== null),
+            Action::make('toggle_fully_booked')
+                ->label(fn () => $this->record->is_fully_booked ? __('teacher.mark_available') : __('teacher.mark_fully_booked'))
+                ->icon(fn () => $this->record->is_fully_booked ? 'heroicon-o-check-circle' : 'heroicon-o-no-symbol')
+                ->color(fn () => $this->record->is_fully_booked ? 'success' : 'warning')
+                ->requiresConfirmation()
+                ->action(function () {
+                    $this->record->update(['is_fully_booked' => ! $this->record->is_fully_booked]);
+                }),
             DeleteAction::make()
                 ->label('حذف'),
         ];

@@ -25,7 +25,8 @@
     :stats="$stats"
     color="yellow"
     badge-icon="ri-book-read-line"
-    :badge-text="__('components.teacher_detail.quran_teacher_badge')">
+    :badge-text="__('components.teacher_detail.quran_teacher_badge')"
+    :is-fully-booked="$teacher->is_fully_booked">
     <!-- Qualifications -->
     <x-teacher.qualifications-grid :teacher="$teacher" color="yellow" />
   </x-teacher.profile-header>
@@ -54,7 +55,9 @@
     <!-- Sidebar -->
     <div class="lg:col-span-1 space-y-4 md:space-y-6">
 
-      @if(!$isTeacher)
+      @if($teacher->is_fully_booked)
+      <x-teacher.fully-booked-notice />
+      @elseif(!$isTeacher)
       <!-- Trial Session -->
       @if($offersTrialSessions)
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
@@ -122,7 +125,7 @@
     </div>
   </div>
 
-  @if(!$isTeacher)
+  @if(!$isTeacher && !$teacher->is_fully_booked)
   <!-- Packages Section (Full Width) -->
   @if($packages->count() > 0)
     <div class="mt-6 md:mt-8" x-data="{ pricingPeriod: 'monthly' }">

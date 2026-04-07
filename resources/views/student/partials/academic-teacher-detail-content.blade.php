@@ -42,7 +42,8 @@
     :stats="$stats"
     color="violet"
     badge-icon="ri-graduation-cap-line"
-    :badge-text="__('student.academic_teacher_detail.badge_text')">
+    :badge-text="__('student.academic_teacher_detail.badge_text')"
+    :is-fully-booked="$teacher->is_fully_booked">
     <!-- Qualifications -->
     <x-teacher.qualifications-grid :teacher="$teacher" color="violet" />
   </x-teacher.profile-header>
@@ -70,6 +71,10 @@
 
     <!-- Sidebar -->
     <div class="lg:col-span-1 space-y-4 md:space-y-6">
+
+      @if($teacher->is_fully_booked)
+      <x-teacher.fully-booked-notice />
+      @endif
 
       <!-- Subjects & Grade Levels -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
@@ -123,7 +128,7 @@
     </div>
   </div>
 
-  @if(!$isTeacher)
+  @if(!$isTeacher && !$teacher->is_fully_booked)
   <!-- Packages Section (Full Width) -->
   @if($packages->count() > 0)
     <div class="mt-6 md:mt-8" x-data="{ pricingPeriod: 'monthly' }">

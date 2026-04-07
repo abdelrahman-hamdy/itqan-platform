@@ -41,6 +41,7 @@ class UnifiedQuranTeacherController extends Controller
 
         // Base query (applies to all users)
         $query = QuranTeacherProfile::where('academy_id', $academy->id)
+            ->notFullyBooked()
             ->whereHas('user', fn ($q) => $q->where('active_status', true));
 
         // Apply filters (same for both)

@@ -39,6 +39,7 @@ class AcademicTeacherProfile extends Model
         'available_time_end',
         'session_price_individual',
         'individual_session_prices',
+        'is_fully_booked',
         'languages',
         // Activation fields removed - use User.active_status instead
         'notes',
@@ -55,6 +56,7 @@ class AcademicTeacherProfile extends Model
         'grade_level_ids' => 'array',    // ← SINGLE SOURCE OF TRUTH
         'package_ids' => 'array',
         'available_days' => 'array',     // ← SINGLE SOURCE OF TRUTH
+        'is_fully_booked' => 'boolean',
         // Activation casts removed - use User.active_status instead
         'rating' => 'decimal:2',
         'total_reviews' => 'integer',
@@ -433,6 +435,11 @@ class AcademicTeacherProfile extends Model
     public function scopeActive($query)
     {
         return $query->whereHas('user', fn ($q) => $q->where('active_status', true));
+    }
+
+    public function scopeNotFullyBooked($query)
+    {
+        return $query->where('is_fully_booked', false);
     }
 
     public function scopeUnlinked($query)

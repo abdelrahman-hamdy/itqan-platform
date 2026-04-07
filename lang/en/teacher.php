@@ -1933,4 +1933,13 @@ return [
         'created_success' => 'Private lesson created successfully',
         'updated_success' => 'Private lesson updated successfully',
     ],
+
+    'fully_booked' => 'Fully Booked',
+    'mark_fully_booked' => 'Mark as Fully Booked',
+    'mark_available' => 'Mark as Available',
+    'fully_booked_notice' => 'This teacher is currently fully booked and not accepting new students',
+    'fully_booked_helper' => 'When enabled, the teacher will be hidden from student browse pages',
+    'total_circles' => 'Total Circles',
+    'total_private_sessions' => 'Total Private Lessons',
+    'available' => 'Available',
 ];

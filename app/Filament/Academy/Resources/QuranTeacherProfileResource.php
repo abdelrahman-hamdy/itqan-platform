@@ -45,6 +45,12 @@ class QuranTeacherProfileResource extends BaseQuranTeacherProfileResource
                             $user->save();
                         }
                     }),
+                Action::make('toggle_fully_booked')
+                    ->label(fn ($record) => $record->is_fully_booked ? __('teacher.mark_available') : __('teacher.mark_fully_booked'))
+                    ->icon(fn ($record) => $record->is_fully_booked ? 'heroicon-o-check-circle' : 'heroicon-o-no-symbol')
+                    ->color(fn ($record) => $record->is_fully_booked ? 'success' : 'warning')
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => $record->update(['is_fully_booked' => ! $record->is_fully_booked])),
                 DeleteAction::make()
                     ->label('حذف'),
             ]),

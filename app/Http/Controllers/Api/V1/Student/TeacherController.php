@@ -26,6 +26,7 @@ class TeacherController extends Controller
         $academy = $request->attributes->get('academy') ?? current_academy();
 
         $query = QuranTeacherProfile::where('academy_id', $academy->id)
+            ->notFullyBooked()
             ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user']);
 
@@ -140,6 +141,7 @@ class TeacherController extends Controller
                 'available_days' => $teacher->available_days ?? [],
                 'available_time_start' => $teacher->available_time_start?->format('H:i'),
                 'available_time_end' => $teacher->available_time_end?->format('H:i'),
+                'is_fully_booked' => $teacher->is_fully_booked,
                 'is_subscribed' => $circle !== null,
                 'subscription_id' => $circle?->id,
                 'packages' => $packages->map(fn ($pkg) => $this->mapPackageToArray($pkg))->toArray(),
@@ -155,6 +157,7 @@ class TeacherController extends Controller
         $academy = $request->attributes->get('academy') ?? current_academy();
 
         $query = AcademicTeacherProfile::where('academy_id', $academy->id)
+            ->notFullyBooked()
             ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user']);
 
@@ -289,6 +292,7 @@ class TeacherController extends Controller
                 'available_days' => $teacher->available_days ?? [],
                 'available_time_start' => $teacher->available_time_start?->format('H:i'),
                 'available_time_end' => $teacher->available_time_end?->format('H:i'),
+                'is_fully_booked' => $teacher->is_fully_booked,
                 'is_subscribed' => $lesson !== null,
                 'subscription_id' => $lesson?->id,
                 'packages' => $packages->map(fn ($pkg) => $this->mapPackageToArray($pkg))->toArray(),

@@ -1933,4 +1933,13 @@ return [
         'created_success' => 'تم إنشاء الدرس الخاص بنجاح',
         'updated_success' => 'تم تحديث الدرس الخاص بنجاح',
     ],
+
+    'fully_booked' => 'مكتمل العدد',
+    'mark_fully_booked' => 'تعيين كمكتمل العدد',
+    'mark_available' => 'تعيين كمتاح',
+    'fully_booked_notice' => 'هذا المعلم مكتمل العدد حالياً ولا يقبل طلاب جدد',
+    'fully_booked_helper' => 'عند التفعيل، لن يظهر المعلم في صفحات البحث للطلاب',
+    'total_circles' => 'إجمالي الحلقات',
+    'total_private_sessions' => 'إجمالي الدروس الخصوصية',
+    'available' => 'متاح',
 ];

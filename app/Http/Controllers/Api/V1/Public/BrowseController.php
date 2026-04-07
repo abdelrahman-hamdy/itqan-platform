@@ -31,6 +31,7 @@ class BrowseController extends Controller
         $academy = $request->attributes->get('academy') ?? current_academy();
 
         $query = QuranTeacherProfile::where('academy_id', $academy->id)
+            ->notFullyBooked()
             ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user']);
 
@@ -94,6 +95,7 @@ class BrowseController extends Controller
         $academy = $request->attributes->get('academy') ?? current_academy();
 
         $query = AcademicTeacherProfile::where('academy_id', $academy->id)
+            ->notFullyBooked()
             ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user']);
 

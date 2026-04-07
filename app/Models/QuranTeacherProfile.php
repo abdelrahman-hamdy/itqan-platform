@@ -39,6 +39,7 @@ class QuranTeacherProfile extends Model
         'package_ids',
         // Activation fields removed - use User.active_status instead
         'offers_trial_sessions',
+        'is_fully_booked',
         // SECURITY: rating, total_reviews, total_students, total_sessions excluded from fillable
         // These are system-calculated via HasReviews trait, never user-supplied
         'session_price_individual',
@@ -55,6 +56,7 @@ class QuranTeacherProfile extends Model
         'educational_qualification' => EducationalQualification::class,
         // 'is_active' removed - use User.active_status instead
         'offers_trial_sessions' => 'boolean',
+        'is_fully_booked' => 'boolean',
         'rating' => 'decimal:2',
         'total_reviews' => 'integer',
         'total_students' => 'integer',
@@ -315,6 +317,11 @@ class QuranTeacherProfile extends Model
     public function scopeActive($query)
     {
         return $query->whereHas('user', fn ($q) => $q->where('active_status', true));
+    }
+
+    public function scopeNotFullyBooked($query)
+    {
+        return $query->where('is_fully_booked', false);
     }
 
     public function scopeUnlinked($query)

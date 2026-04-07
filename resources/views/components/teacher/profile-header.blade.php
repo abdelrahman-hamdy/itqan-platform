@@ -3,7 +3,8 @@
     'stats',
     'color' => 'yellow', // yellow or violet
     'badgeIcon' => 'ri-book-read-line',
-    'badgeText' => __('components.teacher.profile_header.default_badge')
+    'badgeText' => __('components.teacher.profile_header.default_badge'),
+    'isFullyBooked' => false,
 ])
 
 @php
@@ -47,6 +48,12 @@
               <i class="{{ $badgeIcon }}"></i>
               <span>{{ $badgeText }}</span>
             </span>
+            @if($isFullyBooked)
+            <span class="px-2.5 py-1 md:px-3 md:py-1.5 bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs md:text-sm font-bold inline-flex items-center gap-1.5">
+              <i class="ri-user-forbid-line"></i>
+              <span>{{ __('teacher.fully_booked') }}</span>
+            </span>
+            @endif
           </div>
 
           <!-- Star Rating -->

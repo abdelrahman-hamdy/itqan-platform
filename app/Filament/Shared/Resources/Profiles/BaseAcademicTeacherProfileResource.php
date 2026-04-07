@@ -109,6 +109,8 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
                     TimePicker::make('available_time_start')->label('وقت البداية'),
                     TimePicker::make('available_time_end')->label('وقت النهاية'),
                 ]),
+                Toggle::make('is_fully_booked')->label(__('teacher.fully_booked'))->default(false)
+                    ->helperText(__('teacher.fully_booked_helper')),
             ]),
 
             Section::make(__('filament.pricing'))
@@ -156,6 +158,7 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
             ->filtersFormColumns(4)
             ->deferFilters(false)
             ->deferColumnManager(false)
+            ->modifyQueryUsing(fn (Builder $query) => $query->withCount('privateSessions'))
             ->recordActions(static::getTableActions())->toolbarActions(static::getTableBulkActions());
     }
 
@@ -185,6 +188,12 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
                     true: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', 1)),
                     false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where(fn ($inner) => $inner->where('active_status', 0)->orWhereNull('active_status'))),
                 ),
+
+            TernaryFilter::make('is_fully_booked')
+                ->label(__('teacher.fully_booked'))
+                ->placeholder('الكل')
+                ->trueLabel(__('teacher.fully_booked'))
+                ->falseLabel(__('teacher.available')),
         ];
     }
 
@@ -201,6 +210,11 @@ abstract class BaseAcademicTeacherProfileResource extends Resource
             TextColumn::make('phone')->label('رقم الهاتف')
                 ->searchable(query: fn (Builder $query, string $search) => $query->whereHas('user', fn ($q) => $q->where('phone', 'like', "%{$search}%")))
                 ->toggleable(isToggledHiddenByDefault: true),
+            IconColumn::make('is_fully_booked')->label(__('teacher.fully_booked'))->boolean()
+                ->trueIcon('heroicon-o-no-symbol')->falseIcon('heroicon-o-check-circle')
+                ->trueColor('warning')->falseColor('success'),
+            TextColumn::make('private_sessions_count')->label(__('teacher.total_private_sessions'))
+                ->sortable()->badge()->color('info'),
             IconColumn::make('user.active_status')->label('نشط')->boolean()->trueIcon('heroicon-o-check-circle')
                 ->falseIcon('heroicon-o-x-circle')->trueColor('success')->falseColor('danger'),
             TextColumn::make('created_at')->label('تاريخ الإنشاء')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
