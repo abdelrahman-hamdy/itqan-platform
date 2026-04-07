@@ -21,6 +21,10 @@ return new class extends Migration
         $tables = ['quran_sessions', 'academic_sessions', 'interactive_course_sessions'];
 
         foreach ($tables as $table) {
+            if (Schema::hasColumn($table, 'counts_for_teacher')) {
+                continue;
+            }
+
             Schema::table($table, function (Blueprint $t) use ($table) {
                 // Counting flag for teacher earnings (null = auto-calculated from attendance)
                 $afterCol = Schema::hasColumn($table, 'subscription_counted') ? 'subscription_counted' : 'attendance_status';
