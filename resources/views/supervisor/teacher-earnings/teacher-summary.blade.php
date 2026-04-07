@@ -4,8 +4,8 @@
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
     $earningsCurrencySymbol = getTeacherEarningsCurrencySymbol();
 
-    $hasActiveFilters = ($currentTeacherId ?? null) || ($currentMonth ?? null) || ($startDate ?? null) || ($endDate ?? null) || ($currentTeacherType ?? null) || ($currentGender ?? null);
-    $filterCount = (($currentTeacherId ?? null) ? 1 : 0) + (($currentMonth ?? null) ? 1 : 0) + (($startDate ?? null) || ($endDate ?? null) ? 1 : 0) + (($currentTeacherType ?? null) ? 1 : 0) + (($currentGender ?? null) ? 1 : 0);
+    $hasActiveFilters = !empty($currentTeacherIds) || ($currentMonth ?? null) || ($startDate ?? null) || ($endDate ?? null) || ($currentTeacherType ?? null) || ($currentGender ?? null);
+    $filterCount = (!empty($currentTeacherIds) ? 1 : 0) + (($currentMonth ?? null) ? 1 : 0) + (($startDate ?? null) || ($endDate ?? null) ? 1 : 0) + (($currentTeacherType ?? null) ? 1 : 0) + (($currentGender ?? null) ? 1 : 0);
 @endphp
 
 <div>
@@ -26,7 +26,7 @@
         <button type="button" onclick="document.getElementById('export-modal').classList.remove('hidden')"
             class="cursor-pointer min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium">
             <i class="ri-download-line"></i>
-            {{ __('supervisor.teacher_earnings.export_button') }}
+            {{ __('supervisor.teacher_earnings.export_button_generic') }}
         </button>
     </div>
 
@@ -57,15 +57,15 @@
             <div x-show="open" x-collapse>
                 <form method="GET" action="{{ route('manage.teacher-earnings.teacher-summary', ['subdomain' => $subdomain]) }}" class="px-4 md:px-6 pb-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                        {{-- Teacher --}}
+                        {{-- Teacher (Multi-select) --}}
                         <div>
-                            <label for="teacher_id" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.teacher_earnings.filter_teacher') }}</label>
-                            <select name="teacher_id" id="teacher_id" class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="">{{ __('supervisor.teacher_earnings.all_teachers') }}</option>
-                                @foreach($teachers as $t)
-                                    <option value="{{ $t['id'] }}" {{ ($currentTeacherId ?? null) == $t['id'] ? 'selected' : '' }}>{{ $t['name'] }}</option>
-                                @endforeach
-                            </select>
+                            <x-ui.multi-select
+                                name="teacher_ids"
+                                :options="$teachers"
+                                :selected="$currentTeacherIds ?? []"
+                                :placeholder="__('supervisor.teacher_earnings.all_teachers')"
+                                :label="__('supervisor.teacher_earnings.filter_teacher')"
+                            />
                         </div>
 
                         {{-- Teacher Type --}}
@@ -356,11 +356,34 @@
 
                     {{-- Pass current filter state --}}
                     <input type="hidden" name="month" value="{{ $currentMonth ?? '' }}">
-                    <input type="hidden" name="teacher_id" value="{{ $currentTeacherId ?? '' }}">
+                    @foreach($currentTeacherIds ?? [] as $tid)
+                        <input type="hidden" name="teacher_ids[]" value="{{ $tid }}">
+                    @endforeach
                     <input type="hidden" name="teacher_type" value="{{ $currentTeacherType ?? '' }}">
                     <input type="hidden" name="gender" value="{{ $currentGender ?? '' }}">
                     <input type="hidden" name="start_date" value="{{ $startDate ?? '' }}">
                     <input type="hidden" name="end_date" value="{{ $endDate ?? '' }}">
+
+                    {{-- Export format selection --}}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('supervisor.teacher_earnings.export_format_label') }}</label>
+                        <div class="flex items-center gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                <input type="radio" name="format" value="pdf" checked class="text-green-600 focus:ring-green-500">
+                                <span class="text-sm text-gray-700 flex items-center gap-1.5">
+                                    <i class="ri-file-pdf-2-line text-red-500"></i>
+                                    {{ __('supervisor.teacher_earnings.export_format_pdf') }}
+                                </span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                <input type="radio" name="format" value="excel" class="text-green-600 focus:ring-green-500">
+                                <span class="text-sm text-gray-700 flex items-center gap-1.5">
+                                    <i class="ri-file-excel-2-line text-green-600"></i>
+                                    {{ __('supervisor.teacher_earnings.export_format_excel') }}
+                                </span>
+                            </label>
+                        </div>
+                    </div>
 
                     {{-- Active filters summary --}}
                     <div class="mb-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
@@ -368,9 +391,9 @@
                         <ul class="space-y-1 text-xs">
                             <li>
                                 <span class="text-gray-500">{{ __('supervisor.teacher_earnings.filter_teacher') }}:</span>
-                                @if($currentTeacherId ?? null)
-                                    @php $selectedTeacher = collect($teachers)->firstWhere('id', $currentTeacherId); @endphp
-                                    <span class="font-medium">{{ $selectedTeacher['name'] ?? $currentTeacherId }}</span>
+                                @if(!empty($currentTeacherIds))
+                                    @php $selectedNames = collect($teachers)->whereIn('id', $currentTeacherIds)->pluck('name')->implode('، '); @endphp
+                                    <span class="font-medium">{{ $selectedNames }}</span>
                                 @else
                                     <span>{{ __('supervisor.teacher_earnings.export_all_teachers') }}</span>
                                 @endif

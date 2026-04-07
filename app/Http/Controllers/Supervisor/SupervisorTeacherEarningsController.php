@@ -28,16 +28,12 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
         $allTeacherIds = array_merge($quranTeacherIds, $academicTeacherIds);
 
-        [$quranProfileIds, $academicProfileIds] = $this->resolveProfileIds($quranTeacherIds, $academicTeacherIds);
-        $profileUserMap = $this->buildProfileUserMap($quranTeacherIds, $academicTeacherIds);
+        [$quranProfileIds, $academicProfileIds, $profileUserMap] = $this->resolveProfilesAndMap($quranTeacherIds, $academicTeacherIds);
         $teachersList = $this->buildTeachersList($profileUserMap);
 
-        $currentTeacherId = $request->input('teacher_id');
-        if ($currentTeacherId && ! in_array((int) $currentTeacherId, $allTeacherIds)) {
-            $currentTeacherId = null;
-        }
+        $currentTeacherIds = $this->parseTeacherIdsFromRequest($request, $allTeacherIds);
 
-        $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $teachersList, $currentTeacherId ? (int) $currentTeacherId : null);
+        $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $teachersList, $currentTeacherIds);
 
         $request->validate([
             'start_date' => 'nullable|date',
@@ -91,7 +87,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             'availableMonths' => $this->getAvailableMonths($academyId, $scopeQuery),
             'teachers' => $teachersList,
             'profileUserMap' => $profileUserMap,
-            'currentTeacherId' => $currentTeacherId,
+            'currentTeacherIds' => $currentTeacherIds,
             'currentMonth' => $currentMonth,
             'currentStatus' => $currentStatus,
             'startDate' => $startDate,
@@ -113,7 +109,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             'profileUserMap' => $data['profileUserMap'],
             'availableMonths' => $data['availableMonths'],
             'teachers' => $data['teachersList'],
-            'currentTeacherId' => $data['currentTeacherId'],
+            'currentTeacherIds' => $data['currentTeacherIds'],
             'currentMonth' => $data['currentMonth'],
             'currentTeacherType' => $data['currentTeacherType'],
             'currentGender' => $data['currentGender'],
@@ -129,6 +125,11 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             abort(403);
         }
 
+        $request->validate([
+            'format' => 'nullable|in:pdf,excel',
+        ]);
+
+        $format = $request->input('format', 'pdf');
         $data = $this->buildTeacherSummaryData($request);
 
         if (empty($data['teacherSummaries'])) {
@@ -147,6 +148,11 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
         try {
             $service = app(TeacherEarningsExportService::class);
+
+            if ($format === 'excel') {
+                return $service->generateSummaryExcel($data['teacherSummaries'], $data['profileUserMap'], $meta);
+            }
+
             $pdfContent = $service->generateSummaryPdf($data['teacherSummaries'], $data['profileUserMap'], $meta);
         } catch (\Throwable $e) {
             report($e);
@@ -258,20 +264,54 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
      * Build teacher scope query. Uses $teachersList to determine teacher type
      * for filtered queries, avoiding extra User::find() calls.
      */
-    private function buildTeacherScopeQuery(array $quranProfileIds, array $academicProfileIds, array $teachersList, ?int $filterTeacherId = null): \Closure
+    private function buildTeacherScopeQuery(array $quranProfileIds, array $academicProfileIds, array $teachersList, array $filterTeacherIds = []): \Closure
     {
-        return function ($query) use ($quranProfileIds, $academicProfileIds, $teachersList, $filterTeacherId) {
-            if ($filterTeacherId) {
-                $teacher = collect($teachersList)->firstWhere('id', $filterTeacherId);
-                if ($teacher && $teacher['type'] === 'quran_teacher') {
-                    $profileId = QuranTeacherProfile::where('user_id', $filterTeacherId)->value('id');
-                    $query->where('teacher_type', 'quran_teacher')->where('teacher_id', $profileId);
-                } elseif ($teacher && $teacher['type'] === 'academic_teacher') {
-                    $profileId = AcademicTeacherProfile::where('user_id', $filterTeacherId)->value('id');
-                    $query->where('teacher_type', 'academic_teacher')->where('teacher_id', $profileId);
-                } else {
-                    $query->whereRaw('1 = 0');
+        $teachersById = collect($teachersList)->keyBy('id');
+
+        return function ($query) use ($quranProfileIds, $academicProfileIds, $teachersById, $filterTeacherIds) {
+            if (! empty($filterTeacherIds)) {
+                $quranUserIds = [];
+                $academicUserIds = [];
+
+                foreach ($filterTeacherIds as $userId) {
+                    $teacher = $teachersById->get($userId);
+                    if (! $teacher) {
+                        continue;
+                    }
+                    if ($teacher['type'] === 'quran_teacher') {
+                        $quranUserIds[] = $userId;
+                    } elseif ($teacher['type'] === 'academic_teacher') {
+                        $academicUserIds[] = $userId;
+                    }
                 }
+
+                $filteredQuranProfileIds = ! empty($quranUserIds)
+                    ? QuranTeacherProfile::whereIn('user_id', $quranUserIds)->pluck('id')->toArray()
+                    : [];
+                $filteredAcademicProfileIds = ! empty($academicUserIds)
+                    ? AcademicTeacherProfile::whereIn('user_id', $academicUserIds)->pluck('id')->toArray()
+                    : [];
+
+                if (empty($filteredQuranProfileIds) && empty($filteredAcademicProfileIds)) {
+                    $query->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                $query->where(function ($q) use ($filteredQuranProfileIds, $filteredAcademicProfileIds) {
+                    if (! empty($filteredQuranProfileIds)) {
+                        $q->orWhere(function ($sub) use ($filteredQuranProfileIds) {
+                            $sub->where('teacher_type', 'quran_teacher')
+                                ->whereIn('teacher_id', $filteredQuranProfileIds);
+                        });
+                    }
+                    if (! empty($filteredAcademicProfileIds)) {
+                        $q->orWhere(function ($sub) use ($filteredAcademicProfileIds) {
+                            $sub->where('teacher_type', 'academic_teacher')
+                                ->whereIn('teacher_id', $filteredAcademicProfileIds);
+                        });
+                    }
+                });
             } else {
                 $query->where(function ($q) use ($quranProfileIds, $academicProfileIds) {
                     if (! empty($quranProfileIds)) {
@@ -294,21 +334,13 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         };
     }
 
-    private function buildProfileUserMap(array $quranTeacherIds, array $academicTeacherIds): array
+    private function parseTeacherIdsFromRequest(Request $request, array $allowedIds): array
     {
-        $map = [];
-        if (! empty($quranTeacherIds)) {
-            foreach (QuranTeacherProfile::whereIn('user_id', $quranTeacherIds)->with('user')->get() as $p) {
-                $map['quran_teacher_'.$p->id] = $p->user;
-            }
-        }
-        if (! empty($academicTeacherIds)) {
-            foreach (AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->with('user')->get() as $p) {
-                $map['academic_teacher_'.$p->id] = $p->user;
-            }
-        }
-
-        return $map;
+        return collect($request->input('teacher_ids', []))
+            ->map(fn ($v) => (int) $v)
+            ->filter(fn ($id) => in_array($id, $allowedIds))
+            ->values()
+            ->toArray();
     }
 
     /**
@@ -407,12 +439,9 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         [$quranProfileIds, $academicProfileIds, $profileUserMap] = $this->resolveProfilesAndMap($quranTeacherIds, $academicTeacherIds, $currentGender);
         $teachersList = $this->buildTeachersList($profileUserMap);
 
-        $currentTeacherId = $request->input('teacher_id');
-        if ($currentTeacherId && ! in_array((int) $currentTeacherId, $allTeacherIds)) {
-            $currentTeacherId = null;
-        }
+        $currentTeacherIds = $this->parseTeacherIdsFromRequest($request, $allTeacherIds);
 
-        $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $teachersList, $currentTeacherId ? (int) $currentTeacherId : null);
+        $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $teachersList, $currentTeacherIds);
 
         $currentMonth = $request->input('month');
         $startDate = $request->input('start_date');
@@ -489,7 +518,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             'profileUserMap' => $profileUserMap,
             'teachersList' => $teachersList,
             'availableMonths' => $this->getAvailableMonths($academyId, $scopeQuery),
-            'currentTeacherId' => $currentTeacherId,
+            'currentTeacherIds' => $currentTeacherIds,
             'currentMonth' => $currentMonth,
             'currentTeacherType' => $currentTeacherType,
             'currentGender' => $currentGender,

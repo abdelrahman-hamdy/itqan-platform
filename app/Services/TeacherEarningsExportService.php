@@ -2,10 +2,24 @@
 
 namespace App\Services;
 
+use App\Exports\TeacherEarningsSummaryExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use TCPDF;
 
 class TeacherEarningsExportService
 {
+    /**
+     * Generate a teacher earnings summary Excel file for download.
+     */
+    public function generateSummaryExcel(array $teacherSummaries, array $profileUserMap, array $meta): BinaryFileResponse
+    {
+        $export = new TeacherEarningsSummaryExport($teacherSummaries, $profileUserMap, $meta);
+        $filename = 'teacher-earnings-'.nowInAcademyTimezone()->format('Y-m-d').'.xlsx';
+
+        return Excel::download($export, $filename);
+    }
+
     /**
      * Generate a teacher earnings summary PDF in memory.
      *
