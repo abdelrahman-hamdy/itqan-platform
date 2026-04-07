@@ -857,6 +857,8 @@ return [
         'count_student_confirm' => 'This session will be counted from :name\'s subscription balance. Continue?',
         'uncount_student_confirm' => 'This session will be removed from :name\'s subscription and balance restored. Continue?',
         'toggle_error' => 'Error updating counting status',
+        'no_attendance_data' => 'No attendance data',
+        'duration' => 'Duration',
 
         // Edit modal
         'edit_modal_title' => 'Edit Session',

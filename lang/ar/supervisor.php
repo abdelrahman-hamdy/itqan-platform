@@ -857,6 +857,8 @@ return [
         'count_student_confirm' => 'سيتم احتساب هذه الجلسة من رصيد اشتراك الطالب :name. هل تريد المتابعة؟',
         'uncount_student_confirm' => 'سيتم إلغاء احتساب هذه الجلسة من رصيد اشتراك الطالب :name وإرجاع الرصيد. هل تريد المتابعة؟',
         'toggle_error' => 'حدث خطأ أثناء تحديث حالة الاحتساب',
+        'no_attendance_data' => 'لا توجد بيانات حضور',
+        'duration' => 'المدة',
 
         // Edit modal
         'edit_modal_title' => 'تعديل الجلسة',

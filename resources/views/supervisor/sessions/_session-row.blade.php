@@ -88,7 +88,7 @@
         @if($session->status === \App\Enums\SessionStatus::COMPLETED)
             @php
                 $tAtt = $session->teacher_attendance_status;
-                $sAtt = $session->attendances?->first()?->attendance_status;
+                $sAtt = $session->meetingAttendances?->where('user_type', 'student')->first()?->attendance_status;
                 $attColors = ['attended' => 'bg-green-100 text-green-700', 'partially_attended' => 'bg-amber-100 text-amber-700', 'late' => 'bg-yellow-100 text-yellow-700', 'left' => 'bg-orange-100 text-orange-700', 'absent' => 'bg-red-100 text-red-700'];
             @endphp
             <div class="space-y-1">
@@ -119,7 +119,7 @@
         @if($session->status === \App\Enums\SessionStatus::COMPLETED)
             @php
                 $tCounts = $session->counts_for_teacher ?? true;
-                $sCounts = $session->attendances?->first()?->counts_for_subscription ?? true;
+                $sCounts = $session->meetingAttendances?->where('user_type', 'student')->first()?->counts_for_subscription ?? true;
             @endphp
             <div class="space-y-1">
                 <div class="flex items-center gap-1">

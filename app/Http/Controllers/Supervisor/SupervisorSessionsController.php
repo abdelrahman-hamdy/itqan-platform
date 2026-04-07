@@ -7,6 +7,7 @@ use App\Enums\SessionStatus;
 use App\Http\Requests\Supervisor\UpdateSessionRequest;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
+use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\User;
 use App\Services\SessionCountingService;
@@ -222,15 +223,18 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             return response()->json(['message' => __('supervisor.observation.session_not_found')], 404);
         }
 
-        $attendance = $session->attendanceRecords()->findOrFail($attendanceId);
+        $meetingAttendance = MeetingAttendance::where('session_id', $session->id)
+            ->where('id', $attendanceId)
+            ->firstOrFail();
 
         $validated = $request->validate(['counts' => 'required|boolean']);
 
-        app(SessionCountingService::class)->setCountsForSubscription(
-            $attendance,
-            $validated['counts'],
-            auth()->id()
-        );
+        // Update counts_for_subscription directly on meeting_attendances
+        $meetingAttendance->update([
+            'counts_for_subscription' => $validated['counts'],
+            'counts_for_subscription_set_by' => auth()->id(),
+            'counts_for_subscription_set_at' => now(),
+        ]);
 
         return response()->json(['success' => true, 'counts_for_subscription' => $validated['counts']]);
     }
@@ -342,7 +346,7 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     private function getQuranQuery(): Builder
     {
         $query = QuranSession::query()
-            ->with(['quranTeacher', 'student', 'circle', 'individualCircle', 'trialRequest.student']);
+            ->with(['quranTeacher', 'student', 'circle', 'individualCircle', 'trialRequest.student', 'meetingAttendances']);
 
         if (! $this->isAdminUser()) {
             $teacherIds = $this->getAssignedQuranTeacherIds();
@@ -358,7 +362,7 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     private function getAcademicQuery(): Builder
     {
         $query = AcademicSession::query()
-            ->with(['academicTeacher.user', 'student', 'academicIndividualLesson.academicSubject']);
+            ->with(['academicTeacher.user', 'student', 'academicIndividualLesson.academicSubject', 'meetingAttendances']);
 
         if (! $this->isAdminUser()) {
             $profileIds = $this->getAssignedAcademicTeacherProfileIds();
@@ -374,7 +378,7 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     private function getInteractiveQuery(): Builder
     {
         $query = InteractiveCourseSession::query()
-            ->with(['course.assignedTeacher.user', 'course.subject']);
+            ->with(['course.assignedTeacher.user', 'course.subject', 'meetingAttendances']);
 
         if (! $this->isAdminUser()) {
             $profileIds = $this->getAssignedAcademicTeacherProfileIds();

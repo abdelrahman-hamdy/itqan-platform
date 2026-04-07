@@ -421,11 +421,13 @@
     {{-- Counting Management Section --}}
     @if($session->status === \App\Enums\SessionStatus::COMPLETED)
     @php
-        $attendances = $session->attendances ?? collect();
-        $teacherAttStatus = $session->teacher_attendance_status;
+        // Use meeting_attendances as source of truth (quran_session_attendances is empty)
+        $allMeetingAtt = $session->meetingAttendances ?? collect();
+        $studentAttendances = $allMeetingAtt->where('user_type', 'student');
+        $teacherMeetingAtt = $allMeetingAtt->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])->first();
+        $teacherAttStatus = $session->teacher_attendance_status ?? $teacherMeetingAtt?->attendance_status;
         $teacherCounts = $session->counts_for_teacher ?? true;
-        $teacherDuration = $session->meetingAttendances?->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])->first();
-        $teacherMinutes = $teacherDuration?->total_duration_minutes ?? 0;
+        $teacherMinutes = $teacherMeetingAtt?->total_duration_minutes ?? 0;
 
         $attStatusClasses = [
             'attended' => 'bg-green-100 text-green-800',
@@ -505,16 +507,15 @@
                     {{ __('settings.student_attendance') }}
                 </h4>
 
-                @forelse($attendances as $att)
+                @forelse($studentAttendances as $sAtt)
                     @php
-                        $studentMeeting = $session->meetingAttendances?->where('user_id', $att->student_id)->where('user_type', 'student')->first();
-                        $studentMinutes = $studentMeeting?->total_duration_minutes ?? $att->auto_duration_minutes ?? 0;
-                        $studentAttStatus = $att->attendance_status;
-                        $studentCountsVal = $att->counts_for_subscription ?? true;
+                        $studentUser = \App\Models\User::find($sAtt->user_id);
+                        $studentMinutes = $sAtt->total_duration_minutes ?? 0;
+                        $studentAttStatus = $sAtt->attendance_status;
                     @endphp
                     <div class="border-b border-gray-100 pb-3 last:border-0 last:pb-0 space-y-2">
                         <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-gray-800">{{ $att->student?->name ?? '-' }}</span>
+                            <span class="text-sm font-medium text-gray-800">{{ $studentUser?->name ?? __('supervisor.sessions.student_short') }}</span>
                             @if($studentAttStatus)
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium {{ $attStatusClasses[$studentAttStatus] ?? 'bg-gray-100 text-gray-600' }}">
                                     <i class="{{ \App\Enums\AttendanceStatus::tryFrom($studentAttStatus)?->icon() ?? 'ri-question-line' }} text-[10px]"></i>
@@ -525,27 +526,27 @@
 
                         <div class="flex items-center justify-between text-xs text-gray-500">
                             <span>{{ $studentMinutes }} {{ __('settings.minutes') }} / {{ $session->duration_minutes ?? '-' }} {{ __('settings.minutes') }}</span>
-                            <span x-show="studentCounts[{{ $att->id }}]" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium {{ $countedClass }}">
+                            <span x-show="studentCounts[{{ $sAtt->id }}]" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium {{ $countedClass }}">
                                 <i class="ri-check-line text-[10px]"></i> {{ __('supervisor.sessions.counted') }}
                             </span>
-                            <span x-show="!studentCounts[{{ $att->id }}]" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium {{ $notCountedClass }}">
+                            <span x-show="!studentCounts[{{ $sAtt->id }}]" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium {{ $notCountedClass }}">
                                 <i class="ri-close-line text-[10px]"></i> {{ __('supervisor.sessions.not_counted') }}
                             </span>
                         </div>
 
                         <button
-                            @click="confirmToggleStudent({{ $att->id }}, '{{ $att->student?->name ?? '' }}')"
+                            @click="confirmToggleStudent({{ $sAtt->id }}, '{{ $studentUser?->name ?? '' }}')"
                             class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-medium rounded-lg transition-colors"
-                            :class="studentCounts[{{ $att->id }}]
+                            :class="studentCounts[{{ $sAtt->id }}]
                                 ? 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'
                                 : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200'"
                         >
-                            <i :class="studentCounts[{{ $att->id }}] ? 'ri-close-circle-line' : 'ri-check-circle-line'"></i>
-                            <span x-text="studentCounts[{{ $att->id }}] ? '{{ __('supervisor.sessions.uncount_for_student') }}' : '{{ __('supervisor.sessions.count_for_student') }}'"></span>
+                            <i :class="studentCounts[{{ $sAtt->id }}] ? 'ri-close-circle-line' : 'ri-check-circle-line'"></i>
+                            <span x-text="studentCounts[{{ $sAtt->id }}] ? '{{ __('supervisor.sessions.uncount_for_student') }}' : '{{ __('supervisor.sessions.count_for_student') }}'"></span>
                         </button>
                     </div>
                 @empty
-                    <p class="text-sm text-gray-400 text-center py-4">{{ __('settings.auto_calculated') }}</p>
+                    <p class="text-sm text-gray-400 text-center py-4">{{ __('supervisor.sessions.no_attendance_data') }}</p>
                 @endforelse
             </div>
         </div>
@@ -556,7 +557,7 @@
     function countingControls() {
         return {
             countsForTeacher: @json($session->counts_for_teacher ?? true),
-            studentCounts: @json(($attendances ?? collect())->pluck('counts_for_subscription', 'id')->map(fn($v) => $v ?? true)),
+            studentCounts: @json($studentAttendances->pluck('counts_for_subscription', 'id')->map(fn($v) => $v ?? true)),
             submitting: false,
 
             confirmToggleTeacher() {
