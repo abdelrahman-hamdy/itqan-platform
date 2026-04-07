@@ -425,7 +425,8 @@
         $allMeetingAtt = $session->meetingAttendances ?? collect();
         $studentAttendances = $allMeetingAtt->where('user_type', 'student');
         $teacherMeetingAtt = $allMeetingAtt->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])->first();
-        $teacherAttStatus = $session->teacher_attendance_status ?? $teacherMeetingAtt?->attendance_status;
+        $teacherAttStatusRaw = $session->teacher_attendance_status ?? $teacherMeetingAtt?->attendance_status;
+        $teacherAttStatus = $teacherAttStatusRaw instanceof \BackedEnum ? $teacherAttStatusRaw->value : $teacherAttStatusRaw;
         $teacherCounts = $session->counts_for_teacher ?? true;
         $teacherMinutes = $teacherMeetingAtt?->total_duration_minutes ?? 0;
 
@@ -511,7 +512,8 @@
                     @php
                         $studentUser = $sAtt->user;
                         $studentMinutes = $sAtt->total_duration_minutes ?? 0;
-                        $studentAttStatus = $sAtt->attendance_status;
+                        $studentAttStatusRaw = $sAtt->attendance_status;
+                        $studentAttStatus = $studentAttStatusRaw instanceof \BackedEnum ? $studentAttStatusRaw->value : $studentAttStatusRaw;
                     @endphp
                     <div class="border-b border-gray-100 pb-3 last:border-0 last:pb-0 space-y-2">
                         <div class="flex items-center justify-between">
