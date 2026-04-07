@@ -63,21 +63,24 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
         $gatewayRevenues = collect();
 
         if ($isAdmin) {
+            $academyNow = nowInAcademyTimezone();
+            $completedBase = fn () => $applyFilters(Payment::query())
+                ->where('status', PaymentStatus::COMPLETED);
+
             $pendingCount = $applyFilters(Payment::query())->pending()->count();
 
-            $completedToday = $applyFilters(Payment::query())
-                ->where('status', PaymentStatus::COMPLETED)
-                ->whereDate('paid_at', today())
+            $completedToday = $completedBase()
+                ->whereDate('paid_at', $academyNow->toDateString())
                 ->count();
 
-            $revenueThisMonth = $applyFilters(Payment::query())
-                ->where('status', PaymentStatus::COMPLETED)
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
+            $revenueThisMonth = $completedBase()
+                ->whereBetween('created_at', [
+                    $academyNow->copy()->startOfMonth()->utc(),
+                    $academyNow->copy()->endOfMonth()->utc(),
+                ])
                 ->sum('amount');
 
-            $gatewayRevenues = $applyFilters(Payment::query())
-                ->where('status', PaymentStatus::COMPLETED)
+            $gatewayRevenues = $completedBase()
                 ->groupBy('payment_gateway')
                 ->selectRaw('payment_gateway, SUM(amount) as total')
                 ->pluck('total', 'payment_gateway');
