@@ -15,13 +15,12 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
             abort(403);
         }
 
-        // Reusable filter closure applied to all queries (list + stats)
         $applyFilters = function ($q) use ($request) {
             if ($request->filled('status')) {
                 $q->where('status', $request->status);
             }
             if ($request->filled('payment_method')) {
-                $q->where('payment_method', $request->payment_method);
+                $q->forMethod($request->payment_method);
             }
             if ($request->filled('date_from')) {
                 $q->whereDate('created_at', '>=', $request->date_from);
@@ -30,7 +29,7 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
                 $q->whereDate('created_at', '<=', $request->date_to);
             }
             if ($request->filled('payment_gateway')) {
-                $q->where('payment_gateway', $request->payment_gateway);
+                $q->forGateway($request->payment_gateway);
             }
             if ($request->filled('search')) {
                 $search = $request->search;
@@ -43,7 +42,6 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
             return $q;
         };
 
-        // Paginated list
         $query = $applyFilters(Payment::with(['user', 'payable']));
 
         $sort = $request->get('sort', 'newest');
@@ -56,45 +54,40 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
 
         $payments = $query->paginate(15)->withQueryString();
 
-        // Stats (filtered)
-        $revenueThisMonth = $applyFilters(Payment::query())
-            ->where('status', PaymentStatus::COMPLETED)
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->sum('amount');
-
-        $pendingCount = $applyFilters(Payment::query())
-            ->where('status', PaymentStatus::PENDING)->count();
+        $pendingCount = $applyFilters(Payment::query())->pending()->count();
 
         $completedToday = $applyFilters(Payment::query())
             ->where('status', PaymentStatus::COMPLETED)
             ->whereDate('paid_at', today())
             ->count();
 
-        $totalRevenue = $applyFilters(Payment::query())
-            ->where('status', PaymentStatus::COMPLETED)->sum('amount');
+        $isAdmin = $this->isAdminUser();
 
-        // Per-gateway revenue stats (filtered)
-        $paymobRevenue = $applyFilters(Payment::query())
-            ->where('status', PaymentStatus::COMPLETED)
-            ->where('payment_gateway', 'paymob')->sum('amount');
-        $easykashRevenue = $applyFilters(Payment::query())
-            ->where('status', PaymentStatus::COMPLETED)
-            ->where('payment_gateway', 'easykash')->sum('amount');
-        $tapRevenue = $applyFilters(Payment::query())
-            ->where('status', PaymentStatus::COMPLETED)
-            ->where('payment_gateway', 'tap')->sum('amount');
-        $manualRevenue = $applyFilters(Payment::query())
-            ->where('status', PaymentStatus::COMPLETED)
-            ->where('payment_gateway', 'manual')->sum('amount');
+        $revenueThisMonth = 0;
+        $totalRevenue = 0;
+        $gatewayRevenues = collect();
 
-        // Distinct payment methods for filter dropdown
+        if ($isAdmin) {
+            $revenueThisMonth = $applyFilters(Payment::query())
+                ->where('status', PaymentStatus::COMPLETED)
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->sum('amount');
+
+            // Single GROUP BY query for total + per-gateway revenue
+            $gatewayRevenues = $applyFilters(Payment::query())
+                ->where('status', PaymentStatus::COMPLETED)
+                ->groupBy('payment_gateway')
+                ->selectRaw('payment_gateway, SUM(amount) as total')
+                ->pluck('total', 'payment_gateway');
+
+            $totalRevenue = $gatewayRevenues->sum();
+        }
+
         $paymentMethods = Payment::whereNotNull('payment_method')
             ->distinct()
             ->pluck('payment_method')
             ->toArray();
-
-        $isAdmin = $this->isAdminUser();
 
         return view('supervisor.payments.index', compact(
             'payments',
@@ -102,10 +95,7 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
             'pendingCount',
             'completedToday',
             'totalRevenue',
-            'paymobRevenue',
-            'easykashRevenue',
-            'tapRevenue',
-            'manualRevenue',
+            'gatewayRevenues',
             'paymentMethods',
             'isAdmin',
         ));

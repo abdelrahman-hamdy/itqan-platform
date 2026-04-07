@@ -98,46 +98,32 @@
 
     <!-- Revenue by Source -->
     @if($isAdmin)
+    @php
+        $gatewayCards = [
+            'paymob'   => 'border-s-blue-500',
+            'easykash' => 'border-s-emerald-500',
+            'tap'      => 'border-s-cyan-500',
+            'manual'   => 'border-s-orange-500',
+        ];
+    @endphp
     <div class="mb-6">
         <h3 class="text-sm font-semibold text-gray-500 mb-3">{{ __('supervisor.payments.revenue_by_source') }}</h3>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            {{-- Paymob --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 border-s-4 border-s-blue-500 p-4 md:p-5">
-                <div class="flex items-center gap-3 mb-3">
-                    <img src="{{ asset('app-design-assets/paymob-logo.png') }}" alt="Paymob" class="h-7 w-auto object-contain">
-                    <span class="text-sm text-gray-500">{{ __('supervisor.payments.gateway_paymob') }}</span>
-                </div>
-                <div class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($paymobRevenue, 2) }}</div>
-            </div>
-
-            {{-- EasyKash --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 border-s-4 border-s-emerald-500 p-4 md:p-5">
-                <div class="flex items-center gap-3 mb-3">
-                    <img src="{{ asset('app-design-assets/easykash-logo.png') }}" alt="EasyKash" class="h-7 w-auto object-contain">
-                    <span class="text-sm text-gray-500">{{ __('supervisor.payments.gateway_easykash') }}</span>
-                </div>
-                <div class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($easykashRevenue, 2) }}</div>
-            </div>
-
-            {{-- Tap --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 border-s-4 border-s-cyan-500 p-4 md:p-5">
-                <div class="flex items-center gap-3 mb-3">
-                    <img src="{{ asset('app-design-assets/tap-logo.png') }}" alt="Tap" class="h-7 w-auto object-contain">
-                    <span class="text-sm text-gray-500">{{ __('supervisor.payments.gateway_tap') }}</span>
-                </div>
-                <div class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($tapRevenue, 2) }}</div>
-            </div>
-
-            {{-- Manual (Admin) --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 border-s-4 border-s-orange-500 p-4 md:p-5">
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="p-1.5 bg-orange-50 rounded-lg">
-                        <i class="ri-admin-line text-lg text-orange-600"></i>
+            @foreach($gatewayCards as $gw => $borderClass)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 border-s-4 {{ $borderClass }} p-4 md:p-5">
+                    <div class="flex items-center gap-3 mb-3">
+                        @if(isset($gatewayLogos[$gw]))
+                            <img src="{{ $gatewayLogos[$gw] }}" alt="" class="h-7 w-auto object-contain">
+                        @else
+                            <div class="p-1.5 bg-orange-50 rounded-lg">
+                                <i class="ri-admin-line text-lg text-orange-600"></i>
+                            </div>
+                        @endif
+                        <span class="text-sm text-gray-500">{{ $gatewayLabels[$gw] }}</span>
                     </div>
-                    <span class="text-sm text-gray-500">{{ __('supervisor.payments.gateway_manual') }}</span>
+                    <div class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($gatewayRevenues->get($gw, 0), 2) }}</div>
                 </div>
-                <div class="text-xl md:text-2xl font-bold text-gray-900">{{ number_format($manualRevenue, 2) }}</div>
-            </div>
+            @endforeach
         </div>
     </div>
     @endif
