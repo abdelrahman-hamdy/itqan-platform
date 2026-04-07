@@ -79,9 +79,17 @@ class SessionCountingService
 
             $studentId = $attendance->student_id ?? $attendance->user_id;
 
-            if ($counts && ! $attendance->subscription_counted_at) {
+            // Check both tracking systems: MeetingAttendance.subscription_counted_at
+            // (group sessions) and session.subscription_counted (individual sessions).
+            // Individual sessions set subscription_counted on the session, NOT
+            // subscription_counted_at on MeetingAttendance.
+            $wasCountedOnAttendance = (bool) $attendance->subscription_counted_at;
+            $wasCountedOnSession = (bool) $session->subscription_counted;
+            $wasCounted = $wasCountedOnAttendance || $wasCountedOnSession;
+
+            if ($counts && ! $wasCounted) {
                 $this->applySubscriptionForStudent($attendance, $session, $studentId);
-            } elseif (! $counts && $attendance->subscription_counted_at) {
+            } elseif (! $counts && $wasCounted) {
                 $this->reverseSubscriptionForStudent($attendance, $session, $studentId);
             }
 
@@ -113,6 +121,11 @@ class SessionCountingService
             $subscription->useSession();
             $attendance->update(['subscription_counted_at' => now()]);
 
+            // Also set session-level flag (individual sessions track here)
+            if (! $session->subscription_counted) {
+                $session->update(['subscription_counted' => true]);
+            }
+
             Log::info('SessionCountingService: Subscription decremented', [
                 'subscription_id' => $subscription->id,
                 'student_id' => $studentId,
@@ -138,6 +151,11 @@ class SessionCountingService
         try {
             $subscription->returnSession();
             $attendance->update(['subscription_counted_at' => null]);
+
+            // Also reset session-level flag (individual sessions track here)
+            if ($session->subscription_counted) {
+                $session->update(['subscription_counted' => false]);
+            }
 
             Log::info('SessionCountingService: Subscription reversed', [
                 'subscription_id' => $subscription->id,
