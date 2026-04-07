@@ -15,38 +15,37 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
             abort(403);
         }
 
-        $query = Payment::with(['user', 'payable']);
+        // Reusable filter closure applied to all queries (list + stats)
+        $applyFilters = function ($q) use ($request) {
+            if ($request->filled('status')) {
+                $q->where('status', $request->status);
+            }
+            if ($request->filled('payment_method')) {
+                $q->where('payment_method', $request->payment_method);
+            }
+            if ($request->filled('date_from')) {
+                $q->whereDate('created_at', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $q->whereDate('created_at', '<=', $request->date_to);
+            }
+            if ($request->filled('payment_gateway')) {
+                $q->where('payment_gateway', $request->payment_gateway);
+            }
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $q->whereHas('user', function ($u) use ($search) {
+                    $u->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
+            }
 
-        // Filters
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+            return $q;
+        };
 
-        if ($request->filled('payment_method')) {
-            $query->where('payment_method', $request->payment_method);
-        }
+        // Paginated list
+        $query = $applyFilters(Payment::with(['user', 'payable']));
 
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-
-        if ($request->filled('payment_gateway')) {
-            $query->where('payment_gateway', $request->payment_gateway);
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-
-        // Sorting
         $sort = $request->get('sort', 'newest');
         $query = match ($sort) {
             'amount_desc' => $query->orderByDesc('amount'),
@@ -57,28 +56,36 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
 
         $payments = $query->paginate(15)->withQueryString();
 
-        // Stats
-        $revenueThisMonth = Payment::where('status', PaymentStatus::COMPLETED)
+        // Stats (filtered)
+        $revenueThisMonth = $applyFilters(Payment::query())
+            ->where('status', PaymentStatus::COMPLETED)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->sum('amount');
 
-        $pendingCount = Payment::where('status', PaymentStatus::PENDING)->count();
+        $pendingCount = $applyFilters(Payment::query())
+            ->where('status', PaymentStatus::PENDING)->count();
 
-        $completedToday = Payment::where('status', PaymentStatus::COMPLETED)
+        $completedToday = $applyFilters(Payment::query())
+            ->where('status', PaymentStatus::COMPLETED)
             ->whereDate('paid_at', today())
             ->count();
 
-        $totalRevenue = Payment::where('status', PaymentStatus::COMPLETED)->sum('amount');
+        $totalRevenue = $applyFilters(Payment::query())
+            ->where('status', PaymentStatus::COMPLETED)->sum('amount');
 
-        // Per-gateway revenue stats
-        $paymobRevenue = Payment::where('status', PaymentStatus::COMPLETED)
+        // Per-gateway revenue stats (filtered)
+        $paymobRevenue = $applyFilters(Payment::query())
+            ->where('status', PaymentStatus::COMPLETED)
             ->where('payment_gateway', 'paymob')->sum('amount');
-        $easykashRevenue = Payment::where('status', PaymentStatus::COMPLETED)
+        $easykashRevenue = $applyFilters(Payment::query())
+            ->where('status', PaymentStatus::COMPLETED)
             ->where('payment_gateway', 'easykash')->sum('amount');
-        $tapRevenue = Payment::where('status', PaymentStatus::COMPLETED)
+        $tapRevenue = $applyFilters(Payment::query())
+            ->where('status', PaymentStatus::COMPLETED)
             ->where('payment_gateway', 'tap')->sum('amount');
-        $manualRevenue = Payment::where('status', PaymentStatus::COMPLETED)
+        $manualRevenue = $applyFilters(Payment::query())
+            ->where('status', PaymentStatus::COMPLETED)
             ->where('payment_gateway', 'manual')->sum('amount');
 
         // Distinct payment methods for filter dropdown
