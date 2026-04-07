@@ -88,7 +88,9 @@
         @if($session->status === \App\Enums\SessionStatus::COMPLETED)
             @php
                 $tAtt = $session->teacher_attendance_status;
-                $sAtt = $session->meetingAttendances?->where('user_type', 'student')->first()?->attendance_status;
+                $sAttRaw = $session->meetingAttendances?->where('user_type', 'student')->first()?->attendance_status;
+                $sAtt = $sAttRaw instanceof \BackedEnum ? $sAttRaw->value : $sAttRaw;
+                $tAtt = $tAtt instanceof \BackedEnum ? $tAtt->value : $tAtt;
                 $attColors = ['attended' => 'bg-green-100 text-green-700', 'partially_attended' => 'bg-amber-100 text-amber-700', 'late' => 'bg-yellow-100 text-yellow-700', 'left' => 'bg-orange-100 text-orange-700', 'absent' => 'bg-red-100 text-red-700'];
             @endphp
             <div class="space-y-1">
