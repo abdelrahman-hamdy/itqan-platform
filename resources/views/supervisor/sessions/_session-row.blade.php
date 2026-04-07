@@ -30,22 +30,24 @@
 
     $showUrl = route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
 
-    // Attendance data (from meeting_attendances)
-    $attColors = ['attended' => 'bg-green-100 text-green-700', 'partially_attended' => 'bg-amber-100 text-amber-700', 'late' => 'bg-yellow-100 text-yellow-700', 'left' => 'bg-orange-100 text-orange-700', 'absent' => 'bg-red-100 text-red-700'];
-    $tAtt = $session->teacher_attendance_status;
-    $tAtt = $tAtt instanceof \BackedEnum ? $tAtt->value : $tAtt;
-    $teacherMeeting = $session->meetingAttendances?->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])->first();
-    $tMinutes = $teacherMeeting?->total_duration_minutes ?? 0;
-    $studentMeeting = $session->meetingAttendances?->where('user_type', 'student')->first();
-    $sAttRaw = $studentMeeting?->attendance_status;
-    $sAtt = $sAttRaw instanceof \BackedEnum ? $sAttRaw->value : $sAttRaw;
-    $sMinutes = $studentMeeting?->total_duration_minutes ?? 0;
-    $tCounts = $session->counts_for_teacher ?? true;
-    $sCounts = $studentMeeting?->counts_for_subscription ?? true;
-    $duration = $session->duration_minutes ?? 0;
-
-    $toggleTeacherUrl = route('manage.sessions.toggle-counts-teacher', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
-    $toggleStudentUrl = $studentMeeting ? route('manage.sessions.toggle-counts-subscription', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id, 'attendanceId' => $studentMeeting->id]) : null;
+    // Only resolve attendance data for completed sessions
+    $attColors = $tAtt = $sAtt = $tMinutes = $sMinutes = $tCounts = $sCounts = $duration = $toggleTeacherUrl = $toggleStudentUrl = $studentMeeting = null;
+    if ($isCompleted) {
+        $attColors = ['attended' => 'bg-green-100 text-green-700', 'partially_attended' => 'bg-amber-100 text-amber-700', 'late' => 'bg-yellow-100 text-yellow-700', 'left' => 'bg-orange-100 text-orange-700', 'absent' => 'bg-red-100 text-red-700'];
+        $tAttRaw = $session->teacher_attendance_status;
+        $tAtt = $tAttRaw instanceof \BackedEnum ? $tAttRaw->value : $tAttRaw;
+        $teacherMeeting = $session->meetingAttendances?->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])->first();
+        $tMinutes = $teacherMeeting?->total_duration_minutes ?? 0;
+        $studentMeeting = $session->meetingAttendances?->where('user_type', 'student')->first();
+        $sAttRaw = $studentMeeting?->attendance_status;
+        $sAtt = $sAttRaw instanceof \BackedEnum ? $sAttRaw->value : $sAttRaw;
+        $sMinutes = $studentMeeting?->total_duration_minutes ?? 0;
+        $tCounts = $session->counts_for_teacher ?? true;
+        $sCounts = $studentMeeting?->counts_for_subscription ?? true;
+        $duration = $session->duration_minutes ?? 0;
+        $toggleTeacherUrl = route('manage.sessions.toggle-counts-teacher', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
+        $toggleStudentUrl = $studentMeeting ? route('manage.sessions.toggle-counts-subscription', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id, 'attendanceId' => $studentMeeting->id]) : null;
+    }
 @endphp
 
 <tr class="hover:bg-gray-50 cursor-pointer transition-colors {{ $isLive ? 'bg-green-50/50' : '' }}"
