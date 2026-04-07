@@ -21,9 +21,10 @@ return new class extends Migration
         $tables = ['quran_sessions', 'academic_sessions', 'interactive_course_sessions'];
 
         foreach ($tables as $table) {
-            Schema::table($table, function (Blueprint $t) {
+            Schema::table($table, function (Blueprint $t) use ($table) {
                 // Counting flag for teacher earnings (null = auto-calculated from attendance)
-                $t->boolean('counts_for_teacher')->nullable()->default(null)->after('subscription_counted');
+                $afterCol = Schema::hasColumn($table, 'subscription_counted') ? 'subscription_counted' : 'attendance_status';
+                $t->boolean('counts_for_teacher')->nullable()->default(null)->after($afterCol);
                 $t->unsignedBigInteger('counts_for_teacher_set_by')->nullable()->after('counts_for_teacher');
                 $t->timestamp('counts_for_teacher_set_at')->nullable()->after('counts_for_teacher_set_by');
 
