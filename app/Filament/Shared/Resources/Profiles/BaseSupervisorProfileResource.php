@@ -274,12 +274,15 @@ abstract class BaseSupervisorProfileResource extends Resource
                             ->label('إدارة أرباح المعلمين')
                             ->helperText('عرض ومراجعة أرباح المعلمين'),
                     ])->columns(2),
-                Fieldset::make('المراقبة')
+                Fieldset::make('المراقبة والدورات')
                     ->schema([
                         Toggle::make('can_monitor_sessions')
                             ->label('مراقبة الجلسات')
                             ->helperText('الانضمام للاجتماعات ومراقبة الجلسات'),
-                    ]),
+                        Toggle::make('can_manage_interactive_courses')
+                            ->label('إدارة الدورات التفاعلية')
+                            ->helperText('إنشاء وتعديل الدورات التفاعلية'),
+                    ])->columns(2),
                 Grid::make(2)->schema([
                     Select::make('quran_teacher_ids')
                         ->label('معلمو القرآن')

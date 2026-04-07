@@ -122,8 +122,13 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::put('/academic-lessons/{subscription}', [SupervisorAcademicLessonsController::class, 'update'])->name('academic-lessons.update');
 
         // Interactive Courses
+        Route::get('/interactive-courses/create', [SupervisorInteractiveCoursesController::class, 'create'])->name('interactive-courses.create');
+        Route::post('/interactive-courses', [SupervisorInteractiveCoursesController::class, 'store'])->name('interactive-courses.store');
         Route::get('/interactive-courses', [SupervisorInteractiveCoursesController::class, 'index'])->name('interactive-courses.index');
         Route::get('/interactive-courses/{course}', [SupervisorInteractiveCoursesController::class, 'show'])->name('interactive-courses.show');
+        Route::put('/interactive-courses/{course}', [SupervisorInteractiveCoursesController::class, 'update'])->name('interactive-courses.update');
+        Route::post('/interactive-courses/{course}/change-teacher', [SupervisorInteractiveCoursesController::class, 'changeTeacher'])->name('interactive-courses.change-teacher');
+        Route::delete('/interactive-courses/{course}', [SupervisorInteractiveCoursesController::class, 'destroy'])->name('interactive-courses.destroy');
         Route::post('/interactive-courses/{course}/enrollments', [SupervisorInteractiveCoursesController::class, 'addEnrollment'])->name('interactive-courses.add-enrollment');
         Route::delete('/interactive-courses/{course}/enrollments/{enrollment}', [SupervisorInteractiveCoursesController::class, 'removeEnrollment'])->name('interactive-courses.remove-enrollment');
 

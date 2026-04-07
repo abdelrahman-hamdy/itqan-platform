@@ -131,6 +131,15 @@ abstract class BaseSupervisorWebController extends Controller
         return $this->getCurrentSupervisorProfile()?->canMonitorSessions() ?? false;
     }
 
+    protected function canManageInteractiveCourses(): bool
+    {
+        if ($this->isAdminUser()) {
+            return true;
+        }
+
+        return $this->getCurrentSupervisorProfile()?->canManageInteractiveCourses() ?? false;
+    }
+
     // ========================================================================
     // Supervisor profile helpers
     // ========================================================================
