@@ -72,7 +72,7 @@
     </div>
 
     {{-- Quick Actions --}}
-    @if($isLive || $status->canCancel() || $status->canForgive())
+    @if($isLive || $status->canCancel())
     <div class="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-1.5" onclick="event.stopPropagation();">
         @if($isLive)
             <a href="{{ $showUrl }}?mode=observer"
@@ -93,12 +93,6 @@
                 {{ __('supervisor.sessions.cancel_session') }}
             </a>
         @endif
-        @if($status->canForgive())
-            <a href="{{ $showUrl }}#forgive"
-               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
-                <i class="ri-heart-line"></i>
-                {{ __('sessions.actions.forgive') }}
-            </a>
         @endif
     </div>
     @endif
