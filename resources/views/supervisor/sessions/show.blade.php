@@ -509,7 +509,7 @@
 
                 @forelse($studentAttendances as $sAtt)
                     @php
-                        $studentUser = \App\Models\User::find($sAtt->user_id);
+                        $studentUser = $sAtt->user;
                         $studentMinutes = $sAtt->total_duration_minutes ?? 0;
                         $studentAttStatus = $sAtt->attendance_status;
                     @endphp

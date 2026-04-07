@@ -11,6 +11,7 @@ use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\User;
 use App\Services\SessionCountingService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -228,15 +229,35 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             ->firstOrFail();
 
         $validated = $request->validate(['counts' => 'required|boolean']);
+        $counts = $validated['counts'];
 
-        // Update counts_for_subscription directly on meeting_attendances
-        $meetingAttendance->update([
-            'counts_for_subscription' => $validated['counts'],
-            'counts_for_subscription_set_by' => auth()->id(),
-            'counts_for_subscription_set_at' => now(),
-        ]);
+        DB::transaction(function () use ($meetingAttendance, $counts) {
+            $meetingAttendance->update([
+                'counts_for_subscription' => $counts,
+                'counts_for_subscription_set_by' => auth()->id(),
+                'counts_for_subscription_set_at' => now(),
+            ]);
 
-        return response()->json(['success' => true, 'counts_for_subscription' => $validated['counts']]);
+            // Apply subscription side effects
+            $session = $meetingAttendance->session_type
+                ? $this->resolveSessionForMeetingAttendance($meetingAttendance)
+                : null;
+
+            if ($session && method_exists($session, 'getSubscriptionForCounting')) {
+                $subscription = $session->getSubscriptionForCounting();
+                if ($subscription) {
+                    if ($counts && ! $meetingAttendance->subscription_counted_at) {
+                        $subscription->useSession();
+                        $meetingAttendance->update(['subscription_counted_at' => now()]);
+                    } elseif (! $counts && $meetingAttendance->subscription_counted_at) {
+                        $subscription->returnSession();
+                        $meetingAttendance->update(['subscription_counted_at' => null]);
+                    }
+                }
+            }
+        });
+
+        return response()->json(['success' => true, 'counts_for_subscription' => $counts]);
     }
 
     // ========================================================================
@@ -346,7 +367,7 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     private function getQuranQuery(): Builder
     {
         $query = QuranSession::query()
-            ->with(['quranTeacher', 'student', 'circle', 'individualCircle', 'trialRequest.student', 'meetingAttendances']);
+            ->with(['quranTeacher', 'student', 'circle', 'individualCircle', 'trialRequest.student', 'meetingAttendances.user']);
 
         if (! $this->isAdminUser()) {
             $teacherIds = $this->getAssignedQuranTeacherIds();
@@ -362,7 +383,7 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     private function getAcademicQuery(): Builder
     {
         $query = AcademicSession::query()
-            ->with(['academicTeacher.user', 'student', 'academicIndividualLesson.academicSubject', 'meetingAttendances']);
+            ->with(['academicTeacher.user', 'student', 'academicIndividualLesson.academicSubject', 'meetingAttendances.user']);
 
         if (! $this->isAdminUser()) {
             $profileIds = $this->getAssignedAcademicTeacherProfileIds();
@@ -378,7 +399,7 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     private function getInteractiveQuery(): Builder
     {
         $query = InteractiveCourseSession::query()
-            ->with(['course.assignedTeacher.user', 'course.subject', 'meetingAttendances']);
+            ->with(['course.assignedTeacher.user', 'course.subject', 'meetingAttendances.user']);
 
         if (! $this->isAdminUser()) {
             $profileIds = $this->getAssignedAcademicTeacherProfileIds();
@@ -578,6 +599,20 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         };
 
         return $query->find($id);
+    }
+
+    /**
+     * Resolve the session model from a MeetingAttendance record.
+     */
+    private function resolveSessionForMeetingAttendance(MeetingAttendance $att)
+    {
+        $sessionType = match ($att->session_type) {
+            'academic' => AcademicSession::class,
+            'interactive' => InteractiveCourseSession::class,
+            default => QuranSession::class,
+        };
+
+        return $sessionType::withoutGlobalScopes()->find($att->session_id);
     }
 
     /**

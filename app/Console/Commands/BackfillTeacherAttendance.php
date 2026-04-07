@@ -11,7 +11,6 @@ use App\Models\QuranSession;
 use App\Services\SessionSettingsService;
 use App\Services\Traits\AttendanceCalculatorTrait;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Backfill teacher_attendance_status on completed sessions from meeting_attendances data.
