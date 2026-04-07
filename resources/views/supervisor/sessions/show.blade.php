@@ -418,74 +418,134 @@
         </div>
     </div>
 
-    {{-- Counting Management Section (replaces forgiveness) --}}
+    {{-- Counting Management Section --}}
     @if($session->status === \App\Enums\SessionStatus::COMPLETED)
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <i class="ri-calculator-line"></i>
+    @php
+        $attendances = $session->attendances ?? collect();
+        $teacherAttStatus = $session->teacher_attendance_status;
+        $teacherCounts = $session->counts_for_teacher ?? true;
+        $teacherDuration = $session->meetingAttendances?->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])->first();
+        $teacherMinutes = $teacherDuration?->total_duration_minutes ?? 0;
+
+        $attStatusClasses = [
+            'attended' => 'bg-green-100 text-green-800',
+            'partially_attended' => 'bg-amber-100 text-amber-800',
+            'late' => 'bg-yellow-100 text-yellow-800',
+            'left' => 'bg-orange-100 text-orange-800',
+            'absent' => 'bg-red-100 text-red-800',
+        ];
+        $countedClass = 'bg-emerald-100 text-emerald-700';
+        $notCountedClass = 'bg-red-100 text-red-700';
+    @endphp
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6" x-data="countingControls()">
+        <h3 class="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+            <i class="ri-calculator-line text-indigo-500"></i>
             {{ __('settings.counting_management') }}
         </h3>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" x-data="countingControls()">
-            {{-- Teacher Side --}}
-            <div class="space-y-3">
-                <h4 class="text-sm font-medium text-gray-700">{{ __('settings.teacher_attendance') }}</h4>
-                <div class="flex items-center gap-2">
-                    <span class="text-sm">{{ __('settings.teacher_attendance_status') }}:</span>
-                    @if($session->teacher_attendance_status)
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
-                            {{ $session->teacher_attendance_status === 'attended' ? 'bg-green-100 text-green-800' : '' }}
-                            {{ $session->teacher_attendance_status === 'partially_attended' ? 'bg-amber-100 text-amber-800' : '' }}
-                            {{ $session->teacher_attendance_status === 'absent' ? 'bg-red-100 text-red-800' : '' }}
-                        ">
-                            {{ __('enums.attendance_status.' . $session->teacher_attendance_status) }}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {{-- Teacher Column --}}
+            <div class="rounded-lg border border-gray-200 p-4 space-y-4">
+                <h4 class="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                    <i class="ri-user-star-line text-indigo-500"></i>
+                    {{ __('settings.teacher_attendance') }}
+                </h4>
+
+                {{-- Auto-calculated attendance --}}
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500">{{ __('settings.teacher_attendance_status') }}</span>
+                    @if($teacherAttStatus)
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium {{ $attStatusClasses[$teacherAttStatus] ?? 'bg-gray-100 text-gray-600' }}">
+                            <i class="{{ \App\Enums\AttendanceStatus::tryFrom($teacherAttStatus)?->icon() ?? 'ri-question-line' }} text-[10px]"></i>
+                            {{ __('enums.attendance_status.' . $teacherAttStatus) }}
                         </span>
                     @else
                         <span class="text-xs text-gray-400">{{ __('settings.auto_calculated') }}</span>
                     @endif
                 </div>
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox"
-                        :checked="countsForTeacher"
-                        @change="toggleTeacher($event.target.checked)"
-                        class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
-                    <span class="text-sm">{{ __('settings.counts_for_teacher') }}</span>
-                </label>
+
+                {{-- Duration --}}
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500">{{ __('supervisor.sessions.duration') }}</span>
+                    <span class="text-xs font-medium text-gray-700">{{ $teacherMinutes }} {{ __('settings.minutes') }} / {{ $session->duration_minutes ?? '-' }} {{ __('settings.minutes') }}</span>
+                </div>
+
+                {{-- Counted status --}}
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500">{{ __('settings.counts_for_teacher') }}</span>
+                    <span x-show="countsForTeacher" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium {{ $countedClass }}">
+                        <i class="ri-check-line text-[10px]"></i> {{ __('supervisor.sessions.counted') }}
+                    </span>
+                    <span x-show="!countsForTeacher" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium {{ $notCountedClass }}">
+                        <i class="ri-close-line text-[10px]"></i> {{ __('supervisor.sessions.not_counted') }}
+                    </span>
+                </div>
+
                 @if($session->counts_for_teacher_set_by)
-                    <p class="text-xs text-gray-400">{{ __('settings.override_by') }}: {{ $session->countsForTeacherSetBy?->name }}</p>
+                    <p class="text-[11px] text-gray-400"><i class="ri-edit-line"></i> {{ __('settings.override_by') }}: {{ $session->countsForTeacherSetBy?->name }}</p>
                 @endif
+
+                {{-- Action Button --}}
+                <button
+                    @click="confirmToggleTeacher()"
+                    class="w-full mt-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg transition-colors"
+                    :class="countsForTeacher
+                        ? 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'
+                        : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200'"
+                >
+                    <i :class="countsForTeacher ? 'ri-close-circle-line' : 'ri-check-circle-line'"></i>
+                    <span x-text="countsForTeacher ? '{{ __('supervisor.sessions.uncount_for_teacher') }}' : '{{ __('supervisor.sessions.count_for_teacher') }}'"></span>
+                </button>
             </div>
 
-            {{-- Student Side --}}
-            <div class="space-y-3">
-                <h4 class="text-sm font-medium text-gray-700">{{ __('settings.student_attendance') }}</h4>
-                @php
-                    $attendances = $session->attendances ?? collect();
-                @endphp
+            {{-- Student Column --}}
+            <div class="rounded-lg border border-gray-200 p-4 space-y-4">
+                <h4 class="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                    <i class="ri-user-line text-indigo-500"></i>
+                    {{ __('settings.student_attendance') }}
+                </h4>
+
                 @forelse($attendances as $att)
-                    <div class="flex items-center justify-between py-1">
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm">{{ $att->student?->name ?? __('settings.student_attendance_status') }}</span>
-                            @if($att->attendance_status)
-                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium
-                                    {{ $att->attendance_status === 'attended' ? 'bg-green-100 text-green-800' : '' }}
-                                    {{ $att->attendance_status === 'absent' ? 'bg-red-100 text-red-800' : '' }}
-                                    {{ $att->attendance_status === 'late' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                ">
-                                    {{ __('enums.attendance_status.' . $att->attendance_status) }}
+                    @php
+                        $studentMeeting = $session->meetingAttendances?->where('user_id', $att->student_id)->where('user_type', 'student')->first();
+                        $studentMinutes = $studentMeeting?->total_duration_minutes ?? $att->auto_duration_minutes ?? 0;
+                        $studentAttStatus = $att->attendance_status;
+                        $studentCountsVal = $att->counts_for_subscription ?? true;
+                    @endphp
+                    <div class="border-b border-gray-100 pb-3 last:border-0 last:pb-0 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-gray-800">{{ $att->student?->name ?? '-' }}</span>
+                            @if($studentAttStatus)
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium {{ $attStatusClasses[$studentAttStatus] ?? 'bg-gray-100 text-gray-600' }}">
+                                    <i class="{{ \App\Enums\AttendanceStatus::tryFrom($studentAttStatus)?->icon() ?? 'ri-question-line' }} text-[10px]"></i>
+                                    {{ __('enums.attendance_status.' . $studentAttStatus) }}
                                 </span>
                             @endif
                         </div>
-                        <label class="flex items-center gap-1 cursor-pointer">
-                            <input type="checkbox"
-                                :checked="studentCounts[{{ $att->id }}] ?? true"
-                                @change="toggleStudent({{ $att->id }}, $event.target.checked)"
-                                class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4">
-                            <span class="text-xs">{{ __('settings.counts_for_subscription') }}</span>
-                        </label>
+
+                        <div class="flex items-center justify-between text-xs text-gray-500">
+                            <span>{{ $studentMinutes }} {{ __('settings.minutes') }} / {{ $session->duration_minutes ?? '-' }} {{ __('settings.minutes') }}</span>
+                            <span x-show="studentCounts[{{ $att->id }}]" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium {{ $countedClass }}">
+                                <i class="ri-check-line text-[10px]"></i> {{ __('supervisor.sessions.counted') }}
+                            </span>
+                            <span x-show="!studentCounts[{{ $att->id }}]" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium {{ $notCountedClass }}">
+                                <i class="ri-close-line text-[10px]"></i> {{ __('supervisor.sessions.not_counted') }}
+                            </span>
+                        </div>
+
+                        <button
+                            @click="confirmToggleStudent({{ $att->id }}, '{{ $att->student?->name ?? '' }}')"
+                            class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-medium rounded-lg transition-colors"
+                            :class="studentCounts[{{ $att->id }}]
+                                ? 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'
+                                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200'"
+                        >
+                            <i :class="studentCounts[{{ $att->id }}] ? 'ri-close-circle-line' : 'ri-check-circle-line'"></i>
+                            <span x-text="studentCounts[{{ $att->id }}] ? '{{ __('supervisor.sessions.uncount_for_student') }}' : '{{ __('supervisor.sessions.count_for_student') }}'"></span>
+                        </button>
                     </div>
                 @empty
-                    <p class="text-sm text-gray-400">{{ __('settings.auto_calculated') }}</p>
+                    <p class="text-sm text-gray-400 text-center py-4">{{ __('settings.auto_calculated') }}</p>
                 @endforelse
             </div>
         </div>
@@ -496,8 +556,27 @@
     function countingControls() {
         return {
             countsForTeacher: @json($session->counts_for_teacher ?? true),
-            studentCounts: @json($attendances->pluck('counts_for_subscription', 'id')->map(fn($v) => $v ?? true)),
-            async toggleTeacher(counts) {
+            studentCounts: @json(($attendances ?? collect())->pluck('counts_for_subscription', 'id')->map(fn($v) => $v ?? true)),
+            submitting: false,
+
+            confirmToggleTeacher() {
+                const newVal = !this.countsForTeacher;
+                const self = this;
+                window.confirmAction({
+                    title: newVal ? '{{ __("supervisor.sessions.count_for_teacher") }}' : '{{ __("supervisor.sessions.uncount_for_teacher") }}',
+                    message: newVal
+                        ? '{{ __("supervisor.sessions.count_teacher_confirm") }}'
+                        : '{{ __("supervisor.sessions.uncount_teacher_confirm") }}',
+                    confirmText: '{{ __("components.ui.confirmation_modal.confirm") }}',
+                    isDangerous: !newVal,
+                    theme: newVal ? 'green' : null,
+                    onConfirm: () => self.doToggleTeacher(newVal),
+                });
+            },
+
+            async doToggleTeacher(counts) {
+                if (this.submitting) return;
+                this.submitting = true;
                 try {
                     const res = await fetch('{{ route("manage.sessions.toggle-counts-teacher", ["subdomain" => $subdomain, "sessionType" => $sessionType, "sessionId" => $session->id]) }}', {
                         method: 'PATCH',
@@ -506,9 +585,29 @@
                     });
                     if (!res.ok) throw new Error('Failed');
                     this.countsForTeacher = counts;
-                } catch (e) { this.countsForTeacher = !counts; }
+                } catch (e) { alert('{{ __("supervisor.sessions.toggle_error") }}'); }
+                this.submitting = false;
             },
-            async toggleStudent(attId, counts) {
+
+            confirmToggleStudent(attId, name) {
+                const newVal = !this.studentCounts[attId];
+                const self = this;
+                window.confirmAction({
+                    title: newVal ? '{{ __("supervisor.sessions.count_for_student") }}' : '{{ __("supervisor.sessions.uncount_for_student") }}',
+                    message: (newVal
+                        ? '{{ __("supervisor.sessions.count_student_confirm") }}'
+                        : '{{ __("supervisor.sessions.uncount_student_confirm") }}'
+                    ).replace(':name', name),
+                    confirmText: '{{ __("components.ui.confirmation_modal.confirm") }}',
+                    isDangerous: !newVal,
+                    theme: newVal ? 'green' : null,
+                    onConfirm: () => self.doToggleStudent(attId, newVal),
+                });
+            },
+
+            async doToggleStudent(attId, counts) {
+                if (this.submitting) return;
+                this.submitting = true;
                 try {
                     const res = await fetch('{{ route("manage.sessions.toggle-counts-subscription", ["subdomain" => $subdomain, "sessionType" => $sessionType, "sessionId" => $session->id, "attendanceId" => "__ID__"]) }}'.replace('__ID__', attId), {
                         method: 'PATCH',
@@ -517,7 +616,8 @@
                     });
                     if (!res.ok) throw new Error('Failed');
                     this.studentCounts[attId] = counts;
-                } catch (e) { this.studentCounts[attId] = !counts; }
+                } catch (e) { alert('{{ __("supervisor.sessions.toggle_error") }}'); }
+                this.submitting = false;
             }
         }
     }

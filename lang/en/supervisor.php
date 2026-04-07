@@ -841,6 +841,23 @@ return [
         'cancel_session' => 'Cancel Session',
         'view_in_panel' => 'View in Panel',
 
+        // Attendance & Counting columns
+        'col_attendance' => 'Attendance',
+        'col_counting' => 'Counting',
+        'teacher_short' => 'Teacher',
+        'student_short' => 'Student',
+        'counted' => 'Counted',
+        'not_counted' => 'Not Counted',
+        'count_for_teacher' => 'Count for Teacher',
+        'uncount_for_teacher' => 'Uncount for Teacher',
+        'count_for_student' => 'Count for Student',
+        'uncount_for_student' => 'Uncount for Student',
+        'count_teacher_confirm' => 'This session will be counted towards teacher earnings. Continue?',
+        'uncount_teacher_confirm' => 'This session will be removed from teacher earnings. Continue?',
+        'count_student_confirm' => 'This session will be counted from :name\'s subscription balance. Continue?',
+        'uncount_student_confirm' => 'This session will be removed from :name\'s subscription and balance restored. Continue?',
+        'toggle_error' => 'Error updating counting status',
+
         // Edit modal
         'edit_modal_title' => 'Edit Session',
         'edit_status' => 'Status',

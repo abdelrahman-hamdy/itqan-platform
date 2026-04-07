@@ -224,6 +224,8 @@
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_teacher') }}</th>
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_student') }}</th>
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_scheduled') }}</th>
+                        <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('supervisor.sessions.col_attendance') }}</th>
+                        <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('supervisor.sessions.col_counting') }}</th>
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_actions') }}</th>
                     </tr>
                 </thead>

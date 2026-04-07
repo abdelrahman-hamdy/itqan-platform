@@ -83,6 +83,65 @@
         @endif
     </td>
 
+    {{-- Attendance (Teacher / Student) --}}
+    <td class="px-4 py-3">
+        @if($session->status === \App\Enums\SessionStatus::COMPLETED)
+            @php
+                $tAtt = $session->teacher_attendance_status;
+                $sAtt = $session->attendances?->first()?->attendance_status;
+                $attColors = ['attended' => 'bg-green-100 text-green-700', 'partially_attended' => 'bg-amber-100 text-amber-700', 'late' => 'bg-yellow-100 text-yellow-700', 'left' => 'bg-orange-100 text-orange-700', 'absent' => 'bg-red-100 text-red-700'];
+            @endphp
+            <div class="space-y-1">
+                <div class="flex items-center gap-1">
+                    <span class="text-[10px] text-gray-400 w-10">{{ __('supervisor.sessions.teacher_short') }}</span>
+                    @if($tAtt)
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium {{ $attColors[$tAtt] ?? 'bg-gray-100 text-gray-600' }}">{{ __('enums.attendance_status.' . $tAtt) }}</span>
+                    @else
+                        <span class="text-[10px] text-gray-300">-</span>
+                    @endif
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="text-[10px] text-gray-400 w-10">{{ __('supervisor.sessions.student_short') }}</span>
+                    @if($sAtt)
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium {{ $attColors[$sAtt] ?? 'bg-gray-100 text-gray-600' }}">{{ __('enums.attendance_status.' . $sAtt) }}</span>
+                    @else
+                        <span class="text-[10px] text-gray-300">-</span>
+                    @endif
+                </div>
+            </div>
+        @else
+            <span class="text-xs text-gray-300">-</span>
+        @endif
+    </td>
+
+    {{-- Counting (Teacher / Student) --}}
+    <td class="px-4 py-3">
+        @if($session->status === \App\Enums\SessionStatus::COMPLETED)
+            @php
+                $tCounts = $session->counts_for_teacher ?? true;
+                $sCounts = $session->attendances?->first()?->counts_for_subscription ?? true;
+            @endphp
+            <div class="space-y-1">
+                <div class="flex items-center gap-1">
+                    <span class="text-[10px] text-gray-400 w-10">{{ __('supervisor.sessions.teacher_short') }}</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium {{ $tCounts ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                        <i class="{{ $tCounts ? 'ri-check-line' : 'ri-close-line' }} text-[9px]"></i>
+                        {{ $tCounts ? __('supervisor.sessions.counted') : __('supervisor.sessions.not_counted') }}
+                    </span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="text-[10px] text-gray-400 w-10">{{ __('supervisor.sessions.student_short') }}</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium {{ $sCounts ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                        <i class="{{ $sCounts ? 'ri-check-line' : 'ri-close-line' }} text-[9px]"></i>
+                        {{ $sCounts ? __('supervisor.sessions.counted') : __('supervisor.sessions.not_counted') }}
+                    </span>
+                </div>
+            </div>
+        @else
+            <span class="text-xs text-gray-300">-</span>
+        @endif
+    </td>
+
     {{-- Actions (inline buttons) --}}
     <td class="px-4 py-3" onclick="event.stopPropagation()">
         <div class="flex items-center gap-1.5">

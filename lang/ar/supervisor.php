@@ -841,6 +841,23 @@ return [
         'cancel_session' => 'إلغاء الجلسة',
         'view_in_panel' => 'عرض في لوحة التحكم',
 
+        // Attendance & Counting columns
+        'col_attendance' => 'الحضور',
+        'col_counting' => 'الاحتساب',
+        'teacher_short' => 'المعلم',
+        'student_short' => 'الطالب',
+        'counted' => 'محتسبة',
+        'not_counted' => 'غير محتسبة',
+        'count_for_teacher' => 'احتساب للمعلم',
+        'uncount_for_teacher' => 'إلغاء احتساب المعلم',
+        'count_for_student' => 'احتساب للطالب',
+        'uncount_for_student' => 'إلغاء احتساب الطالب',
+        'count_teacher_confirm' => 'سيتم احتساب هذه الجلسة ضمن أرباح المعلم. هل تريد المتابعة؟',
+        'uncount_teacher_confirm' => 'سيتم إلغاء احتساب هذه الجلسة من أرباح المعلم وحذف مستحقاته عنها. هل تريد المتابعة؟',
+        'count_student_confirm' => 'سيتم احتساب هذه الجلسة من رصيد اشتراك الطالب :name. هل تريد المتابعة؟',
+        'uncount_student_confirm' => 'سيتم إلغاء احتساب هذه الجلسة من رصيد اشتراك الطالب :name وإرجاع الرصيد. هل تريد المتابعة؟',
+        'toggle_error' => 'حدث خطأ أثناء تحديث حالة الاحتساب',
+
         // Edit modal
         'edit_modal_title' => 'تعديل الجلسة',
         'edit_status' => 'الحالة',
