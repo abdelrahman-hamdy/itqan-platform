@@ -238,21 +238,18 @@ class SupervisorSessionsController extends BaseSupervisorWebController
                 'counts_for_subscription_set_at' => now(),
             ]);
 
-            // Apply subscription side effects
-            $session = $meetingAttendance->session_type
-                ? $this->resolveSessionForMeetingAttendance($meetingAttendance)
-                : null;
-
-            if ($session && method_exists($session, 'getSubscriptionForCounting')) {
-                $subscription = $session->getSubscriptionForCounting();
-                if ($subscription) {
-                    if ($counts && ! $meetingAttendance->subscription_counted_at) {
-                        $subscription->useSession();
-                        $meetingAttendance->update(['subscription_counted_at' => now()]);
-                    } elseif (! $counts && $meetingAttendance->subscription_counted_at) {
-                        $subscription->returnSession();
-                        $meetingAttendance->update(['subscription_counted_at' => null]);
-                    }
+            // Apply subscription side effects via public trait methods
+            if ($counts && ! $meetingAttendance->subscription_counted_at) {
+                $session = $this->resolveSessionForMeetingAttendance($meetingAttendance);
+                if ($session && method_exists($session, 'updateSubscriptionUsage')) {
+                    $session->updateSubscriptionUsage();
+                    $meetingAttendance->update(['subscription_counted_at' => now()]);
+                }
+            } elseif (! $counts && $meetingAttendance->subscription_counted_at) {
+                $session = $this->resolveSessionForMeetingAttendance($meetingAttendance);
+                if ($session && method_exists($session, 'reverseSubscriptionUsage')) {
+                    $session->reverseSubscriptionUsage();
+                    $meetingAttendance->update(['subscription_counted_at' => null]);
                 }
             }
         });
