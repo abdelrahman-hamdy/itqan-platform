@@ -28,7 +28,7 @@ return new class extends Migration
         ];
 
         foreach ($attendanceTables as $table) {
-            if (! Schema::hasTable($table)) {
+            if (! Schema::hasTable($table) || Schema::hasColumn($table, 'counts_for_subscription')) {
                 continue;
             }
 
