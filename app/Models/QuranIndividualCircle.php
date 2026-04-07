@@ -157,9 +157,10 @@ class QuranIndividualCircle extends Model
      */
     public function getActiveSubscriptionAttribute(): ?QuranSubscription
     {
-        // Use loaded collection to avoid N+1 when eager-loaded
-        $activeLinked = $this->linkedSubscriptions
-            ->firstWhere('status', SessionSubscriptionStatus::ACTIVE);
+        // Use loaded collection when eager-loaded, otherwise use targeted query
+        $activeLinked = $this->relationLoaded('linkedSubscriptions')
+            ? $this->linkedSubscriptions->firstWhere('status', SessionSubscriptionStatus::ACTIVE)
+            : $this->linkedSubscriptions()->where('status', SessionSubscriptionStatus::ACTIVE)->first();
 
         if ($activeLinked) {
             return $activeLinked;
@@ -260,9 +261,10 @@ class QuranIndividualCircle extends Model
     {
         return $query->whereNull('completed_at')
             ->where(function ($q) {
-                // Has subscription (legacy or linked) but none are active
+                // Has legacy subscription that is not active (or orphaned/deleted)
                 $q->where(function ($q2) {
-                    $q2->whereHas('subscription', fn ($sq) => $sq->where('status', '!=', SessionSubscriptionStatus::ACTIVE))
+                    $q2->whereNotNull('subscription_id')
+                        ->whereDoesntHave('subscription', fn ($sq) => $sq->where('status', SessionSubscriptionStatus::ACTIVE))
                         ->whereDoesntHave('linkedSubscriptions', fn ($sq) => $sq->where('status', SessionSubscriptionStatus::ACTIVE));
                 })->orWhere(function ($q2) {
                     // Has only linked subscriptions, none active
@@ -438,16 +440,14 @@ class QuranIndividualCircle extends Model
      *
      * Priority: completed_at → subscription status → is_active fallback.
      *
-     * @return array{key: string, text: string, class: string, color: string}
+     * @return array{text: string, class: string}
      */
     public function getDisplayStatusAttribute(): array
     {
         if ($this->completed_at !== null) {
             return [
-                'key' => 'completed',
                 'text' => __('teacher.individual_circles_list.status_completed'),
                 'class' => 'bg-yellow-100 text-yellow-800',
-                'color' => 'warning',
             ];
         }
 
@@ -457,8 +457,8 @@ class QuranIndividualCircle extends Model
             : $this->is_active;
 
         return $isEffectivelyActive
-            ? ['key' => 'active', 'text' => __('teacher.individual_circles_list.status_active'), 'class' => 'bg-green-100 text-green-800', 'color' => 'success']
-            : ['key' => 'paused', 'text' => __('teacher.individual_circles_list.status_paused'), 'class' => 'bg-orange-100 text-orange-800', 'color' => 'warning'];
+            ? ['text' => __('teacher.individual_circles_list.status_active'), 'class' => 'bg-green-100 text-green-800']
+            : ['text' => __('teacher.individual_circles_list.status_paused'), 'class' => 'bg-orange-100 text-orange-800'];
     }
 
     // Boot method to handle model events

@@ -122,6 +122,7 @@ class QuranIndividualCircleController extends Controller
         $circleModel->load([
             'student',
             'subscription.package',
+            'linkedSubscriptions',
             'quranTeacher',
             'sessions' => function ($query) {
                 $query->orderBy('scheduled_at');

@@ -70,7 +70,7 @@ class SupervisorIndividualCirclesController extends BaseSupervisorWebController
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
 
         $circle = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)
-            ->with(['quranTeacher', 'student', 'sessions' => fn ($q) => $q->orderBy('scheduled_at', 'desc'), 'subscription.package', 'subscription.certificate'])
+            ->with(['quranTeacher', 'student', 'sessions' => fn ($q) => $q->orderBy('scheduled_at', 'desc'), 'subscription.package', 'subscription.certificate', 'linkedSubscriptions'])
             ->findOrFail($circleId);
 
         $teacher = User::find($circle->quran_teacher_id);
