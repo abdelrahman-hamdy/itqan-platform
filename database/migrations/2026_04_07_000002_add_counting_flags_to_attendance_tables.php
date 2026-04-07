@@ -32,7 +32,7 @@ return new class extends Migration
                 continue;
             }
 
-            Schema::table($table, function (Blueprint $t) {
+            Schema::table($table, function (Blueprint $t) use ($table) {
                 $t->boolean('counts_for_subscription')->nullable()->default(null)->after('notes');
                 $t->unsignedBigInteger('counts_for_subscription_set_by')->nullable()->after('counts_for_subscription');
                 $t->timestamp('counts_for_subscription_set_at')->nullable()->after('counts_for_subscription_set_by');
