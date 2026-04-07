@@ -61,8 +61,8 @@ class EventFetchingService
             ->with([
                 'course' => function ($query) {
                     $query->with([
-                        'assignedTeacher:id,user_id,first_name,last_name',
-                        'assignedTeacher.user:id,name,email,gender',
+                        'assignedTeacher:id,user_id',
+                        'assignedTeacher.user:id,first_name,last_name,name,email,gender',
                     ]);
                 },
             ]);
