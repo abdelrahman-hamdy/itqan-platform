@@ -38,17 +38,11 @@ return new class extends Migration
                 $t->timestamp('counts_for_subscription_set_at')->nullable()->after('counts_for_subscription_set_by');
                 $t->timestamp('subscription_counted_at')->nullable()->after('counts_for_subscription_set_at');
 
-                $t->foreign('counts_for_subscription_set_by')
+                $fkName = substr($table, 0, 30).'_sub_set_by_fk';
+                $t->foreign('counts_for_subscription_set_by', $fkName)
                     ->references('id')
                     ->on('users')
                     ->nullOnDelete();
-
-                // Composite index for per-student lookups in group subscription counting
-                try {
-                    $t->index(['session_id', 'student_id']);
-                } catch (\Exception) {
-                    // Index may already exist
-                }
             });
         }
 
@@ -90,8 +84,7 @@ return new class extends Migration
             }
 
             Schema::table($table, function (Blueprint $t) use ($table) {
-                $fkName = "{$table}_counts_for_subscription_set_by_foreign";
-                // Use try-catch since FK name might differ
+                $fkName = substr($table, 0, 30).'_sub_set_by_fk';
                 try {
                     $t->dropForeign($fkName);
                 } catch (\Exception) {
