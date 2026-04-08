@@ -187,13 +187,22 @@ class SupervisorCalendarController extends BaseSupervisorWebController
 
     public function createSchedule(Request $request, $subdomain = null): JsonResponse
     {
+        // Use academy timezone for "today" so dates are not rejected due to UTC server clock
+        $todayInAcademy = Carbon::now(AcademyContextService::getTimezone())->toDateString();
+
+        // For trial items, schedule_days is auto-derived from the selected date on the frontend
+        $itemType = $request->input('item_type');
+        $scheduleDaysRules = $itemType === 'trial'
+            ? ['array']
+            : ['required', 'array', 'min:1'];
+
         $validated = $request->validate([
             'item_id' => ['required', 'integer'],
             'item_type' => ['required', 'string', 'in:group,individual,trial,private_lesson,interactive_course'],
-            'schedule_days' => ['required', 'array', 'min:1'],
+            'schedule_days' => $scheduleDaysRules,
             'schedule_days.*' => ['string', 'in:Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday'],
             'schedule_time' => ['required', 'string', 'regex:/^\d{2}:\d{2}$/'],
-            'schedule_start_date' => ['required', 'date', 'after_or_equal:today'],
+            'schedule_start_date' => ['required', 'date', "after_or_equal:{$todayInAcademy}"],
             'session_count' => ['required', 'integer', 'min:1'],
         ]);
 
@@ -531,7 +540,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
         QuranSessionHomework::updateOrCreate(
             ['session_id' => $session->id],
             [
-                'created_by' => auth()->id(),
+                'created_by' => $teacher->id,
                 'has_new_memorization' => $validated['has_new_memorization'] ?? false,
                 'has_review' => $validated['has_review'] ?? false,
                 'has_comprehensive_review' => $validated['has_comprehensive_review'] ?? false,
