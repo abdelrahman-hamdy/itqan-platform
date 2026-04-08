@@ -127,4 +127,18 @@
             justify-content: center;
         }
     }
+
+    /* Focus mode: dimmed events */
+    .fc-event-dimmed {
+        opacity: 0.2 !important;
+        transition: opacity 0.3s ease;
+    }
+
+    /* Focus mode: highlighted events */
+    .fc-event-focused {
+        opacity: 1 !important;
+        box-shadow: 0 0 0 2px #3b82f6, 0 0 8px rgba(59, 130, 246, 0.3) !important;
+        transition: opacity 0.3s ease, box-shadow 0.3s ease;
+        z-index: 10 !important;
+    }
 </style>

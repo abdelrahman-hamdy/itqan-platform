@@ -61,6 +61,7 @@ class EventFormattingService
                     'teacher_id' => $session->quran_teacher_id,
                     'student_id' => $session->student_id,
                     'circle_id' => $session->circle_id,
+                    'individual_circle_id' => $session->individual_circle_id,
                     'quran_subscription_id' => $session->quran_subscription_id,
                 ],
             ];

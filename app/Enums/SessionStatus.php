@@ -215,6 +215,25 @@ enum SessionStatus: string
     }
 
     /**
+     * Check if this status counts towards subscription usage.
+     * Convenience method so callers can safely call $session->status->countsTowardsSubscription()
+     * without hitting undefined method errors in queued contexts.
+     */
+    public function countsTowardsSubscription(): bool
+    {
+        return $this === self::COMPLETED;
+    }
+
+    /**
+     * Check if a session with this status can be forgiven (excused absence).
+     * Only completed sessions can be forgiven since they represent actual attended time.
+     */
+    public function canForgive(): bool
+    {
+        return $this === self::COMPLETED;
+    }
+
+    /**
      * Get all status values as array
      */
     public static function values(): array

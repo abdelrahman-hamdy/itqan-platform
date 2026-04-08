@@ -215,6 +215,46 @@ class CalendarController extends Controller
     }
 
     /**
+     * Remove all future scheduled sessions for a given entity.
+     */
+    public function removeScheduledSessions(Request $request, $subdomain = null): JsonResponse
+    {
+        $validated = $request->validate([
+            'item_id' => ['required', 'integer'],
+            'item_type' => ['required', 'string', 'in:group,individual,trial,private_lesson,interactive_course'],
+        ]);
+
+        $user = Auth::user();
+        $teacherType = $user->isQuranTeacher() ? 'quran_teacher' : 'academic_teacher';
+
+        try {
+            $strategy = $this->strategyFactory->make($teacherType);
+            $strategy->forUser($user);
+
+            $removedCount = $strategy->removeScheduledSessions(
+                $validated['item_type'],
+                $validated['item_id']
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => __('teacher.calendar.sessions_removed_success', ['count' => $removedCount]),
+                'deleted_count' => $removedCount,
+            ]);
+        } catch (InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Check for time conflicts before scheduling.
      */
     public function checkConflicts(Request $request, $subdomain = null): JsonResponse

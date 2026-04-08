@@ -97,6 +97,7 @@ return [
         'quran_group' => 'Group Quran',
         'quick_actions' => 'Quick Actions',
         'go_to_calendar' => 'Calendar',
+        'view_in_calendar' => 'View in Calendar',
         'go_to_monitoring' => 'Sessions Monitoring',
         'go_to_teachers' => 'Teachers',
         'go_to_reports' => 'Reports',

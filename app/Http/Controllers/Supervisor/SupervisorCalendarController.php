@@ -252,6 +252,46 @@ class SupervisorCalendarController extends BaseSupervisorWebController
         }
     }
 
+    /**
+     * Remove all future scheduled sessions for a given entity.
+     */
+    public function removeScheduledSessions(Request $request, $subdomain = null): JsonResponse
+    {
+        $validated = $request->validate([
+            'item_id' => ['required', 'integer'],
+            'item_type' => ['required', 'string', 'in:group,individual,trial,private_lesson,interactive_course'],
+        ]);
+
+        $teacher = $this->verifyTeacherAccess($request);
+        $teacherType = $teacher->isQuranTeacher() ? 'quran_teacher' : 'academic_teacher';
+
+        try {
+            $strategy = $this->strategyFactory->make($teacherType);
+            $strategy->forUser($teacher);
+
+            $removedCount = $strategy->removeScheduledSessions(
+                $validated['item_type'],
+                $validated['item_id']
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => __('teacher.calendar.sessions_removed_success', ['count' => $removedCount]),
+                'deleted_count' => $removedCount,
+            ]);
+        } catch (InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function checkConflicts(Request $request, $subdomain = null): JsonResponse
     {
         $validated = $request->validate([

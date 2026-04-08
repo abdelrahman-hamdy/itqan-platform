@@ -97,6 +97,7 @@ return [
         'quran_group' => 'قرآن جماعي',
         'quick_actions' => 'إجراءات سريعة',
         'go_to_calendar' => 'التقويم',
+        'view_in_calendar' => 'عرض في التقويم',
         'go_to_monitoring' => 'مراقبة الجلسات',
         'go_to_teachers' => 'المعلمون',
         'go_to_reports' => 'التقارير',

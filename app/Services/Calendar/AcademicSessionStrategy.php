@@ -21,6 +21,7 @@ use App\Services\Scheduling\Validators\InteractiveCourseValidator;
 use App\Services\Scheduling\Validators\ScheduleValidatorInterface;
 use App\Services\SessionManagementService;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Academic teacher session strategy
@@ -400,5 +401,69 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
     public function getTabsLabel(): string
     {
         return __('calendar.strategy.academic_session_types');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function removeScheduledSessions(string $itemType, int $itemId): int
+    {
+        return match ($itemType) {
+            'private_lesson' => $this->removePrivateLessonSessions($itemId),
+            'interactive_course' => $this->removeInteractiveCourseSessions($itemId),
+            default => throw new InvalidArgumentException("Unknown item type: {$itemType}"),
+        };
+    }
+
+    /**
+     * Reset future scheduled sessions for a private lesson back to UNSCHEDULED
+     *
+     * Private lesson sessions are pre-created and should not be deleted —
+     * instead we reset them to unscheduled state (inverse of createPrivateLessonSchedule).
+     */
+    private function removePrivateLessonSessions(int $subscriptionId): int
+    {
+        $subscription = AcademicSubscription::findOrFail($subscriptionId);
+
+        return DB::transaction(function () use ($subscription) {
+            $sessions = $subscription->sessions()
+                ->where('status', SessionStatus::SCHEDULED->value)
+                ->where('scheduled_at', '>', now())
+                ->get();
+
+            $count = 0;
+            foreach ($sessions as $session) {
+                $session->update([
+                    'status' => SessionStatus::UNSCHEDULED,
+                    'scheduled_at' => null,
+                ]);
+                $count++;
+            }
+
+            return $count;
+        });
+    }
+
+    /**
+     * Remove all future scheduled sessions for an interactive course
+     */
+    private function removeInteractiveCourseSessions(int $courseId): int
+    {
+        $course = InteractiveCourse::findOrFail($courseId);
+
+        return DB::transaction(function () use ($course) {
+            $sessions = InteractiveCourseSession::where('course_id', $course->id)
+                ->where('status', SessionStatus::SCHEDULED->value)
+                ->where('scheduled_at', '>', now())
+                ->get();
+
+            $count = 0;
+            foreach ($sessions as $session) {
+                $session->delete();
+                $count++;
+            }
+
+            return $count;
+        });
     }
 }

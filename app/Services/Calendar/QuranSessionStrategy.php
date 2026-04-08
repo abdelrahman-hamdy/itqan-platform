@@ -11,6 +11,7 @@ use App\Filament\Shared\Widgets\UnifiedCalendarWidget;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
 use App\Models\QuranIndividualCircle;
+use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
 use App\Services\AcademyContextService;
 use App\Services\Scheduling\Validators\GroupCircleValidator;
@@ -21,6 +22,7 @@ use App\Services\SessionManagementService;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 /**
@@ -434,5 +436,47 @@ class QuranSessionStrategy extends AbstractSessionStrategy
     public function getTabsLabel(): string
     {
         return __('calendar.strategy.quran_session_types');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function removeScheduledSessions(string $itemType, int $itemId): int
+    {
+        return DB::transaction(function () use ($itemType, $itemId) {
+            [$column, $entityId] = match ($itemType) {
+                'group' => ['circle_id', QuranCircle::findOrFail($itemId)->id],
+                'individual' => ['individual_circle_id', QuranIndividualCircle::findOrFail($itemId)->id],
+                'trial' => ['trial_request_id', QuranTrialRequest::findOrFail($itemId)->id],
+                default => throw new InvalidArgumentException("Unknown item type: {$itemType}"),
+            };
+
+            // Deactivate group circle schedule to stop auto-generation
+            if ($itemType === 'group') {
+                QuranCircleSchedule::where('circle_id', $entityId)
+                    ->where('is_active', true)
+                    ->update(['is_active' => false]);
+            }
+
+            // Soft-delete all future SCHEDULED sessions (individual delete for model observers)
+            $sessions = QuranSession::where($column, $entityId)
+                ->where('status', SessionStatus::SCHEDULED->value)
+                ->where('scheduled_at', '>', now())
+                ->get();
+
+            $count = 0;
+            foreach ($sessions as $session) {
+                $session->delete();
+                $count++;
+            }
+
+            // Reset trial request to PENDING so it can be rescheduled
+            if ($itemType === 'trial' && $count > 0) {
+                QuranTrialRequest::where('id', $entityId)
+                    ->update(['status' => TrialRequestStatus::PENDING]);
+            }
+
+            return $count;
+        });
     }
 }

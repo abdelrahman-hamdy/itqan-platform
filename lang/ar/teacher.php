@@ -958,6 +958,17 @@ return [
         'cannot_schedule' => 'لا يمكن الجدولة',
         'already_scheduled' => 'الجلسة مجدولة بالفعل',
 
+        // Remove scheduled sessions
+        'remove_scheduled_sessions' => 'حذف جميع الجلسات المجدولة',
+        'remove_sessions_confirm_title' => 'حذف الجلسات المجدولة',
+        'remove_sessions_confirm_message' => 'سيتم حذف جميع الجلسات المستقبلية بحالة "مجدول" لهذا العنصر نهائياً. فقط الجلسات التي لم تبدأ بعد سيتم حذفها. جميع البيانات المرتبطة بها (الواجبات، الحضور، التقارير) سيتم حذفها أيضاً. لا يمكن التراجع عن هذا الإجراء.',
+        'sessions_removed_success' => 'تم حذف :count جلسة مجدولة بنجاح.',
+        'removing_sessions' => 'جاري حذف الجلسات...',
+
+        // Focus on entity
+        'focus_on_entity' => 'تركيز على التقويم',
+        'unfocus_entity' => 'عرض جميع الأحداث',
+
         // Schedule form improvements
         'start_date_hint' => 'اتركه فارغاً للبدء من اليوم',
         'hour_label' => 'الساعة',

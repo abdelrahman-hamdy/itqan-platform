@@ -1189,6 +1189,17 @@ return [
         'cannot_schedule' => 'Cannot schedule',
         'already_scheduled' => 'Session already scheduled',
 
+        // Remove scheduled sessions
+        'remove_scheduled_sessions' => 'Remove All Scheduled Sessions',
+        'remove_sessions_confirm_title' => 'Remove Scheduled Sessions',
+        'remove_sessions_confirm_message' => 'This will permanently delete all future sessions with "Scheduled" status for this entity. Only sessions that have not started yet will be removed. All related data (homework, attendance, reports) will also be deleted. This action cannot be undone.',
+        'sessions_removed_success' => ':count scheduled session(s) removed successfully.',
+        'removing_sessions' => 'Removing sessions...',
+
+        // Focus on entity
+        'focus_on_entity' => 'Focus on Calendar',
+        'unfocus_entity' => 'Show All Events',
+
         // Schedule form improvements
         'start_date_hint' => 'Leave empty to start from today',
         'hour_label' => 'Hour',

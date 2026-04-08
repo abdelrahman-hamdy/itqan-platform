@@ -174,6 +174,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::put('/calendar/update-session', [SupervisorCalendarController::class, 'updateSession'])->name('calendar.update-session');
         Route::post('/calendar/quran-homework', [SupervisorCalendarController::class, 'saveQuranHomework'])->name('calendar.quran-homework');
         Route::post('/calendar/academic-homework', [SupervisorCalendarController::class, 'saveAcademicHomework'])->name('calendar.academic-homework');
+        Route::delete('/calendar/remove-sessions', [SupervisorCalendarController::class, 'removeScheduledSessions'])->name('calendar.remove-sessions');
 
         // Sessions Management
         Route::get('/sessions', [SupervisorSessionsController::class, 'index'])->name('sessions.index');

@@ -34,6 +34,7 @@
         :schedulableItemsRoute="route('teacher.calendar.schedulable-items', ['subdomain' => $subdomain])"
         :recommendationsRoute="$recommendationsRoute"
         :scheduleRoute="route('teacher.calendar.schedule', ['subdomain' => $subdomain])"
+        :removeSessionsRoute="route('teacher.calendar.remove-sessions', ['subdomain' => $subdomain])"
         :teacherType="$teacherType"
         :tabs="$tabs"
         calendarVarName="teacherCalendar"
@@ -176,6 +177,18 @@
                     successCallback(events);
                 })
                 .catch(() => failureCallback());
+            },
+
+            // Re-apply focus/dim styles when events render
+            eventDidMount: function(info) {
+                const panel = document.querySelector('[x-data="schedulingPanel()"]');
+                if (!panel) return;
+                const alpineData = Alpine.$data(panel);
+                if (!alpineData || !alpineData.isFocused || !alpineData.selectedItem) return;
+
+                const isMatch = matchesFocusedItem(info.event.extendedProps, alpineData.selectedItem.type, alpineData.selectedItem.id);
+                info.el.classList.toggle('fc-event-focused', isMatch);
+                info.el.classList.toggle('fc-event-dimmed', !isMatch);
             },
 
             // Click event → show session detail modal

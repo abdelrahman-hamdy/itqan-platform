@@ -71,6 +71,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/calendar/quran-homework', [CalendarController::class, 'saveQuranHomework'])->name('calendar.quran-homework');
         Route::post('/calendar/academic-homework', [CalendarController::class, 'saveAcademicHomework'])->name('calendar.academic-homework');
         Route::put('/calendar/reschedule', [CalendarController::class, 'rescheduleEvent'])->name('calendar.reschedule');
+        Route::delete('/calendar/remove-sessions', [CalendarController::class, 'removeScheduledSessions'])->name('calendar.remove-sessions');
     });
 
     /*

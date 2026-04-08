@@ -106,4 +106,13 @@ interface SessionStrategyInterface
      * @return string Tabs label text
      */
     public function getTabsLabel(): string;
+
+    /**
+     * Remove all future scheduled sessions for a given entity
+     *
+     * @param  string  $itemType  Type of item (e.g., 'group', 'individual', 'private_lesson')
+     * @param  int  $itemId  ID of the entity
+     * @return int Number of sessions removed/reset
+     */
+    public function removeScheduledSessions(string $itemType, int $itemId): int;
 }

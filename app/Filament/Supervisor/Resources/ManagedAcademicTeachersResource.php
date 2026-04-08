@@ -75,6 +75,15 @@ class ManagedAcademicTeachersResource extends BaseAcademicTeacherProfileResource
                         'tableFilters[teacher][values][0]' => 'academic_'.$record->id,
                     ]))
                     ->visible(fn () => BaseSupervisorResource::canManageTeachers()),
+                Action::make('view_calendar')
+                    ->label(__('supervisor.view_in_calendar'))
+                    ->icon('heroicon-o-calendar-days')
+                    ->url(fn (AcademicTeacherProfile $record): string => route('manage.calendar.index', [
+                        'subdomain' => auth()->user()->academy?->subdomain,
+                        'teacher_id' => $record->user_id,
+                    ]))
+                    ->openUrlInNewTab()
+                    ->visible(fn () => BaseSupervisorResource::canManageTeachers()),
                 Action::make('activate')
                     ->label('تفعيل المعلم')
                     ->icon('heroicon-o-check-circle')

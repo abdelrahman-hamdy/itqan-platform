@@ -2,18 +2,20 @@
     Shared Scheduling Panel for Teacher & Supervisor calendars.
 
     Props:
-    - $schedulableItemsRoute (string) — URL for fetching schedulable items
-    - $recommendationsRoute  (string) — URL for fetching scheduling recommendations
-    - $scheduleRoute         (string) — URL for submitting schedule
-    - $teacherType           (string) — 'quran_teacher' | 'academic_teacher'
-    - $tabs                  (array)  — tab key→label map
-    - $teacherId             (int|null) — null for teacher view, set for supervisor
-    - $calendarVarName       (string) — JS window var to refetch ('teacherCalendar' | 'supervisorCalendar')
+    - $schedulableItemsRoute  (string) — URL for fetching schedulable items
+    - $recommendationsRoute   (string) — URL for fetching scheduling recommendations
+    - $scheduleRoute          (string) — URL for submitting schedule
+    - $removeSessionsRoute    (string|null) — URL for removing scheduled sessions
+    - $teacherType            (string) — 'quran_teacher' | 'academic_teacher'
+    - $tabs                   (array)  — tab key→label map
+    - $teacherId              (int|null) — null for teacher view, set for supervisor
+    - $calendarVarName        (string) — JS window var to refetch ('teacherCalendar' | 'supervisorCalendar')
 --}}
 @props([
     'schedulableItemsRoute',
     'recommendationsRoute',
     'scheduleRoute',
+    'removeSessionsRoute' => null,
     'teacherType',
     'tabs',
     'teacherId' => null,
@@ -211,10 +213,21 @@
                 <!-- Cannot-schedule info panel (shown when item is selected but not schedulable) -->
                 <template x-if="selectedItem && selectedItem.can_schedule === false">
                     <div class="w-full lg:w-1/2 bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col gap-3">
-                        <h3 class="text-sm font-bold text-gray-900">
-                            <i class="ri-information-line me-1 text-gray-500"></i>
-                            <span x-text="selectedItem.name || selectedItem.title"></span>
-                        </h3>
+                        <div class="flex items-center justify-between gap-2">
+                            <h3 class="text-sm font-bold text-gray-900">
+                                <i class="ri-information-line me-1 text-gray-500"></i>
+                                <span x-text="selectedItem.name || selectedItem.title"></span>
+                            </h3>
+                            <!-- Focus toggle button -->
+                            <template x-if="hasScheduledSessions()">
+                                <button @click="toggleFocusOnEntity()"
+                                        class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-colors flex-shrink-0"
+                                        :class="isFocused ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'">
+                                    <i :class="isFocused ? 'ri-eye-line' : 'ri-eye-off-line'"></i>
+                                    <span x-text="isFocused ? {{ json_encode(__('teacher.calendar.unfocus_entity')) }} : {{ json_encode(__('teacher.calendar.focus_on_entity')) }}"></span>
+                                </button>
+                            </template>
+                        </div>
 
                         <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
                             <p class="font-semibold mb-1">
@@ -234,17 +247,43 @@
                                 <p x-text="selectedItem.scheduled_at_formatted"></p>
                             </div>
                         </template>
+
+                        <!-- Remove scheduled sessions button -->
+                        <template x-if="hasScheduledSessions() && removeSessionsRoute">
+                            <button @click="confirmRemoveSessions()"
+                                    :disabled="removingSession"
+                                    class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-red-50 text-red-700 text-sm font-medium rounded-lg border border-red-200 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                <template x-if="removingSession">
+                                    <div class="animate-spin rounded-full h-4 w-4 border-2 border-red-500 border-t-transparent"></div>
+                                </template>
+                                <template x-if="!removingSession">
+                                    <i class="ri-delete-bin-line"></i>
+                                </template>
+                                <span x-text="removingSession ? {{ json_encode(__('teacher.calendar.removing_sessions')) }} : {{ json_encode(__('teacher.calendar.remove_scheduled_sessions')) }}"></span>
+                            </button>
+                        </template>
                     </div>
                 </template>
 
                 <!-- Schedule Form (right side, shown when item selected and schedulable) -->
                 <template x-if="selectedItem && selectedItem.can_schedule !== false">
                     <div class="w-full lg:w-1/2 bg-gray-50 border border-gray-200 rounded-xl p-4">
-                        <h3 class="text-sm font-bold text-gray-900 mb-3">
-                            <i class="ri-calendar-schedule-line me-1 text-blue-600"></i>
-                            {{ __('teacher.calendar.schedule_for') }}:
-                            <span class="text-blue-700" x-text="selectedItem.name || selectedItem.title"></span>
-                        </h3>
+                        <div class="flex items-center justify-between gap-2 mb-3">
+                            <h3 class="text-sm font-bold text-gray-900">
+                                <i class="ri-calendar-schedule-line me-1 text-blue-600"></i>
+                                {{ __('teacher.calendar.schedule_for') }}:
+                                <span class="text-blue-700" x-text="selectedItem.name || selectedItem.title"></span>
+                            </h3>
+                            <!-- Focus toggle button -->
+                            <template x-if="hasScheduledSessions()">
+                                <button @click="toggleFocusOnEntity()"
+                                        class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-colors flex-shrink-0"
+                                        :class="isFocused ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'">
+                                    <i :class="isFocused ? 'ri-eye-line' : 'ri-eye-off-line'"></i>
+                                    <span x-text="isFocused ? {{ json_encode(__('teacher.calendar.unfocus_entity')) }} : {{ json_encode(__('teacher.calendar.focus_on_entity')) }}"></span>
+                                </button>
+                            </template>
+                        </div>
 
                         <!-- Days Selection (hidden for trial sessions — day is auto-computed from date) -->
                         <div class="mb-3" x-show="selectedItem.type !== 'trial'">
@@ -364,6 +403,21 @@
                             </div>
                         </template>
 
+                        <!-- Remove existing sessions (for partially scheduled items) -->
+                        <template x-if="hasScheduledSessions() && removeSessionsRoute">
+                            <button @click="confirmRemoveSessions()"
+                                    :disabled="removingSession"
+                                    class="w-full mb-2 inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-red-50 text-red-700 text-xs font-medium rounded-lg border border-red-200 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                <template x-if="removingSession">
+                                    <div class="animate-spin rounded-full h-3 w-3 border-2 border-red-500 border-t-transparent"></div>
+                                </template>
+                                <template x-if="!removingSession">
+                                    <i class="ri-delete-bin-line text-xs"></i>
+                                </template>
+                                <span x-text="removingSession ? {{ json_encode(__('teacher.calendar.removing_sessions')) }} : {{ json_encode(__('teacher.calendar.remove_scheduled_sessions')) }}"></span>
+                            </button>
+                        </template>
+
                         <!-- Submit Button (full width) -->
                         <button @click="submitSchedule()" :disabled="submitting || (selectedItem.type === 'trial' ? !scheduleStartDate : scheduleDays.length === 0) || sessionCount < 1"
                                 class="w-full min-h-[40px] inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
@@ -383,11 +437,33 @@
 </div>
 
 <script>
+/**
+ * Check if a calendar event belongs to the given focused entity.
+ * Shared between applyFocusStyles() and eventDidMount() callbacks.
+ */
+function matchesFocusedItem(eventProps, focusedType, focusedId) {
+    const original = eventProps.originalEvent || {};
+    const metadata = original.metadata || {};
+    const source = original.source || eventProps.source;
+
+    switch (focusedType) {
+        case 'group':
+            return (source === 'circle_session' && metadata.circle_id == focusedId)
+                || (source === 'quran_session' && metadata.circle_id == focusedId && metadata.session_type === 'group');
+        case 'individual':
+            return (source === 'quran_session' && metadata.individual_circle_id == focusedId);
+        case 'interactive_course':
+            return (source === 'course_session' && metadata.course_id == focusedId);
+    }
+    return false;
+}
+
 function schedulingPanel() {
     return {
         teacherType: @js($teacherType),
         teacherId: @js($teacherId),
         calendarVarName: @js($calendarVarName),
+        removeSessionsRoute: @js($removeSessionsRoute),
         panelOpen: false,
         activeTab: '',
         tabs: @js($tabs),
@@ -395,6 +471,8 @@ function schedulingPanel() {
         selectedItem: null,
         loading: false,
         submitting: false,
+        removingSession: false,
+        isFocused: false,
         scheduleDays: [],
         scheduleStartDate: '',
         scheduleHour: 4,
@@ -415,6 +493,13 @@ function schedulingPanel() {
                 this.activeTab = tabKeys[0];
                 this.fetchItems();
             }
+            // Clean up focus state when panel collapses
+            this.$watch('panelOpen', (open) => {
+                if (!open && this.isFocused) {
+                    this.isFocused = false;
+                    this.removeFocusStyles();
+                }
+            });
         },
 
         async fetchItems() {
@@ -440,6 +525,11 @@ function schedulingPanel() {
         },
 
         selectItem(item) {
+            // Clear focus when selecting a different item
+            if (this.isFocused) {
+                this.isFocused = false;
+                this.removeFocusStyles();
+            }
             this.selectedItem = item;
             this.scheduleDays = item.schedule_days || [];
             const remaining = item.sessions_remaining ?? item.remaining_sessions ?? 0;
@@ -632,6 +722,112 @@ function schedulingPanel() {
                 'interactive_courses': @js(__('teacher.calendar.no_interactive_courses_desc'))
             };
             return descriptions[this.activeTab] || @js(__('teacher.calendar.no_items_desc'));
+        },
+
+        // ── Remove Scheduled Sessions ──────────────────────────────
+
+        hasScheduledSessions() {
+            if (!this.selectedItem) return false;
+            const s = this.selectedItem;
+            return (s.sessions_scheduled > 0)
+                || s.status === 'scheduled'
+                || s.status === 'fully_scheduled'
+                || s.status === 'partially_scheduled';
+        },
+
+        confirmRemoveSessions() {
+            if (!this.selectedItem) return;
+
+            window.confirmAction({
+                title: @js(__('teacher.calendar.remove_sessions_confirm_title')),
+                message: @js(__('teacher.calendar.remove_sessions_confirm_message')),
+                confirmText: @js(__('teacher.calendar.remove_scheduled_sessions')),
+                cancelText: @js(__('components.ui.confirmation_modal.cancel')),
+                isDangerous: true,
+                icon: 'ri-delete-bin-line',
+                onConfirm: () => this.executeRemoveSessions()
+            });
+        },
+
+        async executeRemoveSessions() {
+            if (this.removingSession || !this.selectedItem || !this.removeSessionsRoute) return;
+            this.removingSession = true;
+            this.error = null;
+            this.success = null;
+
+            try {
+                const bodyData = {
+                    item_id: this.selectedItem.id,
+                    item_type: this.selectedItem.type,
+                };
+                if (this.teacherId) {
+                    bodyData.teacher_id = this.teacherId;
+                }
+
+                const response = await fetch(this.removeSessionsRoute, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': @js(csrf_token()),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(bodyData)
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    this.success = data.message;
+                    this.selectedItem = null;
+                    this.isFocused = false;
+                    this.removeFocusStyles();
+                    this.fetchItems();
+                    if (window[this.calendarVarName]) {
+                        window[this.calendarVarName].refetchEvents();
+                    }
+                } else {
+                    this.error = data.message || @js(__('teacher.calendar.schedule_error'));
+                }
+            } catch (e) {
+                this.error = @js(__('teacher.calendar.schedule_error'));
+            } finally {
+                this.removingSession = false;
+            }
+        },
+
+        // ── Focus on Entity ────────────────────────────────────────
+
+        toggleFocusOnEntity() {
+            if (!this.selectedItem) return;
+
+            this.isFocused = !this.isFocused;
+            if (this.isFocused) {
+                this.applyFocusStyles();
+            } else {
+                this.removeFocusStyles();
+            }
+        },
+
+        applyFocusStyles() {
+            const calendar = window[this.calendarVarName];
+            if (!calendar || !this.selectedItem) return;
+
+            const type = this.selectedItem.type;
+            const id = this.selectedItem.id;
+
+            calendar.getEvents().forEach(event => {
+                const isMatch = matchesFocusedItem(event.extendedProps, type, id);
+                const currentClasses = (event.classNames || []).filter(c => c !== 'fc-event-focused' && c !== 'fc-event-dimmed');
+                event.setProp('classNames', [...currentClasses, isMatch ? 'fc-event-focused' : 'fc-event-dimmed']);
+            });
+        },
+
+        removeFocusStyles() {
+            const calendar = window[this.calendarVarName];
+            if (!calendar) return;
+
+            calendar.getEvents().forEach(event => {
+                event.setProp('classNames', (event.classNames || []).filter(c => c !== 'fc-event-focused' && c !== 'fc-event-dimmed'));
+            });
         }
     }
 }
