@@ -40,24 +40,30 @@ class SupervisorCalendarController extends BaseSupervisorWebController
         $teachers = collect();
 
         if (! empty($quranTeacherIds)) {
-            $quranTeachers = User::whereIn('id', $quranTeacherIds)->get()->map(fn ($u) => [
-                'id' => $u->id,
-                'name' => $u->name,
-                'gender' => $u->gender,
-                'type' => 'quran',
-                'type_label' => __('supervisor.teachers.teacher_type_quran'),
-            ]);
+            $quranTeachers = User::whereIn('id', $quranTeacherIds)
+                ->with('quranTeacherProfile')
+                ->get()
+                ->map(fn ($u) => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'gender' => $u->quranTeacherProfile?->gender?->value ?? $u->gender ?? '',
+                    'type' => 'quran',
+                    'type_label' => __('supervisor.teachers.teacher_type_quran'),
+                ]);
             $teachers = $teachers->merge($quranTeachers);
         }
 
         if (! empty($academicTeacherIds)) {
-            $academicTeachers = User::whereIn('id', $academicTeacherIds)->get()->map(fn ($u) => [
-                'id' => $u->id,
-                'name' => $u->name,
-                'gender' => $u->gender,
-                'type' => 'academic',
-                'type_label' => __('supervisor.teachers.teacher_type_academic'),
-            ]);
+            $academicTeachers = User::whereIn('id', $academicTeacherIds)
+                ->with('academicTeacherProfile')
+                ->get()
+                ->map(fn ($u) => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'gender' => $u->academicTeacherProfile?->gender?->value ?? $u->gender ?? '',
+                    'type' => 'academic',
+                    'type_label' => __('supervisor.teachers.teacher_type_academic'),
+                ]);
             $teachers = $teachers->merge($academicTeachers);
         }
 
