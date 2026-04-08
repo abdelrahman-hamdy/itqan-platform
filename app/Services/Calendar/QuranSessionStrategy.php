@@ -192,8 +192,12 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                     SessionStatus::CANCELLED,
                 ])->count();
 
+                $totalFromSub = $subscription?->total_sessions ?? $circle->total_sessions;
+                // Consumed sessions = sessions used on subscription but with no actual session records
+                $consumedByAdmin = max(0, $totalFromSub - ($subscription?->sessions_remaining ?? $totalFromSub) - $countedSessions);
+
                 $status = 'not_scheduled';
-                if ($countedSessions > 0) {
+                if ($countedSessions > 0 || $consumedByAdmin > 0) {
                     if ($remainingSessions > 0) {
                         $status = 'partially_scheduled';
                     } else {
@@ -206,8 +210,9 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                     'type' => 'individual',
                     'name' => $circle->name,
                     'status' => $status,
-                    'sessions_count' => $circle->total_sessions,
+                    'sessions_count' => $totalFromSub,
                     'sessions_scheduled' => $countedSessions,
+                    'sessions_consumed' => $consumedByAdmin,
                     'sessions_remaining' => $remainingSessions,
                     'subscription_start' => $subscription?->starts_at?->toDateString(),
                     'subscription_end' => $subscription?->ends_at?->toDateString(),

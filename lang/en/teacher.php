@@ -1195,6 +1195,7 @@ return [
         'remove_sessions_confirm_message' => 'This will permanently delete all future sessions with "Scheduled" status for this entity. Only sessions that have not started yet will be removed. All related data (homework, attendance, reports) will also be deleted. This action cannot be undone.',
         'sessions_removed_success' => ':count scheduled session(s) removed successfully.',
         'removing_sessions' => 'Removing sessions...',
+        'consumed_sessions' => 'Previously consumed sessions',
 
         // Focus on entity
         'focus_on_entity' => 'Focus on Calendar',

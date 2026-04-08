@@ -352,14 +352,24 @@ class QuranIndividualCircle extends Model
 
     /**
      * Calculate how many session slots are still available.
-     * Uses total from subscription minus all non-cancelled sessions.
+     * Uses subscription.sessions_remaining (accounts for consumed sessions set by admin)
+     * minus active/pending sessions that haven't been counted against subscription yet.
      */
     private function calculateRemainingSessions(): int
     {
-        $total = $this->subscription?->total_sessions ?? $this->total_sessions;
-        $used = $this->sessions()->notCancelled()->count();
+        $subscriptionRemaining = $this->subscription?->sessions_remaining;
 
-        return max(0, $total - $used);
+        if ($subscriptionRemaining === null) {
+            // Fallback when no subscription exists
+            $total = $this->total_sessions;
+            $used = $this->sessions()->notCancelled()->count();
+
+            return max(0, $total - $used);
+        }
+
+        $activeSessions = $this->sessions()->active()->count();
+
+        return max(0, $subscriptionRemaining - $activeSessions);
     }
 
     /**

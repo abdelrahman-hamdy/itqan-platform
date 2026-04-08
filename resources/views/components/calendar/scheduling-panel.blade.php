@@ -140,6 +140,9 @@
                                         <div class="space-y-1 text-xs text-gray-600">
                                             <p><i class="ri-user-line me-1 text-gray-400"></i> {{ __('teacher.calendar.student_label') }} <span class="font-medium text-gray-800" x-text="item.student_name || '-'"></span></p>
                                             <p><i class="ri-calendar-check-line me-1 text-gray-400"></i> {{ __('teacher.calendar.sessions_progress') }}: <span class="font-medium text-gray-800" x-text="(item.sessions_scheduled || 0) + '/' + (item.sessions_count || 0)"></span></p>
+                                            <template x-if="item.sessions_consumed > 0">
+                                                <p><i class="ri-history-line me-1 text-amber-500"></i> {{ __('teacher.calendar.consumed_sessions') }}: <span class="font-medium text-amber-700" x-text="item.sessions_consumed"></span></p>
+                                            </template>
                                             <template x-if="item.subscription_start || item.subscription_end">
                                                 <p><i class="ri-calendar-line me-1 text-gray-400"></i> <span class="font-medium text-gray-800" x-text="formatDate(item.subscription_start) + ' → ' + formatDate(item.subscription_end)"></span></p>
                                             </template>

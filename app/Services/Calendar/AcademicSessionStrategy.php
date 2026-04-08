@@ -102,16 +102,18 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
             ->get()
             ->map(function ($subscription) {
                 $allSessions = $subscription->sessions;
-                $totalSessions = $allSessions->count();
-                $scheduledSessions = $allSessions->filter(function ($session) {
-                    return $session->status->value === SessionStatus::SCHEDULED->value && ! is_null($session->scheduled_at);
-                })->count();
-                $unscheduledSessions = $allSessions->filter(function ($session) {
-                    return $session->status->value === SessionStatus::UNSCHEDULED->value || is_null($session->scheduled_at);
-                })->count();
+                $completedSessions = $allSessions->filter(fn ($s) => $s->status->value === SessionStatus::COMPLETED->value)->count();
+                $scheduledSessions = $allSessions->filter(fn ($s) => in_array($s->status->value, [
+                    SessionStatus::SCHEDULED->value,
+                    SessionStatus::READY->value,
+                    SessionStatus::ONGOING->value,
+                ]))->count();
+                $unscheduledSessions = $allSessions->filter(fn ($s) => $s->status->value === SessionStatus::UNSCHEDULED->value || is_null($s->scheduled_at))->count();
+
+                $totalFromSub = $subscription->total_sessions ?? $allSessions->count();
 
                 $status = 'not_scheduled';
-                if ($scheduledSessions > 0) {
+                if ($scheduledSessions > 0 || $completedSessions > 0) {
                     if ($unscheduledSessions > 0) {
                         $status = 'partially_scheduled';
                     } else {
@@ -124,8 +126,8 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                     'type' => 'private_lesson',
                     'name' => __('calendar.strategy.private_lesson', ['subject' => $subscription->subject_name ?? __('calendar.strategy.academic_subject')]),
                     'status' => $status,
-                    'total_sessions' => $totalSessions,
-                    'sessions_scheduled' => $scheduledSessions,
+                    'total_sessions' => $totalFromSub,
+                    'sessions_scheduled' => $scheduledSessions + $completedSessions,
                     'sessions_remaining' => $unscheduledSessions,
                     'student_name' => $subscription->student?->name ?? __('calendar.strategy.unspecified'),
                     'subject_name' => $subscription->subject_name ?? __('calendar.strategy.academic_subject'),
