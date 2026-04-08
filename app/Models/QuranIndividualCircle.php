@@ -321,18 +321,23 @@ class QuranIndividualCircle extends Model
     {
         $scheduled = $this->scheduledSessions()->count();
         $completed = $this->completedSessions()->count();
-        $unscheduled = $this->sessions()->where('status', SessionStatus::UNSCHEDULED)->count();
+
+        // Remaining = total sessions minus all non-cancelled sessions (regardless of status)
+        $totalFromSubscription = $this->subscription?->total_sessions ?? $this->total_sessions;
+        $allNonCancelled = $this->sessions()
+            ->where('status', '!=', SessionStatus::CANCELLED->value)
+            ->count();
+        $remaining = max(0, $totalFromSubscription - $allNonCancelled);
 
         $this->update([
             'sessions_scheduled' => $scheduled,
             'sessions_completed' => $completed,
-            'sessions_remaining' => $unscheduled, // Sessions that can still be scheduled
+            'sessions_remaining' => $remaining,
         ]);
     }
 
     /**
-     * Handle session cancellation by incrementing remaining sessions
-     * When a session is cancelled, a new slot becomes available for scheduling
+     * Handle session cancellation — recalculate all counts from actual session records
      */
     public function handleSessionCancelled(): void
     {
@@ -343,21 +348,24 @@ class QuranIndividualCircle extends Model
                 return;
             }
 
-            // Increment sessions_remaining (a cancelled session frees up a slot)
-            $circle->increment('sessions_remaining');
-
-            // Recalculate session counts to ensure consistency
             $scheduled = $circle->scheduledSessions()->count();
             $completed = $circle->completedSessions()->count();
+
+            $totalFromSubscription = $circle->subscription?->total_sessions ?? $circle->total_sessions;
+            $allNonCancelled = $circle->sessions()
+                ->where('status', '!=', SessionStatus::CANCELLED->value)
+                ->count();
+            $remaining = max(0, $totalFromSubscription - $allNonCancelled);
 
             $circle->update([
                 'sessions_scheduled' => $scheduled,
                 'sessions_completed' => $completed,
+                'sessions_remaining' => $remaining,
             ]);
 
-            Log::info("Circle {$circle->id} remaining sessions incremented due to cancellation", [
+            Log::info("Circle {$circle->id} session counts recalculated after cancellation", [
                 'circle_id' => $circle->id,
-                'new_remaining' => $circle->sessions_remaining,
+                'remaining' => $remaining,
             ]);
         });
     }
@@ -479,10 +487,7 @@ class QuranIndividualCircle extends Model
             $circle->sessions_remaining = $circle->total_sessions;
         });
 
-        static::updating(function ($circle) {
-            if ($circle->isDirty(['sessions_completed', 'total_sessions'])) {
-                $circle->sessions_remaining = $circle->total_sessions - $circle->sessions_completed;
-            }
-        });
+        // Note: sessions_remaining is maintained by updateSessionCounts() and handleSessionCancelled()
+        // No automatic recalculation here to avoid conflicting with those methods
     }
 }
