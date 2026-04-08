@@ -763,6 +763,12 @@ return [
         'select_teacher' => 'Select a teacher to view their calendar',
         'select_teacher_description' => 'Choose one of your assigned teachers to view their schedule',
         'breadcrumb' => 'Calendar',
+        'search_teachers' => 'Search for a teacher...',
+        'filter_male' => 'Male',
+        'filter_female' => 'Female',
+        'filter_quran' => 'Quran',
+        'filter_academic' => 'Academic',
+        'no_matching_teachers' => 'No matching teachers',
     ],
 
     'profile' => [

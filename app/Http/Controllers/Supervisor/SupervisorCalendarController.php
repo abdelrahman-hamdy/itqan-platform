@@ -43,6 +43,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
             $quranTeachers = User::whereIn('id', $quranTeacherIds)->get()->map(fn ($u) => [
                 'id' => $u->id,
                 'name' => $u->name,
+                'gender' => $u->gender,
                 'type' => 'quran',
                 'type_label' => __('supervisor.teachers.teacher_type_quran'),
             ]);
@@ -53,6 +54,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
             $academicTeachers = User::whereIn('id', $academicTeacherIds)->get()->map(fn ($u) => [
                 'id' => $u->id,
                 'name' => $u->name,
+                'gender' => $u->gender,
                 'type' => 'academic',
                 'type_label' => __('supervisor.teachers.teacher_type_academic'),
             ]);

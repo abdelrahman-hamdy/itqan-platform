@@ -31,30 +31,16 @@
 
     <!-- Teacher Selector -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
-        <div class="flex items-center gap-4 flex-wrap">
-            <label class="text-sm font-medium text-gray-700 flex items-center gap-1.5 flex-shrink-0">
-                <i class="ri-user-line text-gray-400"></i>
-                {{ __('supervisor.calendar.select_teacher') }}
-            </label>
-            <select
-                id="calendar-teacher-select"
-                onchange="
-                    var base = window.location.pathname;
-                    if (this.value) {
-                        window.location.href = base + '?teacher_id=' + this.value;
-                    } else {
-                        window.location.href = base;
-                    }
-                "
-                class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500 min-w-[250px]"
-            >
-                <option value="">-- {{ __('supervisor.calendar.select_teacher') }} --</option>
-                @foreach($teachers as $t)
-                    <option value="{{ $t['id'] }}" {{ $selectedTeacherId == $t['id'] ? 'selected' : '' }}>
-                        {{ $t['name'] }} ({{ $t['type_label'] }})
-                    </option>
-                @endforeach
-            </select>
+        <div class="max-w-md">
+            <x-ui.searchable-select
+                name="teacher_id"
+                :options="$teachers"
+                :selected="$selectedTeacherId"
+                :placeholder="__('supervisor.calendar.select_teacher')"
+                :label="__('supervisor.calendar.select_teacher')"
+                :showGenderFilter="true"
+                :showTypeFilter="true"
+            />
         </div>
     </div>
 

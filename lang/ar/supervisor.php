@@ -763,6 +763,12 @@ return [
         'select_teacher' => 'اختر معلماً لعرض تقويمه',
         'select_teacher_description' => 'اختر أحد المعلمين المُعينين لك لعرض جدوله الزمني',
         'breadcrumb' => 'التقويم',
+        'search_teachers' => 'بحث عن معلم...',
+        'filter_male' => 'ذكور',
+        'filter_female' => 'إناث',
+        'filter_quran' => 'قرآن',
+        'filter_academic' => 'أكاديمي',
+        'no_matching_teachers' => 'لا يوجد معلمون مطابقون',
     ],
 
     'profile' => [
