@@ -55,6 +55,7 @@ class QuranSessionObserver
         // Update circle session counts and progress when session is completed
         if ($quranSession->wasChanged('status') && $quranSession->status === SessionStatus::COMPLETED) {
             if ($quranSession->session_type === 'individual' && $quranSession->individualCircle) {
+                $quranSession->individualCircle->loadMissing('subscription');
                 $quranSession->individualCircle->updateSessionCounts();
                 $quranSession->individualCircle->updateProgress();
             }
@@ -92,6 +93,7 @@ class QuranSessionObserver
                     ->delete();
 
                 if ($session->session_type === 'individual' && $session->individualCircle) {
+                    $session->individualCircle->loadMissing('subscription');
                     $session->individualCircle->handleSessionCancelled();
                 }
 

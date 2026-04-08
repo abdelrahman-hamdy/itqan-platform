@@ -102,13 +102,24 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
             ->get()
             ->map(function ($subscription) {
                 $allSessions = $subscription->sessions;
-                $completedSessions = $allSessions->filter(fn ($s) => $s->status->value === SessionStatus::COMPLETED->value)->count();
-                $scheduledSessions = $allSessions->filter(fn ($s) => in_array($s->status->value, [
-                    SessionStatus::SCHEDULED->value,
-                    SessionStatus::READY->value,
-                    SessionStatus::ONGOING->value,
-                ]))->count();
-                $unscheduledSessions = $allSessions->filter(fn ($s) => $s->status->value === SessionStatus::UNSCHEDULED->value || is_null($s->scheduled_at))->count();
+                $activeStatuses = array_map(fn ($s) => $s->value, SessionStatus::activeStatuses());
+
+                $counts = $allSessions->reduce(function ($carry, $session) use ($activeStatuses) {
+                    $status = $session->status->value;
+                    if ($status === SessionStatus::COMPLETED->value) {
+                        $carry['completed']++;
+                    } elseif (in_array($status, $activeStatuses)) {
+                        $carry['scheduled']++;
+                    } elseif ($status === SessionStatus::UNSCHEDULED->value || is_null($session->scheduled_at)) {
+                        $carry['unscheduled']++;
+                    }
+
+                    return $carry;
+                }, ['completed' => 0, 'scheduled' => 0, 'unscheduled' => 0]);
+
+                $completedSessions = $counts['completed'];
+                $scheduledSessions = $counts['scheduled'];
+                $unscheduledSessions = $counts['unscheduled'];
 
                 $totalFromSub = $subscription->total_sessions ?? $allSessions->count();
 
