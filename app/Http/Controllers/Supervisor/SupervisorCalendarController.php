@@ -46,7 +46,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
                 ->map(fn ($u) => [
                     'id' => $u->id,
                     'name' => $u->name,
-                    'gender' => $u->quranTeacherProfile?->gender?->value ?? $u->gender ?? '',
+                    'gender' => $u->quranTeacherProfile?->gender ?? $u->gender ?? '',
                     'type' => 'quran',
                     'type_label' => __('supervisor.teachers.teacher_type_quran'),
                 ]);
@@ -60,7 +60,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
                 ->map(fn ($u) => [
                     'id' => $u->id,
                     'name' => $u->name,
-                    'gender' => $u->academicTeacherProfile?->gender?->value ?? $u->gender ?? '',
+                    'gender' => $u->academicTeacherProfile?->gender ?? $u->gender ?? '',
                     'type' => 'academic',
                     'type_label' => __('supervisor.teachers.teacher_type_academic'),
                 ]);
