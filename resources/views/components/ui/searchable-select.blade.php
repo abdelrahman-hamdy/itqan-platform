@@ -26,7 +26,7 @@
             'type' => $o['type'] ?? '',
             'type_label' => $o['type_label'] ?? '',
         ])->values()) }},
-        get filteredOptions() {
+        getFilteredOptions() {
             return this.options.filter(o => {
                 if (this.search.trim() && !o.name.toLowerCase().includes(this.search.trim().toLowerCase())) return false;
                 if (this.genderFilter && o.gender !== this.genderFilter) return false;
@@ -138,7 +138,7 @@
 
             {{-- Options List --}}
             <div class="max-h-56 overflow-y-auto border-t border-gray-100">
-                <template x-for="option in filteredOptions" :key="option.id">
+                <template x-for="option in getFilteredOptions()" :key="option.id">
                     <button type="button" @click="select(option.id)"
                         class="cursor-pointer w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-start"
                         :class="option.id === selected ? 'bg-indigo-50' : ''">
@@ -149,7 +149,7 @@
                         <i class="ri-check-line text-indigo-500" x-show="option.id === selected"></i>
                     </button>
                 </template>
-                <div x-show="filteredOptions.length === 0" class="px-4 py-3 text-sm text-gray-400 text-center">
+                <div x-show="getFilteredOptions().length === 0" class="px-4 py-3 text-sm text-gray-400 text-center">
                     {{ __('supervisor.calendar.no_matching_teachers') }}
                 </div>
             </div>
