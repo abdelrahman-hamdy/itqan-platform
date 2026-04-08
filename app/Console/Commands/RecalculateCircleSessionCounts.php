@@ -18,7 +18,7 @@ class RecalculateCircleSessionCounts extends Command
 
         $fixed = 0;
 
-        QuranIndividualCircle::with(['sessions', 'subscription'])
+        QuranIndividualCircle::with('subscription')
             ->chunk(100, function ($circles) use (&$fixed) {
                 foreach ($circles as $circle) {
                     $oldRemaining = $circle->sessions_remaining;

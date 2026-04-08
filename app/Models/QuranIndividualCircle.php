@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\Traits\ScopedToAcademy;
 use DB;
@@ -319,25 +318,15 @@ class QuranIndividualCircle extends Model
 
     public function updateSessionCounts(): void
     {
-        $scheduled = $this->scheduledSessions()->count();
-        $completed = $this->completedSessions()->count();
-
-        // Remaining = total sessions minus all non-cancelled sessions (regardless of status)
-        $totalFromSubscription = $this->subscription?->total_sessions ?? $this->total_sessions;
-        $allNonCancelled = $this->sessions()
-            ->where('status', '!=', SessionStatus::CANCELLED->value)
-            ->count();
-        $remaining = max(0, $totalFromSubscription - $allNonCancelled);
-
         $this->update([
-            'sessions_scheduled' => $scheduled,
-            'sessions_completed' => $completed,
-            'sessions_remaining' => $remaining,
+            'sessions_scheduled' => $this->scheduledSessions()->count(),
+            'sessions_completed' => $this->completedSessions()->count(),
+            'sessions_remaining' => $this->calculateRemainingSessions(),
         ]);
     }
 
     /**
-     * Handle session cancellation — recalculate all counts from actual session records
+     * Handle session cancellation with row locking to prevent concurrent overwrites.
      */
     public function handleSessionCancelled(): void
     {
@@ -348,26 +337,29 @@ class QuranIndividualCircle extends Model
                 return;
             }
 
-            $scheduled = $circle->scheduledSessions()->count();
-            $completed = $circle->completedSessions()->count();
-
-            $totalFromSubscription = $circle->subscription?->total_sessions ?? $circle->total_sessions;
-            $allNonCancelled = $circle->sessions()
-                ->where('status', '!=', SessionStatus::CANCELLED->value)
-                ->count();
-            $remaining = max(0, $totalFromSubscription - $allNonCancelled);
-
             $circle->update([
-                'sessions_scheduled' => $scheduled,
-                'sessions_completed' => $completed,
-                'sessions_remaining' => $remaining,
+                'sessions_scheduled' => $circle->scheduledSessions()->count(),
+                'sessions_completed' => $circle->completedSessions()->count(),
+                'sessions_remaining' => $circle->calculateRemainingSessions(),
             ]);
 
             Log::info("Circle {$circle->id} session counts recalculated after cancellation", [
                 'circle_id' => $circle->id,
-                'remaining' => $remaining,
+                'remaining' => $circle->sessions_remaining,
             ]);
         });
+    }
+
+    /**
+     * Calculate how many session slots are still available.
+     * Uses total from subscription minus all non-cancelled sessions.
+     */
+    private function calculateRemainingSessions(): int
+    {
+        $total = $this->subscription?->total_sessions ?? $this->total_sessions;
+        $used = $this->sessions()->notCancelled()->count();
+
+        return max(0, $total - $used);
     }
 
     /**
