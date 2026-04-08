@@ -118,6 +118,7 @@
                             <label for="status" class="block text-sm font-medium text-gray-700 mb-1">{{ __('supervisor.common.filter_status') }}</label>
                             <select name="status" id="status" class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                                 <option value="">{{ __('teacher.trial_sessions_list.filter_all') }}</option>
+                                <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>{{ __('teacher.trial_sessions_list.filter_pending') }}</option>
                                 <option value="scheduled" {{ request('status') === 'scheduled' ? 'selected' : '' }}>{{ __('teacher.trial_sessions_list.filter_scheduled') }}</option>
                                 <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>{{ __('teacher.trial_sessions_list.filter_completed') }}</option>
                                 <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>{{ __('teacher.trial_sessions_list.filter_cancelled') }}</option>
@@ -162,6 +163,7 @@
                         $statusValue = $status instanceof \App\Enums\TrialRequestStatus ? $status->value : $status;
 
                         $statusConfig = match($statusValue) {
+                            'pending' => ['class' => 'bg-yellow-100 text-yellow-800', 'text' => __('teacher.trial_sessions_list.status_pending')],
                             'scheduled' => ['class' => 'bg-green-100 text-green-800', 'text' => __('teacher.trial_sessions_list.status_scheduled')],
                             'completed' => ['class' => 'bg-emerald-100 text-emerald-800', 'text' => __('teacher.trial_sessions_list.status_completed')],
                             'cancelled' => ['class' => 'bg-gray-100 text-gray-800', 'text' => __('teacher.trial_sessions_list.status_cancelled')],
