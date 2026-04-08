@@ -1196,6 +1196,7 @@ return [
         'sessions_removed_success' => ':count scheduled session(s) removed successfully.',
         'removing_sessions' => 'Removing sessions...',
         'consumed_sessions' => 'Previously consumed sessions',
+        'unscheduled_sessions' => 'Unscheduled',
 
         // Focus on entity
         'focus_on_entity' => 'Focus on Calendar',

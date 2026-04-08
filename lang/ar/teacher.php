@@ -965,6 +965,7 @@ return [
         'sessions_removed_success' => 'تم حذف :count جلسة مجدولة بنجاح.',
         'removing_sessions' => 'جاري حذف الجلسات...',
         'consumed_sessions' => 'جلسات مستهلكة مسبقاً',
+        'unscheduled_sessions' => 'غير مجدول',
 
         // Focus on entity
         'focus_on_entity' => 'تركيز على التقويم',

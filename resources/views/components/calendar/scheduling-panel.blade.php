@@ -204,7 +204,7 @@
                                     <template x-if="item.can_schedule !== false && (item.sessions_remaining !== undefined || item.remaining_sessions !== undefined)">
                                         <p class="text-xs text-blue-600 mt-1.5 font-medium">
                                             <i class="ri-calendar-todo-line me-0.5"></i>
-                                            {{ __('teacher.calendar.remaining') }}: <span x-text="item.sessions_remaining ?? item.remaining_sessions"></span>
+                                            {{ __('teacher.calendar.unscheduled_sessions') }}: <span x-text="item.sessions_remaining ?? item.remaining_sessions"></span>
                                         </p>
                                     </template>
                                 </div>
