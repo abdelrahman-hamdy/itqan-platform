@@ -1339,6 +1339,7 @@ return [
         'sort_oldest' => 'Oldest',
         'sort_expiring_soon' => 'Expiring Soon',
         'sort_sessions_remaining' => 'Sessions Remaining',
+        'sort_student_name' => 'Student Name',
         'type_quran_individual' => 'Individual Quran',
         'type_quran_group' => 'Group Quran',
         'ends_in' => 'Ends in :days days',

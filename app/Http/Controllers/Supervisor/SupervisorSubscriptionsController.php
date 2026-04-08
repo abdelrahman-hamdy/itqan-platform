@@ -137,6 +137,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'oldest' => $filtered->sortBy('created_at'),
             'expiring_soon' => $filtered->sortBy(fn ($s) => $s['end_date'] ?? now()->addYears(10)),
             'sessions_remaining' => $filtered->sortBy('sessions_remaining'),
+            'student_name' => $filtered->sortBy('student_name'),
             default => $filtered->sortByDesc('created_at'),
         };
 

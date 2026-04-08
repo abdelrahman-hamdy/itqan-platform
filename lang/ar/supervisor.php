@@ -1339,6 +1339,7 @@ return [
         'sort_oldest' => 'الأقدم',
         'sort_expiring_soon' => 'تنتهي قريباً',
         'sort_sessions_remaining' => 'الحصص المتبقية',
+        'sort_student_name' => 'اسم الطالب',
         'type_quran_individual' => 'قرآن فردي',
         'type_quran_group' => 'قرآن جماعي',
         'ends_in' => 'ينتهي خلال :days يوم',

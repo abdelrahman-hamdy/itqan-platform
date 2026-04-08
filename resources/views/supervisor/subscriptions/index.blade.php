@@ -119,6 +119,7 @@
                             @case('oldest') {{ __('supervisor.subscriptions.sort_oldest') }} @break
                             @case('expiring_soon') {{ __('supervisor.subscriptions.sort_expiring_soon') }} @break
                             @case('sessions_remaining') {{ __('supervisor.subscriptions.sort_sessions_remaining') }} @break
+                            @case('student_name') {{ __('supervisor.subscriptions.sort_student_name') }} @break
                             @default {{ __('supervisor.subscriptions.sort_newest') }}
                         @endswitch
                     </span>
@@ -126,7 +127,7 @@
                 </button>
                 <div x-show="open" @click.away="open = false" x-transition
                     class="absolute start-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                    @foreach(['newest', 'oldest', 'expiring_soon', 'sessions_remaining'] as $sortOption)
+                    @foreach(['newest', 'oldest', 'expiring_soon', 'sessions_remaining', 'student_name'] as $sortOption)
                         <a href="{{ request()->fullUrlWithQuery(['sort' => $sortOption, 'page' => 1]) }}"
                            class="block px-4 py-2 text-sm cursor-pointer {{ $currentSort === $sortOption ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                             {{ __('supervisor.subscriptions.sort_' . $sortOption) }}
@@ -242,9 +243,13 @@
                                             <i class="{{ $typeIcon }}"></i>
                                             {{ $typeLabel }}
                                         </span>
-                                        <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $sub['status']->badgeClasses() }}">
-                                            {{ $sub['status']->label() }}
-                                        </span>
+                                        @if($sub['status'])
+                                            <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $sub['status']->badgeClasses() }}">
+                                                {{ $sub['status']->label() }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">-</span>
+                                        @endif
                                         @if($sub['model']->is_sessions_exhausted)
                                             <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
                                                 <i class="ri-check-double-line"></i>
