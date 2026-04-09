@@ -215,7 +215,7 @@
     @if($sessions->isNotEmpty())
         {{-- Desktop Table --}}
         <div class="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
-            <table class="min-w-[1300px] w-full divide-y divide-gray-200">
+            <table class="min-w-[1440px] w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_status') }}</th>
@@ -224,7 +224,8 @@
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_teacher') }}</th>
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_student') }}</th>
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[110px]">{{ __($t.'col_scheduled') }}</th>
-                        <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[170px]">{{ __('supervisor.sessions.col_attendance') }}</th>
+                        <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[140px]">{{ __('supervisor.sessions.col_attendance') }}</th>
+                        <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">{{ __($t.'col_counting') }}</th>
                         <th class="px-4 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __($t.'col_actions') }}</th>
                     </tr>
                 </thead>
