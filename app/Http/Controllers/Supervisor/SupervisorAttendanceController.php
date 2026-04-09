@@ -106,6 +106,10 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
             ->paginate(25)
             ->withQueryString();
 
+        // Batch-load User models for avatar component (single query, no N+1)
+        $userIds = $records->pluck('user_id')->unique()->filter();
+        $usersMap = $userIds->isNotEmpty() ? User::whereIn('id', $userIds)->get()->keyBy('id') : collect();
+
         // Build teacher options for searchable-select (same format as calendar)
         $teacherOptions = $this->buildTeacherOptions($quranTeacherIds, $academicTeacherIds);
 
@@ -114,6 +118,7 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
             'stats' => $stats,
             'teacherOptions' => $teacherOptions,
             'activeTab' => $activeTab,
+            'usersMap' => $usersMap,
         ]);
     }
 

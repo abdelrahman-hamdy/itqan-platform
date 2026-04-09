@@ -189,7 +189,6 @@
                                     $statusValue = 'absent';
                                 }
 
-                                // Session type: icon + label (matching sessions management page)
                                 $typeConfig = match($record->session_type) {
                                     'individual' => ['bg' => 'bg-green-50', 'text' => 'text-green-600', 'icon' => 'ri-book-read-line', 'label' => __('supervisor.attendance.quran_individual')],
                                     'group' => ['bg' => 'bg-green-50', 'text' => 'text-green-600', 'icon' => 'ri-book-read-line', 'label' => __('supervisor.attendance.quran_group')],
@@ -215,21 +214,24 @@
                                     default => 'quran',
                                 };
                                 $sessionUrl = route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $routeType, 'sessionId' => $record->session_id]);
-
                                 $isCounted = (bool) $record->is_counted;
                                 $toggleUrl = route('manage.attendance.toggle-counted', ['subdomain' => $subdomain, 'id' => $record->id]);
                                 $userName = $record->user_name ?? '-';
-                                $initials = mb_substr($userName, 0, 2);
+                                $userModel = $usersMap[$record->user_id] ?? null;
+                                $userType = $activeTab === 'teachers' ? 'quran_teacher' : 'student';
+
+                                $confirmTitle = $isCounted ? __('supervisor.attendance.confirm_uncount_title') : __('supervisor.attendance.confirm_count_title');
+                                $confirmMessage = $isCounted ? __('supervisor.attendance.confirm_uncount_message', ['name' => $userName]) : __('supervisor.attendance.confirm_count_message', ['name' => $userName]);
                             @endphp
-                            <tr class="{{ $statusValue === 'absent' ? 'bg-red-50/30' : '' }} hover:bg-gray-50">
-                                {{-- User: avatar + name (clickable) --}}
+                            <tr x-data="{ counted: {{ $isCounted ? 'true' : 'false' }}, busy: false }"
+                                class="{{ $statusValue === 'absent' ? 'bg-red-50/30' : '' }} hover:bg-gray-50 cursor-pointer"
+                                onclick="window.location='{{ $sessionUrl }}'">
+                                {{-- User: avatar + name --}}
                                 <td class="px-4 py-3">
-                                    <a href="{{ $sessionUrl }}" class="flex items-center gap-2.5 group">
-                                        <div class="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center {{ $activeTab === 'teachers' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700' }}">
-                                            <span class="font-semibold text-xs">{{ $initials }}</span>
-                                        </div>
-                                        <span class="font-medium text-gray-900 group-hover:text-blue-700 truncate max-w-[160px] transition-colors">{{ $userName }}</span>
-                                    </a>
+                                    <div class="flex items-center gap-2.5">
+                                        <x-avatar :user="$userModel" size="xs" :user-type="$userType" />
+                                        <span class="font-medium text-gray-900 truncate max-w-[160px]">{{ $userName }}</span>
+                                    </div>
                                 </td>
                                 {{-- Session type: icon + label --}}
                                 <td class="px-4 py-3">
@@ -267,27 +269,30 @@
                                     <span class="text-xs px-2 py-1 rounded-full {{ $statusBadge[0] }}">{{ $statusBadge[1] }}</span>
                                 </td>
                                 {{-- Counted toggle with confirmation --}}
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3" @click.stop>
                                     <button type="button"
-                                        @click="window.confirmAction({
-                                            title: {!! json_encode($isCounted ? __('supervisor.attendance.confirm_uncount_title') : __('supervisor.attendance.confirm_count_title')) !!},
-                                            message: {!! json_encode($isCounted ? __('supervisor.attendance.confirm_uncount_message', ['name' => $userName]) : __('supervisor.attendance.confirm_count_message', ['name' => $userName])) !!},
-                                            isDangerous: {{ $isCounted ? 'true' : 'false' }},
-                                            theme: {{ $isCounted ? 'null' : "'green'" }},
-                                            icon: '{{ $isCounted ? 'ri-subtract-line' : 'ri-add-line' }}',
+                                        @click.stop="if(busy) return; window.confirmAction({
+                                            title: counted ? {{ json_encode(__('supervisor.attendance.confirm_uncount_title')) }} : {{ json_encode(__('supervisor.attendance.confirm_count_title')) }},
+                                            message: counted ? {{ json_encode(__('supervisor.attendance.confirm_uncount_message', ['name' => $userName])) }} : {{ json_encode(__('supervisor.attendance.confirm_count_message', ['name' => $userName])) }},
+                                            isDangerous: counted,
+                                            theme: counted ? null : 'green',
+                                            icon: counted ? 'ri-subtract-line' : 'ri-add-line',
                                             onConfirm: async () => {
+                                                busy = true;
                                                 try {
                                                     const r = await fetch('{{ $toggleUrl }}', {
                                                         method: 'PATCH',
                                                         headers: {'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'},
                                                     });
-                                                    if (r.ok) window.location.reload();
+                                                    if (r.ok) { counted = !counted; window.location.reload(); }
                                                 } catch(e) {}
+                                                busy = false;
                                             }
                                         })"
-                                        class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer {{ $isCounted ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200' }}">
-                                        <i class="{{ $isCounted ? 'ri-check-line' : 'ri-close-line' }}"></i>
-                                        {{ $isCounted ? __('supervisor.attendance.counted') : __('supervisor.attendance.not_counted') }}
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer"
+                                        :class="counted ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'">
+                                        <i :class="counted ? 'ri-check-line' : 'ri-close-line'"></i>
+                                        <span x-text="counted ? '{{ __('supervisor.attendance.counted') }}' : '{{ __('supervisor.attendance.not_counted') }}'"></span>
                                     </button>
                                 </td>
                             </tr>
