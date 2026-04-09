@@ -10,11 +10,13 @@
             <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('support.my_tickets') }}</h1>
             <p class="mt-1 text-sm text-gray-600">{{ __('support.page_title') }}</p>
         </div>
+        @if($tickets->count() > 0)
         <a href="{{ route($routePrefix . '.create', ['subdomain' => $subdomain]) }}"
            class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors text-sm font-medium">
             <i class="ri-add-line text-lg"></i>
             {{ __('support.new_ticket') }}
         </a>
+        @endif
     </div>
 </div>
 

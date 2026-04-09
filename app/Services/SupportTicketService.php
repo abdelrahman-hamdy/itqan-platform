@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\NotificationCategory;
+use App\Enums\NotificationType;
 use App\Enums\SupportTicketStatus;
 use App\Enums\UserType;
 use App\Models\AcademicSubscription;
@@ -10,8 +12,7 @@ use App\Models\QuranSubscription;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketReply;
 use App\Models\User;
-use App\Notifications\SupportTicketCreatedNotification;
-use App\Notifications\SupportTicketRepliedNotification;
+use App\Services\Notification\NotificationRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -19,6 +20,10 @@ use Illuminate\Http\UploadedFile;
 
 class SupportTicketService
 {
+    public function __construct(
+        private readonly NotificationRepository $notificationRepository,
+    ) {}
+
     /**
      * Create a new support ticket.
      */
@@ -40,7 +45,21 @@ class SupportTicketService
         ]);
 
         $ticket->load('user');
-        $this->notifySupervisors($ticket, new SupportTicketCreatedNotification($ticket));
+
+        // Notify all supervisors/admins about the new ticket
+        $this->getAcademySupervisors($ticket->academy_id)->each(function (User $supervisor) use ($ticket) {
+            $this->sendNotification(
+                user: $supervisor,
+                type: NotificationType::SUPPORT_TICKET_CREATED,
+                title: __('support.notifications.new_ticket_title'),
+                message: __('support.notifications.new_ticket_message', [
+                    'name' => $ticket->user->name,
+                    'reason' => $ticket->reason->label(),
+                ]),
+                actionUrl: $this->getTicketUrl($ticket, $supervisor),
+                ticket: $ticket,
+            );
+        });
 
         return $ticket;
     }
@@ -50,15 +69,35 @@ class SupportTicketService
      */
     public function addReply(SupportTicket $ticket, User $user, string $body): SupportTicketReply
     {
+        $ticket->loadMissing('user');
+
         $reply = $ticket->replies()->create([
             'user_id' => $user->id,
             'body' => $body,
         ]);
 
         if ($user->isAdmin() || $user->isSupervisor()) {
-            $ticket->user->notify(new SupportTicketRepliedNotification($ticket, $user));
+            // Admin/supervisor replied — notify the ticket owner
+            $this->sendNotification(
+                user: $ticket->user,
+                type: NotificationType::SUPPORT_TICKET_REPLIED,
+                title: __('support.notifications.reply_title'),
+                message: __('support.notifications.reply_message', ['name' => $user->name]),
+                actionUrl: $this->getTicketUrl($ticket, $ticket->user),
+                ticket: $ticket,
+            );
         } else {
-            $this->notifySupervisors($ticket, new SupportTicketRepliedNotification($ticket, $user));
+            // Reporter replied — notify supervisors
+            $this->getAcademySupervisors($ticket->academy_id)->each(function (User $supervisor) use ($ticket, $user) {
+                $this->sendNotification(
+                    user: $supervisor,
+                    type: NotificationType::SUPPORT_TICKET_REPLIED,
+                    title: __('support.notifications.reply_title'),
+                    message: __('support.notifications.reply_message', ['name' => $user->name]),
+                    actionUrl: $this->getTicketUrl($ticket, $supervisor),
+                    ticket: $ticket,
+                );
+            });
         }
 
         return $reply;
@@ -231,9 +270,6 @@ class SupportTicketService
     // Private Helpers
     // ========================================
 
-    /**
-     * Get all supervisors and admins for an academy.
-     */
     private function getAcademySupervisors(int $academyId): Collection
     {
         return User::query()
@@ -246,9 +282,60 @@ class SupportTicketService
             ->get();
     }
 
-    private function notifySupervisors(SupportTicket $ticket, $notification): void
+    /**
+     * Send a notification via the NotificationRepository (sets action_url column properly).
+     */
+    private function sendNotification(
+        User $user,
+        NotificationType $type,
+        string $title,
+        string $message,
+        string $actionUrl,
+        SupportTicket $ticket,
+    ): void {
+        $category = NotificationCategory::SYSTEM;
+
+        $this->notificationRepository->create($user, [
+            'type' => $type->value,
+            'notification_type' => $type->value,
+            'category' => $category->value,
+            'icon' => $category->getIcon(),
+            'icon_color' => $category->getColor(),
+            'action_url' => $actionUrl,
+            'is_important' => false,
+            'tenant_id' => $user->academy_id,
+            'metadata' => ['ticket_id' => $ticket->id],
+            'data' => [
+                'title' => $title,
+                'message' => $message,
+                'body' => $message,
+                'category' => $category->value,
+                'icon' => $category->getIcon(),
+                'color' => $category->getColor(),
+                'action_url' => $actionUrl,
+                'iconColor' => $category->getFilamentColor(),
+                'format' => 'filament',
+                'duration' => 'persistent',
+            ],
+        ]);
+    }
+
+    /**
+     * Generate the ticket URL based on the recipient's role.
+     */
+    private function getTicketUrl(SupportTicket $ticket, User $recipient): string
     {
-        $this->getAcademySupervisors($ticket->academy_id)
-            ->each(fn (User $supervisor) => $supervisor->notify($notification));
+        $subdomain = $recipient->academy->subdomain ?? 'itqan-academy';
+
+        if ($recipient->isStudent()) {
+            return route('student.support.show', ['subdomain' => $subdomain, 'ticket' => $ticket->id]);
+        }
+
+        if ($recipient->isQuranTeacher() || $recipient->isAcademicTeacher()) {
+            return route('teacher.support.show', ['subdomain' => $subdomain, 'ticket' => $ticket->id]);
+        }
+
+        // Supervisor/admin → supervisor panel
+        return route('manage.support-tickets.show', ['subdomain' => $subdomain, 'ticket' => $ticket->id]);
     }
 }
