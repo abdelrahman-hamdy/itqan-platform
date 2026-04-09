@@ -1672,6 +1672,15 @@ return [
         'quran_individual' => 'قرآن فردي',
         'quran_group' => 'قرآن جماعي',
         'quran_trial' => 'قرآن تجريبي',
+        'counted' => 'محتسب',
+        'not_counted' => 'غير محتسب',
+        'counted_filter' => 'الاحتساب',
+        'counted_earnings' => 'محتسب للأرباح',
+        'counted_subscription' => 'محتسب للاشتراك',
+        'total_records' => 'إجمالي السجلات',
+        'select_teacher' => 'اختر المعلم',
+        'click_to_count' => 'اضغط للاحتساب',
+        'click_to_uncount' => 'اضغط لإلغاء الاحتساب',
     ],
 
     'recorded_courses' => [

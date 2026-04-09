@@ -14,20 +14,22 @@
         </div>
     </div>
 
-    <!-- Tabs: Teachers / Students -->
-    <div class="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
-        <a href="{{ $baseUrl }}?tab=teachers"
-           class="px-5 py-2 text-sm font-medium rounded-md transition-colors {{ $activeTab === 'teachers' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
-            <i class="ri-user-star-line me-1"></i>{{ __('supervisor.attendance.tab_teachers') }}
-        </a>
-        <a href="{{ $baseUrl }}?tab=students"
-           class="px-5 py-2 text-sm font-medium rounded-md transition-colors {{ $activeTab === 'students' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
-            <i class="ri-graduation-cap-line me-1"></i>{{ __('supervisor.attendance.tab_students') }}
-        </a>
+    <!-- Tabs: Teachers / Students (centered) -->
+    <div class="flex justify-center mb-6">
+        <div class="flex gap-1 bg-gray-100 rounded-lg p-1">
+            <a href="{{ $baseUrl }}?tab=teachers"
+               class="px-5 py-2 text-sm font-medium rounded-md transition-colors {{ $activeTab === 'teachers' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
+                <i class="ri-user-star-line me-1"></i>{{ __('supervisor.attendance.tab_teachers') }}
+            </a>
+            <a href="{{ $baseUrl }}?tab=students"
+               class="px-5 py-2 text-sm font-medium rounded-md transition-colors {{ $activeTab === 'students' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
+                <i class="ri-graduation-cap-line me-1"></i>{{ __('supervisor.attendance.tab_students') }}
+            </a>
+        </div>
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -43,11 +45,13 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <i class="ri-check-line text-green-600"></i>
+                    <i class="ri-checkbox-circle-line text-green-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats['attended'] }}</p>
-                    <p class="text-xs text-gray-500">{{ __('supervisor.attendance.present') }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $stats['counted'] }}</p>
+                    <p class="text-xs text-gray-500">
+                        {{ $activeTab === 'teachers' ? __('supervisor.attendance.counted_earnings') : __('supervisor.attendance.counted_subscription') }}
+                    </p>
                 </div>
             </div>
         </div>
@@ -55,47 +59,23 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                    <i class="ri-close-line text-red-600"></i>
+                    <i class="ri-close-circle-line text-red-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats['absent'] }}</p>
-                    <p class="text-xs text-gray-500">{{ __('supervisor.attendance.absent') }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $stats['not_counted'] }}</p>
+                    <p class="text-xs text-gray-500">{{ __('supervisor.attendance.not_counted') }}</p>
                 </div>
             </div>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                    <i class="ri-time-line text-amber-600"></i>
+                <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <i class="ri-list-check text-gray-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats['late'] }}</p>
-                    <p class="text-xs text-gray-500">{{ __('supervisor.attendance.late') }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                    <i class="ri-user-star-line text-indigo-600"></i>
-                </div>
-                <div>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats['teacher_rate'] }}%</p>
-                    <p class="text-xs text-gray-500">{{ __('supervisor.attendance.teacher_attendance_rate') }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <i class="ri-loader-line text-orange-600"></i>
-                </div>
-                <div>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats['pending'] }}</p>
-                    <p class="text-xs text-gray-500">{{ __('supervisor.attendance.pending_calculations') }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $stats['total'] }}</p>
+                    <p class="text-xs text-gray-500">{{ __('supervisor.attendance.total_records') }}</p>
                 </div>
             </div>
         </div>
@@ -106,7 +86,28 @@
         <form method="GET" action="{{ $baseUrl }}" class="flex flex-wrap gap-3 items-end">
             <input type="hidden" name="tab" value="{{ $activeTab }}">
 
-            <div class="flex-1 min-w-[140px]">
+            {{-- Teacher searchable-select (both tabs) --}}
+            <div class="flex-1 min-w-[200px]">
+                <x-ui.searchable-select
+                    name="teacher_id"
+                    :options="$teacherOptions"
+                    :selected="request('teacher_id')"
+                    :placeholder="__('supervisor.attendance.select_teacher')"
+                    :label="__('supervisor.attendance.teacher')"
+                    :showGenderFilter="true"
+                    :showTypeFilter="true"
+                />
+            </div>
+
+            @if($activeTab === 'students')
+                <div class="flex-1 min-w-[150px]">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.search_name') }}</label>
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('supervisor.attendance.search_placeholder') }}"
+                           class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+            @endif
+
+            <div class="flex-1 min-w-[130px]">
                 <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.session_type') }}</label>
                 <select name="session_type" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
                     <option value="">{{ __('supervisor.common.all') }}</option>
@@ -116,25 +117,19 @@
                 </select>
             </div>
 
-            <div class="flex-1 min-w-[150px]">
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.search_name') }}</label>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('supervisor.attendance.search_placeholder') }}"
-                       class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
-            </div>
-
-            <div class="flex-1 min-w-[120px]">
+            <div class="flex-1 min-w-[110px]">
                 <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.date_from') }}</label>
                 <input type="date" name="date_from" value="{{ request('date_from') }}"
                        class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
             </div>
 
-            <div class="flex-1 min-w-[120px]">
+            <div class="flex-1 min-w-[110px]">
                 <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.date_to') }}</label>
                 <input type="date" name="date_to" value="{{ request('date_to') }}"
                        class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
             </div>
 
-            <div class="flex-1 min-w-[120px]">
+            <div class="flex-1 min-w-[110px]">
                 <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.common.status') }}</label>
                 <select name="status" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
                     <option value="">{{ __('supervisor.common.all') }}</option>
@@ -146,12 +141,12 @@
                 </select>
             </div>
 
-            <div class="flex-1 min-w-[120px]">
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.calculated') }}</label>
-                <select name="is_calculated" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+            <div class="flex-1 min-w-[110px]">
+                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.counted_filter') }}</label>
+                <select name="counted" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
                     <option value="">{{ __('supervisor.common.all') }}</option>
-                    <option value="yes" {{ request('is_calculated') === 'yes' ? 'selected' : '' }}>{{ __('supervisor.attendance.calculated') }}</option>
-                    <option value="no" {{ request('is_calculated') === 'no' ? 'selected' : '' }}>{{ __('supervisor.attendance.pending') }}</option>
+                    <option value="yes" {{ request('counted') === 'yes' ? 'selected' : '' }}>{{ __('supervisor.attendance.counted') }}</option>
+                    <option value="no" {{ request('counted') === 'no' ? 'selected' : '' }}>{{ __('supervisor.attendance.not_counted') }}</option>
                 </select>
             </div>
 
@@ -179,7 +174,7 @@
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.duration') }}</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.percentage') }}</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.common.status') }}</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.calculated') }}</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.counted_filter') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -190,7 +185,6 @@
                                     $statusValue = $statusValue->value;
                                 }
 
-                                // Fix stale status: if duration is 0 and status says attended, override to absent
                                 if (($record->total_duration_minutes ?? 0) == 0 && $statusValue === 'attended') {
                                     $statusValue = 'absent';
                                 }
@@ -212,10 +206,23 @@
                                     'partially_attended' => ['bg-cyan-100 text-cyan-700', __('supervisor.attendance.partially_attended')],
                                     default => ['bg-gray-100 text-gray-700', $statusValue ?? '-'],
                                 };
+
+                                $routeType = match($record->session_type) {
+                                    'individual', 'group', 'trial' => 'quran',
+                                    'academic' => 'academic',
+                                    'interactive' => 'interactive',
+                                    default => 'quran',
+                                };
+                                $sessionUrl = route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $routeType, 'sessionId' => $record->session_id]);
+
+                                $isCounted = (bool) $record->is_counted;
                             @endphp
                             <tr class="{{ $statusValue === 'absent' ? 'bg-red-50/30' : '' }} hover:bg-gray-50">
                                 <td class="px-4 py-3">
-                                    <span class="font-medium text-gray-900 truncate max-w-[180px] block">{{ $record->user_name ?? '-' }}</span>
+                                    <a href="{{ $sessionUrl }}" class="font-medium text-blue-700 hover:text-blue-900 hover:underline truncate max-w-[180px] block">
+                                        {{ $record->user_name ?? '-' }}
+                                        <i class="ri-external-link-line text-xs text-gray-400 ms-1"></i>
+                                    </a>
                                 </td>
                                 <td class="px-4 py-3">
                                     <span class="text-xs px-2 py-1 rounded-full {{ $sessionTypeBadge[0] }}">{{ $sessionTypeBadge[1] }}</span>
@@ -247,11 +254,17 @@
                                     <span class="text-xs px-2 py-1 rounded-full {{ $statusBadge[0] }}">{{ $statusBadge[1] }}</span>
                                 </td>
                                 <td class="px-4 py-3">
-                                    @if($record->is_calculated)
-                                        <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700"><i class="ri-check-line"></i> {{ __('supervisor.attendance.calculated') }}</span>
-                                    @else
-                                        <span class="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700"><i class="ri-loader-line"></i> {{ __('supervisor.attendance.pending') }}</span>
-                                    @endif
+                                    <form method="POST" action="{{ route('manage.attendance.toggle-counted', ['subdomain' => $subdomain, 'id' => $record->id]) }}" class="inline">
+                                        @csrf
+                                        <button type="submit" title="{{ $isCounted ? __('supervisor.attendance.click_to_uncount') : __('supervisor.attendance.click_to_count') }}"
+                                                class="text-xs px-2.5 py-1 rounded-full cursor-pointer transition-colors {{ $isCounted ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200' }}">
+                                            @if($isCounted)
+                                                <i class="ri-check-line"></i> {{ __('supervisor.attendance.counted') }}
+                                            @else
+                                                <i class="ri-close-line"></i> {{ __('supervisor.attendance.not_counted') }}
+                                            @endif
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         @endforeach

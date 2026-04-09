@@ -1672,6 +1672,15 @@ return [
         'quran_individual' => 'Individual Quran',
         'quran_group' => 'Group Quran',
         'quran_trial' => 'Trial Quran',
+        'counted' => 'Counted',
+        'not_counted' => 'Not Counted',
+        'counted_filter' => 'Counting',
+        'counted_earnings' => 'Counted for Earnings',
+        'counted_subscription' => 'Counted for Subscription',
+        'total_records' => 'Total Records',
+        'select_teacher' => 'Select Teacher',
+        'click_to_count' => 'Click to count',
+        'click_to_uncount' => 'Click to uncount',
     ],
 
     'recorded_courses' => [
