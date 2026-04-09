@@ -120,26 +120,29 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
 
     public function toggleCounted(Request $request, $subdomain, int $id): RedirectResponse
     {
+        if (! $this->canMonitorSessions()) {
+            abort(403);
+        }
+
         $attendance = MeetingAttendance::findOrFail($id);
+
+        // Verify attendance belongs to a session under this supervisor's scope
+        $session = $this->resolveSession($attendance);
+        if (! $session) {
+            abort(404);
+        }
+
         $countingService = app(SessionCountingService::class);
         $adminId = auth()->id();
 
         $isTeacher = in_array($attendance->user_type, ['teacher', 'quran_teacher', 'academic_teacher']);
 
         if ($isTeacher) {
-            $session = $this->resolveSession($attendance);
-
-            if ($session) {
-                $newValue = ! (bool) $session->counts_for_teacher;
-                $countingService->setCountsForTeacher($session, $newValue, $adminId);
-            }
+            $newValue = ! (bool) $session->counts_for_teacher;
+            $countingService->setCountsForTeacher($session, $newValue, $adminId);
         } else {
-            $session = $this->resolveSession($attendance);
             $newValue = ! (bool) $attendance->counts_for_subscription;
-
-            if ($session) {
-                $countingService->setCountsForSubscription($attendance, $session, $newValue, $adminId);
-            }
+            $countingService->setCountsForSubscription($attendance, $session, $newValue, $adminId);
         }
 
         return redirect()->back();
@@ -222,33 +225,27 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
 
     private function filterByTeacher($query, int $teacherId): void
     {
-        $query->where(function ($q) use ($teacherId) {
+        $academicProfileIds = \App\Models\AcademicTeacherProfile::where('user_id', $teacherId)->pluck('id')->toArray();
+
+        $query->where(function ($q) use ($teacherId, $academicProfileIds) {
             $q->whereExists(function ($sub) use ($teacherId) {
                 $sub->select(DB::raw(1))->from('quran_sessions')
                     ->whereColumn('quran_sessions.id', 'meeting_attendances.session_id')
                     ->where('quran_sessions.quran_teacher_id', $teacherId);
-            })->orWhereExists(function ($sub) use ($teacherId) {
-                $profileIds = \App\Models\AcademicTeacherProfile::where('user_id', $teacherId)->pluck('id')->toArray();
-                if (empty($profileIds)) {
-                    $sub->whereRaw('1=0');
-
-                    return;
-                }
-                $sub->select(DB::raw(1))->from('academic_sessions')
-                    ->whereColumn('academic_sessions.id', 'meeting_attendances.session_id')
-                    ->whereIn('academic_sessions.academic_teacher_id', $profileIds);
-            })->orWhereExists(function ($sub) use ($teacherId) {
-                $profileIds = \App\Models\AcademicTeacherProfile::where('user_id', $teacherId)->pluck('id')->toArray();
-                if (empty($profileIds)) {
-                    $sub->whereRaw('1=0');
-
-                    return;
-                }
-                $sub->select(DB::raw(1))->from('interactive_course_sessions')
-                    ->join('interactive_courses', 'interactive_courses.id', '=', 'interactive_course_sessions.course_id')
-                    ->whereColumn('interactive_course_sessions.id', 'meeting_attendances.session_id')
-                    ->whereIn('interactive_courses.assigned_teacher_id', $profileIds);
             });
+
+            if (! empty($academicProfileIds)) {
+                $q->orWhereExists(function ($sub) use ($academicProfileIds) {
+                    $sub->select(DB::raw(1))->from('academic_sessions')
+                        ->whereColumn('academic_sessions.id', 'meeting_attendances.session_id')
+                        ->whereIn('academic_sessions.academic_teacher_id', $academicProfileIds);
+                })->orWhereExists(function ($sub) use ($academicProfileIds) {
+                    $sub->select(DB::raw(1))->from('interactive_course_sessions')
+                        ->join('interactive_courses', 'interactive_courses.id', '=', 'interactive_course_sessions.course_id')
+                        ->whereColumn('interactive_course_sessions.id', 'meeting_attendances.session_id')
+                        ->whereIn('interactive_courses.assigned_teacher_id', $academicProfileIds);
+                });
+            }
         });
     }
 
