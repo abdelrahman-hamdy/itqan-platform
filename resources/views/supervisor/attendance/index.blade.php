@@ -270,11 +270,11 @@
                                 <td class="px-4 py-3">
                                     <button type="button"
                                         @click="window.confirmAction({
-                                            title: {{ $isCounted ? \"'\".__('supervisor.attendance.confirm_uncount_title').\"'\" : \"'\".__('supervisor.attendance.confirm_count_title').\"'\" }},
-                                            message: {{ $isCounted ? \"'\".__('supervisor.attendance.confirm_uncount_message', ['name' => $userName]).\"'\" : \"'\".__('supervisor.attendance.confirm_count_message', ['name' => $userName]).\"'\" }},
+                                            title: {!! json_encode($isCounted ? __('supervisor.attendance.confirm_uncount_title') : __('supervisor.attendance.confirm_count_title')) !!},
+                                            message: {!! json_encode($isCounted ? __('supervisor.attendance.confirm_uncount_message', ['name' => $userName]) : __('supervisor.attendance.confirm_count_message', ['name' => $userName])) !!},
                                             isDangerous: {{ $isCounted ? 'true' : 'false' }},
-                                            theme: {{ $isCounted ? 'null' : \"'green'\" }},
-                                            icon: {{ $isCounted ? \"'ri-subtract-line'\" : \"'ri-add-line'\" }},
+                                            theme: {{ $isCounted ? 'null' : "'green'" }},
+                                            icon: '{{ $isCounted ? 'ri-subtract-line' : 'ri-add-line' }}',
                                             onConfirm: async () => {
                                                 try {
                                                     const r = await fetch('{{ $toggleUrl }}', {
