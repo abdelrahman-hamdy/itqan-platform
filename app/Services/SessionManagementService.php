@@ -618,6 +618,8 @@ class SessionManagementService
                     );
                     $createdCount++;
                 } catch (Exception $e) {
+                    file_put_contents(storage_path('logs/schedule_debug.log'),
+                        date('Y-m-d H:i:s') . " FAILED: circle={$lockedCircle->id} date={$scheduledAt->toDateTimeString()} error={$e->getMessage()}\n", FILE_APPEND);
                     Log::warning('Failed to create individual session', [
                         'circle_id' => $lockedCircle->id,
                         'scheduled_at' => $scheduledAt->toDateTimeString(),
