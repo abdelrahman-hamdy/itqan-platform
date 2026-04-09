@@ -13,6 +13,9 @@
         </p>
       </div>
 
+      <!-- Support Contact Form -->
+      @include('components.support.contact-form')
+
       <!-- Quick Stats -->
       @include('components.stats.teacher-stats', ['stats' => $stats])
 
@@ -243,9 +246,6 @@
         @endif
 
       </div>
-
-      <!-- Support Contact Form -->
-      @include('components.support.contact-form')
 
 </div>
 
