@@ -599,6 +599,9 @@ function schedulingPanel() {
                     bodyData.teacher_id = this.teacherId;
                 }
 
+                console.log('[Schedule] Submitting:', JSON.stringify(bodyData));
+                console.log('[Schedule] URL:', @js($scheduleRoute));
+
                 const response = await fetch(@js($scheduleRoute), {
                     method: 'POST',
                     headers: {
@@ -609,7 +612,9 @@ function schedulingPanel() {
                     body: JSON.stringify(bodyData)
                 });
 
+                console.log('[Schedule] Response status:', response.status);
                 const data = await response.json();
+                console.log('[Schedule] Response data:', JSON.stringify(data));
                 if (response.ok) {
                     this.success = data.message || @js(__('teacher.calendar.schedule_success'));
                     this.selectedItem = null;
