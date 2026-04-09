@@ -93,6 +93,10 @@
     .fc .fc-highlight {
         background-color: rgba(59, 130, 246, 0.1) !important;
     }
+    /* Month view — taller cells to show more events */
+    .fc .fc-daygrid-day-frame {
+        min-height: 140px;
+    }
     /* Responsive — ensure calendar fills all available width */
     .fc {
         width: 100% !important;

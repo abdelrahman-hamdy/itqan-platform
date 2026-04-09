@@ -186,7 +186,7 @@
             eventStartEditable: true,
             eventDurationEditable: true,
             selectable: false,
-            dayMaxEvents: isMobile ? 2 : 4,
+            dayMaxEvents: isMobile ? 2 : 5,
             windowResize: function() {
                 const newView = getCalendarView();
                 if (calendar.view.type !== newView) {
