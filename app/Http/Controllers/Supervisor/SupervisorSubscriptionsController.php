@@ -20,15 +20,20 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             abort(403);
         }
 
-        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        $academicTeacherProfileIds = $this->getAssignedAcademicTeacherProfileIds();
+        $isAdmin = $this->isAdminUser();
+
+        $quranTeacherIds = $isAdmin ? [] : $this->getAssignedQuranTeacherIds();
+        $academicTeacherProfileIds = $isAdmin ? [] : $this->getAssignedAcademicTeacherProfileIds();
 
         $subscriptions = collect();
 
         // Load Quran subscriptions
-        if (! empty($quranTeacherIds)) {
-            $quranSubs = QuranSubscription::whereIn('quran_teacher_id', $quranTeacherIds)
-                ->with(['student', 'quranTeacherUser'])
+        if ($isAdmin || ! empty($quranTeacherIds)) {
+            $quranQuery = QuranSubscription::with(['student', 'quranTeacherUser']);
+            if (! $isAdmin) {
+                $quranQuery->whereIn('quran_teacher_id', $quranTeacherIds);
+            }
+            $quranSubs = $quranQuery
                 ->get()
                 ->map(fn ($sub) => [
                     'id' => $sub->id,
@@ -51,9 +56,12 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         }
 
         // Load Academic subscriptions
-        if (! empty($academicTeacherProfileIds)) {
-            $academicSubs = AcademicSubscription::whereIn('teacher_id', $academicTeacherProfileIds)
-                ->with(['student', 'teacher.user'])
+        if ($isAdmin || ! empty($academicTeacherProfileIds)) {
+            $academicQuery = AcademicSubscription::with(['student', 'teacher.user']);
+            if (! $isAdmin) {
+                $academicQuery->whereIn('teacher_id', $academicTeacherProfileIds);
+            }
+            $academicSubs = $academicQuery
                 ->get()
                 ->map(fn ($sub) => [
                     'id' => $sub->id,
@@ -75,21 +83,13 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             $subscriptions = $subscriptions->merge($academicSubs);
         }
 
-        // Stats from unfiltered set
-        $totalActive = $subscriptions->filter(fn ($s) => $s['status'] === SessionSubscriptionStatus::ACTIVE)->count();
-        $expiringThisWeek = $subscriptions->filter(function ($s) {
-            return $s['status'] === SessionSubscriptionStatus::ACTIVE
-                && $s['end_date']
-                && $s['end_date']->between(now(), now()->addDays(7));
-        })->count();
-        $totalPending = $subscriptions->filter(fn ($s) => $s['status'] === SessionSubscriptionStatus::PENDING)->count();
-        $totalPaused = $subscriptions->filter(fn ($s) => $s['status'] === SessionSubscriptionStatus::PAUSED)->count();
-        $totalExpired = $subscriptions->filter(fn ($s) => $s['status'] === SessionSubscriptionStatus::EXPIRED)->count();
-        $totalExtended = $subscriptions->filter(function ($s) {
-            $gracePeriodEndsAt = $s['model']->metadata['grace_period_ends_at'] ?? null;
-
-            return $gracePeriodEndsAt && Carbon::parse($gracePeriodEndsAt)->isFuture();
-        })->count();
+        // Stats from unfiltered set (single pass)
+        $statusCounts = $subscriptions->countBy(fn ($s) => $s['status']->value);
+        $totalActive = $statusCounts[SessionSubscriptionStatus::ACTIVE->value] ?? 0;
+        $totalPending = $statusCounts[SessionSubscriptionStatus::PENDING->value] ?? 0;
+        $totalPaused = $statusCounts[SessionSubscriptionStatus::PAUSED->value] ?? 0;
+        $totalExpired = $statusCounts[SessionSubscriptionStatus::EXPIRED->value] ?? 0;
+        $totalCancelled = $statusCounts[SessionSubscriptionStatus::CANCELLED->value] ?? 0;
 
         // Apply filters
         $filtered = $subscriptions;
@@ -153,17 +153,14 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        $isAdmin = $this->isAdminUser();
-
         return view('supervisor.subscriptions.index', [
             'subscriptions' => $paginated,
             'totalCount' => $subscriptions->count(),
             'totalActive' => $totalActive,
-            'expiringThisWeek' => $expiringThisWeek,
             'totalPending' => $totalPending,
             'totalPaused' => $totalPaused,
             'totalExpired' => $totalExpired,
-            'totalExtended' => $totalExtended,
+            'totalCancelled' => $totalCancelled,
             'filteredCount' => $filteredValues->count(),
             'isAdmin' => $isAdmin,
             'canCreate' => $this->canCreateSubscriptions(),

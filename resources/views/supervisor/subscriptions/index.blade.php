@@ -37,23 +37,23 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
             <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-list-check text-purple-600"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-xl font-bold text-gray-900">{{ $totalCount }}</p>
+                    <p class="text-xs text-gray-600">{{ __('supervisor.subscriptions.stat_total_subscriptions') }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
+            <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <i class="ri-checkbox-circle-line text-green-600"></i>
                 </div>
                 <div class="flex-1">
                     <p class="text-xl font-bold text-gray-900">{{ $totalActive }}</p>
                     <p class="text-xs text-gray-600">{{ __('supervisor.subscriptions.stat_active') }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-alarm-warning-line text-amber-600"></i>
-                </div>
-                <div class="flex-1">
-                    <p class="text-xl font-bold text-gray-900">{{ $expiringThisWeek }}</p>
-                    <p class="text-xs text-gray-600">{{ __('supervisor.subscriptions.stat_expiring') }}</p>
                 </div>
             </div>
         </div>
@@ -82,7 +82,7 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-time-line text-gray-600"></i>
+                    <i class="ri-calendar-close-line text-gray-600"></i>
                 </div>
                 <div class="flex-1">
                     <p class="text-xl font-bold text-gray-900">{{ $totalExpired }}</p>
@@ -92,12 +92,12 @@
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-add-circle-line text-indigo-600"></i>
+                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-close-circle-line text-red-600"></i>
                 </div>
                 <div class="flex-1">
-                    <p class="text-xl font-bold text-gray-900">{{ $totalExtended }}</p>
-                    <p class="text-xs text-gray-600">{{ __('supervisor.subscriptions.stat_extended') }}</p>
+                    <p class="text-xl font-bold text-gray-900">{{ $totalCancelled }}</p>
+                    <p class="text-xs text-gray-600">{{ __('supervisor.subscriptions.stat_cancelled') }}</p>
                 </div>
             </div>
         </div>
