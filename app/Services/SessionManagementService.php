@@ -562,37 +562,57 @@ class SessionManagementService
      */
     public function createIndividualCircleSchedule(QuranIndividualCircle $circle, array $data): int
     {
-        $sessionDates = $this->generateSessionDates(
-            $data['schedule_days'],
-            $data['schedule_time'],
-            $data['schedule_start_date'] ?? now()->toDateString(),
-            $data['session_count']
-        );
+        // Wrap the entire batch in a single transaction with a lock to prevent
+        // concurrent scheduling requests from over-booking the subscription.
+        return DB::transaction(function () use ($circle, $data) {
+            $lockedCircle = QuranIndividualCircle::lockForUpdate()->findOrFail($circle->id);
 
-        $createdCount = 0;
-        $durationMinutes = $circle->default_duration_minutes
-            ?? $circle->subscription?->session_duration_minutes
-            ?? $circle->subscription?->package?->session_duration_minutes
-            ?? 60;
+            $remainingSessions = $this->getRemainingIndividualSessions($lockedCircle);
+            $requestedCount = $data['session_count'];
 
-        foreach ($sessionDates as $scheduledAt) {
-            try {
-                $this->createIndividualSession(
-                    $circle,
-                    $scheduledAt,
-                    $durationMinutes
-                );
-                $createdCount++;
-            } catch (Exception $e) {
-                Log::warning('Failed to create individual session', [
-                    'circle_id' => $circle->id,
-                    'scheduled_at' => $scheduledAt->toDateTimeString(),
-                    'error' => $e->getMessage(),
-                ]);
+            if ($remainingSessions <= 0) {
+                throw new Exception(__('scheduling.count.no_remaining_circle'));
             }
-        }
 
-        return $createdCount;
+            if ($requestedCount > $remainingSessions) {
+                throw new Exception(__('scheduling.count.exceeds_remaining_short', [
+                    'count' => $requestedCount,
+                    'remaining' => $remainingSessions,
+                ]));
+            }
+
+            $sessionDates = $this->generateSessionDates(
+                $data['schedule_days'],
+                $data['schedule_time'],
+                $data['schedule_start_date'] ?? now()->toDateString(),
+                $requestedCount
+            );
+
+            $createdCount = 0;
+            $durationMinutes = $lockedCircle->default_duration_minutes
+                ?? $lockedCircle->subscription?->session_duration_minutes
+                ?? $lockedCircle->subscription?->package?->session_duration_minutes
+                ?? 60;
+
+            foreach ($sessionDates as $scheduledAt) {
+                try {
+                    $this->createIndividualSession(
+                        $lockedCircle,
+                        $scheduledAt,
+                        $durationMinutes
+                    );
+                    $createdCount++;
+                } catch (Exception $e) {
+                    Log::warning('Failed to create individual session', [
+                        'circle_id' => $lockedCircle->id,
+                        'scheduled_at' => $scheduledAt->toDateTimeString(),
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            return $createdCount;
+        });
     }
 
     /**
