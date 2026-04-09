@@ -61,6 +61,16 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
                 }
             });
 
+        // Default to teacher tab
+        $activeTab = $request->input('tab', 'teachers');
+
+        // Apply tab filter (replaces participant_type dropdown)
+        if ($activeTab === 'teachers') {
+            $baseQuery->whereIn('meeting_attendances.user_type', ['teacher', 'quran_teacher', 'academic_teacher']);
+        } else {
+            $baseQuery->where('meeting_attendances.user_type', 'student');
+        }
+
         // Apply filters
         $this->applyMeetingFilters($baseQuery, $request);
 
@@ -85,6 +95,7 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
             'records' => $records,
             'stats' => $stats,
             'teachers' => $teachers,
+            'activeTab' => $activeTab,
         ]);
     }
 
@@ -96,15 +107,6 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
         }
         if ($request->filled('date_to')) {
             $query->where('meeting_attendances.created_at', '<=', $request->date_to.' 23:59:59');
-        }
-
-        // Participant type (student / teacher / all)
-        if ($participantType = $request->input('participant_type')) {
-            if ($participantType === 'student') {
-                $query->where('meeting_attendances.user_type', 'student');
-            } elseif ($participantType === 'teacher') {
-                $query->whereIn('meeting_attendances.user_type', ['teacher', 'quran_teacher', 'academic_teacher']);
-            }
         }
 
         // Session type

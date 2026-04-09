@@ -1667,6 +1667,11 @@ return [
         'pending' => 'معلق',
         'partially_attended' => 'حضور جزئي',
         'search_name' => 'بحث بالاسم',
+        'tab_teachers' => 'المعلمون',
+        'tab_students' => 'الطلاب',
+        'quran_individual' => 'قرآن فردي',
+        'quran_group' => 'قرآن جماعي',
+        'quran_trial' => 'قرآن تجريبي',
     ],
 
     'recorded_courses' => [

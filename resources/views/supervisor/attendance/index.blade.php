@@ -2,6 +2,7 @@
 
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+    $baseUrl = route('manage.attendance.index', ['subdomain' => $subdomain]);
 @endphp
 
 <div class="max-w-7xl mx-auto">
@@ -11,6 +12,18 @@
             <h1 class="text-xl md:text-2xl font-bold text-gray-900">{{ __('supervisor.attendance.title') }}</h1>
             <p class="text-sm text-gray-500 mt-1">{{ __('supervisor.attendance.subtitle') }}</p>
         </div>
+    </div>
+
+    <!-- Tabs: Teachers / Students -->
+    <div class="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
+        <a href="{{ $baseUrl }}?tab=teachers"
+           class="px-5 py-2 text-sm font-medium rounded-md transition-colors {{ $activeTab === 'teachers' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
+            <i class="ri-user-star-line me-1"></i>{{ __('supervisor.attendance.tab_teachers') }}
+        </a>
+        <a href="{{ $baseUrl }}?tab=students"
+           class="px-5 py-2 text-sm font-medium rounded-md transition-colors {{ $activeTab === 'students' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
+            <i class="ri-graduation-cap-line me-1"></i>{{ __('supervisor.attendance.tab_students') }}
+        </a>
     </div>
 
     <!-- Stats Cards -->
@@ -90,15 +103,8 @@
 
     <!-- Filters -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-        <form method="GET" action="{{ route('manage.attendance.index', ['subdomain' => $subdomain]) }}" class="flex flex-wrap gap-3 items-end">
-            <div class="flex-1 min-w-[140px]">
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.participant_type') }}</label>
-                <select name="participant_type" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
-                    <option value="">{{ __('supervisor.common.all') }}</option>
-                    <option value="student" {{ request('participant_type') === 'student' ? 'selected' : '' }}>{{ __('supervisor.attendance.participant_student') }}</option>
-                    <option value="teacher" {{ request('participant_type') === 'teacher' ? 'selected' : '' }}>{{ __('supervisor.attendance.participant_teacher') }}</option>
-                </select>
-            </div>
+        <form method="GET" action="{{ $baseUrl }}" class="flex flex-wrap gap-3 items-end">
+            <input type="hidden" name="tab" value="{{ $activeTab }}">
 
             <div class="flex-1 min-w-[140px]">
                 <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.session_type') }}</label>
@@ -153,7 +159,7 @@
                 <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
                     <i class="ri-search-line"></i> {{ __('supervisor.common.search') }}
                 </button>
-                <a href="{{ route('manage.attendance.index', ['subdomain' => $subdomain]) }}"
+                <a href="{{ $baseUrl }}?tab={{ $activeTab }}"
                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
                     <i class="ri-refresh-line"></i>
                 </a>
@@ -168,11 +174,8 @@
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.participant_type') }}</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.student_name') }}</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.session_type') }}</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.join_time') }}</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.leave_time') }}</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.duration') }}</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.percentage') }}</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.common.status') }}</th>
@@ -187,10 +190,15 @@
                                     $statusValue = $statusValue->value;
                                 }
 
-                                $isTeacher = in_array($record->user_type, ['teacher', 'quran_teacher', 'academic_teacher']);
+                                // Fix stale status: if duration is 0 and status says attended, override to absent
+                                if (($record->total_duration_minutes ?? 0) == 0 && $statusValue === 'attended') {
+                                    $statusValue = 'absent';
+                                }
 
                                 $sessionTypeBadge = match($record->session_type) {
-                                    'individual', 'group', 'trial' => ['bg-yellow-100 text-yellow-800', __('supervisor.attendance.quran')],
+                                    'individual' => ['bg-yellow-100 text-yellow-800', __('supervisor.attendance.quran_individual')],
+                                    'group' => ['bg-emerald-100 text-emerald-800', __('supervisor.attendance.quran_group')],
+                                    'trial' => ['bg-orange-100 text-orange-800', __('supervisor.attendance.quran_trial')],
                                     'academic' => ['bg-violet-100 text-violet-800', __('supervisor.attendance.academic')],
                                     'interactive' => ['bg-blue-100 text-blue-800', __('supervisor.attendance.interactive')],
                                     default => ['bg-gray-100 text-gray-800', $record->session_type ?? '-'],
@@ -205,41 +213,23 @@
                                     default => ['bg-gray-100 text-gray-700', $statusValue ?? '-'],
                                 };
                             @endphp
-                            <tr class="{{ $statusValue === 'absent' ? 'bg-red-50/30' : '' }} {{ $isTeacher ? 'bg-indigo-50/20' : '' }} hover:bg-gray-50">
-                                <td class="px-4 py-3">
-                                    @if($isTeacher)
-                                        <span class="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700">{{ __('supervisor.attendance.participant_teacher') }}</span>
-                                    @else
-                                        <span class="text-xs px-2 py-1 rounded-full bg-sky-100 text-sky-700">{{ __('supervisor.attendance.participant_student') }}</span>
-                                    @endif
-                                </td>
+                            <tr class="{{ $statusValue === 'absent' ? 'bg-red-50/30' : '' }} hover:bg-gray-50">
                                 <td class="px-4 py-3">
                                     <span class="font-medium text-gray-900 truncate max-w-[180px] block">{{ $record->user_name ?? '-' }}</span>
                                 </td>
                                 <td class="px-4 py-3">
                                     <span class="text-xs px-2 py-1 rounded-full {{ $sessionTypeBadge[0] }}">{{ $sessionTypeBadge[1] }}</span>
                                 </td>
-                                <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
-                                    @if($record->first_join_time)
-                                        @php $joinTime = toAcademyTimezone($record->first_join_time); @endphp
-                                        {{ $joinTime->format('Y/m/d') }}
-                                        <span class="text-xs text-gray-500 block">{{ $joinTime->format('H:i') }}</span>
-                                    @else
-                                        <span class="text-gray-400">-</span>
-                                    @endif
-                                </td>
-                                <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
-                                    @if($record->last_leave_time)
-                                        @php $leaveTime = toAcademyTimezone($record->last_leave_time); @endphp
-                                        {{ $leaveTime->format('Y/m/d') }}
-                                        <span class="text-xs text-gray-500 block">{{ $leaveTime->format('H:i') }}</span>
-                                    @else
-                                        <span class="text-gray-400">-</span>
-                                    @endif
-                                </td>
                                 <td class="px-4 py-3 text-gray-700">
-                                    @if($record->total_duration_minutes > 0)
-                                        {{ $record->total_duration_minutes }} {{ __('supervisor.attendance.minutes') }}
+                                    @php
+                                        $attendanceDuration = $record->total_duration_minutes ?? 0;
+                                        $sessionDuration = $record->session_duration_minutes ?? 0;
+                                    @endphp
+                                    @if($attendanceDuration > 0 || $sessionDuration > 0)
+                                        <span class="font-medium">{{ $attendanceDuration }}</span>
+                                        <span class="text-gray-400">/</span>
+                                        <span>{{ $sessionDuration }}</span>
+                                        <span class="text-xs text-gray-500">{{ __('supervisor.attendance.minutes') }}</span>
                                     @else
                                         <span class="text-gray-400">-</span>
                                     @endif

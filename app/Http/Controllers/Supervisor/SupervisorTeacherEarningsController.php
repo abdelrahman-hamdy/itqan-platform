@@ -45,17 +45,6 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        $statsBase = TeacherEarning::where('academy_id', $academyId)->where($scopeQuery);
-
-        $now = Carbon::now();
-        $stats = [
-            'totalEarningsThisMonth' => (clone $statsBase)->forMonth($now->year, $now->month)->sum('amount'),
-            'totalEarningsAllTime' => (clone $statsBase)->sum('amount'),
-            'finalizedAmount' => (clone $statsBase)->finalized()->sum('amount'),
-            'disputedAmount' => (clone $statsBase)->disputed()->sum('amount'),
-            'sessionsCount' => (clone $statsBase)->count(),
-        ];
-
         $earningsQuery = TeacherEarning::where('academy_id', $academyId)
             ->where($scopeQuery)
             ->with([
@@ -78,6 +67,14 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         } elseif ($currentStatus === 'disputed') {
             $earningsQuery->disputed();
         }
+
+        // Stats computed from the same filtered query (before pagination)
+        $stats = [
+            'totalEarnings' => (clone $earningsQuery)->sum('amount'),
+            'finalizedAmount' => (clone $earningsQuery)->where('is_finalized', true)->where('is_disputed', false)->sum('amount'),
+            'disputedAmount' => (clone $earningsQuery)->where('is_disputed', true)->sum('amount'),
+            'sessionsCount' => (clone $earningsQuery)->count(),
+        ];
 
         $earnings = $earningsQuery->orderByDesc('session_completed_at')->paginate(15);
 

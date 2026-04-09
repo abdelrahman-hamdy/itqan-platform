@@ -1667,6 +1667,11 @@ return [
         'pending' => 'Pending',
         'partially_attended' => 'Partially Attended',
         'search_name' => 'Search by Name',
+        'tab_teachers' => 'Teachers',
+        'tab_students' => 'Students',
+        'quran_individual' => 'Individual Quran',
+        'quran_group' => 'Group Quran',
+        'quran_trial' => 'Trial Quran',
     ],
 
     'recorded_courses' => [
