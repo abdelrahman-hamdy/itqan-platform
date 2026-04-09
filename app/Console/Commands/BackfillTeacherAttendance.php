@@ -46,7 +46,8 @@ class BackfillTeacherAttendance extends Command
 
             foreach ($sessions as $session) {
                 $teacherAtt = MeetingAttendance::where('session_id', $session->id)
-                    ->where('session_type', $type === 'quran' ? 'individual' : $type)
+                    ->when($type === 'quran', fn ($q) => $q->whereIn('session_type', ['individual', 'group', 'trial']))
+                    ->when($type !== 'quran', fn ($q) => $q->where('session_type', $type))
                     ->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])
                     ->where('is_calculated', true)
                     ->first();
@@ -78,7 +79,7 @@ class BackfillTeacherAttendance extends Command
                 $teacherCounts = $teacherStatus !== AttendanceStatus::ABSENT;
 
                 if ($isDryRun) {
-                    $this->line("  Session {$session->id}: teacher={$teacherStatus->value}, counts={$teacherCounts}, duration=" . ($teacherAtt?->total_duration_minutes ?? 0) . "min");
+                    $this->line("  Session {$session->id}: teacher={$teacherStatus->value}, counts={$teacherCounts}, duration=".($teacherAtt?->total_duration_minutes ?? 0).'min');
                 } else {
                     $updateData = [
                         'teacher_attendance_status' => $teacherStatus->value,

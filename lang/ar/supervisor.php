@@ -1655,6 +1655,18 @@ return [
         'quran' => 'قرآن',
         'academic' => 'أكاديمي',
         'interactive' => 'دورة تفاعلية',
+        'participant_type' => 'نوع المشارك',
+        'participant_student' => 'طالب',
+        'participant_teacher' => 'معلم',
+        'teacher_attendance_rate' => 'نسبة حضور المعلمين',
+        'pending_calculations' => 'حسابات معلقة',
+        'join_time' => 'وقت الدخول',
+        'leave_time' => 'وقت الخروج',
+        'percentage' => 'النسبة',
+        'calculated' => 'محسوب',
+        'pending' => 'معلق',
+        'partially_attended' => 'حضور جزئي',
+        'search_name' => 'بحث بالاسم',
     ],
 
     'recorded_courses' => [

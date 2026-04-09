@@ -1655,6 +1655,18 @@ return [
         'quran' => 'Quran',
         'academic' => 'Academic',
         'interactive' => 'Interactive',
+        'participant_type' => 'Participant Type',
+        'participant_student' => 'Student',
+        'participant_teacher' => 'Teacher',
+        'teacher_attendance_rate' => 'Teacher Attendance Rate',
+        'pending_calculations' => 'Pending Calculations',
+        'join_time' => 'Join Time',
+        'leave_time' => 'Leave Time',
+        'percentage' => 'Percentage',
+        'calculated' => 'Calculated',
+        'pending' => 'Pending',
+        'partially_attended' => 'Partially Attended',
+        'search_name' => 'Search by Name',
     ],
 
     'recorded_courses' => [

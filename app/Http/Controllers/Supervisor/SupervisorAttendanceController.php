@@ -3,190 +3,180 @@
 namespace App\Http\Controllers\Supervisor;
 
 use App\Enums\AttendanceStatus;
-use App\Models\AcademicSession;
-use App\Models\AcademicSessionAttendance;
-use App\Models\InteractiveCourseSession;
-use App\Models\InteractiveSessionAttendance;
-use App\Models\QuranSession;
-use App\Models\QuranSessionAttendance;
+use App\Models\MeetingAttendance;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class SupervisorAttendanceController extends BaseSupervisorWebController
 {
     public function index(Request $request, $subdomain = null): View
     {
+        // Gather all teacher user IDs the supervisor can see
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
+        $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
+        $allTeacherUserIds = array_unique(array_merge($quranTeacherIds, $academicTeacherIds));
+
+        if (empty($allTeacherUserIds)) {
+            return view('supervisor.attendance.index', [
+                'records' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 25),
+                'stats' => $this->emptyStats(),
+                'teachers' => collect(),
+            ]);
+        }
+
+        // Build the base query on MeetingAttendance, scoped to supervised sessions
         $academicProfileIds = $this->getAssignedAcademicTeacherProfileIds();
 
-        // Collect attendance from all session types
-        $allRecords = collect();
+        $baseQuery = MeetingAttendance::query()
+            ->join('users', 'meeting_attendances.user_id', '=', 'users.id')
+            ->where(function ($outer) use ($allTeacherUserIds, $academicProfileIds) {
+                // Session must belong to one of the supervised teachers (OR across 3 session types)
+                $outer->whereExists(function ($sub) use ($allTeacherUserIds) {
+                    $sub->select(DB::raw(1))
+                        ->from('quran_sessions')
+                        ->whereColumn('quran_sessions.id', 'meeting_attendances.session_id')
+                        ->whereIn('quran_sessions.quran_teacher_id', $allTeacherUserIds)
+                        ->whereNotIn('meeting_attendances.session_type', ['academic', 'interactive']);
+                });
 
-        // Quran attendance
-        if (! empty($quranTeacherIds)) {
-            $quranQuery = QuranSessionAttendance::whereHas('session', function ($q) use ($quranTeacherIds) {
-                $q->whereIn('quran_teacher_id', $quranTeacherIds);
-            })->with(['student', 'session.quranTeacher']);
+                if (! empty($academicProfileIds)) {
+                    $outer->orWhereExists(function ($sub) use ($academicProfileIds) {
+                        $sub->select(DB::raw(1))
+                            ->from('academic_sessions')
+                            ->whereColumn('academic_sessions.id', 'meeting_attendances.session_id')
+                            ->whereIn('academic_sessions.academic_teacher_id', $academicProfileIds)
+                            ->where('meeting_attendances.session_type', 'academic');
+                    });
 
-            $this->applyFilters($quranQuery, $request, 'quran');
-
-            $quranRecords = $quranQuery->get()->map(function ($att) {
-                return [
-                    'id' => $att->id,
-                    'date' => $att->session?->scheduled_at,
-                    'student' => $att->student,
-                    'teacher_name' => $att->session?->quranTeacher?->name ?? '',
-                    'session_type' => 'quran',
-                    'session_info' => $att->session?->title ?? '',
-                    'status' => $att->attendance_status,
-                    'duration' => $att->attendance_duration_minutes,
-                    'student_id' => $att->student_id,
-                ];
+                    $outer->orWhereExists(function ($sub) use ($academicProfileIds) {
+                        $sub->select(DB::raw(1))
+                            ->from('interactive_course_sessions')
+                            ->join('interactive_courses', 'interactive_courses.id', '=', 'interactive_course_sessions.course_id')
+                            ->whereColumn('interactive_course_sessions.id', 'meeting_attendances.session_id')
+                            ->whereIn('interactive_courses.assigned_teacher_id', $academicProfileIds)
+                            ->where('meeting_attendances.session_type', 'interactive');
+                    });
+                }
             });
-            $allRecords = $allRecords->merge($quranRecords);
-        }
 
-        // Academic attendance
-        if (! empty($academicProfileIds)) {
-            $academicQuery = AcademicSessionAttendance::whereHas('session', function ($q) use ($academicProfileIds) {
-                $q->whereIn('academic_teacher_id', $academicProfileIds);
-            })->with(['student', 'session.academicTeacher.user']);
+        // Apply filters
+        $this->applyMeetingFilters($baseQuery, $request);
 
-            $this->applyFilters($academicQuery, $request, 'academic');
+        // Calculate stats from the filtered set (before pagination)
+        $stats = $this->calculateStats(clone $baseQuery);
 
-            $academicRecords = $academicQuery->get()->map(function ($att) {
-                return [
-                    'id' => $att->id,
-                    'date' => $att->session?->scheduled_at,
-                    'student' => $att->student,
-                    'teacher_name' => $att->session?->academicTeacher?->user?->name ?? '',
-                    'session_type' => 'academic',
-                    'session_info' => $att->session?->title ?? '',
-                    'status' => $att->attendance_status,
-                    'duration' => $att->attendance_duration_minutes,
-                    'student_id' => $att->student_id,
-                ];
-            });
-            $allRecords = $allRecords->merge($academicRecords);
-        }
+        // Select fields and paginate
+        $records = $baseQuery
+            ->select([
+                'meeting_attendances.*',
+                'users.name as user_name',
+            ])
+            ->orderByDesc('meeting_attendances.first_join_time')
+            ->orderByDesc('meeting_attendances.created_at')
+            ->paginate(25)
+            ->withQueryString();
 
-        // Interactive attendance
-        if (! empty($academicProfileIds)) {
-            $interactiveQuery = InteractiveSessionAttendance::whereHas('session.course', function ($q) use ($academicProfileIds) {
-                $q->whereIn('assigned_teacher_id', $academicProfileIds);
-            })->with(['student', 'session.course.assignedTeacher.user']);
-
-            $this->applyFilters($interactiveQuery, $request, 'interactive');
-
-            $interactiveRecords = $interactiveQuery->get()->map(function ($att) {
-                return [
-                    'id' => $att->id,
-                    'date' => $att->session?->scheduled_at,
-                    'student' => $att->student,
-                    'teacher_name' => $att->session?->course?->assignedTeacher?->user?->name ?? '',
-                    'session_type' => 'interactive',
-                    'session_info' => $att->session?->course?->title ?? '',
-                    'status' => $att->attendance_status,
-                    'duration' => $att->attendance_duration_minutes,
-                    'student_id' => $att->student_id,
-                ];
-            });
-            $allRecords = $allRecords->merge($interactiveRecords);
-        }
-
-        // Apply type filter
-        if ($typeFilter = $request->input('session_type')) {
-            $allRecords = $allRecords->where('session_type', $typeFilter);
-        }
-
-        // Apply student search filter
-        if ($studentSearch = $request->input('student')) {
-            $studentSearch = mb_strtolower($studentSearch);
-            $allRecords = $allRecords->filter(function ($r) use ($studentSearch) {
-                return $r['student'] && str_contains(mb_strtolower($r['student']->name), $studentSearch);
-            });
-        }
-
-        // Apply status filter
-        if ($statusFilter = $request->input('status')) {
-            $allRecords = $allRecords->where('status', $statusFilter);
-        }
-
-        // Stats (from unfiltered records before type/student/status filters)
-        $totalRecords = $allRecords->count();
-        $presentCount = $allRecords->where('status', AttendanceStatus::ATTENDED->value)->count();
-        $absentCount = $allRecords->where('status', AttendanceStatus::ABSENT->value)->count();
-        $lateCount = $allRecords->where('status', AttendanceStatus::LATE->value)->count();
-        $attendanceRate = $totalRecords > 0 ? round(($presentCount / $totalRecords) * 100) : 0;
-
-        // Chronic absentees: students absent more than 3 times this month
-        $monthStart = now()->startOfMonth();
-        $thisMonthRecords = $allRecords->filter(fn ($r) => $r['date'] && $r['date']->gte($monthStart));
-        $absentCounts = $thisMonthRecords->where('status', AttendanceStatus::ABSENT->value)
-            ->groupBy('student_id')
-            ->map->count();
-        $chronicAbsentees = $absentCounts->filter(fn ($count) => $count > 3)->count();
-
-        // Sort by date desc
-        $allRecords = $allRecords->sortByDesc('date')->values();
-
-        // Paginate
-        $perPage = 15;
-        $page = $request->input('page', 1);
-        $paginated = new LengthAwarePaginator(
-            $allRecords->forPage($page, $perPage)->values(),
-            $allRecords->count(),
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
-
-        // Teachers for filter
-        $teacherIds = array_unique(array_merge($quranTeacherIds, $this->getAssignedAcademicTeacherIds()));
-        $teachers = User::whereIn('id', $teacherIds)->get();
+        // Teachers for filter dropdown
+        $teachers = User::whereIn('id', $allTeacherUserIds)->get();
 
         return view('supervisor.attendance.index', [
-            'records' => $paginated,
-            'attendanceRate' => $attendanceRate,
-            'presentCount' => $presentCount,
-            'absentCount' => $absentCount,
-            'lateCount' => $lateCount,
-            'chronicAbsentees' => $chronicAbsentees,
+            'records' => $records,
+            'stats' => $stats,
             'teachers' => $teachers,
         ]);
     }
 
-    private function applyFilters($query, Request $request, string $type): void
+    private function applyMeetingFilters($query, Request $request): void
     {
-        // Date range filter
+        // Date range
         if ($request->filled('date_from')) {
-            $query->whereHas('session', function ($q) use ($request) {
-                $q->whereDate('scheduled_at', '>=', $request->date_from);
-            });
+            $query->where('meeting_attendances.created_at', '>=', $request->date_from.' 00:00:00');
         }
         if ($request->filled('date_to')) {
-            $query->whereHas('session', function ($q) use ($request) {
-                $q->whereDate('scheduled_at', '<=', $request->date_to);
-            });
+            $query->where('meeting_attendances.created_at', '<=', $request->date_to.' 23:59:59');
         }
 
-        // Teacher filter
-        if ($teacherId = $request->input('teacher_id')) {
-            if ($type === 'quran') {
-                $query->whereHas('session', fn ($q) => $q->where('quran_teacher_id', $teacherId));
-            } elseif ($type === 'academic') {
-                $profileIds = \App\Models\AcademicTeacherProfile::where('user_id', $teacherId)->pluck('id')->toArray();
-                if (! empty($profileIds)) {
-                    $query->whereHas('session', fn ($q) => $q->whereIn('academic_teacher_id', $profileIds));
-                }
-            } elseif ($type === 'interactive') {
-                $profileIds = \App\Models\AcademicTeacherProfile::where('user_id', $teacherId)->pluck('id')->toArray();
-                if (! empty($profileIds)) {
-                    $query->whereHas('session.course', fn ($q) => $q->whereIn('assigned_teacher_id', $profileIds));
-                }
+        // Participant type (student / teacher / all)
+        if ($participantType = $request->input('participant_type')) {
+            if ($participantType === 'student') {
+                $query->where('meeting_attendances.user_type', 'student');
+            } elseif ($participantType === 'teacher') {
+                $query->whereIn('meeting_attendances.user_type', ['teacher', 'quran_teacher', 'academic_teacher']);
             }
         }
+
+        // Session type
+        if ($sessionType = $request->input('session_type')) {
+            if ($sessionType === 'quran') {
+                $query->whereNotIn('meeting_attendances.session_type', ['academic', 'interactive']);
+            } else {
+                $query->where('meeting_attendances.session_type', $sessionType);
+            }
+        }
+
+        // Name search (matches user name)
+        if ($search = $request->input('search')) {
+            $query->where('users.name', 'like', '%'.$search.'%');
+        }
+
+        // Attendance status
+        if ($status = $request->input('status')) {
+            $query->where('meeting_attendances.attendance_status', $status);
+        }
+
+        // Calculated filter
+        if ($request->filled('is_calculated')) {
+            $query->where('meeting_attendances.is_calculated', $request->input('is_calculated') === 'yes');
+        }
+    }
+
+    private function calculateStats($query): array
+    {
+        $attended = AttendanceStatus::ATTENDED->value;
+        $absent = AttendanceStatus::ABSENT->value;
+        $late = AttendanceStatus::LATE->value;
+
+        $row = (clone $query)->selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN meeting_attendances.attendance_status = ? THEN 1 ELSE 0 END) as attended,
+            SUM(CASE WHEN meeting_attendances.attendance_status = ? THEN 1 ELSE 0 END) as absent,
+            SUM(CASE WHEN meeting_attendances.attendance_status = ? THEN 1 ELSE 0 END) as late,
+            SUM(CASE WHEN meeting_attendances.is_calculated = 0 THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN meeting_attendances.user_type IN ('teacher','quran_teacher','academic_teacher') THEN 1 ELSE 0 END) as teacher_total,
+            SUM(CASE WHEN meeting_attendances.user_type IN ('teacher','quran_teacher','academic_teacher') AND meeting_attendances.attendance_status = ? THEN 1 ELSE 0 END) as teacher_attended
+        ", [$attended, $absent, $late, $attended])->first();
+
+        $total = (int) ($row->total ?? 0);
+        $teacherTotal = (int) ($row->teacher_total ?? 0);
+        $teacherAttendedCount = (int) ($row->teacher_attended ?? 0);
+
+        return [
+            'total' => $total,
+            'attended' => (int) ($row->attended ?? 0),
+            'absent' => (int) ($row->absent ?? 0),
+            'late' => (int) ($row->late ?? 0),
+            'pending' => (int) ($row->pending ?? 0),
+            'attendance_rate' => $total > 0 ? round(((int) $row->attended / $total) * 100) : 0,
+            'teacher_total' => $teacherTotal,
+            'teacher_attended' => $teacherAttendedCount,
+            'teacher_rate' => $teacherTotal > 0 ? round(($teacherAttendedCount / $teacherTotal) * 100) : 0,
+        ];
+    }
+
+    private function emptyStats(): array
+    {
+        return [
+            'total' => 0,
+            'attended' => 0,
+            'absent' => 0,
+            'late' => 0,
+            'pending' => 0,
+            'attendance_rate' => 0,
+            'teacher_total' => 0,
+            'teacher_attended' => 0,
+            'teacher_rate' => 0,
+        ];
     }
 }
