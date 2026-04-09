@@ -23,7 +23,7 @@
     $routePrefix = auth()->user()->isStudent() ? 'student.support' : 'teacher.support';
 @endphp
 
-<div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200 p-5 md:p-6">
+<div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200 p-5 md:p-6 mb-6 md:mb-8">
     <div class="flex items-start gap-4">
         <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center shrink-0">
             <i class="ri-customer-service-2-line text-xl text-emerald-600"></i>
