@@ -169,7 +169,7 @@
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.student_name') }}</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ $activeTab === 'teachers' ? __('supervisor.attendance.teacher') : __('supervisor.attendance.student_name') }}</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.session_type') }}</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.duration') }}</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">{{ __('supervisor.attendance.percentage') }}</th>
@@ -189,13 +189,14 @@
                                     $statusValue = 'absent';
                                 }
 
-                                $sessionTypeBadge = match($record->session_type) {
-                                    'individual' => ['bg-yellow-100 text-yellow-800', __('supervisor.attendance.quran_individual')],
-                                    'group' => ['bg-emerald-100 text-emerald-800', __('supervisor.attendance.quran_group')],
-                                    'trial' => ['bg-orange-100 text-orange-800', __('supervisor.attendance.quran_trial')],
-                                    'academic' => ['bg-violet-100 text-violet-800', __('supervisor.attendance.academic')],
-                                    'interactive' => ['bg-blue-100 text-blue-800', __('supervisor.attendance.interactive')],
-                                    default => ['bg-gray-100 text-gray-800', $record->session_type ?? '-'],
+                                // Session type: icon + label (matching sessions management page)
+                                $typeConfig = match($record->session_type) {
+                                    'individual' => ['bg' => 'bg-green-50', 'text' => 'text-green-600', 'icon' => 'ri-book-read-line', 'label' => __('supervisor.attendance.quran_individual')],
+                                    'group' => ['bg' => 'bg-green-50', 'text' => 'text-green-600', 'icon' => 'ri-book-read-line', 'label' => __('supervisor.attendance.quran_group')],
+                                    'trial' => ['bg' => 'bg-green-50', 'text' => 'text-green-600', 'icon' => 'ri-book-read-line', 'label' => __('supervisor.attendance.quran_trial')],
+                                    'academic' => ['bg' => 'bg-violet-50', 'text' => 'text-violet-600', 'icon' => 'ri-graduation-cap-line', 'label' => __('supervisor.attendance.academic')],
+                                    'interactive' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-600', 'icon' => 'ri-video-chat-line', 'label' => __('supervisor.attendance.interactive')],
+                                    default => ['bg' => 'bg-gray-50', 'text' => 'text-gray-600', 'icon' => 'ri-question-line', 'label' => $record->session_type ?? '-'],
                                 };
 
                                 $statusBadge = match($statusValue) {
@@ -216,16 +217,28 @@
                                 $sessionUrl = route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $routeType, 'sessionId' => $record->session_id]);
 
                                 $isCounted = (bool) $record->is_counted;
+                                $toggleUrl = route('manage.attendance.toggle-counted', ['subdomain' => $subdomain, 'id' => $record->id]);
+                                $userName = $record->user_name ?? '-';
+                                $initials = mb_substr($userName, 0, 2);
                             @endphp
                             <tr class="{{ $statusValue === 'absent' ? 'bg-red-50/30' : '' }} hover:bg-gray-50">
+                                {{-- User: avatar + name (clickable) --}}
                                 <td class="px-4 py-3">
-                                    <a href="{{ $sessionUrl }}" class="font-medium text-blue-700 hover:text-blue-900 hover:underline truncate max-w-[180px] block">
-                                        {{ $record->user_name ?? '-' }}
-                                        <i class="ri-external-link-line text-xs text-gray-400 ms-1"></i>
+                                    <a href="{{ $sessionUrl }}" class="flex items-center gap-2.5 group">
+                                        <div class="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center {{ $activeTab === 'teachers' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700' }}">
+                                            <span class="font-semibold text-xs">{{ $initials }}</span>
+                                        </div>
+                                        <span class="font-medium text-gray-900 group-hover:text-blue-700 truncate max-w-[160px] transition-colors">{{ $userName }}</span>
                                     </a>
                                 </td>
+                                {{-- Session type: icon + label --}}
                                 <td class="px-4 py-3">
-                                    <span class="text-xs px-2 py-1 rounded-full {{ $sessionTypeBadge[0] }}">{{ $sessionTypeBadge[1] }}</span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-6 h-6 rounded flex items-center justify-center {{ $typeConfig['bg'] }}">
+                                            <i class="{{ $typeConfig['icon'] }} text-xs {{ $typeConfig['text'] }}"></i>
+                                        </span>
+                                        <span class="text-xs text-gray-600">{{ $typeConfig['label'] }}</span>
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3 text-gray-700">
                                     @php
@@ -253,18 +266,29 @@
                                 <td class="px-4 py-3">
                                     <span class="text-xs px-2 py-1 rounded-full {{ $statusBadge[0] }}">{{ $statusBadge[1] }}</span>
                                 </td>
+                                {{-- Counted toggle with confirmation --}}
                                 <td class="px-4 py-3">
-                                    <form method="POST" action="{{ route('manage.attendance.toggle-counted', ['subdomain' => $subdomain, 'id' => $record->id]) }}" class="inline">
-                                        @csrf
-                                        <button type="submit" title="{{ $isCounted ? __('supervisor.attendance.click_to_uncount') : __('supervisor.attendance.click_to_count') }}"
-                                                class="text-xs px-2.5 py-1 rounded-full cursor-pointer transition-colors {{ $isCounted ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200' }}">
-                                            @if($isCounted)
-                                                <i class="ri-check-line"></i> {{ __('supervisor.attendance.counted') }}
-                                            @else
-                                                <i class="ri-close-line"></i> {{ __('supervisor.attendance.not_counted') }}
-                                            @endif
-                                        </button>
-                                    </form>
+                                    <button type="button"
+                                        @click="window.confirmAction({
+                                            title: {{ $isCounted ? \"'\".__('supervisor.attendance.confirm_uncount_title').\"'\" : \"'\".__('supervisor.attendance.confirm_count_title').\"'\" }},
+                                            message: {{ $isCounted ? \"'\".__('supervisor.attendance.confirm_uncount_message', ['name' => $userName]).\"'\" : \"'\".__('supervisor.attendance.confirm_count_message', ['name' => $userName]).\"'\" }},
+                                            isDangerous: {{ $isCounted ? 'true' : 'false' }},
+                                            theme: {{ $isCounted ? 'null' : \"'green'\" }},
+                                            icon: {{ $isCounted ? \"'ri-subtract-line'\" : \"'ri-add-line'\" }},
+                                            onConfirm: async () => {
+                                                try {
+                                                    const r = await fetch('{{ $toggleUrl }}', {
+                                                        method: 'PATCH',
+                                                        headers: {'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'},
+                                                    });
+                                                    if (r.ok) window.location.reload();
+                                                } catch(e) {}
+                                            }
+                                        })"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer {{ $isCounted ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200' }}">
+                                        <i class="{{ $isCounted ? 'ri-check-line' : 'ri-close-line' }}"></i>
+                                        {{ $isCounted ? __('supervisor.attendance.counted') : __('supervisor.attendance.not_counted') }}
+                                    </button>
                                 </td>
                             </tr>
                         @endforeach

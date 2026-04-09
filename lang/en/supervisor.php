@@ -1681,6 +1681,10 @@ return [
         'select_teacher' => 'Select Teacher',
         'click_to_count' => 'Click to count',
         'click_to_uncount' => 'Click to uncount',
+        'confirm_count_title' => 'Count Session',
+        'confirm_uncount_title' => 'Uncount Session',
+        'confirm_count_message' => 'Count this session for :name?',
+        'confirm_uncount_message' => 'Uncount this session for :name?',
     ],
 
     'recorded_courses' => [

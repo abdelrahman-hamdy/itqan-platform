@@ -9,7 +9,6 @@ use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\User;
 use App\Services\SessionCountingService;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -118,7 +117,7 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
         ]);
     }
 
-    public function toggleCounted(Request $request, $subdomain, int $id): RedirectResponse
+    public function toggleCounted(Request $request, $subdomain, int $id)
     {
         if (! $this->canMonitorSessions()) {
             abort(403);
@@ -126,7 +125,6 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
 
         $attendance = MeetingAttendance::findOrFail($id);
 
-        // Verify attendance belongs to a session under this supervisor's scope
         $session = $this->resolveSession($attendance);
         if (! $session) {
             abort(404);
@@ -143,6 +141,10 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
         } else {
             $newValue = ! (bool) $attendance->counts_for_subscription;
             $countingService->setCountsForSubscription($attendance, $session, $newValue, $adminId);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'counted' => $newValue]);
         }
 
         return redirect()->back();

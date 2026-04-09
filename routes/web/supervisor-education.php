@@ -161,7 +161,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Attendance
         Route::get('/attendance', [SupervisorAttendanceController::class, 'index'])->name('attendance.index');
-        Route::post('/attendance/{id}/toggle-counted', [SupervisorAttendanceController::class, 'toggleCounted'])->name('attendance.toggle-counted');
+        Route::patch('/attendance/{id}/toggle-counted', [SupervisorAttendanceController::class, 'toggleCounted'])->name('attendance.toggle-counted');
 
         // Calendar
         Route::get('/calendar', [SupervisorCalendarController::class, 'index'])->name('calendar.index');

@@ -1681,6 +1681,10 @@ return [
         'select_teacher' => 'اختر المعلم',
         'click_to_count' => 'اضغط للاحتساب',
         'click_to_uncount' => 'اضغط لإلغاء الاحتساب',
+        'confirm_count_title' => 'احتساب الجلسة',
+        'confirm_uncount_title' => 'إلغاء احتساب الجلسة',
+        'confirm_count_message' => 'هل تريد احتساب هذه الجلسة لـ :name؟',
+        'confirm_uncount_message' => 'هل تريد إلغاء احتساب هذه الجلسة لـ :name؟',
     ],
 
     'recorded_courses' => [
