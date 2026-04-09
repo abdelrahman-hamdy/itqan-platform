@@ -365,7 +365,7 @@
                         <i class="ri-file-chart-line"></i>
                         {{ __('supervisor.teachers.view_reports') }}
                     </a>
-                    <a href="{{ route('manage.teacher-earnings.index', ['subdomain' => $subdomain, 'teacher_id' => $teacher->id]) }}"
+                    <a href="{{ route('manage.teacher-earnings.index', ['subdomain' => $subdomain, 'teacher_ids' => [$teacher->id]]) }}"
                        class="cursor-pointer w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors">
                         <i class="ri-money-dollar-circle-line"></i>
                         {{ __('supervisor.teachers.view_earnings') }}
