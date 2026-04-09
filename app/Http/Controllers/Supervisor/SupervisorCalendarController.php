@@ -187,6 +187,11 @@ class SupervisorCalendarController extends BaseSupervisorWebController
 
     public function createSchedule(Request $request, $subdomain = null): JsonResponse
     {
+        \Log::info('createSchedule: ENTRY', [
+            'all_input' => $request->all(),
+            'user_id' => auth()->id(),
+        ]);
+
         // Use academy timezone for "today" so dates are not rejected due to UTC server clock
         $todayInAcademy = Carbon::now(AcademyContextService::getTimezone())->toDateString();
 
