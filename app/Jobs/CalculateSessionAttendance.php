@@ -155,7 +155,7 @@ class CalculateSessionAttendance implements ShouldQueue
             $table = (new $sessionClass)->getTable();
             $query->whereRaw("EXISTS (SELECT 1 FROM meeting_attendances WHERE meeting_attendances.session_id = {$table}.id AND meeting_attendances.is_calculated = 0)");
 
-            $query->each(function ($session) use (&$processed, &$failed) {
+            $query->each(function ($session) use ($sessionClass, &$processed, &$failed) {
                 $attendances = DB::transaction(function () use ($session) {
                     return MeetingAttendance::where('session_id', $session->id)
                         ->where('is_calculated', false)
@@ -175,6 +175,12 @@ class CalculateSessionAttendance implements ShouldQueue
                         ]);
                         $failed++;
                     }
+                }
+
+                // Dispatch per-session job for full pipeline (teacher flags + subscription + earnings)
+                // if teacher attendance hasn't been calculated yet
+                if ($session->status === SessionStatus::COMPLETED && $session->counts_for_teacher === null) {
+                    CalculateSessionForAttendance::dispatch($session->id, $sessionClass);
                 }
             });
         }
