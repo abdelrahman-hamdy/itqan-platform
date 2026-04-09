@@ -1679,6 +1679,7 @@ return [
         'counted_subscription' => 'Counted for Subscription',
         'total_records' => 'Total Records',
         'select_teacher' => 'Select Teacher',
+        'select_student' => 'Select Student',
         'click_to_count' => 'Click to count',
         'click_to_uncount' => 'Click to uncount',
         'confirm_count_title' => 'Count Session',

@@ -1679,6 +1679,7 @@ return [
         'counted_subscription' => 'محتسب للاشتراك',
         'total_records' => 'إجمالي السجلات',
         'select_teacher' => 'اختر المعلم',
+        'select_student' => 'اختر الطالب',
         'click_to_count' => 'اضغط للاحتساب',
         'click_to_uncount' => 'اضغط لإلغاء الاحتساب',
         'confirm_count_title' => 'احتساب الجلسة',

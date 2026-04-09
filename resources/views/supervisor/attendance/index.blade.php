@@ -83,81 +83,101 @@
 
     <!-- Filters -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-        <form method="GET" action="{{ $baseUrl }}" class="flex flex-wrap gap-3 items-end">
+        <form method="GET" action="{{ $baseUrl }}">
             <input type="hidden" name="tab" value="{{ $activeTab }}">
 
-            {{-- Teacher searchable-select (both tabs) --}}
-            <div class="flex-1 min-w-[200px]">
-                <x-ui.searchable-select
-                    name="teacher_id"
-                    :options="$teacherOptions"
-                    :selected="request('teacher_id')"
-                    :placeholder="__('supervisor.attendance.select_teacher')"
-                    :label="__('supervisor.attendance.teacher')"
-                    :showGenderFilter="true"
-                    :showTypeFilter="true"
-                />
-            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {{-- Teacher filter (both tabs) --}}
+                <div>
+                    <x-ui.searchable-select
+                        name="teacher_id"
+                        :options="$teacherOptions"
+                        :selected="request('teacher_id')"
+                        :placeholder="__('supervisor.attendance.select_teacher')"
+                        :label="__('supervisor.attendance.teacher')"
+                        :showGenderFilter="true"
+                        :showTypeFilter="true"
+                    />
+                </div>
 
-            @if($activeTab === 'students')
-                <div class="flex-1 min-w-[150px]">
-                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.search_name') }}</label>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('supervisor.attendance.search_placeholder') }}"
+                @if($activeTab === 'students')
+                    {{-- Student filter (students tab only) --}}
+                    <div>
+                        <x-ui.searchable-select
+                            name="student_id"
+                            :options="$studentOptions"
+                            :selected="request('student_id')"
+                            :placeholder="__('supervisor.attendance.select_student')"
+                            :label="__('supervisor.attendance.student_name')"
+                            :showGenderFilter="true"
+                            :showTypeFilter="false"
+                        />
+                    </div>
+                @endif
+
+                {{-- Session type --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.session_type') }}</label>
+                    <select name="session_type" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">{{ __('supervisor.common.all') }}</option>
+                        <option value="quran" {{ request('session_type') === 'quran' ? 'selected' : '' }}>{{ __('supervisor.attendance.quran') }}</option>
+                        <option value="academic" {{ request('session_type') === 'academic' ? 'selected' : '' }}>{{ __('supervisor.attendance.academic') }}</option>
+                        <option value="interactive" {{ request('session_type') === 'interactive' ? 'selected' : '' }}>{{ __('supervisor.attendance.interactive') }}</option>
+                    </select>
+                </div>
+
+                {{-- Date from --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.date_from') }}</label>
+                    <input type="date" name="date_from" value="{{ request('date_from') }}"
                            class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
                 </div>
-            @endif
 
-            <div class="flex-1 min-w-[130px]">
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.session_type') }}</label>
-                <select name="session_type" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
-                    <option value="">{{ __('supervisor.common.all') }}</option>
-                    <option value="quran" {{ request('session_type') === 'quran' ? 'selected' : '' }}>{{ __('supervisor.attendance.quran') }}</option>
-                    <option value="academic" {{ request('session_type') === 'academic' ? 'selected' : '' }}>{{ __('supervisor.attendance.academic') }}</option>
-                    <option value="interactive" {{ request('session_type') === 'interactive' ? 'selected' : '' }}>{{ __('supervisor.attendance.interactive') }}</option>
-                </select>
+                {{-- Date to --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.date_to') }}</label>
+                    <input type="date" name="date_to" value="{{ request('date_to') }}"
+                           class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                {{-- Status --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.common.status') }}</label>
+                    <select name="status" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">{{ __('supervisor.common.all') }}</option>
+                        <option value="attended" {{ request('status') === 'attended' ? 'selected' : '' }}>{{ __('supervisor.attendance.present') }}</option>
+                        <option value="absent" {{ request('status') === 'absent' ? 'selected' : '' }}>{{ __('supervisor.attendance.absent') }}</option>
+                        <option value="late" {{ request('status') === 'late' ? 'selected' : '' }}>{{ __('supervisor.attendance.late') }}</option>
+                        <option value="partially_attended" {{ request('status') === 'partially_attended' ? 'selected' : '' }}>{{ __('supervisor.attendance.partially_attended') }}</option>
+                        <option value="left" {{ request('status') === 'left' ? 'selected' : '' }}>{{ __('supervisor.attendance.left_early') }}</option>
+                    </select>
+                </div>
+
+                {{-- Counted --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.counted_filter') }}</label>
+                    <select name="counted" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">{{ __('supervisor.common.all') }}</option>
+                        <option value="yes" {{ request('counted') === 'yes' ? 'selected' : '' }}>{{ __('supervisor.attendance.counted') }}</option>
+                        <option value="no" {{ request('counted') === 'no' ? 'selected' : '' }}>{{ __('supervisor.attendance.not_counted') }}</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="flex-1 min-w-[110px]">
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.date_from') }}</label>
-                <input type="date" name="date_from" value="{{ request('date_from') }}"
-                       class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
-            </div>
-
-            <div class="flex-1 min-w-[110px]">
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.date_to') }}</label>
-                <input type="date" name="date_to" value="{{ request('date_to') }}"
-                       class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
-            </div>
-
-            <div class="flex-1 min-w-[110px]">
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.common.status') }}</label>
-                <select name="status" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
-                    <option value="">{{ __('supervisor.common.all') }}</option>
-                    <option value="attended" {{ request('status') === 'attended' ? 'selected' : '' }}>{{ __('supervisor.attendance.present') }}</option>
-                    <option value="absent" {{ request('status') === 'absent' ? 'selected' : '' }}>{{ __('supervisor.attendance.absent') }}</option>
-                    <option value="late" {{ request('status') === 'late' ? 'selected' : '' }}>{{ __('supervisor.attendance.late') }}</option>
-                    <option value="partially_attended" {{ request('status') === 'partially_attended' ? 'selected' : '' }}>{{ __('supervisor.attendance.partially_attended') }}</option>
-                    <option value="left" {{ request('status') === 'left' ? 'selected' : '' }}>{{ __('supervisor.attendance.left_early') }}</option>
-                </select>
-            </div>
-
-            <div class="flex-1 min-w-[110px]">
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.attendance.counted_filter') }}</label>
-                <select name="counted" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
-                    <option value="">{{ __('supervisor.common.all') }}</option>
-                    <option value="yes" {{ request('counted') === 'yes' ? 'selected' : '' }}>{{ __('supervisor.attendance.counted') }}</option>
-                    <option value="no" {{ request('counted') === 'no' ? 'selected' : '' }}>{{ __('supervisor.attendance.not_counted') }}</option>
-                </select>
-            </div>
-
-            <div class="flex gap-2">
-                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                    <i class="ri-search-line"></i> {{ __('supervisor.common.search') }}
+            {{-- Buttons --}}
+            <div class="flex flex-wrap items-center gap-3 mt-4">
+                <button type="submit"
+                    class="cursor-pointer min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-sm font-medium">
+                    <i class="ri-filter-line"></i>
+                    {{ __('supervisor.teachers.filter') }}
                 </button>
-                <a href="{{ $baseUrl }}?tab={{ $activeTab }}"
-                   class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
-                    <i class="ri-refresh-line"></i>
-                </a>
+                @if($hasActiveFilters)
+                    <a href="{{ $baseUrl }}?tab={{ $activeTab }}"
+                       class="cursor-pointer min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">
+                        <i class="ri-close-line"></i>
+                        {{ __('supervisor.teachers.clear_filters') }}
+                    </a>
+                @endif
             </div>
         </form>
     </div>

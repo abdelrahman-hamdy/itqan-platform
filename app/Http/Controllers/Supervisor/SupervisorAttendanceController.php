@@ -113,12 +113,23 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
         // Build teacher options for searchable-select (same format as calendar)
         $teacherOptions = $this->buildTeacherOptions($quranTeacherIds, $academicTeacherIds);
 
+        // Build student options for students tab
+        $studentOptions = [];
+        if ($activeTab === 'students') {
+            $studentOptions = $this->buildStudentOptions($allTeacherUserIds, $academicProfileIds);
+        }
+
+        // Check if any filters are active (for showing reset button)
+        $hasActiveFilters = $request->anyFilled(['teacher_id', 'student_id', 'session_type', 'date_from', 'date_to', 'status', 'counted', 'search']);
+
         return view('supervisor.attendance.index', [
             'records' => $records,
             'stats' => $stats,
             'teacherOptions' => $teacherOptions,
+            'studentOptions' => $studentOptions,
             'activeTab' => $activeTab,
             'usersMap' => $usersMap,
+            'hasActiveFilters' => $hasActiveFilters,
         ]);
     }
 
@@ -192,8 +203,12 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
 
         // Teacher filter (from searchable-select)
         if ($teacherId = $request->input('teacher_id')) {
-            // Scope to sessions of this specific teacher
             $this->filterByTeacher($query, (int) $teacherId);
+        }
+
+        // Student filter (students tab only)
+        if ($studentId = $request->input('student_id')) {
+            $query->where('meeting_attendances.user_id', (int) $studentId);
         }
 
         // Counted filter
@@ -345,6 +360,32 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
         }
 
         return $teachers->values()->toArray();
+    }
+
+    private function buildStudentOptions(array $allTeacherUserIds, array $academicProfileIds): array
+    {
+        // Get unique student user IDs from meeting_attendances for supervised sessions
+        $studentUserIds = MeetingAttendance::where('user_type', 'student')
+            ->distinct()
+            ->pluck('user_id')
+            ->toArray();
+
+        if (empty($studentUserIds)) {
+            return [];
+        }
+
+        return User::whereIn('id', $studentUserIds)
+            ->with('studentProfile')
+            ->get()
+            ->map(fn ($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'gender' => $u->studentProfile?->gender ?? $u->gender ?? '',
+                'type' => 'student',
+                'type_label' => __('supervisor.attendance.participant_student'),
+            ])
+            ->values()
+            ->toArray();
     }
 
     private function emptyStats(): array
