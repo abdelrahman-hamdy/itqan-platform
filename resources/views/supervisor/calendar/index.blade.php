@@ -153,18 +153,26 @@
             return `${get('year')}-${get('month')}-${get('day')}T${hour}:${get('minute')}:${get('second')}`;
         }
 
+        // Responsive calendar helpers
+        function getCalendarView() {
+            return window.innerWidth < 640 ? 'listWeek' : 'dayGridMonth';
+        }
+        function getCalendarToolbar() {
+            if (window.innerWidth < 640) {
+                return { start: 'prev,next today', center: 'title', end: 'listWeek,timeGridDay' };
+            }
+            return { start: 'prev,next today', center: 'title', end: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' };
+        }
+        const isMobile = window.innerWidth < 640;
+
         // Initialize FullCalendar
         const calendar = new FullCalendar.Calendar(calendarEl, {
             direction: 'rtl',
             locale: 'ar',
             timeZone: 'UTC',
             now: utcToAcademyLocal(new Date().toISOString()),
-            initialView: 'dayGridMonth',
-            headerToolbar: {
-                start: 'prev,next today',
-                center: 'title',
-                end: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
-            },
+            initialView: getCalendarView(),
+            headerToolbar: getCalendarToolbar(),
             buttonText: {
                 today: @js(__('student.calendar.today')),
                 month: @js(__('teacher.calendar.view_month')),
@@ -178,7 +186,14 @@
             eventStartEditable: true,
             eventDurationEditable: true,
             selectable: false,
-            dayMaxEvents: 4,
+            dayMaxEvents: isMobile ? 2 : 4,
+            windowResize: function() {
+                const newView = getCalendarView();
+                if (calendar.view.type !== newView) {
+                    calendar.changeView(newView);
+                }
+                calendar.setOption('headerToolbar', getCalendarToolbar());
+            },
             moreLinkText: function(n) { return '+' + n + ' {{ __("student.calendar.more_sessions") }}'; },
             nowIndicator: true,
 

@@ -126,6 +126,23 @@
             display: flex;
             justify-content: center;
         }
+        .fc .fc-toolbar-title {
+            font-size: 1rem;
+        }
+        .fc .fc-button {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        .fc .fc-list-event-title {
+            font-size: 0.85rem;
+        }
+        .fc .fc-list-event-time {
+            font-size: 0.75rem;
+        }
+        .fc .fc-list-day-text,
+        .fc .fc-list-day-side-text {
+            font-size: 0.8rem;
+        }
     }
 
     /* Focus mode: dimmed events */
