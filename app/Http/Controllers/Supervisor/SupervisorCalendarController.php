@@ -187,6 +187,11 @@ class SupervisorCalendarController extends BaseSupervisorWebController
 
     public function createSchedule(Request $request, $subdomain = null): JsonResponse
     {
+        // Direct file write to bypass any caching
+        file_put_contents(storage_path('logs/schedule_debug.log'),
+            date('Y-m-d H:i:s') . ' createSchedule ENTRY: ' . json_encode($request->all()) . "\n",
+            FILE_APPEND
+        );
         \Log::info('createSchedule: ENTRY', [
             'all_input' => $request->all(),
             'user_id' => auth()->id(),
