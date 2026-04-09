@@ -570,6 +570,15 @@ class SessionManagementService
             $remainingSessions = $this->getRemainingIndividualSessions($lockedCircle);
             $requestedCount = $data['session_count'];
 
+            Log::info('createIndividualCircleSchedule: starting', [
+                'circle_id' => $lockedCircle->id,
+                'remaining' => $remainingSessions,
+                'requested' => $requestedCount,
+                'days' => $data['schedule_days'] ?? [],
+                'time' => $data['schedule_time'] ?? null,
+                'start_date' => $data['schedule_start_date'] ?? null,
+            ]);
+
             if ($remainingSessions <= 0) {
                 throw new Exception(__('scheduling.count.no_remaining_circle'));
             }
@@ -587,6 +596,12 @@ class SessionManagementService
                 $data['schedule_start_date'] ?? now()->toDateString(),
                 $requestedCount
             );
+
+            Log::info('createIndividualCircleSchedule: dates generated', [
+                'circle_id' => $lockedCircle->id,
+                'dates_count' => count($sessionDates),
+                'dates' => array_map(fn ($d) => $d->toDateTimeString(), $sessionDates),
+            ]);
 
             $createdCount = 0;
             $durationMinutes = $lockedCircle->default_duration_minutes
@@ -610,6 +625,12 @@ class SessionManagementService
                     ]);
                 }
             }
+
+            Log::info('createIndividualCircleSchedule: completed', [
+                'circle_id' => $lockedCircle->id,
+                'created' => $createdCount,
+                'requested' => $requestedCount,
+            ]);
 
             return $createdCount;
         });

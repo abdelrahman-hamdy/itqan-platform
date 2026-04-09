@@ -250,6 +250,12 @@ class SupervisorCalendarController extends BaseSupervisorWebController
                 ], 422);
             }
 
+            \Log::info('SupervisorCalendarController::createSchedule - calling strategy', [
+                'validated' => $validated,
+                'teacher_id' => $teacher->id,
+                'teacher_type' => $teacherType,
+            ]);
+
             $strategy->createSchedule($validated, $validator);
 
             return response()->json([
