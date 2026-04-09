@@ -226,11 +226,10 @@
                             <tr x-data="{ counted: {{ $isCounted ? 'true' : 'false' }}, busy: false }"
                                 class="{{ $statusValue === 'absent' ? 'bg-red-50/30' : '' }} hover:bg-gray-50 cursor-pointer"
                                 onclick="window.location='{{ $sessionUrl }}'">
-                                {{-- User: avatar + name --}}
                                 <td class="px-4 py-3">
-                                    <div class="flex items-center gap-2.5">
-                                        <x-avatar :user="$userModel" size="xs" :user-type="$userType" />
-                                        <span class="font-medium text-gray-900 truncate max-w-[160px]">{{ $userName }}</span>
+                                    <div class="flex items-center gap-3">
+                                        <x-avatar :user="$userModel" size="sm" :user-type="$userType" />
+                                        <span class="text-sm font-bold text-gray-900 truncate max-w-[160px]">{{ $userName }}</span>
                                     </div>
                                 </td>
                                 {{-- Session type: icon + label --}}
