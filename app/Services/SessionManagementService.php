@@ -359,20 +359,19 @@ class SessionManagementService
             throw new Exception(__('sessions.validation.cannot_schedule_past'));
         }
 
-        $endTime = $scheduledAt->copy()->addMinutes($duration);
+        // Convert to UTC for DB comparison — whereRaw doesn't auto-convert timezone
+        $scheduledAtUtc = $scheduledAt->copy()->utc();
+        $endTimeUtc = $scheduledAtUtc->copy()->addMinutes($duration);
         $nowUtc = Carbon::now('UTC');
 
         $conflict = QuranSession::where('quran_teacher_id', $teacherId)
-            ->where(function ($query) use ($scheduledAt, $endTime) {
-                // Check if new session overlaps with existing sessions
-                $query->where(function ($q) use ($scheduledAt) {
-                    // Existing session starts before new session and ends after new session starts
-                    $q->where('scheduled_at', '<=', $scheduledAt)
-                        ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) > ?', [$scheduledAt]);
-                })->orWhere(function ($q) use ($scheduledAt, $endTime) {
-                    // Existing session starts during new session
-                    $q->where('scheduled_at', '>=', $scheduledAt)
-                        ->where('scheduled_at', '<', $endTime);
+            ->where(function ($query) use ($scheduledAtUtc, $endTimeUtc) {
+                $query->where(function ($q) use ($scheduledAtUtc) {
+                    $q->where('scheduled_at', '<=', $scheduledAtUtc)
+                        ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) > ?', [$scheduledAtUtc]);
+                })->orWhere(function ($q) use ($scheduledAtUtc, $endTimeUtc) {
+                    $q->where('scheduled_at', '>=', $scheduledAtUtc)
+                        ->where('scheduled_at', '<', $endTimeUtc);
                 });
             })
             // For future sessions: block ALL statuses except cancelled (to catch incorrectly marked sessions)
