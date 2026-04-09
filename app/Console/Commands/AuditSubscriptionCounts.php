@@ -38,21 +38,17 @@ class AuditSubscriptionCounts extends Command
             ->get();
 
         foreach ($quranIndividual as $sub) {
-            $actualUsed = DB::table('quran_sessions')
-                ->where('quran_subscription_id', $sub->id)
+            // Count sessions linked via subscription_id OR via individual_circle
+            $totalActual = DB::table('quran_sessions')
                 ->where('subscription_counted', true)
-                ->count();
-
-            // Also count via individual_circle sessions
-            $circleUsed = DB::table('quran_sessions')
-                ->whereIn('individual_circle_id', function ($q) use ($sub) {
-                    $q->select('id')->from('quran_individual_circles')
-                        ->where('subscription_id', $sub->id);
+                ->where(function ($q) use ($sub) {
+                    $q->where('quran_subscription_id', $sub->id)
+                        ->orWhereIn('individual_circle_id', function ($sq) use ($sub) {
+                            $sq->select('id')->from('quran_individual_circles')
+                                ->where('subscription_id', $sub->id);
+                        });
                 })
-                ->where('subscription_counted', true)
                 ->count();
-
-            $totalActual = max($actualUsed, $circleUsed);
 
             if ($totalActual !== $sub->sessions_used) {
                 $mismatches++;
