@@ -484,4 +484,18 @@ return [
         'needs_improvement' => 'يحتاج تحسين',
         'not_evaluated' => 'غير مقيّم',
     ],
+
+    'support_ticket_reason' => [
+        'session_issue' => 'مشكلة في الجلسات',
+        'payment_issue' => 'مشكلة في الدفع',
+        'technical_issue' => 'مشكلة تقنية',
+        'account_issue' => 'مشكلة في الحساب',
+        'homework_issue' => 'مشكلة في الواجبات',
+        'general' => 'أخرى',
+    ],
+
+    'support_ticket_status' => [
+        'open' => 'مفتوحة',
+        'closed' => 'مغلقة',
+    ],
 ];

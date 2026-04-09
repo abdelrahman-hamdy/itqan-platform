@@ -194,6 +194,12 @@
           :label="__('supervisor.sidebar.certificates')"
           icon="ri-award-line"
           :active="request()->routeIs('manage.certificates.*')" />
+
+        <x-sidebar.nav-item
+          :href="route('manage.support-tickets.index', ['subdomain' => $subdomain])"
+          :label="__('supervisor.sidebar.support_tickets')"
+          icon="ri-customer-service-2-line"
+          :active="request()->routeIs('manage.support-tickets.*')" />
       </x-sidebar.nav-section>
 
     </div>

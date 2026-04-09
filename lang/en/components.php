@@ -1043,6 +1043,8 @@ return [
         'financial_management' => 'Financial Management',
         'monthly_earnings' => 'Monthly Earnings',
         'email_not_specified' => 'Not specified',
+        'help_support' => 'Help & Support',
+        'support_tickets' => 'Support Tickets',
     ],
     'layouts' => [
         'parent_portal' => 'Parent Portal',

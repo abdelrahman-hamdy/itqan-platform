@@ -109,6 +109,10 @@ enum NotificationType: string
     case SUBSCRIPTION_RENEWAL_FAILED_BATCH = 'subscription_renewal_failed_batch';
     case NEW_STUDENT_SUBSCRIPTION_TEACHER = 'new_student_subscription_teacher';
 
+    // Support Ticket Notifications
+    case SUPPORT_TICKET_CREATED = 'support_ticket_created';
+    case SUPPORT_TICKET_REPLIED = 'support_ticket_replied';
+
     // System Notifications
     case ACCOUNT_VERIFIED = 'account_verified';
     case PASSWORD_CHANGED = 'password_changed';
@@ -201,6 +205,10 @@ enum NotificationType: string
             // Review notifications - yellow with star
             self::REVIEW_RECEIVED,
             self::REVIEW_APPROVED => NotificationCategory::REVIEW,
+
+            // Support ticket notifications
+            self::SUPPORT_TICKET_CREATED,
+            self::SUPPORT_TICKET_REPLIED => NotificationCategory::SYSTEM,
 
             // System notifications
             self::ACCOUNT_VERIFIED,

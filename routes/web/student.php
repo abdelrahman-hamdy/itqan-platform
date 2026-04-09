@@ -23,6 +23,7 @@ use App\Http\Controllers\StudentPaymentController;
 use App\Http\Controllers\StudentProfileController;
 use App\Http\Controllers\StudentQuranController;
 use App\Http\Controllers\StudentSubscriptionController;
+use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\UnifiedInteractiveCourseController;
 use App\Http\Controllers\UnifiedQuranTeacherController;
 use Illuminate\Support\Facades\Route;
@@ -239,6 +240,20 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         Route::get('/academic/subscription/{subscription}/payment', [\App\Http\Controllers\AcademicSubscriptionPaymentController::class, 'create'])->name('academic.subscription.payment');
         Route::post('/academic/subscription/{subscription}/payment', [\App\Http\Controllers\AcademicSubscriptionPaymentController::class, 'store'])->name('academic.subscription.payment.submit');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Student Support Tickets
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('support')->name('student.support.')->controller(SupportTicketController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{ticket}', 'show')->name('show');
+            Route::post('/{ticket}/reply', 'reply')->name('reply');
+        });
     });
 
     /*

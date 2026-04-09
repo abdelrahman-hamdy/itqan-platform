@@ -37,6 +37,7 @@ return [
         'homework' => 'Homework',
         'attendance' => 'Attendance',
         'recorded_courses' => 'Recorded Courses',
+        'support_tickets' => 'Support Tickets',
     ],
 
     'dashboard' => [

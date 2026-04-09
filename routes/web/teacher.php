@@ -29,6 +29,7 @@ use App\Http\Controllers\Teacher\RecordingListController;
 use App\Http\Controllers\Teacher\SessionHomeworkController;
 use App\Http\Controllers\Teacher\SessionReportListController;
 use App\Http\Controllers\Teacher\TrialSessionController;
+use App\Http\Controllers\SupportTicketController;
 use Illuminate\Support\Facades\Route;
 
 Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
@@ -283,5 +284,19 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::put('/sessions/{sessionId}/absent', [QuranSessionController::class, 'markAbsent'])->name('sessions.absent');
         Route::get('/sessions/{sessionId}/actions', [QuranSessionController::class, 'getStatusActions'])->name('sessions.actions');
         Route::post('/sessions/{sessionId}/create-meeting', [LiveKitMeetingController::class, 'createMeeting'])->name('sessions.create-meeting');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Teacher Support Tickets
+    |--------------------------------------------------------------------------
+    */
+
+    Route::middleware(['auth', 'role:quran_teacher,academic_teacher'])->prefix('teacher/support')->name('teacher.support.')->controller(SupportTicketController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{ticket}', 'show')->name('show');
+        Route::post('/{ticket}/reply', 'reply')->name('reply');
     });
 });

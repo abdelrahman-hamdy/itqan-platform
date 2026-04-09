@@ -119,6 +119,15 @@
           :active="request()->routeIs('teacher.earnings')" />
       </x-sidebar.nav-section>
 
+      <!-- Help & Support -->
+      <x-sidebar.nav-section :title="__('components.sidebar.help_support')">
+        <x-sidebar.nav-item
+          :href="route('teacher.support.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
+          :label="__('components.sidebar.support_tickets')"
+          icon="ri-customer-service-2-line"
+          :active="request()->routeIs('teacher.support.*')" />
+      </x-sidebar.nav-section>
+
     </div>
   </nav>
 

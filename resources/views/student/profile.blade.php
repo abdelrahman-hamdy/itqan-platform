@@ -505,6 +505,9 @@
 
       </div>
 
+      <!-- Support Contact Form -->
+      @include('components.support.contact-form')
+
     </div>
   </div>
 

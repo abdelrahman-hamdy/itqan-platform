@@ -913,6 +913,7 @@ return [
         'email_not_specified' => 'غير محدد',
         'help_support' => 'المساعدة والدعم',
         'help_center' => 'مركز المساعدة',
+        'support_tickets' => 'تقارير المشاكل',
     ],
     'homework' => [
         'grading' => [

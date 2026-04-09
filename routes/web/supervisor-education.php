@@ -31,6 +31,7 @@ use App\Http\Controllers\Supervisor\SupervisorStudentsController;
 use App\Http\Controllers\Supervisor\SupervisorSubscriptionsController;
 use App\Http\Controllers\Supervisor\SupervisorSupervisorsController;
 use App\Http\Controllers\Supervisor\SupervisorTeacherEarningsController;
+use App\Http\Controllers\Supervisor\SupervisorSupportTicketsController;
 use App\Http\Controllers\Supervisor\SupervisorTeachersController;
 use App\Http\Controllers\Supervisor\SupervisorTrialSessionsController;
 use App\Http\Controllers\Teacher\GroupCircleReportController;
@@ -220,5 +221,14 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Profile
         Route::get('/profile', [SupervisorProfileController::class, 'index'])->name('profile');
+
+        // Support Tickets
+        Route::prefix('support-tickets')->name('support-tickets.')->controller(SupervisorSupportTicketsController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/settings', 'updateSettings')->name('settings.update');
+            Route::get('/{ticket}', 'show')->name('show');
+            Route::post('/{ticket}/reply', 'reply')->name('reply');
+            Route::post('/{ticket}/close', 'close')->name('close');
+        });
     });
 });

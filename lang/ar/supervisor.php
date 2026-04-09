@@ -37,6 +37,7 @@ return [
         'homework' => 'الواجبات',
         'attendance' => 'الحضور والغياب',
         'recorded_courses' => 'الدورات المسجلة',
+        'support_tickets' => 'تقارير المشاكل',
     ],
 
     'dashboard' => [

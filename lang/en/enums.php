@@ -484,4 +484,18 @@ return [
         'needs_improvement' => 'Needs Improvement',
         'not_evaluated' => 'Not Evaluated',
     ],
+
+    'support_ticket_reason' => [
+        'session_issue' => 'Session Issue',
+        'payment_issue' => 'Payment Issue',
+        'technical_issue' => 'Technical Issue',
+        'account_issue' => 'Account Issue',
+        'homework_issue' => 'Homework Issue',
+        'general' => 'General',
+    ],
+
+    'support_ticket_status' => [
+        'open' => 'Open',
+        'closed' => 'Closed',
+    ],
 ];
