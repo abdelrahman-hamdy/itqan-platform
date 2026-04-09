@@ -61,8 +61,7 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
                 }
             });
 
-        // Default to teacher tab
-        $activeTab = $request->input('tab', 'teachers');
+        $activeTab = in_array($request->input('tab'), ['teachers', 'students']) ? $request->input('tab') : 'teachers';
 
         // Apply tab filter (replaces participant_type dropdown)
         if ($activeTab === 'teachers') {

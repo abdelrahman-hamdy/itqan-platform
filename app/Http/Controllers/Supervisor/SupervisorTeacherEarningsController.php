@@ -68,12 +68,19 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             $earningsQuery->disputed();
         }
 
-        // Stats computed from the same filtered query (before pagination)
+        // Single query for all stats (avoids 4 clones that carry eager loading overhead)
+        $statsRow = (clone $earningsQuery)->reorder()->selectRaw('
+            COALESCE(SUM(amount), 0) as total_earnings,
+            COALESCE(SUM(CASE WHEN is_finalized = 1 AND is_disputed = 0 THEN amount ELSE 0 END), 0) as finalized_amount,
+            COALESCE(SUM(CASE WHEN is_disputed = 1 THEN amount ELSE 0 END), 0) as disputed_amount,
+            COUNT(*) as sessions_count
+        ')->first();
+
         $stats = [
-            'totalEarnings' => (clone $earningsQuery)->sum('amount'),
-            'finalizedAmount' => (clone $earningsQuery)->where('is_finalized', true)->where('is_disputed', false)->sum('amount'),
-            'disputedAmount' => (clone $earningsQuery)->where('is_disputed', true)->sum('amount'),
-            'sessionsCount' => (clone $earningsQuery)->count(),
+            'totalEarnings' => (float) $statsRow->total_earnings,
+            'finalizedAmount' => (float) $statsRow->finalized_amount,
+            'disputedAmount' => (float) $statsRow->disputed_amount,
+            'sessionsCount' => (int) $statsRow->sessions_count,
         ];
 
         $earnings = $earningsQuery->orderByDesc('session_completed_at')->paginate(15);
