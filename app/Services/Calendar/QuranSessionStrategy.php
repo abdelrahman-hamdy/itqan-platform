@@ -369,11 +369,20 @@ class QuranSessionStrategy extends AbstractSessionStrategy
      */
     private function createIndividualCircleSchedule(int $circleId, array $data): int
     {
+        file_put_contents(storage_path('logs/schedule_debug.log'),
+            date('Y-m-d H:i:s') . " strategy: circleId=$circleId\n", FILE_APPEND);
+
         $circle = QuranIndividualCircle::findOrFail($circleId);
+
+        file_put_contents(storage_path('logs/schedule_debug.log'),
+            date('Y-m-d H:i:s') . " strategy: circle found #{$circle->id} sub_id={$circle->subscription_id}\n", FILE_APPEND);
 
         if (! $circle->subscription) {
             throw new Exception(__('calendar.strategy.no_valid_subscription'));
         }
+
+        file_put_contents(storage_path('logs/schedule_debug.log'),
+            date('Y-m-d H:i:s') . " strategy: sub status={$circle->subscription->status->value}\n", FILE_APPEND);
 
         if ($circle->subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             throw new Exception(__('calendar.strategy.subscription_inactive'));
@@ -381,12 +390,20 @@ class QuranSessionStrategy extends AbstractSessionStrategy
 
         $remainingSessions = $this->sessionService->getRemainingIndividualSessions($circle);
 
+        file_put_contents(storage_path('logs/schedule_debug.log'),
+            date('Y-m-d H:i:s') . " strategy: remaining=$remainingSessions\n", FILE_APPEND);
+
         if ($remainingSessions <= 0) {
             throw new Exception(__('calendar.strategy.no_remaining_circle_sessions'));
         }
 
         // Generate sessions using the session service
-        return $this->sessionService->createIndividualCircleSchedule($circle, $data);
+        $result = $this->sessionService->createIndividualCircleSchedule($circle, $data);
+
+        file_put_contents(storage_path('logs/schedule_debug.log'),
+            date('Y-m-d H:i:s') . " strategy: created=$result\n", FILE_APPEND);
+
+        return $result;
     }
 
     /**
