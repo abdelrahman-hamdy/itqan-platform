@@ -108,7 +108,7 @@ class Payment extends Model
      * Historical data has 5 different representations: canonical FQCN,
      * double-escaped backslashes, legacy snake_case, etc. This mutator
      * converts any FQCN to its registered morph alias so all new writes
-     * use a single canonical form. Reads return the raw stored value.
+     * use a single canonical form.
      */
     protected function payableType(): Attribute
     {
@@ -118,25 +118,33 @@ class Payment extends Model
                     return $value;
                 }
 
-                // Unescape any double-escaped backslashes (e.g., 'App\\\\Models\\\\QuranSubscription')
                 $normalized = str_replace('\\\\', '\\', $value);
 
-                // If it's already a morph alias (snake_case), return as-is
-                $morphMap = Relation::morphMap();
-                if (isset($morphMap[$normalized])) {
+                [$map, $flipped] = self::morphMapCache();
+
+                if (isset($map[$normalized])) {
                     return $normalized;
                 }
 
-                // If it's a FQCN, convert to morph alias
-                $flipped = array_flip($morphMap);
-                if (isset($flipped[$normalized])) {
-                    return $flipped[$normalized];
-                }
-
-                // Unknown value — store as-is (model not in morph map)
-                return $normalized;
+                return $flipped[$normalized] ?? $normalized;
             },
         );
+    }
+
+    /**
+     * Cached morph map + flipped map for the payableType mutator.
+     * Payment is a hot path; computing this on every save is wasteful.
+     */
+    private static ?array $morphMapCache = null;
+
+    private static function morphMapCache(): array
+    {
+        if (self::$morphMapCache === null) {
+            $map = Relation::morphMap();
+            self::$morphMapCache = [$map, array_flip($map)];
+        }
+
+        return self::$morphMapCache;
     }
 
     // Relationships

@@ -443,7 +443,7 @@
         $teacherMeetingAtt = $allMeetingAtt->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])->first();
         $teacherAttStatusRaw = $session->teacher_attendance_status ?? $teacherMeetingAtt?->attendance_status;
         $teacherAttStatus = $teacherAttStatusRaw instanceof \BackedEnum ? $teacherAttStatusRaw->value : $teacherAttStatusRaw;
-        $teacherCounts = $session->counts_for_teacher ?? false;
+        $teacherCounts = $session->counts_for_teacher ?? true;
         $teacherMinutes = $teacherMeetingAtt?->total_duration_minutes ?? 0;
 
         $attStatusClasses = [

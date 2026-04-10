@@ -270,24 +270,13 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
                 'counts_for_teacher' => $updateData['counts_for_teacher'] ?? 'admin_override',
             ]);
 
-            // Refresh to pick up the counts_for_teacher value we just persisted.
-            $session->refresh();
-
             // Count subscription usage when teacher was NOT explicitly absent.
-            // counts_for_teacher can be true (present) or null (not yet determined,
-            // admin didn't override, auto-calc hadn't run). Only `false` should skip counting.
+            // null = admin didn't override and auto-calc hadn't run yet; treat as "count by default".
+            // Only explicit false (teacher absent) skips counting.
+            // CountsTowardsSubscription::updateSubscriptionUsage() handles MeetingAttendance sync.
             if ($session->counts_for_teacher !== false && method_exists($session, 'updateSubscriptionUsage')) {
                 try {
                     $session->updateSubscriptionUsage();
-
-                    // Belt-and-suspenders: ensure student attendance flag is set for UI display.
-                    // updateSubscriptionUsage() already syncs this for its own session, but keep
-                    // this as a safety net for any student attendance rows it may have missed.
-                    MeetingAttendance::where('session_id', $session->id)
-                        ->where('user_type', 'student')
-                        ->whereNull('counts_for_subscription_set_by')
-                        ->whereNull('counts_for_subscription')
-                        ->update(['counts_for_subscription' => true]);
                 } catch (Exception $e) {
                     Log::error('CalculateSessionForAttendance: Failed to update subscription usage', [
                         'session_id' => $session->id,

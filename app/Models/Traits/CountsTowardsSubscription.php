@@ -249,6 +249,17 @@ trait CountsTowardsSubscription
         // Wrap entire group in single transaction for atomicity.
         // If any student fails, all are rolled back.
         DB::transaction(function () use ($enrollments) {
+            // Lock ALL student attendance rows in one query to avoid N+1 lock acquisitions.
+            // Uses meetingAttendances (current LiveKit-based table) since the legacy
+            // attendances() table (QuranSessionAttendance) is no longer populated.
+            $studentIds = $enrollments->pluck('student_id')->filter()->unique()->values();
+            $attendanceByUser = $this->meetingAttendances()
+                ->whereIn('user_id', $studentIds)
+                ->where('user_type', 'student')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('user_id');
+
             foreach ($enrollments as $enrollment) {
                 $subscription = $enrollment->activeSubscription;
                 if (! $subscription) {
@@ -264,14 +275,7 @@ trait CountsTowardsSubscription
                     continue;
                 }
 
-                // Lock attendance row to prevent TOCTOU double-counting.
-                // Use meetingAttendances (current LiveKit-based table) since the
-                // legacy attendances() table (QuranSessionAttendance) is no longer populated.
-                $attendance = $this->meetingAttendances()
-                    ->where('user_id', $enrollment->student_id)
-                    ->where('user_type', 'student')
-                    ->lockForUpdate()
-                    ->first();
+                $attendance = $attendanceByUser->get($enrollment->student_id);
 
                 if ($attendance && $attendance->subscription_counted_at) {
                     continue; // Already counted by another process
