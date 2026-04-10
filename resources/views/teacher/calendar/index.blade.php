@@ -27,7 +27,7 @@
     </div>
 
     <!-- Stats Cards -->
-    <x-calendar.stats-cards />
+    <x-calendar.stats-cards :stats="$stats" />
 
     <!-- Scheduling Panel -->
     <x-calendar.scheduling-panel

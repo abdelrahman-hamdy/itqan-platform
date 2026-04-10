@@ -46,7 +46,7 @@
 
     @if($selectedTeacher)
         <!-- Stats Cards -->
-        <x-calendar.stats-cards />
+        <x-calendar.stats-cards :stats="$stats" />
 
         <!-- Scheduling Panel -->
         @if(!empty($tabs))
