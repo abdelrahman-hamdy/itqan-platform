@@ -81,6 +81,7 @@ class MeetingAttendance extends Model
         'counts_for_subscription',
         'counts_for_subscription_set_by',
         'counts_for_subscription_set_at',
+        'subscription_counted_at',
     ];
 
     protected $casts = [
@@ -99,6 +100,7 @@ class MeetingAttendance extends Model
         'is_calculated' => 'boolean',
         'counts_for_subscription' => 'boolean',
         'counts_for_subscription_set_at' => 'datetime',
+        'subscription_counted_at' => 'datetime',
     ];
 
     /**
