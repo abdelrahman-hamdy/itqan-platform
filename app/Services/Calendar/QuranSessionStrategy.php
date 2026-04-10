@@ -480,7 +480,14 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                     ->update(['is_active' => false]);
             }
 
-            // Soft-delete all future SCHEDULED sessions (individual delete for model observers)
+            // Clear trial request link BEFORE deleting sessions
+            if ($itemType === 'trial') {
+                QuranTrialRequest::where('id', $entityId)
+                    ->update(['trial_session_id' => null]);
+            }
+
+            // Force-delete all future SCHEDULED sessions — these are schedule
+            // placeholders with no attendance/reports/earnings data.
             $sessions = QuranSession::where($column, $entityId)
                 ->where('status', SessionStatus::SCHEDULED->value)
                 ->where('scheduled_at', '>', now())
@@ -488,7 +495,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
 
             $count = 0;
             foreach ($sessions as $session) {
-                $session->delete();
+                $session->forceDelete();
                 $count++;
             }
 

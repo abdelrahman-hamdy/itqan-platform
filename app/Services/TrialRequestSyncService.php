@@ -112,8 +112,9 @@ class TrialRequestSyncService
             return;
         }
 
-        // Link the session to the request (if not already linked)
-        if (! $trialRequest->trial_session_id) {
+        // Always link to the latest session (handles rescheduling where
+        // old session was deleted but trial_session_id wasn't cleared)
+        if ($trialRequest->trial_session_id !== $session->id) {
             $trialRequest->update(['trial_session_id' => $session->id]);
         }
 
