@@ -148,9 +148,9 @@ class PaymentSettingsResource extends BaseResource
                         CheckboxList::make('payment_settings.enabled_gateways')
                             ->label('البوابات المفعلة')
                             ->options([
-                                'paymob' => 'باي موب (Paymob) - مصر، السعودية، الإمارات',
-                                'easykash' => 'إيزي كاش (EasyKash) - مصر',
-                                'tap' => 'تاب (Tap) - السعودية، الخليج',
+                                'paymob' => 'باي موب (Paymob)',
+                                'easykash' => 'إيزي كاش (EasyKash)',
+                                'tap' => 'تاب (Tap)',
                             ])
                             ->helperText('اختر البوابات المتاحة للطلاب في هذه الأكاديمية. إذا لم يتم اختيار أي بوابة، ستكون جميع البوابات متاحة.')
                             ->columns(1),
