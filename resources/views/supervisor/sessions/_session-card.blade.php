@@ -24,7 +24,7 @@
     $typeConfig = match(true) {
         $type === 'academic' => ['label' => __('supervisor.sessions.type_private_lesson'), 'icon' => 'ri-graduation-cap-line', 'bg' => 'bg-violet-50', 'text' => 'text-violet-600'],
         $type === 'interactive' => ['label' => __('supervisor.sessions.type_interactive'), 'icon' => 'ri-video-chat-line', 'bg' => 'bg-blue-50', 'text' => 'text-blue-600'],
-        $isTrial => ['label' => __('supervisor.sessions.type_quran_trial'), 'icon' => 'ri-gift-line', 'bg' => 'bg-pink-50', 'text' => 'text-pink-600'],
+        $isTrial => ['label' => __('supervisor.sessions.type_quran_trial'), 'icon' => 'ri-gift-line', 'bg' => 'bg-orange-50', 'text' => 'text-orange-600'],
         (bool) $session->circle => ['label' => __('supervisor.sessions.type_quran_group'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
         default => ['label' => __('supervisor.sessions.type_quran_individual'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
     };
