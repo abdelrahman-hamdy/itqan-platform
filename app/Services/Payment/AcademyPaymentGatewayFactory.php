@@ -2,12 +2,14 @@
 
 namespace App\Services\Payment;
 
-use Exception;
 use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Models\Academy;
+use App\Models\User;
+use App\Services\Payment\DTOs\AcademyPaymentSettings;
 use App\Services\Payment\Gateways\EasyKashGateway;
 use App\Services\Payment\Gateways\PaymobGateway;
 use App\Services\Payment\Gateways\TapGateway;
+use Exception;
 use InvalidArgumentException;
 
 /**
@@ -20,6 +22,7 @@ class AcademyPaymentGatewayFactory
 {
     public function __construct(
         private PaymentGatewayManager $gatewayManager,
+        private UserCountryResolver $countryResolver,
     ) {}
 
     /**
@@ -33,14 +36,15 @@ class AcademyPaymentGatewayFactory
     public function getGateway(Academy $academy, ?string $gatewayName = null): PaymentGatewayInterface
     {
         $settings = $academy->getPaymentSettings();
+        $fallbackDefault = config('payments.default', 'paymob');
 
         // Determine which gateway to use
         $gateway = $gatewayName
             ?? $settings->getDefaultGateway()
-            ?? config('payments.default', 'paymob');
+            ?? $fallbackDefault;
 
         // Check if gateway is enabled for this academy
-        if (! $settings->isGatewayEnabled($gateway)) {
+        if (! $settings->isGatewayEnabled($gateway, $fallbackDefault)) {
             throw new InvalidArgumentException(
                 "Payment gateway '{$gateway}' is not enabled for academy '{$academy->name}'"
             );
@@ -57,19 +61,29 @@ class AcademyPaymentGatewayFactory
     /**
      * Get all available gateways for an academy.
      *
+     * When a user is provided, gateways are additionally filtered by the
+     * academy's per-gateway country policy (`allowed_countries` /
+     * `blocked_countries` under each gateway key in `payment_settings`),
+     * intersected with each gateway's baseline `getSupportedCountries()`.
+     *
      * @return array<string, PaymentGatewayInterface>
      */
-    public function getAvailableGatewaysForAcademy(Academy $academy): array
+    public function getAvailableGatewaysForAcademy(Academy $academy, ?User $user = null): array
     {
         $settings = $academy->getPaymentSettings();
+        $fallbackDefault = config('payments.default', 'paymob');
         $availableGateways = [];
+
+        $userCountry = $user !== null
+            ? $this->countryResolver->resolve($user, $academy)
+            : null;
 
         // Get all configured gateways from global config
         $allGateways = array_keys(config('payments.gateways', []));
 
         foreach ($allGateways as $gatewayName) {
             // Skip if not enabled for this academy
-            if (! $settings->isGatewayEnabled($gatewayName)) {
+            if (! $settings->isGatewayEnabled($gatewayName, $fallbackDefault)) {
                 continue;
             }
 
@@ -77,9 +91,16 @@ class AcademyPaymentGatewayFactory
                 $gateway = $this->getGateway($academy, $gatewayName);
 
                 // Only include if properly configured
-                if ($gateway->isConfigured()) {
-                    $availableGateways[$gatewayName] = $gateway;
+                if (! $gateway->isConfigured()) {
+                    continue;
                 }
+
+                // Apply country filter when we know the user's country.
+                if ($userCountry !== null && ! $this->isGatewayAllowedForCountry($gateway, $userCountry, $settings)) {
+                    continue;
+                }
+
+                $availableGateways[$gatewayName] = $gateway;
             } catch (Exception $e) {
                 // Gateway not available, skip it
                 continue;
@@ -87,6 +108,47 @@ class AcademyPaymentGatewayFactory
         }
 
         return $availableGateways;
+    }
+
+    /**
+     * Decide whether a gateway is allowed for a given ISO alpha-2 country
+     * under an academy's configured policy.
+     *
+     * Rules:
+     *  - If the academy configured an `allowed_countries` list, the user's
+     *    country must be in it (further intersected with the gateway's own
+     *    supported countries when that baseline is non-empty).
+     *  - Else if the academy configured a `blocked_countries` list, the user's
+     *    country must not be in it, AND must still be supported by the gateway.
+     *  - Else, fall back to the gateway's own baseline (empty baseline = allow).
+     */
+    private function isGatewayAllowedForCountry(
+        PaymentGatewayInterface $gateway,
+        string $country,
+        AcademyPaymentSettings $settings,
+    ): bool {
+        $baseline = $gateway->getSupportedCountries();
+        $cfg = $settings->getGatewayConfig($gateway->getName());
+        $allowed = is_array($cfg['allowed_countries'] ?? null) ? $cfg['allowed_countries'] : [];
+        $blocked = is_array($cfg['blocked_countries'] ?? null) ? $cfg['blocked_countries'] : [];
+
+        if (! empty($allowed)) {
+            $effective = ! empty($baseline)
+                ? array_values(array_intersect($allowed, $baseline))
+                : $allowed;
+
+            return in_array($country, $effective, true);
+        }
+
+        if (! empty($blocked)) {
+            if (in_array($country, $blocked, true)) {
+                return false;
+            }
+
+            return empty($baseline) || in_array($country, $baseline, true);
+        }
+
+        return empty($baseline) || in_array($country, $baseline, true);
     }
 
     /**

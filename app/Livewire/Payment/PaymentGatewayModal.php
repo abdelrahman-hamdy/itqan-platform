@@ -4,6 +4,7 @@ namespace App\Livewire\Payment;
 
 use App\Models\Academy;
 use App\Services\Payment\AcademyPaymentGatewayFactory;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -85,7 +86,7 @@ class PaymentGatewayModal extends Component
         }
 
         $factory = app(AcademyPaymentGatewayFactory::class);
-        $gateways = $factory->getAvailableGatewaysForAcademy($academy);
+        $gateways = $factory->getAvailableGatewaysForAcademy($academy, Auth::user());
 
         $this->availableGateways = [];
 

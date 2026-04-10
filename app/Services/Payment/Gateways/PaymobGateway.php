@@ -79,6 +79,14 @@ class PaymobGateway extends AbstractGateway implements SupportsRefunds, Supports
     }
 
     /**
+     * Baseline countries Paymob can process payments for.
+     */
+    public function getSupportedCountries(): array
+    {
+        return ['EG', 'SA', 'AE'];
+    }
+
+    /**
      * Get the payment flow type.
      */
     public function getFlowType(): PaymentFlowType

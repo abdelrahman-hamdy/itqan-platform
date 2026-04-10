@@ -45,15 +45,18 @@ readonly class AcademyPaymentSettings
     /**
      * Check if a specific gateway is enabled for this academy.
      *
-     * If enabledGateways is empty, all gateways are considered enabled.
+     * If `enabledGateways` is empty, only the default gateway is considered
+     * enabled. Callers that need a non-null default when `defaultGateway` is
+     * also unset should pass one in as `$fallbackDefault` (the factory wires
+     * this from `config('payments.default')`).
      */
-    public function isGatewayEnabled(string $gateway): bool
+    public function isGatewayEnabled(string $gateway, ?string $fallbackDefault = null): bool
     {
         if (empty($this->enabledGateways)) {
-            return true; // All gateways enabled by default
+            return $gateway === ($this->defaultGateway ?? $fallbackDefault);
         }
 
-        return in_array($gateway, $this->enabledGateways);
+        return in_array($gateway, $this->enabledGateways, true);
     }
 
     /**

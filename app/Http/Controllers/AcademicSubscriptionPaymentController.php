@@ -54,8 +54,8 @@ class AcademicSubscriptionPaymentController extends Controller
                 ->with('error', __('payments.academic_payment.not_found'));
         }
 
-        // Get available gateways for this academy
-        $gateways = $this->gatewayFactory->getAvailableGatewaysForAcademy($academy);
+        // Get available gateways for this academy, filtered by the student's country.
+        $gateways = $this->gatewayFactory->getAvailableGatewaysForAcademy($academy, Auth::user());
 
         if (count($gateways) === 0) {
             return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])

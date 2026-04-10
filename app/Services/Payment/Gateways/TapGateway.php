@@ -2,13 +2,13 @@
 
 namespace App\Services\Payment\Gateways;
 
-use Exception;
 use App\Contracts\Payment\SupportsWebhooks;
 use App\Enums\PaymentFlowType;
 use App\Services\Payment\DTOs\PaymentIntent;
 use App\Services\Payment\DTOs\PaymentResult;
 use App\Services\Payment\DTOs\WebhookPayload;
 use App\Services\Payment\TapSignatureService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -65,6 +65,15 @@ class TapGateway extends AbstractGateway implements SupportsWebhooks
     public function getSupportedMethods(): array
     {
         return ['card', 'mada', 'apple_pay', 'google_pay'];
+    }
+
+    /**
+     * Baseline countries Tap can process payments for.
+     * Covers the GCC markets Tap officially supports.
+     */
+    public function getSupportedCountries(): array
+    {
+        return ['SA', 'AE', 'KW', 'QA', 'BH', 'OM'];
     }
 
     /**

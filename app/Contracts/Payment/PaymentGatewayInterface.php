@@ -37,6 +37,18 @@ interface PaymentGatewayInterface
     public function getSupportedMethods(): array;
 
     /**
+     * Get the baseline countries this gateway supports out of the box.
+     *
+     * Returned as ISO 3166-1 alpha-2 codes. Represents the gateway's own
+     * capabilities (what it can physically process), not an academy's
+     * per-tenant policy. Return an empty array to indicate "no country
+     * restriction at the gateway level — leave it to the admin policy".
+     *
+     * @return array<string>
+     */
+    public function getSupportedCountries(): array;
+
+    /**
      * Get the payment flow type for this gateway.
      */
     public function getFlowType(): PaymentFlowType;

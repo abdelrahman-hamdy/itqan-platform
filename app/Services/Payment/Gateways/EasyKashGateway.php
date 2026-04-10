@@ -104,6 +104,14 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
     }
 
     /**
+     * Baseline countries EasyKash can process payments for.
+     */
+    public function getSupportedCountries(): array
+    {
+        return ['EG'];
+    }
+
+    /**
      * Get the payment flow type.
      */
     public function getFlowType(): PaymentFlowType

@@ -197,6 +197,17 @@ return [
         'tap' => 'Tap Payments',
     ],
 
+    // Country-based gateway availability (per academy settings)
+    'country_filter' => [
+        'section_title' => 'Country availability',
+        'section_description' => 'Control which countries can use this gateway. Leave both lists empty to use the gateway\'s default supported countries.',
+        'allowed_label' => 'Allowed countries',
+        'allowed_helper' => 'If set, this gateway is shown only to users from these countries (intersected with the gateway\'s own supported countries).',
+        'blocked_label' => 'Blocked countries',
+        'blocked_helper' => 'If set, this gateway is shown to everyone except users from these countries. Ignored when the Allowed list is populated.',
+        'placeholder' => 'Select countries',
+    ],
+
     'method_types' => [
         'card' => 'Credit Card',
         'wallet' => 'E-Wallet',

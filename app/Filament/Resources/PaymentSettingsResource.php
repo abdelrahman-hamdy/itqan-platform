@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\UserType;
 use App\Filament\Resources\PaymentSettingsResource\Pages\EditPaymentSettings;
 use App\Filament\Resources\PaymentSettingsResource\Pages\ManagePaymentSettings;
+use App\Helpers\CountryList;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
 use Filament\Actions\ActionGroup;
@@ -236,6 +237,8 @@ class PaymentSettingsResource extends BaseResource
                                     ->helperText('Integration ID للمحافظ الإلكترونية (اختياري)')
                                     ->visible(fn (Get $get) => ! $get('payment_settings.paymob.use_global')),
                             ]),
+
+                        ...static::countryFilterFields('paymob'),
                     ]),
 
                 // EasyKash Gateway Settings
@@ -269,6 +272,8 @@ class PaymentSettingsResource extends BaseResource
                                     ->helperText('Secret Key للتحقق من صحة الـ Webhook')
                                     ->visible(fn (Get $get) => ! $get('payment_settings.easykash.use_global')),
                             ]),
+
+                        ...static::countryFilterFields('easykash'),
                     ]),
 
                 // Tap Gateway Settings
@@ -308,8 +313,51 @@ class PaymentSettingsResource extends BaseResource
                                     ->helperText('معرف التاجر من لوحة تحكم تاب')
                                     ->visible(fn (Get $get) => ! $get('payment_settings.tap.use_global')),
                             ]),
+
+                        ...static::countryFilterFields('tap'),
                     ]),
             ]);
+    }
+
+    /**
+     * Shared country availability fields for a gateway section.
+     *
+     * Returns a Section component wrapping `allowed_countries` and
+     * `blocked_countries` multi-selects bound to the given gateway's
+     * nested key under `payment_settings`. Options are computed once
+     * per form build and shared across all three gateway sections.
+     *
+     * @return array<\Filament\Schemas\Components\Component>
+     */
+    protected static function countryFilterFields(string $gateway): array
+    {
+        static $countryOptions = null;
+        $countryOptions ??= CountryList::toSelectArray();
+
+        return [
+            Section::make(__('payments.country_filter.section_title'))
+                ->description(__('payments.country_filter.section_description'))
+                ->icon('heroicon-o-globe-alt')
+                ->collapsible()
+                ->collapsed()
+                ->schema([
+                    Select::make("payment_settings.{$gateway}.allowed_countries")
+                        ->label(__('payments.country_filter.allowed_label'))
+                        ->helperText(__('payments.country_filter.allowed_helper'))
+                        ->placeholder(__('payments.country_filter.placeholder'))
+                        ->multiple()
+                        ->searchable()
+                        ->options($countryOptions),
+
+                    Select::make("payment_settings.{$gateway}.blocked_countries")
+                        ->label(__('payments.country_filter.blocked_label'))
+                        ->helperText(__('payments.country_filter.blocked_helper'))
+                        ->placeholder(__('payments.country_filter.placeholder'))
+                        ->multiple()
+                        ->searchable()
+                        ->options($countryOptions),
+                ]),
+        ];
     }
 
     public static function table(Table $table): Table
