@@ -842,6 +842,7 @@ return [
         'type_trial' => 'Trial',
         'type_quran_individual' => 'Quran Individual',
         'type_quran_group' => 'Quran Group',
+        'type_quran_trial' => 'Trial Session',
         'type_private_lesson' => 'Private Lesson',
 
         // Actions
