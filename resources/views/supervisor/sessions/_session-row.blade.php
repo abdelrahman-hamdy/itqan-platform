@@ -41,8 +41,8 @@
         $sAttRaw = $studentMeeting?->attendance_status;
         $sAtt = $sAttRaw instanceof \BackedEnum ? $sAttRaw->value : $sAttRaw;
         $sMinutes = $studentMeeting?->total_duration_minutes ?? 0;
-        $tCounts = $session->counts_for_teacher ?? true;
-        $sCounts = $studentMeeting?->counts_for_subscription ?? true;
+        $tCounts = $session->counts_for_teacher ?? false;
+        $sCounts = $studentMeeting?->counts_for_subscription ?? false;
         $duration = $session->duration_minutes ?? 0;
         $toggleTeacherUrl = route('manage.sessions.toggle-counts-teacher', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
         $toggleStudentUrl = $studentMeeting ? route('manage.sessions.toggle-counts-subscription', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id, 'attendanceId' => $studentMeeting->id]) : null;
@@ -50,8 +50,8 @@
 @endphp
 
 <tr class="hover:bg-gray-50 cursor-pointer transition-colors {{ $isLive ? 'bg-green-50/50' : '' }}"
-    onclick="window.location.href='{{ $showUrl }}'"
     @if($isCompleted) x-data="{ tc: {{ $tCounts ? 'true' : 'false' }}, sc: {{ $sCounts ? 'true' : 'false' }}, busy: false }" @endif
+    @click="window.location.href='{{ $showUrl }}'"
 >
     {{-- Status --}}
     <td class="px-4 py-3">
@@ -111,7 +111,8 @@
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap {{ $attColors[$tAtt] ?? 'bg-gray-100 text-gray-600' }}">{{ __('enums.attendance_status.' . $tAtt) }}</span>
                         <span class="text-[10px] text-gray-400">{{ $tMinutes }}/{{ $duration }}{{ __('settings.minutes') }}</span>
                     @else
-                        <span class="text-[10px] text-gray-300">-</span>
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap {{ $attColors['absent'] }}">{{ __('enums.attendance_status.absent') }}</span>
+                        <span class="text-[10px] text-gray-400">0/{{ $duration }}{{ __('settings.minutes') }}</span>
                     @endif
                 </div>
                 <div class="flex items-center gap-1.5">
@@ -120,7 +121,8 @@
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap {{ $attColors[$sAtt] ?? 'bg-gray-100 text-gray-600' }}">{{ __('enums.attendance_status.' . $sAtt) }}</span>
                         <span class="text-[10px] text-gray-400">{{ $sMinutes }}/{{ $duration }}{{ __('settings.minutes') }}</span>
                     @else
-                        <span class="text-[10px] text-gray-300">-</span>
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap {{ $attColors['absent'] }}">{{ __('enums.attendance_status.absent') }}</span>
+                        <span class="text-[10px] text-gray-400">0/{{ $duration }}{{ __('settings.minutes') }}</span>
                     @endif
                 </div>
             </div>
@@ -130,7 +132,7 @@
     </td>
 
     {{-- Counting --}}
-    <td class="px-4 py-3 whitespace-nowrap" onclick="event.stopPropagation()">
+    <td class="px-4 py-3 whitespace-nowrap" @click.stop>
         @if($isCompleted)
             <div class="space-y-1.5">
                 {{-- Teacher counting button --}}
@@ -198,7 +200,7 @@
     </td>
 
     {{-- Actions --}}
-    <td class="px-4 py-3" onclick="event.stopPropagation()">
+    <td class="px-4 py-3" @click.stop>
         <div class="flex flex-wrap items-center gap-1">
             @if($isLive)
                 <a href="{{ $showUrl }}?mode=observer"
@@ -213,11 +215,30 @@
                 </a>
             @endif
             @if($status->canCancel())
-                <a href="{{ $showUrl }}#cancel"
-                   class="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors">
+                @php $cancelUrl = route('manage.sessions.cancel', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]); @endphp
+                <button type="button"
+                    @click.stop="window.confirmAction({
+                        title: {{ json_encode(__('supervisor.sessions.cancel_session')) }},
+                        message: {{ json_encode(__('supervisor.sessions.cancel_confirm')) }},
+                        isDangerous: true,
+                        icon: 'ri-close-circle-line',
+                        onConfirm: async () => {
+                            const reason = prompt({{ json_encode(__('supervisor.sessions.cancel_reason_prompt')) }});
+                            if (!reason) return;
+                            try {
+                                const r = await fetch('{{ $cancelUrl }}', {
+                                    method: 'POST',
+                                    headers: {'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'},
+                                    body: JSON.stringify({cancellation_reason: reason})
+                                });
+                                if (r.ok) window.location.reload();
+                            } catch(e) {}
+                        }
+                    })"
+                    class="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors cursor-pointer">
                     <i class="ri-close-circle-line"></i>
                     {{ __('supervisor.sessions.cancel_session') }}
-                </a>
+                </button>
             @endif
         </div>
     </td>

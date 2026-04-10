@@ -850,6 +850,8 @@ return [
         'observe_meeting' => 'مراقبة الاجتماع',
         'edit_session' => 'تعديل الجلسة',
         'cancel_session' => 'إلغاء الجلسة',
+        'cancel_confirm' => 'هل تريد إلغاء هذه الجلسة؟ لا يمكن التراجع عن هذا الإجراء.',
+        'cancel_reason_prompt' => 'أدخل سبب إلغاء الجلسة',
         'view_in_panel' => 'عرض في لوحة التحكم',
 
         // Attendance & Counting columns

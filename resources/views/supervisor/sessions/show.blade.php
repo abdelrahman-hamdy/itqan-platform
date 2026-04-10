@@ -427,7 +427,7 @@
         $teacherMeetingAtt = $allMeetingAtt->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])->first();
         $teacherAttStatusRaw = $session->teacher_attendance_status ?? $teacherMeetingAtt?->attendance_status;
         $teacherAttStatus = $teacherAttStatusRaw instanceof \BackedEnum ? $teacherAttStatusRaw->value : $teacherAttStatusRaw;
-        $teacherCounts = $session->counts_for_teacher ?? true;
+        $teacherCounts = $session->counts_for_teacher ?? false;
         $teacherMinutes = $teacherMeetingAtt?->total_duration_minutes ?? 0;
 
         $attStatusClasses = [
@@ -548,7 +548,27 @@
                         </button>
                     </div>
                 @empty
-                    <p class="text-sm text-gray-400 text-center py-4">{{ __('supervisor.sessions.no_attendance_data') }}</p>
+                    {{-- No MeetingAttendance record — student never joined. Show as absent. --}}
+                    @php $sessionStudent = $session->student; @endphp
+                    @if($sessionStudent)
+                        <div class="border-b border-gray-100 pb-3 last:border-0 last:pb-0 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800">{{ $sessionStudent->name }}</span>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium {{ $attStatusClasses['absent'] }}">
+                                    <i class="{{ \App\Enums\AttendanceStatus::ABSENT->icon() }} text-[10px]"></i>
+                                    {{ __('enums.attendance_status.absent') }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span>0 {{ __('settings.minutes') }} / {{ $session->duration_minutes ?? '-' }} {{ __('settings.minutes') }}</span>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium {{ $notCountedClass }}">
+                                    <i class="ri-close-line text-[10px]"></i> {{ __('supervisor.sessions.not_counted') }}
+                                </span>
+                            </div>
+                        </div>
+                    @else
+                        <p class="text-sm text-gray-400 text-center py-4">{{ __('supervisor.sessions.no_attendance_data') }}</p>
+                    @endif
                 @endforelse
             </div>
         </div>
@@ -559,7 +579,7 @@
     function countingControls() {
         return {
             countsForTeacher: @json($session->counts_for_teacher ?? true),
-            studentCounts: @json($studentAttendances->pluck('counts_for_subscription', 'id')->map(fn($v) => $v ?? true)),
+            studentCounts: @json($studentAttendances->pluck('counts_for_subscription', 'id')->map(fn($v) => $v ?? false)),
             submitting: false,
 
             confirmToggleTeacher() {

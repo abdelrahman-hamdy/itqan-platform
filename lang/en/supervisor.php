@@ -850,6 +850,8 @@ return [
         'observe_meeting' => 'Observe Meeting',
         'edit_session' => 'Edit Session',
         'cancel_session' => 'Cancel Session',
+        'cancel_confirm' => 'Are you sure you want to cancel this session? This cannot be undone.',
+        'cancel_reason_prompt' => 'Enter the reason for cancellation',
         'view_in_panel' => 'View in Panel',
 
         // Attendance & Counting columns
