@@ -418,8 +418,8 @@
         </div>
     </div>
 
-    {{-- Counting Management Section --}}
-    @if($session->status === \App\Enums\SessionStatus::COMPLETED)
+    {{-- Counting Management Section (trials don't count for subscriptions or teacher earnings) --}}
+    @if($session->status === \App\Enums\SessionStatus::COMPLETED && ($session->session_type ?? null) !== 'trial')
     @php
         // Use meeting_attendances as source of truth (quran_session_attendances is empty)
         $allMeetingAtt = $session->meetingAttendances ?? collect();

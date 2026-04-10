@@ -3,6 +3,8 @@
     $status = $session->status;
     $isLive = in_array($status, [\App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING]);
     $isCompleted = $status === \App\Enums\SessionStatus::COMPLETED;
+    // Trials don't affect subscriptions or teacher earnings — hide counting controls for them.
+    $isTrial = $type === 'quran' && ($session->session_type ?? null) === 'trial';
 
     $teacherName = match($type) {
         'academic' => $session->academicTeacher?->user?->name ?? '-',
@@ -122,7 +124,8 @@
                 </div>
             </div>
 
-            {{-- Counting --}}
+            {{-- Counting (not applicable to trial sessions) --}}
+            @if(!$isTrial)
             <div class="space-y-1" onclick="event.stopPropagation()">
                 <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">{{ __('supervisor.sessions.col_counting') }}</p>
                 <div class="flex flex-wrap gap-1.5">
@@ -183,6 +186,7 @@
                     </button>
                 </div>
             </div>
+            @endif
         </div>
     @endif
 
