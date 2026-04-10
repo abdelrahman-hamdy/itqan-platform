@@ -4,7 +4,6 @@ namespace App\Jobs;
 
 use App\Enums\AttendanceStatus;
 use App\Events\AttendanceUpdated;
-use App\Jobs\CalculateSessionEarningsJob;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use App\Models\InteractiveCourseSession;
@@ -142,8 +141,22 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
                 'session_id' => $this->sessionId,
             ]);
 
-            // Still calculate teacher attendance and set counting flags
-            // (handles case where nobody joined — teacher absent, students not penalized)
+            // Create absent MeetingAttendance for student if none exists (nobody joined)
+            if ($session->student_id) {
+                MeetingAttendance::firstOrCreate(
+                    ['session_id' => $session->id, 'user_id' => $session->student_id, 'user_type' => 'student'],
+                    [
+                        'session_type' => method_exists($session, 'getAttendanceSessionType') ? $session->getAttendanceSessionType() : 'individual',
+                        'attendance_status' => AttendanceStatus::ABSENT,
+                        'total_duration_minutes' => 0,
+                        'attendance_percentage' => 0,
+                        'is_calculated' => true,
+                        'session_duration_minutes' => $session->duration_minutes,
+                    ]
+                );
+            }
+
+            // Calculate teacher attendance and set counting flags
             $this->calculateTeacherAttendanceAndSetFlags($session);
 
             return;

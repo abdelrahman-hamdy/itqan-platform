@@ -6,6 +6,7 @@ use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Jobs\CalculateSessionEarningsJob;
+use App\Jobs\CalculateSessionForAttendance;
 use App\Jobs\CreateSessionMeetingJob;
 use App\Models\BaseSession;
 use App\Models\User;
@@ -136,10 +137,13 @@ class BaseSessionObserver
 
             if ($newStatusEnum === SessionStatus::COMPLETED) {
                 try {
-                    // Delay 10 minutes: gives the attendance job time to run first
-                    // and dispatch earnings itself. For manual completions (no
-                    // LiveKit), this delayed dispatch is the only earnings trigger.
-                    // The earnings service's isAlreadyCalculated() prevents duplicates.
+                    // Full attendance + counting pipeline (teacher flags, subscription, earnings).
+                    // ShouldBeUnique prevents duplicates if webhook already dispatched this.
+                    dispatch(new CalculateSessionForAttendance($session->id, get_class($session)))
+                        ->delay(now()->addMinutes(5));
+
+                    // Earnings backup: if attendance job fails, this ensures earnings
+                    // are still calculated. isAlreadyCalculated() prevents duplicates.
                     dispatch(new CalculateSessionEarningsJob($session))
                         ->delay(now()->addMinutes(10));
                 } catch (Exception $e) {
