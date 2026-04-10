@@ -36,7 +36,7 @@
               'hideDots' => true,
               'collapsible' => true,
               'startCollapsed' => $activeSubscriptions->isEmpty(),
-              'items' => $activeSubscriptions->take(3)->map(function($subscription) {
+              'items' => $activeSubscriptions->map(function($subscription) {
                 // Skip subscriptions without individual circles
                 if (!$subscription->individualCircle) {
                   return null;

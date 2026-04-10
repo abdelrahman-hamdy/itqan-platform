@@ -361,7 +361,7 @@ class TeacherProfileController extends Controller
             ->limit(5)
             ->get();
 
-        // Get active subscriptions
+        // Get active subscriptions (no limit — show all on profile page)
         $activeSubscriptions = QuranSubscription::where('quran_teacher_id', $user->id)
             ->where('academy_id', $academy->id)
             ->whereIn('status', [
@@ -371,7 +371,6 @@ class TeacherProfileController extends Controller
             ->whereIn('payment_status', ['paid', 'pending'])
             ->with(['student', 'package', 'individualCircle'])
             ->orderBy('created_at', 'desc')
-            ->limit(5)
             ->get();
 
         // Get recent sessions

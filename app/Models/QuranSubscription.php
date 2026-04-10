@@ -476,6 +476,15 @@ class QuranSubscription extends BaseSubscription
     }
 
     /**
+     * Get remaining sessions (total - completed - missed).
+     * Always computed from current tracking columns, not the legacy sessions_remaining column.
+     */
+    public function getRemainingSessionsAttribute(): int
+    {
+        return max(0, (int) $this->total_sessions - (int) $this->total_sessions_completed - (int) $this->total_sessions_missed);
+    }
+
+    /**
      * Check if in trial mode
      */
     public function getIsInTrialAttribute(): bool
