@@ -132,6 +132,19 @@ trait CountsTowardsSubscription
                     // Mark this session as counted to prevent double-counting
                     $session->update(['subscription_counted' => true]);
 
+                    // Sync MeetingAttendance flag so supervisor UI shows correct state.
+                    // Only update NULL flags (respect admin overrides and auto-excluded cases).
+                    if (method_exists($session, 'meetingAttendances')) {
+                        $session->meetingAttendances()
+                            ->where('user_type', 'student')
+                            ->whereNull('counts_for_subscription_set_by')
+                            ->whereNull('counts_for_subscription')
+                            ->update([
+                                'counts_for_subscription' => true,
+                                'subscription_counted_at' => now(),
+                            ]);
+                    }
+
                     // Refresh the current instance with updated data
                     $this->refresh();
 
@@ -251,9 +264,12 @@ trait CountsTowardsSubscription
                     continue;
                 }
 
-                // Lock attendance row to prevent TOCTOU double-counting
-                $attendance = $this->attendances()
-                    ->where('student_id', $enrollment->student_id)
+                // Lock attendance row to prevent TOCTOU double-counting.
+                // Use meetingAttendances (current LiveKit-based table) since the
+                // legacy attendances() table (QuranSessionAttendance) is no longer populated.
+                $attendance = $this->meetingAttendances()
+                    ->where('user_id', $enrollment->student_id)
+                    ->where('user_type', 'student')
                     ->lockForUpdate()
                     ->first();
 
@@ -264,7 +280,11 @@ trait CountsTowardsSubscription
                 $subscription->useSession();
 
                 if ($attendance) {
-                    $attendance->update(['subscription_counted_at' => now()]);
+                    // Set both the timestamp (idempotency key) and the display flag
+                    $attendance->update([
+                        'subscription_counted_at' => now(),
+                        'counts_for_subscription' => $attendance->counts_for_subscription ?? true,
+                    ]);
                 }
 
                 Log::info("Group session {$this->id}: subscription {$subscription->id} decremented for student {$enrollment->student_id}");

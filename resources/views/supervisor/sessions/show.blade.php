@@ -577,8 +577,8 @@
     <script>
     function countingControls() {
         return {
-            countsForTeacher: @json($session->counts_for_teacher ?? false),
-            studentCounts: @json($studentAttendances->pluck('counts_for_subscription', 'id')->map(fn($v) => $v ?? false)),
+            countsForTeacher: @json($session->counts_for_teacher ?? true),
+            studentCounts: @json($studentAttendances->pluck('counts_for_subscription', 'id')->map(fn($v) => $v ?? (bool) $session->subscription_counted)),
             submitting: false,
 
             confirmToggleTeacher() {

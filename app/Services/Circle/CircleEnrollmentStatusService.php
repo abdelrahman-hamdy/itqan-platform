@@ -181,7 +181,7 @@ class CircleEnrollmentStatusService
         $subscription = QuranSubscription::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
             ->where('education_unit_id', $circle->id)
-            ->where('education_unit_type', QuranCircle::class)
+            ->whereIn('education_unit_type', ['quran_circle', QuranCircle::class])
             ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
             ->with(['package', 'quranTeacherUser'])
             ->first();
@@ -207,7 +207,7 @@ class CircleEnrollmentStatusService
                 'subscription_type' => 'group',
                 // Link to education unit (polymorphic relationship)
                 'education_unit_id' => $circle->id,
-                'education_unit_type' => QuranCircle::class,
+                'education_unit_type' => 'quran_circle',
                 'total_sessions' => $circle->monthly_sessions_count ?? 8,
                 'sessions_used' => 0,
                 'sessions_remaining' => $circle->monthly_sessions_count ?? 8,
@@ -250,7 +250,7 @@ class CircleEnrollmentStatusService
         if (! $subscription->education_unit_id) {
             $subscription->update([
                 'education_unit_id' => $enrollment->circle_id,
-                'education_unit_type' => QuranCircle::class,
+                'education_unit_type' => 'quran_circle',
             ]);
         }
 

@@ -124,7 +124,7 @@ class AdminSubscriptionWizardService
 
             // Link group circle if provided
             if ($type === 'quran_group' && ! empty($data['quran_circle_id'])) {
-                $baseData['education_unit_type'] = 'App\\Models\\QuranCircle';
+                $baseData['education_unit_type'] = 'quran_circle';
                 $baseData['education_unit_id'] = $data['quran_circle_id'];
             }
 

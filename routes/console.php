@@ -217,6 +217,16 @@ Schedule::command('subscriptions:reconcile-missed')
     ->runInBackground()
     ->description('Safety net: count subscriptions for completed sessions that were missed');
 
+// Recalculate denormalized teacher profile counters (total_students, total_sessions)
+// Required because total_students/total_sessions are excluded from $fillable for security
+// and no observer/listener currently maintains them. Runs as safety net every 15 minutes.
+Schedule::command('teachers:recalculate-counters')
+    ->name('recalculate-teacher-counters')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Recalculate total_students/total_sessions on teacher profiles from actual session data');
+
 // ════════════════════════════════════════════════════════════════
 // DATA MAINTENANCE
 // ════════════════════════════════════════════════════════════════

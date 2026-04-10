@@ -655,7 +655,7 @@ class QuranSubscription extends BaseSubscription
     {
         $this->update([
             'education_unit_id' => $unit->id,
-            'education_unit_type' => get_class($unit),
+            'education_unit_type' => $unit->getMorphClass(),
         ]);
 
         return $this;

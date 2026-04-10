@@ -50,7 +50,7 @@ class CirclePaidEnrollmentService
                 $existingSubscription = QuranSubscription::where('student_id', $user->id)
                     ->where('academy_id', $academy->id)
                     ->where('education_unit_id', $lockedCircle->id)
-                    ->where('education_unit_type', QuranCircle::class)
+                    ->whereIn('education_unit_type', ['quran_circle', QuranCircle::class])
                     ->where('subscription_type', 'group')
                     ->where('status', SessionSubscriptionStatus::PENDING)
                     ->where('payment_status', SubscriptionPaymentStatus::PENDING)
@@ -72,7 +72,7 @@ class CirclePaidEnrollmentService
                     'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
                     'subscription_type' => 'group',
                     'education_unit_id' => $lockedCircle->id,
-                    'education_unit_type' => QuranCircle::class,
+                    'education_unit_type' => 'quran_circle',
                     'total_sessions' => $lockedCircle->monthly_sessions_count ?? 8,
                     'sessions_used' => 0,
                     'sessions_remaining' => $lockedCircle->monthly_sessions_count ?? 8,

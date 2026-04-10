@@ -34,14 +34,19 @@ class ReconcileSubscriptionCounts extends Command
         $errors = 0;
 
         // Process Quran sessions
-        // Skip sessions where teacher was absent (counts_for_teacher=false)
-        // — those were intentionally not counted
-        // Only count sessions where teacher attendance was confirmed (counts_for_teacher = true).
-        // Sessions with NULL teacher flag need attendance calculated first — don't count blindly.
+        // Skip sessions where teacher was explicitly marked absent (counts_for_teacher=false).
+        // Include sessions with counts_for_teacher = true OR NULL:
+        //   - true: teacher confirmed present → definitely count
+        //   - NULL: auto-calc may not have run yet, but sessions ended >10min ago should
+        //     have been processed. Count them to avoid permanent drift. The NULL case is
+        //     the most common cause of uncounted sessions after recovery incidents.
         $quranSessions = QuranSession::where('status', SessionStatus::COMPLETED)
             ->where('subscription_counted', false)
             ->where('ended_at', '<', $cutoff)
-            ->where('counts_for_teacher', true)
+            ->where(function ($q) {
+                $q->where('counts_for_teacher', true)
+                  ->orWhereNull('counts_for_teacher');
+            })
             ->get();
 
         foreach ($quranSessions as $session) {
@@ -73,7 +78,10 @@ class ReconcileSubscriptionCounts extends Command
         $academicSessions = AcademicSession::where('status', SessionStatus::COMPLETED)
             ->where('subscription_counted', false)
             ->where('ended_at', '<', $cutoff)
-            ->where('counts_for_teacher', true)
+            ->where(function ($q) {
+                $q->where('counts_for_teacher', true)
+                  ->orWhereNull('counts_for_teacher');
+            })
             ->get();
 
         foreach ($academicSessions as $session) {

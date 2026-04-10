@@ -7,10 +7,12 @@ use App\Enums\PaymentStatus;
 use App\Models\Traits\ScopedToAcademy;
 use App\Services\Payment\DTOs\InvoiceData;
 use App\Services\Payment\InvoiceService;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -99,6 +101,43 @@ class Payment extends Model
         'gateway_response' => 'array',
         'metadata' => 'array',
     ];
+
+    /**
+     * Normalize payable_type to morph alias when set.
+     *
+     * Historical data has 5 different representations: canonical FQCN,
+     * double-escaped backslashes, legacy snake_case, etc. This mutator
+     * converts any FQCN to its registered morph alias so all new writes
+     * use a single canonical form. Reads return the raw stored value.
+     */
+    protected function payableType(): Attribute
+    {
+        return Attribute::make(
+            set: function ($value) {
+                if ($value === null || $value === '') {
+                    return $value;
+                }
+
+                // Unescape any double-escaped backslashes (e.g., 'App\\\\Models\\\\QuranSubscription')
+                $normalized = str_replace('\\\\', '\\', $value);
+
+                // If it's already a morph alias (snake_case), return as-is
+                $morphMap = Relation::morphMap();
+                if (isset($morphMap[$normalized])) {
+                    return $normalized;
+                }
+
+                // If it's a FQCN, convert to morph alias
+                $flipped = array_flip($morphMap);
+                if (isset($flipped[$normalized])) {
+                    return $flipped[$normalized];
+                }
+
+                // Unknown value — store as-is (model not in morph map)
+                return $normalized;
+            },
+        );
+    }
 
     // Relationships
     public function academy(): BelongsTo

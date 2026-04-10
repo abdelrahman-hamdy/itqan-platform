@@ -42,7 +42,9 @@
         $sAtt = $sAttRaw instanceof \BackedEnum ? $sAttRaw->value : $sAttRaw;
         $sMinutes = $studentMeeting?->total_duration_minutes ?? 0;
         $tCounts = $session->counts_for_teacher ?? true;
-        $sCounts = $studentMeeting?->counts_for_subscription ?? true;
+        // Fall back to session-level flag when MeetingAttendance flag is NULL
+        // (individual sessions track on session.subscription_counted).
+        $sCounts = $studentMeeting?->counts_for_subscription ?? (bool) $session->subscription_counted;
         $duration = $session->duration_minutes ?? 0;
         $toggleTeacherUrl = route('manage.sessions.toggle-counts-teacher', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
         $toggleStudentUrl = $studentMeeting ? route('manage.sessions.toggle-counts-subscription', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id, 'attendanceId' => $studentMeeting->id]) : null;

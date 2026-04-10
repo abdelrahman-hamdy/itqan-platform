@@ -41,7 +41,11 @@ class SessionCountingService
             if ($counts) {
                 dispatch(new CalculateSessionEarningsJob($session));
             } else {
-                TeacherEarning::where('session_type', get_class($session))
+                // Use both morph alias and FQCN to cover legacy data
+                TeacherEarning::whereIn('session_type', [
+                        $session->getMorphClass(),
+                        get_class($session),
+                    ])
                     ->where('session_id', $session->id)
                     ->delete();
             }

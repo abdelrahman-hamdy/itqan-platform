@@ -231,7 +231,7 @@ class TrialConversionService
                 'subscription_type' => QuranSubscription::SUBSCRIPTION_TYPE_INDIVIDUAL,
                 // Polymorphic link to education unit
                 'education_unit_id' => $circle->id,
-                'education_unit_type' => QuranIndividualCircle::class,
+                'education_unit_type' => 'individual_circle',
                 'billing_cycle' => $billingCycle,
                 'total_sessions' => $totalSessions,
                 'sessions_remaining' => $totalSessions,

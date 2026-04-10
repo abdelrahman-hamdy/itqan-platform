@@ -42,7 +42,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
             if (! $this->isEligibleForEarnings($session)) {
                 Log::info('Session not eligible for earnings', [
                     'session_id' => $session->id,
-                    'session_type' => get_class($session),
+                    'session_type' => $session->getMorphClass(),
                     'status' => $session->status,
                 ]);
 
@@ -54,7 +54,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
                     'session_id' => $session->id,
                 ]);
 
-                return TeacherEarning::forSession(get_class($session), $session->id)->first();
+                return TeacherEarning::forSession($session->getMorphClass(), $session->id)->first();
             }
 
             // Bust teacher profile cache to ensure we use current rates, not stale cached rates
@@ -89,7 +89,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
                 // Re-check inside the transaction with a lock to prevent race conditions.
                 // Two concurrent calls may both pass the early isAlreadyCalculated() check;
                 // this lockForUpdate() ensures only one proceeds to create the record.
-                $existing = TeacherEarning::forSession(get_class($session), $session->id)
+                $existing = TeacherEarning::forSession($session->getMorphClass(), $session->id)
                     ->lockForUpdate()
                     ->first();
                 if ($existing) {
@@ -100,7 +100,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
                     'academy_id' => $session->academy_id ?? $this->getAcademyId($session),
                     'teacher_type' => $teacherData['type'],
                     'teacher_id' => $teacherData['id'],
-                    'session_type' => get_class($session),
+                    'session_type' => $session->getMorphClass(),
                     'session_id' => $session->id,
                     'amount' => $amount,
                     'calculation_method' => $this->getCalculationMethod($session),
@@ -581,7 +581,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
      */
     protected function isAlreadyCalculated(BaseSession $session): bool
     {
-        return TeacherEarning::forSession(get_class($session), $session->id)->exists();
+        return TeacherEarning::forSession($session->getMorphClass(), $session->id)->exists();
     }
 
     /**
@@ -607,7 +607,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
         if (! $academyId) {
             Log::error('Academy ID missing for session', [
                 'session_id' => $session->id,
-                'session_type' => get_class($session),
+                'session_type' => $session->getMorphClass(),
             ]);
         }
 

@@ -38,7 +38,7 @@ class CircleTransferService
 
             $activeStatuses = [SessionSubscriptionStatus::ACTIVE, SessionSubscriptionStatus::PENDING];
 
-            QuranSubscription::where('education_unit_type', QuranIndividualCircle::class)
+            QuranSubscription::whereIn('education_unit_type', ['individual_circle', QuranIndividualCircle::class])
                 ->where('education_unit_id', $circle->id)
                 ->whereIn('status', $activeStatuses)
                 ->update(['quran_teacher_id' => $newTeacher->id]);
