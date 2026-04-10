@@ -69,17 +69,18 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         }
 
         // Single query for all stats (avoids 4 clones that carry eager loading overhead)
-        $statsRow = (clone $earningsQuery)->reorder()->selectRaw('
+        // total_duration_minutes extracts duration_minutes from calculation_metadata JSON, defaulting to 60
+        $statsRow = (clone $earningsQuery)->reorder()->selectRaw("
             COALESCE(SUM(amount), 0) as total_earnings,
             COALESCE(SUM(CASE WHEN is_finalized = 1 AND is_disputed = 0 THEN amount ELSE 0 END), 0) as finalized_amount,
-            COALESCE(SUM(CASE WHEN is_disputed = 1 THEN amount ELSE 0 END), 0) as disputed_amount,
+            COALESCE(SUM(COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(calculation_metadata, '$.duration_minutes')) AS UNSIGNED), 60)), 0) as total_duration_minutes,
             COUNT(*) as sessions_count
-        ')->first();
+        ")->first();
 
         $stats = [
             'totalEarnings' => (float) $statsRow->total_earnings,
             'finalizedAmount' => (float) $statsRow->finalized_amount,
-            'disputedAmount' => (float) $statsRow->disputed_amount,
+            'totalHours' => round(((int) $statsRow->total_duration_minutes) / 60, 1),
             'sessionsCount' => (int) $statsRow->sessions_count,
         ];
 

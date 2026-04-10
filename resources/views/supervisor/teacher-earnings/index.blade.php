@@ -56,15 +56,15 @@
             </div>
         </div>
 
-        {{-- Disputed --}}
+        {{-- Total Hours --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="ri-error-warning-line text-red-600"></i>
+                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="ri-time-line text-purple-600"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-lg md:text-xl font-bold text-gray-900">{{ number_format($stats['disputedAmount'], 2) }}</p>
-                    <p class="text-xs text-gray-600 truncate">{{ __('supervisor.teacher_earnings.status_disputed') }}</p>
+                    <p class="text-lg md:text-xl font-bold text-gray-900">{{ $stats['totalHours'] }} <span class="text-xs md:text-sm font-normal text-gray-500">{{ __('supervisor.teacher_earnings.hours_unit') }}</span></p>
+                    <p class="text-xs text-gray-600 truncate">{{ __('supervisor.teacher_earnings.summary_total_hours') }}</p>
                 </div>
             </div>
         </div>
