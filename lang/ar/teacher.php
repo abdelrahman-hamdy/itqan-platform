@@ -21,6 +21,8 @@ return [
         'hours' => 'ساعة',
         'teacher_rating' => 'تقييم المعلم',
         'out_of_stars' => 'من 5 نجوم',
+        'individual_students_label' => 'طلاب الحلقات الفردية',
+        'private_students_label' => 'طلاب الدروس الخصوصية',
     ],
     'sidebar' => [
         'quran_teacher' => 'معلم قرآن',

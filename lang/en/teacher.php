@@ -21,6 +21,8 @@ return [
         'hours' => 'hours',
         'teacher_rating' => 'Teacher Rating',
         'out_of_stars' => 'out of 5 stars',
+        'individual_students_label' => 'Individual circle students',
+        'private_students_label' => 'Private lesson students',
     ],
     'sidebar' => [
         'quran_teacher' => 'Quran Teacher',

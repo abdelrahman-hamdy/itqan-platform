@@ -7,8 +7,8 @@ $teacherStats = [
         'icon' => 'ri-group-line',
         'color' => 'blue',
         'subtitle' => isset($stats['activeCircles'])
-            ? ($stats['activeCircles'] . ' ' . ($stats['activeCircles'] > 1 ? __('teacher.quick_stats.active_circles_plural') : __('teacher.quick_stats.active_circles')))
-            : (isset($stats['activeCourses']) ? ($stats['activeCourses'] . ' ' . ($stats['activeCourses'] > 1 ? __('teacher.quick_stats.active_courses_plural') : __('teacher.quick_stats.active_courses'))) : null),
+            ? __('teacher.quick_stats.individual_students_label')
+            : (isset($stats['activeCourses']) ? __('teacher.quick_stats.private_students_label') : null),
     ],
     [
         'label' => __('teacher.quick_stats.month_duration'),

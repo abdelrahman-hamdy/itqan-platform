@@ -456,21 +456,11 @@ class TeacherProfileController extends Controller
      */
     private function calculateQuranTeacherStats($user, $teacherProfile, $currentMonth)
     {
-        // Total students from assigned circles - use Eloquent with automatic tenant scoping
-        $totalStudents = QuranCircle::where('quran_teacher_id', $user->id)
-            ->with('students')
-            ->get()
-            ->pluck('students')
-            ->flatten()
-            ->unique('id')
-            ->count();
-
-        // Also count individual circle students
-        $individualStudents = QuranIndividualCircle::where('quran_teacher_id', $teacherProfile->id)
+        // Count unique students in active individual circles only
+        $totalStudents = QuranIndividualCircle::where('quran_teacher_id', $user->id)
+            ->where('is_active', true)
             ->distinct('student_id')
             ->count('student_id');
-
-        $totalStudents = $totalStudents + $individualStudents;
 
         // Active circles
         $activeCircles = QuranCircle::where('quran_teacher_id', $user->id)
@@ -495,20 +485,11 @@ class TeacherProfileController extends Controller
      */
     private function calculateAcademicTeacherStats($user, $teacherProfile, $currentMonth)
     {
-        // Total students from courses - use DB query to avoid loading all users
-        $courseIds = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
-            ->pluck('id');
-
-        $totalStudents = InteractiveCourseEnrollment::whereIn('course_id', $courseIds)
+        // Count unique students in active private lessons only
+        $totalStudents = AcademicSubscription::where('teacher_id', $teacherProfile->id)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->distinct('student_id')
             ->count('student_id');
-
-        // Also count private lesson students
-        $privateLessonStudents = AcademicSubscription::where('teacher_id', $teacherProfile->id)
-            ->distinct('student_id')
-            ->count('student_id');
-
-        $totalStudents = $totalStudents + $privateLessonStudents;
 
         // Active courses (both created and assigned)
         $activeCourses = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
