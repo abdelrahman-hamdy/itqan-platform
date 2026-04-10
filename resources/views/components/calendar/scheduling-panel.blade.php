@@ -455,6 +455,8 @@ function matchesFocusedItem(eventProps, focusedType, focusedId) {
                 || (source === 'quran_session' && metadata.circle_id == focusedId && metadata.session_type === 'group');
         case 'individual':
             return (source === 'quran_session' && metadata.individual_circle_id == focusedId);
+        case 'trial':
+            return (source === 'quran_session' && metadata.trial_request_id == focusedId && metadata.session_type === 'trial');
         case 'interactive_course':
             return (source === 'course_session' && metadata.course_id == focusedId);
     }

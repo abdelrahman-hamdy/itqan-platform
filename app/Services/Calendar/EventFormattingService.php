@@ -63,6 +63,7 @@ class EventFormattingService
                     'circle_id' => $session->circle_id,
                     'individual_circle_id' => $session->individual_circle_id,
                     'quran_subscription_id' => $session->quran_subscription_id,
+                    'trial_request_id' => $session->trial_request_id,
                 ],
             ];
         });
