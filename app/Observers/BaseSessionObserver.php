@@ -147,7 +147,7 @@ class BaseSessionObserver
                     dispatch(new CalculateSessionEarningsJob($session))
                         ->delay(now()->addMinutes(10));
                 } catch (Exception $e) {
-                    Log::error('Failed to dispatch delayed earnings calculation job', [
+                    Log::error('Failed to dispatch session completion jobs', [
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),
                     ]);
