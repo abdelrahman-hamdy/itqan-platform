@@ -3,8 +3,7 @@
     $status = $session->status;
     $isLive = in_array($status, [\App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING]);
     $isCompleted = $status === \App\Enums\SessionStatus::COMPLETED;
-    // Trials don't affect subscriptions or teacher earnings — hide counting controls for them.
-    $isTrial = $type === 'quran' && ($session->session_type ?? null) === 'trial';
+    $isTrial = $session->isTrial();
 
     $teacherName = match($type) {
         'academic' => $session->academicTeacher?->user?->name ?? '-',

@@ -330,6 +330,17 @@ abstract class BaseSession extends Model implements MeetingCapable
         );
     }
 
+    /**
+     * Whether this is a trial (free introductory) session. Only QuranSession
+     * currently uses 'trial' as a session_type; academic/interactive never do.
+     * Trials don't count toward any subscription and don't generate teacher
+     * earnings — callers use this to hide counting UI and skip financial logic.
+     */
+    public function isTrial(): bool
+    {
+        return ($this->session_type ?? null) === 'trial';
+    }
+
     // ========================================
     // QUERY SCOPES
     // ========================================
