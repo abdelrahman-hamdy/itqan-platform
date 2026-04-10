@@ -76,18 +76,19 @@ class QuranTeacherOverviewWidget extends BaseWidget
             ->where('status', true)
             ->count();
 
-        $activeIndividualCircles = QuranIndividualCircle::where('quran_teacher_id', $user->id)
-            ->where('is_active', true)
-            ->count();
-
-        // Total active students (from circles)
         $groupCircleStudents = QuranCircle::where('quran_teacher_id', $user->id)
             ->where('status', true)
             ->sum('enrolled_students');
 
-        $individualCircleStudents = $activeIndividualCircles;
+        $activeIndividualCircles = QuranIndividualCircle::where('quran_teacher_id', $user->id)
+            ->where('is_active', true)
+            ->count();
 
-        $totalActiveStudents = $groupCircleStudents + $individualCircleStudents;
+        // Total individual students (unique students in active individual circles)
+        $totalIndividualStudents = QuranIndividualCircle::where('quran_teacher_id', $user->id)
+            ->where('is_active', true)
+            ->distinct('student_id')
+            ->count('student_id');
 
         // Pending trial requests
         $pendingTrials = QuranTrialRequest::where('teacher_id', $teacher->id)
@@ -124,8 +125,8 @@ class QuranTeacherOverviewWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success'),
 
-            Stat::make('الطلاب النشطين', $totalActiveStudents)
-                ->description($individualCircleStudents.' فردي، '.$groupCircleStudents.' جماعي')
+            Stat::make('عدد الطلاب', $totalIndividualStudents)
+                ->description('طلاب الحلقات الفردية')
                 ->descriptionIcon('heroicon-m-users')
                 ->color('info'),
 

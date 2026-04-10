@@ -82,10 +82,11 @@ class AcademicTeacherOverviewWidget extends BaseWidget
 
         $monthCompletedSessions = $monthCompletedIndividual + $monthCompletedCourses;
 
-        // Active individual lessons (students)
-        $activeIndividualLessons = AcademicIndividualLesson::where('academic_teacher_id', $teacherProfile->id)
+        // Total individual students (unique students in active private lessons)
+        $totalIndividualStudents = AcademicIndividualLesson::where('academic_teacher_id', $teacherProfile->id)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
-            ->count();
+            ->distinct('student_id')
+            ->count('student_id');
 
         // Active interactive courses
         $activeCourses = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
@@ -141,9 +142,9 @@ class AcademicTeacherOverviewWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success'),
 
-            Stat::make('الدروس الفردية النشطة', $activeIndividualLessons)
-                ->description('طلاب مسجلين')
-                ->descriptionIcon('heroicon-m-user')
+            Stat::make('عدد الطلاب', $totalIndividualStudents)
+                ->description('طلاب الدروس الخصوصية')
+                ->descriptionIcon('heroicon-m-users')
                 ->color('info'),
 
             Stat::make('الدورات التفاعلية', $activeCourses)
