@@ -33,8 +33,6 @@ use Illuminate\Support\Facades\Log;
  * - Validate subscription constraints for ALL session types
  * - Validate time conflicts
  * - Enforce business rules
- *
- * @see \App\Filament\Shared\Widgets\UnifiedCalendarWidget
  */
 class CalendarEventHandler
 {

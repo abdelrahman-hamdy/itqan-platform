@@ -16,8 +16,6 @@ use Illuminate\Support\Collection;
  *
  * Provides optimized database queries for fetching calendar events.
  * Queries are executed fresh each time to ensure data consistency.
- *
- * @see \App\Filament\Shared\Widgets\UnifiedCalendarWidget
  */
 class EventFetchingService
 {

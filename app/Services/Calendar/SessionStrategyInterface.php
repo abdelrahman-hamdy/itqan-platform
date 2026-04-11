@@ -73,13 +73,6 @@ interface SessionStrategyInterface
     public function createSchedule(array $data, ScheduleValidatorInterface $validator): void;
 
     /**
-     * Get footer widgets for the calendar page
-     *
-     * @return array Array of widget class names
-     */
-    public function getFooterWidgets(): array;
-
-    /**
      * Get available session types for this strategy
      *
      * @return array Array of session type identifiers

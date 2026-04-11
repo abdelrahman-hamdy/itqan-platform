@@ -56,12 +56,8 @@ class TenantMiddleware
                     abort(403, 'You do not have access to this academy');
                 }
 
-                // Set the tenant in Filament context only for tenant-aware panels
-                if ($request->is('panel') || $request->is('panel/*') ||
-                    $request->is('teacher-panel') || $request->is('teacher-panel/*') ||
-                    $request->is('supervisor-panel') || $request->is('supervisor-panel/*') ||
-                    $request->is('academic-teacher') || $request->is('academic-teacher/*') ||
-                    $request->is('academic-teacher-panel') || $request->is('academic-teacher-panel/*')) {
+                // Set the tenant in Filament context only for the Academy panel
+                if ($request->is('panel') || $request->is('panel/*')) {
                     Filament::setTenant($academy);
                 }
 
@@ -72,12 +68,8 @@ class TenantMiddleware
                 $defaultAcademy = Academy::where('subdomain', DefaultAcademy::subdomain())->first();
 
                 if ($defaultAcademy) {
-                    // Only set tenant for tenant-aware panels, not for Super-Admin
-                    if ($request->is('panel') || $request->is('panel/*') ||
-                        $request->is('teacher-panel') || $request->is('teacher-panel/*') ||
-                        $request->is('supervisor-panel') || $request->is('supervisor-panel/*') ||
-                        $request->is('academic-teacher') || $request->is('academic-teacher/*') ||
-                        $request->is('academic-teacher-panel') || $request->is('academic-teacher-panel/*')) {
+                    // Only set tenant for the Academy panel, not for Super-Admin
+                    if ($request->is('panel') || $request->is('panel/*')) {
                         Filament::setTenant($defaultAcademy);
                     }
                     app()->instance('current_academy', $defaultAcademy);

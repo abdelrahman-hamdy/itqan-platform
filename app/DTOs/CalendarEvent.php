@@ -56,7 +56,10 @@ readonly class CalendarEvent
             type: 'quran_session',
             status: $session->status instanceof BackedEnum ? $session->status->value : $session->status,
             color: self::getStatusColor($session->status),
-            url: "/teacher-panel/quran-sessions/{$session->id}",
+            url: route('teacher.sessions.show', [
+                'subdomain' => $session->academy?->subdomain,
+                'sessionId' => $session->id,
+            ]),
             teacherId: $session->quran_teacher_id,
             teacherName: $session->quranTeacher?->user?->name,
             studentId: $session->student_id,

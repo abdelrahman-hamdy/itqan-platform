@@ -93,33 +93,14 @@
             <td><strong>Academy</strong></td>
             <td><code>App\Filament\Academy\</code></td>
             <td><code>/panel/{subdomain}</code></td>
-            <td><code>admin</code>, <code>supervisor</code></td>
+            <td><code>admin</code></td>
             <td>70+</td>
-        </tr>
-        <tr>
-            <td><strong>Teacher (Quran)</strong></td>
-            <td><code>App\Filament\Teacher\</code></td>
-            <td><code>/teacher-panel</code></td>
-            <td><code>quran_teacher</code></td>
-            <td>10+</td>
-        </tr>
-        <tr>
-            <td><strong>AcademicTeacher</strong></td>
-            <td><code>App\Filament\AcademicTeacher\</code></td>
-            <td><code>/academic-teacher-panel</code></td>
-            <td><code>academic_teacher</code></td>
-            <td>10+</td>
-        </tr>
-        <tr>
-            <td><strong>Supervisor</strong></td>
-            <td><code>App\Filament\Supervisor\</code></td>
-            <td><code>/supervisor-panel</code></td>
-            <td><code>supervisor</code></td>
-            <td>—</td>
         </tr>
     </tbody>
 </table>
 </div>
+
+<p><strong>Note:</strong> Teachers, academic teachers, and supervisors no longer have dedicated Filament panels. They use frontend routes under <code>/teacher</code> and <code>/manage</code> respectively.</p>
 
 <h2 id="panel-structure">Panel Directory Structure</h2>
 

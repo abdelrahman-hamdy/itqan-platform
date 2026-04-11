@@ -1,8 +1,5 @@
 <?php
 
-use App\Models\User;
-use App\Models\Academy;
-
 // SuperAdmin Panel Tests
 $superAdminRoutes = [
     'admin',
@@ -72,7 +69,6 @@ test('SuperAdmin panel pages do not return 500 errors', function () use ($superA
                 } elseif (preg_match('/<title>(.*?)<\/title>/s', $content, $matches)) {
                     $errorMsg = trim(strip_tags($matches[1]));
                 }
-                // Also check exception in response content
                 if (preg_match('/exception.*?message.*?"(.*?)"/s', $content, $matches)) {
                     $errorMsg .= ' | ' . substr($matches[1], 0, 200);
                 }
@@ -159,175 +155,6 @@ test('Academy panel pages do not return 500 errors', function () use ($academyRo
 
     if (!empty($errors)) {
         $errorReport = "=== ACADEMY PANEL 500 ERRORS (" . count($errors) . ") ===\n" . implode("\n", $errors);
-        $successReport = "\n\n=== SUCCESSES (" . count($successes) . ") ===\n" . implode("\n", $successes);
-        $this->fail($errorReport . $successReport);
-    }
-
-    expect($successes)->not->toBeEmpty();
-});
-
-// Teacher Panel Tests
-$teacherRoutes = [
-    'teacher-panel',
-    'teacher-panel/quran-circles',
-    'teacher-panel/quran-individual-circles',
-    'teacher-panel/quran-sessions',
-    'teacher-panel/quran-trial-requests',
-    'teacher-panel/student-session-reports',
-    'teacher-panel/teacher-earnings',
-    'teacher-panel/certificates',
-];
-
-test('Teacher panel pages do not return 500 errors', function () use ($teacherRoutes) {
-    $academy = createAcademy();
-    $user = createQuranTeacher($academy);
-    setTenantContext($academy);
-
-    $errors = [];
-    $successes = [];
-
-    foreach ($teacherRoutes as $route) {
-        try {
-            $response = $this->actingAs($user)->get("/{$route}");
-            $status = $response->getStatusCode();
-
-            if ($status >= 500) {
-                $content = $response->getContent();
-                $errorMsg = '';
-                if (preg_match('/class="exception-message"[^>]*>(.*?)<\//s', $content, $matches)) {
-                    $errorMsg = trim(strip_tags($matches[1]));
-                } elseif (preg_match('/<title>(.*?)<\/title>/s', $content, $matches)) {
-                    $errorMsg = trim(strip_tags($matches[1]));
-                }
-                if (preg_match('/exception.*?message.*?"(.*?)"/s', $content, $matches)) {
-                    $errorMsg .= ' | ' . substr($matches[1], 0, 200);
-                }
-                $errors[] = "/{$route} => {$status} | {$errorMsg}";
-            } else {
-                $successes[] = "/{$route} => {$status}";
-            }
-        } catch (\Throwable $e) {
-            $errors[] = "/{$route} => EXCEPTION: " . get_class($e) . ': ' . substr($e->getMessage(), 0, 300);
-        }
-    }
-
-    if (!empty($errors)) {
-        $errorReport = "=== TEACHER PANEL 500 ERRORS (" . count($errors) . ") ===\n" . implode("\n", $errors);
-        $successReport = "\n\n=== SUCCESSES (" . count($successes) . ") ===\n" . implode("\n", $successes);
-        $this->fail($errorReport . $successReport);
-    }
-
-    expect($successes)->not->toBeEmpty();
-});
-
-// Academic Teacher Panel Tests
-$academicTeacherRoutes = [
-    'academic-teacher-panel',
-    'academic-teacher-panel/academic-individual-lessons',
-    'academic-teacher-panel/academic-sessions',
-    'academic-teacher-panel/interactive-courses',
-    'academic-teacher-panel/interactive-course-sessions',
-    'academic-teacher-panel/session-recordings',
-    'academic-teacher-panel/academic-session-reports',
-    'academic-teacher-panel/interactive-session-reports',
-    'academic-teacher-panel/teacher-earnings',
-    'academic-teacher-panel/certificates',
-];
-
-test('Academic Teacher panel pages do not return 500 errors', function () use ($academicTeacherRoutes) {
-    $academy = createAcademy();
-    $user = createAcademicTeacher($academy);
-    setTenantContext($academy);
-
-    $errors = [];
-    $successes = [];
-
-    foreach ($academicTeacherRoutes as $route) {
-        try {
-            $response = $this->actingAs($user)->get("/{$route}");
-            $status = $response->getStatusCode();
-
-            if ($status >= 500) {
-                $content = $response->getContent();
-                $errorMsg = '';
-                if (preg_match('/class="exception-message"[^>]*>(.*?)<\//s', $content, $matches)) {
-                    $errorMsg = trim(strip_tags($matches[1]));
-                } elseif (preg_match('/<title>(.*?)<\/title>/s', $content, $matches)) {
-                    $errorMsg = trim(strip_tags($matches[1]));
-                }
-                if (preg_match('/exception.*?message.*?"(.*?)"/s', $content, $matches)) {
-                    $errorMsg .= ' | ' . substr($matches[1], 0, 200);
-                }
-                $errors[] = "/{$route} => {$status} | {$errorMsg}";
-            } else {
-                $successes[] = "/{$route} => {$status}";
-            }
-        } catch (\Throwable $e) {
-            $errors[] = "/{$route} => EXCEPTION: " . get_class($e) . ': ' . substr($e->getMessage(), 0, 300);
-        }
-    }
-
-    if (!empty($errors)) {
-        $errorReport = "=== ACADEMIC TEACHER PANEL 500 ERRORS (" . count($errors) . ") ===\n" . implode("\n", $errors);
-        $successReport = "\n\n=== SUCCESSES (" . count($successes) . ") ===\n" . implode("\n", $successes);
-        $this->fail($errorReport . $successReport);
-    }
-
-    expect($successes)->not->toBeEmpty();
-});
-
-// Supervisor Panel Tests
-$supervisorRoutes = [
-    'supervisor-panel',
-    'supervisor-panel/managed-teachers',
-    'supervisor-panel/managed-teacher-reviews',
-    'supervisor-panel/managed-teacher-earnings',
-    'supervisor-panel/monitored-all-sessions',
-    'supervisor-panel/monitored-individual-circles',
-    'supervisor-panel/monitored-group-circles',
-    'supervisor-panel/monitored-trial-requests',
-    'supervisor-panel/monitored-academic-lessons',
-    'supervisor-panel/monitored-interactive-courses',
-    'supervisor-panel/monitored-session-reports',
-    'supervisor-panel/monitored-certificates',
-    'supervisor-panel/monitored-quiz-assignments',
-];
-
-test('Supervisor panel pages do not return 500 errors', function () use ($supervisorRoutes) {
-    $academy = createAcademy();
-    $user = createSupervisor($academy);
-    setTenantContext($academy);
-
-    $errors = [];
-    $successes = [];
-
-    foreach ($supervisorRoutes as $route) {
-        try {
-            $response = $this->actingAs($user)->get("/{$route}");
-            $status = $response->getStatusCode();
-
-            if ($status >= 500) {
-                $content = $response->getContent();
-                $errorMsg = '';
-                if (preg_match('/class="exception-message"[^>]*>(.*?)<\//s', $content, $matches)) {
-                    $errorMsg = trim(strip_tags($matches[1]));
-                } elseif (preg_match('/<title>(.*?)<\/title>/s', $content, $matches)) {
-                    $errorMsg = trim(strip_tags($matches[1]));
-                }
-                if (preg_match('/exception.*?message.*?"(.*?)"/s', $content, $matches)) {
-                    $errorMsg .= ' | ' . substr($matches[1], 0, 200);
-                }
-                $errors[] = "/{$route} => {$status} | {$errorMsg}";
-            } else {
-                $successes[] = "/{$route} => {$status}";
-            }
-        } catch (\Throwable $e) {
-            $errors[] = "/{$route} => EXCEPTION: " . get_class($e) . ': ' . substr($e->getMessage(), 0, 300);
-        }
-    }
-
-    if (!empty($errors)) {
-        $errorReport = "=== SUPERVISOR PANEL 500 ERRORS (" . count($errors) . ") ===\n" . implode("\n", $errors);
         $successReport = "\n\n=== SUCCESSES (" . count($successes) . ") ===\n" . implode("\n", $successes);
         $this->fail($errorReport . $successReport);
     }

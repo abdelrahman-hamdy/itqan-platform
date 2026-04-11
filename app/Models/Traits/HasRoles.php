@@ -139,19 +139,6 @@ trait HasRoles
     }
 
     /**
-     * Get dashboard route based on user type
-     */
-    public function getDashboardRoute(): string
-    {
-        return match ($this->user_type) {
-            UserType::ADMIN->value => '/panel',
-            UserType::SUPERVISOR->value => '/supervisor',
-            UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value => '/teacher',
-            default => '/profile',
-        };
-    }
-
-    /**
      * Get user type label (localized)
      */
     public function getUserTypeLabel(): string

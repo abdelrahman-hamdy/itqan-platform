@@ -257,13 +257,10 @@
             <div class="flex items-center gap-1.5 text-xs text-gray-500">
                 <i class="ri-checkbox-circle-line text-gray-400"></i> مدير الأكاديمية (اختياري — للإعدادات المتقدمة)
             </div>
-            <div class="flex items-center gap-1.5 text-xs text-gray-500">
-                <i class="ri-checkbox-circle-line text-gray-400"></i> المعلمون (اختياري)
-            </div>
         </div>
         <div class="mt-3 pt-3 border-t border-gray-200">
             <p class="text-xs text-gray-400">الروابط</p>
-            <p class="text-xs font-mono text-gray-600 mt-0.5" dir="ltr">/admin &nbsp;أو&nbsp; /panel &nbsp;أو&nbsp; /teacher-panel</p>
+            <p class="text-xs font-mono text-gray-600 mt-0.5" dir="ltr">/admin &nbsp;أو&nbsp; /panel</p>
         </div>
     </div>
 
@@ -392,14 +389,6 @@
                             <i :class="copied ? 'ri-check-line text-green-600' : 'ri-file-copy-line text-purple-400'" class="text-sm"></i>
                         </button>
                     </div>
-                    <div x-data="{ copied: false }" class="flex items-center gap-2">
-                        <span class="text-xs text-gray-500 flex-shrink-0">Filament (اختياري):</span>
-                        <code class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/teacher-panel</code>
-                        <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/teacher-panel'); copied = true; setTimeout(() => copied = false, 2000)"
-                                class="flex-shrink-0 p-1 rounded hover:bg-gray-200 transition-colors">
-                            <i :class="copied ? 'ri-check-line text-green-600' : 'ri-file-copy-line text-gray-400'" class="text-sm"></i>
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -415,14 +404,6 @@
                         <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/login'); copied = true; setTimeout(() => copied = false, 2000)"
                                 class="flex-shrink-0 p-1 rounded hover:bg-indigo-200 transition-colors">
                             <i :class="copied ? 'ri-check-line text-green-600' : 'ri-file-copy-line text-indigo-400'" class="text-sm"></i>
-                        </button>
-                    </div>
-                    <div x-data="{ copied: false }" class="flex items-center gap-2">
-                        <span class="text-xs text-gray-500 flex-shrink-0">Filament (اختياري):</span>
-                        <code class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono truncate" dir="ltr">your-academy.itqanway.com/academic-teacher-panel</code>
-                        <button @click="navigator.clipboard.writeText('https://your-academy.itqanway.com/academic-teacher-panel'); copied = true; setTimeout(() => copied = false, 2000)"
-                                class="flex-shrink-0 p-1 rounded hover:bg-gray-200 transition-colors">
-                            <i :class="copied ? 'ri-check-line text-green-600' : 'ri-file-copy-line text-gray-400'" class="text-sm"></i>
                         </button>
                     </div>
                 </div>
@@ -541,26 +522,6 @@
         <div class="flex-1 min-w-0">
             <p class="font-bold text-gray-800 text-sm">لوحة مدير الأكاديمية <span class="text-xs font-normal text-gray-600">(اختياري)</span></p>
             <p class="text-xs text-gray-700 mt-0.5">إعدادات متقدمة وباقات التسعير — تُدخل عبر: <code class="bg-gray-100 px-1 rounded" dir="ltr">{academy}.itqanway.com/panel</code></p>
-        </div>
-    </div>
-
-    <div class="flex items-center gap-4 p-4 bg-gray-50 border border-gray-200 rounded-xl">
-        <div class="w-12 h-12 rounded-xl bg-gray-400 flex items-center justify-center flex-shrink-0 shadow">
-            <i class="ri-book-2-line text-white text-xl"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-            <p class="font-bold text-gray-700 text-sm">لوحة معلم القرآن <span class="text-xs font-normal text-gray-500">(اختياري)</span></p>
-            <p class="text-xs text-gray-600 mt-0.5">واجهة بديلة للمعلم — تُدخل عبر: <code class="bg-gray-100 px-1 rounded" dir="ltr">{academy}.itqanway.com/teacher-panel</code></p>
-        </div>
-    </div>
-
-    <div class="flex items-center gap-4 p-4 bg-gray-50 border border-gray-200 rounded-xl">
-        <div class="w-12 h-12 rounded-xl bg-gray-400 flex items-center justify-center flex-shrink-0 shadow">
-            <i class="ri-pencil-ruler-2-line text-white text-xl"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-            <p class="font-bold text-gray-700 text-sm">لوحة المعلم الأكاديمي <span class="text-xs font-normal text-gray-500">(اختياري)</span></p>
-            <p class="text-xs text-gray-600 mt-0.5">واجهة بديلة للمعلم الأكاديمي — تُدخل عبر: <code class="bg-gray-100 px-1 rounded" dir="ltr">{academy}.itqanway.com/academic-teacher-panel</code></p>
         </div>
     </div>
 

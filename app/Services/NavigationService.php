@@ -81,57 +81,39 @@ class NavigationService
      */
     protected function getTeacherNavItems(?User $user): array
     {
-        if (! $user) {
+        if (! $user?->isTeacher()) {
             return [];
         }
 
-        if ($user->isQuranTeacher()) {
-            return [
-                [
-                    'href' => '/teacher-panel/quran-sessions',
-                    'label' => __('sessions.navigation.session_schedule'),
-                    'icon' => 'ri-calendar-schedule-line',
-                    'activeRoutes' => [],
-                ],
-                [
-                    'href' => '/teacher-panel/quran-trial-requests',
-                    'label' => __('sessions.navigation.trial_sessions'),
-                    'icon' => 'ri-user-add-line',
-                    'activeRoutes' => [],
-                ],
-                [
-                    'href' => '/teacher-panel/quran-session-reports',
-                    'label' => __('sessions.navigation.session_reports'),
-                    'icon' => 'ri-file-chart-line',
-                    'activeRoutes' => [],
-                ],
+        $middleItem = $user->isQuranTeacher()
+            ? [
+                'href' => '/teacher/trial-sessions',
+                'label' => __('sessions.navigation.trial_sessions'),
+                'icon' => 'ri-user-add-line',
+                'activeRoutes' => [],
+            ]
+            : [
+                'href' => '/teacher/homework',
+                'label' => __('sessions.navigation.homework'),
+                'icon' => 'ri-file-list-3-line',
+                'activeRoutes' => [],
             ];
-        }
 
-        if ($user->isAcademicTeacher()) {
-            return [
-                [
-                    'href' => '/academic-teacher-panel/academic-sessions',
-                    'label' => __('sessions.navigation.session_schedule'),
-                    'icon' => 'ri-calendar-schedule-line',
-                    'activeRoutes' => [],
-                ],
-                [
-                    'href' => '/academic-teacher-panel/homework-submissions',
-                    'label' => __('sessions.navigation.homework'),
-                    'icon' => 'ri-file-list-3-line',
-                    'activeRoutes' => [],
-                ],
-                [
-                    'href' => '/academic-teacher-panel/academic-session-reports',
-                    'label' => __('sessions.navigation.session_reports'),
-                    'icon' => 'ri-file-chart-line',
-                    'activeRoutes' => [],
-                ],
-            ];
-        }
-
-        return [];
+        return [
+            [
+                'href' => '/teacher/calendar',
+                'label' => __('sessions.navigation.session_schedule'),
+                'icon' => 'ri-calendar-schedule-line',
+                'activeRoutes' => [],
+            ],
+            $middleItem,
+            [
+                'href' => '/teacher/session-reports',
+                'label' => __('sessions.navigation.session_reports'),
+                'icon' => 'ri-file-chart-line',
+                'activeRoutes' => [],
+            ],
+        ];
     }
 
     /**

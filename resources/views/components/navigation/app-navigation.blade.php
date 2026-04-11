@@ -247,19 +247,6 @@
           </div>
         @endif
 
-        <!-- Filament Dashboard Link (Teacher only) -->
-        @if($role === 'teacher')
-          @php
-            $filamentDashboardUrl = $user && $user->isQuranTeacher()
-              ? route('filament.teacher.pages.dashboard', ['tenant' => $subdomain])
-              : route('filament.academic-teacher.pages.dashboard', ['tenant' => $subdomain]);
-          @endphp
-          <a href="{{ $filamentDashboardUrl }}" target="_blank"
-             class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-            <i class="ri-dashboard-line"></i>
-            {{ __('components.navigation.app.teacher_nav.dashboard') }}
-          </a>
-        @endif
 
         @if($role === 'supervisor' && $user)
           {{-- Academy Context Switcher (SuperAdmin only on manage pages) --}}
@@ -630,18 +617,6 @@
         </a>
         @endif
 
-        @if($role === 'teacher')
-          @php
-            $filamentDashboardUrlMobile = $user && $user->isQuranTeacher()
-              ? route('filament.teacher.pages.dashboard', ['tenant' => $subdomain])
-              : route('filament.academic-teacher.pages.dashboard', ['tenant' => $subdomain]);
-          @endphp
-          <a href="{{ $filamentDashboardUrlMobile }}" target="_blank"
-             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-            <i class="ri-dashboard-line text-xl"></i>
-            <span>{{ __('components.navigation.app.teacher_nav.dashboard') }}</span>
-          </a>
-        @endif
 
         @if($role === 'supervisor' && $user)
           @if($user->isSuperAdmin())

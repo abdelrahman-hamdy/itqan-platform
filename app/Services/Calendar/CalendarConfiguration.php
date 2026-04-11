@@ -18,8 +18,6 @@ use App\Models\User;
  * 1. Quran Teacher - sees Quran individual/group/trial sessions
  * 2. Academic Teacher - sees academic private lessons and interactive courses
  * 3. Supervisor (future) - can manage any teacher's calendar
- *
- * @see \App\Filament\Shared\Widgets\UnifiedCalendarWidget
  */
 final readonly class CalendarConfiguration
 {

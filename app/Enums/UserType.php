@@ -117,8 +117,8 @@ enum UserType: string
     {
         return match ($this) {
             self::ADMIN, self::SUPER_ADMIN => '/panel',
-            self::SUPERVISOR => '/supervisor',
-            self::QURAN_TEACHER, self::ACADEMIC_TEACHER => '/teacher',
+            self::SUPERVISOR => '/manage/dashboard',
+            self::QURAN_TEACHER, self::ACADEMIC_TEACHER => '/teacher/calendar',
             default => '/profile',
         };
     }

@@ -39,19 +39,6 @@ class FormInteractionTest extends DuskTestCase
     }
 
     /**
-     * Test that supervisor panel shows login when not authenticated
-     */
-    public function test_supervisor_panel_redirects_to_login(): void
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->visit('/supervisor-panel')
-                ->waitForLocation('/supervisor-panel/login', 10)
-                ->assertPathIs('/supervisor-panel/login')
-                ->screenshot('supervisor-redirects-to-login');
-        });
-    }
-
-    /**
      * Test that login form has required fields
      */
     public function test_login_form_has_required_fields(): void

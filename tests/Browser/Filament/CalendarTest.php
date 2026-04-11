@@ -29,48 +29,6 @@ class CalendarTest extends DuskTestCase
     }
 
     /**
-     * Test that the teacher panel login page loads correctly
-     */
-    public function test_teacher_login_page_loads(): void
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->visit('/teacher-panel/login')
-                ->waitFor('form', 10)
-                ->assertPresent('form')
-                ->assertPresent('input[type="email"]')
-                ->screenshot('teacher-login-page');
-        });
-    }
-
-    /**
-     * Test that the academic teacher panel login page loads correctly
-     */
-    public function test_academic_teacher_login_page_loads(): void
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->visit('/academic-teacher-panel/login')
-                ->waitFor('form', 10)
-                ->assertPresent('form')
-                ->assertPresent('input[type="email"]')
-                ->screenshot('academic-teacher-login-page');
-        });
-    }
-
-    /**
-     * Test that the supervisor panel login page loads correctly
-     */
-    public function test_supervisor_login_page_loads(): void
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->visit('/supervisor-panel/login')
-                ->waitFor('form', 10)
-                ->assertPresent('form')
-                ->assertPresent('input[type="email"]')
-                ->screenshot('supervisor-login-page');
-        });
-    }
-
-    /**
      * Test super admin can login and access dashboard
      *
      * Note: Skipped due to UserFactory schema issues

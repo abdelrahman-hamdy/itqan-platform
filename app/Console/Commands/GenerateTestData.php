@@ -1016,9 +1016,9 @@ class GenerateTestData extends Command
             [
                 ['super_admin', 'super@'.$domain, '/admin'],
                 ['admin', 'admin@'.$domain, '/panel'],
-                ['quran_teacher', 'quran.teacher@'.$domain, '/teacher-panel'],
-                ['academic_teacher', 'academic.teacher@'.$domain, '/academic-teacher-panel'],
-                ['supervisor', 'supervisor@'.$domain, '/supervisor-panel'],
+                ['quran_teacher', 'quran.teacher@'.$domain, '/teacher/*'],
+                ['academic_teacher', 'academic.teacher@'.$domain, '/teacher/*'],
+                ['supervisor', 'supervisor@'.$domain, '/manage/*'],
                 ['student', 'student@'.$domain, '/student/*'],
                 ['parent', 'parent@'.$domain, '/parent/*'],
             ]

@@ -278,29 +278,11 @@ class ComprehensiveRouteChecker extends Command
                 return false;
             }
 
-            // Role-based panel filtering
-            if ($role === 'quran_teacher') {
-                // Quran teachers should test teacher-panel routes
-                if (str_contains($uri, 'academic-teacher-panel') || str_contains($uri, 'panel/')) {
-                    if (! str_contains($uri, 'teacher-panel')) {
-                        return false;
-                    }
-                }
-            } elseif ($role === 'academic_teacher') {
-                // Academic teachers should test academic-teacher-panel routes
-                if (str_contains($uri, 'teacher-panel') && ! str_contains($uri, 'academic-teacher-panel')) {
-                    return false;
-                }
-            } elseif ($role === 'student') {
-                // Students should test student routes
-                if (str_contains($uri, '-panel/') || str_contains($uri, 'panel/')) {
-                    return false;
-                }
-            } elseif ($role === 'parent') {
-                // Parents should test parent routes
-                if (str_contains($uri, '-panel/') || str_contains($uri, 'panel/')) {
-                    return false;
-                }
+            // Only admins/super admins use Filament panels (/panel, /admin).
+            // Route::getUri() returns the URI without a leading slash.
+            if (! in_array($role, ['admin', 'super_admin'], true)
+                && (str_starts_with($uri, 'panel') || str_starts_with($uri, 'admin'))) {
+                return false;
             }
 
             return true;

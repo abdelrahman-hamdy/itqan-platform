@@ -317,7 +317,6 @@ abstract class BaseQuranTrialRequestResource extends Resource
                 $panelId = filament()->getCurrentPanel()?->getId();
 
                 $resourceClass = match ($panelId) {
-                    'teacher' => \App\Filament\Teacher\Resources\QuranSessionResource::class,
                     'academy' => \App\Filament\Academy\Resources\QuranSessionResource::class,
                     default => \App\Filament\Resources\QuranSessionResource::class,
                 };

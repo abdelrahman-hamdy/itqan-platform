@@ -9,8 +9,6 @@ namespace App\Enums;
  *
  * Defines all actions that can be performed on calendar events.
  * Used for action buttons and permission checks.
- *
- * @see \App\Filament\Shared\Widgets\UnifiedCalendarWidget
  */
 enum CalendarEventAction: string
 {

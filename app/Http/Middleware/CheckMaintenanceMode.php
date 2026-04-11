@@ -29,12 +29,6 @@ class CheckMaintenanceMode
         'build/*',
         '@vite/*',
         'maintenance',
-        'supervisor-panel/*',
-        'supervisor-panel',
-        'teacher-panel/*',
-        'teacher-panel',
-        'academic-teacher-panel/*',
-        'academic-teacher-panel',
         'panel/*',
         'panel',
     ];

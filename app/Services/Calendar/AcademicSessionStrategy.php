@@ -9,8 +9,6 @@ use App\Enums\InteractiveCourseStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Shared\Traits\ValidatesConflicts;
-use App\Filament\Shared\Widgets\CalendarColorLegendWidget;
-use App\Filament\Shared\Widgets\UnifiedCalendarWidget;
 use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseSession;
@@ -371,17 +369,6 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         }
 
         return $createdCount;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getFooterWidgets(): array
-    {
-        return [
-            UnifiedCalendarWidget::class,
-            CalendarColorLegendWidget::class,
-        ];
     }
 
     /**

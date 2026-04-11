@@ -14,9 +14,8 @@ use Illuminate\Support\Facades\Auth;
 /**
  * Base controller for Supervisor education frontend.
  *
- * Provides helper methods that mirror the scoping logic in
- * App\Filament\Supervisor\Resources\BaseSupervisorResource so that
- * the web frontend and Filament panel share identical data boundaries.
+ * Provides helper methods used by all supervisor/admin web controllers to
+ * scope data consistently across the frontend.
  *
  * For super_admin and admin roles, returns ALL teachers/data in the academy
  * (no supervisor-based scoping). For supervisors, scopes to assigned teachers.

@@ -15,7 +15,6 @@ use App\Models\QuranSession;
  * Defines all session types that can be displayed on the teacher calendar.
  * Used for type-safe event identification, color coding, and role-based filtering.
  *
- * @see \App\Filament\Shared\Widgets\UnifiedCalendarWidget
  * @see \App\ValueObjects\CalendarEventId
  */
 enum CalendarSessionType: string

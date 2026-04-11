@@ -6,8 +6,6 @@ use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
-use App\Filament\Shared\Widgets\CalendarColorLegendWidget;
-use App\Filament\Shared\Widgets\UnifiedCalendarWidget;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
 use App\Models\QuranIndividualCircle;
@@ -415,17 +413,6 @@ class QuranSessionStrategy extends AbstractSessionStrategy
 
         // Generate trial session using the session service
         return $this->sessionService->createTrialSession($trialRequest, $data);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getFooterWidgets(): array
-    {
-        return [
-            UnifiedCalendarWidget::class,
-            CalendarColorLegendWidget::class,
-        ];
     }
 
     /**

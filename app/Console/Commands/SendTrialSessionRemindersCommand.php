@@ -269,17 +269,7 @@ class SendTrialSessionRemindersCommand extends Command
      */
     private function sendTeacherReminder(QuranSession $session): void
     {
-        // Build session URL for teacher using the named Filament route.
-        // Falls back to a relative URL if the route is not available (e.g. in test env).
-        try {
-            $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
-            $sessionUrl = route('filament.teacher.resources.quran-sessions.view', [
-                'subdomain' => $subdomain,
-                'record' => $session->id,
-            ]);
-        } catch (\Exception $e) {
-            $sessionUrl = "/teacher-panel/quran-sessions/{$session->id}";
-        }
+        $sessionUrl = $this->notificationService->getUrlBuilder()->getTeacherCircleUrl($session);
 
         // Use role-specific TRIAL_SESSION_REMINDER_TEACHER type
         $this->notificationService->send(

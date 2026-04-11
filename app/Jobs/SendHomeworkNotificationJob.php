@@ -181,17 +181,26 @@ class SendHomeworkNotificationJob implements ShouldQueue
 
     /**
      * Get teacher-facing URL for the homework submission.
-     * Uses the appropriate panel path based on submission type.
+     *
+     * Academic submissions have a dedicated grading screen under /teacher/homework;
+     * interactive course submissions are reviewed on the session page itself because
+     * the frontend grading controller only handles academic submissions.
      */
     private function getTeacherHomeworkUrl(Model $submission): string
     {
-        if ($submission instanceof InteractiveCourseHomeworkSubmission) {
-            // Interactive course homework is managed through the course panel path
-            return "/academic-teacher-panel/interactive-course-homework-submissions/{$submission->id}";
+        $subdomain = $submission->academy?->subdomain ?? DefaultAcademy::subdomain();
+
+        if ($submission instanceof InteractiveCourseHomeworkSubmission && $submission->session) {
+            return route('teacher.interactive-sessions.show', [
+                'subdomain' => $subdomain,
+                'session'   => $submission->session->id,
+            ]);
         }
 
-        // Academic homework submissions (default)
-        return "/academic-teacher-panel/homework-submissions/{$submission->id}";
+        return route('teacher.homework.grade', [
+            'subdomain'    => $subdomain,
+            'submissionId' => $submission->id,
+        ]);
     }
 
     /**

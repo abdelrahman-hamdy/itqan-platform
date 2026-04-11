@@ -200,33 +200,14 @@ graph LR
             <td><strong>Academy</strong></td>
             <td><code>app/Filament/Academy/</code></td>
             <td><code>/panel/{subdomain}</code></td>
-            <td>admin, supervisor</td>
+            <td>admin</td>
             <td>Advanced academy config, packages, pricing (supplementary)</td>
-        </tr>
-        <tr>
-            <td><strong>Teacher</strong> (Quran)</td>
-            <td><code>app/Filament/Teacher/</code></td>
-            <td><code>/teacher-panel</code></td>
-            <td>quran_teacher</td>
-            <td>Optional alternative teacher interface</td>
-        </tr>
-        <tr>
-            <td><strong>AcademicTeacher</strong></td>
-            <td><code>app/Filament/AcademicTeacher/</code></td>
-            <td><code>/academic-teacher-panel</code></td>
-            <td>academic_teacher</td>
-            <td>Optional alternative teacher interface</td>
-        </tr>
-        <tr>
-            <td><strong>Supervisor</strong></td>
-            <td><code>app/Filament/Supervisor/</code></td>
-            <td><code>/supervisor-panel</code></td>
-            <td>supervisor</td>
-            <td>Legacy — now uses <code>/manage/dashboard</code> instead</td>
         </tr>
     </tbody>
 </table>
 </div>
+
+<p>Teachers, academic teachers, and supervisors no longer have dedicated Filament panels. They use the frontend routes under <code>/teacher</code> (Quran &amp; academic teachers) and <code>/manage</code> (supervisors, academy admins, super admins) respectively.</p>
 
 <h2 id="request-lifecycle">Request Lifecycle</h2>
 

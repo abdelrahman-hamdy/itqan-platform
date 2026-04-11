@@ -7,7 +7,6 @@
  * based on user roles and academy context.
  */
 
-use App\Filament\Supervisor\Widgets\SupervisorStatsWidget;
 use App\Filament\Widgets\AcademyStatsWidget;
 use App\Filament\Widgets\SuperAdminStatsWidget;
 use Livewire\Livewire;
@@ -73,68 +72,6 @@ describe('AcademyStatsWidget', function () {
 
         Livewire::test(AcademyStatsWidget::class)
             ->assertOk();
-    });
-});
-
-describe('QuranTeacherOverviewWidget', function () {
-    /**
-     * SKIPPED: QuranCircleFactory uses outdated column names (name_ar, name_en)
-     * but the table now uses consolidated 'name' column.
-     * Re-enable once factory is updated to match current schema.
-     */
-    it('shows only teacher\'s own data')->skip(
-        'QuranCircleFactory uses outdated schema - needs update'
-    );
-
-    it('is only visible to Quran teachers', function () {
-        $academy = createAcademy();
-        $teacher = createQuranTeacher($academy);
-
-        $this->actingAs($teacher);
-        setTenantContext($academy);
-
-        // Teacher should be able to see the widget
-        expect($teacher->isQuranTeacher())->toBeTrue();
-    });
-});
-
-describe('AcademicTeacherOverviewWidget', function () {
-    /**
-     * SKIPPED: AcademicSubscriptionFactory has schema issues with related models.
-     * Re-enable once factory is updated to match current schema.
-     */
-    it('shows only teacher\'s own data')->skip(
-        'AcademicSubscriptionFactory uses outdated schema - needs update'
-    );
-});
-
-describe('SupervisorStatsWidget', function () {
-    it('shows supervised teachers data only', function () {
-        $academy = createAcademy();
-        $supervisor = createSupervisor($academy);
-
-        $teacher1 = createQuranTeacher($academy);
-        $teacher2 = createQuranTeacher($academy);
-
-        // Assign teacher1 to supervisor
-        // This depends on your supervisor responsibility system
-        // For now, just test the widget renders
-
-        $this->actingAs($supervisor);
-        setTenantContext($academy);
-
-        Livewire::test(SupervisorStatsWidget::class)
-            ->assertOk();
-    });
-
-    it('is only visible to supervisors', function () {
-        $academy = createAcademy();
-        $supervisor = createSupervisor($academy);
-
-        $this->actingAs($supervisor);
-        setTenantContext($academy);
-
-        expect($supervisor->hasRole('supervisor'))->toBeTrue();
     });
 });
 

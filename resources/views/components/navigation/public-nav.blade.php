@@ -150,10 +150,11 @@
             $mobileProfileRouteName = $mobileUser->isTeacher() ? 'teacher.profile' : 'student.profile';
             $mobileIsAdminOrSuperAdminOrSupervisor = $mobileUser->isAdmin() || $mobileUser->isSuperAdmin() || $mobileUser->isSupervisor();
 
-            // Determine dashboard route for admin roles
+            // Determine dashboard route for admin roles.
+            // Supervisors use the frontend /manage panel; admins/super admins use Filament.
             $mobileDashboardRoute = match($mobileUser->user_type) {
-              'supervisor' => route('filament.supervisor.pages.dashboard'),
-              'admin' => route('filament.admin.pages.dashboard'),
+              'supervisor' => route('manage.dashboard', ['subdomain' => $academy->subdomain]),
+              'admin' => '/panel',
               'super_admin' => route('filament.admin.pages.dashboard'),
               default => route('filament.admin.pages.dashboard')
             };

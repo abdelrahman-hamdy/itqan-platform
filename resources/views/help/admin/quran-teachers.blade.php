@@ -96,8 +96,8 @@
     <i class="ri-lightbulb-line help-callout-icon"></i>
     <div>
         أبلغ المعلم بكود المعلم <code>QT-XXXX</code> وبريده الإلكتروني.
-        يستطيع المعلم تسجيل الدخول بشكل أساسي عبر الموقع الأمامي على رابط
-        <strong>/login</strong> في نطاق أكاديميتك. ولوحة Filament (<strong>/teacher-panel</strong>) متاحة كواجهة بديلة اختيارية.
+        يستطيع المعلم تسجيل الدخول عبر الموقع الأمامي على رابط
+        <strong>/login</strong> في نطاق أكاديميتك، وسيُوجَّه تلقائيًا إلى لوحة المعلم على <code>/teacher</code>.
     </div>
 </div>
 

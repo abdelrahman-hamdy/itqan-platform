@@ -9,38 +9,21 @@ trait HasPermissions
 {
     /**
      * Filament User Interface Implementation
+     *
+     * Only two Filament panels remain: `admin` (super-admin system panel)
+     * and `academy` (academy admin panel). Teachers and supervisors use the
+     * frontend panels under `/teacher` and `/manage` respectively.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        // Teacher panels are strictly for their respective teacher types only.
-        // Even super admins should not access these — they have their own panels.
-        if ($panel->getId() === 'teacher') {
-            return $this->user_type === UserType::QURAN_TEACHER->value;
-        }
-
-        if ($panel->getId() === 'academic-teacher') {
-            return $this->user_type === UserType::ACADEMIC_TEACHER->value;
-        }
-
-        // Super admins can access all other panels
         if ($this->isSuperAdmin()) {
             return true;
         }
 
-        // For regular users, check specific panel permissions
-        switch ($panel->getId()) {
-            case 'admin':
-                return false; // Only super admins can access admin panel
-
-            case 'academy':
-                return $this->user_type === UserType::ADMIN->value;
-
-            case 'supervisor':
-                return $this->isSupervisor();
-
-            default:
-                return false;
-        }
+        return match ($panel->getId()) {
+            'academy' => $this->user_type === UserType::ADMIN->value,
+            default => false,
+        };
     }
 
     /**

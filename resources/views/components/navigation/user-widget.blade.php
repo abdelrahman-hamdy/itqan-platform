@@ -30,9 +30,11 @@
         $profileRoute = route('student.profile', ['subdomain' => $subdomain]);
     }
 
-    // Filament panel route for admin roles
+    // Dashboard route per user type. Supervisors and admins use the frontend /manage
+    // panel; super admins keep access to the Filament admin panel; academy admins
+    // also keep the Filament Academy panel at /panel.
     $filamentRoute = match($user->user_type) {
-        'supervisor' => route('filament.supervisor.pages.dashboard'),
+        'supervisor' => route('manage.dashboard', ['subdomain' => $subdomain]),
         'admin' => '/panel',
         'super_admin' => route('filament.admin.pages.dashboard'),
         default => null,
