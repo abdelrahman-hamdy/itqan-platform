@@ -22,6 +22,7 @@ class StudentProfile extends Model
         'first_name',
         'last_name',
         'phone',
+        'phone_country_code',
         'avatar',
         'student_code',
         'grade_level_id',

@@ -56,7 +56,7 @@
               :required="false"
               countryCodeField="phone_country_code"
               countryField="phone_country"
-              initialCountry="sa"
+              :initialCountry="strtolower(\App\Helpers\CountryList::dialCodeToIso($parent?->phone_country_code, 'SA'))"
               :value="$parent?->phone ?? ''"
               :error="$errors->first('phone')"
           />
@@ -70,7 +70,7 @@
               :required="false"
               countryCodeField="secondary_phone_country_code"
               countryField="secondary_phone_country"
-              initialCountry="sa"
+              :initialCountry="strtolower(\App\Helpers\CountryList::dialCodeToIso($parent?->secondary_phone_country_code, 'SA'))"
               :value="$parent?->secondary_phone ?? ''"
               :error="$errors->first('secondary_phone')"
           />

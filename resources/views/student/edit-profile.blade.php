@@ -55,7 +55,7 @@
               :required="false"
               countryCodeField="phone_country_code"
               countryField="phone_country"
-              initialCountry="sa"
+              :initialCountry="strtolower(\App\Helpers\CountryList::dialCodeToIso($studentProfile?->phone_country_code, 'SA'))"
               :value="$studentProfile?->phone ?? ''"
               :error="$errors->first('phone')"
           />

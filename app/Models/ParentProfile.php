@@ -23,12 +23,14 @@ class ParentProfile extends Model
         'first_name',
         'last_name',
         'phone',
+        'phone_country_code',
         'avatar',
         'parent_code',
         'occupation',
         'relationship_type',
         'address',
         'secondary_phone',
+        'secondary_phone_country_code',
         'preferred_contact_method',
         'admin_notes', // Visible to admin only
     ];

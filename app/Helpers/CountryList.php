@@ -334,6 +334,58 @@ class CountryList
     }
 
     /**
+     * Map an international dial code (e.g. "+966", "966", "00966") to an
+     * ISO 3166-1 alpha-2 country code. Returns the default when no match.
+     *
+     * Useful for rehydrating the phone country picker on edit forms and
+     * for payment gateway country resolution.
+     */
+    public static function dialCodeToIso(?string $dialCode, ?string $default = null): ?string
+    {
+        if ($dialCode === null || $dialCode === '') {
+            return $default;
+        }
+
+        $digits = preg_replace('/\D+/', '', $dialCode) ?? '';
+        if ($digits === '') {
+            return $default;
+        }
+
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+
+        foreach ([3, 2] as $len) {
+            $prefix = substr($digits, 0, $len);
+            if (isset(self::DIAL_CODE_TO_ISO[$prefix])) {
+                return self::DIAL_CODE_TO_ISO[$prefix];
+            }
+        }
+
+        return $default;
+    }
+
+    /**
+     * Dial code → ISO alpha-2. Longer prefixes are checked first by the
+     * `dialCodeToIso()` lookup, so 3-digit codes always win over 2-digit
+     * overlaps (e.g. "+970" Palestine beats "+97" ambiguity).
+     *
+     * Keep in sync with the intl-tel-input `onlyCountries` list emitted by
+     * `CountryList::getPhoneCodes()` above.
+     *
+     * @var array<string, string>
+     */
+    private const DIAL_CODE_TO_ISO = [
+        '966' => 'SA', '971' => 'AE', '974' => 'QA', '965' => 'KW',
+        '973' => 'BH', '968' => 'OM', '962' => 'JO', '961' => 'LB',
+        '964' => 'IQ', '963' => 'SY', '967' => 'YE', '970' => 'PS',
+        '972' => 'PS', '211' => 'SS', '212' => 'MA', '213' => 'DZ',
+        '216' => 'TN', '218' => 'LY', '249' => 'SD', '252' => 'SO',
+        '253' => 'DJ', '269' => 'KM', '222' => 'MR',
+        '20' => 'EG',
+    ];
+
+    /**
      * Get the phone country names object for JavaScript (used by intl-tel-input i18n).
      * Returns [lowercase_code => localized_name].
      */

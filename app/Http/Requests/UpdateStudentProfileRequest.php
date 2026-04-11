@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\Helpers\CountryList;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -28,6 +28,7 @@ class UpdateStudentProfileRequest extends FormRequest
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
+            'phone_country_code' => 'nullable|string|max:5',
             'birth_date' => 'nullable|date',
             'gender' => 'nullable|in:male,female',
             'nationality' => 'nullable|string|in:'.CountryList::validationRule(),

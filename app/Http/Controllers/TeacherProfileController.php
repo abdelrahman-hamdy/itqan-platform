@@ -11,7 +11,6 @@ use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
-use App\Models\InteractiveCourseEnrollment;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
@@ -317,6 +316,7 @@ class TeacherProfileController extends Controller
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'phone' => $validated['phone'] ?? $user->phone,
+            'phone_country_code' => $validated['phone_country_code'] ?? $user->phone_country_code,
         ]);
 
         return back()->with('success', 'تم تحديث الملف الشخصي بنجاح');

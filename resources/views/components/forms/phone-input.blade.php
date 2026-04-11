@@ -27,6 +27,20 @@
         'jo' => '790123456',
     ];
     $defaultPlaceholder = $phoneFormats[$initialCountry] ?? '512345678';
+
+    // Seed hidden fields from the resolved initial country so a fast submit
+    // (before intl-tel-input finishes booting) still carries the right dial
+    // code and ISO through to the request.
+    $initialIso = strtoupper($initialCountry ?: 'sa');
+    $dialCodes = [
+        'SA' => '+966', 'AE' => '+971', 'QA' => '+974', 'KW' => '+965',
+        'BH' => '+973', 'OM' => '+968', 'JO' => '+962', 'LB' => '+961',
+        'IQ' => '+964', 'SY' => '+963', 'YE' => '+967', 'PS' => '+970',
+        'EG' => '+20',  'MA' => '+212', 'DZ' => '+213', 'TN' => '+216',
+        'LY' => '+218', 'SD' => '+249', 'SO' => '+252', 'DJ' => '+253',
+        'KM' => '+269', 'MR' => '+222',
+    ];
+    $initialDialCode = $dialCodes[$initialIso] ?? '+966';
 @endphp
 
 <div class="mb-4" id="{{ $inputId }}_wrapper">
@@ -47,8 +61,8 @@
         >
     </div>
 
-    <input type="hidden" name="{{ $countryCodeField }}" id="{{ $inputId }}_country_code" value="+966">
-    <input type="hidden" name="{{ $countryField }}" id="{{ $inputId }}_country" value="SA">
+    <input type="hidden" name="{{ $countryCodeField }}" id="{{ $inputId }}_country_code" value="{{ old($countryCodeField, $initialDialCode) }}">
+    <input type="hidden" name="{{ $countryField }}" id="{{ $inputId }}_country" value="{{ old($countryField, $initialIso) }}">
 
     @if($helperText)
         <p class="mt-1.5 text-xs text-gray-500">{{ $helperText }}</p>

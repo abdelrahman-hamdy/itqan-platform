@@ -41,6 +41,7 @@ class UpdateParentProfileRequest extends FormRequest
             'phone' => 'nullable|string|max:20',
             'phone_country_code' => 'nullable|string|max:5',
             'secondary_phone' => 'nullable|string|max:20',
+            'secondary_phone_country_code' => 'nullable|string|max:5',
             'address' => 'nullable|string|max:500',
             'occupation' => 'nullable|string|max:255',
             'preferred_contact_method' => 'nullable|in:phone,email,sms,whatsapp',

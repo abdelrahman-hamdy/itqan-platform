@@ -211,6 +211,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
         'last_name',
         'email',
         'phone',
+        'phone_country_code',
         'gender', // Used for teacher profiles via API
         'password',
         'plain_password',

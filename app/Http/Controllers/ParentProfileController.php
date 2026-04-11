@@ -2,31 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ParentProfile;
-use Log;
-use App\Enums\RelationshipType;
-use App\Models\QuranSubscription;
-use App\Models\AcademicSubscription;
-use App\Models\CourseSubscription;
-use App\Models\QuranSession;
-use App\Models\AcademicSession;
-use App\Models\Certificate;
-use App\Models\Payment;
-use Illuminate\Support\Collection;
-use App\Models\QuranCircle;
-use App\Models\InteractiveCourse;
-use App\Models\RecordedCourse;
-use App\Models\QuranTrialRequest;
 use App\Constants\DefaultAcademy;
 use App\Enums\AttendanceStatus;
+use App\Enums\RelationshipType;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Http\Requests\UpdateParentProfileRequest;
+use App\Models\AcademicSession;
+use App\Models\AcademicSubscription;
+use App\Models\Certificate;
+use App\Models\CourseSubscription;
+use App\Models\InteractiveCourse;
+use App\Models\ParentProfile;
+use App\Models\Payment;
+use App\Models\QuranCircle;
+use App\Models\QuranSession;
+use App\Models\QuranSubscription;
+use App\Models\QuranTrialRequest;
+use App\Models\RecordedCourse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Log;
 
 /**
  * Parent Profile Controller
@@ -180,6 +180,7 @@ class ParentProfileController extends Controller
         $user->update([
             'name' => trim($validated['first_name'].' '.$validated['last_name']),
             'phone' => $validated['phone'] ?? $user->phone,
+            'phone_country_code' => $validated['phone_country_code'] ?? $user->phone_country_code,
         ]);
 
         return redirect()->route('parent.profile', ['subdomain' => $user->academy->subdomain ?? DefaultAcademy::subdomain()])

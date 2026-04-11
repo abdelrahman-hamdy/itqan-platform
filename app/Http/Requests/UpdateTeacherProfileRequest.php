@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\Enums\EducationalQualification;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
 
@@ -46,6 +46,7 @@ class UpdateTeacherProfileRequest extends FormRequest
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
+            'phone_country_code' => 'nullable|string|max:5',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'preview_video' => 'nullable|file|mimes:mp4,webm,mov|max:51200',
             'remove_preview_video' => 'nullable|boolean',
