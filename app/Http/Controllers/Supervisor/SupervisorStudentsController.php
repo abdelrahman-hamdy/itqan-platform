@@ -552,13 +552,15 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 
         // Attendance stats — read from meeting_attendances (single source of truth).
         // Filter by session_type so we only count quran + academic (excludes interactive).
-        $allAttendance = MeetingAttendance::where('user_id', $student->id)
+        // Two aggregate COUNT queries instead of loading every row and counting in PHP.
+        $attendanceBase = MeetingAttendance::where('user_id', $student->id)
             ->where('user_type', 'student')
-            ->whereIn('session_type', ['individual', 'group', 'academic'])
-            ->get();
+            ->whereIn('session_type', ['individual', 'group', 'academic']);
 
-        $totalAttendanceRecords = $allAttendance->count();
-        $presentCount = $allAttendance->where('attendance_status', AttendanceStatus::ATTENDED->value)->count();
+        $totalAttendanceRecords = (clone $attendanceBase)->count();
+        $presentCount = (clone $attendanceBase)
+            ->where('attendance_status', AttendanceStatus::ATTENDED->value)
+            ->count();
         $attendanceRate = $totalAttendanceRecords > 0 ? round(($presentCount / $totalAttendanceRecords) * 100) : 0;
 
         // Recent sessions (last 10)

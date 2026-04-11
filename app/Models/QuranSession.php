@@ -586,11 +586,13 @@ class QuranSession extends BaseSession implements RecordingCapable
                         'session_duration_minutes' => $this->duration_minutes,
                     ]
                 );
-
-                StudentSessionReport::where('session_id', $this->id)
-                    ->where('student_id', $student->id)
-                    ->update(['attendance_status' => $status]);
             }
+
+            // Batch-update StudentSessionReport for all students in one query
+            // (avoids N per-student UPDATEs inside the enclosing transaction).
+            StudentSessionReport::where('session_id', $this->id)
+                ->whereIn('student_id', $students->pluck('id'))
+                ->update(['attendance_status' => $status]);
 
             Log::info('Session attendance recorded', [
                 'session_id' => $this->id,

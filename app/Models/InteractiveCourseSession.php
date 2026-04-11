@@ -385,7 +385,15 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * تحديث عدد الحضور — count of students marked attended/late/partially_attended.
+     * تحديث عدد الحضور — count of students who completed (a meaningful part of) this session.
+     *
+     * Intentionally excludes LEFT (left early) because for interactive courses the
+     * cached attendance_count feeds the course completion metric, and students who
+     * left early should not be credited as having completed a session. This is the
+     * stricter semantic compared to StudentStatisticsService::calculateAttendanceRate,
+     * which treats LEFT as "present" because overall attendance rate measures showed-up
+     * rather than completed.
+     *
      * Reads from meeting_attendances (single source of truth).
      */
     public function updateAttendanceCount(): void
