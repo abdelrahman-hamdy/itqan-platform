@@ -17,9 +17,12 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 
 class SupportTicketService
 {
+    private const REPLY_DEDUP_TTL_SECONDS = 5;
+
     public function __construct(
         private readonly NotificationRepository $notificationRepository,
     ) {}
@@ -66,15 +69,32 @@ class SupportTicketService
 
     /**
      * Add a reply to a ticket.
+     *
+     * Idempotency via Redis cache: if the same user just posted an identical body
+     * on the same ticket within the last few seconds, return the existing reply
+     * instead of creating a duplicate. Guards against accidental double-clicks
+     * and replayed POSTs.
      */
     public function addReply(SupportTicket $ticket, User $user, string $body): SupportTicketReply
     {
         $ticket->loadMissing('user');
 
+        $body = trim($body);
+        $dedupKey = sprintf('support_reply_dedup:%d:%d:%s', $ticket->id, $user->id, md5($body));
+
+        if ($cachedReplyId = Cache::get($dedupKey)) {
+            $existing = SupportTicketReply::find($cachedReplyId);
+            if ($existing !== null) {
+                return $existing;
+            }
+        }
+
         $reply = $ticket->replies()->create([
             'user_id' => $user->id,
             'body' => $body,
         ]);
+
+        Cache::put($dedupKey, $reply->id, self::REPLY_DEDUP_TTL_SECONDS);
 
         if ($user->isAdmin() || $user->isSupervisor()) {
             // Admin/supervisor replied — notify the ticket owner
@@ -165,13 +185,17 @@ class SupportTicketService
             });
         }
 
+        if (! empty($filters['user_id'])) {
+            $query->where('user_id', $filters['user_id']);
+        }
+
         return $query->latest()->paginate(20);
     }
 
     /**
      * Get user IDs within a supervisor's scope (their assigned teachers + those teachers' students).
      *
-     * @return int[]|null  null means admin (no scoping needed)
+     * @return int[]|null null means admin (no scoping needed)
      */
     public function getScopedUserIdsForSupervisor(
         bool $isAdmin,

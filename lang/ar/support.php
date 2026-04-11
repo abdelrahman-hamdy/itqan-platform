@@ -17,6 +17,7 @@ return [
     'submit' => 'إرسال',
     'reply_placeholder' => 'اكتب ردك هنا...',
     'send_reply' => 'إرسال الرد',
+    'sending' => 'جار الإرسال...',
 
     // List
     'no_tickets' => 'لا توجد مشاكل مرسلة',
@@ -66,6 +67,15 @@ return [
         'replied_by' => 'رد بواسطة',
         'no_tickets' => 'لا توجد مشاكل',
         'no_tickets_description' => 'لم يتم إرسال أي مشكلة حتى الآن.',
+        'back_to_all' => 'العودة إلى كل المشاكل',
+        'related_actions' => 'إجراءات ذات صلة',
+        'view_student_profile' => 'عرض ملف الطالب',
+        'view_teacher_profile' => 'عرض ملف المعلم',
+        'view_student_subscriptions' => 'عرض اشتراكات الطالب',
+        'view_teacher_subscriptions' => 'عرض اشتراكات المعلم',
+        'view_user_tickets' => 'كل البلاغات من :name',
+        'filtered_by_user' => 'تم الفلترة حسب: :name',
+        'clear_filter' => 'إزالة الفلتر',
 
         // Settings
         'settings_title' => 'إعدادات نموذج التواصل',

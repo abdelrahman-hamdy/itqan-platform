@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Supervisor;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -131,6 +132,28 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             });
         }
 
+        // Filter by reporting student (deep-link from support tickets)
+        if ($studentId = $request->input('student_id')) {
+            $studentId = (int) $studentId;
+            $filtered = $filtered->filter(fn ($s) => $s['student_user']?->id === $studentId);
+        }
+
+        // Filter by reporting teacher's User id (deep-link from support tickets).
+        // Note: QuranSubscription.quran_teacher_id is a User id, while
+        // AcademicSubscription.teacher_id points to AcademicTeacherProfile.id, so we
+        // resolve the academic teacher's User id via the relationship.
+        if ($teacherUserId = $request->input('teacher_user_id')) {
+            $teacherUserId = (int) $teacherUserId;
+            $filtered = $filtered->filter(function ($s) use ($teacherUserId) {
+                $model = $s['model'];
+                if ($s['type'] === 'quran') {
+                    return (int) $model->quran_teacher_id === $teacherUserId;
+                }
+
+                return (int) ($model->teacher?->user_id ?? 0) === $teacherUserId;
+            });
+        }
+
         // Sort
         $sort = $request->get('sort', 'newest');
         $filtered = match ($sort) {
@@ -153,6 +176,14 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
+        // Resolve the deep-link filter user (for the "filtered by NAME" chip).
+        $filterUser = null;
+        if ($studentIdParam = $request->input('student_id')) {
+            $filterUser = User::query()->find($studentIdParam);
+        } elseif ($teacherUserIdParam = $request->input('teacher_user_id')) {
+            $filterUser = User::query()->find($teacherUserIdParam);
+        }
+
         return view('supervisor.subscriptions.index', [
             'subscriptions' => $paginated,
             'totalCount' => $subscriptions->count(),
@@ -164,6 +195,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'filteredCount' => $filteredValues->count(),
             'isAdmin' => $isAdmin,
             'canCreate' => $this->canCreateSubscriptions(),
+            'filterUser' => $filterUser,
         ]);
     }
 

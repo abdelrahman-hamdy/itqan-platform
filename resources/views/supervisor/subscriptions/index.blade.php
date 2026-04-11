@@ -3,13 +3,21 @@
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
 
-    $hasActiveFilters = request('search') || request('type') || request('status');
+    $userFilterParam = request('student_id') ? 'student_id' : (request('teacher_user_id') ? 'teacher_user_id' : null);
+    $hasUserFilter = $userFilterParam !== null && ($filterUser ?? null) !== null;
+
+    $hasActiveFilters = request('search') || request('type') || request('status') || $hasUserFilter;
 
     $filterCount = (request('search') ? 1 : 0)
         + (request('type') ? 1 : 0)
-        + (request('status') ? 1 : 0);
+        + (request('status') ? 1 : 0)
+        + ($hasUserFilter ? 1 : 0);
 
     $currentSort = request('sort', 'newest');
+
+    $clearUserFilterUrl = $hasUserFilter
+        ? request()->fullUrlWithQuery([$userFilterParam => null, 'page' => null])
+        : null;
 @endphp
 
 <div>
@@ -32,6 +40,19 @@
             </a>
         @endif
     </div>
+
+    @if($hasUserFilter)
+        <div class="mb-4 inline-flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+            <i class="ri-filter-3-line"></i>
+            <span>{{ __('support.supervisor.filtered_by_user', ['name' => $filterUser->name]) }}</span>
+            <a href="{{ $clearUserFilterUrl }}"
+               class="ms-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+               title="{{ __('support.supervisor.clear_filter') }}"
+               aria-label="{{ __('support.supervisor.clear_filter') }}">
+                <i class="ri-close-line text-xs"></i>
+            </a>
+        </div>
+    @endif
 
     <!-- Stats -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
@@ -154,6 +175,12 @@
                 <form method="GET" action="{{ route('manage.subscriptions.index', ['subdomain' => $subdomain]) }}" class="px-4 md:px-6 pb-4">
                     @if(request('sort'))
                         <input type="hidden" name="sort" value="{{ request('sort') }}">
+                    @endif
+                    @if(request('student_id'))
+                        <input type="hidden" name="student_id" value="{{ request('student_id') }}">
+                    @endif
+                    @if(request('teacher_user_id'))
+                        <input type="hidden" name="teacher_user_id" value="{{ request('teacher_user_id') }}">
                     @endif
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                         <div>

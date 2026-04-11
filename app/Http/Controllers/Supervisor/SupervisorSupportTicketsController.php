@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Supervisor;
 use App\Enums\SupportTicketReason;
 use App\Enums\SupportTicketStatus;
 use App\Models\SupportTicket;
+use App\Models\User;
 use App\Services\SupportTicketService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,6 +33,7 @@ class SupervisorSupportTicketsController extends BaseSupervisorWebController
             'status' => $request->get('status'),
             'reason' => $request->get('reason'),
             'search' => $request->get('search'),
+            'user_id' => $request->get('user_id'),
         ];
 
         $tickets = $this->service->getTicketsForSupervisor(
@@ -47,10 +49,15 @@ class SupervisorSupportTicketsController extends BaseSupervisorWebController
             $contactFormSettings = $this->service->getContactFormSettings($this->getAcademyId());
         }
 
+        $filterUser = ! empty($filters['user_id'])
+            ? User::query()->find($filters['user_id'])
+            : null;
+
         return view('supervisor.support-tickets.index', [
             'tickets' => $tickets,
             'stats' => $stats,
             'filters' => $filters,
+            'filterUser' => $filterUser,
             'reasons' => SupportTicketReason::options(),
             'statuses' => SupportTicketStatus::options(),
             'isAdmin' => $this->isAdminUser(),
@@ -58,13 +65,14 @@ class SupervisorSupportTicketsController extends BaseSupervisorWebController
         ]);
     }
 
-    public function show(string $subdomain, SupportTicket $ticket): View
+    public function show(Request $request, string $subdomain, SupportTicket $ticket): View
     {
         $ticket->load(['user', 'replies.user', 'closedByUser']);
 
         return view('supervisor.support-tickets.show', [
             'ticket' => $ticket,
             'isAdmin' => $this->isAdminUser(),
+            'backFilters' => $this->preservedListFilters($request),
         ]);
     }
 
@@ -77,17 +85,37 @@ class SupervisorSupportTicketsController extends BaseSupervisorWebController
         $this->service->addReply($ticket, Auth::user(), $request->input('body'));
 
         return redirect()
-            ->route('manage.support-tickets.show', ['subdomain' => $subdomain, 'ticket' => $ticket])
+            ->route('manage.support-tickets.show', array_merge(
+                ['subdomain' => $subdomain, 'ticket' => $ticket],
+                $this->preservedListFilters($request),
+            ))
             ->with('success', __('support.reply_sent'));
     }
 
-    public function close(string $subdomain, SupportTicket $ticket): RedirectResponse
+    public function close(Request $request, string $subdomain, SupportTicket $ticket): RedirectResponse
     {
         $this->service->closeTicket($ticket, Auth::user());
 
         return redirect()
-            ->route('manage.support-tickets.index', ['subdomain' => $subdomain])
+            ->route('manage.support-tickets.index', array_merge(
+                ['subdomain' => $subdomain],
+                $this->preservedListFilters($request),
+            ))
             ->with('success', __('support.ticket_closed'));
+    }
+
+    /**
+     * Filter params to round-trip across reply/close redirects so the
+     * supervisor lands back on the same filtered/paginated index view.
+     *
+     * @return array<string, string>
+     */
+    private function preservedListFilters(Request $request): array
+    {
+        return array_filter(
+            $request->only(['status', 'reason', 'search', 'user_id', 'page']),
+            fn ($v) => $v !== null && $v !== '',
+        );
     }
 
     public function updateSettings(Request $request, string $subdomain): RedirectResponse

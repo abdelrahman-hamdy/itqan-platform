@@ -2,16 +2,63 @@
 
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+    $backUrl = route('manage.support-tickets.index', array_merge(['subdomain' => $subdomain], $backFilters));
+    $isStudentReporter = $ticket->user->isStudent();
+    $isTeacherReporter = $ticket->user->isTeacher();
 @endphp
 
 <div>
     <x-ui.breadcrumb
         :items="[
-            ['label' => __('support.supervisor.page_title'), 'url' => route('manage.support-tickets.index', ['subdomain' => $subdomain])],
+            ['label' => __('support.supervisor.page_title'), 'route' => $backUrl],
             ['label' => __('support.ticket_detail')],
         ]"
         view-type="supervisor"
     />
+
+    <!-- Back to all issues -->
+    <a href="{{ $backUrl }}" class="inline-flex items-center gap-2 px-3 py-1.5 mb-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">
+        <i class="ri-arrow-right-line rtl:hidden"></i>
+        <i class="ri-arrow-left-line ltr:hidden"></i>
+        {{ __('support.supervisor.back_to_all') }}
+    </a>
+
+    <!-- Related actions for the reporting user -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-3 md:p-4 mb-6">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs text-gray-500 me-1">{{ __('support.supervisor.related_actions') }}:</span>
+
+            @if($isStudentReporter)
+                <a href="{{ route('manage.students.show', ['subdomain' => $subdomain, 'student' => $ticket->user_id]) }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium">
+                    <i class="ri-user-line"></i>
+                    {{ __('support.supervisor.view_student_profile') }}
+                </a>
+                <a href="{{ route('manage.subscriptions.index', ['subdomain' => $subdomain, 'student_id' => $ticket->user_id]) }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors text-xs font-medium">
+                    <i class="ri-bookmark-line"></i>
+                    {{ __('support.supervisor.view_student_subscriptions') }}
+                </a>
+            @elseif($isTeacherReporter)
+                <a href="{{ route('manage.teachers.show', ['subdomain' => $subdomain, 'teacher' => $ticket->user_id]) }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium">
+                    <i class="ri-graduation-cap-line"></i>
+                    {{ __('support.supervisor.view_teacher_profile') }}
+                </a>
+                <a href="{{ route('manage.subscriptions.index', ['subdomain' => $subdomain, 'teacher_user_id' => $ticket->user_id]) }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors text-xs font-medium">
+                    <i class="ri-bookmark-line"></i>
+                    {{ __('support.supervisor.view_teacher_subscriptions') }}
+                </a>
+            @endif
+
+            <a href="{{ route('manage.support-tickets.index', ['subdomain' => $subdomain, 'user_id' => $ticket->user_id]) }}"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors text-xs font-medium">
+                <i class="ri-history-line"></i>
+                {{ __('support.supervisor.view_user_tickets', ['name' => $ticket->user->name]) }}
+            </a>
+        </div>
+    </div>
 
     <!-- Ticket Info Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6 mb-6">
@@ -37,10 +84,18 @@
 
             @if($ticket->status === \App\Enums\SupportTicketStatus::OPEN)
                 <form action="{{ route('manage.support-tickets.close', ['subdomain' => $subdomain, 'ticket' => $ticket]) }}" method="POST"
-                      onsubmit="return confirm('{{ __('support.supervisor.close_confirm') }}')">
+                      x-data="{ submitting: false }"
+                      @submit="if (! confirm('{{ __('support.supervisor.close_confirm') }}')) { $event.preventDefault(); return; } submitting = true">
                     @csrf
-                    <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">
-                        <i class="ri-check-double-line"></i>
+                    @foreach($backFilters as $k => $v)
+                        <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+                    @endforeach
+                    <button type="submit"
+                            :disabled="submitting"
+                            :class="submitting ? 'opacity-60 cursor-not-allowed' : ''"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">
+                        <i class="ri-check-double-line" x-show="!submitting"></i>
+                        <i class="ri-loader-4-line animate-spin" x-show="submitting" x-cloak></i>
                         {{ __('support.supervisor.close_ticket') }}
                     </button>
                 </form>
@@ -112,20 +167,30 @@
 
         <!-- Admin Reply Form -->
         @if($ticket->status === \App\Enums\SupportTicketStatus::OPEN)
-            <form action="{{ route('manage.support-tickets.reply', ['subdomain' => $subdomain, 'ticket' => $ticket]) }}" method="POST" class="border-t border-gray-100 pt-4">
+            <form action="{{ route('manage.support-tickets.reply', ['subdomain' => $subdomain, 'ticket' => $ticket]) }}" method="POST"
+                  x-data="{ submitting: false }"
+                  @submit="submitting = true"
+                  class="border-t border-gray-100 pt-4">
                 @csrf
+                @foreach($backFilters as $k => $v)
+                    <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+                @endforeach
                 <div class="mb-3">
                     <textarea name="body" rows="3" required minlength="2" maxlength="2000"
-                              class="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm"
+                              :disabled="submitting"
+                              class="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm disabled:bg-gray-50"
                               placeholder="{{ __('support.reply_placeholder') }}">{{ old('body') }}</textarea>
                     @error('body')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
                 <button type="submit"
+                        :disabled="submitting"
+                        :class="submitting ? 'opacity-60 cursor-not-allowed' : ''"
                         class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium">
-                    <i class="ri-send-plane-line"></i>
-                    {{ __('support.send_reply') }}
+                    <i class="ri-send-plane-line" x-show="!submitting"></i>
+                    <i class="ri-loader-4-line animate-spin" x-show="submitting" x-cloak></i>
+                    <span x-text="submitting ? '{{ __('support.sending') }}' : '{{ __('support.send_reply') }}'"></span>
                 </button>
             </form>
         @endif

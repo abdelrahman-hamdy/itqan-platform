@@ -17,6 +17,7 @@ return [
     'submit' => 'Submit',
     'reply_placeholder' => 'Write your reply here...',
     'send_reply' => 'Send Reply',
+    'sending' => 'Sending...',
 
     // List
     'no_tickets' => 'No issues submitted',
@@ -66,6 +67,15 @@ return [
         'replied_by' => 'Replied by',
         'no_tickets' => 'No issues',
         'no_tickets_description' => 'No issues have been submitted yet.',
+        'back_to_all' => 'Back to all issues',
+        'related_actions' => 'Related actions',
+        'view_student_profile' => 'View student profile',
+        'view_teacher_profile' => 'View teacher profile',
+        'view_student_subscriptions' => 'View student subscriptions',
+        'view_teacher_subscriptions' => 'View teacher subscriptions',
+        'view_user_tickets' => 'All issues from :name',
+        'filtered_by_user' => 'Filtered by: :name',
+        'clear_filter' => 'Clear filter',
 
         // Settings
         'settings_title' => 'Contact Form Settings',

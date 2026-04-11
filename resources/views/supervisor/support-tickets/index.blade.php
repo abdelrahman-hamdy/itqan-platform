@@ -2,6 +2,16 @@
 
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+
+    $activeFilters = array_filter(
+        array_merge($filters, ['page' => request('page')]),
+        fn ($v) => $v !== null && $v !== '',
+    );
+
+    $hasUserFilter = ! empty($filters['user_id']) && ($filterUser ?? null) !== null;
+    $clearUserFilterUrl = $hasUserFilter
+        ? request()->fullUrlWithQuery(['user_id' => null, 'page' => null])
+        : null;
 @endphp
 
 <div>
@@ -53,9 +63,25 @@
         </div>
     </div>
 
+    @if($hasUserFilter)
+        <div class="mb-4 inline-flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800">
+            <i class="ri-filter-3-line"></i>
+            <span>{{ __('support.supervisor.filtered_by_user', ['name' => $filterUser->name]) }}</span>
+            <a href="{{ $clearUserFilterUrl }}"
+               class="ms-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-700 transition-colors"
+               title="{{ __('support.supervisor.clear_filter') }}"
+               aria-label="{{ __('support.supervisor.clear_filter') }}">
+                <i class="ri-close-line text-xs"></i>
+            </a>
+        </div>
+    @endif
+
     <!-- Filters -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
         <form method="GET" action="{{ route('manage.support-tickets.index', ['subdomain' => $subdomain]) }}" class="flex flex-wrap gap-3">
+            @if(! empty($filters['user_id']))
+                <input type="hidden" name="user_id" value="{{ $filters['user_id'] }}">
+            @endif
             <div class="flex-1 min-w-[200px]">
                 <input type="text" name="search" value="{{ $filters['search'] ?? '' }}"
                        placeholder="{{ __('support.supervisor.search_placeholder') }}"
@@ -96,7 +122,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @foreach($tickets as $ticket)
-                            <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{{ route('manage.support-tickets.show', ['subdomain' => $subdomain, 'ticket' => $ticket]) }}'">
+                            <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{{ route('manage.support-tickets.show', array_merge(['subdomain' => $subdomain, 'ticket' => $ticket], $activeFilters)) }}'">
                                 <td class="px-4 py-3 font-medium text-gray-900">{{ $ticket->user->name }}</td>
                                 <td class="px-4 py-3">
                                     <span class="text-xs text-gray-500">{{ $ticket->user->getUserTypeLabel() }}</span>
