@@ -329,14 +329,6 @@ class AcademicSession extends BaseSession
     }
 
     /**
-     * Get all attendance records for this academic session
-     */
-    public function attendanceRecords(): HasMany
-    {
-        return $this->hasMany(AcademicSessionAttendance::class, 'session_id');
-    }
-
-    /**
      * Get the academic homework assignments for this session
      */
     public function homeworkAssignments(): HasMany

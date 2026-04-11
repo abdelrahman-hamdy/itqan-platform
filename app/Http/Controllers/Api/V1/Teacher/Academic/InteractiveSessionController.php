@@ -396,7 +396,10 @@ class InteractiveSessionController extends Controller
 
         DB::beginTransaction();
         try {
-            $existingAttendanceUserIds = $session->attendances->pluck('student_id')->toArray();
+            $existingAttendanceUserIds = $session->meetingAttendances()
+                ->where('user_type', 'student')
+                ->pluck('user_id')
+                ->toArray();
             $enrollments = $session->course?->enrollments ?? collect();
 
             // If specific student_ids provided, filter to those; otherwise mark all without attendance
@@ -406,13 +409,21 @@ class InteractiveSessionController extends Controller
 
             $markedCount = 0;
             foreach ($targetStudentIds as $studentId) {
-                // Check not already recorded
                 if (! in_array($studentId, $existingAttendanceUserIds)) {
-                    $session->attendances()->create([
-                        'student_id' => $studentId,
-                        'attendance_status' => AttendanceStatus::ABSENT->value,
-                        'notes' => $request->reason,
-                    ]);
+                    \App\Models\MeetingAttendance::updateOrCreate(
+                        [
+                            'session_id' => $session->id,
+                            'user_id' => $studentId,
+                            'user_type' => 'student',
+                        ],
+                        [
+                            'session_type' => 'interactive',
+                            'attendance_status' => AttendanceStatus::ABSENT->value,
+                            'is_calculated' => true,
+                            'attendance_calculated_at' => now(),
+                            'session_duration_minutes' => $session->duration_minutes,
+                        ]
+                    );
                     $markedCount++;
                 }
             }

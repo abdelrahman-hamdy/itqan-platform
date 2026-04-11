@@ -45,7 +45,6 @@ use App\Livewire\Chat\Info;
 use App\Livewire\Filament\DatabaseNotifications;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicSession;
-use App\Models\AcademicSessionAttendance;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
@@ -70,7 +69,6 @@ use App\Models\StudentSessionReport;
 use App\Models\SupervisorResponsibility;
 use App\Models\TeacherEarning;
 use App\Models\User;
-use App\Observers\AcademicSessionAttendanceObserver;
 use App\Observers\AcademicSessionObserver;
 use App\Observers\AcademyObserver;
 use App\Observers\BaseSessionObserver;
@@ -258,9 +256,6 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Media Observer to handle UTF-8 filename sanitization
         Media::observe(MediaObserver::class);
-
-        // Register AcademicSessionAttendance Observer for attendance-based progress tracking
-        AcademicSessionAttendance::observe(AcademicSessionAttendanceObserver::class);
 
         /*
         |--------------------------------------------------------------------------

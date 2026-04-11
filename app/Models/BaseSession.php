@@ -12,13 +12,11 @@ use App\Models\Traits\HasSessionScheduling;
 use App\Models\Traits\HasSessionStatus;
 use App\Models\Traits\ScopedToAcademyForWeb;
 use App\Services\SessionNamingService;
-use BadMethodCallException;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -314,20 +312,6 @@ abstract class BaseSession extends Model implements MeetingCapable
     public function recordings(): MorphMany
     {
         return $this->morphMany(SessionRecording::class, 'recordable');
-    }
-
-    /**
-     * Get all attendance records for this session
-     * Note: This is a base relationship - child classes may override with specific attendance models
-     */
-    public function attendanceRecords(): HasMany
-    {
-        // This method should be overridden in child classes to return the correct attendance model
-        // For example: AcademicSession returns AcademicSessionAttendance
-        // This base implementation serves as a fallback and documentation
-        throw new BadMethodCallException(
-            'attendanceRecords() must be implemented in child class: '.static::class
-        );
     }
 
     /**

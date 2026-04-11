@@ -250,8 +250,6 @@ trait CountsTowardsSubscription
         // If any student fails, all are rolled back.
         DB::transaction(function () use ($enrollments) {
             // Lock ALL student attendance rows in one query to avoid N+1 lock acquisitions.
-            // Uses meetingAttendances (current LiveKit-based table) since the legacy
-            // attendances() table (QuranSessionAttendance) is no longer populated.
             $studentIds = $enrollments->pluck('student_id')->filter()->unique()->values();
             $attendanceByUser = $this->meetingAttendances()
                 ->whereIn('user_id', $studentIds)

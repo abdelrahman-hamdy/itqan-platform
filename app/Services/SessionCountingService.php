@@ -61,8 +61,8 @@ class SessionCountingService
     /**
      * Set whether a session counts for a student's subscription.
      *
-     * Accepts both BaseSessionAttendance and MeetingAttendance models
-     * (both have counts_for_subscription, subscription_counted_at fields).
+     * Accepts a MeetingAttendance model (the single source of truth for
+     * per-student attendance counting flags).
      *
      * Side effects:
      * - true + not yet counted: apply subscription usage

@@ -6,12 +6,14 @@
     $sessions = $course ? $course->sessions()->orderBy('scheduled_at')->get() : collect();
     $totalSessions = $sessions->count();
 
-    // Get attendance records
-    $attendanceRecords = \App\Models\InteractiveSessionAttendance::whereIn('session_id', $sessions->pluck('id'))
-        ->where('student_id', $studentId)
+    // Get attendance records from meeting_attendances (single source of truth)
+    $attendanceRecords = \App\Models\MeetingAttendance::whereIn('session_id', $sessions->pluck('id'))
+        ->where('user_id', $studentId)
+        ->where('user_type', 'student')
+        ->where('session_type', 'interactive')
         ->get();
 
-    $sessionsAttended = $attendanceRecords->whereIn('attendance_status', ['attended', 'late'])->count();
+    $sessionsAttended = $attendanceRecords->whereIn('attendance_status', ['attended', 'late', 'partially_attended'])->count();
     $completedSessions = $sessions->where('status', 'completed')->count();
 
     // Get session reports for homework data

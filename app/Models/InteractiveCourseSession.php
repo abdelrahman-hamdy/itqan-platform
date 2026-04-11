@@ -190,23 +190,6 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * حضور الطلاب في هذه الجلسة
-     */
-    public function attendances(): HasMany
-    {
-        return $this->hasMany(InteractiveSessionAttendance::class, 'session_id');
-    }
-
-    /**
-     * Get all attendance records for this interactive session
-     * Overrides BaseSession abstract method
-     */
-    public function attendanceRecords(): HasMany
-    {
-        return $this->attendances();
-    }
-
-    /**
      * Get enrolled students through the course relationship
      */
     public function enrolledStudents(): HasManyThrough
@@ -243,33 +226,6 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     public function reports(): HasMany
     {
         return $this->studentReports();
-    }
-
-    /**
-     * الطلاب الحاضرون
-     */
-    public function presentStudents(): HasMany
-    {
-        return $this->hasMany(InteractiveSessionAttendance::class, 'session_id')
-            ->where('attendance_status', AttendanceStatus::ATTENDED->value);
-    }
-
-    /**
-     * الطلاب الغائبون
-     */
-    public function absentStudents(): HasMany
-    {
-        return $this->hasMany(InteractiveSessionAttendance::class, 'session_id')
-            ->where('attendance_status', AttendanceStatus::ABSENT->value);
-    }
-
-    /**
-     * الطلاب المتأخرون
-     */
-    public function lateStudents(): HasMany
-    {
-        return $this->hasMany(InteractiveSessionAttendance::class, 'session_id')
-            ->where('attendance_status', AttendanceStatus::LATE->value);
     }
 
     // Common scopes (scheduled, completed, cancelled, ongoing, today, upcoming, past)
@@ -429,12 +385,20 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * تحديث عدد الحضور
+     * تحديث عدد الحضور — count of students marked attended/late/partially_attended.
+     * Reads from meeting_attendances (single source of truth).
      */
     public function updateAttendanceCount(): void
     {
         $this->update([
-            'attendance_count' => $this->attendances()->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
+            'attendance_count' => $this->meetingAttendances()
+                ->where('user_type', 'student')
+                ->whereIn('attendance_status', [
+                    AttendanceStatus::ATTENDED->value,
+                    AttendanceStatus::LATE->value,
+                    AttendanceStatus::PARTIALLY_ATTENDED->value,
+                ])
+                ->count(),
         ]);
     }
 
@@ -466,22 +430,6 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * الحصول على متوسط درجة المشاركة
-     */
-    public function getAverageParticipationScoreAttribute(): float
-    {
-        $scores = $this->attendances()
-            ->whereNotNull('participation_score')
-            ->pluck('participation_score');
-
-        if ($scores->isEmpty()) {
-            return 0;
-        }
-
-        return round($scores->avg(), 1);
-    }
-
-    /**
      * الحصول على تفاصيل الجلسة
      */
     public function getSessionDetailsAttribute(): array
@@ -503,7 +451,6 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
             'status_in_arabic' => $this->status_in_arabic,
             'attendance_count' => $this->attendance_count,
             'attendance_rate' => $this->attendance_rate,
-            'average_participation_score' => $this->average_participation_score,
             'homework_assigned' => $this->homework_assigned,
             'meeting_link' => $this->meeting_link, // Now using LiveKit
             'can_start' => $this->canStart(),

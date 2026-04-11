@@ -6,16 +6,15 @@ use App\Enums\AttendanceStatus;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
-use App\Models\AcademicSessionAttendance;
 use App\Models\AcademicSubscription;
 use App\Models\Certificate;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
+use App\Models\MeetingAttendance;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleEnrollment;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
-use App\Models\QuranSessionAttendance;
 use App\Models\QuranSubscription;
 use App\Models\StudentProfile;
 use App\Models\User;
@@ -551,10 +550,12 @@ class SupervisorStudentsController extends BaseSupervisorWebController
         // Get certificates
         $certificates = Certificate::where('student_id', $student->id)->latest('issued_at')->get();
 
-        // Attendance stats
-        $quranAttendance = QuranSessionAttendance::where('student_id', $student->id)->get();
-        $academicAttendance = AcademicSessionAttendance::where('student_id', $student->id)->get();
-        $allAttendance = $quranAttendance->merge($academicAttendance);
+        // Attendance stats — read from meeting_attendances (single source of truth).
+        // Filter by session_type so we only count quran + academic (excludes interactive).
+        $allAttendance = MeetingAttendance::where('user_id', $student->id)
+            ->where('user_type', 'student')
+            ->whereIn('session_type', ['individual', 'group', 'academic'])
+            ->get();
 
         $totalAttendanceRecords = $allAttendance->count();
         $presentCount = $allAttendance->where('attendance_status', AttendanceStatus::ATTENDED->value)->count();

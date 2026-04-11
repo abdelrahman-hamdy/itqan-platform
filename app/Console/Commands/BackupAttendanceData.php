@@ -3,14 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Models\AcademicSession;
-use App\Models\AcademicSessionAttendance;
 use App\Models\AcademicSessionReport;
 use App\Models\InteractiveCourseSession;
-use App\Models\InteractiveSessionAttendance;
 use App\Models\InteractiveSessionReport;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
-use App\Models\QuranSessionAttendance;
 use App\Models\StudentSessionReport;
 use App\Models\TeacherEarning;
 use Illuminate\Console\Command;
@@ -139,19 +136,6 @@ class BackupAttendanceData extends Command
                     'is_late', 'late_minutes', 'is_calculated',
                     'created_at', 'updated_at',
                 ]);
-        });
-
-        // 9. Session attendance records (Quran, Academic, Interactive)
-        $this->exportTable($path, 'quran_session_attendances_backup.json', $timestamp, function () {
-            return QuranSessionAttendance::withoutGlobalScopes();
-        });
-
-        $this->exportTable($path, 'academic_session_attendances_backup.json', $timestamp, function () {
-            return AcademicSessionAttendance::withoutGlobalScopes();
-        });
-
-        $this->exportTable($path, 'interactive_session_attendances_backup.json', $timestamp, function () {
-            return InteractiveSessionAttendance::withoutGlobalScopes();
         });
 
         $this->newLine();

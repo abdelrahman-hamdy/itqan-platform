@@ -21,7 +21,7 @@
     </thead>
     <tbody>
         <tr><td><strong>Users & Profiles</strong></td><td>users, quran_teacher_profiles, academic_teacher_profiles, student_profiles, supervisor_profiles, parent_profiles</td><td>8</td></tr>
-        <tr><td><strong>Sessions</strong></td><td>quran_sessions, academic_sessions, interactive_course_sessions, quran_session_attendances, academic_session_attendances, interactive_session_attendances, *_reports</td><td>12</td></tr>
+        <tr><td><strong>Sessions</strong></td><td>quran_sessions, academic_sessions, interactive_course_sessions, meeting_attendances, meeting_attendance_events, *_reports</td><td>9</td></tr>
         <tr><td><strong>Subscriptions</strong></td><td>quran_subscriptions, academic_subscriptions, course_subscriptions, quran_circle_enrollments, interactive_course_enrollments</td><td>7</td></tr>
         <tr><td><strong>Courses & Content</strong></td><td>interactive_courses, recorded_courses, course_sections, lessons, quran_circles, quran_individual_circles, quran_circle_schedules</td><td>10</td></tr>
         <tr><td><strong>Homework & Quizzes</strong></td><td>quran_session_homework, academic_homeworks, homework_submissions, quizzes, quiz_questions, quiz_assignments, quiz_attempts</td><td>9</td></tr>
@@ -122,28 +122,20 @@ erDiagram
         datetime scheduled_at
         string status
     }
-    quran_session_attendances {
+    meeting_attendances {
         uuid id PK
         uuid session_id FK
-        uuid student_id FK
+        uuid user_id FK
+        string user_type
+        string session_type
         string attendance_status
-    }
-    academic_session_attendances {
-        uuid id PK
-        uuid session_id FK
-        uuid student_id FK
-        string attendance_status
-    }
-    interactive_session_attendances {
-        uuid id PK
-        uuid session_id FK
-        uuid student_id FK
-        string attendance_status
+        int total_duration_minutes
+        boolean counts_for_subscription
     }
 
-    quran_sessions ||--o{ quran_session_attendances : "tracks"
-    academic_sessions ||--o{ academic_session_attendances : "tracks"
-    interactive_course_sessions ||--o{ interactive_session_attendances : "tracks"
+    quran_sessions ||--o{ meeting_attendances : "tracks (session_type=individual/group/trial)"
+    academic_sessions ||--o{ meeting_attendances : "tracks (session_type=academic)"
+    interactive_course_sessions ||--o{ meeting_attendances : "tracks (session_type=interactive)"
 </pre>
 </div>
 

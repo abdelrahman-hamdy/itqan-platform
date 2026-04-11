@@ -188,9 +188,6 @@ class RemoveTestAccounts extends Command
             'Session reports' => DB::table('student_session_reports')->whereIn('student_id', $this->allUserIds)->count()
                 + DB::table('academic_session_reports')->whereIn('student_id', $this->allUserIds)->count()
                 + DB::table('interactive_session_reports')->whereIn('student_id', $this->allUserIds)->count(),
-            'Session attendances' => DB::table('quran_session_attendances')->whereIn('student_id', $this->allUserIds)->count()
-                + DB::table('academic_session_attendances')->whereIn('student_id', $this->allUserIds)->count()
-                + DB::table('interactive_session_attendances')->whereIn('student_id', $this->allUserIds)->count(),
             'Meeting attendances' => DB::table('meeting_attendances')->whereIn('user_id', $this->allUserIds)->count(),
             'Teacher earnings' => $this->teacherProfileId
                 ? TeacherEarning::withoutGlobalScopes()->withTrashed()
@@ -310,20 +307,6 @@ class RemoveTestAccounts extends Command
         $this->deleteAndLog('Interactive session reports',
             DB::table('interactive_session_reports')->whereIn('student_id', $this->allUserIds)->count(),
             fn () => DB::table('interactive_session_reports')->whereIn('student_id', $this->allUserIds)->delete()
-        );
-
-        // Session attendances
-        $this->deleteAndLog('Quran session attendances',
-            DB::table('quran_session_attendances')->whereIn('student_id', $this->allUserIds)->count(),
-            fn () => DB::table('quran_session_attendances')->whereIn('student_id', $this->allUserIds)->delete()
-        );
-        $this->deleteAndLog('Academic session attendances',
-            DB::table('academic_session_attendances')->whereIn('student_id', $this->allUserIds)->count(),
-            fn () => DB::table('academic_session_attendances')->whereIn('student_id', $this->allUserIds)->delete()
-        );
-        $this->deleteAndLog('Interactive session attendances',
-            DB::table('interactive_session_attendances')->whereIn('student_id', $this->allUserIds)->count(),
-            fn () => DB::table('interactive_session_attendances')->whereIn('student_id', $this->allUserIds)->delete()
         );
 
         // Meeting attendances

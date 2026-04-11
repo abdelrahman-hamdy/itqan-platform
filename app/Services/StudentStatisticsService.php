@@ -9,13 +9,12 @@ use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSession;
-use App\Models\AcademicSessionAttendance;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseSession;
+use App\Models\MeetingAttendance;
 use App\Models\QuizAssignment;
 use App\Models\QuranCircle;
 use App\Models\QuranSession;
-use App\Models\QuranSessionAttendance;
 use App\Models\QuranSubscription;
 use App\Models\QuranTrialRequest;
 use App\Models\RecordedCourse;
@@ -283,26 +282,42 @@ class StudentStatisticsService implements StudentStatisticsServiceInterface
                 AttendanceStatus::ATTENDED->value,
                 AttendanceStatus::LATE->value,
                 AttendanceStatus::LEFT->value,
+                AttendanceStatus::PARTIALLY_ATTENDED->value,
             ];
 
-            // Quran attendance
-            $quranTotal = QuranSessionAttendance::where('student_id', $user->id)
-                ->whereHas('session', fn ($q) => $q->where('academy_id', $academy->id))
+            // Pull this student's MeetingAttendance rows across quran + academic sessions
+            // that belong to this academy. Session-type filtering keeps interactive course
+            // records out of the student's overall attendance rate (same behavior as the
+            // legacy implementation).
+            $quranSessionIds = QuranSession::where('academy_id', $academy->id)
+                ->pluck('id');
+            $academicSessionIds = AcademicSession::where('academy_id', $academy->id)
+                ->pluck('id');
+
+            $quranTotal = MeetingAttendance::where('user_id', $user->id)
+                ->where('user_type', 'student')
+                ->whereIn('session_type', ['individual', 'group'])
+                ->whereIn('session_id', $quranSessionIds)
                 ->count();
 
-            $quranPresent = QuranSessionAttendance::where('student_id', $user->id)
+            $quranPresent = MeetingAttendance::where('user_id', $user->id)
+                ->where('user_type', 'student')
+                ->whereIn('session_type', ['individual', 'group'])
+                ->whereIn('session_id', $quranSessionIds)
                 ->whereIn('attendance_status', $presentStatuses)
-                ->whereHas('session', fn ($q) => $q->where('academy_id', $academy->id))
                 ->count();
 
-            // Academic attendance
-            $academicTotal = AcademicSessionAttendance::where('student_id', $user->id)
-                ->whereHas('session', fn ($q) => $q->where('academy_id', $academy->id))
+            $academicTotal = MeetingAttendance::where('user_id', $user->id)
+                ->where('user_type', 'student')
+                ->where('session_type', 'academic')
+                ->whereIn('session_id', $academicSessionIds)
                 ->count();
 
-            $academicPresent = AcademicSessionAttendance::where('student_id', $user->id)
+            $academicPresent = MeetingAttendance::where('user_id', $user->id)
+                ->where('user_type', 'student')
+                ->where('session_type', 'academic')
+                ->whereIn('session_id', $academicSessionIds)
                 ->whereIn('attendance_status', $presentStatuses)
-                ->whereHas('session', fn ($q) => $q->where('academy_id', $academy->id))
                 ->count();
 
             $total = $quranTotal + $academicTotal;

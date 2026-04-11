@@ -9,7 +9,7 @@ use Carbon\Carbon;
  * Trait AttendanceCalculatorTrait
  *
  * Provides centralized attendance status calculation logic.
- * Eliminates duplication across BaseSessionAttendance, BaseSessionReport, and MeetingAttendance.
+ * Eliminates duplication across BaseSessionReport and MeetingAttendance.
  *
  * Attendance Rules (50% threshold):
  * - < 50% attendance = 'left' (left early)

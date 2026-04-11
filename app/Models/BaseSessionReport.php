@@ -19,7 +19,7 @@ use Log;
  * Abstract base class for all session report models (Quran, Academic, Interactive)
  * Contains shared attendance tracking, evaluation, and reporting logic.
  *
- * This follows the same pattern as BaseSession (Phase 5) and BaseSessionAttendance (Phase 7).
+ * This follows the same pattern as BaseSession.
  *
  * @property int $id
  * @property int $session_id

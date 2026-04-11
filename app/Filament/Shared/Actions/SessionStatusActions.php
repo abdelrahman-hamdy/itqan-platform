@@ -217,24 +217,34 @@ class SessionStatusActions
      */
     public static function toggleCountsForSubscription(): Action
     {
+        // Helper: get the student's MeetingAttendance row (single source of truth).
+        $getStudentAttendance = fn (Model $record) => $record->meetingAttendances()
+            ->where('user_type', 'student')
+            ->first();
+
         return Action::make('toggle_counts_subscription')
-            ->label(function (Model $record) {
-                $attendance = $record->attendanceRecords()->first();
-                $counts = $attendance?->counts_for_subscription ?? true;
+            ->label(function (Model $record) use ($getStudentAttendance) {
+                $attendance = $getStudentAttendance($record);
+                // Fall back to the session-level flag when the attendance flag is NULL,
+                // matching the supervisor row/card/show view semantics.
+                $counts = $attendance?->counts_for_subscription
+                    ?? (bool) ($record->subscription_counted ?? false);
 
                 return $counts
                     ? __('settings.counts_for_subscription').': ✓'
                     : __('settings.counts_for_subscription').': ✗';
             })
             ->icon('heroicon-o-academic-cap')
-            ->color(function (Model $record) {
-                $attendance = $record->attendanceRecords()->first();
+            ->color(function (Model $record) use ($getStudentAttendance) {
+                $attendance = $getStudentAttendance($record);
+                $counts = $attendance?->counts_for_subscription
+                    ?? (bool) ($record->subscription_counted ?? false);
 
-                return ($attendance?->counts_for_subscription ?? true) ? 'success' : 'danger';
+                return $counts ? 'success' : 'danger';
             })
             ->requiresConfirmation()
-            ->action(function (Model $record) {
-                $attendance = $record->attendanceRecords()->first();
+            ->action(function (Model $record) use ($getStudentAttendance) {
+                $attendance = $getStudentAttendance($record);
                 if (! $attendance) {
                     Notification::make()
                         ->title(__('supervisor.observation.session_not_found'))
@@ -244,7 +254,9 @@ class SessionStatusActions
                     return;
                 }
 
-                $newValue = ! $attendance->counts_for_subscription;
+                $newValue = ! ($attendance->counts_for_subscription
+                    ?? (bool) ($record->subscription_counted ?? false));
+
                 app(SessionCountingService::class)->setCountsForSubscription(
                     $attendance,
                     $record,

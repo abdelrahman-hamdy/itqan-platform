@@ -205,21 +205,6 @@ class QuranSession extends BaseSession implements RecordingCapable
     // Note: progress() relationship removed - Progress is now calculated
     // dynamically from session reports using the QuranReportService
 
-    public function attendances(): HasMany
-    {
-        return $this->hasMany(QuranSessionAttendance::class, 'session_id');
-    }
-
-    /**
-     * Get all attendance records for this Quran session
-     * Overrides BaseSession abstract method to provide Quran-specific implementation
-     * Alias for attendances() for consistency with BaseSession contract
-     */
-    public function attendanceRecords(): HasMany
-    {
-        return $this->attendances();
-    }
-
     /**
      * العلاقة مع تقارير الطلاب الجديدة
      */
@@ -260,11 +245,6 @@ class QuranSession extends BaseSession implements RecordingCapable
     public function sessionHomework(): HasOne
     {
         return $this->hasOne(QuranSessionHomework::class, 'session_id');
-    }
-
-    public function autoTrackedAttendances(): HasMany
-    {
-        return $this->hasMany(QuranSessionAttendance::class, 'session_id')->where('auto_tracked', true);
     }
 
     // Quran-specific scopes
@@ -567,18 +547,17 @@ class QuranSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * Record session attendance for all students in this session
+     * Record session attendance for all students in this session by writing to
+     * meeting_attendances (the single source of truth). Called from the teacher's
+     * manual markAsCompleted/markAsCancelled/markAsAbsent flows so the override is
+     * immediately visible. We set is_calculated=true so the delayed
+     * CalculateSessionForAttendance job won't overwrite the manual state.
      *
-     * This method updates attendance records when a session status changes.
-     * For individual sessions: updates the single student's attendance
-     * For group sessions: updates attendance for all enrolled students
-     *
-     * @param  string  $status  The attendance status ('attended', 'absent', 'cancelled', 'late', 'left')
+     * @param  string  $status  attendance_status value (attended/absent/late/left/partially_attended)
      */
     protected function recordSessionAttendance(string $status): void
     {
         try {
-            // Get students based on session type
             $students = $this->getStudentsForSession();
 
             if ($students->isEmpty()) {
@@ -590,23 +569,24 @@ class QuranSession extends BaseSession implements RecordingCapable
                 return;
             }
 
+            $sessionTypeForMA = $this->session_type === 'group' ? 'group' : 'individual';
+
             foreach ($students as $student) {
-                // Update or create attendance record
-                QuranSessionAttendance::updateOrCreate(
+                MeetingAttendance::updateOrCreate(
                     [
                         'session_id' => $this->id,
-                        'student_id' => $student->id,
+                        'user_id' => $student->id,
+                        'user_type' => 'student',
                     ],
                     [
-                        'academy_id' => $this->academy_id,
+                        'session_type' => $sessionTypeForMA,
                         'attendance_status' => $status,
-                        'recorded_at' => now(),
-                        'auto_tracked' => false,
-                        'manually_overridden' => true,
+                        'is_calculated' => true,
+                        'attendance_calculated_at' => now(),
+                        'session_duration_minutes' => $this->duration_minutes,
                     ]
                 );
 
-                // Also update student session report if exists
                 StudentSessionReport::where('session_id', $this->id)
                     ->where('student_id', $student->id)
                     ->update(['attendance_status' => $status]);
@@ -1487,26 +1467,6 @@ class QuranSession extends BaseSession implements RecordingCapable
             'completed_count' => $studentsWithGrades->count(),
             'average_memorization_degree' => $reports->avg('new_memorization_degree') ?? 0,
             'average_reservation_degree' => $reports->avg('reservation_degree') ?? 0,
-        ];
-    }
-
-    /**
-     * Get attendance statistics for this session
-     */
-    public function getAttendanceStatsAttribute(): array
-    {
-        $attendances = $this->attendances()->with('student')->get();
-
-        return [
-            'total_students' => $attendances->count(),
-            'present_count' => $attendances->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
-            'late_count' => $attendances->where('attendance_status', AttendanceStatus::LATE->value)->count(),
-            'absent_count' => $attendances->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
-            'left_early_count' => $attendances->where('attendance_status', AttendanceStatus::LEFT->value)->count(),
-            'auto_tracked_count' => $attendances->where('auto_tracked', true)->count(),
-            'manually_overridden_count' => $attendances->where('manually_overridden', true)->count(),
-            'average_participation' => $attendances->whereNotNull('participation_score')->avg('participation_score') ?? 0,
-            'attendances' => $attendances,
         ];
     }
 
