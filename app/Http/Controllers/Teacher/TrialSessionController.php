@@ -49,8 +49,8 @@ class TrialSessionController extends Controller
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->whereHas('student', function ($sq) use ($request) {
-                    $sq->where('name', 'like', '%' . $request->search . '%');
-                })->orWhere('student_name', 'like', '%' . $request->search . '%');
+                    $sq->where('name', 'like', '%'.$request->search.'%');
+                })->orWhere('student_name', 'like', '%'.$request->search.'%');
             });
         }
         if ($request->filled('date_from')) {
@@ -80,7 +80,7 @@ class TrialSessionController extends Controller
         $trialRequest->load([
             'student.studentProfile',
             'trialSession.meeting',
-            'trialSession.attendances',
+            'trialSession.meetingAttendances',
             'academy',
         ]);
 

@@ -67,7 +67,7 @@ class RecalculateTeacherProfileCounters extends Command
         return $this->applyStats(
             'quran_teacher_profiles',
             $profiles,
-            fn ($profile) => $stats->get($profile->user_id),
+            fn ($profile) => $stats->get((int) $profile->user_id),
             hasSessionsCounter: true,
         );
     }
@@ -94,13 +94,17 @@ class RecalculateTeacherProfileCounters extends Command
         return $this->applyStats(
             'academic_teacher_profiles',
             $profiles,
-            fn ($profile) => $stats->get($profile->id),
+            fn ($profile) => $stats->get((int) $profile->id),
             hasSessionsCounter: false,
         );
     }
 
     /**
      * Single aggregate query grouped by teacher_id column.
+     *
+     * Keys are explicitly cast to int because MySQL/PDO can return BIGINT
+     * aggregates as strings, which would cause keyBy lookups against integer
+     * profile IDs to silently miss.
      */
     private function aggregateSessionStats(Builder $query, string $teacherColumn): Collection
     {
@@ -110,7 +114,7 @@ class RecalculateTeacherProfileCounters extends Command
             ->groupBy($teacherColumn)
             ->selectRaw("{$teacherColumn} AS teacher_key, COUNT(*) AS total_sessions, COUNT(DISTINCT student_id) AS total_students")
             ->get()
-            ->keyBy('teacher_key');
+            ->keyBy(fn ($row) => (int) $row->teacher_key);
     }
 
     /**
@@ -126,8 +130,18 @@ class RecalculateTeacherProfileCounters extends Command
 
         foreach ($profiles as $profile) {
             $stat = $resolveStat($profile);
-            $newSessions = (int) ($stat->total_sessions ?? 0);
-            $newStudents = (int) ($stat->total_students ?? 0);
+
+            // Defensive: $stat may be null when a profile has no sessions yet,
+            // or in rare edge cases a non-object (e.g. unexpected Collection).
+            // Guard explicitly to avoid "Object of class ... could not be converted to int"
+            // and "Attempt to read property on null" fatal errors.
+            if (is_object($stat)) {
+                $newSessions = (int) ($stat->total_sessions ?? 0);
+                $newStudents = (int) ($stat->total_students ?? 0);
+            } else {
+                $newSessions = 0;
+                $newStudents = 0;
+            }
 
             $payload = ['total_students' => $newStudents];
             $changed = $profile->total_students !== $newStudents;
