@@ -469,10 +469,17 @@ class LiveKitControls {
             }
 
             // Pass capture options (AEC/NS/AGC) — audio codec/bitrate set via RoomOptions.
-            if (newState) {
-                await this.localParticipant.setMicrophoneEnabled(true, window.LiveKitAudioCaptureOptions);
-            } else {
-                await this.localParticipant.setMicrophoneEnabled(false);
+            if (window.MT) window.MT.event('mic', newState ? 'enable_requested' : 'disable_requested', { user_role: this.userRole });
+            try {
+                if (newState) {
+                    await this.localParticipant.setMicrophoneEnabled(true, window.LiveKitAudioCaptureOptions);
+                } else {
+                    await this.localParticipant.setMicrophoneEnabled(false);
+                }
+                if (window.MT) window.MT.event('mic', newState ? 'enable_succeeded' : 'disable_succeeded', {});
+            } catch (mtErr) {
+                if (window.MT) window.MT.error('mic', newState ? 'enable_failed' : 'disable_failed', mtErr);
+                throw mtErr;
             }
 
             // Update our internal state to match the SDK

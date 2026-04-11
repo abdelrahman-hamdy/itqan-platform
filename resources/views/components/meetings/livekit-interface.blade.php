@@ -37,7 +37,6 @@
     $academySettings = $academy?->settings;
     $preparationMinutes = $academySettings?->default_preparation_minutes ?? 10;
     $endingBufferMinutes = $academySettings?->default_buffer_minutes ?? 5;
-    $graceMinutes = $academySettings?->default_late_tolerance_minutes ?? 15;
 
     // Check if session has a meeting room (based on meeting_room_name or meeting_link)
     $hasMeetingRoom = !empty($session->meeting_room_name) || !empty($session->meeting_link);
@@ -620,8 +619,24 @@
         });
     }
 
-    // Load LiveKit scripts in order: API helper first, then session timer, then modules
+    // Load LiveKit scripts in order: telemetry FIRST (so it can capture downstream
+    // module load failures), then API helper, then session timer, then modules.
     Promise.resolve()
+        .then(() => loadScript('{{ asset("js/livekit/telemetry.js") }}?v={{ time() }}', 'telemetry'))
+        .then(() => {
+            // Initialize the telemetry singleton with the meeting context
+            try {
+                window.MT = new window.MeetingTelemetryClass({
+                    sessionId: {{ $session->id }},
+                    sessionType: '{{ $isAcademicSession ? 'academic' : ($isInteractiveCourseSession ? 'interactive' : 'quran') }}',
+                    userId: {{ auth()->id() ?? 'null' }},
+                    userRole: '{{ $currentUserType }}',
+                    csrfToken: '{{ csrf_token() }}',
+                });
+            } catch (e) {
+                console.error('Failed to init MeetingTelemetry', e);
+            }
+        })
         .then(() => loadScript('{{ asset("js/livekit/api.js") }}?v={{ time() }}', 'api'))
         .then(() => loadScript('{{ asset("js/session-timer.js") }}?v={{ time() }}', 'sessionTimer'))
         .then(() => loadScript('{{ asset("js/livekit/data-channel.js") }}?v={{ time() }}', 'dataChannel'))
@@ -631,8 +646,13 @@
         .then(() => loadScript('{{ asset("js/livekit/controls.js") }}?v={{ time() }}', 'controls'))
         .then(() => loadScript('{{ asset("js/livekit/layout.js") }}?v={{ time() }}', 'layout'))
         .then(() => loadScript('{{ asset("js/livekit/index.js") }}?v={{ time() }}', 'index'))
-        .catch(() => {
-            // Silent fail - LiveKit scripts loading error
+        .then(() => {
+            if (window.MT) window.MT.event('loader', 'all_scripts_loaded', { count: Object.keys(scriptsLoaded).length });
+        })
+        .catch((err) => {
+            // No longer silent — surface to telemetry so we can debug stuck-connecting reports
+            if (window.MT) window.MT.error('loader', 'script_load_failed', err);
+            else console.error('LiveKit script loading failed', err);
         });
 
     // CRITICAL FIX: Initialize Smart Session Timer with immediate loading and display

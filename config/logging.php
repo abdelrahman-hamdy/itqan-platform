@@ -160,6 +160,18 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // LiveKit meeting client telemetry — receives batched events from
+        // browser-side telemetry.js (see MeetingTelemetryController). Used to
+        // diagnose echo (echoReturnLoss), reconnect storms, and SDK load
+        // failures with objective per-session data. High volume; short retention.
+        'meeting-telemetry' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/meeting-telemetry.log'),
+            'level' => 'debug',
+            'days' => 3,
+            'replace_placeholders' => true,
+        ],
+
     ],
 
     /*

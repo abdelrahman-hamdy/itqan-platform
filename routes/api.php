@@ -79,6 +79,13 @@ Route::middleware(['web', 'auth', 'verified'])
             ->name('api.sessions.meeting.end');
         Route::post('/leave', [DevMeetingController::class, 'leave'])
             ->name('api.sessions.meeting.leave');
+
+        // Client-side telemetry sink: receives batched events from the meeting
+        // page (telemetry.js) and forwards them to the dedicated 'meeting-telemetry'
+        // log channel for offline analysis. Throttled per-IP to prevent abuse.
+        Route::post('/telemetry', [\App\Http\Controllers\Api\MeetingTelemetryController::class, 'store'])
+            ->middleware('throttle:120,1')
+            ->name('api.sessions.meeting.telemetry');
     });
 
 // ============================================================================

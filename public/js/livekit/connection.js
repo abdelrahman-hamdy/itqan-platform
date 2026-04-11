@@ -95,6 +95,7 @@ class LiveKitConnection {
 
         this.setupRoomEventListeners();
 
+        if (window.MT) window.MT.event('connection', 'room_created', { sdkVersion: (window.LiveKit && window.LiveKit.version) || null });
         return this.room;
     }
 
@@ -203,11 +204,17 @@ class LiveKitConnection {
 
         this.isConnecting = true;
 
+        if (window.MT) window.MT.event('connection', 'connect_started', { server: serverUrl, hasToken: !!token });
+        const t0 = Date.now();
         try {
             await this.room.connect(serverUrl, token, this.getConnectOptions());
             this.localParticipant = this.room.localParticipant;
+            if (window.MT) window.MT.event('connection', 'connect_succeeded', { ms: Date.now() - t0 });
+            // Begin sampling WebRTC stats now that we have a live room
+            if (window.MT) window.MT.startStatsPolling(this.room);
         } catch (error) {
             this.isConnecting = false;
+            if (window.MT) window.MT.error('connection', 'connect_failed', error, { ms: Date.now() - t0 });
             throw error;
         }
     }
@@ -219,6 +226,13 @@ class LiveKitConnection {
     handleConnectionStateChange(state) {
         this.isConnected = state === 'connected';
 
+        if (window.MT) window.MT.event('connection', 'state_change', {
+            state,
+            attempts: this.reconnectAttempts,
+            max_attempts: this.maxReconnectAttempts,
+            reason: this.lastDisconnectReason || null,
+        });
+
         if (state === 'connected') {
             this.isConnecting = false;
 
@@ -227,7 +241,12 @@ class LiveKitConnection {
             // will cancel the timer via the 'disconnected' branch below, so the
             // counter keeps climbing and maxReconnectAttempts eventually kicks in.
             if (this.stabilityTimerId) clearTimeout(this.stabilityTimerId);
+            const attemptsAtConnect = this.reconnectAttempts;
             this.stabilityTimerId = setTimeout(() => {
+                if (window.MT) window.MT.event('connection', 'stability_reached', {
+                    window_ms: this.stabilityWindowMs,
+                    attempts_cleared: attemptsAtConnect,
+                });
                 this.reconnectAttempts = 0;
                 this.stabilityTimerId = null;
             }, this.stabilityWindowMs);
@@ -242,6 +261,7 @@ class LiveKitConnection {
             if (this.stabilityTimerId) {
                 clearTimeout(this.stabilityTimerId);
                 this.stabilityTimerId = null;
+                if (window.MT) window.MT.event('connection', 'stability_cancelled', { window_ms: this.stabilityWindowMs });
             }
 
             // CRITICAL FIX: Record attendance when disconnected
@@ -266,11 +286,28 @@ class LiveKitConnection {
      * It gets a fresh token and creates a new connection with exponential backoff.
      */
     handleDisconnection() {
-        if (this.intentionalDisconnect) return;
-        if (this.reconnectAttempts >= this.maxReconnectAttempts) return;
+        if (this.intentionalDisconnect) {
+            if (window.MT) window.MT.event('connection', 'disconnect_intentional', {});
+            return;
+        }
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+            if (window.MT) window.MT.warn('connection', 'reconnect_exhausted', {
+                attempts: this.reconnectAttempts,
+                max: this.maxReconnectAttempts,
+                reason: this.lastDisconnectReason || null,
+            });
+            return;
+        }
 
         this.reconnectAttempts++;
         const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 16000);
+
+        if (window.MT) window.MT.event('connection', 'reconnect_scheduled', {
+            attempt: this.reconnectAttempts,
+            max: this.maxReconnectAttempts,
+            delay_ms: delay,
+            reason: this.lastDisconnectReason || null,
+        });
 
         if (this.reconnectTimeoutId) clearTimeout(this.reconnectTimeoutId);
         this.reconnectTimeoutId = setTimeout(async () => {
@@ -318,6 +355,8 @@ class LiveKitConnection {
      * @returns {Promise<string>} LiveKit token
      */
     async getLiveKitToken() {
+        const t0 = Date.now();
+        if (window.MT) window.MT.event('connection', 'token_fetch_started', {});
 
         try {
             // Get session ID from window object (set in Blade template)
@@ -347,9 +386,11 @@ class LiveKitConnection {
                 throw new Error('Invalid token response: ' + (data.message || data.error || 'Unknown error'));
             }
 
+            if (window.MT) window.MT.event('connection', 'token_fetch_succeeded', { ms: Date.now() - t0 });
             return data.data.access_token;
 
         } catch (error) {
+            if (window.MT) window.MT.error('connection', 'token_fetch_failed', error, { ms: Date.now() - t0 });
             throw error;
         }
     }
@@ -476,6 +517,11 @@ class LiveKitConnection {
      * Destroy the connection and clean up
      */
     destroy() {
+        if (window.MT) {
+            window.MT.event('connection', 'destroy_called', {});
+            window.MT.stopStatsPolling();
+        }
+
         // Clear pending reconnect timer
         if (this.reconnectTimeoutId) {
             clearTimeout(this.reconnectTimeoutId);

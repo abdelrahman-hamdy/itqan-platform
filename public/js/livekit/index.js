@@ -589,16 +589,20 @@ class LiveKitMeeting {
 
         // MICROPHONE: ON for teachers, OFF for students
         try {
+            if (window.MT) window.MT.event('media', 'permission_request_started', { isTeacher });
             // Request permission then IMMEDIATELY release the stream to free the device lock.
             const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             audioStream.getTracks().forEach(track => track.stop());
+            if (window.MT) window.MT.event('media', 'permission_granted', { isTeacher });
 
             if (isTeacher) {
                 await localParticipant.setMicrophoneEnabled(true, window.LiveKitAudioCaptureOptions);
+                if (window.MT) window.MT.event('mic', 'initial_publish_succeeded', { isTeacher });
             }
             mediaPermissionsGranted = true;
             this.hideMicBlockedBanner();
         } catch (audioError) {
+            if (window.MT) window.MT.error('media', 'permission_or_publish_failed', audioError, { isTeacher });
             if (audioError.name === 'NotAllowedError' || audioError.name === 'NotFoundError') {
                 this.showMicBlockedBanner(audioError.name);
             }
