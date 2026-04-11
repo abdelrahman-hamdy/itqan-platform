@@ -103,32 +103,52 @@ class Payment extends Model
     ];
 
     /**
-     * Normalize payable_type to morph alias when set.
+     * Normalize payable_type to morph alias on both read and write.
      *
      * Historical data has 5 different representations: canonical FQCN,
      * double-escaped backslashes, legacy snake_case, etc. This mutator
      * converts any FQCN to its registered morph alias so all new writes
      * use a single canonical form.
+     *
+     * The `get` callback also normalizes on read so that legacy rows
+     * (or rows written via raw query builder / bulk insert that bypass
+     * mutators) cannot leak doubled-backslash strings into Eloquent's
+     * polymorphic resolution. A corrupted `App\\Models\\X` string causes
+     * `class_exists` to fail (different name from the loaded class),
+     * triggers a redundant autoload, and crashes with
+     * "Cannot redeclare class" because composer's strtr produces a path
+     * with doubled slashes that PHP tracks as a separate include.
      */
     protected function payableType(): Attribute
     {
         return Attribute::make(
-            set: function ($value) {
-                if ($value === null || $value === '') {
-                    return $value;
-                }
-
-                $normalized = str_replace('\\\\', '\\', $value);
-
-                [$map, $flipped] = self::morphMapCache();
-
-                if (isset($map[$normalized])) {
-                    return $normalized;
-                }
-
-                return $flipped[$normalized] ?? $normalized;
-            },
+            get: fn ($value) => self::normalizePayableType($value),
+            set: fn ($value) => self::normalizePayableType($value),
         );
+    }
+
+    /**
+     * Collapse any escaped/legacy form of a payable_type value down to its
+     * canonical form (morph alias if registered, FQCN with single backslashes
+     * otherwise). Returns the value unchanged if null or empty.
+     */
+    private static function normalizePayableType(?string $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        // Collapse any run of two or more backslashes down to one. Handles
+        // both `App\\Models\\X` and `App\\\\Models\\\\X` (rare quad-escape).
+        $normalized = preg_replace('/\\\\{2,}/', '\\', $value);
+
+        [$map, $flipped] = self::morphMapCache();
+
+        if (isset($map[$normalized])) {
+            return $normalized;
+        }
+
+        return $flipped[$normalized] ?? $normalized;
     }
 
     /**
