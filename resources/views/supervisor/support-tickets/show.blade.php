@@ -39,6 +39,13 @@
                     <i class="ri-bookmark-line"></i>
                     {{ __('support.supervisor.view_student_subscriptions') }}
                 </a>
+                @if($isAdmin)
+                    <a href="{{ route('manage.payments.index', ['subdomain' => $subdomain, 'user_id' => $ticket->user_id]) }}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors text-xs font-medium">
+                        <i class="ri-bank-card-line"></i>
+                        {{ __('support.supervisor.view_student_payments') }}
+                    </a>
+                @endif
             @elseif($isTeacherReporter)
                 <a href="{{ route('manage.teachers.show', ['subdomain' => $subdomain, 'teacher' => $ticket->user_id]) }}"
                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium">
@@ -49,6 +56,21 @@
                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors text-xs font-medium">
                     <i class="ri-bookmark-line"></i>
                     {{ __('support.supervisor.view_teacher_subscriptions') }}
+                </a>
+                <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'teacher_id' => $ticket->user_id]) }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors text-xs font-medium">
+                    <i class="ri-calendar-event-line"></i>
+                    {{ __('support.supervisor.view_teacher_sessions') }}
+                </a>
+                <a href="{{ route('manage.calendar.index', ['subdomain' => $subdomain, 'teacher_id' => $ticket->user_id]) }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 text-sky-700 rounded-lg hover:bg-sky-100 transition-colors text-xs font-medium">
+                    <i class="ri-calendar-line"></i>
+                    {{ __('support.supervisor.view_teacher_calendar') }}
+                </a>
+                <a href="{{ route('manage.teacher-earnings.index', ['subdomain' => $subdomain, 'teacher_ids' => [$ticket->user_id]]) }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors text-xs font-medium">
+                    <i class="ri-money-dollar-circle-line"></i>
+                    {{ __('support.supervisor.view_teacher_earnings') }}
                 </a>
             @endif
 

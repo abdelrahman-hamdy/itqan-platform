@@ -38,6 +38,9 @@ class SupervisorPaymentsController extends BaseSupervisorWebController
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             }
+            if ($request->filled('user_id')) {
+                $q->where('user_id', $request->user_id);
+            }
 
             return $q;
         };
