@@ -4,6 +4,21 @@
  * VERSION: 2025-11-16-FIX-v6 - Fixed clearAllRaisedHands room reference & added debugging
  */
 
+/**
+ * Shared audio capture constraints for every mic publish path.
+ * Applied by LiveKit only when creating a new audio track (not on re-unmute of an
+ * existing track — the SDK cannot apply these via applyConstraints). Kept here so
+ * every setMicrophoneEnabled(true, ...) site uses the exact same echoCancellation /
+ * noiseSuppression / autoGainControl configuration.
+ *
+ * Exposed on window so other modules (index.js) can reference the same constant.
+ */
+window.LiveKitAudioCaptureOptions = Object.freeze({
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+});
+
 
 /**
  * Controls manager for meeting UI interactions
@@ -453,17 +468,9 @@ class LiveKitControls {
                 }
             }
 
-            // Use SDK method to enable/disable microphone with audio optimization
+            // Pass capture options (AEC/NS/AGC) — audio codec/bitrate set via RoomOptions.
             if (newState) {
-                // Audio optimization settings (reduces bandwidth by 40-50%)
-                const audioOptions = {
-                    audioBitrate: 32000,        // 32 kbps (down from default 64 kbps)
-                    dtx: true,                  // Discontinuous transmission (silence detection)
-                    autoGainControl: true,      // Automatic gain control for consistent volume
-                    echoCancellation: true,     // Echo cancellation
-                    noiseSuppression: true,     // Noise suppression for clearer audio
-                };
-                await this.localParticipant.setMicrophoneEnabled(true, audioOptions);
+                await this.localParticipant.setMicrophoneEnabled(true, window.LiveKitAudioCaptureOptions);
             } else {
                 await this.localParticipant.setMicrophoneEnabled(false);
             }
@@ -575,8 +582,7 @@ class LiveKitControls {
 
         try {
 
-            // Enable microphone automatically
-            await this.localParticipant.setMicrophoneEnabled(true);
+            await this.localParticipant.setMicrophoneEnabled(true, window.LiveKitAudioCaptureOptions);
 
             // Update internal state
             this.isAudioEnabled = true;
@@ -2682,9 +2688,8 @@ class LiveKitControls {
     async handleAudioPermissionGranted(data) {
 
         try {
-            // Automatically unmute microphone
             if (!this.isAudioEnabled) {
-                await this.localParticipant.setMicrophoneEnabled(true);
+                await this.localParticipant.setMicrophoneEnabled(true, window.LiveKitAudioCaptureOptions);
                 this.isAudioEnabled = true;
                 this.updateControlButtons();
             }

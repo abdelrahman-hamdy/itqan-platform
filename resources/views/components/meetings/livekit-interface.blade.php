@@ -529,16 +529,18 @@
 
 <!-- Meeting interface CSS is loaded via resources/css/meeting-interface.css through Vite -->
 
-<!-- LiveKit JavaScript SDK - SPECIFIC WORKING VERSION -->
+@php
+    // Must be same-origin: third-party CDNs (jsDelivr) are blocked by some regional ISPs.
+    $livekitSdkPath = 'js/livekit/livekit-client.umd.min.js';
+@endphp
+<!-- LiveKit JavaScript SDK — self-hosted (livekit-client 2.18.0) -->
 <script>
     // Loading LiveKit SDK
 
     function loadLiveKitScript() {
         return new Promise((resolve, reject) => {
-            // Use official latest version from CDN
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/livekit-client@2.18.0/dist/livekit-client.umd.min.js';
-            script.crossOrigin = 'anonymous';
+            script.src = '{{ asset($livekitSdkPath) }}?v={{ filemtime(public_path($livekitSdkPath)) }}';
 
             script.onload = () => {
                 // LiveKit script loaded

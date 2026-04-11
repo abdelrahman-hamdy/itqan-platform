@@ -379,10 +379,13 @@
 
     async function loadLiveKitSDK() {
         if (window.LiveKit) return;
+        @php
+            // Must be same-origin: third-party CDNs (jsDelivr) are blocked by some regional ISPs.
+            $livekitSdkPath = 'js/livekit/livekit-client.umd.min.js';
+        @endphp
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/livekit-client@2.18.0/dist/livekit-client.umd.min.js';
-            script.crossOrigin = 'anonymous';
+            script.src = '{{ asset($livekitSdkPath) }}?v={{ filemtime(public_path($livekitSdkPath)) }}';
             script.onload = () => {
                 setTimeout(() => {
                     const names = ['LiveKit', 'LiveKitClient', 'LivekitClient', 'livekit'];

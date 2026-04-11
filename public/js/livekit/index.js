@@ -594,7 +594,7 @@ class LiveKitMeeting {
             audioStream.getTracks().forEach(track => track.stop());
 
             if (isTeacher) {
-                await localParticipant.setMicrophoneEnabled(true);
+                await localParticipant.setMicrophoneEnabled(true, window.LiveKitAudioCaptureOptions);
             }
             mediaPermissionsGranted = true;
             this.hideMicBlockedBanner();

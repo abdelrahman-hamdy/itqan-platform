@@ -38,31 +38,35 @@ class LiveKitConnection {
     }
 
     /**
-     * Build LiveKit connection options with codec, simulcast, and audio defaults
+     * Build LiveKit RoomOptions — passed to `new Room(options)`.
+     * Audio pipeline: speech-preset Opus (voice-optimized) with AEC/NS/AGC on.
+     * Video config is intentionally left on SDK defaults (stable VP8, auto simulcast).
      */
-    getConnectionOptions() {
+    getRoomOptions() {
         return {
-            publishDefaults: {
-                videoCodec: 'vp9',
-                simulcast: true,
-                videoSimulcastLayers: [
-                    { resolution: window.LiveKit.VideoPresets.h180.resolution, maxBitrate: 150000 },
-                    { resolution: window.LiveKit.VideoPresets.h360.resolution, maxBitrate: 500000 },
-                    { resolution: window.LiveKit.VideoPresets.h540.resolution, maxBitrate: 800000 },
-                ],
-                dtx: true,
-                audioBitrate: 32000,
-            },
-            dynacast: true,
             adaptiveStream: true,
-            videoCaptureDefaults: {
-                resolution: window.LiveKit.VideoPresets.h540.resolution,
-            },
+            dynacast: true,
             audioCaptureDefaults: {
-                autoGainControl: true,
                 echoCancellation: true,
                 noiseSuppression: true,
+                autoGainControl: true,
             },
+            publishDefaults: {
+                audioPreset: window.LiveKit.AudioPresets.speech, // ~32 kbps, voice-optimized
+                dtx: true,
+                red: true,
+            },
+        };
+    }
+
+    /**
+     * Build LiveKit RoomConnectOptions — passed to `room.connect(url, token, options)`.
+     * Only fields defined in RoomConnectOptions belong here (autoSubscribe, rtcConfig, etc.).
+     * Fields belonging to RoomOptions are silently ignored by connect() — see getRoomOptions().
+     */
+    getConnectOptions() {
+        return {
+            autoSubscribe: true,
         };
     }
 
@@ -78,7 +82,9 @@ class LiveKitConnection {
 
         // Let LiveKit server provide TURN credentials automatically via signaling.
         // No client-side ICE override needed (matches mobile app behavior).
-        this.room = new window.LiveKit.Room();
+        // RoomOptions (audioCaptureDefaults, publishDefaults, adaptiveStream, dynacast)
+        // MUST be passed to the Room constructor — they are silently ignored if passed to connect().
+        this.room = new window.LiveKit.Room(this.getRoomOptions());
 
         this.setupRoomEventListeners();
 
@@ -191,7 +197,7 @@ class LiveKitConnection {
         this.isConnecting = true;
 
         try {
-            await this.room.connect(serverUrl, token, this.getConnectionOptions());
+            await this.room.connect(serverUrl, token, this.getConnectOptions());
             this.localParticipant = this.room.localParticipant;
         } catch (error) {
             this.isConnecting = false;
@@ -276,7 +282,7 @@ class LiveKitConnection {
             if (!serverUrl) {
                 throw new Error('LiveKit server URL not configured');
             }
-            await this.room.connect(serverUrl, token, this.getConnectionOptions());
+            await this.room.connect(serverUrl, token, this.getConnectOptions());
 
         } catch (error) {
             this.isConnecting = false;

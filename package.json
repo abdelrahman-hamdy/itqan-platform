@@ -28,7 +28,7 @@
         "gsap": "^3.13.0",
         "intl-tel-input": "^25.14.0",
         "laravel-echo": "^2.2.0",
-        "livekit-client": "^2.15.5",
+        "livekit-client": "2.18.0",
         "pusher-js": "^8.4.0",
         "remixicon": "^4.8.0"
     }
