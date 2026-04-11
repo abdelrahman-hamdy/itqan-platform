@@ -7,6 +7,11 @@
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
     $breadcrumbItems = [];
 
+    $studentReport = null;
+    if ($viewType === 'student') {
+        $studentReport = $session->studentReports?->firstWhere('student_id', auth()->id());
+    }
+
     // Build session-type specific breadcrumb items
     if($session->circle_id && $session->circle) {
         // Group Circle Session
@@ -101,6 +106,14 @@
                         {!! nl2br(e($session->lesson_content)) !!}
                     </div>
                 </div>
+            @endif
+
+            {{-- Student Session Report (shown only when completed) --}}
+            @if($viewType === 'student' && $session->status === \App\Enums\SessionStatus::COMPLETED)
+                <x-sessions.student-session-report
+                    :report="$studentReport"
+                    session-type="quran"
+                />
             @endif
 
             <!-- Session Recordings (gated by visibility toggle) -->

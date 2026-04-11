@@ -242,6 +242,7 @@ class StudentCourseService
             'homework',
             'attendances',
             'meetingAttendances',
+            'studentReports',
         ])->find($sessionId);
 
         if (! $session) {

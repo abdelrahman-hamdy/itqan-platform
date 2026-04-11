@@ -4,6 +4,7 @@
 
 @php
     $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
+    $studentInteractiveReport = $session->studentReports?->firstWhere('student_id', auth()->id());
 @endphp
 
 <div>
@@ -59,6 +60,14 @@
                 :session="$session"
                 view-type="student"
                 session-type="interactive" />
+        @endif
+
+        {{-- Student Session Report --}}
+        @if($session->status === \App\Enums\SessionStatus::COMPLETED)
+            <x-sessions.student-session-report
+                :report="$studentInteractiveReport"
+                session-type="interactive"
+            />
         @endif
 
         <!-- Student Feedback Section (for completed sessions) -->

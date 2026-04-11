@@ -4,6 +4,7 @@
 
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+    $studentAcademicReport = $session->sessionReports?->firstWhere('student_id', auth()->id());
     $breadcrumbItems = [
         ['label' => __('student.session_detail.academic_teachers_breadcrumb'), 'route' => route('academic-teachers.index', ['subdomain' => $subdomain]), 'icon' => 'ri-user-star-line'],
     ];
@@ -69,6 +70,12 @@
                         </div>
                     @endif
                 </div>
+
+            {{-- Student Session Report --}}
+            <x-sessions.student-session-report
+                :report="$studentAcademicReport"
+                session-type="academic"
+            />
             @endif
 
             <!-- Student Feedback Section -->
