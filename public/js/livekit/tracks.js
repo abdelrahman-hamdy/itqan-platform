@@ -312,11 +312,35 @@ class LiveKitTracks {
             // For non-local participants, attach audio
             if (!isLocal && track) {
                 const audioElement = this.getOrCreateAudioElement(participantId);
-                
+
                 try {
                     track.attach(audioElement);
                     this.storeTrackReference(participantId, 'audio', audioElement);
+
+                    // Some mobile browsers need an explicit .play() after attach
+                    // even when autoplay is set — e.g. Safari with strict autoplay
+                    // policies on the meeting origin.
+                    const playPromise = audioElement.play();
+                    if (playPromise && typeof playPromise.catch === 'function') {
+                        playPromise.catch((playErr) => {
+                            if (window.MT) window.MT.error('tracks', 'audio_play_failed', playErr, {
+                                participant: participantId,
+                            });
+                        });
+                    }
+
+                    if (window.MT) window.MT.event('tracks', 'audio_attached', {
+                        participant: participantId,
+                        paused: audioElement.paused,
+                        muted: audioElement.muted,
+                        volume: audioElement.volume,
+                        sink_id: audioElement.sinkId || null,
+                        ready_state: audioElement.readyState,
+                    });
                 } catch (attachError) {
+                    if (window.MT) window.MT.error('tracks', 'audio_attach_failed', attachError, {
+                        participant: participantId,
+                    });
                 }
             }
 
@@ -820,7 +844,16 @@ class LiveKitTracks {
     }
 
     /**
-     * Get or create audio element for participant
+     * Get or create audio element for participant.
+     *
+     * Mobile browsers are picky about WebRTC audio playback elements:
+     *  - display:none audio elements are deprioritized for autoplay permissions
+     *    and device routing on iOS Safari. We use off-screen positioning instead.
+     *  - playsInline is REQUIRED on iOS Safari for inline audio playback.
+     *  - setSinkId('') tells Chrome/Edge to follow the OS default output device,
+     *    so when a user plugs in earbuds the audio actually routes there.
+     *  - explicit muted=false prevents the autoplay policy from starting muted.
+     *
      * @param {string} participantId - Participant ID
      * @returns {HTMLAudioElement} Audio element
      */
@@ -831,9 +864,30 @@ class LiveKitTracks {
             audioElement = document.createElement('audio');
             audioElement.id = `audio-${participantId}`;
             audioElement.autoplay = true;
-            audioElement.style.display = 'none';
+            audioElement.playsInline = true;
+            audioElement.muted = false;
+            audioElement.setAttribute('aria-hidden', 'true');
+            // Off-screen rather than display:none so mobile browsers treat
+            // this as a real playback element for audio routing decisions.
+            audioElement.style.position = 'fixed';
+            audioElement.style.left = '-9999px';
+            audioElement.style.top = '-9999px';
+            audioElement.style.width = '1px';
+            audioElement.style.height = '1px';
+            audioElement.style.pointerEvents = 'none';
 
-            // Append to document body
+            // Try to bind to the OS default output. setSinkId is a Promise and
+            // is only supported on Chrome/Edge desktop + newer Android Chrome.
+            // Passing '' follows the OS default when the device changes.
+            if (typeof audioElement.setSinkId === 'function') {
+                audioElement.setSinkId('').catch((err) => {
+                    if (window.MT) window.MT.warn('tracks', 'set_sink_id_failed', {
+                        participant: participantId,
+                        err_message: err && err.message ? err.message : String(err),
+                    });
+                });
+            }
+
             document.body.appendChild(audioElement);
         }
 

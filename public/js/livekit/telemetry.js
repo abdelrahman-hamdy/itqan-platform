@@ -43,7 +43,54 @@ class MeetingTelemetry {
         window.addEventListener('beforeunload', () => this.flushSync());
         window.addEventListener('pagehide', () => this.flushSync());
 
+        // Track audio device changes — critical for debugging Bluetooth earbuds
+        // that plug in or disconnect mid-meeting.
+        if (navigator.mediaDevices && typeof navigator.mediaDevices.addEventListener === 'function') {
+            navigator.mediaDevices.addEventListener('devicechange', () => {
+                this.event('devices', 'changed', {});
+                this.enumerateAudioDevices();
+            });
+        }
+
         this.event('telemetry', 'started', { device: this.deviceInfo });
+        // Log the initial set of available audio devices so we can correlate
+        // user reports like "my earbuds don't work" with what the browser
+        // actually sees.
+        this.enumerateAudioDevices();
+    }
+
+    /**
+     * Enumerate audio input/output devices and log them to telemetry.
+     * Labels are only populated after the user has granted mic permission, so
+     * we log both the id (stable) and the label (if available).
+     */
+    async enumerateAudioDevices() {
+        try {
+            if (!navigator.mediaDevices || typeof navigator.mediaDevices.enumerateDevices !== 'function') {
+                this.event('devices', 'enumerate_unsupported', {});
+                return;
+            }
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const inputs = [];
+            const outputs = [];
+            for (const d of devices) {
+                const entry = {
+                    id: (d.deviceId || '').substring(0, 12),
+                    label: d.label || '',
+                    group: (d.groupId || '').substring(0, 12),
+                };
+                if (d.kind === 'audioinput') inputs.push(entry);
+                else if (d.kind === 'audiooutput') outputs.push(entry);
+            }
+            this.event('devices', 'enumerated', {
+                audio_input_count: inputs.length,
+                audio_output_count: outputs.length,
+                inputs,
+                outputs,
+            });
+        } catch (e) {
+            this.error('devices', 'enumerate_failed', e);
+        }
     }
 
     collectDeviceInfo() {
