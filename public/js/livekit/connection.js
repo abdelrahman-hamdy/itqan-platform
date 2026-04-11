@@ -35,6 +35,13 @@ class LiveKitConnection {
         this.maxReconnectAttempts = 5;
         this.intentionalDisconnect = false;
         this.reconnectTimeoutId = null;
+        // Stability timer: only reset reconnectAttempts after the connection
+        // has been stable for this long. Prevents infinite loops where a
+        // client connects (reaching 'connected'), immediately disconnects,
+        // reconnects again, and resets the counter each cycle — bypassing
+        // maxReconnectAttempts entirely.
+        this.stabilityTimerId = null;
+        this.stabilityWindowMs = 30000;
     }
 
     /**
@@ -214,12 +221,28 @@ class LiveKitConnection {
 
         if (state === 'connected') {
             this.isConnecting = false;
-            this.reconnectAttempts = 0;
+
+            // Defer the reconnectAttempts reset until the connection has been
+            // stable for stabilityWindowMs. A rapid connect → disconnect cycle
+            // will cancel the timer via the 'disconnected' branch below, so the
+            // counter keeps climbing and maxReconnectAttempts eventually kicks in.
+            if (this.stabilityTimerId) clearTimeout(this.stabilityTimerId);
+            this.stabilityTimerId = setTimeout(() => {
+                this.reconnectAttempts = 0;
+                this.stabilityTimerId = null;
+            }, this.stabilityWindowMs);
 
             // CRITICAL FIX: Record attendance when successfully connected
             this.recordAttendanceJoin();
         } else if (state === 'disconnected') {
             this.isConnecting = false;
+
+            // Cancel any pending stability timer — the connection didn't stay
+            // up long enough to count as successful.
+            if (this.stabilityTimerId) {
+                clearTimeout(this.stabilityTimerId);
+                this.stabilityTimerId = null;
+            }
 
             // CRITICAL FIX: Record attendance when disconnected
             this.recordAttendanceLeave();
@@ -457,6 +480,12 @@ class LiveKitConnection {
         if (this.reconnectTimeoutId) {
             clearTimeout(this.reconnectTimeoutId);
             this.reconnectTimeoutId = null;
+        }
+
+        // Clear pending stability timer
+        if (this.stabilityTimerId) {
+            clearTimeout(this.stabilityTimerId);
+            this.stabilityTimerId = null;
         }
 
         // Record leave when destroying connection
