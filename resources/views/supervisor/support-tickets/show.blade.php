@@ -199,8 +199,9 @@
                 @endforeach
                 <div class="mb-3">
                     <textarea name="body" rows="3" required minlength="2" maxlength="2000"
-                              :disabled="submitting"
-                              class="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm disabled:bg-gray-50"
+                              :readonly="submitting"
+                              :class="submitting ? 'bg-gray-50' : ''"
+                              class="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm"
                               placeholder="{{ __('support.reply_placeholder') }}">{{ old('body') }}</textarea>
                     @error('body')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
