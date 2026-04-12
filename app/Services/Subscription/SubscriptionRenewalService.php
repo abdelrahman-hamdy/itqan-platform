@@ -509,17 +509,14 @@ class SubscriptionRenewalService
 
         // sessions_per_month may be NULL on the subscription row (it's a
         // package-level field not always snapshotted). Fall back to the actual
-        // package record to avoid the hardcoded 8 default on line 84.
-        $sessionsPerMonthFromSub = $subscription->sessions_per_month;
-        if ($sessionsPerMonthFromSub === null && $packageId) {
-            $pkg = $this->findPackage($subscription, $packageId);
-            $sessionsPerMonthFromSub = $pkg?->sessions_per_month;
-        }
+        // package record to avoid the hardcoded 8 default.
+        $pkg = ($subscription->sessions_per_month === null && $packageId)
+            ? $this->findPackage($subscription, $packageId)
+            : null;
 
         return [
-            'sessions_per_month' => $sessionsPerMonthFromSub,
-            'session_duration_minutes' => $subscription->session_duration_minutes
-                ?? ($packageId ? $this->findPackage($subscription, $packageId)?->session_duration_minutes : null),
+            'sessions_per_month' => $subscription->sessions_per_month ?? $pkg?->sessions_per_month,
+            'session_duration_minutes' => $subscription->session_duration_minutes ?? $pkg?->session_duration_minutes,
             'package_id' => $this->getPackageId($subscription),
             'package_snapshot' => $this->packageSnapshotFromSubscription($subscription),
             'price_fields' => [
