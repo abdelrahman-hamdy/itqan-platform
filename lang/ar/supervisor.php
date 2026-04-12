@@ -1235,6 +1235,15 @@ return [
         'no_academic_teachers_available' => 'لا يوجد معلمون أكاديميون متاحون',
         'teacher_count' => ':count معلم',
         'password_optional_hint' => 'اتركها فارغة إذا لم ترد تغيير كلمة المرور',
+        'search_teachers' => 'بحث عن معلم...',
+        'filter_quran' => 'قرآن',
+        'filter_academic' => 'أكاديمي',
+        'filter_male' => 'معلم',
+        'filter_female' => 'معلمة',
+        'no_matching_teachers' => 'لا يوجد معلمون مطابقون',
+        'selected_count' => 'معلم محدد',
+        'select_all' => 'تحديد الكل',
+        'deselect_all' => 'إلغاء تحديد الكل',
     ],
 
     'subscriptions' => [

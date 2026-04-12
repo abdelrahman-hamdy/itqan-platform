@@ -6,6 +6,7 @@ use App\Models\SupervisorProfile;
 use App\Models\SupervisorResponsibility;
 use App\Models\User;
 use App\Services\AcademyContextService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -195,7 +196,11 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
             ->orderBy('first_name')
             ->get();
 
-        return view('supervisor.supervisors.create', compact('academy', 'quranTeachers', 'academicTeachers'));
+        $oldQuranIds = array_map('intval', old('quran_teacher_ids', []) ?? []);
+        $oldAcademicIds = array_map('intval', old('academic_teacher_ids', []) ?? []);
+        $allTeachers = $this->buildTeacherList($quranTeachers, $academicTeachers, array_merge($oldQuranIds, $oldAcademicIds));
+
+        return view('supervisor.supervisors.create', compact('academy', 'allTeachers'));
     }
 
     public function store(Request $request, $subdomain = null): RedirectResponse
@@ -223,9 +228,9 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
             'password' => ['required', PasswordRules::min(6)->letters()->numbers()],
             'password_confirmation' => 'required|same:password',
             'quran_teacher_ids' => 'nullable|array',
-            'quran_teacher_ids.*' => 'exists:users,id',
+            'quran_teacher_ids.*' => [Rule::exists('users', 'id')->where('academy_id', AcademyContextService::getCurrentAcademy()->id)->where('user_type', 'quran_teacher')],
             'academic_teacher_ids' => 'nullable|array',
-            'academic_teacher_ids.*' => 'exists:users,id',
+            'academic_teacher_ids.*' => [Rule::exists('users', 'id')->where('academy_id', AcademyContextService::getCurrentAcademy()->id)->where('user_type', 'academic_teacher')],
         ], [
             'first_name.required' => __('auth.register.teacher.step2.validation.first_name_required', [], 'ar'),
             'last_name.required' => __('auth.register.teacher.step2.validation.last_name_required', [], 'ar'),
@@ -336,13 +341,14 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
         $assignedQuranTeacherIds = $supervisor->supervisorProfile?->getAssignedQuranTeacherIds() ?? [];
         $assignedAcademicTeacherIds = $supervisor->supervisorProfile?->getAssignedAcademicTeacherIds() ?? [];
 
+        $oldQuranIds = array_map('intval', old('quran_teacher_ids', $assignedQuranTeacherIds) ?? []);
+        $oldAcademicIds = array_map('intval', old('academic_teacher_ids', $assignedAcademicTeacherIds) ?? []);
+        $allTeachers = $this->buildTeacherList($quranTeachers, $academicTeachers, array_merge($oldQuranIds, $oldAcademicIds));
+
         return view('supervisor.supervisors.edit', compact(
             'supervisor',
             'academy',
-            'quranTeachers',
-            'academicTeachers',
-            'assignedQuranTeacherIds',
-            'assignedAcademicTeacherIds',
+            'allTeachers',
         ));
     }
 
@@ -374,9 +380,9 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
             'password' => ['nullable', PasswordRules::min(6)->letters()->numbers()],
             'password_confirmation' => 'nullable|same:password',
             'quran_teacher_ids' => 'nullable|array',
-            'quran_teacher_ids.*' => 'exists:users,id',
+            'quran_teacher_ids.*' => [Rule::exists('users', 'id')->where('academy_id', AcademyContextService::getCurrentAcademy()->id)->where('user_type', 'quran_teacher')],
             'academic_teacher_ids' => 'nullable|array',
-            'academic_teacher_ids.*' => 'exists:users,id',
+            'academic_teacher_ids.*' => [Rule::exists('users', 'id')->where('academy_id', AcademyContextService::getCurrentAcademy()->id)->where('user_type', 'academic_teacher')],
         ], [
             'first_name.required' => __('auth.register.teacher.step2.validation.first_name_required', [], 'ar'),
             'last_name.required' => __('auth.register.teacher.step2.validation.last_name_required', [], 'ar'),
@@ -458,6 +464,38 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
         if ($supervisor->user_type !== 'supervisor' || $supervisor->academy_id !== $this->getAcademyId()) {
             abort(403);
         }
+    }
+
+    private function buildTeacherList(Collection $quranTeachers, Collection $academicTeachers, array $preSelectedIds = []): array
+    {
+        $selectedMap = array_flip($preSelectedIds);
+        $teachers = [];
+
+        foreach ($quranTeachers as $teacher) {
+            $teachers[] = [
+                'id' => $teacher->id,
+                'name' => $teacher->name,
+                'gender' => $teacher->quranTeacherProfile?->gender ?? '',
+                'type' => 'quran',
+                'type_label' => __('supervisor.supervisors.quran_teachers_assigned'),
+                'teacher_code' => $teacher->quranTeacherProfile?->teacher_code ?? '',
+                'selected' => isset($selectedMap[$teacher->id]),
+            ];
+        }
+
+        foreach ($academicTeachers as $teacher) {
+            $teachers[] = [
+                'id' => $teacher->id,
+                'name' => $teacher->name,
+                'gender' => $teacher->academicTeacherProfile?->gender ?? '',
+                'type' => 'academic',
+                'type_label' => __('supervisor.supervisors.academic_teachers_assigned'),
+                'teacher_code' => $teacher->academicTeacherProfile?->teacher_code ?? '',
+                'selected' => isset($selectedMap[$teacher->id]),
+            ];
+        }
+
+        return $teachers;
     }
 
     private function syncResponsibilities(SupervisorProfile $profile, Request $request): void

@@ -275,61 +275,7 @@
                     <h3 class="text-lg font-semibold text-gray-900">{{ __('supervisor.supervisors.assignments_info') }}</h3>
                 </div>
 
-                <div class="space-y-5">
-                    {{-- Quran Teachers --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ __('supervisor.supervisors.select_quran_teachers') }}
-                            <span class="text-xs text-gray-400">{{ __('supervisor.supervisors.teacher_count', ['count' => $quranTeachers->count()]) }}</span>
-                        </label>
-                        @if($quranTeachers->count() > 0)
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto p-1">
-                                @foreach($quranTeachers as $teacher)
-                                    <label class="flex items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                                        <input type="checkbox" name="quran_teacher_ids[]" value="{{ $teacher->id }}"
-                                               class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                                               {{ in_array($teacher->id, old('quran_teacher_ids', $assignedQuranTeacherIds)) ? 'checked' : '' }}>
-                                        <span class="ms-2 text-sm text-gray-700">
-                                            {{ $teacher->name }}
-                                            @if($teacher->quranTeacherProfile?->teacher_code)
-                                                <span class="text-xs text-gray-400 font-mono">({{ $teacher->quranTeacherProfile->teacher_code }})</span>
-                                            @endif
-                                        </span>
-                                    </label>
-                                @endforeach
-                            </div>
-                        @else
-                            <p class="text-sm text-gray-500 text-center py-3">{{ __('supervisor.supervisors.no_quran_teachers_available') }}</p>
-                        @endif
-                    </div>
-
-                    {{-- Academic Teachers --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ __('supervisor.supervisors.select_academic_teachers') }}
-                            <span class="text-xs text-gray-400">{{ __('supervisor.supervisors.teacher_count', ['count' => $academicTeachers->count()]) }}</span>
-                        </label>
-                        @if($academicTeachers->count() > 0)
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto p-1">
-                                @foreach($academicTeachers as $teacher)
-                                    <label class="flex items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                                        <input type="checkbox" name="academic_teacher_ids[]" value="{{ $teacher->id }}"
-                                               class="h-4 w-4 text-violet-600 focus:ring-violet-500 border-gray-300 rounded"
-                                               {{ in_array($teacher->id, old('academic_teacher_ids', $assignedAcademicTeacherIds)) ? 'checked' : '' }}>
-                                        <span class="ms-2 text-sm text-gray-700">
-                                            {{ $teacher->name }}
-                                            @if($teacher->academicTeacherProfile?->teacher_code)
-                                                <span class="text-xs text-gray-400 font-mono">({{ $teacher->academicTeacherProfile->teacher_code }})</span>
-                                            @endif
-                                        </span>
-                                    </label>
-                                @endforeach
-                            </div>
-                        @else
-                            <p class="text-sm text-gray-500 text-center py-3">{{ __('supervisor.supervisors.no_academic_teachers_available') }}</p>
-                        @endif
-                    </div>
-                </div>
+                @include('supervisor.supervisors._teacher-assignments')
             </div>
 
             <!-- Notes -->

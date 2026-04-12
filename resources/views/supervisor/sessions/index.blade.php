@@ -114,7 +114,7 @@
             <div class="flex flex-wrap items-center gap-2">
                 <span class="text-xs font-medium text-gray-500">{{ __($t.'col_scheduled') }}:</span>
                 @foreach(['all' => __($t.'filter_date_all'), 'today' => __($t.'filter_date_today'), 'week' => __($t.'filter_date_week'), 'month' => __($t.'filter_date_month')] as $dateVal => $dateLabel)
-                    <a href="{{ $filterUrl(['date' => $dateVal, 'date_from' => null, 'date_to' => null, 'teacher_gender' => null]) }}"
+                    <a href="{{ $filterUrl(['date' => $dateVal, 'date_from' => null, 'date_to' => null]) }}"
                        @click="showCustomDate = false"
                        class="px-3 py-1 text-xs font-medium rounded-full transition-colors
                            {{ $dateFilter === $dateVal ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
@@ -207,7 +207,7 @@
                         @if($statusFilter)<input type="hidden" name="status" value="{{ $statusFilter }}">@endif
                         @if($teacherId)<input type="hidden" name="teacher_id" value="{{ $teacherId }}">@endif
                         @if($studentId)<input type="hidden" name="student_id" value="{{ $studentId }}">@endif
-                            @if(request('date_from'))<input type="hidden" name="date_from" value="{{ request('date_from') }}">@endif
+                        @if(request('date_from'))<input type="hidden" name="date_from" value="{{ request('date_from') }}">@endif
                         @if(request('date_to'))<input type="hidden" name="date_to" value="{{ request('date_to') }}">@endif
                         <input type="text" name="search" value="{{ $search }}"
                             placeholder="{{ __($t.'search_placeholder') }}"

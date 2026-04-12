@@ -9,6 +9,7 @@ use App\Jobs\CalculateSessionEarningsJob;
 use App\Jobs\CalculateSessionForAttendance;
 use App\Jobs\CreateSessionMeetingJob;
 use App\Models\BaseSession;
+use App\Models\MeetingAttendance;
 use App\Models\User;
 use App\Services\Notification\NotificationUrlBuilder;
 use App\Services\NotificationService;
@@ -268,19 +269,20 @@ class BaseSessionObserver
     private function cleanupStaleTeacherAttendance(BaseSession $session): void
     {
         $oldTeacherId = null;
-        $newTeacherId = null;
 
         if ($session instanceof \App\Models\QuranSession && $session->wasChanged('quran_teacher_id')) {
             $oldTeacherId = $session->getOriginal('quran_teacher_id');
-            $newTeacherId = $session->quran_teacher_id;
+        } elseif ($session instanceof \App\Models\AcademicSession && $session->wasChanged('academic_teacher_id')) {
+            $oldTeacherId = $session->academicTeacher?->getOriginal('user_id')
+                ?? $session->getOriginal('academic_teacher_id');
         }
 
-        if (! $oldTeacherId || $oldTeacherId === $newTeacherId) {
+        if (! $oldTeacherId) {
             return;
         }
 
-        $deleted = \App\Models\MeetingAttendance::where('session_id', $session->id)
-            ->whereIn('user_type', \App\Models\MeetingAttendance::TEACHER_USER_TYPES)
+        $deleted = MeetingAttendance::where('session_id', $session->id)
+            ->whereIn('user_type', MeetingAttendance::TEACHER_USER_TYPES)
             ->where('user_id', $oldTeacherId)
             ->where('total_duration_minutes', 0)
             ->delete();
@@ -289,7 +291,6 @@ class BaseSessionObserver
             Log::info('Cleaned up stale teacher attendance after reassignment', [
                 'session_id' => $session->id,
                 'old_teacher_id' => $oldTeacherId,
-                'new_teacher_id' => $newTeacherId,
             ]);
         }
     }

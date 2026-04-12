@@ -1235,6 +1235,15 @@ return [
         'no_academic_teachers_available' => 'No Academic teachers available',
         'teacher_count' => ':count teacher(s)',
         'password_optional_hint' => 'Leave empty if you don\'t want to change the password',
+        'search_teachers' => 'Search for a teacher...',
+        'filter_quran' => 'Quran',
+        'filter_academic' => 'Academic',
+        'filter_male' => 'Male',
+        'filter_female' => 'Female',
+        'no_matching_teachers' => 'No matching teachers',
+        'selected_count' => 'selected',
+        'select_all' => 'Select All',
+        'deselect_all' => 'Deselect All',
     ],
 
     'subscriptions' => [
