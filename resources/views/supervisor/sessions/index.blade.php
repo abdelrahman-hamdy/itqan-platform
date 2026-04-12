@@ -105,18 +105,16 @@
             $filterUrl = fn(array $overrides = []) => route('manage.sessions.index', array_filter(array_merge([
                 'subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter,
                 'status' => $statusFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId,
-                'search' => $search, 'teacher_gender' => request('teacher_gender'),
-                'date_from' => request('date_from'), 'date_to' => request('date_to'),
+                'search' => $search, 'date_from' => request('date_from'), 'date_to' => request('date_to'),
             ], $overrides)));
-            $hasFilters = $statusFilter || $dateFilter !== 'all' || $teacherId || $studentId || $search || request('teacher_gender') || request('date_from');
-            $genderFilter = request('teacher_gender');
+            $hasFilters = $statusFilter || $dateFilter !== 'all' || $teacherId || $studentId || $search || request('date_from');
         @endphp
         <div class="p-4 space-y-3" x-data="{ showCustomDate: {{ $dateFilter === 'custom' ? 'true' : 'false' }} }">
             {{-- Date pills --}}
             <div class="flex flex-wrap items-center gap-2">
                 <span class="text-xs font-medium text-gray-500">{{ __($t.'col_scheduled') }}:</span>
                 @foreach(['all' => __($t.'filter_date_all'), 'today' => __($t.'filter_date_today'), 'week' => __($t.'filter_date_week'), 'month' => __($t.'filter_date_month')] as $dateVal => $dateLabel)
-                    <a href="{{ $filterUrl(['date' => $dateVal, 'date_from' => null, 'date_to' => null]) }}"
+                    <a href="{{ $filterUrl(['date' => $dateVal, 'date_from' => null, 'date_to' => null, 'teacher_gender' => null]) }}"
                        @click="showCustomDate = false"
                        class="px-3 py-1 text-xs font-medium rounded-full transition-colors
                            {{ $dateFilter === $dateVal ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
@@ -139,7 +137,6 @@
                     @if($statusFilter)<input type="hidden" name="status" value="{{ $statusFilter }}">@endif
                     @if($teacherId)<input type="hidden" name="teacher_id" value="{{ $teacherId }}">@endif
                     @if($studentId)<input type="hidden" name="student_id" value="{{ $studentId }}">@endif
-                    @if($genderFilter)<input type="hidden" name="teacher_gender" value="{{ $genderFilter }}">@endif
                     @if($search)<input type="hidden" name="search" value="{{ $search }}">@endif
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">{{ __($t.'filter_date_from') }}</label>
@@ -177,44 +174,28 @@
                     </option>
                 </select>
 
-                {{-- Teacher dropdown with gender filter --}}
+                {{-- Teacher searchable select with gender filter --}}
                 @if(!empty($teachers))
-                <div class="flex gap-1">
-                    <select onchange="if(this.value !== '') { window.location.href = this.value; }"
-                        class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 flex-1 min-w-0">
-                        <option value="{{ $filterUrl(['teacher_id' => null]) }}" {{ !$teacherId ? 'selected' : '' }}>
-                            {{ __('supervisor.common.all_teachers') }}
-                        </option>
-                        @foreach($teachers as $teacher)
-                            @if(!$genderFilter || $teacher['gender'] === $genderFilter)
-                            <option value="{{ $filterUrl(['teacher_id' => $teacher['id']]) }}" {{ $teacherId == $teacher['id'] ? 'selected' : '' }}>
-                                {{ $teacher['name'] }}
-                            </option>
-                            @endif
-                        @endforeach
-                    </select>
-                    <select onchange="window.location.href = this.value"
-                        class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 w-20 shrink-0">
-                        <option value="{{ $filterUrl(['teacher_gender' => null]) }}" {{ !$genderFilter ? 'selected' : '' }}>{{ __($t.'filter_gender_all') }}</option>
-                        <option value="{{ $filterUrl(['teacher_gender' => 'male']) }}" {{ $genderFilter === 'male' ? 'selected' : '' }}>{{ __($t.'filter_gender_male') }}</option>
-                        <option value="{{ $filterUrl(['teacher_gender' => 'female']) }}" {{ $genderFilter === 'female' ? 'selected' : '' }}>{{ __($t.'filter_gender_female') }}</option>
-                    </select>
-                </div>
+                <x-ui.searchable-select
+                    name="teacher_id"
+                    :options="$teachers"
+                    :selected="$teacherId"
+                    :placeholder="__('supervisor.common.all_teachers')"
+                    :showGenderFilter="true"
+                    :showTypeFilter="false"
+                />
                 @endif
 
-                {{-- Student dropdown --}}
+                {{-- Student searchable select with gender filter --}}
                 @if(!empty($students))
-                <select onchange="if(this.value !== '') { window.location.href = this.value; }"
-                    class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                    <option value="{{ $filterUrl(['student_id' => null]) }}" {{ !$studentId ? 'selected' : '' }}>
-                        {{ __($t.'all_students') }}
-                    </option>
-                    @foreach($students as $student)
-                        <option value="{{ $filterUrl(['student_id' => $student['id']]) }}" {{ $studentId == $student['id'] ? 'selected' : '' }}>
-                            {{ $student['name'] }}
-                        </option>
-                    @endforeach
-                </select>
+                <x-ui.searchable-select
+                    name="student_id"
+                    :options="$students"
+                    :selected="$studentId"
+                    :placeholder="__($t.'all_students')"
+                    :showGenderFilter="true"
+                    :showTypeFilter="false"
+                />
                 @endif
 
                 {{-- Search input --}}
@@ -226,8 +207,7 @@
                         @if($statusFilter)<input type="hidden" name="status" value="{{ $statusFilter }}">@endif
                         @if($teacherId)<input type="hidden" name="teacher_id" value="{{ $teacherId }}">@endif
                         @if($studentId)<input type="hidden" name="student_id" value="{{ $studentId }}">@endif
-                        @if($genderFilter)<input type="hidden" name="teacher_gender" value="{{ $genderFilter }}">@endif
-                        @if(request('date_from'))<input type="hidden" name="date_from" value="{{ request('date_from') }}">@endif
+                            @if(request('date_from'))<input type="hidden" name="date_from" value="{{ request('date_from') }}">@endif
                         @if(request('date_to'))<input type="hidden" name="date_to" value="{{ request('date_to') }}">@endif
                         <input type="text" name="search" value="{{ $search }}"
                             placeholder="{{ __($t.'search_placeholder') }}"

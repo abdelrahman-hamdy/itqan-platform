@@ -354,12 +354,6 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             $this->applyTeacherFilter($query, $type, (int) $teacherId);
         }
 
-        // Teacher gender filter
-        $teacherGender = request('teacher_gender');
-        if ($teacherGender) {
-            $this->applyTeacherGenderFilter($query, $type, $teacherGender);
-        }
-
         // Student filter
         if ($studentId) {
             $this->applyStudentFilter($query, $type, (int) $studentId);
@@ -430,18 +424,6 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             'academic' => $query->whereHas('academicTeacher', fn ($q) => $q->where('user_id', $teacherUserId)),
             'interactive' => $query->whereHas('course.assignedTeacher', fn ($q) => $q->where('user_id', $teacherUserId)),
             default => $query->where('quran_teacher_id', $teacherUserId),
-        };
-    }
-
-    /**
-     * Apply teacher gender filter to query.
-     */
-    private function applyTeacherGenderFilter(Builder $query, string $type, string $gender): void
-    {
-        match ($type) {
-            'academic' => $query->whereHas('academicTeacher.user', fn ($q) => $q->where('gender', $gender)),
-            'interactive' => $query->whereHas('course.assignedTeacher.user', fn ($q) => $q->where('gender', $gender)),
-            default => $query->whereHas('quranTeacher', fn ($q) => $q->where('gender', $gender)),
         };
     }
 
@@ -554,21 +536,35 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
         $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
 
-        $allIds = array_unique(array_merge($quranTeacherIds, $academicTeacherIds));
+        $teachers = collect();
 
-        if (empty($allIds)) {
-            return [];
+        if (! empty($quranTeacherIds)) {
+            $quran = User::whereIn('id', $quranTeacherIds)->orderBy('name')->get()
+                ->map(fn ($u) => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'gender' => $u->gender ?? '',
+                    'type' => 'quran',
+                    'type_label' => __('supervisor.sessions.type_quran'),
+                ]);
+            $teachers = $teachers->merge($quran);
         }
 
-        return User::whereIn('id', $allIds)
-            ->orderBy('name')
-            ->get()
-            ->map(fn ($user) => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'gender' => $user->gender,
-            ])
-            ->toArray();
+        if (! empty($academicTeacherIds)) {
+            $academic = User::whereIn('id', $academicTeacherIds)
+                ->whereNotIn('id', $quranTeacherIds) // avoid duplicates
+                ->orderBy('name')->get()
+                ->map(fn ($u) => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'gender' => $u->gender ?? '',
+                    'type' => 'academic',
+                    'type_label' => __('supervisor.sessions.type_academic'),
+                ]);
+            $teachers = $teachers->merge($academic);
+        }
+
+        return $teachers->sortBy('name')->values()->toArray();
     }
 
     /**
@@ -594,13 +590,14 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         }
 
         return User::query()
-            ->select('id', 'first_name', 'last_name')
+            ->select('id', 'first_name', 'last_name', 'gender')
             ->whereIn('id', $allIds)
             ->orderBy('name')
             ->get()
             ->map(fn ($user) => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'gender' => $user->gender ?? '',
             ])
             ->toArray();
     }
