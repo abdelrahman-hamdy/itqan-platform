@@ -630,7 +630,7 @@
                                                     @endforeach
                                                 </div>
                                             </div>
-                                            <p class="text-xs text-gray-500">{{ __('supervisor.subscriptions.renew_always_activates_note') }}</p>
+                                            <div class="mb-3"><label class="block text-sm font-medium text-gray-700 mb-2">{{ __('supervisor.subscriptions.payment_mode_label') }}</label><div class="flex gap-2"><label class="flex-1 cursor-pointer"><input type="radio" name="payment_mode" value="paid" checked class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-700">{{ __('supervisor.subscriptions.payment_mode_paid') }}</div></label><label class="flex-1 cursor-pointer"><input type="radio" name="payment_mode" value="unpaid" class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-yellow-600 peer-checked:bg-yellow-50 peer-checked:text-yellow-700">{{ __('supervisor.subscriptions.payment_mode_unpaid') }}</div></label></div></div>
                                         </form>
                                     </div>
                                     <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">
@@ -663,7 +663,7 @@
                                                     @endforeach
                                                 </div>
                                             </div>
-                                            <p class="text-xs text-gray-500">{{ __('supervisor.subscriptions.resubscribe_always_activates_note') }}</p>
+                                            <div class="mb-3"><label class="block text-sm font-medium text-gray-700 mb-2">{{ __('supervisor.subscriptions.payment_mode_label') }}</label><div class="flex gap-2"><label class="flex-1 cursor-pointer"><input type="radio" name="payment_mode" value="paid" checked class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-700">{{ __('supervisor.subscriptions.payment_mode_paid') }}</div></label><label class="flex-1 cursor-pointer"><input type="radio" name="payment_mode" value="unpaid" class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-yellow-600 peer-checked:bg-yellow-50 peer-checked:text-yellow-700">{{ __('supervisor.subscriptions.payment_mode_unpaid') }}</div></label></div></div>
                                         </form>
                                     </div>
                                     <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">

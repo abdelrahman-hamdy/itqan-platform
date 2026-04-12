@@ -757,10 +757,9 @@ trait HasSubscriptionActions
     /**
      * Shared form schema for renew and resubscribe actions.
      *
-     * Note: the old `activate_mode` Select has been removed. Renew now always
-     * activates the new cycle — there is no "renew with pending payment" mode.
-     * Admins who need to grant the student more time to pay should use the
-     * Extend action (grace period on the current cycle) instead.
+     * Offers a payment mode choice (paid vs unpaid) so the admin can renew
+     * without requiring immediate payment — the student keeps scheduling
+     * while payment is pending.
      */
     private static function getRenewalFormSchema(): array
     {
@@ -774,6 +773,15 @@ trait HasSubscriptionActions
                 ])
                 ->default(fn (BaseSubscription $record) => $record->billing_cycle->value)
                 ->required(),
+            Select::make('payment_mode')
+                ->label(__('subscriptions.payment_mode_label'))
+                ->options([
+                    'paid' => __('subscriptions.payment_mode_paid'),
+                    'unpaid' => __('subscriptions.payment_mode_unpaid'),
+                ])
+                ->default('paid')
+                ->required()
+                ->helperText(__('subscriptions.payment_mode_helper')),
             TextInput::make('discount_amount')
                 ->label(__('subscriptions.discount_label'))
                 ->numeric()
@@ -821,6 +829,7 @@ trait HasSubscriptionActions
                     $new = app(\App\Services\Subscription\SubscriptionRenewalService::class)
                         ->renew($record, [
                             'billing_cycle' => $data['billing_cycle'],
+                            'payment_mode' => $data['payment_mode'] ?? 'paid',
                             'discount_amount' => (float) ($data['discount_amount'] ?? 0),
                             'is_recurring_discount' => $data['is_recurring_discount'] ?? false,
                         ]);

@@ -209,7 +209,11 @@ return [
 
     // Cycle-based renewal copy
     'renewal_payment_recorded_by_admin' => 'تم تسجيل دفعة التجديد بواسطة الإدارة (دورة جديدة)',
-    'renew_always_activates_note' => 'سيتم تفعيل الدورة الجديدة فوراً. لمنح الطالب مهلة للدفع، استخدم إجراء تمديد فترة السماح بدلاً من ذلك.',
+    'renewal_payment_pending' => 'دفعة تجديد معلقة — في انتظار الدفع من الطالب',
+    'payment_mode_label' => 'حالة الدفع',
+    'payment_mode_paid' => 'مدفوع',
+    'payment_mode_unpaid' => 'غير مدفوع (معلق)',
+    'payment_mode_helper' => 'مدفوع: يتم تفعيل الدورة فوراً كمدفوعة. غير مدفوع: يتم تفعيل الدورة مع حالة دفع معلقة — الطالب يحضر جلساته عادياً ويدفع لاحقاً.',
 
     // Cancel action
     'cancel_label' => 'إلغاء الاشتراك',

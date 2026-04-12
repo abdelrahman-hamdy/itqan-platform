@@ -203,7 +203,11 @@ return [
 
     // Cycle-based renewal copy
     'renewal_payment_recorded_by_admin' => 'Renewal payment recorded by admin (new cycle)',
-    'renew_always_activates_note' => 'The new cycle will activate immediately. To grant the student more time to pay, use the Extend Grace Period action instead.',
+    'renewal_payment_pending' => 'Renewal payment pending — awaiting student payment',
+    'payment_mode_label' => 'Payment Status',
+    'payment_mode_paid' => 'Paid',
+    'payment_mode_unpaid' => 'Unpaid (Pending)',
+    'payment_mode_helper' => 'Paid: cycle activates as fully paid. Unpaid: cycle activates with pending payment — student attends sessions normally and pays later.',
 
     // Cancel action
     'cancel_label' => 'Cancel Subscription',

@@ -432,29 +432,12 @@ abstract class BaseSubscription extends Model
     /**
      * Scope: Get subscriptions that are schedulable right now.
      *
-     * A subscription is schedulable if and only if:
-     *   status === ACTIVE
-     *   AND (payment_status === PAID OR the current cycle is in grace period)
-     *
-     * This is the query-side equivalent of `isSchedulable()` and should be used
-     * anywhere the UI needs to populate a schedulable-items dropdown or filter
-     * circles/lessons for session creation.
+     * Matches `isSchedulable()`: status === ACTIVE is the only requirement.
+     * Payment status is a billing concern, not a scheduling gate.
      */
     public function scopeSchedulable(Builder $query): Builder
     {
-        return $query->where('status', SessionSubscriptionStatus::ACTIVE)
-            ->where(function (Builder $q) {
-                $q->where('payment_status', SubscriptionPaymentStatus::PAID)
-                    ->orWhere(function (Builder $grace) {
-                        $grace->whereRaw(
-                            "JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.grace_period_ends_at')) > NOW()"
-                        );
-                    })
-                    ->orWhereHas('currentCycle', function (Builder $cycleQ) {
-                        $cycleQ->whereNotNull('grace_period_ends_at')
-                            ->where('grace_period_ends_at', '>', now());
-                    });
-            });
+        return $query->where('status', SessionSubscriptionStatus::ACTIVE);
     }
 
     /**
@@ -541,26 +524,21 @@ abstract class BaseSubscription extends Model
     /**
      * Check whether this subscription is schedulable right now.
      *
-     * A subscription is schedulable if and only if:
-     *   - status === ACTIVE
-     *   - AND (payment_status === PAID OR the current cycle is in a grace period)
+     * A subscription is schedulable whenever its status is ACTIVE — period.
+     * Payment status is a billing concern, not a scheduling concern:
      *
-     * This is the SINGLE contract that every scheduling gate must consult
-     * (validators, calendar strategy filters, session creating observers,
-     * circle option loaders). Replacing all direct `status === ACTIVE` checks
-     * with this method is what unblocks grace-period scheduling.
+     *   - ACTIVE + PAID  → schedulable (normal paid subscription)
+     *   - ACTIVE + PENDING → schedulable (admin-renewed unpaid, or in grace)
+     *   - PAUSED  → NOT schedulable (cycle ended, or grace lapsed)
+     *   - PENDING → NOT schedulable (first-time signup, never activated)
+     *   - CANCELLED → NOT schedulable
+     *
+     * The subscription lifecycle handles non-payment via ExpireActiveSubscriptions
+     * (pauses when cycle ends) and the Extend action (keeps ACTIVE during grace).
      */
     public function isSchedulable(): bool
     {
-        if ($this->status !== SessionSubscriptionStatus::ACTIVE) {
-            return false;
-        }
-
-        if ($this->payment_status === SubscriptionPaymentStatus::PAID) {
-            return true;
-        }
-
-        return $this->isInGracePeriod();
+        return $this->status === SessionSubscriptionStatus::ACTIVE;
     }
 
     /**

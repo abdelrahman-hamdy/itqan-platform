@@ -135,9 +135,12 @@ class SubscriptionRenewalService
                 'currency' => $subscription->currency ?? 'SAR',
                 'package_id' => $pricing['package_id'] ?? null,
                 'package_snapshot' => $pricing['package_snapshot'] ?? null,
-                'payment_status' => SubscriptionCycle::PAYMENT_PAID,
+                'payment_status' => ($options['payment_mode'] ?? 'paid') === 'unpaid'
+                    ? SubscriptionCycle::PAYMENT_PENDING
+                    : SubscriptionCycle::PAYMENT_PAID,
                 'metadata' => [
                     'created_by_renewal' => true,
+                    'payment_mode' => $options['payment_mode'] ?? 'paid',
                     'actor_id' => $options['actor_id'] ?? auth()->id(),
                     'previous_cycle_id' => $currentCycle->id ?? null,
                 ],
@@ -156,7 +159,7 @@ class SubscriptionRenewalService
             }
 
             // Create a COMPLETED payment row linked to this cycle (Renew asserts the cycle is paid)
-            $payment = $this->createRenewalPayment($subscription, $newCycle, $pricing);
+            $payment = $this->createRenewalPayment($subscription, $newCycle, $pricing, $options);
             $newCycle->update(['payment_id' => $payment->id]);
 
             // Academic: create the next batch of UNSCHEDULED sessions for this cycle
@@ -347,13 +350,17 @@ class SubscriptionRenewalService
         array $pricing,
         array $options,
     ): void {
+        $isPaid = ($options['payment_mode'] ?? 'paid') !== 'unpaid';
+
         $updateData = [
             'status' => SessionSubscriptionStatus::ACTIVE,
-            'payment_status' => SubscriptionPaymentStatus::PAID,
+            'payment_status' => $isPaid
+                ? SubscriptionPaymentStatus::PAID
+                : SubscriptionPaymentStatus::PENDING,
             'starts_at' => $cycle->starts_at,
             'ends_at' => $cycle->ends_at,
             'next_billing_date' => $cycle->ends_at,
-            'last_payment_date' => now(),
+            'last_payment_date' => $isPaid ? now() : $subscription->last_payment_date,
             'billing_cycle' => BillingCycle::from($cycle->billing_cycle),
             'total_sessions' => $cycle->total_sessions,
             'sessions_remaining' => $cycle->total_sessions,
@@ -414,23 +421,24 @@ class SubscriptionRenewalService
     }
 
     /**
-     * Create a COMPLETED payment row for the renewal.
+     * Create a payment row for the renewal.
      *
-     * Renew asserts that the cycle is paid — either the student paid in-platform
-     * (webhook path) or the admin confirmed an external payment. Uses the
-     * `Payment::createPayment()` factory so purchase-source metadata, payment
-     * code generation, and fee/tax recalculation stay consistent with other
-     * in-platform payments.
+     * When payment_mode = 'paid': creates a COMPLETED payment (admin confirmed
+     * external payment or student paid in-platform).
+     * When payment_mode = 'unpaid': creates a PENDING payment (student will pay later).
      */
     private function createRenewalPayment(
         BaseSubscription $subscription,
         SubscriptionCycle $cycle,
         array $pricing,
+        array $options = [],
     ): Payment {
         $amount = (float) ($pricing['price_fields']['final_price']
             ?? $cycle->final_price
             ?? $cycle->total_price
             ?? 0);
+
+        $isPaid = ($options['payment_mode'] ?? 'paid') !== 'unpaid';
 
         return Payment::createPayment([
             'academy_id' => $subscription->academy_id,
@@ -442,12 +450,14 @@ class SubscriptionRenewalService
             'payment_gateway' => 'manual',
             'amount' => $amount,
             'currency' => $subscription->currency ?? 'SAR',
-            'status' => PaymentStatus::COMPLETED,
-            'payment_status' => 'paid',
-            'payment_date' => now(),
-            'paid_at' => now(),
-            'confirmed_at' => now(),
-            'notes' => __('subscriptions.renewal_payment_recorded_by_admin'),
+            'status' => $isPaid ? PaymentStatus::COMPLETED : PaymentStatus::PENDING,
+            'payment_status' => $isPaid ? 'paid' : 'pending',
+            'payment_date' => $isPaid ? now() : null,
+            'paid_at' => $isPaid ? now() : null,
+            'confirmed_at' => $isPaid ? now() : null,
+            'notes' => $isPaid
+                ? __('subscriptions.renewal_payment_recorded_by_admin')
+                : __('subscriptions.renewal_payment_pending'),
         ]);
     }
 

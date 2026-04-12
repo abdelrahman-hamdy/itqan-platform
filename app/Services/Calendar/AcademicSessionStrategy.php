@@ -457,7 +457,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
 
             $count = 0;
             foreach ($sessions as $session) {
-                $session->delete();
+                $session->forceDelete();
                 $count++;
             }
 

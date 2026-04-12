@@ -439,6 +439,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
         $validator = Validator::make($request->all(), [
             'billing_cycle' => 'required|in:monthly,quarterly,yearly',
+            'payment_mode' => 'sometimes|in:paid,unpaid',
         ]);
 
         if ($validator->fails()) {
@@ -446,13 +447,10 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         }
 
         try {
-            // Renew always activates — the old `activate_mode = pending` was the
-            // entry point that created ghost rows with NULL dates. Admins who
-            // want to grant the student more payment time should use the Extend
-            // action, which grants a grace period on the current cycle.
             $service = app(\App\Services\Subscription\SubscriptionRenewalService::class);
             $options = [
                 'billing_cycle' => $request->billing_cycle,
+                'payment_mode' => $request->input('payment_mode', 'paid'),
             ];
 
             $new = $mode === 'resubscribe'
