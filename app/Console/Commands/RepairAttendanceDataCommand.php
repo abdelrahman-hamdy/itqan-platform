@@ -29,7 +29,8 @@ class RepairAttendanceDataCommand extends Command
                           {--since=2026-04-01 : Only process sessions ended after this date}
                           {--academy-id= : Limit to a specific academy}
                           {--dry-run : Preview changes without saving}
-                          {--session-ids= : Comma-separated session IDs to process}';
+                          {--session-ids= : Comma-separated session IDs to process}
+                          {--force-recalculate-legacy : Reset is_calculated on left/late rows so they get recalculated with new percentage thresholds}';
 
     protected $description = 'Repair attendance data: recalculate, backfill teacher flags, fix earnings, flag for manual review';
 
@@ -74,10 +75,32 @@ class RepairAttendanceDataCommand extends Command
 
     /**
      * Phase A: Recalculate uncalculated MeetingAttendance records.
+     *
+     * With --force-recalculate-legacy: first resets is_calculated on rows
+     * with deprecated left/late statuses so they get recalculated through
+     * the new percentage-based thresholds.
      */
     private function phaseA(Carbon $since, ?int $academyId, bool $isDryRun, ?array $sessionIdFilter): void
     {
         $this->info('=== Phase A: Recalculate uncalculated MeetingAttendance records ===');
+
+        // Reset legacy left/late rows so they go through the new percentage logic
+        if ($this->option('force-recalculate-legacy')) {
+            $legacyQuery = MeetingAttendance::whereIn('attendance_status', ['left', 'late'])
+                ->where('is_calculated', true);
+
+            $legacyCount = $legacyQuery->count();
+            $this->line("  Legacy left/late rows to reset: {$legacyCount}");
+
+            if ($legacyCount > 0 && ! $isDryRun) {
+                MeetingAttendance::whereIn('attendance_status', ['left', 'late'])
+                    ->where('is_calculated', true)
+                    ->update(['is_calculated' => false]);
+                $this->line("  Reset {$legacyCount} rows to is_calculated=false");
+            } elseif ($isDryRun) {
+                $this->line("  [DRY] Would reset {$legacyCount} rows to is_calculated=false");
+            }
+        }
 
         $processed = 0;
         $errors = 0;
