@@ -31,6 +31,14 @@
 
     $showUrl = route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
 
+    $statusValue = is_object($status) ? $status->value : $status;
+    $teacherUserId = match($type) {
+        'academic' => $session->academicTeacher?->user_id,
+        'interactive' => $session->course?->assignedTeacher?->user_id,
+        default => $session->quran_teacher_id,
+    };
+    $studentUserId = $session->student_id ?? null;
+
     $attColors = $tAtt = $sAtt = $tMinutes = $sMinutes = $tCounts = $sCounts = $duration = $toggleTeacherUrl = $toggleStudentUrl = $studentMeeting = null;
     if ($isCompleted) {
         $attColors = ['attended' => 'bg-green-100 text-green-700', 'partially_attended' => 'bg-amber-100 text-amber-700', 'late' => 'bg-yellow-100 text-yellow-700', 'left' => 'bg-orange-100 text-orange-700', 'absent' => 'bg-red-100 text-red-700'];
@@ -67,12 +75,17 @@
         </div>
     </td>
 
-    {{-- Session Title + Duration --}}
+    {{-- Session Title + Code + Duration --}}
     <td class="px-4 py-3">
         <p class="text-sm font-medium text-gray-900">{{ $session->title ?: ($session->session_code ?? '-') }}</p>
-        @if($session->duration_minutes)
-            <p class="text-xs text-gray-400">{{ __('supervisor.sessions.duration_minutes', ['count' => $session->duration_minutes]) }}</p>
-        @endif
+        <div class="flex items-center gap-2 mt-0.5">
+            @if($session->session_code && $session->title)
+                <span class="text-[10px] text-gray-400 font-mono">{{ $session->session_code }}</span>
+            @endif
+            @if($session->duration_minutes)
+                <span class="text-xs text-gray-400">{{ __('supervisor.sessions.duration_minutes', ['count' => $session->duration_minutes]) }}</span>
+            @endif
+        </div>
     </td>
 
     {{-- Type --}}
@@ -87,12 +100,24 @@
 
     {{-- Teacher --}}
     <td class="px-4 py-3">
-        <span class="text-sm text-gray-700">{{ $teacherName }}</span>
+        <div class="flex items-center gap-1.5">
+            @if($isLive && $teacherUserId)
+                <span class="w-2 h-2 rounded-full shrink-0 transition-colors"
+                      :class="($store.presence?.sessions?.[{{ $session->id }}] || []).includes({{ $teacherUserId }}) ? 'bg-green-500 animate-pulse' : 'bg-gray-300'"></span>
+            @endif
+            <span class="text-sm text-gray-700">{{ $teacherName }}</span>
+        </div>
     </td>
 
     {{-- Student / Group --}}
     <td class="px-4 py-3">
-        <span class="text-sm text-gray-700">{{ $studentName }}</span>
+        <div class="flex items-center gap-1.5">
+            @if($isLive && $studentUserId)
+                <span class="w-2 h-2 rounded-full shrink-0 transition-colors"
+                      :class="($store.presence?.sessions?.[{{ $session->id }}] || []).includes({{ $studentUserId }}) ? 'bg-green-500 animate-pulse' : 'bg-gray-300'"></span>
+            @endif
+            <span class="text-sm text-gray-700">{{ $studentName }}</span>
+        </div>
     </td>
 
     {{-- Scheduled At --}}

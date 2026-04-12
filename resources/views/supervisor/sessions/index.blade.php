@@ -301,10 +301,39 @@
 
 <script>
 function sessionsFilters() {
-    return {
-        // Placeholder for future Alpine.js enhancements (e.g., real-time search debounce)
-    }
+    return {}
 }
+
+document.addEventListener('alpine:init', () => {
+    Alpine.store('presence', { sessions: {} });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!window.Echo) return;
+
+    const liveSessions = @json($liveSessions);
+    if (!liveSessions.length) return;
+
+    liveSessions.forEach(sessionId => {
+        window.Echo.join(`meeting.${sessionId}`)
+            .here(users => {
+                Alpine.store('presence').sessions[sessionId] = users.map(u => u.id);
+            })
+            .joining(user => {
+                const store = Alpine.store('presence');
+                if (!store.sessions[sessionId]) store.sessions[sessionId] = [];
+                if (!store.sessions[sessionId].includes(user.id)) {
+                    store.sessions[sessionId] = [...store.sessions[sessionId], user.id];
+                }
+            })
+            .leaving(user => {
+                const store = Alpine.store('presence');
+                if (store.sessions[sessionId]) {
+                    store.sessions[sessionId] = store.sessions[sessionId].filter(id => id !== user.id);
+                }
+            });
+    });
+});
 </script>
 
 </x-layouts.supervisor>

@@ -31,6 +31,14 @@
 
     $showUrl = route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
 
+    $statusValue = is_object($status) ? $status->value : $status;
+    $teacherUserId = match($type) {
+        'academic' => $session->academicTeacher?->user_id,
+        'interactive' => $session->course?->assignedTeacher?->user_id,
+        default => $session->quran_teacher_id,
+    };
+    $studentUserId = $session->student_id ?? null;
+
     $attColors = $tAtt = $sAtt = $tMinutes = $sMinutes = $tCounts = $sCounts = $duration = $toggleTeacherUrl = $toggleStudentUrl = $studentMeeting = null;
     if ($isCompleted) {
         $attColors = ['attended' => 'bg-green-100 text-green-700', 'partially_attended' => 'bg-amber-100 text-amber-700', 'late' => 'bg-yellow-100 text-yellow-700', 'left' => 'bg-orange-100 text-orange-700', 'absent' => 'bg-red-100 text-red-700'];
@@ -62,8 +70,14 @@
                 <i class="{{ $typeConfig['icon'] }} {{ $typeConfig['text'] }}"></i>
             </span>
             <div class="min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">{{ $studentName }}</p>
-                <p class="text-xs text-gray-500">{{ $typeConfig['label'] }}</p>
+                <div class="flex items-center gap-1.5">
+                    @if($isLive && $studentUserId)
+                        <span class="w-2 h-2 rounded-full shrink-0 transition-colors"
+                              :class="($store.presence?.sessions?.[{{ $session->id }}] || []).includes({{ $studentUserId }}) ? 'bg-green-500 animate-pulse' : 'bg-gray-300'"></span>
+                    @endif
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ $studentName }}</p>
+                </div>
+                <p class="text-xs text-gray-500">{{ $typeConfig['label'] }}@if($session->session_code) · <span class="font-mono">{{ $session->session_code }}</span>@endif</p>
             </div>
         </div>
         <div class="flex items-center gap-1.5 flex-shrink-0">
@@ -81,6 +95,10 @@
     <div class="grid grid-cols-2 gap-2 text-xs">
         <div class="flex items-center gap-1 text-gray-500">
             <i class="ri-user-line"></i>
+            @if($isLive && $teacherUserId)
+                <span class="w-2 h-2 rounded-full shrink-0 transition-colors"
+                      :class="($store.presence?.sessions?.[{{ $session->id }}] || []).includes({{ $teacherUserId }}) ? 'bg-green-500 animate-pulse' : 'bg-gray-300'"></span>
+            @endif
             <span>{{ $teacherName }}</span>
         </div>
         <div class="flex items-center gap-1 text-gray-500">

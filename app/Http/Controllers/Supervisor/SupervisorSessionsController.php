@@ -60,6 +60,12 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             ? collect($students)->firstWhere('id', (int) $studentId)['name'] ?? null
             : null;
 
+        $liveStatuses = [SessionStatus::READY->value, SessionStatus::ONGOING->value];
+        $liveSessions = $sessions->filter(fn ($s) => in_array(
+            is_object($s->status) ? $s->status->value : $s->status,
+            $liveStatuses
+        ))->pluck('id')->values();
+
         return view('supervisor.sessions.index', [
             'sessions' => $sessions,
             'activeTab' => $tab,
@@ -74,6 +80,7 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             'teachers' => $teachers,
             'students' => $students,
             'statusOptions' => SessionStatus::options(),
+            'liveSessions' => $liveSessions,
         ]);
     }
 
