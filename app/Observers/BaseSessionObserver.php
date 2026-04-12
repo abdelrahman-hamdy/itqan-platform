@@ -254,6 +254,44 @@ class BaseSessionObserver
                 $this->notifyAdminSessionCancelled($session);
             }
         }
+
+        // Clean up stale teacher attendance when teacher is reassigned.
+        // Only removes empty rows (no real attendance data) so a teacher
+        // who actually taught keeps their record for historical accuracy.
+        $this->cleanupStaleTeacherAttendance($session);
+    }
+
+    /**
+     * Remove the old teacher's empty MeetingAttendance row when the session's
+     * teacher_id changes (reassignment). Preserves rows with real join data.
+     */
+    private function cleanupStaleTeacherAttendance(BaseSession $session): void
+    {
+        $oldTeacherId = null;
+        $newTeacherId = null;
+
+        if ($session instanceof \App\Models\QuranSession && $session->wasChanged('quran_teacher_id')) {
+            $oldTeacherId = $session->getOriginal('quran_teacher_id');
+            $newTeacherId = $session->quran_teacher_id;
+        }
+
+        if (! $oldTeacherId || $oldTeacherId === $newTeacherId) {
+            return;
+        }
+
+        $deleted = \App\Models\MeetingAttendance::where('session_id', $session->id)
+            ->whereIn('user_type', \App\Models\MeetingAttendance::TEACHER_USER_TYPES)
+            ->where('user_id', $oldTeacherId)
+            ->where('total_duration_minutes', 0)
+            ->delete();
+
+        if ($deleted > 0) {
+            Log::info('Cleaned up stale teacher attendance after reassignment', [
+                'session_id' => $session->id,
+                'old_teacher_id' => $oldTeacherId,
+                'new_teacher_id' => $newTeacherId,
+            ]);
+        }
     }
 
     /**

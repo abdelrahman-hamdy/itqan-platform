@@ -254,6 +254,30 @@ class SessionTransitionService
             ];
         }
 
+        // Remove stale teacher rows left by a previous teacher assignment.
+        // Only deletes empty rows (total_duration_minutes = 0) so real
+        // attendance data from a teacher who actually taught is preserved.
+        $currentTeacherIds = collect($participants)
+            ->where('user_type', 'teacher')
+            ->pluck('user_id')
+            ->toArray();
+
+        if (! empty($currentTeacherIds)) {
+            $deleted = MeetingAttendance::where('session_id', $session->id)
+                ->whereIn('user_type', MeetingAttendance::TEACHER_USER_TYPES)
+                ->whereNotIn('user_id', $currentTeacherIds)
+                ->where('total_duration_minutes', 0)
+                ->delete();
+
+            if ($deleted > 0) {
+                Log::info('Cleaned up stale teacher attendance rows', [
+                    'session_id' => $session->id,
+                    'deleted_count' => $deleted,
+                    'current_teacher_ids' => $currentTeacherIds,
+                ]);
+            }
+        }
+
         // Insert new rows; leave existing (session_id, user_id) pairs untouched.
         // Empty update-columns array makes this an insert-ignore via upsert.
         MeetingAttendance::upsert($rows, ['session_id', 'user_id'], []);
