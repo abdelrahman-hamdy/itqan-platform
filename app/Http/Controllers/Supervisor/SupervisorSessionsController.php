@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Supervisor;
 
 use App\Contracts\MeetingObserverServiceInterface;
+use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Http\Requests\Supervisor\UpdateSessionRequest;
 use App\Models\AcademicSession;
@@ -309,20 +310,18 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         // Status filter
         if ($status === 'need_review') {
             // Completed sessions where teacher or student attendance is not fully attended, excluding trials
+            $reviewStatuses = [AttendanceStatus::ABSENT->value, AttendanceStatus::PARTIALLY_ATTENDED->value];
             $query->where('status', SessionStatus::COMPLETED)
-                ->where(function ($q) {
-                    $q->whereIn('teacher_attendance_status', ['absent', 'partially_attended'])
-                        ->orWhereHas('meetingAttendances', function ($mq) {
+                ->where(function ($q) use ($reviewStatuses) {
+                    $q->whereIn('teacher_attendance_status', $reviewStatuses)
+                        ->orWhereHas('meetingAttendances', function ($mq) use ($reviewStatuses) {
                             $mq->where('user_type', 'student')
                                 ->where('is_calculated', true)
-                                ->whereIn('attendance_status', ['absent', 'partially_attended']);
+                                ->whereIn('attendance_status', $reviewStatuses);
                         });
                 });
 
-            // Exclude trial sessions (Quran only)
-            if (method_exists($query->getModel(), 'getSessionTypeColumn')) {
-                $query->where('session_type', '!=', 'trial');
-            } elseif ($query->getModel() instanceof QuranSession) {
+            if ($query->getModel() instanceof QuranSession) {
                 $query->where('session_type', '!=', 'trial');
             }
         } elseif ($status) {
