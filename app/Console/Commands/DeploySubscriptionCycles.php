@@ -369,7 +369,7 @@ class DeploySubscriptionCycles extends Command
         // 5. All sessions point to existing subscriptions
         $orphanSessions = \App\Models\QuranSession::withoutGlobalScopes()
             ->whereNotNull('quran_subscription_id')
-            ->whereDoesntHave('quranSubscription')
+            ->whereDoesntHave('subscription')
             ->count();
         if ($orphanSessions > 0) {
             $this->error("  FAIL: {$orphanSessions} QuranSessions pointing to deleted subscriptions");
