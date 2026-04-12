@@ -7,6 +7,8 @@
     'label' => '',
     'showGenderFilter' => false,
     'showTypeFilter' => false,
+    'searchPlaceholder' => null,
+    'emptyMessage' => null,
 ])
 
 <div>
@@ -99,7 +101,7 @@
                 <div class="relative">
                     <i class="ri-search-line absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
                     <input type="text" x-model="search" x-ref="searchInput"
-                        placeholder="{{ __('supervisor.calendar.search_teachers') }}"
+                        placeholder="{{ $searchPlaceholder ?? __('supervisor.calendar.search_teachers') }}"
                         class="w-full ps-9 pe-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                         @click.stop>
                 </div>
@@ -150,7 +152,7 @@
                     </button>
                 </template>
                 <div x-show="getFilteredOptions().length === 0" class="px-4 py-3 text-sm text-gray-400 text-center">
-                    {{ __('supervisor.calendar.no_matching_teachers') }}
+                    {{ $emptyMessage ?? __('supervisor.calendar.no_matching_teachers') }}
                 </div>
             </div>
         </div>

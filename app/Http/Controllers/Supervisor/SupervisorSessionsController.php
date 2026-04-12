@@ -539,11 +539,13 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         $teachers = collect();
 
         if (! empty($quranTeacherIds)) {
-            $quran = User::whereIn('id', $quranTeacherIds)->orderBy('name')->get()
+            $quran = User::whereIn('id', $quranTeacherIds)
+                ->with('quranTeacherProfile')
+                ->orderBy('name')->get()
                 ->map(fn ($u) => [
                     'id' => $u->id,
                     'name' => $u->name,
-                    'gender' => $u->gender ?? '',
+                    'gender' => $u->quranTeacherProfile?->gender ?? $u->gender ?? '',
                     'type' => 'quran',
                     'type_label' => __('supervisor.sessions.type_quran'),
                 ]);
@@ -552,12 +554,13 @@ class SupervisorSessionsController extends BaseSupervisorWebController
 
         if (! empty($academicTeacherIds)) {
             $academic = User::whereIn('id', $academicTeacherIds)
-                ->whereNotIn('id', $quranTeacherIds) // avoid duplicates
+                ->whereNotIn('id', $quranTeacherIds)
+                ->with('academicTeacherProfile')
                 ->orderBy('name')->get()
                 ->map(fn ($u) => [
                     'id' => $u->id,
                     'name' => $u->name,
-                    'gender' => $u->gender ?? '',
+                    'gender' => $u->academicTeacherProfile?->gender ?? $u->gender ?? '',
                     'type' => 'academic',
                     'type_label' => __('supervisor.sessions.type_academic'),
                 ]);
@@ -591,13 +594,14 @@ class SupervisorSessionsController extends BaseSupervisorWebController
 
         return User::query()
             ->select('id', 'first_name', 'last_name', 'gender')
+            ->with('studentProfile:id,user_id,gender')
             ->whereIn('id', $allIds)
             ->orderBy('name')
             ->get()
             ->map(fn ($user) => [
                 'id' => $user->id,
                 'name' => $user->name,
-                'gender' => $user->gender ?? '',
+                'gender' => $user->studentProfile?->gender ?? $user->gender ?? '',
             ])
             ->toArray();
     }

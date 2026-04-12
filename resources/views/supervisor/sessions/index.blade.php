@@ -195,6 +195,8 @@
                     :placeholder="__($t.'all_students')"
                     :showGenderFilter="true"
                     :showTypeFilter="false"
+                    :searchPlaceholder="__($t.'search_placeholder')"
+                    :emptyMessage="__($t.'no_sessions')"
                 />
                 @endif
 
