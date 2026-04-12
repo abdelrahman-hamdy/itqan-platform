@@ -507,9 +507,19 @@ class SubscriptionRenewalService
         $finalPrice = $options['amount'] ?? $subscription->getPriceForBillingCycle();
         $discount = $this->resolveDiscount($subscription, $options);
 
+        // sessions_per_month may be NULL on the subscription row (it's a
+        // package-level field not always snapshotted). Fall back to the actual
+        // package record to avoid the hardcoded 8 default on line 84.
+        $sessionsPerMonthFromSub = $subscription->sessions_per_month;
+        if ($sessionsPerMonthFromSub === null && $packageId) {
+            $pkg = $this->findPackage($subscription, $packageId);
+            $sessionsPerMonthFromSub = $pkg?->sessions_per_month;
+        }
+
         return [
-            'sessions_per_month' => $subscription->sessions_per_month,
-            'session_duration_minutes' => $subscription->session_duration_minutes,
+            'sessions_per_month' => $sessionsPerMonthFromSub,
+            'session_duration_minutes' => $subscription->session_duration_minutes
+                ?? ($packageId ? $this->findPackage($subscription, $packageId)?->session_duration_minutes : null),
             'package_id' => $this->getPackageId($subscription),
             'package_snapshot' => $this->packageSnapshotFromSubscription($subscription),
             'price_fields' => [
