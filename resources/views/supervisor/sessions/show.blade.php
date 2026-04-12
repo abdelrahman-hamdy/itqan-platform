@@ -444,7 +444,7 @@
         $teacherAttStatusRaw = $session->teacher_attendance_status ?? $teacherMeetingAtt?->attendance_status;
         $teacherAttStatus = $teacherAttStatusRaw instanceof \BackedEnum ? $teacherAttStatusRaw->value : $teacherAttStatusRaw;
         $teacherCounts = $session->counts_for_teacher ?? true;
-        $teacherMinutes = $teacherMeetingAtt?->effective_display_minutes ?? 0;
+        $teacherMinutes = $teacherMeetingAtt?->total_duration_minutes ?? 0;
 
         $attStatusClasses = [
             'attended' => 'bg-green-100 text-green-800',
@@ -530,7 +530,7 @@
                 @forelse($studentAttendances as $sAtt)
                     @php
                         $studentUser = $sAtt->user;
-                        $studentMinutes = $sAtt->effective_display_minutes;
+                        $studentMinutes = $sAtt->total_duration_minutes ?? 0;
                         $studentAttStatusRaw = $sAtt->attendance_status;
                         $studentAttStatus = $studentAttStatusRaw instanceof \BackedEnum ? $studentAttStatusRaw->value : $studentAttStatusRaw;
                     @endphp
