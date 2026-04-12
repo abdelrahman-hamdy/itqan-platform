@@ -229,11 +229,18 @@
 
     {{-- ═══ CYCLES HISTORY ═══ --}}
     @if($subscriptionCycles->isNotEmpty())
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
             <div class="px-5 py-3 border-b border-gray-200 flex items-center gap-2">
                 <i class="ri-history-line text-gray-500"></i>
                 <h3 class="text-sm font-semibold text-gray-900">{{ __('supervisor.subscriptions.cycles_history_title') }}</h3>
                 <span class="text-xs bg-gray-100 px-2 py-0.5 rounded-full">{{ $subscriptionCycles->count() }}</span>
+                @if($teacherUser)
+                    <a href="{{ route('manage.calendar.index', ['subdomain' => $subdomain, 'teacher_id' => $teacherUser->id]) }}"
+                       class="mr-auto inline-flex items-center gap-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">
+                        <i class="ri-calendar-line"></i>
+                        {{ __('supervisor.subscriptions.view_in_calendar') }}
+                    </a>
+                @endif
             </div>
             <div class="divide-y divide-gray-100">
                 @foreach($subscriptionCycles as $sCycle)

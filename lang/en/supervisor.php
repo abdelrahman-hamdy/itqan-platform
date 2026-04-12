@@ -1384,6 +1384,7 @@ return [
         'payment_mode_paid' => 'Paid',
         'payment_mode_unpaid' => 'Unpaid (Pending)',
         'cycles_history_title' => 'Cycles History',
+        'view_in_calendar' => 'View in Calendar',
         'cycle_state_active' => 'Active',
         'cycle_state_queued' => 'Queued',
         'cycle_state_archived' => 'Archived',

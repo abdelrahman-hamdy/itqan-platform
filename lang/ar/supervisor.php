@@ -1384,6 +1384,7 @@ return [
         'payment_mode_paid' => 'مدفوع',
         'payment_mode_unpaid' => 'غير مدفوع (معلق)',
         'cycles_history_title' => 'سجل الدورات',
+        'view_in_calendar' => 'عرض في التقويم',
         'cycle_state_active' => 'نشطة',
         'cycle_state_queued' => 'في الانتظار',
         'cycle_state_archived' => 'مؤرشفة',
