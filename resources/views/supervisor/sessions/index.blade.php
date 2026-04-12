@@ -197,6 +197,8 @@
                     :showTypeFilter="false"
                     :searchPlaceholder="__($t.'search_placeholder')"
                     :emptyMessage="__($t.'no_sessions')"
+                    :maleLabel="__('common.form.male')"
+                    :femaleLabel="__('common.form.female')"
                 />
                 @endif
 

@@ -9,6 +9,8 @@
     'showTypeFilter' => false,
     'searchPlaceholder' => null,
     'emptyMessage' => null,
+    'maleLabel' => null,
+    'femaleLabel' => null,
 ])
 
 <div>
@@ -127,12 +129,12 @@
                 <button type="button" @click.stop="toggleGender('male')"
                     class="cursor-pointer text-xs font-medium px-2.5 py-1 rounded-full border transition-colors"
                     :class="genderFilter === 'male' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'">
-                    <i class="ri-men-line me-0.5"></i> {{ __('supervisor.calendar.filter_male') }}
+                    <i class="ri-men-line me-0.5"></i> {{ $maleLabel ?? __('supervisor.calendar.filter_male') }}
                 </button>
                 <button type="button" @click.stop="toggleGender('female')"
                     class="cursor-pointer text-xs font-medium px-2.5 py-1 rounded-full border transition-colors"
                     :class="genderFilter === 'female' ? 'bg-pink-100 text-pink-700 border-pink-300' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'">
-                    <i class="ri-women-line me-0.5"></i> {{ __('supervisor.calendar.filter_female') }}
+                    <i class="ri-women-line me-0.5"></i> {{ $femaleLabel ?? __('supervisor.calendar.filter_female') }}
                 </button>
                 @endif
             </div>
