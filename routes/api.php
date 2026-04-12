@@ -82,9 +82,14 @@ Route::middleware(['web', 'auth', 'verified'])
 
         // Client-side telemetry sink: receives batched events from the meeting
         // page (telemetry.js) and forwards them to the dedicated 'meeting-telemetry'
-        // log channel for offline analysis. Throttled per-IP to prevent abuse.
+        // log channel for offline analysis.
+        //
+        // Throttle sized for shared NAT: a school/office WiFi with 100 concurrent
+        // teachers appears as one IP, and each client flushes up to ~12 batches/min
+        // (5s timer + eager flush at 50 buffered events). 1500 keeps burst headroom
+        // while still bounding abuse.
         Route::post('/telemetry', [\App\Http\Controllers\Api\MeetingTelemetryController::class, 'store'])
-            ->middleware('throttle:120,1')
+            ->middleware('throttle:1500,1')
             ->name('api.sessions.meeting.telemetry');
     });
 

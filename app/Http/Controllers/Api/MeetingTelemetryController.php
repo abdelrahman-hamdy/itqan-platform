@@ -31,7 +31,10 @@ class MeetingTelemetryController extends Controller
             'events.*.category' => 'required|string|max:50',
             'events.*.name' => 'required|string|max:100',
             'events.*.level' => 'nullable|string|in:info,warning,error',
-            'events.*.data' => 'nullable|array',
+            // Cap top-level keys so a buggy/malicious client cannot push a giant
+            // nested payload into the log file. Our largest known event (audio_sender
+            // stats) has ~14 keys, so 50 is ample headroom.
+            'events.*.data' => 'nullable|array|max:50',
         ]);
 
         $logger = Log::channel('meeting-telemetry');

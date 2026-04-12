@@ -39,17 +39,29 @@ class MeetingTelemetry {
         this.deviceInfo = this.collectDeviceInfo();
         this.startFlushTimer();
 
-        // Best-effort flush on page unload
-        window.addEventListener('beforeunload', () => this.flushSync());
-        window.addEventListener('pagehide', () => this.flushSync());
+        // Store bound handler refs so destroy() can remove them — otherwise
+        // repeated instantiation (e.g. SPA navigation back into the meeting page)
+        // would leak listeners on every cycle.
+        this._unloadHandler = () => this.flushSync();
+        window.addEventListener('beforeunload', this._unloadHandler);
+        window.addEventListener('pagehide', this._unloadHandler);
 
         // Track audio device changes — critical for debugging Bluetooth earbuds
-        // that plug in or disconnect mid-meeting.
-        if (navigator.mediaDevices && typeof navigator.mediaDevices.addEventListener === 'function') {
-            navigator.mediaDevices.addEventListener('devicechange', () => {
+        // that plug in or disconnect mid-meeting. Debounce the handler because
+        // Bluetooth profile switching can fire `devicechange` several times per
+        // second while HFP/A2DP negotiate.
+        this._deviceChangeDebounceMs = 1000;
+        this._deviceChangeDebounceId = null;
+        this._deviceChangeHandler = () => {
+            if (this._deviceChangeDebounceId) clearTimeout(this._deviceChangeDebounceId);
+            this._deviceChangeDebounceId = setTimeout(() => {
+                this._deviceChangeDebounceId = null;
                 this.event('devices', 'changed', {});
                 this.enumerateAudioDevices();
-            });
+            }, this._deviceChangeDebounceMs);
+        };
+        if (navigator.mediaDevices && typeof navigator.mediaDevices.addEventListener === 'function') {
+            navigator.mediaDevices.addEventListener('devicechange', this._deviceChangeHandler);
         }
 
         this.event('telemetry', 'started', { device: this.deviceInfo });
@@ -176,17 +188,26 @@ class MeetingTelemetry {
                 body: JSON.stringify({ events }),
                 keepalive: true,
             });
-            if (!response.ok) {
-                // Don't lose events on transient failure — push back to buffer (capped)
-                if (this.buffer.length + events.length < this.maxBufferRetained) {
-                    this.buffer.unshift(...events);
-                }
-            }
+            if (!response.ok) this.requeueOrDrop(events);
         } catch (e) {
-            if (this.buffer.length + events.length < this.maxBufferRetained) {
-                this.buffer.unshift(...events);
-            }
+            this.requeueOrDrop(events);
         }
+    }
+
+    /**
+     * Push failed events back to the head of the buffer so they retry on the
+     * next flush. If the buffer is saturated (server unreachable for a long
+     * time), drop the overflow and surface a console warning so an operator
+     * watching the browser devtools knows telemetry is being dropped.
+     */
+    requeueOrDrop(events) {
+        if (this.buffer.length + events.length < this.maxBufferRetained) {
+            this.buffer.unshift(...events);
+            return;
+        }
+        try {
+            console.warn('[MT] telemetry buffer overflow — dropping', events.length, 'events (server unreachable?)');
+        } catch (e) {}
     }
 
     /**
@@ -348,6 +369,20 @@ class MeetingTelemetry {
         this.stopFlushTimer();
         this.stopStatsPolling();
         this.flushSync();
+
+        if (this._unloadHandler) {
+            window.removeEventListener('beforeunload', this._unloadHandler);
+            window.removeEventListener('pagehide', this._unloadHandler);
+            this._unloadHandler = null;
+        }
+        if (this._deviceChangeHandler && navigator.mediaDevices && typeof navigator.mediaDevices.removeEventListener === 'function') {
+            navigator.mediaDevices.removeEventListener('devicechange', this._deviceChangeHandler);
+            this._deviceChangeHandler = null;
+        }
+        if (this._deviceChangeDebounceId) {
+            clearTimeout(this._deviceChangeDebounceId);
+            this._deviceChangeDebounceId = null;
+        }
     }
 }
 
