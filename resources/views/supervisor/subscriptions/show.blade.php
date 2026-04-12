@@ -268,7 +268,7 @@
                             <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $paymentColor }}">{{ $paymentLabel }}</span>
                             <span class="text-xs text-gray-500 truncate">
                                 {{ $sCycle->starts_at?->format('Y-m-d') ?? '—' }}
-                                &nbsp;→&nbsp;
+                                &nbsp;←&nbsp;
                                 {{ $sCycle->ends_at?->format('Y-m-d') ?? '—' }}
                             </span>
                             @if($sCycle->grace_period_ends_at && $sCycle->grace_period_ends_at->isFuture())
