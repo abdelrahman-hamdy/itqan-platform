@@ -306,8 +306,26 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             default => $this->getQuranQuery(),
         };
 
-        // Status filter (comma-separated)
-        if ($status) {
+        // Status filter
+        if ($status === 'need_review') {
+            // Completed sessions where teacher or student attendance is not fully attended, excluding trials
+            $query->where('status', SessionStatus::COMPLETED)
+                ->where(function ($q) {
+                    $q->whereIn('teacher_attendance_status', ['absent', 'partially_attended'])
+                        ->orWhereHas('meetingAttendances', function ($mq) {
+                            $mq->where('user_type', 'student')
+                                ->where('is_calculated', true)
+                                ->whereIn('attendance_status', ['absent', 'partially_attended']);
+                        });
+                });
+
+            // Exclude trial sessions (Quran only)
+            if (method_exists($query->getModel(), 'getSessionTypeColumn')) {
+                $query->where('session_type', '!=', 'trial');
+            } elseif ($query->getModel() instanceof QuranSession) {
+                $query->where('session_type', '!=', 'trial');
+            }
+        } elseif ($status) {
             $statuses = array_filter(explode(',', $status));
             if (! empty($statuses)) {
                 $query->whereIn('status', $statuses);
@@ -321,11 +339,26 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()]);
         } elseif ($date === 'month') {
             $query->whereBetween('scheduled_at', [now()->startOfMonth(), now()->endOfMonth()]);
+        } elseif ($date === 'custom') {
+            $dateFrom = request('date_from');
+            $dateTo = request('date_to');
+            if ($dateFrom) {
+                $query->whereDate('scheduled_at', '>=', $dateFrom);
+            }
+            if ($dateTo) {
+                $query->whereDate('scheduled_at', '<=', $dateTo);
+            }
         }
 
         // Teacher filter
         if ($teacherId) {
             $this->applyTeacherFilter($query, $type, (int) $teacherId);
+        }
+
+        // Teacher gender filter
+        $teacherGender = request('teacher_gender');
+        if ($teacherGender) {
+            $this->applyTeacherGenderFilter($query, $type, $teacherGender);
         }
 
         // Student filter
@@ -398,6 +431,18 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             'academic' => $query->whereHas('academicTeacher', fn ($q) => $q->where('user_id', $teacherUserId)),
             'interactive' => $query->whereHas('course.assignedTeacher', fn ($q) => $q->where('user_id', $teacherUserId)),
             default => $query->where('quran_teacher_id', $teacherUserId),
+        };
+    }
+
+    /**
+     * Apply teacher gender filter to query.
+     */
+    private function applyTeacherGenderFilter(Builder $query, string $type, string $gender): void
+    {
+        match ($type) {
+            'academic' => $query->whereHas('academicTeacher.user', fn ($q) => $q->where('gender', $gender)),
+            'interactive' => $query->whereHas('course.assignedTeacher.user', fn ($q) => $q->where('gender', $gender)),
+            default => $query->whereHas('quranTeacher', fn ($q) => $q->where('gender', $gender)),
         };
     }
 
@@ -522,6 +567,7 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             ->map(fn ($user) => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'gender' => $user->gender,
             ])
             ->toArray();
     }

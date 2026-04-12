@@ -101,63 +101,115 @@
         </div>
 
         {{-- Filters Row --}}
-        <div class="p-4 space-y-3">
+        <div class="p-4 space-y-3" x-data="{ showCustomDate: {{ $dateFilter === 'custom' ? 'true' : 'false' }}, teacherGender: '{{ request('teacher_gender', '') }}' }">
             {{-- Date pills --}}
             <div class="flex flex-wrap items-center gap-2">
                 <span class="text-xs font-medium text-gray-500">{{ __($t.'col_scheduled') }}:</span>
                 @foreach(['all' => __($t.'filter_date_all'), 'today' => __($t.'filter_date_today'), 'week' => __($t.'filter_date_week'), 'month' => __($t.'filter_date_month')] as $dateVal => $dateLabel)
-                    <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateVal, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search]) }}"
+                    <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateVal, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search, 'teacher_gender' => request('teacher_gender')]) }}"
+                       @click="showCustomDate = false"
                        class="px-3 py-1 text-xs font-medium rounded-full transition-colors
                            {{ $dateFilter === $dateVal ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
                         {{ $dateLabel }}
                     </a>
                 @endforeach
+                <button @click="showCustomDate = !showCustomDate"
+                    class="px-3 py-1 text-xs font-medium rounded-full transition-colors
+                        {{ $dateFilter === 'custom' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+                    <i class="ri-calendar-2-line me-0.5"></i>
+                    {{ __($t.'filter_date_custom') }}
+                </button>
             </div>
 
-            {{-- Status + Teacher + Search Row --}}
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            {{-- Custom date range (collapsible) --}}
+            <div x-show="showCustomDate" x-collapse class="flex flex-wrap items-end gap-2">
+                <form method="GET" action="{{ route('manage.sessions.index', ['subdomain' => $subdomain]) }}" class="flex flex-wrap items-end gap-2">
+                    <input type="hidden" name="tab" value="{{ $activeTab }}">
+                    <input type="hidden" name="date" value="custom">
+                    @if($statusFilter)<input type="hidden" name="status" value="{{ $statusFilter }}">@endif
+                    @if($teacherId)<input type="hidden" name="teacher_id" value="{{ $teacherId }}">@endif
+                    @if($studentId)<input type="hidden" name="student_id" value="{{ $studentId }}">@endif
+                    @if(request('teacher_gender'))<input type="hidden" name="teacher_gender" value="{{ request('teacher_gender') }}">@endif
+                    @if($search)<input type="hidden" name="search" value="{{ $search }}">@endif
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ __($t.'filter_date_from') }}</label>
+                        <input type="date" name="date_from" value="{{ request('date_from') }}"
+                            class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ __($t.'filter_date_to') }}</label>
+                        <input type="date" name="date_to" value="{{ request('date_to') }}"
+                            class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                    <button type="submit" class="px-3 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors">
+                        <i class="ri-filter-line me-1"></i>{{ __($t.'btn_search') }}
+                    </button>
+                </form>
+            </div>
+
+            {{-- Status + Teacher + Student + Search Row --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                 {{-- Status dropdown --}}
                 <select onchange="if(this.value !== '') { window.location.href = this.value; }"
-                    class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:w-44">
-                    <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search]) }}"
+                    class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search, 'teacher_gender' => request('teacher_gender'), 'date_from' => request('date_from'), 'date_to' => request('date_to')]) }}"
                         {{ !$statusFilter ? 'selected' : '' }}>
                         {{ __($t.'filter_status') }}: {{ __($t.'filter_date_all') }}
                     </option>
                     @foreach(\App\Enums\SessionStatus::cases() as $statusEnum)
-                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusEnum->value, 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search]) }}"
+                        @if(!in_array($statusEnum, [\App\Enums\SessionStatus::UNSCHEDULED, \App\Enums\SessionStatus::SUSPENDED]))
+                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusEnum->value, 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search, 'teacher_gender' => request('teacher_gender'), 'date_from' => request('date_from'), 'date_to' => request('date_to')]) }}"
                             {{ $statusFilter === $statusEnum->value ? 'selected' : '' }}>
                             {{ $statusEnum->label() }}
                         </option>
+                        @endif
                     @endforeach
+                    <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => 'need_review', 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search, 'teacher_gender' => request('teacher_gender'), 'date_from' => request('date_from'), 'date_to' => request('date_to')]) }}"
+                        {{ $statusFilter === 'need_review' ? 'selected' : '' }}>
+                        {{ __($t.'filter_need_review') }}
+                    </option>
                 </select>
 
-                {{-- Teacher dropdown --}}
+                {{-- Teacher dropdown with gender filter --}}
                 @if(!empty($teachers))
-                <select onchange="if(this.value !== '') { window.location.href = this.value; }"
-                    class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:w-48">
-                    <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'student_id' => $studentId, 'search' => $search]) }}"
-                        {{ !$teacherId ? 'selected' : '' }}>
-                        {{ __('supervisor.common.all_teachers') }}
-                    </option>
-                    @foreach($teachers as $teacher)
-                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacher['id'], 'student_id' => $studentId, 'search' => $search]) }}"
-                            {{ $teacherId == $teacher['id'] ? 'selected' : '' }}>
-                            {{ $teacher['name'] }}
+                <div class="flex gap-1">
+                    <select onchange="if(this.value !== '') { window.location.href = this.value; }"
+                        class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 flex-1 min-w-0">
+                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'student_id' => $studentId, 'search' => $search, 'teacher_gender' => request('teacher_gender'), 'date_from' => request('date_from'), 'date_to' => request('date_to')]) }}"
+                            {{ !$teacherId ? 'selected' : '' }}>
+                            {{ __('supervisor.common.all_teachers') }}
                         </option>
-                    @endforeach
-                </select>
+                        @foreach($teachers as $teacher)
+                            @if(!request('teacher_gender') || (request('teacher_gender') === 'male' && $teacher['gender'] === 'male') || (request('teacher_gender') === 'female' && $teacher['gender'] === 'female'))
+                            <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacher['id'], 'student_id' => $studentId, 'search' => $search, 'teacher_gender' => request('teacher_gender'), 'date_from' => request('date_from'), 'date_to' => request('date_to')]) }}"
+                                {{ $teacherId == $teacher['id'] ? 'selected' : '' }}>
+                                {{ $teacher['name'] }}
+                            </option>
+                            @endif
+                        @endforeach
+                    </select>
+                    <select onchange="window.location.href = this.value"
+                        class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 w-20 shrink-0">
+                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search, 'date_from' => request('date_from'), 'date_to' => request('date_to')]) }}"
+                            {{ !request('teacher_gender') ? 'selected' : '' }}>{{ __($t.'filter_gender_all') }}</option>
+                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search, 'teacher_gender' => 'male', 'date_from' => request('date_from'), 'date_to' => request('date_to')]) }}"
+                            {{ request('teacher_gender') === 'male' ? 'selected' : '' }}>{{ __($t.'filter_gender_male') }}</option>
+                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId, 'search' => $search, 'teacher_gender' => 'female', 'date_from' => request('date_from'), 'date_to' => request('date_to')]) }}"
+                            {{ request('teacher_gender') === 'female' ? 'selected' : '' }}>{{ __($t.'filter_gender_female') }}</option>
+                    </select>
+                </div>
                 @endif
 
-                {{-- Student dropdown --}}
+                {{-- Student dropdown with search --}}
                 @if(!empty($students))
                 <select onchange="if(this.value !== '') { window.location.href = this.value; }"
-                    class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:w-48">
-                    <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'search' => $search]) }}"
+                    class="text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'search' => $search, 'teacher_gender' => request('teacher_gender'), 'date_from' => request('date_from'), 'date_to' => request('date_to')]) }}"
                         {{ !$studentId ? 'selected' : '' }}>
                         {{ __($t.'all_students') }}
                     </option>
                     @foreach($students as $student)
-                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'student_id' => $student['id'], 'search' => $search]) }}"
+                        <option value="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab, 'date' => $dateFilter, 'status' => $statusFilter, 'teacher_id' => $teacherId, 'student_id' => $student['id'], 'search' => $search, 'teacher_gender' => request('teacher_gender'), 'date_from' => request('date_from'), 'date_to' => request('date_to')]) }}"
                             {{ $studentId == $student['id'] ? 'selected' : '' }}>
                             {{ $student['name'] }}
                         </option>
@@ -166,34 +218,43 @@
                 @endif
 
                 {{-- Search input --}}
-                <form method="GET" action="{{ route('manage.sessions.index', ['subdomain' => $subdomain]) }}" class="flex-1 flex gap-2">
-                    <input type="hidden" name="tab" value="{{ $activeTab }}">
-                    <input type="hidden" name="date" value="{{ $dateFilter }}">
-                    @if($statusFilter)<input type="hidden" name="status" value="{{ $statusFilter }}">@endif
-                    @if($teacherId)<input type="hidden" name="teacher_id" value="{{ $teacherId }}">@endif
-                    @if($studentId)<input type="hidden" name="student_id" value="{{ $studentId }}">@endif
-                    <div class="relative flex-1">
-                        <i class="ri-search-line absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <div class="relative">
+                    <i class="ri-search-line absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <form method="GET" action="{{ route('manage.sessions.index', ['subdomain' => $subdomain]) }}">
+                        <input type="hidden" name="tab" value="{{ $activeTab }}">
+                        <input type="hidden" name="date" value="{{ $dateFilter }}">
+                        @if($statusFilter)<input type="hidden" name="status" value="{{ $statusFilter }}">@endif
+                        @if($teacherId)<input type="hidden" name="teacher_id" value="{{ $teacherId }}">@endif
+                        @if($studentId)<input type="hidden" name="student_id" value="{{ $studentId }}">@endif
+                        @if(request('teacher_gender'))<input type="hidden" name="teacher_gender" value="{{ request('teacher_gender') }}">@endif
+                        @if(request('date_from'))<input type="hidden" name="date_from" value="{{ request('date_from') }}">@endif
+                        @if(request('date_to'))<input type="hidden" name="date_to" value="{{ request('date_to') }}">@endif
                         <input type="text" name="search" value="{{ $search }}"
                             placeholder="{{ __($t.'search_placeholder') }}"
-                            class="w-full ps-9 pe-3 py-2 text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                    </div>
-                    <button type="submit" class="px-3 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors">
-                        <i class="ri-search-line"></i>
-                    </button>
-                </form>
+                            class="w-full ps-9 pe-3 py-2 text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                            onkeydown="if(event.key==='Enter') this.form.submit()">
+                    </form>
+                </div>
+            </div>
 
-                {{-- Clear filters + result count --}}
-                @if($statusFilter || $dateFilter !== 'all' || $teacherId || $studentId || $search)
-                    <span class="px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg whitespace-nowrap">
-                        {{ $sessions->total() }} {{ __($t.'results') }}
-                    </span>
-                    <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab]) }}"
-                       class="px-3 py-2 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors whitespace-nowrap">
-                        <i class="ri-close-line me-0.5"></i>
-                        {{ __($t.'clear_filters') }}
-                    </a>
-                @endif
+            {{-- Action buttons row --}}
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    @if($statusFilter || $dateFilter !== 'all' || $teacherId || $studentId || $search || request('teacher_gender') || request('date_from'))
+                        <span class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg whitespace-nowrap">
+                            {{ $sessions->total() }} {{ __($t.'results') }}
+                        </span>
+                    @endif
+                </div>
+                <div class="flex items-center gap-2">
+                    @if($statusFilter || $dateFilter !== 'all' || $teacherId || $studentId || $search || request('teacher_gender') || request('date_from'))
+                        <a href="{{ route('manage.sessions.index', ['subdomain' => $subdomain, 'tab' => $activeTab]) }}"
+                           class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                            <i class="ri-refresh-line"></i>
+                            {{ __($t.'btn_reset') }}
+                        </a>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
