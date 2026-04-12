@@ -216,7 +216,7 @@ class SubscriptionCycle extends Model
     ): self {
         $nextNumber = $overrides['cycle_number']
             ?? (((int) static::query()
-                ->where('subscribable_type', $owner::class)
+                ->where('subscribable_type', $owner->getMorphClass())
                 ->where('subscribable_id', $owner->id)
                 ->max('cycle_number')) + 1);
 
@@ -225,7 +225,7 @@ class SubscriptionCycle extends Model
             : self::PAYMENT_PENDING;
 
         $defaults = [
-            'subscribable_type' => $owner::class,
+            'subscribable_type' => $owner->getMorphClass(),
             'subscribable_id' => $owner->id,
             'academy_id' => $source->academy_id,
             'cycle_number' => max(1, (int) $nextNumber),

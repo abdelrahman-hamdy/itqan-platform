@@ -114,7 +114,7 @@ class SubscriptionRenewalService
             $newCycleNumber = max(1, $newCycleNumber);
 
             $newCycle = SubscriptionCycle::create([
-                'subscribable_type' => $subscription::class,
+                'subscribable_type' => $subscription->getMorphClass(),
                 'subscribable_id' => $subscription->id,
                 'academy_id' => $subscription->academy_id,
                 'cycle_number' => $newCycleNumber,
