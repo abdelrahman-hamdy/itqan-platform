@@ -31,7 +31,6 @@
 
     $showUrl = route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
 
-    $statusValue = is_object($status) ? $status->value : $status;
     $teacherUserId = match($type) {
         'academic' => $session->academicTeacher?->user_id,
         'interactive' => $session->course?->assignedTeacher?->user_id,
