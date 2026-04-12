@@ -627,17 +627,10 @@ class AcademicSession extends BaseSession
         return 5; // Fallback default
     }
 
-    /**
-     * Get grace period minutes for late joins from academy settings
-     * Overrides BaseSession hardcoded value
-     */
+    /** @deprecated Unused — percentage-based status. */
     protected function getGracePeriodMinutes(): int
     {
-        if ($this->academy && $this->academy->settings) {
-            return $this->academy->settings->default_late_tolerance_minutes ?? 15;
-        }
-
-        return 15; // Fallback default
+        return 0;
     }
 
     /**

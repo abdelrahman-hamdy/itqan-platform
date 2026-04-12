@@ -13,7 +13,7 @@
         ->where('session_type', 'interactive')
         ->get();
 
-    $sessionsAttended = $attendanceRecords->whereIn('attendance_status', ['attended', 'late', 'partially_attended'])->count();
+    $sessionsAttended = $attendanceRecords->whereIn('attendance_status', \App\Enums\AttendanceStatus::presentValues())->count();
     $completedSessions = $sessions->where('status', 'completed')->count();
 
     // Get session reports for homework data

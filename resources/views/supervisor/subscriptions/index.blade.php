@@ -630,10 +630,7 @@
                                                     @endforeach
                                                 </div>
                                             </div>
-                                            <div class="flex gap-2">
-                                                <label class="flex-1 cursor-pointer"><input type="radio" name="activate_mode" value="immediate" checked class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-indigo-600 peer-checked:bg-indigo-50">{{ __('supervisor.subscriptions.mode_immediate') }}</div></label>
-                                                <label class="flex-1 cursor-pointer"><input type="radio" name="activate_mode" value="pending" class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-indigo-600 peer-checked:bg-indigo-50">{{ __('supervisor.subscriptions.mode_pending') }}</div></label>
-                                            </div>
+                                            <p class="text-xs text-gray-500">{{ __('supervisor.subscriptions.renew_always_activates_note') }}</p>
                                         </form>
                                     </div>
                                     <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">
@@ -666,10 +663,7 @@
                                                     @endforeach
                                                 </div>
                                             </div>
-                                            <div class="flex gap-2">
-                                                <label class="flex-1 cursor-pointer"><input type="radio" name="activate_mode" value="immediate" checked class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-teal-600 peer-checked:bg-teal-50">{{ __('supervisor.subscriptions.mode_immediate') }}</div></label>
-                                                <label class="flex-1 cursor-pointer"><input type="radio" name="activate_mode" value="pending" class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-teal-600 peer-checked:bg-teal-50">{{ __('supervisor.subscriptions.mode_pending') }}</div></label>
-                                            </div>
+                                            <p class="text-xs text-gray-500">{{ __('supervisor.subscriptions.resubscribe_always_activates_note') }}</p>
                                         </form>
                                     </div>
                                     <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">

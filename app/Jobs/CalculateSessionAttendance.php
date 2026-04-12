@@ -140,6 +140,13 @@ class CalculateSessionAttendance implements ShouldQueue
             // Only sessions that have ended (past grace period)
             $query->whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod]);
 
+            // Never scan sessions that started before the cutoff — keeps
+            // historical rows' counts_for_* flags frozen at pre-deploy state.
+            $cutoff = config('business.attendance.matrix_cutoff_at');
+            if ($cutoff) {
+                $query->where('scheduled_at', '>=', $cutoff);
+            }
+
             // Only ONGOING or recently COMPLETED sessions
             $query->where(function ($q) {
                 $q->where('status', SessionStatus::ONGOING->value)
@@ -187,7 +194,8 @@ class CalculateSessionAttendance implements ShouldQueue
     }
 
     /**
-     * Calculate final attendance for a single attendance record
+     * Calculate final attendance for a single attendance record.
+     * Percentage-based; thresholds come from SessionSettingsService.
      */
     private function calculateAttendance($session, MeetingAttendance $attendance): void
     {
@@ -199,34 +207,38 @@ class CalculateSessionAttendance implements ShouldQueue
 
         // Reconcile any open cycles before calculating
         $cycles = $this->reconcileOpenCycles($cycles, $session, $attendance, $sessionEnd);
-        $sessionDuration = $sessionStart->diffInMinutes($sessionEnd);
+        $sessionDuration = (int) $sessionStart->diffInMinutes($sessionEnd);
 
-        // 🔥 FIX: Calculate total duration from cycles, excluding preparation and buffer time
+        // Calculation duration (capped to scheduled window — used for percentage)
         $totalMinutes = $this->calculateTotalDuration($cycles, $sessionStart, $sessionEnd);
 
-        // Tolerance time (grace period for late arrival) - configurable, default 15 minutes
-        $toleranceMinutes = config('business.attendance.grace_period_minutes', 15);
+        // Display duration (uncapped — spans prep + session + buffer)
+        $displayMinutes = $this->calculateDisplayDuration($cycles, $session);
 
-        // Determine first join time
+        $settingsService = app(\App\Services\SessionSettingsService::class);
+        [$fullPercent, $partialPercent] = $settingsService
+            ->getAttendanceThresholdsForUserType($session, $attendance->user_type);
+
         $firstJoinTime = $attendance->first_join_time;
 
-        // Calculate attendance percentage (capped at session start time - no preparation time counted)
+        // Calculate attendance percentage (denominator is scheduled session duration)
         $attendancePercentage = $sessionDuration > 0 ? min(100, ($totalMinutes / $sessionDuration) * 100) : 0;
 
-        // Determine attendance status using centralized trait logic
+        // Determine attendance status using centralized trait logic (percentage-based)
         $status = $this->determineAttendanceStatusFromTrait(
             $firstJoinTime,
-            $sessionStart,
             $sessionDuration,
             $totalMinutes,
-            $toleranceMinutes
+            $fullPercent,
+            $partialPercent,
         );
 
         // Update attendance record
         $attendance->update([
             'total_duration_minutes' => $totalMinutes,
+            'display_duration_minutes' => $displayMinutes,
             'session_duration_minutes' => $sessionDuration,
-            'attendance_status' => $status->value, // Save enum value
+            'attendance_status' => $status->value,
             'attendance_percentage' => round($attendancePercentage, 2),
             'is_calculated' => true,
             'attendance_calculated_at' => now(),
@@ -241,6 +253,7 @@ class CalculateSessionAttendance implements ShouldQueue
                     'attendance_status' => $status->value,
                     'attendance_percentage' => round($attendancePercentage, 2),
                     'total_duration_minutes' => $totalMinutes,
+                    'display_duration_minutes' => $displayMinutes,
                     'session_duration_minutes' => $sessionDuration,
                     'first_join_time' => $attendance->first_join_time?->toISOString(),
                     'last_leave_time' => $attendance->last_leave_time?->toISOString(),
@@ -261,10 +274,31 @@ class CalculateSessionAttendance implements ShouldQueue
         Log::info('Attendance calculated', [
             'session_id' => $session->id,
             'user_id' => $attendance->user_id,
+            'user_type' => $attendance->user_type,
             'status' => $status->value,
             'duration' => $totalMinutes,
+            'display_duration' => $displayMinutes,
             'percentage' => round($attendancePercentage, 2),
         ]);
+    }
+
+    /**
+     * Calculate display duration (uncapped meeting-window time) from cycles.
+     * Delegates to AttendanceCalculatorTrait::sumCycleMinutesInWindow().
+     */
+    private function calculateDisplayDuration(array $cycles, $session): int
+    {
+        if (! $session || ! $session->scheduled_at) {
+            return 0;
+        }
+
+        $settingsService = app(\App\Services\SessionSettingsService::class);
+        $windowStart = $session->scheduled_at->copy()
+            ->subMinutes($settingsService->getPreparationMinutes($session));
+        $windowEnd = $session->scheduled_at->copy()
+            ->addMinutes(($session->duration_minutes ?? 60) + $settingsService->getBufferMinutes($session));
+
+        return $this->sumCycleMinutesInWindow($cycles, $windowStart, $windowEnd);
     }
 
     /**
@@ -456,28 +490,22 @@ class CalculateSessionAttendance implements ShouldQueue
     }
 
     /**
-     * Determine attendance status based on join time and duration.
+     * Determine attendance status (percentage-based).
      * Delegates to AttendanceCalculatorTrait::calculateAttendanceStatusEnum().
-     *
-     * @param  Carbon|null  $firstJoinTime  When user first joined
-     * @param  Carbon  $sessionStartTime  Session's scheduled start time
-     * @param  int  $sessionDurationMinutes  Total session duration in minutes
-     * @param  int  $totalAttendanceMinutes  How long user actually attended
-     * @param  int  $toleranceMinutes  Grace period for late arrivals
      */
     private function determineAttendanceStatusFromTrait(
         ?Carbon $firstJoinTime,
-        Carbon $sessionStartTime,
         int $sessionDurationMinutes,
         int $totalAttendanceMinutes,
-        int $toleranceMinutes
+        float $fullPercent,
+        float $partialPercent,
     ): AttendanceStatus {
         return $this->calculateAttendanceStatusEnum(
             $firstJoinTime,
-            $sessionStartTime,
             $sessionDurationMinutes,
             $totalAttendanceMinutes,
-            $toleranceMinutes
+            $fullPercent,
+            $partialPercent,
         );
     }
 
@@ -490,7 +518,7 @@ class CalculateSessionAttendance implements ShouldQueue
     {
         try {
             // Skip teacher participants — their attendance should not create student report records
-            if (in_array($attendance->user_type, ['teacher', 'quran_teacher', 'academic_teacher'])) {
+            if (in_array($attendance->user_type, MeetingAttendance::TEACHER_USER_TYPES)) {
                 Log::debug('Skipping report sync for teacher attendance record', [
                     'session_id' => $session->id,
                     'user_id' => $attendance->user_id,
@@ -531,7 +559,6 @@ class CalculateSessionAttendance implements ShouldQueue
                 return;
             }
 
-            // Update report with calculated attendance
             $report->fill([
                 'teacher_id' => $teacherId,
                 'academy_id' => $academyId,
@@ -540,10 +567,8 @@ class CalculateSessionAttendance implements ShouldQueue
                 'actual_attendance_minutes' => $attendance->total_duration_minutes,
                 'attendance_status' => $attendance->attendance_status,
                 'attendance_percentage' => $attendance->attendance_percentage,
-                'is_late' => $attendance->first_join_time && $attendance->first_join_time->gt($session->scheduled_at->copy()->addMinutes(config('business.attendance.late_threshold_minutes', 15))),
-                'late_minutes' => $attendance->first_join_time && $attendance->first_join_time->gt($session->scheduled_at)
-                    ? (int) $session->scheduled_at->diffInMinutes($attendance->first_join_time)
-                    : 0,
+                'is_late' => false,
+                'late_minutes' => 0,
                 'is_calculated' => true,
                 'evaluated_at' => now(),
             ]);

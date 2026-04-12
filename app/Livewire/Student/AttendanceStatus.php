@@ -205,8 +205,7 @@ class AttendanceStatus extends Component
         $this->status = 'completed';
 
         if ($attendance && $attendance->is_calculated) {
-            // Attendance has been calculated - show final status
-            $this->duration = $attendance->total_duration_minutes ?? 0;
+            $this->duration = $attendance->effective_display_minutes;
             $sessionDuration = $session->duration_minutes ?? 60;
             $this->attendancePercentage = $attendance->attendance_percentage ?? 0;
 
@@ -219,12 +218,12 @@ class AttendanceStatus extends Component
                 // Use enum label for display
                 $this->attendanceText = $statusEnum->label();
 
-                // Set dot color based on status
                 $dotColors = [
                     AttendanceStatusEnum::ATTENDED->value => 'bg-green-500',
+                    AttendanceStatusEnum::PARTIALLY_ATTENDED->value => 'bg-amber-500',
+                    AttendanceStatusEnum::ABSENT->value => 'bg-red-500',
                     AttendanceStatusEnum::LATE->value => 'bg-yellow-500',
                     AttendanceStatusEnum::LEFT->value => 'bg-orange-500',
-                    AttendanceStatusEnum::ABSENT->value => 'bg-red-500',
                 ];
                 $this->dotColor = $dotColors[$statusEnum->value] ?? 'bg-gray-500';
 

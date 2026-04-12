@@ -148,6 +148,7 @@ return [
         'certificate_already_issued' => 'تم إصدار الشهادة مسبقاً.',
         'certificate_not_eligible' => 'الاشتراك غير مؤهل للحصول على شهادة.',
         'invalid_package' => 'الباقة المحددة غير متاحة.',
+        'queued_cycle_exists' => 'يوجد تجديد معلق بالفعل لهذا الاشتراك. يرجى الانتظار حتى ينتهي الاشتراك الحالي.',
         'cannot_cancel_paid' => 'لا يمكن إلغاء اشتراك مدفوع. سينتهي الاشتراك تلقائياً في تاريخ الانتهاء.',
         'cancel_reason_student' => 'إلغاء من قبل الطالب',
         'cannot_delete_package_with_subscriptions' => 'لا يمكن حذف الباقة لوجود اشتراكات مرتبطة بها. يمكنك تعطيلها بدلاً من ذلك.',
@@ -199,6 +200,16 @@ return [
     'additional_days' => 'عدد الأيام الإضافية',
     'extend_grace_success' => 'تم تمديد فترة السماح',
     'extend_grace_success_body' => 'تم منح فترة سماح :days يوم حتى :date',
+
+    // Cancel extension action (remove an active grace period)
+    'cancel_extension_label' => 'إلغاء فترة السماح',
+    'cancel_extension_modal_heading' => 'إلغاء فترة السماح النشطة',
+    'cancel_extension_modal_description' => 'سيتم إزالة فترة السماح من هذا الاشتراك. إذا كانت فترة الاشتراك الأصلية قد انتهت، سيتم إيقاف الاشتراك.',
+    'cancel_extension_success' => 'تم إلغاء فترة السماح',
+
+    // Cycle-based renewal copy
+    'renewal_payment_recorded_by_admin' => 'تم تسجيل دفعة التجديد بواسطة الإدارة (دورة جديدة)',
+    'renew_always_activates_note' => 'سيتم تفعيل الدورة الجديدة فوراً. لمنح الطالب مهلة للدفع، استخدم إجراء تمديد فترة السماح بدلاً من ذلك.',
 
     // Cancel action
     'cancel_label' => 'إلغاء الاشتراك',

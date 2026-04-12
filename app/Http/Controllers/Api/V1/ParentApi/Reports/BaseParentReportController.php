@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi\Reports;
 
-use BackedEnum;
-use Illuminate\Support\Collection;
-use Illuminate\Http\Request;
 use App\Enums\AttendanceStatus;
-use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\ParentStudentRelationship;
+use BackedEnum;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Base controller for parent report operations.
@@ -69,7 +68,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Get date range from request with defaults.
      *
-     * @param Request $request
+     * @param  Request  $request
      * @return array [startDate, endDate]
      */
     protected function getDateRange($request): array
@@ -88,7 +87,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Calculate attendance rate from reports.
      *
-     * @param Collection $reports
+     * @param  Collection  $reports
      */
     protected function calculateAttendanceRate($reports): float
     {
@@ -104,7 +103,7 @@ abstract class BaseParentReportController extends Controller
                 $status = $status->value;
             }
 
-            return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
+            return in_array($status, AttendanceStatus::presentValues());
         })->count();
 
         return round(($attended / $total) * 100, 1);
@@ -113,7 +112,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Count attended sessions from reports.
      *
-     * @param Collection $reports
+     * @param  Collection  $reports
      */
     protected function countAttended($reports): int
     {
@@ -123,14 +122,14 @@ abstract class BaseParentReportController extends Controller
                 $status = $status->value;
             }
 
-            return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
+            return in_array($status, AttendanceStatus::presentValues());
         })->count();
     }
 
     /**
      * Count missed sessions from reports.
      *
-     * @param Collection $reports
+     * @param  Collection  $reports
      */
     protected function countMissed($reports): int
     {
@@ -147,7 +146,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Validate parent access.
      *
-     * @param Request $request
+     * @param  Request  $request
      * @return array|JsonResponse Returns [user, parentProfile] or error response
      */
     protected function validateParentAccess($request)

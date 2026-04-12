@@ -59,6 +59,9 @@ use App\Enums\SessionStatus;
                         
                         <!-- Attendance Status -->
                         <div class="flex items-center gap-4">
+                            @php
+                                $isPartial = AttendanceStatus::tryFrom($attendanceStatus)?->isPartialTier() ?? false;
+                            @endphp
                             @if($canEdit && ($session->status === SessionStatus::ONGOING || $session->status === SessionStatus::COMPLETED))
                                 <!-- Attendance Options (editable) -->
                                 <div class="flex items-center gap-2">
@@ -71,11 +74,11 @@ use App\Enums\SessionStatus;
                                     </label>
 
                                     <label class="flex items-center">
-                                        <input type="radio" name="attendance_{{ $student->id }}" value="{{ AttendanceStatus::LATE->value }}"
-                                               class="text-yellow-600 focus:ring-yellow-500 attendance-radio"
-                                               {{ $attendanceStatus === AttendanceStatus::LATE->value ? 'checked' : '' }}
+                                        <input type="radio" name="attendance_{{ $student->id }}" value="{{ AttendanceStatus::PARTIALLY_ATTENDED->value }}"
+                                               class="text-amber-600 focus:ring-amber-500 attendance-radio"
+                                               {{ $isPartial ? 'checked' : '' }}
                                                data-student-id="{{ $student->id }}">
-                                        <span class="me-2 text-sm font-medium text-yellow-600">{{ __('components.sessions.attendance.late') }}</span>
+                                        <span class="me-2 text-sm font-medium text-amber-600">{{ __('components.sessions.attendance.partially_attended') }}</span>
                                     </label>
 
                                     <label class="flex items-center">
@@ -90,18 +93,18 @@ use App\Enums\SessionStatus;
                                 <!-- Attendance Status (read-only for supervisor) -->
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                                     {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? 'bg-green-100 text-green-800' :
-                                       ($attendanceStatus === AttendanceStatus::LATE->value ? 'bg-yellow-100 text-yellow-800' :
+                                       ($isPartial ? 'bg-amber-100 text-amber-800' :
                                        ($attendanceStatus === AttendanceStatus::ABSENT->value ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')) }}">
                                     {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? __('components.sessions.attendance.present') :
-                                       ($attendanceStatus === AttendanceStatus::LATE->value ? __('components.sessions.attendance.late') :
+                                       ($isPartial ? __('components.sessions.attendance.partially_attended') :
                                        ($attendanceStatus === AttendanceStatus::ABSENT->value ? __('components.sessions.attendance.absent') : __('components.sessions.attendance.not_specified'))) }}
                                 </span>
                             @else
                                 <!-- Display Status for Scheduled Sessions -->
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                                     {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? 'bg-green-100 text-green-800' :
-                                       ($attendanceStatus === AttendanceStatus::LATE->value ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                                    {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? __('components.sessions.attendance.present') : ($attendanceStatus === AttendanceStatus::LATE->value ? __('components.sessions.attendance.late') : __('components.sessions.attendance.not_specified')) }}
+                                       ($isPartial ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800') }}">
+                                    {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? __('components.sessions.attendance.present') : ($isPartial ? __('components.sessions.attendance.partially_attended') : __('components.sessions.attendance.not_specified')) }}
                                 </span>
                             @endif
                         </div>
@@ -173,7 +176,7 @@ use App\Enums\SessionStatus;
                     <div class="text-sm text-gray-600">
                         <span id="attendanceStats">
                             {{ __('components.sessions.attendance.stats_present') }} <span class="font-medium text-green-600">{{ $session->attendances->where('attendance_status', AttendanceStatus::ATTENDED->value)->count() }}</span> |
-                            {{ __('components.sessions.attendance.stats_late') }} <span class="font-medium text-yellow-600">{{ $session->attendances->where('attendance_status', AttendanceStatus::LATE->value)->count() }}</span> |
+                            {{ __('components.sessions.attendance.partially_attended') }} <span class="font-medium text-amber-600">{{ $session->attendances->whereIn('attendance_status', AttendanceStatus::partialValues())->count() }}</span> |
                             {{ __('components.sessions.attendance.stats_absent') }} <span class="font-medium text-red-600">{{ $session->attendances->where('attendance_status', AttendanceStatus::ABSENT->value)->count() }}</span>
                         </span>
                     </div>

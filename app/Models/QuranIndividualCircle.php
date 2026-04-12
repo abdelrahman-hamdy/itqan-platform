@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\SessionSubscriptionStatus;
 use App\Models\Traits\ScopedToAcademy;
 use DB;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -151,22 +150,32 @@ class QuranIndividualCircle extends Model
     }
 
     /**
-     * Get the active subscription for this circle
-     * Checks both polymorphic relationship (new) and direct FK (legacy)
+     * Get the active subscription for this circle.
+     *
+     * "Active" here means "schedulable right now", which includes subscriptions
+     * whose current cycle is in a grace period even if payment is pending. Uses
+     * the `isSchedulable()` contract defined on BaseSubscription so grace-period
+     * semantics propagate through every scheduling gate.
+     *
+     * Checks both polymorphic relationship (new) and direct FK (legacy).
      */
     public function getActiveSubscriptionAttribute(): ?QuranSubscription
     {
         // Use loaded collection when eager-loaded, otherwise use targeted query
-        $activeLinked = $this->relationLoaded('linkedSubscriptions')
-            ? $this->linkedSubscriptions->firstWhere('status', SessionSubscriptionStatus::ACTIVE)
-            : $this->linkedSubscriptions()->where('status', SessionSubscriptionStatus::ACTIVE)->first();
+        if ($this->relationLoaded('linkedSubscriptions')) {
+            $activeLinked = $this->linkedSubscriptions->first(
+                fn ($sub) => $sub->isSchedulable()
+            );
+        } else {
+            $activeLinked = $this->linkedSubscriptions()->schedulable()->first();
+        }
 
         if ($activeLinked) {
             return $activeLinked;
         }
 
         // Fallback to legacy direct FK
-        if ($this->subscription_id && $this->subscription?->status === SessionSubscriptionStatus::ACTIVE) {
+        if ($this->subscription_id && $this->subscription?->isSchedulable()) {
             return $this->subscription;
         }
 
@@ -236,14 +245,16 @@ class QuranIndividualCircle extends Model
 
     /**
      * Scope: circles that are effectively active (subscription-aware).
-     * Active = not completed AND (has active subscription OR no subscription but is_active=true).
+     * Active = not completed AND (has schedulable subscription OR no subscription but is_active=true).
+     *
+     * Uses `schedulable()` so grace-period subscriptions count as effectively active.
      */
     public function scopeEffectivelyActive($query)
     {
         return $query->whereNull('completed_at')
             ->where(function ($q) {
-                $q->whereHas('subscription', fn ($sq) => $sq->where('status', SessionSubscriptionStatus::ACTIVE))
-                    ->orWhereHas('linkedSubscriptions', fn ($sq) => $sq->where('status', SessionSubscriptionStatus::ACTIVE))
+                $q->whereHas('subscription', fn ($sq) => $sq->schedulable())
+                    ->orWhereHas('linkedSubscriptions', fn ($sq) => $sq->schedulable())
                     ->orWhere(function ($q2) {
                         $q2->whereNull('subscription_id')
                             ->whereDoesntHave('linkedSubscriptions')
@@ -254,22 +265,22 @@ class QuranIndividualCircle extends Model
 
     /**
      * Scope: circles that are effectively paused (subscription-aware).
-     * Paused = not completed AND (has non-active subscription OR no subscription with is_active=false).
+     * Paused = not completed AND (has non-schedulable subscription OR no subscription with is_active=false).
      */
     public function scopeEffectivelyPaused($query)
     {
         return $query->whereNull('completed_at')
             ->where(function ($q) {
-                // Has legacy subscription that is not active (or orphaned/deleted)
+                // Has legacy subscription that is not schedulable (or orphaned/deleted)
                 $q->where(function ($q2) {
                     $q2->whereNotNull('subscription_id')
-                        ->whereDoesntHave('subscription', fn ($sq) => $sq->where('status', SessionSubscriptionStatus::ACTIVE))
-                        ->whereDoesntHave('linkedSubscriptions', fn ($sq) => $sq->where('status', SessionSubscriptionStatus::ACTIVE));
+                        ->whereDoesntHave('subscription', fn ($sq) => $sq->schedulable())
+                        ->whereDoesntHave('linkedSubscriptions', fn ($sq) => $sq->schedulable());
                 })->orWhere(function ($q2) {
-                    // Has only linked subscriptions, none active
+                    // Has only linked subscriptions, none schedulable
                     $q2->whereNull('subscription_id')
                         ->whereHas('linkedSubscriptions')
-                        ->whereDoesntHave('linkedSubscriptions', fn ($sq) => $sq->where('status', SessionSubscriptionStatus::ACTIVE));
+                        ->whereDoesntHave('linkedSubscriptions', fn ($sq) => $sq->schedulable());
                 })->orWhere(function ($q2) {
                     // No subscriptions at all, is_active=false
                     $q2->whereNull('subscription_id')
@@ -462,8 +473,8 @@ class QuranIndividualCircle extends Model
         }
 
         $subscription = $this->activeSubscription ?? $this->subscription;
-        $isEffectivelyActive = $subscription && $subscription->status instanceof SessionSubscriptionStatus
-            ? $subscription->status === SessionSubscriptionStatus::ACTIVE
+        $isEffectivelyActive = $subscription
+            ? $subscription->isSchedulable()
             : $this->is_active;
 
         return $isEffectivelyActive

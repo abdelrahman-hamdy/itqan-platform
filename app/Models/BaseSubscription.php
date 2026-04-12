@@ -8,6 +8,7 @@ use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -88,6 +89,8 @@ abstract class BaseSubscription extends Model
         'academy_id',
         'student_id',
         'previous_subscription_id',
+        'current_cycle_id',
+        'cycle_count',
         'subscription_code',
         'status',
 
@@ -178,6 +181,9 @@ abstract class BaseSubscription extends Model
         'billing_cycle' => BillingCycle::class,
         'purchase_source' => PurchaseSource::class,
 
+        // Cycle linkage
+        'cycle_count' => 'integer',
+
         // Dates
         'last_accessed_at' => 'datetime',
         'starts_at' => 'datetime',
@@ -262,12 +268,51 @@ abstract class BaseSubscription extends Model
 
     /**
      * Check if this subscription has a pending renewal.
+     *
+     * @deprecated Under the cycle-based model, early renewal creates a `queued`
+     * cycle on the same subscription, not a new row. Kept only for backwards
+     * compatibility with data migrated from the previous model.
      */
     public function hasPendingRenewal(): bool
     {
         return static::where('previous_subscription_id', $this->id)
             ->where('status', SessionSubscriptionStatus::PENDING)
             ->exists();
+    }
+
+    // ========================================
+    // CYCLE RELATIONS (cycle-based model)
+    // ========================================
+
+    /**
+     * Get all cycles for this subscription thread (historical + active + queued).
+     */
+    public function cycles(): MorphMany
+    {
+        return $this->morphMany(SubscriptionCycle::class, 'subscribable')
+            ->orderBy('cycle_number');
+    }
+
+    /**
+     * Get the currently active cycle for this subscription.
+     * The subscription's own columns (starts_at, ends_at, total_sessions, etc.)
+     * always mirror the active cycle.
+     */
+    public function currentCycle(): BelongsTo
+    {
+        return $this->belongsTo(SubscriptionCycle::class, 'current_cycle_id');
+    }
+
+    /**
+     * Get the queued (future) cycle if one exists.
+     *
+     * Early renewal creates a `queued` cycle to start when the current cycle ends.
+     * At most one queued cycle per thread.
+     */
+    public function queuedCycle(): MorphOne
+    {
+        return $this->morphOne(SubscriptionCycle::class, 'subscribable')
+            ->where('cycle_state', SubscriptionCycle::STATE_QUEUED);
     }
 
     /**
@@ -385,6 +430,34 @@ abstract class BaseSubscription extends Model
     }
 
     /**
+     * Scope: Get subscriptions that are schedulable right now.
+     *
+     * A subscription is schedulable if and only if:
+     *   status === ACTIVE
+     *   AND (payment_status === PAID OR the current cycle is in grace period)
+     *
+     * This is the query-side equivalent of `isSchedulable()` and should be used
+     * anywhere the UI needs to populate a schedulable-items dropdown or filter
+     * circles/lessons for session creation.
+     */
+    public function scopeSchedulable(Builder $query): Builder
+    {
+        return $query->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->where(function (Builder $q) {
+                $q->where('payment_status', SubscriptionPaymentStatus::PAID)
+                    ->orWhere(function (Builder $grace) {
+                        $grace->whereRaw(
+                            "JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.grace_period_ends_at')) > NOW()"
+                        );
+                    })
+                    ->orWhereHas('currentCycle', function (Builder $cycleQ) {
+                        $cycleQ->whereNotNull('grace_period_ends_at')
+                            ->where('grace_period_ends_at', '>', now());
+                    });
+            });
+    }
+
+    /**
      * Scope: Get subscriptions by billing cycle
      */
     public function scopeForBillingCycle($query, BillingCycle $cycle)
@@ -463,6 +536,31 @@ abstract class BaseSubscription extends Model
         }
 
         return $this->status->canAccess() && $this->payment_status->allowsAccess();
+    }
+
+    /**
+     * Check whether this subscription is schedulable right now.
+     *
+     * A subscription is schedulable if and only if:
+     *   - status === ACTIVE
+     *   - AND (payment_status === PAID OR the current cycle is in a grace period)
+     *
+     * This is the SINGLE contract that every scheduling gate must consult
+     * (validators, calendar strategy filters, session creating observers,
+     * circle option loaders). Replacing all direct `status === ACTIVE` checks
+     * with this method is what unblocks grace-period scheduling.
+     */
+    public function isSchedulable(): bool
+    {
+        if ($this->status !== SessionSubscriptionStatus::ACTIVE) {
+            return false;
+        }
+
+        if ($this->payment_status === SubscriptionPaymentStatus::PAID) {
+            return true;
+        }
+
+        return $this->isInGracePeriod();
     }
 
     /**
@@ -547,30 +645,42 @@ abstract class BaseSubscription extends Model
 
     /**
      * Check if subscription is currently in grace period (admin-granted or auto-renewal failure).
+     *
+     * Prefers the cycle-level `grace_period_ends_at` on the current cycle,
+     * falls back to the legacy `metadata['grace_period_ends_at']` and
+     * `metadata['grace_period_expires_at']` keys for backwards compatibility
+     * with data that predates the cycle-based model.
      */
     public function isInGracePeriod(): bool
     {
-        $metadata = $this->metadata ?? [];
+        $endsAt = $this->getGracePeriodEndsAt();
 
-        // Check both keys: standardized key and legacy key (for existing records)
-        $key = isset($metadata['grace_period_ends_at']) ? 'grace_period_ends_at'
-            : (isset($metadata['grace_period_expires_at']) ? 'grace_period_expires_at' : null);
-
-        if (! $key) {
-            return false;
-        }
-
-        return Carbon::parse($metadata[$key])->isFuture();
+        return $endsAt !== null && $endsAt->isFuture();
     }
 
     /**
      * Get grace period end date if set, null otherwise.
+     *
+     * Source of truth priority:
+     *   1. current_cycle.grace_period_ends_at (cycle-based model)
+     *   2. metadata['grace_period_ends_at'] (legacy)
+     *   3. metadata['grace_period_expires_at'] (oldest legacy key)
      */
     public function getGracePeriodEndsAt(): ?Carbon
     {
+        // Prefer the current cycle's grace period if we have one loaded/available
+        if ($this->current_cycle_id) {
+            $cycle = $this->relationLoaded('currentCycle')
+                ? $this->currentCycle
+                : $this->currentCycle()->first();
+
+            if ($cycle && $cycle->grace_period_ends_at !== null) {
+                return $cycle->grace_period_ends_at;
+            }
+        }
+
         $metadata = $this->metadata ?? [];
 
-        // Check both keys: standardized key and legacy key (for existing records)
         $key = isset($metadata['grace_period_ends_at']) ? 'grace_period_ends_at'
             : (isset($metadata['grace_period_expires_at']) ? 'grace_period_expires_at' : null);
 
@@ -609,6 +719,50 @@ abstract class BaseSubscription extends Model
             'ends_at' => $this->calculateEndDate($this->starts_at ?? now()),
             'next_billing_date' => $this->calculateEndDate($this->starts_at ?? now()),
             'last_payment_date' => now(),
+        ]);
+
+        return $this;
+    }
+
+    /**
+     * Settle the current cycle after a payment lands.
+     *
+     * - Marks the current cycle row as PAID
+     * - Clears the current cycle's grace period
+     * - Clears the subscription-level grace metadata (for back-compat reads)
+     * - Links the payment to the cycle if a Payment was provided
+     *
+     * This is the cycle-aware complement to `activate()`. Called from the
+     * concrete `activateFromPayment()` implementations.
+     */
+    public function settleCurrentCycle(?Payment $payment = null): self
+    {
+        $cycle = null;
+
+        if ($this->current_cycle_id) {
+            $cycle = SubscriptionCycle::find($this->current_cycle_id);
+        }
+
+        if ($cycle) {
+            $cycle->update([
+                'payment_status' => SubscriptionCycle::PAYMENT_PAID,
+                'grace_period_ends_at' => null,
+                'payment_id' => $payment?->id ?? $cycle->payment_id,
+            ]);
+        }
+
+        // Clear subscription-level grace metadata (back-compat with legacy reads)
+        $metadata = $this->metadata ?? [];
+        unset(
+            $metadata['grace_period_ends_at'],
+            $metadata['grace_period_expires_at'],
+            $metadata['grace_period_started_at'],
+        );
+
+        $this->update([
+            'payment_status' => SubscriptionPaymentStatus::PAID,
+            'last_payment_date' => now(),
+            'metadata' => $metadata ?: null,
         ]);
 
         return $this;
@@ -928,6 +1082,77 @@ abstract class BaseSubscription extends Model
     abstract public function getSessions();
 
     // ========================================
+    // CYCLE LIFECYCLE METHODS
+    // ========================================
+
+    /**
+     * Ensure this subscription has a current_cycle_id pointing at an active cycle.
+     *
+     * Idempotent: short-circuits if a cycle is already linked. Used by:
+     *   - `activateFromPayment()` to bootstrap the first cycle on brand-new subs
+     *   - `SubscriptionRenewalService::renew()` for lazy back-fill on legacy data
+     *   - `AdminSubscriptionWizardService` for admin-created active subs
+     *
+     * Creates the cycle via `SubscriptionCycle::materializeFromSubscription()` so
+     * the snapshot logic stays in one place.
+     */
+    public function ensureCurrentCycle(): SubscriptionCycle
+    {
+        if ($this->current_cycle_id) {
+            $existing = SubscriptionCycle::find($this->current_cycle_id);
+            if ($existing) {
+                return $existing;
+            }
+        }
+
+        $cycle = SubscriptionCycle::materializeFromSubscription(
+            $this,
+            $this,
+            SubscriptionCycle::STATE_ACTIVE,
+            [
+                'cycle_number' => max(1, (int) $this->cycle_count),
+                'metadata' => [
+                    'materialized_from_subscription' => true,
+                    'materialized_at' => now()->toDateTimeString(),
+                ],
+            ]
+        );
+
+        $this->update([
+            'current_cycle_id' => $cycle->id,
+            'cycle_count' => max(1, (int) $this->cycle_count),
+        ]);
+
+        return $cycle;
+    }
+
+    /**
+     * Get progress percentage from the current cycle's actual counters.
+     *
+     * After a cycle advance, `progress_percentage` on the subscription row is
+     * reset to 0. This accessor derives progress from the cycle counters
+     * (which are always incremented alongside the subscription row via
+     * `useSession()`) so callers get an accurate per-cycle progress value.
+     *
+     * Falls back to the subscription row's `progress_percentage` column for
+     * subscriptions that predate the cycle model.
+     */
+    public function getCurrentCycleProgressAttribute(): float
+    {
+        if ($this->current_cycle_id) {
+            $cycle = $this->relationLoaded('currentCycle')
+                ? $this->currentCycle
+                : $this->currentCycle()->first();
+
+            if ($cycle && $cycle->total_sessions > 0) {
+                return round(($cycle->sessions_completed / $cycle->total_sessions) * 100, 2);
+            }
+        }
+
+        return (float) ($this->progress_percentage ?? 0);
+    }
+
+    // ========================================
     // SESSION USAGE METHODS
     // ========================================
 
@@ -969,6 +1194,16 @@ abstract class BaseSubscription extends Model
             }
 
             $subscription->update($updateData);
+
+            // Keep the current cycle's counters in sync so the cycles
+            // relation manager and API payloads reflect real session usage.
+            if ($subscription->current_cycle_id) {
+                SubscriptionCycle::where('id', $subscription->current_cycle_id)
+                    ->update([
+                        'sessions_used' => DB::raw('sessions_used + 1'),
+                        'sessions_completed' => DB::raw('sessions_completed + 1'),
+                    ]);
+            }
 
             $this->refresh();
 
@@ -1013,6 +1248,15 @@ abstract class BaseSubscription extends Model
             }
 
             $subscription->update($updateData);
+
+            // Reverse the current cycle's counters to match the subscription row.
+            if ($subscription->current_cycle_id) {
+                SubscriptionCycle::where('id', $subscription->current_cycle_id)
+                    ->update([
+                        'sessions_used' => DB::raw('GREATEST(sessions_used - 1, 0)'),
+                        'sessions_completed' => DB::raw('GREATEST(sessions_completed - 1, 0)'),
+                    ]);
+            }
 
             Log::info('Session returned to '.class_basename(static::class)." {$subscription->id}");
 

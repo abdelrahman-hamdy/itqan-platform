@@ -3,7 +3,6 @@
 namespace App\Services\Scheduling\Validators;
 
 use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
 use App\Models\QuranIndividualCircle;
 use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
@@ -82,13 +81,16 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
     public function validateDateRange(?Carbon $startDate, int $weeksAhead): ValidationResult
     {
         $limits = $this->getSubscriptionLimits();
-        $subscription = $this->circle->subscription;
+        $subscription = $this->circle->activeSubscription ?? $this->circle->subscription;
 
         if (! $subscription) {
             return ValidationResult::error(__('scheduling.date.no_active_subscription'));
         }
 
-        if ($subscription->status !== SessionSubscriptionStatus::ACTIVE) {
+        // Use the model-level contract that honors grace period + payment_status.
+        // This is the single source of truth for "is this subscription schedulable"
+        // and MUST stay in sync with BaseSubscription::isSchedulable().
+        if (! $subscription->isSchedulable()) {
             return ValidationResult::error(__('scheduling.date.subscription_inactive'));
         }
 
@@ -169,9 +171,9 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
 
     public function getSchedulingStatus(): array
     {
-        $subscription = $this->circle->subscription;
+        $subscription = $this->circle->activeSubscription ?? $this->circle->subscription;
 
-        if (! $subscription || $subscription->status !== SessionSubscriptionStatus::ACTIVE) {
+        if (! $subscription || ! $subscription->isSchedulable()) {
             return [
                 'status' => 'inactive',
                 'message' => __('scheduling.status.inactive_subscription'),

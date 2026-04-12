@@ -279,11 +279,11 @@ class AcademyGeneralSettingsResource extends BaseResource
                     ]),
 
                 Section::make('إعدادات الاجتماعات')
-                    ->description('تحديد القيم الافتراضية لتوقيت فتح وإغلاق الاجتماعات وإدارة الانضمام المتأخر')
+                    ->description('تحديد القيم الافتراضية لتوقيت فتح وإغلاق الاجتماعات')
                     ->collapsible()
                     ->collapsed()
                     ->schema([
-                        Grid::make(3)
+                        Grid::make(2)
                             ->schema([
                                 TextInput::make('meeting_settings.default_preparation_minutes')
                                     ->label('وقت تحضير الاجتماع (دقيقة)')
@@ -292,16 +292,6 @@ class AcademyGeneralSettingsResource extends BaseResource
                                     ->minValue(0)
                                     ->maxValue(60)
                                     ->default(10)
-                                    ->required()
-                                    ->suffix('دقيقة'),
-
-                                TextInput::make('meeting_settings.default_late_tolerance_minutes')
-                                    ->label('فترة السماح للانضمام المتأخر (دقيقة)')
-                                    ->helperText('الوقت المسموح للطلاب للانضمام بعد بداية الجلسة دون اعتبارهم متأخرين')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->maxValue(60)
-                                    ->default(15)
                                     ->required()
                                     ->suffix('دقيقة'),
 
@@ -314,6 +304,55 @@ class AcademyGeneralSettingsResource extends BaseResource
                                     ->default(5)
                                     ->required()
                                     ->suffix('دقيقة'),
+                            ]),
+                    ]),
+
+                Section::make(__('settings.attendance_rules'))
+                    ->description(__('settings.attendance_rules_description'))
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('attendance_settings.student_full_attendance_percent')
+                                    ->label(__('settings.student_full_attendance'))
+                                    ->helperText(__('settings.student_full_help'))
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(100)
+                                    ->default(80)
+                                    ->required()
+                                    ->suffix('%'),
+
+                                TextInput::make('attendance_settings.student_partial_attendance_percent')
+                                    ->label(__('settings.student_partial_attendance'))
+                                    ->helperText(__('settings.student_partial_help'))
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(100)
+                                    ->default(50)
+                                    ->required()
+                                    ->suffix('%'),
+
+                                TextInput::make('attendance_settings.teacher_full_attendance_percent')
+                                    ->label(__('settings.teacher_full_attendance'))
+                                    ->helperText(__('settings.teacher_full_attendance_help'))
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(100)
+                                    ->default(90)
+                                    ->required()
+                                    ->suffix('%'),
+
+                                TextInput::make('attendance_settings.teacher_partial_attendance_percent')
+                                    ->label(__('settings.teacher_partial_attendance'))
+                                    ->helperText(__('settings.teacher_partial_attendance_help'))
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(100)
+                                    ->default(50)
+                                    ->required()
+                                    ->suffix('%'),
                             ]),
                     ]),
 

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Carbon\Carbon;
-use App\Enums\SessionSubscriptionStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -150,12 +149,12 @@ class QuranCircleEnrollment extends Model
     }
 
     /**
-     * Check if enrollment has an active subscription
+     * Check if enrollment has a schedulable subscription (grace-period aware).
      */
     public function hasActiveSubscription(): bool
     {
-        return $this->subscription_id !== null &&
-               $this->subscription?->status === SessionSubscriptionStatus::ACTIVE;
+        return $this->subscription_id !== null
+            && $this->subscription?->isSchedulable() === true;
     }
 
     /**
@@ -167,11 +166,11 @@ class QuranCircleEnrollment extends Model
     }
 
     /**
-     * Get the active subscription for this enrollment
+     * Get the schedulable subscription for this enrollment (grace-period aware).
      */
     public function getActiveSubscriptionAttribute(): ?QuranSubscription
     {
-        if ($this->subscription_id && $this->subscription?->status === SessionSubscriptionStatus::ACTIVE) {
+        if ($this->subscription_id && $this->subscription?->isSchedulable()) {
             return $this->subscription;
         }
 
@@ -197,12 +196,12 @@ class QuranCircleEnrollment extends Model
     }
 
     /**
-     * Scope to students with active subscriptions
+     * Scope to students with schedulable subscriptions (grace-period aware).
      */
     public function scopeWithActiveSubscription($query)
     {
         return $query->whereHas('subscription', function ($q) {
-            $q->where('status', SessionSubscriptionStatus::ACTIVE);
+            $q->schedulable();
         });
     }
 

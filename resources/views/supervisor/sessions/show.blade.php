@@ -440,11 +440,11 @@
             );
             $studentAttendances = collect([$absentAtt]);
         }
-        $teacherMeetingAtt = $allMeetingAtt->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])->first();
+        $teacherMeetingAtt = $allMeetingAtt->whereIn('user_type', \App\Models\MeetingAttendance::TEACHER_USER_TYPES)->first();
         $teacherAttStatusRaw = $session->teacher_attendance_status ?? $teacherMeetingAtt?->attendance_status;
         $teacherAttStatus = $teacherAttStatusRaw instanceof \BackedEnum ? $teacherAttStatusRaw->value : $teacherAttStatusRaw;
         $teacherCounts = $session->counts_for_teacher ?? true;
-        $teacherMinutes = $teacherMeetingAtt?->total_duration_minutes ?? 0;
+        $teacherMinutes = $teacherMeetingAtt?->effective_display_minutes ?? 0;
 
         $attStatusClasses = [
             'attended' => 'bg-green-100 text-green-800',
@@ -530,7 +530,7 @@
                 @forelse($studentAttendances as $sAtt)
                     @php
                         $studentUser = $sAtt->user;
-                        $studentMinutes = $sAtt->total_duration_minutes ?? 0;
+                        $studentMinutes = $sAtt->effective_display_minutes;
                         $studentAttStatusRaw = $sAtt->attendance_status;
                         $studentAttStatus = $studentAttStatusRaw instanceof \BackedEnum ? $studentAttStatusRaw->value : $studentAttStatusRaw;
                     @endphp

@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 
 class SubscriptionController extends Controller
 {
-    use ApiResponses;
+    use ApiResponses, \App\Http\Traits\Api\FormatsSubscriptionCycles;
 
     /**
      * Get all subscriptions for linked children.
@@ -244,6 +244,7 @@ class SubscriptionController extends Controller
                     'scheduled_at' => $s->scheduled_at?->toISOString(),
                     'status' => $s->status->value ?? $s->status,
                 ])->toArray() ?? [],
+                ...$this->formatCycleFields($subscription),
                 'created_at' => $subscription->created_at->toISOString(),
             ]);
         }
@@ -279,6 +280,7 @@ class SubscriptionController extends Controller
                     'scheduled_at' => $s->scheduled_at?->toISOString(),
                     'status' => $s->status->value ?? $s->status,
                 ])->toArray() ?? [],
+                ...$this->formatCycleFields($subscription),
                 'created_at' => $subscription->created_at->toISOString(),
             ]);
         }

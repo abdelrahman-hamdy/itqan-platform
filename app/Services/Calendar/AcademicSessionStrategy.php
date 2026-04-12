@@ -2,8 +2,6 @@
 
 namespace App\Services\Calendar;
 
-use InvalidArgumentException;
-use Exception;
 use App\Enums\EnrollmentStatus;
 use App\Enums\InteractiveCourseStatus;
 use App\Enums\SessionStatus;
@@ -18,8 +16,10 @@ use App\Services\Scheduling\Validators\AcademicLessonValidator;
 use App\Services\Scheduling\Validators\InteractiveCourseValidator;
 use App\Services\Scheduling\Validators\ScheduleValidatorInterface;
 use App\Services\SessionManagementService;
+use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 /**
  * Academic teacher session strategy
@@ -81,20 +81,18 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         return AcademicSubscription::where('teacher_id', $teacherProfile->id)
             ->where('academy_id', $user->academy_id)
             ->where(function ($query) {
-                // Include ACTIVE and PENDING subscriptions
-                $query->whereIn('status', [
-                    SessionSubscriptionStatus::ACTIVE->value,
-                    SessionSubscriptionStatus::PENDING->value,
-                ])
-                // ALSO include CANCELLED subscriptions that haven't reached end date yet
-                // (paid period should remain accessible until ends_at)
-                ->orWhere(function ($q) {
-                    $q->where('status', SessionSubscriptionStatus::CANCELLED->value)
-                        ->where(function ($dateQuery) {
-                            $dateQuery->where('ends_at', '>', now())
-                                ->orWhereNull('ends_at'); // Include if no end date set yet
-                        });
-                });
+                // Use the schedulable() scope so only subscriptions that would
+                // pass `isSchedulable()` appear. Grace-period subscriptions
+                // are included automatically.
+                $query->schedulable()
+                    // Also include CANCELLED subscriptions that still have paid time
+                    ->orWhere(function ($q) {
+                        $q->where('status', SessionSubscriptionStatus::CANCELLED->value)
+                            ->where(function ($dateQuery) {
+                                $dateQuery->where('ends_at', '>', now())
+                                    ->orWhereNull('ends_at');
+                            });
+                    });
             })
             ->with(['student', 'subject', 'sessions'])
             ->get()

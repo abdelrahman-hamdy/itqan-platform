@@ -1029,23 +1029,29 @@ class AcademicSubscription extends BaseSubscription
      */
     public function activateFromPayment(Payment $payment): void
     {
-        DB::transaction(function () {
+        DB::transaction(function () use ($payment) {
+            // Lock the subscription row to serialize concurrent webhook calls.
+            static::lockForUpdate()->find($this->id);
+            $this->refresh();
+
+            // Bootstrap the first cycle row if this is a brand-new subscription.
+            $this->ensureCurrentCycle();
+
+            // Settle the current cycle (mark PAID, clear grace period on cycle + metadata)
+            $this->settleCurrentCycle($payment);
+
             $startsAt = $this->starts_at ?? now();
             $endsAt = $this->ends_at ?? $this->calculateEndDate($startsAt);
 
-            // Clear grace period metadata on successful payment
+            // Clear extra stale metadata keys that settleCurrentCycle doesn't touch
             $metadata = $this->metadata ?? [];
             unset(
-                $metadata['grace_period_ends_at'],
-                $metadata['grace_period_expires_at'],
-                $metadata['grace_period_started_at'],
                 $metadata['grace_notification_last_sent_at'],
                 $metadata['renewal_failed_count'],
                 $metadata['last_renewal_failure_at'],
                 $metadata['last_renewal_failure_reason']
             );
 
-            // Update subscription status
             $this->update([
                 'status' => SessionSubscriptionStatus::ACTIVE,
                 'payment_status' => SubscriptionPaymentStatus::PAID,
@@ -1079,19 +1085,83 @@ class AcademicSubscription extends BaseSubscription
     }
 
     /**
-     * Create the AcademicIndividualLesson and unscheduled sessions for this subscription.
+     * Create the AcademicIndividualLesson and unscheduled sessions for this
+     * subscription's FIRST cycle.
      *
-     * Called from activateFromPayment() after payment is confirmed.
-     * This prevents orphaned lessons/sessions for unpaid subscriptions.
+     * Called from activateFromPayment() after the first payment is confirmed.
+     * Idempotent: if a lesson already exists for this subscription, it reuses
+     * it instead of creating a duplicate. For renewals into a new cycle, call
+     * `createLessonAndSessionsForCycle($cycle)` instead.
      */
     public function createLessonAndSessions(): void
     {
+        $lesson = $this->ensureLesson();
+
+        $billingCycleMultiplier = $this->billing_cycle->sessionMultiplier();
+        $sessionsPerMonth = $this->sessions_per_month ?? 8;
+        $totalSessions = $sessionsPerMonth * $billingCycleMultiplier;
+
+        $this->createBatchOfUnscheduledSessions(
+            lesson: $lesson,
+            count: $totalSessions,
+        );
+
+        Log::info('[AcademicSubscription] Lesson and sessions created', [
+            'subscription_id' => $this->id,
+            'lesson_id' => $lesson->id,
+            'total_sessions' => $totalSessions,
+        ]);
+    }
+
+    /**
+     * Create the next batch of unscheduled sessions for a specific cycle.
+     *
+     * Called from SubscriptionRenewalService::renew() when a new cycle replaces
+     * the current one (exhausted-session path) and from AdvanceSubscriptionCycles
+     * when a queued cycle is promoted. The existing lesson stays the container;
+     * only new sessions are appended.
+     *
+     * Cycle linkage for sessions is derived from scheduled_at / created_at
+     * vs the cycle's starts_at / ends_at window (not stored on the session itself),
+     * so no new column is required on `academic_sessions`.
+     */
+    public function createLessonAndSessionsForCycle(SubscriptionCycle $cycle): void
+    {
+        $lesson = $this->ensureLesson();
+
+        $this->createBatchOfUnscheduledSessions(
+            lesson: $lesson,
+            count: (int) $cycle->total_sessions,
+        );
+
+        // Roll lesson counters forward so display counters stay correct
+        $lesson->increment('total_sessions', (int) $cycle->total_sessions);
+        $lesson->increment('sessions_remaining', (int) $cycle->total_sessions);
+
+        Log::info('[AcademicSubscription] Cycle sessions created', [
+            'subscription_id' => $this->id,
+            'cycle_id' => $cycle->id,
+            'cycle_number' => $cycle->cycle_number,
+            'sessions_added' => $cycle->total_sessions,
+        ]);
+    }
+
+    /**
+     * Find-or-create the AcademicIndividualLesson for this subscription.
+     * Idempotent: returns the existing lesson if one exists.
+     */
+    protected function ensureLesson(): AcademicIndividualLesson
+    {
+        $existing = AcademicIndividualLesson::where('academic_subscription_id', $this->id)->first();
+        if ($existing) {
+            return $existing;
+        }
+
         $subjectName = $this->subject_name ?? 'مادة';
         $gradeLevelName = $this->grade_level_name ?? '';
         $sessionsPerMonth = $this->sessions_per_month ?? 8;
 
-        // Create the AcademicIndividualLesson (container for sessions)
-        $lesson = AcademicIndividualLesson::create([
+        return AcademicIndividualLesson::create([
             'academy_id' => $this->academy_id,
             'academic_teacher_id' => $this->teacher_id,
             'student_id' => $this->student_id,
@@ -1110,35 +1180,44 @@ class AcademicSubscription extends BaseSubscription
             'recording_enabled' => false,
             'created_by' => $this->student_id,
         ]);
+    }
 
-        // Calculate total sessions based on billing cycle
-        $billingCycleMultiplier = $this->billing_cycle->sessionMultiplier();
-        $totalSessions = $sessionsPerMonth * $billingCycleMultiplier;
+    /**
+     * Create N UNSCHEDULED AcademicSession rows for a lesson/cycle.
+     *
+     * Session numbering starts at (max existing + 1) so multiple cycles on the
+     * same lesson don't collide on session_number / session_code.
+     */
+    protected function createBatchOfUnscheduledSessions(
+        AcademicIndividualLesson $lesson,
+        int $count,
+    ): void {
+        $subjectName = $this->subject_name ?? 'مادة';
+        $gradeLevelName = $this->grade_level_name ?? '';
+        $duration = $this->session_duration_minutes ?? 60;
 
-        // Create unscheduled sessions
-        for ($i = 1; $i <= $totalSessions; $i++) {
-            AcademicSession::create([
-                'academy_id' => $this->academy_id,
-                'academic_teacher_id' => $this->teacher_id,
-                'academic_subscription_id' => $this->id,
-                'academic_individual_lesson_id' => $lesson->id,
-                'student_id' => $this->student_id,
-                'session_code' => 'AS-'.$this->id.'-'.str_pad($i, 3, '0', STR_PAD_LEFT),
-                'session_type' => 'individual',
-                'status' => SessionStatus::UNSCHEDULED,
-                'session_number' => $i,
-                'title' => __('sessions.naming.academic_session', ['n' => $i, 'subject' => $subjectName]),
-                'description' => "جلسة في مادة {$subjectName} - {$gradeLevelName}",
-                'duration_minutes' => $this->session_duration_minutes ?? 60,
-                'created_by' => $this->student_id,
-            ]);
+        $startNumber = ((int) AcademicSession::where('academic_individual_lesson_id', $lesson->id)->max('session_number')) + 1;
+
+        for ($i = 0; $i < $count; $i++) {
+            $n = $startNumber + $i;
+            AcademicSession::withoutEvents(function () use ($lesson, $n, $subjectName, $gradeLevelName, $duration) {
+                AcademicSession::create([
+                    'academy_id' => $this->academy_id,
+                    'academic_teacher_id' => $this->teacher_id,
+                    'academic_subscription_id' => $this->id,
+                    'academic_individual_lesson_id' => $lesson->id,
+                    'student_id' => $this->student_id,
+                    'session_code' => 'AS-'.$this->id.'-'.str_pad((string) $n, 3, '0', STR_PAD_LEFT),
+                    'session_type' => 'individual',
+                    'status' => SessionStatus::UNSCHEDULED,
+                    'session_number' => $n,
+                    'title' => __('sessions.naming.academic_session', ['n' => $n, 'subject' => $subjectName]),
+                    'description' => "جلسة في مادة {$subjectName} - {$gradeLevelName}",
+                    'duration_minutes' => $duration,
+                    'created_by' => $this->student_id,
+                ]);
+            });
         }
-
-        Log::info('[AcademicSubscription] Lesson and sessions created', [
-            'subscription_id' => $this->id,
-            'lesson_id' => $lesson->id,
-            'total_sessions' => $totalSessions,
-        ]);
     }
 
     /**

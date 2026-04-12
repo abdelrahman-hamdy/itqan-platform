@@ -1022,6 +1022,7 @@ return [
         'session_log' => 'Sessions Log',
         'session' => 'session',
         'status_attended' => 'Attended',
+        'status_partially_attended' => 'Partially Attended',
         'status_late' => 'Late',
         'status_absent' => 'Absent',
         'status_absent_short' => 'Absent',

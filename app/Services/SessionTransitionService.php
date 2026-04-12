@@ -201,7 +201,6 @@ class SessionTransitionService
                 'started_at' => now(),
             ]);
 
-            // Refresh the original session instance
             $session->refresh();
 
             // Send notifications when session starts
@@ -215,6 +214,126 @@ class SessionTransitionService
 
             return true;
         });
+    }
+
+    /**
+     * Pre-create MeetingAttendance rows for the teacher + enrolled students.
+     * Called from BaseSessionObserver on any status transition to ONGOING or
+     * COMPLETED, which covers every path (transitionToOngoing, markAsOngoing,
+     * direct ->update, LiveKit webhooks, Filament actions, auto-complete
+     * skipping ONGOING for no-shows).
+     *
+     * Idempotent via upsert on the (session_id, user_id) unique index.
+     */
+    public function preCreateAttendanceRows(BaseSession $session): void
+    {
+        [$participants, $sessionTypeTag] = $this->collectPreCreateParticipants($session);
+
+        if (empty($participants)) {
+            return;
+        }
+
+        $now = now();
+        $rows = [];
+        foreach ($participants as $p) {
+            $rows[] = [
+                'session_id' => $session->id,
+                'user_id' => $p['user_id'],
+                'user_type' => $p['user_type'],
+                'session_type' => $sessionTypeTag,
+                'join_leave_cycles' => json_encode([]),
+                'join_count' => 0,
+                'leave_count' => 0,
+                'total_duration_minutes' => 0,
+                'display_duration_minutes' => 0,
+                'attendance_status' => null,
+                'attendance_percentage' => 0,
+                'is_calculated' => false,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        // Insert new rows; leave existing (session_id, user_id) pairs untouched.
+        // Empty update-columns array makes this an insert-ignore via upsert.
+        MeetingAttendance::upsert($rows, ['session_id', 'user_id'], []);
+
+        Log::info('Pre-created attendance rows for session', [
+            'session_id' => $session->id,
+            'participant_count' => count($rows),
+        ]);
+    }
+
+    /**
+     * Collect the [user_id, user_type] participant list plus the session_type
+     * tag to store on each pre-created MeetingAttendance row.
+     *
+     * @return array{0: array<int, array{user_id: int, user_type: string}>, 1: string}
+     */
+    private function collectPreCreateParticipants(BaseSession $session): array
+    {
+        $participants = [];
+        $sessionTypeTag = 'individual';
+
+        if ($session instanceof \App\Models\QuranSession) {
+            $sessionTypeTag = $session->session_type ?? 'individual';
+
+            if ($session->quran_teacher_id) {
+                $participants[] = ['user_id' => $session->quran_teacher_id, 'user_type' => 'teacher'];
+            }
+
+            if ($sessionTypeTag === 'individual' || $sessionTypeTag === 'trial') {
+                if ($session->student_id) {
+                    $participants[] = ['user_id' => $session->student_id, 'user_type' => 'student'];
+                }
+            } else {
+                $circle = $session->circle ?? null;
+                if ($circle && method_exists($circle, 'students')) {
+                    foreach ($circle->students()->limit(500)->pluck('users.id') as $uid) {
+                        $participants[] = ['user_id' => (int) $uid, 'user_type' => 'student'];
+                    }
+                }
+            }
+        } elseif ($session instanceof \App\Models\AcademicSession) {
+            $sessionTypeTag = 'academic';
+
+            // academic_teacher_id points to the profile, not the user.
+            $teacherUserId = $session->academicTeacher?->user_id;
+            if ($teacherUserId) {
+                $participants[] = ['user_id' => (int) $teacherUserId, 'user_type' => 'teacher'];
+            }
+            if ($session->student_id) {
+                $participants[] = ['user_id' => $session->student_id, 'user_type' => 'student'];
+            }
+        } elseif ($session instanceof \App\Models\InteractiveCourseSession) {
+            $sessionTypeTag = 'interactive';
+
+            $course = $session->course ?? null;
+            $teacherUserId = $course?->assignedTeacher?->user_id;
+            if ($teacherUserId) {
+                $participants[] = ['user_id' => (int) $teacherUserId, 'user_type' => 'teacher'];
+            }
+
+            if ($course && method_exists($course, 'enrollments')) {
+                $studentUserIds = $course->enrollments()
+                    ->where('enrollment_status', \App\Enums\EnrollmentStatus::ENROLLED->value)
+                    ->join('student_profiles', 'student_profiles.id', '=', 'interactive_course_enrollments.student_id')
+                    ->limit(500)
+                    ->pluck('student_profiles.user_id');
+
+                if ($studentUserIds->count() >= 500) {
+                    Log::warning('preCreateAttendanceRows: InteractiveCourse enrollment cap reached', [
+                        'session_id' => $session->id,
+                        'course_id' => $course->id,
+                    ]);
+                }
+                foreach ($studentUserIds as $uid) {
+                    $participants[] = ['user_id' => (int) $uid, 'user_type' => 'student'];
+                }
+            }
+        }
+
+        return [$participants, $sessionTypeTag];
     }
 
     /**

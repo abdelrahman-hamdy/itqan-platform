@@ -8,7 +8,6 @@ use App\Services\SessionCountingService;
 use App\Services\SessionSchedulerService;
 use App\Services\SessionSettingsService;
 use App\Services\Traits\AttendanceCalculatorTrait;
-use Carbon\Carbon;
 
 /**
  * Attendance Overhaul Tests
@@ -20,7 +19,6 @@ use Carbon\Carbon;
  * - Counting flags (counts_for_teacher, counts_for_subscription)
  * - Subscription counting
  */
-
 beforeEach(function () {
     $this->academy = createAcademy();
     setTenantContext($this->academy);
@@ -247,7 +245,7 @@ it('falls back to config defaults when academy settings not set', function () {
 
     // Defaults from config or hardcoded
     expect($settingsService->getTeacherFullAttendancePercent($session))->toBeGreaterThanOrEqual(80.0);
-    expect($settingsService->getStudentMinimumPresencePercent($session))->toBeGreaterThanOrEqual(30.0);
+    expect($settingsService->getStudentPartialAttendancePercent($session))->toBeGreaterThanOrEqual(30.0);
 });
 
 // ============================================

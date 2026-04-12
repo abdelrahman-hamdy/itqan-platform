@@ -123,9 +123,9 @@
                             <p class="text-lg md:text-2xl font-bold text-red-600">{{ $attendanceReport['quran']['absent'] }}</p>
                             <p class="text-[10px] md:text-xs text-gray-500">{{ __('parent.reports.absent') }}</p>
                         </div>
-                        <div class="text-center p-2 md:p-4 bg-yellow-50 rounded-lg">
-                            <p class="text-lg md:text-2xl font-bold text-yellow-600">{{ $attendanceReport['quran']['late'] }}</p>
-                            <p class="text-[10px] md:text-xs text-gray-500">{{ __('parent.reports.late') }}</p>
+                        <div class="text-center p-2 md:p-4 bg-amber-50 rounded-lg">
+                            <p class="text-lg md:text-2xl font-bold text-amber-600">{{ $attendanceReport['quran']['partial'] }}</p>
+                            <p class="text-[10px] md:text-xs text-gray-500">{{ __('parent.reports.partial') }}</p>
                         </div>
                     </div>
                     <div class="mt-4">
@@ -163,9 +163,9 @@
                             <p class="text-lg md:text-2xl font-bold text-red-600">{{ $attendanceReport['academic']['absent'] }}</p>
                             <p class="text-[10px] md:text-xs text-gray-500">{{ __('parent.reports.absent') }}</p>
                         </div>
-                        <div class="text-center p-2 md:p-4 bg-yellow-50 rounded-lg">
-                            <p class="text-lg md:text-2xl font-bold text-yellow-600">{{ $attendanceReport['academic']['late'] }}</p>
-                            <p class="text-[10px] md:text-xs text-gray-500">{{ __('parent.reports.late') }}</p>
+                        <div class="text-center p-2 md:p-4 bg-amber-50 rounded-lg">
+                            <p class="text-lg md:text-2xl font-bold text-amber-600">{{ $attendanceReport['academic']['partial'] }}</p>
+                            <p class="text-[10px] md:text-xs text-gray-500">{{ __('parent.reports.partial') }}</p>
                         </div>
                     </div>
                     <div class="mt-4">

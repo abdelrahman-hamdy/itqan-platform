@@ -27,8 +27,6 @@ use App\Contracts\SubscriptionServiceInterface;
 use App\Contracts\SupervisedChatGroupServiceInterface;
 use App\Contracts\UnifiedHomeworkServiceInterface;
 use App\Contracts\UnifiedSessionStatusServiceInterface;
-use App\Http\Responses\FilamentLogoutResponse;
-use Filament\Auth\Http\Responses\Contracts\LogoutResponse as LogoutResponseContract;
 use App\Health\Checks\LogFilesCheck;
 use App\Health\Checks\MediaLibrarySizeCheck;
 use App\Health\Checks\PHPMemoryCheck;
@@ -40,6 +38,7 @@ use App\Http\Middleware\CustomAuthenticate;
 use App\Http\Middleware\ResolveTenantFromSubdomain;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\TenantMiddleware;
+use App\Http\Responses\FilamentLogoutResponse;
 use App\Livewire\Chat\Chats;
 use App\Livewire\Chat\Info;
 use App\Livewire\Filament\DatabaseNotifications;
@@ -115,6 +114,7 @@ use App\Services\RecordingService;
 use App\Services\Reports\QuranReportService;
 use App\Services\SearchService;
 use App\Services\SessionMeetingService;
+use App\Services\SessionSettingsService;
 use App\Services\StudentDashboardService;
 use App\Services\StudentReportService;
 use App\Services\StudentStatisticsService;
@@ -123,6 +123,7 @@ use App\Services\SupervisedChatGroupService;
 use App\Services\UnifiedHomeworkService;
 use App\Services\UnifiedSessionStatusService;
 use Bottelet\TranslationChecker\TranslationManager;
+use Filament\Auth\Http\Responses\Contracts\LogoutResponse as LogoutResponseContract;
 use Filament\Http\Controllers\RedirectToTenantController;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -188,6 +189,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AcademicSessionMeetingServiceInterface::class, AcademicSessionMeetingService::class);
         $this->app->bind(InteractiveCourseSessionMeetingServiceInterface::class, InteractiveCourseSessionMeetingService::class);
         $this->app->bind(AttendanceEventServiceInterface::class, AttendanceEventService::class);
+
+        // SessionSettingsService has a per-instance cache of academy_settings rows.
+        // Without a singleton binding every app(...) call returns a fresh instance
+        // with an empty cache, causing 100+ redundant academy_settings SELECTs per
+        // completed group session.
+        $this->app->singleton(SessionSettingsService::class);
 
         // Override Filament's RedirectToTenantController to fix Livewire redirect return type issue
         $this->app->bind(

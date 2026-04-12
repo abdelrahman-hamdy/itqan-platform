@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Validator;
 
 class SubscriptionController extends Controller
 {
-    use ApiResponses;
+    use ApiResponses, \App\Http\Traits\Api\FormatsSubscriptionCycles;
 
     /**
      * Get active subscription counts by type for the student.
@@ -701,6 +701,7 @@ class SubscriptionController extends Controller
                 ? $subscription->getGracePeriodEndsAt()?->toDateString()
                 : null,
             'paid_until' => ($subscription->ends_at ?? $subscription->end_date)?->toDateString(),
+            ...$this->formatCycleFields($subscription),
             'created_at' => $subscription->created_at->toISOString(),
         ];
 
@@ -742,6 +743,8 @@ class SubscriptionController extends Controller
 
         return $data;
     }
+
+    // formatCycle() provided by FormatsSubscriptionCycles trait
 
     /**
      * Format subscription for detail view.

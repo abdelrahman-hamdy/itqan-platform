@@ -18,20 +18,20 @@ class AcademicSessionReportFactory extends Factory
 
     public function definition(): array
     {
-        $attendanceStatus = $this->faker->randomElement(AttendanceStatus::values());
+        $attendanceStatus = $this->faker->randomElement([
+            AttendanceStatus::ATTENDED->value,
+            AttendanceStatus::PARTIALLY_ATTENDED->value,
+            AttendanceStatus::ABSENT->value,
+        ]);
 
         $attendancePercentage = match ($attendanceStatus) {
             AttendanceStatus::ATTENDED->value => $this->faker->numberBetween(80, 100),
-            AttendanceStatus::LATE->value => $this->faker->numberBetween(70, 95),
-            AttendanceStatus::LEFT->value => $this->faker->numberBetween(30, 49),
+            AttendanceStatus::PARTIALLY_ATTENDED->value => $this->faker->numberBetween(50, 79),
             AttendanceStatus::ABSENT->value => 0,
         };
 
         $actualMinutes = $attendanceStatus === AttendanceStatus::ABSENT->value ? 0 :
-            round(($attendancePercentage / 100) * 60);
-
-        $lateMinutes = $attendanceStatus === AttendanceStatus::LATE->value
-            ? $this->faker->numberBetween(5, 15) : 0;
+            (int) round(($attendancePercentage / 100) * 60);
 
         return [
             'session_id' => AcademicSession::factory(),
@@ -48,8 +48,8 @@ class AcademicSessionReportFactory extends Factory
             'meeting_leave_time' => $attendanceStatus === AttendanceStatus::ABSENT->value ? null :
                 $this->faker->dateTimeBetween('now', '+1 hour'),
             'actual_attendance_minutes' => $actualMinutes,
-            'is_late' => $attendanceStatus === AttendanceStatus::LATE->value,
-            'late_minutes' => $lateMinutes,
+            'is_late' => false,
+            'late_minutes' => 0,
             'attendance_percentage' => $attendancePercentage,
 
             'meeting_events' => $attendanceStatus === AttendanceStatus::ABSENT->value ? [] : [
@@ -79,37 +79,19 @@ class AcademicSessionReportFactory extends Factory
         ]);
     }
 
-    public function late(): static
+    public function partiallyAttended(): static
     {
         return $this->state(function () {
-            $lateMinutes = $this->faker->numberBetween(5, 15);
-            $attendanceMinutes = $this->faker->numberBetween(40, 55);
+            $attendanceMinutes = $this->faker->numberBetween(30, 47);
 
             return [
-                'attendance_status' => AttendanceStatus::LATE->value,
-                'attendance_percentage' => round(($attendanceMinutes / 60) * 100, 2),
-                'actual_attendance_minutes' => $attendanceMinutes,
-                'is_late' => true,
-                'late_minutes' => $lateMinutes,
-                'meeting_enter_time' => now()->subMinutes(60)->addMinutes($lateMinutes),
-                'meeting_leave_time' => now(),
-            ];
-        });
-    }
-
-    public function left(): static
-    {
-        return $this->state(function () {
-            $attendanceMinutes = $this->faker->numberBetween(18, 29);
-
-            return [
-                'attendance_status' => AttendanceStatus::LEFT->value,
+                'attendance_status' => AttendanceStatus::PARTIALLY_ATTENDED->value,
                 'attendance_percentage' => round(($attendanceMinutes / 60) * 100, 2),
                 'actual_attendance_minutes' => $attendanceMinutes,
                 'is_late' => false,
                 'late_minutes' => 0,
-                'meeting_enter_time' => now()->subMinutes(40),
-                'meeting_leave_time' => now()->subMinutes(20),
+                'meeting_enter_time' => now()->subMinutes(60),
+                'meeting_leave_time' => now()->subMinutes(60 - $attendanceMinutes),
             ];
         });
     }

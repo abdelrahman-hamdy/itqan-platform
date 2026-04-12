@@ -2,9 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
-use App\Models\StudentSessionReport;
-use App\Models\AcademicSessionReport;
-use BackedEnum;
 use App\Enums\AttendanceStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
@@ -12,12 +9,15 @@ use App\Enums\SessionSubscriptionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
+use App\Models\AcademicSessionReport;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
 use App\Models\InteractiveCourseSession;
 use App\Models\ParentStudentRelationship;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
+use App\Models\StudentSessionReport;
+use BackedEnum;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -380,7 +380,7 @@ class ReportController extends Controller
                 $status = $status->value;
             }
 
-            return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
+            return in_array($status, AttendanceStatus::presentValues());
         })->count();
 
         $missed = $reports->filter(function ($report) {
@@ -434,7 +434,7 @@ class ReportController extends Controller
                 $status = $status->value;
             }
 
-            return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
+            return in_array($status, AttendanceStatus::presentValues());
         })->count();
 
         $academicAttended = $academicReports->filter(function ($report) {
@@ -443,7 +443,7 @@ class ReportController extends Controller
                 $status = $status->value;
             }
 
-            return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
+            return in_array($status, AttendanceStatus::presentValues());
         })->count();
 
         $totalAttended = $quranAttended + $academicAttended;
@@ -502,7 +502,7 @@ class ReportController extends Controller
                 $status = $status->value;
             }
 
-            return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
+            return in_array($status, AttendanceStatus::presentValues());
         })->count();
 
         $missed = $reports->filter(function ($report) {

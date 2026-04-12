@@ -494,10 +494,9 @@ class E2ETestDataSeeder extends Seeder
     {
         // Unique constraint: (session_id, student_id) — one report per student per session.
         // Create extra completed sessions so each attendance status has its own session.
-        // Note: DB enum uses 'leaved' but PHP enum uses 'left'. Skip LEFT to avoid mismatch.
         $quranReportConfigs = [
             ['attendance' => AttendanceStatus::ATTENDED, 'memo' => 9.5, 'review' => 8.0, 'pct' => 100],
-            ['attendance' => AttendanceStatus::LATE, 'memo' => 7.0, 'review' => 6.5, 'pct' => 85],
+            ['attendance' => AttendanceStatus::PARTIALLY_ATTENDED, 'memo' => 7.0, 'review' => 6.5, 'pct' => 65],
             ['attendance' => AttendanceStatus::ABSENT, 'memo' => null, 'review' => null, 'pct' => 0],
         ];
 
@@ -527,8 +526,8 @@ class E2ETestDataSeeder extends Seeder
                     'attendance_percentage' => $config['pct'],
                     'new_memorization_degree' => $config['memo'],
                     'reservation_degree' => $config['review'],
-                    'is_late' => $config['attendance'] === AttendanceStatus::LATE,
-                    'late_minutes' => $config['attendance'] === AttendanceStatus::LATE ? 10 : 0,
+                    'is_late' => false,
+                    'late_minutes' => 0,
                     'notes' => self::PREFIX." تقرير قرآن - {$config['attendance']->value}",
                     'is_calculated' => true,
                     'manually_evaluated' => false,
@@ -541,7 +540,7 @@ class E2ETestDataSeeder extends Seeder
 
         $academicReportConfigs = [
             ['attendance' => AttendanceStatus::ATTENDED, 'homework_completion' => 9.0, 'understanding' => 8.5, 'pct' => 100],
-            ['attendance' => AttendanceStatus::LATE, 'homework_completion' => 6.5, 'understanding' => 7.0, 'pct' => 80],
+            ['attendance' => AttendanceStatus::PARTIALLY_ATTENDED, 'homework_completion' => 6.5, 'understanding' => 7.0, 'pct' => 65],
             ['attendance' => AttendanceStatus::ABSENT, 'homework_completion' => null, 'understanding' => null, 'pct' => 0],
         ];
 
@@ -574,8 +573,8 @@ class E2ETestDataSeeder extends Seeder
                     'attendance_percentage' => $config['pct'],
                     'homework_completion_degree' => $config['homework_completion'],
                     'lesson_understanding_degree' => $config['understanding'],
-                    'is_late' => $config['attendance'] === AttendanceStatus::LATE,
-                    'late_minutes' => $config['attendance'] === AttendanceStatus::LATE ? 8 : 0,
+                    'is_late' => false,
+                    'late_minutes' => 0,
                     'notes' => self::PREFIX." تقرير أكاديمي - {$config['attendance']->value}",
                     'is_calculated' => true,
                     'manually_evaluated' => false,

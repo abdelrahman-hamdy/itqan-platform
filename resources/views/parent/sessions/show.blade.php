@@ -232,15 +232,35 @@ use App\Enums\AttendanceStatus;
             <div class="space-y-4 md:space-y-6">
                 <!-- Attendance Info -->
                 @if($attendance)
+                    @php
+                        $statusEnum = $attendance->status instanceof AttendanceStatus
+                            ? $attendance->status
+                            : (AttendanceStatus::tryFrom($attendance->status) ?? AttendanceStatus::ABSENT);
+                        $isPartial = $statusEnum->isPartialTier();
+
+                        $attIcon = match (true) {
+                            $statusEnum === AttendanceStatus::ATTENDED => 'check',
+                            $statusEnum === AttendanceStatus::ABSENT   => 'unfollow',
+                            $isPartial                                 => 'clock',
+                            default                                    => 'question',
+                        };
+
+                        [$attBg, $attIconClass, $attLabelClass] = match (true) {
+                            $statusEnum === AttendanceStatus::ATTENDED => ['bg-green-100', 'text-green-600', 'text-green-900'],
+                            $statusEnum === AttendanceStatus::ABSENT   => ['bg-red-100',   'text-red-600',   'text-red-900'],
+                            $isPartial                                 => ['bg-amber-100', 'text-amber-600', 'text-amber-900'],
+                            default                                    => ['bg-gray-100',  'text-gray-600',  'text-gray-900'],
+                        };
+                    @endphp
                     <div class="bg-white rounded-lg md:rounded-xl shadow">
                         <div class="p-4 md:p-6 border-b border-gray-200">
                             <h3 class="text-sm md:text-lg font-bold text-gray-900">{{ __('parent.sessions.attendance_status_title') }}</h3>
                         </div>
                         <div class="p-4 md:p-6 space-y-3 md:space-y-4">
-                            <div class="text-center p-3 md:p-4 rounded-lg {{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'bg-green-100' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'bg-red-100' : ($attendance->status === AttendanceStatus::LEFT->value ? 'bg-orange-100' : 'bg-yellow-100')) }}">
-                                <i class="ri-user-{{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'check' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'unfollow' : ($attendance->status === AttendanceStatus::LEFT->value ? 'minus' : 'clock')) }}-line text-3xl md:text-4xl mb-1.5 md:mb-2 {{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'text-green-600' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'text-red-600' : ($attendance->status === AttendanceStatus::LEFT->value ? 'text-orange-600' : 'text-yellow-600')) }}"></i>
-                                <p class="font-bold text-sm md:text-lg {{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'text-green-900' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'text-red-900' : ($attendance->status === AttendanceStatus::LEFT->value ? 'text-orange-900' : 'text-yellow-900')) }}">
-                                    {{ $attendance->status === AttendanceStatus::ATTENDED->value ? __('parent.sessions.attendance_status.attended') : ($attendance->status === AttendanceStatus::ABSENT->value ? __('parent.sessions.attendance_status.absent') : ($attendance->status === AttendanceStatus::LEFT->value ? __('parent.sessions.attendance_status.left_early') : __('parent.sessions.attendance_status.late'))) }}
+                            <div class="text-center p-3 md:p-4 rounded-lg {{ $attBg }}">
+                                <i class="ri-user-{{ $attIcon }}-line text-3xl md:text-4xl mb-1.5 md:mb-2 {{ $attIconClass }}"></i>
+                                <p class="font-bold text-sm md:text-lg {{ $attLabelClass }}">
+                                    {{ $statusEnum->label() }}
                                 </p>
                             </div>
 

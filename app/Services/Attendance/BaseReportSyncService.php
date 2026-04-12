@@ -8,6 +8,8 @@ use App\Enums\UserType;
 use App\Models\MeetingAttendance;
 use App\Models\User;
 use App\Services\MeetingAttendanceService;
+use App\Services\SessionSettingsService;
+use App\Services\Traits\AttendanceCalculatorTrait;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
@@ -21,11 +23,11 @@ use Illuminate\Support\Facades\Log;
  * NOTE: This is the REAL-TIME attendance tracking hierarchy (handles join/leave
  * events, calculates live attendance). For HISTORICAL report generation
  * (teacher/parent views), see App\Services\Reports\BaseReportService.
- *
- * Eliminates 883 lines of duplicate code (89.3% average duplication).
  */
 abstract class BaseReportSyncService
 {
+    use AttendanceCalculatorTrait;
+
     protected MeetingAttendanceService $meetingAttendanceService;
 
     public function __construct(MeetingAttendanceService $meetingAttendanceService)
@@ -50,22 +52,6 @@ abstract class BaseReportSyncService
     abstract protected function getSessionReportForeignKey(): string;
 
     /**
-     * Get the attendance threshold percentage for the session.
-     * Each session type resolves this from academy settings differently.
-     *
-     * @return float Minimum attendance percentage to be considered present (default: 80)
-     */
-    abstract protected function getAttendanceThreshold($session): float;
-
-    /**
-     * Get the grace period (late tolerance) in minutes for the session.
-     * Each session type resolves this from academy settings differently.
-     *
-     * @return int Grace period minutes before a student is marked late (default: 15)
-     */
-    abstract protected function getGracePeriod($session): int;
-
-    /**
      * Get the teacher for the session
      */
     abstract protected function getSessionTeacher($session): ?User;
@@ -75,44 +61,25 @@ abstract class BaseReportSyncService
     // ========================================
 
     /**
-     * Determine attendance status based on session-specific rules.
-     *
-     * Centralized logic previously duplicated across QuranReportService,
-     * AcademicReportService, and InteractiveReportService.
-     *
-     * Rules:
-     * - >= threshold% attendance + joined on time = 'attended'
-     * - >= threshold% attendance + joined after grace period = 'late'
-     * - > 0% but < threshold% attendance = 'left' (left early)
-     * - 0% attendance = 'absent'
+     * Determine attendance status for a session report using the same
+     * percentage thresholds as MeetingAttendance. Honors the user_type on
+     * the attendance row so teacher rows use teacher thresholds.
      */
     protected function determineAttendanceStatus(
         MeetingAttendance $meetingAttendance,
         $session,
-        int $actualMinutes,
-        float $attendancePercentage
+        int $actualMinutes
     ): string {
-        $requiredPercentage = $this->getAttendanceThreshold($session);
-        $graceTimeMinutes = $this->getGracePeriod($session);
+        [$fullPercent, $partialPercent] = app(SessionSettingsService::class)
+            ->getAttendanceThresholdsForUserType($session, $meetingAttendance->user_type);
 
-        // Check if student was late (joined after session start + grace period)
-        $sessionStart = $session->scheduled_at;
-        $firstJoin = $meetingAttendance->first_join_time;
-        $isLate = false;
-
-        if ($sessionStart && $firstJoin) {
-            $lateMinutes = $sessionStart->diffInMinutes($firstJoin, false);
-            $isLate = $lateMinutes > $graceTimeMinutes;
-        }
-
-        // Determine status based on attendance percentage
-        if ($attendancePercentage >= $requiredPercentage) {
-            return $isLate ? AttendanceStatus::LATE->value : AttendanceStatus::ATTENDED->value;
-        } elseif ($attendancePercentage > 0) {
-            return AttendanceStatus::LEFT->value;
-        } else {
-            return AttendanceStatus::ABSENT->value;
-        }
+        return $this->calculateAttendanceStatus(
+            $meetingAttendance->first_join_time,
+            $session->duration_minutes ?? 60,
+            $actualMinutes,
+            $fullPercent,
+            $partialPercent,
+        );
     }
 
     // ========================================
@@ -282,9 +249,11 @@ abstract class BaseReportSyncService
                 // Student is currently in meeting - show ATTENDED status
                 $attendanceStatus = AttendanceStatus::ATTENDED->value;
             } elseif ($meetingAttendance && $meetingAttendance->first_join_time) {
-                // Student has joined before but is not currently in meeting
-                // Use the stored status from MeetingAttendance (set on join) or show as "left"
-                $attendanceStatus = $meetingAttendance->attendance_status?->value ?? AttendanceStatus::LEFT->value;
+                // Student has joined before but is not currently in meeting.
+                // Use the stored status from MeetingAttendance, or default to
+                // PARTIALLY_ATTENDED (they left before the session ended).
+                $attendanceStatus = $meetingAttendance->attendance_status?->value
+                    ?? AttendanceStatus::PARTIALLY_ATTENDED->value;
             } elseif ($sessionReport?->attendance_status) {
                 // Use session report status if available
                 $attendanceStatus = $sessionReport->attendance_status;
@@ -357,8 +326,7 @@ abstract class BaseReportSyncService
             $attendanceStatus = $this->determineAttendanceStatus(
                 $meetingAttendance,
                 $session,
-                $actualMinutes,
-                $attendancePercentage
+                $actualMinutes
             );
 
             // Update the session report
@@ -458,8 +426,8 @@ abstract class BaseReportSyncService
         $stats = [
             'total_students' => $reports->count(),
             'present' => $reports->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
+            'partial' => $reports->whereIn('attendance_status', AttendanceStatus::partialValues())->count(),
             'late' => $reports->where('attendance_status', AttendanceStatus::LATE->value)->count(),
-            'partial' => $reports->where('attendance_status', AttendanceStatus::LEFT->value)->count(),
             'absent' => $reports->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
             'average_attendance_percentage' => 0,
             'average_performance' => 0,

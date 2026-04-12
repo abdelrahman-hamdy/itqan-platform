@@ -36,12 +36,12 @@
         $attColors = ['attended' => 'bg-green-100 text-green-700', 'partially_attended' => 'bg-amber-100 text-amber-700', 'late' => 'bg-yellow-100 text-yellow-700', 'left' => 'bg-orange-100 text-orange-700', 'absent' => 'bg-red-100 text-red-700'];
         $tAttRaw = $session->teacher_attendance_status;
         $tAtt = $tAttRaw instanceof \BackedEnum ? $tAttRaw->value : $tAttRaw;
-        $teacherMeeting = $session->meetingAttendances?->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])->first();
-        $tMinutes = $teacherMeeting?->total_duration_minutes ?? 0;
+        $teacherMeeting = $session->meetingAttendances?->whereIn('user_type', \App\Models\MeetingAttendance::TEACHER_USER_TYPES)->first();
+        $tMinutes = $teacherMeeting?->effective_display_minutes ?? 0;
         $studentMeeting = $session->meetingAttendances?->where('user_type', 'student')->first();
         $sAttRaw = $studentMeeting?->attendance_status;
         $sAtt = $sAttRaw instanceof \BackedEnum ? $sAttRaw->value : $sAttRaw;
-        $sMinutes = $studentMeeting?->total_duration_minutes ?? 0;
+        $sMinutes = $studentMeeting?->effective_display_minutes ?? 0;
         $tCounts = $session->counts_for_teacher ?? true;
         // Fall back to session-level flag when MeetingAttendance flag is NULL
         // (individual sessions track on session.subscription_counted).

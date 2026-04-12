@@ -54,11 +54,10 @@ class ManageAcademySettings extends Page implements HasForms
         $academySettings = AcademySettings::getForAcademy($academy);
 
         $data = $academy->toArray();
+        // Form uses semantic names; DB columns kept their legacy names.
         $data['attendance_settings'] = [
-            'default_late_tolerance_minutes' => $academySettings->default_late_tolerance_minutes,
-            'default_attendance_threshold_percentage' => $academySettings->default_attendance_threshold_percentage,
-            'student_minimum_presence_percent' => $academySettings->student_minimum_presence_percent,
-            'student_left_threshold_percent' => $academySettings->student_left_threshold_percent,
+            'student_full_attendance_percent' => $academySettings->default_attendance_threshold_percentage,
+            'student_partial_attendance_percent' => $academySettings->student_minimum_presence_percent,
             'teacher_full_attendance_percent' => $academySettings->teacher_full_attendance_percent,
             'teacher_partial_attendance_percent' => $academySettings->teacher_partial_attendance_percent,
         ];
@@ -175,41 +174,25 @@ class ManageAcademySettings extends Page implements HasForms
                     ->schema([
                         Fieldset::make(__('settings.student_attendance'))
                             ->schema([
-                                TextInput::make('attendance_settings.default_late_tolerance_minutes')
-                                    ->label(__('settings.grace_period_minutes'))
+                                TextInput::make('attendance_settings.student_full_attendance_percent')
+                                    ->label(__('settings.student_full_attendance'))
                                     ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(60)
-                                    ->default(15)
-                                    ->suffix(__('settings.minutes'))
-                                    ->helperText(__('settings.grace_period_help')),
-
-                                TextInput::make('attendance_settings.default_attendance_threshold_percentage')
-                                    ->label(__('settings.full_attendance_threshold'))
-                                    ->numeric()
-                                    ->minValue(50)
+                                    ->minValue(0)
                                     ->maxValue(100)
                                     ->default(80)
+                                    ->required()
                                     ->suffix('%')
-                                    ->helperText(__('settings.full_attendance_help')),
+                                    ->helperText(__('settings.student_full_help')),
 
-                                TextInput::make('attendance_settings.student_minimum_presence_percent')
-                                    ->label(__('settings.minimum_presence_percent'))
+                                TextInput::make('attendance_settings.student_partial_attendance_percent')
+                                    ->label(__('settings.student_partial_attendance'))
                                     ->numeric()
-                                    ->minValue(10)
+                                    ->minValue(0)
                                     ->maxValue(100)
                                     ->default(50)
+                                    ->required()
                                     ->suffix('%')
-                                    ->helperText(__('settings.minimum_presence_help')),
-
-                                TextInput::make('attendance_settings.student_left_threshold_percent')
-                                    ->label(__('settings.left_threshold_percent'))
-                                    ->numeric()
-                                    ->minValue(5)
-                                    ->maxValue(50)
-                                    ->default(30)
-                                    ->suffix('%')
-                                    ->helperText(__('settings.left_threshold_help')),
+                                    ->helperText(__('settings.student_partial_help')),
                             ])
                             ->columns(2),
 
@@ -218,18 +201,20 @@ class ManageAcademySettings extends Page implements HasForms
                                 TextInput::make('attendance_settings.teacher_full_attendance_percent')
                                     ->label(__('settings.teacher_full_attendance'))
                                     ->numeric()
-                                    ->minValue(50)
+                                    ->minValue(0)
                                     ->maxValue(100)
                                     ->default(90)
+                                    ->required()
                                     ->suffix('%')
                                     ->helperText(__('settings.teacher_full_attendance_help')),
 
                                 TextInput::make('attendance_settings.teacher_partial_attendance_percent')
                                     ->label(__('settings.teacher_partial_attendance'))
                                     ->numeric()
-                                    ->minValue(10)
-                                    ->maxValue(90)
+                                    ->minValue(0)
+                                    ->maxValue(100)
                                     ->default(50)
+                                    ->required()
                                     ->suffix('%')
                                     ->helperText(__('settings.teacher_partial_attendance_help')),
                             ])
@@ -257,6 +242,21 @@ class ManageAcademySettings extends Page implements HasForms
         $attendanceData = $data['attendance_settings'] ?? [];
         unset($data['attendance_settings']);
 
+        // Cross-field validation: partial must be ≤ full for both student and teacher.
+        $studentFull = (float) ($attendanceData['student_full_attendance_percent'] ?? 80);
+        $studentPartial = (float) ($attendanceData['student_partial_attendance_percent'] ?? 50);
+        $teacherFull = (float) ($attendanceData['teacher_full_attendance_percent'] ?? 90);
+        $teacherPartial = (float) ($attendanceData['teacher_partial_attendance_percent'] ?? 50);
+
+        if ($studentPartial > $studentFull || $teacherPartial > $teacherFull) {
+            Notification::make()
+                ->danger()
+                ->title(__('settings.attendance_partial_lte_full'))
+                ->send();
+
+            return;
+        }
+
         // Explicit allowlist — only update fields exposed in the form schema
         $allowedFields = [
             'name', 'name_en', 'description',
@@ -271,20 +271,14 @@ class ManageAcademySettings extends Page implements HasForms
 
         $academy->update($data);
 
-        // Save attendance settings to AcademySettings
         if (! empty($attendanceData)) {
-            $allowedAttendanceFields = [
-                'default_late_tolerance_minutes',
-                'default_attendance_threshold_percentage',
-                'student_minimum_presence_percent',
-                'student_left_threshold_percent',
-                'teacher_full_attendance_percent',
-                'teacher_partial_attendance_percent',
-            ];
-            $attendanceData = array_intersect_key($attendanceData, array_flip($allowedAttendanceFields));
-
             $academySettings = AcademySettings::getForAcademy($academy);
-            $academySettings->update($attendanceData);
+            $academySettings->update([
+                'default_attendance_threshold_percentage' => $studentFull,
+                'student_minimum_presence_percent' => $studentPartial,
+                'teacher_full_attendance_percent' => $teacherFull,
+                'teacher_partial_attendance_percent' => $teacherPartial,
+            ]);
         }
 
         Notification::make()

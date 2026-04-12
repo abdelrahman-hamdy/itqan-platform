@@ -403,6 +403,7 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
                 static::getPauseAction(),
                 static::getResumeAction(),
                 static::getExtendSubscriptionAction(),
+                static::getCancelExtensionAction(),
                 static::getCancelAction(),
                 static::getCancelPendingAction(),
                 DeleteAction::make()
@@ -460,7 +461,9 @@ class AcademicSubscriptionResource extends BaseSubscriptionResource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Shared\RelationManagers\SubscriptionCyclesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

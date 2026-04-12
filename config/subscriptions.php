@@ -80,4 +80,41 @@ return [
     // Used only for backwards-compatible detection in returnSession() and data migrations.
     'legacy_sessions_exhausted_pause_reason' => 'انتهت الجلسات المتاحة - في انتظار التجديد',
 
+    /*
+    |--------------------------------------------------------------------------
+    | Grace Period Settings
+    |--------------------------------------------------------------------------
+    |
+    | When admin extends a subscription, the default grace period length
+    | (in days) suggested in the UI. Student keeps scheduling during grace.
+    | If `auto_pause_on_lapse` is true, `subscriptions:expire-active` pauses
+    | the subscription when grace lapses without payment.
+    |
+    */
+
+    'grace' => [
+        'default_days' => env('SUBSCRIPTION_GRACE_DEFAULT_DAYS', 14),
+        'auto_pause_on_lapse' => env('SUBSCRIPTION_GRACE_AUTO_PAUSE', true),
+
+        // Max number of extension audit entries retained in subscription.metadata.
+        // Older entries are pruned on each new extend() call to prevent unbounded
+        // JSON growth (each entry is ~150 bytes; 50 cap ≈ 7.5KB worst case).
+        'extensions_log_cap' => env('SUBSCRIPTION_EXTENSIONS_LOG_CAP', 50),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cycles Settings
+    |--------------------------------------------------------------------------
+    |
+    | Subscription renewal advances the subscription into a new cycle row in
+    | `subscription_cycles`. `max_queued_per_thread` enforces "at most one
+    | queued future cycle per subscription" so early-renewal doesn't stack.
+    |
+    */
+
+    'cycles' => [
+        'max_queued_per_thread' => 1,
+    ],
+
 ];

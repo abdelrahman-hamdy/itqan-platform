@@ -6,7 +6,6 @@ use App\Enums\AttendanceStatus;
 use App\Enums\PerformanceLevel;
 use App\Models\Traits\ScopedToAcademy;
 use App\Services\Traits\AttendanceCalculatorTrait;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -128,17 +127,31 @@ abstract class BaseSessionReport extends Model
      */
     abstract protected function getSessionSpecificPerformanceData(): ?float;
 
-    /**
-     * Get the grace period threshold for late arrivals in minutes
-     * Uses academy settings, can be overridden by child classes
-     */
+    /** @deprecated Unused — percentage-based status. */
     protected function getGracePeriodMinutes(): int
     {
-        // Try to get academy from session relationship
-        $academy = $this->session?->academy;
+        return 0;
+    }
 
-        return $academy?->settings?->default_late_tolerance_minutes
-            ?? config('business.attendance.grace_period_minutes', 15);
+    /**
+     * @return array{0: float, 1: float} [studentFull%, studentPartial%]
+     */
+    protected function resolveAttendanceThresholds(): array
+    {
+        $session = $this->session;
+        if (! $session) {
+            return [
+                (float) config('business.attendance.student_full_attendance_percent', 80),
+                (float) config('business.attendance.student_partial_attendance_percent', 50),
+            ];
+        }
+
+        $settingsService = app(\App\Services\SessionSettingsService::class);
+
+        return [
+            $settingsService->getStudentFullAttendancePercent($session),
+            $settingsService->getStudentPartialAttendancePercent($session),
+        ];
     }
 
     // ========================================
@@ -181,16 +194,6 @@ abstract class BaseSessionReport extends Model
     public function scopeAbsent($query)
     {
         return $query->where('attendance_status', AttendanceStatus::ABSENT);
-    }
-
-    public function scopeLate($query)
-    {
-        return $query->where('attendance_status', AttendanceStatus::LATE);
-    }
-
-    public function scopePartial($query)
-    {
-        return $query->where('attendance_status', AttendanceStatus::LEFT);
     }
 
     public function scopeEvaluated($query)
@@ -343,7 +346,8 @@ abstract class BaseSessionReport extends Model
     }
 
     /**
-     * Calculate lateness based on meeting enter time
+     * Populate the legacy is_late / late_minutes columns. No longer used for
+     * status decisions — informational only.
      */
     protected function calculateLateness(): void
     {
@@ -351,15 +355,14 @@ abstract class BaseSessionReport extends Model
             return;
         }
 
-        $session = $this->session;
-        $lateThreshold = $this->getGracePeriodMinutes();
+        $sessionStartTime = $this->session->scheduled_at;
+        if (! $sessionStartTime) {
+            return;
+        }
 
-        $sessionStartTime = $session->scheduled_at;
-        $lateThresholdTime = $sessionStartTime->copy()->addMinutes($lateThreshold);
-
-        $this->is_late = $this->meeting_enter_time->isAfter($lateThresholdTime);
+        $this->is_late = $this->meeting_enter_time->isAfter($sessionStartTime);
         $this->late_minutes = $this->is_late
-            ? $this->meeting_enter_time->diffInMinutes($sessionStartTime)
+            ? (int) $sessionStartTime->diffInMinutes($this->meeting_enter_time)
             : 0;
     }
 
@@ -390,21 +393,21 @@ abstract class BaseSessionReport extends Model
         }
 
         $session = $this->session;
-        $graceMinutes = $this->getGracePeriodMinutes();
         $sessionDuration = $session->duration_minutes ?? 60;
+        [$fullPercent, $partialPercent] = $this->resolveAttendanceThresholds();
 
         // Calculate current attendance
         $currentDuration = $meetingAttendance->isCurrentlyInMeeting()
             ? $meetingAttendance->getCurrentSessionDuration()
             : $meetingAttendance->total_duration_minutes;
 
-        // Delegate to centralized trait method
+        // Delegate to centralized trait method (percentage-based)
         return $this->calculateRealtimeAttendanceStatus(
             $meetingAttendance->first_join_time,
-            $session->scheduled_at,
             $sessionDuration,
             $currentDuration,
-            $graceMinutes,
+            $fullPercent,
+            $partialPercent,
             $meetingAttendance->isCurrentlyInMeeting()
         );
     }
@@ -425,7 +428,9 @@ abstract class BaseSessionReport extends Model
     }
 
     /**
-     * Calculate attendance automatically based on meeting entry/exit times
+     * Calculate attendance from meeting entry/exit times. Still writes the
+     * legacy is_late / late_minutes columns for backward compatibility, but
+     * they no longer affect attendance_status.
      */
     public function calculateAttendance(array $meetingData = []): void
     {
@@ -437,7 +442,6 @@ abstract class BaseSessionReport extends Model
         $sessionStartTime = $session->scheduled_at;
         $sessionDuration = $session->duration_minutes ?? 60;
         $sessionEndTime = $sessionStartTime->copy()->addMinutes($sessionDuration);
-        $lateThreshold = $this->getGracePeriodMinutes();
 
         // Update meeting times if provided
         if (! empty($meetingData)) {
@@ -446,21 +450,19 @@ abstract class BaseSessionReport extends Model
             $this->meeting_events = array_merge($this->meeting_events ?? [], $meetingData['events'] ?? []);
         }
 
-        // Calculate if student was late
         if ($this->meeting_enter_time) {
-            $lateThresholdTime = $sessionStartTime->copy()->addMinutes($lateThreshold);
-            $this->is_late = $this->meeting_enter_time->isAfter($lateThresholdTime);
+            $this->is_late = $this->meeting_enter_time->isAfter($sessionStartTime);
             $this->late_minutes = $this->is_late
-                ? $this->meeting_enter_time->diffInMinutes($sessionStartTime)
+                ? (int) $sessionStartTime->diffInMinutes($this->meeting_enter_time)
                 : 0;
         }
 
         // Calculate actual attendance duration
         if ($this->meeting_enter_time && $this->meeting_leave_time) {
-            $this->actual_attendance_minutes = $this->meeting_enter_time->diffInMinutes($this->meeting_leave_time);
+            $this->actual_attendance_minutes = (int) $this->meeting_enter_time->diffInMinutes($this->meeting_leave_time);
         } elseif ($this->meeting_enter_time && ! $this->meeting_leave_time) {
             // If student entered but didn't leave, assume they stayed until session end
-            $this->actual_attendance_minutes = $this->meeting_enter_time->diffInMinutes($sessionEndTime);
+            $this->actual_attendance_minutes = (int) $this->meeting_enter_time->diffInMinutes($sessionEndTime);
         }
 
         // Calculate attendance percentage
@@ -468,8 +470,8 @@ abstract class BaseSessionReport extends Model
             ? min(100, ($this->actual_attendance_minutes / $sessionDuration) * 100)
             : 0;
 
-        // Determine attendance status using centralized trait
-        $this->attendance_status = $this->determineAttendanceStatusForReport($sessionStartTime, $sessionDuration, $lateThreshold);
+        // Determine attendance status using centralized trait (percentage-based)
+        $this->attendance_status = $this->determineAttendanceStatusForReport($sessionDuration);
 
         // Mark as calculated
         $this->is_calculated = true;
@@ -478,18 +480,19 @@ abstract class BaseSessionReport extends Model
     }
 
     /**
-     * Determine attendance status based on attendance percentage and timing.
-     * Uses centralized AttendanceCalculatorTrait for calculation logic.
+     * Determine attendance status for this report via the centralized
+     * AttendanceCalculatorTrait using the session's configured thresholds.
      */
-    protected function determineAttendanceStatusForReport(Carbon $sessionStartTime, int $sessionDuration, int $graceMinutes): string
+    protected function determineAttendanceStatusForReport(int $sessionDuration): string
     {
-        // Delegate to centralized trait method
+        [$fullPercent, $partialPercent] = $this->resolveAttendanceThresholds();
+
         return $this->calculateAttendanceStatus(
             $this->meeting_enter_time,
-            $sessionStartTime,
             $sessionDuration,
             $this->actual_attendance_minutes ?? 0,
-            $graceMinutes
+            $fullPercent,
+            $partialPercent,
         );
     }
 

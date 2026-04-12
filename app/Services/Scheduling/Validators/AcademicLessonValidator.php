@@ -3,7 +3,6 @@
 namespace App\Services\Scheduling\Validators;
 
 use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
@@ -100,6 +99,13 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
 
     public function validateDateRange(?Carbon $startDate, int $weeksAhead): ValidationResult
     {
+        // Grace-period aware schedulability check. This matches the Quran
+        // individual circle validator and is the single source of truth so
+        // subscriptions in grace period can still be scheduled.
+        if (! $this->subscription || ! $this->subscription->isSchedulable()) {
+            return ValidationResult::error(__('scheduling.date.subscription_inactive'));
+        }
+
         // Use academy timezone for accurate time comparison
         $timezone = AcademyContextService::getTimezone();
 
@@ -209,8 +215,8 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
 
     public function getSchedulingStatus(): array
     {
-        // Check subscription status first
-        if (! $this->subscription || $this->subscription->status !== SessionSubscriptionStatus::ACTIVE) {
+        // Use the model-level schedulable contract (grace-period aware).
+        if (! $this->subscription || ! $this->subscription->isSchedulable()) {
             return [
                 'status' => 'inactive',
                 'message' => __('scheduling.status.inactive_subscription'),

@@ -58,8 +58,7 @@ class StudentSessionReportObserver
             return;
         }
 
-        // Calculate current attendance counts for this student in this circle using Eloquent
-        $attendedStatuses = [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value];
+        $attendedStatuses = AttendanceStatus::presentValues();
 
         $attended = StudentSessionReport::whereHas('session', function ($query) use ($circle) {
             $query->where('circle_id', $circle->id);

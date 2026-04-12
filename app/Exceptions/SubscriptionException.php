@@ -2,8 +2,8 @@
 
 namespace App\Exceptions;
 
-use Throwable;
 use Exception;
+use Throwable;
 
 /**
  * Exception for subscription-related errors.
@@ -23,6 +23,8 @@ class SubscriptionException extends Exception
     public const RENEWAL_ERROR = 'RENEWAL_ERROR';
 
     public const NOT_FOUND = 'NOT_FOUND';
+
+    public const NOT_SCHEDULABLE = 'NOT_SCHEDULABLE';
 
     protected string $errorCode;
 
@@ -91,6 +93,15 @@ class SubscriptionException extends Exception
         return new self(
             "Subscription not found with ID: {$id}",
             self::NOT_FOUND,
+            ['subscription_id' => $id]
+        );
+    }
+
+    public static function notSchedulable(?int $id = null): self
+    {
+        return new self(
+            __('scheduling.date.subscription_inactive'),
+            self::NOT_SCHEDULABLE,
             ['subscription_id' => $id]
         );
     }

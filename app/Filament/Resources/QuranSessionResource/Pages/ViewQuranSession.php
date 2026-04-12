@@ -134,21 +134,10 @@ class ViewQuranSession extends ViewRecord
                                 TextEntry::make('attendance_status')
                                     ->label('حالة الحضور')
                                     ->badge()
-                                    ->formatStateUsing(fn (?string $state): string => match ($state) {
-                                        AttendanceStatus::ATTENDED->value => 'حاضر',
-                                        AttendanceStatus::ABSENT->value => 'غائب',
-                                        AttendanceStatus::LATE->value => 'متأخر',
-                                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                                        SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
-                                        default => 'غير محدد',
-                                    })
-                                    ->color(fn (?string $state): string => match ($state) {
-                                        AttendanceStatus::ATTENDED->value => 'success',
-                                        AttendanceStatus::ABSENT->value => 'danger',
-                                        AttendanceStatus::LATE->value => 'warning',
-                                        AttendanceStatus::LEFT->value => 'info',
-                                        default => 'gray',
-                                    }),
+                                    ->formatStateUsing(fn (?string $state): string => $state === SessionSubscriptionStatus::PENDING->value
+                                        ? 'في الانتظار'
+                                        : (AttendanceStatus::tryFrom((string) $state)?->label() ?? 'غير محدد'))
+                                    ->color(fn (?string $state): string => AttendanceStatus::tryFrom((string) $state)?->color() ?? 'gray'),
                             ]),
                     ]),
 

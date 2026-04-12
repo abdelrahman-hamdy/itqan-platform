@@ -7,7 +7,7 @@
  * across services, controllers, and traits.
  *
  * USAGE:
- * - config('business.attendance.grace_period_minutes')
+ * - config('business.attendance.student_full_attendance_percent')
  * - config('business.sessions.buffer_time_minutes')
  * - config('business.pagination.notifications')
  */
@@ -19,20 +19,19 @@ return [
     |--------------------------------------------------------------------------
     */
     'attendance' => [
-        // Grace period in minutes before marking as late
-        'grace_period_minutes' => env('ATTENDANCE_GRACE_PERIOD', 15),
+        // Defaults used when academy_settings has no explicit value.
+        'student_full_attendance_percent' => env('ATTENDANCE_STUDENT_FULL_PERCENT', 80),
+        'student_partial_attendance_percent' => env('ATTENDANCE_STUDENT_PARTIAL_PERCENT', 50),
+        'teacher_full_attendance_percent' => env('ATTENDANCE_TEACHER_FULL_PERCENT', 90),
+        'teacher_partial_attendance_percent' => env('ATTENDANCE_TEACHER_PARTIAL_PERCENT', 50),
 
-        // Threshold percentage for attendance calculation (>= this = attended)
-        'threshold_percent' => env('ATTENDANCE_THRESHOLD_PERCENT', 80),
+        // Deploy cutoff (UTC datetime). Per-minute backup and reconcile only
+        // touch sessions that started after this timestamp, so historical
+        // rows keep their pre-deploy counting state.
+        'matrix_cutoff_at' => env('ATTENDANCE_MATRIX_CUTOFF_AT'),
 
-        // Minimum percentage to be considered present (< this = absent)
-        'minimum_presence_percent' => env('ATTENDANCE_MIN_PRESENCE', 50),
-
-        // Excellent attendance percentage (late arrival but still counts as late not absent)
-        'excellent_percent' => env('ATTENDANCE_EXCELLENT_PERCENT', 95),
-
-        // Minimum percentage to count as left (vs absent) for on-time joins
-        'left_threshold_percent' => env('ATTENDANCE_LEFT_THRESHOLD', 30),
+        // Emergency kill-switch for the per-student counting matrix.
+        'use_matrix_counting' => env('ATTENDANCE_USE_MATRIX_COUNTING', true),
 
         // Post-session grace period in minutes (overtime allowance after scheduled end)
         'post_session_grace_minutes' => env('ATTENDANCE_POST_SESSION_GRACE', 30),

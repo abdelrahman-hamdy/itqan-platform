@@ -110,23 +110,6 @@ class AcademySettings extends Model
     }
 
     /**
-     * Get all attendance-related settings as an array
-     */
-    public function getAttendanceSettings(): array
-    {
-        return [
-            'preparation_minutes' => $this->default_preparation_minutes,
-            'buffer_minutes' => $this->default_buffer_minutes,
-            'late_tolerance_minutes' => $this->default_late_tolerance_minutes,
-            'student_attendance_threshold_percentage' => $this->default_attendance_threshold_percentage,
-            'student_minimum_presence_percent' => $this->student_minimum_presence_percent,
-            'student_left_threshold_percent' => $this->student_left_threshold_percent,
-            'teacher_full_attendance_percent' => $this->teacher_full_attendance_percent,
-            'teacher_partial_attendance_percent' => $this->teacher_partial_attendance_percent,
-        ];
-    }
-
-    /**
      * Get trial session settings as an array
      */
     public function getTrialSettings(): array

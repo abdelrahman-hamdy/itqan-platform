@@ -208,13 +208,17 @@
                                 <div class="flex items-start gap-3 md:gap-4">
                                     <!-- Status Indicator -->
                                     <div class="flex flex-col items-center flex-shrink-0">
-                                        @if($attendance && $attendance->attendance_status === \App\Enums\AttendanceStatus::ATTENDED->value)
+                                        @php
+                                            $attStatus = $attendance?->attendance_status;
+                                            $isPartial = \App\Enums\AttendanceStatus::tryFrom((string) $attStatus)?->isPartialTier() ?? false;
+                                        @endphp
+                                        @if($attStatus === \App\Enums\AttendanceStatus::ATTENDED->value)
                                             <div class="w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full mb-0.5 md:mb-1 animate-pulse"></div>
                                             <span class="text-[10px] md:text-xs text-green-600 font-bold">{{ __('teacher.progress.status_attended') }}</span>
-                                        @elseif($attendance && $attendance->attendance_status === \App\Enums\AttendanceStatus::LATE->value)
-                                            <div class="w-3 h-3 md:w-4 md:h-4 bg-yellow-500 rounded-full mb-0.5 md:mb-1"></div>
-                                            <span class="text-[10px] md:text-xs text-yellow-600 font-bold">{{ __('teacher.progress.status_late') }}</span>
-                                        @elseif($attendance && $attendance->attendance_status === \App\Enums\AttendanceStatus::ABSENT->value)
+                                        @elseif($isPartial)
+                                            <div class="w-3 h-3 md:w-4 md:h-4 bg-amber-500 rounded-full mb-0.5 md:mb-1"></div>
+                                            <span class="text-[10px] md:text-xs text-amber-600 font-bold">{{ __('teacher.progress.status_partially_attended') }}</span>
+                                        @elseif($attStatus === \App\Enums\AttendanceStatus::ABSENT->value)
                                             <div class="w-3 h-3 md:w-4 md:h-4 bg-red-500 rounded-full mb-0.5 md:mb-1"></div>
                                             <span class="text-[10px] md:text-xs text-red-600 font-bold">{{ __('teacher.progress.status_absent') }}</span>
                                         @else

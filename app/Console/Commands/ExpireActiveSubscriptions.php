@@ -15,12 +15,15 @@ use Illuminate\Support\Facades\Log;
 /**
  * ExpireActiveSubscriptions Command
  *
- * Transitions ACTIVE subscriptions to EXPIRED when their ends_at date has passed.
- * Respects grace periods — subscriptions with an active grace period are skipped.
+ * New lifecycle: transitions ACTIVE subscriptions to PAUSED (not EXPIRED) when
+ * their ends_at date has passed and no queued cycle exists to advance into.
  *
- * On expiry:
- * - Deactivates linked circle/lesson
- * - Suspends future scheduled sessions (recoverable on reactivation)
+ * Respects per-cycle and legacy metadata grace periods — subscriptions with an
+ * active grace period are skipped. If the grace period has also lapsed without
+ * payment, the subscription is paused.
+ *
+ * The separate `subscriptions:advance-cycles` command handles the happy path
+ * where a queued cycle exists and should be promoted when the current ends.
  */
 class ExpireActiveSubscriptions extends Command
 {
@@ -28,7 +31,7 @@ class ExpireActiveSubscriptions extends Command
                             {--dry-run : Preview changes without making them}
                             {--force : Skip confirmation prompt}';
 
-    protected $description = 'Expire active subscriptions past their end date';
+    protected $description = 'Pause active subscriptions whose paid window has ended and no grace/queued cycle remains';
 
     public function handle(): int
     {
@@ -41,6 +44,7 @@ class ExpireActiveSubscriptions extends Command
             'quran' => 0,
             'academic' => 0,
             'skipped_grace' => 0,
+            'skipped_queued' => 0,
             'errors' => 0,
         ];
 
@@ -56,17 +60,25 @@ class ExpireActiveSubscriptions extends Command
                 ->where('status', SessionSubscriptionStatus::ACTIVE)
                 ->whereNotNull('ends_at')
                 ->where('ends_at', '<', $now)
-                ->with('student')
+                ->with(['student', 'currentCycle', 'queuedCycle'])
                 ->chunkById(100, function ($subscriptions) use ($dryRun, $now, &$stats, $type) {
                     foreach ($subscriptions as $subscription) {
+                        // 1. Skip if still in an active grace period (cycle or legacy metadata)
                         if ($this->isInGracePeriod($subscription, $now)) {
                             $stats['skipped_grace']++;
 
                             continue;
                         }
 
+                        // 2. Skip if a queued next cycle exists — AdvanceSubscriptionCycles will handle it
+                        if ($subscription->queuedCycle !== null) {
+                            $stats['skipped_queued']++;
+
+                            continue;
+                        }
+
                         if ($dryRun) {
-                            $this->line("  [DRY RUN] Would expire {$type} subscription #{$subscription->id} (ends_at: {$subscription->ends_at})");
+                            $this->line("  [DRY RUN] Would pause {$type} subscription #{$subscription->id} (ends_at: {$subscription->ends_at})");
                             $stats[$type]++;
 
                             continue;
@@ -74,16 +86,14 @@ class ExpireActiveSubscriptions extends Command
 
                         try {
                             DB::transaction(function () use ($subscription) {
-                                // 1. Set subscription to EXPIRED
-                                $subscription->update(['status' => SessionSubscriptionStatus::EXPIRED]);
+                                $subscription->update([
+                                    'status' => SessionSubscriptionStatus::PAUSED,
+                                    'paused_at' => now(),
+                                ]);
 
-                                // 2. Deactivate linked circle/lesson
                                 $this->deactivateLinkedEntities($subscription);
-
-                                // 3. Suspend future scheduled sessions
                                 $this->suspendFutureSessions($subscription);
 
-                                // 4. Notify the student
                                 if ($subscription->student) {
                                     $subscription->student->notify(new SubscriptionExpiredNotification($subscription));
                                 }
@@ -91,14 +101,14 @@ class ExpireActiveSubscriptions extends Command
 
                             $stats[$type]++;
 
-                            Log::info('Subscription auto-expired', [
+                            Log::info('Subscription auto-paused at end-of-cycle', [
                                 'subscription_id' => $subscription->id,
                                 'type' => $type,
                                 'ends_at' => $subscription->ends_at->toDateTimeString(),
                             ]);
                         } catch (\Exception $e) {
                             $stats['errors']++;
-                            Log::error('Failed to expire subscription', [
+                            Log::error('Failed to pause subscription', [
                                 'subscription_id' => $subscription->id,
                                 'type' => $type,
                                 'error' => $e->getMessage(),
@@ -110,14 +120,14 @@ class ExpireActiveSubscriptions extends Command
 
         $total = $stats['quran'] + $stats['academic'];
 
-        if ($total === 0 && $stats['skipped_grace'] === 0) {
-            $this->info('No subscriptions to expire.');
+        if ($total === 0 && $stats['skipped_grace'] === 0 && $stats['skipped_queued'] === 0) {
+            $this->info('No subscriptions to pause.');
 
             return Command::SUCCESS;
         }
 
         $this->table(
-            ['Type', 'Expired'],
+            ['Type', 'Paused'],
             [
                 ['Quran', $stats['quran']],
                 ['Academic', $stats['academic']],
@@ -128,6 +138,9 @@ class ExpireActiveSubscriptions extends Command
         if ($stats['skipped_grace'] > 0) {
             $this->line("  Skipped (grace period): {$stats['skipped_grace']}");
         }
+        if ($stats['skipped_queued'] > 0) {
+            $this->line("  Skipped (queued cycle exists): {$stats['skipped_queued']}");
+        }
 
         if ($stats['errors'] > 0) {
             $this->warn("  Errors: {$stats['errors']}");
@@ -136,7 +149,7 @@ class ExpireActiveSubscriptions extends Command
         if ($dryRun) {
             $this->warn('Dry run mode — no changes made.');
         } else {
-            $this->info("Expired {$total} subscription(s).");
+            $this->info("Paused {$total} subscription(s).");
         }
 
         return $stats['errors'] > 0 ? Command::FAILURE : Command::SUCCESS;
@@ -147,12 +160,10 @@ class ExpireActiveSubscriptions extends Command
      */
     private function deactivateLinkedEntities($subscription): void
     {
-        // Quran: deactivate individual circle
         if ($subscription instanceof QuranSubscription && $subscription->education_unit_id) {
             $subscription->educationUnit?->update(['is_active' => false]);
         }
 
-        // Academic: deactivate lesson
         if ($subscription instanceof AcademicSubscription) {
             $subscription->lesson?->update(['is_active' => false]);
         }
@@ -180,10 +191,17 @@ class ExpireActiveSubscriptions extends Command
             ->update(['status' => SessionStatus::SUSPENDED->value]);
     }
 
+    /**
+     * Grace-period check: honors the cycle-level value first, then the legacy
+     * metadata keys. Keeps behavior consistent with BaseSubscription::isInGracePeriod().
+     */
     private function isInGracePeriod($subscription, Carbon $now): bool
     {
-        $metadata = $subscription->metadata ?? [];
+        if (method_exists($subscription, 'isInGracePeriod')) {
+            return $subscription->isInGracePeriod();
+        }
 
+        $metadata = $subscription->metadata ?? [];
         $key = isset($metadata['grace_period_ends_at']) ? 'grace_period_ends_at'
             : (isset($metadata['grace_period_expires_at']) ? 'grace_period_expires_at' : null);
 

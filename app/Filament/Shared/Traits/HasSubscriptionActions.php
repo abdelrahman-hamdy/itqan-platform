@@ -173,17 +173,14 @@ trait HasSubscriptionActions
 
                     return;
                 }
-                $record->update([
-                    'status' => SessionSubscriptionStatus::PAUSED,
-                    'paused_at' => now(),
-                ]);
+                $record->pause();
 
                 Notification::make()
                     ->success()
                     ->title(__('subscriptions.pause_success'))
                     ->send();
             })
-            ->visible(fn (BaseSubscription $record) => $record->status === SessionSubscriptionStatus::ACTIVE
+            ->visible(fn (BaseSubscription $record) => $record->canPause()
                 && ! $record->isInGracePeriod());
     }
 
@@ -347,53 +344,80 @@ trait HasSubscriptionActions
 
                     return;
                 }
-                $graceDays = (int) $data['grace_days'];
-                $metadata = $record->metadata ?? [];
 
-                // Calculate grace_period_ends_at: stack on existing grace period or start from ends_at
-                $baseDate = isset($metadata['grace_period_ends_at'])
-                    ? Carbon::parse($metadata['grace_period_ends_at'])
-                    : ($record->ends_at ?? now());
+                try {
+                    $result = app(\App\Services\Subscription\SubscriptionMaintenanceService::class)
+                        ->extend($record, (int) $data['grace_days']);
 
-                $gracePeriodEndsAt = $baseDate->copy()->addDays($graceDays);
-                $metadata['grace_period_ends_at'] = $gracePeriodEndsAt->toDateTimeString();
-
-                // Log extension in metadata
-                $metadata['extensions'] = $metadata['extensions'] ?? [];
-                $metadata['extensions'][] = [
-                    'type' => 'grace_period',
-                    'grace_days' => $graceDays,
-                    'extended_by' => auth()->id(),
-                    'extended_by_name' => auth()->user()->name,
-                    'ends_at_at_time' => ($record->ends_at ?? now())->toDateTimeString(),
-                    'grace_period_ends_at' => $gracePeriodEndsAt->toDateTimeString(),
-                    'extended_at' => now()->toDateTimeString(),
-                ];
-
-                $updateData = ['metadata' => $metadata];
-
-                // If subscription is EXPIRED, transition to ACTIVE
-                if ($record->status === SessionSubscriptionStatus::EXPIRED) {
-                    $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
+                    Notification::make()
+                        ->success()
+                        ->title(__('subscriptions.extend_grace_success'))
+                        ->body(__('subscriptions.extend_grace_success_body', [
+                            'days' => (int) $data['grace_days'],
+                            'date' => $result['grace_period_ends_at']->format('Y-m-d'),
+                        ]))
+                        ->send();
+                } catch (\Exception $e) {
+                    report($e);
+                    Notification::make()->danger()->title(__('subscriptions.generic_error'))->body($e->getMessage())->send();
                 }
-
-                // Update metadata (+ status if needed) — do NOT change ends_at or payment_status
-                $record->update($updateData);
-
-                Notification::make()
-                    ->success()
-                    ->title(__('subscriptions.extend_grace_success'))
-                    ->body(__('subscriptions.extend_grace_success_body', [
-                        'days' => $graceDays,
-                        'date' => $gracePeriodEndsAt->format('Y-m-d'),
-                    ]))
-                    ->send();
             })
+            // Visible for ACTIVE, PAUSED, EXPIRED, AND PENDING — the user's core
+            // pending-payment-grace-period scenario requires PENDING to be extendable.
             ->visible(fn (BaseSubscription $record) => in_array($record->status, [
                 SessionSubscriptionStatus::ACTIVE,
                 SessionSubscriptionStatus::PAUSED,
                 SessionSubscriptionStatus::EXPIRED,
+                SessionSubscriptionStatus::PENDING,
             ]) && auth()->user()->hasRole(['super_admin', 'admin']));
+    }
+
+    /**
+     * Cancel Extension action — removes an active grace period from a subscription.
+     *
+     * Delegates to SubscriptionMaintenanceService::cancelExtension(). If the
+     * subscription's paid period has already ended, the subscription transitions
+     * to PAUSED (new lifecycle: pause instead of expire).
+     */
+    protected static function getCancelExtensionAction(): Action
+    {
+        return Action::make('cancelExtension')
+            ->label(__('subscriptions.cancel_extension_label'))
+            ->icon('heroicon-o-no-symbol')
+            ->color('gray')
+            ->requiresConfirmation()
+            ->modalHeading(__('subscriptions.cancel_extension_modal_heading'))
+            ->modalDescription(__('subscriptions.cancel_extension_modal_description'))
+            ->action(function (BaseSubscription $record) {
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    \Filament\Notifications\Notification::make()
+                        ->danger()
+                        ->title(__('common.unauthorized'))
+                        ->send();
+
+                    return;
+                }
+
+                try {
+                    app(\App\Services\Subscription\SubscriptionMaintenanceService::class)
+                        ->cancelExtension($record);
+
+                    Notification::make()
+                        ->success()
+                        ->title(__('subscriptions.cancel_extension_success'))
+                        ->send();
+                } catch (\Exception $e) {
+                    Notification::make()->danger()->title(__('subscriptions.generic_error'))->body($e->getMessage())->send();
+                }
+            })
+            ->visible(function (BaseSubscription $record) {
+                if (! auth()->user()?->hasRole(['super_admin', 'admin'])) {
+                    return false;
+                }
+
+                return $record->isInGracePeriod();
+            });
     }
 
     /**
@@ -422,11 +446,7 @@ trait HasSubscriptionActions
                     return;
                 }
                 DB::transaction(function () use ($record) {
-                    $record->update([
-                        'status' => SessionSubscriptionStatus::CANCELLED,
-                        'cancelled_at' => now(),
-                        'auto_renew' => false,
-                    ]);
+                    $record->cancel();
 
                     // Cancel future scheduled sessions
                     $cancelledSessions = $record->sessions()
@@ -443,10 +463,7 @@ trait HasSubscriptionActions
                     });
                 });
             })
-            ->visible(fn (BaseSubscription $record) => ! in_array($record->status, [
-                SessionSubscriptionStatus::CANCELLED,
-                SessionSubscriptionStatus::PENDING,
-            ]));
+            ->visible(fn (BaseSubscription $record) => $record->canCancel());
     }
 
     /**
@@ -739,6 +756,11 @@ trait HasSubscriptionActions
 
     /**
      * Shared form schema for renew and resubscribe actions.
+     *
+     * Note: the old `activate_mode` Select has been removed. Renew now always
+     * activates the new cycle — there is no "renew with pending payment" mode.
+     * Admins who need to grant the student more time to pay should use the
+     * Extend action (grace period on the current cycle) instead.
      */
     private static function getRenewalFormSchema(): array
     {
@@ -751,14 +773,6 @@ trait HasSubscriptionActions
                     'yearly' => __('enums.billing_cycle.yearly'),
                 ])
                 ->default(fn (BaseSubscription $record) => $record->billing_cycle->value)
-                ->required(),
-            Select::make('activate_mode')
-                ->label(__('subscriptions.activation_mode'))
-                ->options([
-                    'pending' => __('subscriptions.create_as_pending'),
-                    'immediate' => __('subscriptions.activate_immediately'),
-                ])
-                ->default('pending')
                 ->required(),
             TextInput::make('discount_amount')
                 ->label(__('subscriptions.discount_label'))
@@ -807,7 +821,6 @@ trait HasSubscriptionActions
                     $new = app(\App\Services\Subscription\SubscriptionRenewalService::class)
                         ->renew($record, [
                             'billing_cycle' => $data['billing_cycle'],
-                            'activate_immediately' => $data['activate_mode'] === 'immediate',
                             'discount_amount' => (float) ($data['discount_amount'] ?? 0),
                             'is_recurring_discount' => $data['is_recurring_discount'] ?? false,
                         ]);

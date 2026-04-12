@@ -209,7 +209,13 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         $this->ensureSubscriptionInScope($subscription, $type);
 
         // Load related data
-        $subscription->load(['student', 'payments', 'previousSubscription']);
+        $subscription->load([
+            'student',
+            'payments',
+            'cycles' => fn ($q) => $q->orderBy('cycle_number', 'desc'),
+            'currentCycle',
+        ]);
+        $subscriptionCycles = $subscription->cycles;
 
         // Session cycle filter
         $cycle = $request->query('cycle', 'current');
@@ -243,6 +249,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
         return view('supervisor.subscriptions.show', [
             'subscription' => $subscription,
+            'subscriptionCycles' => $subscriptionCycles,
             'type' => $type,
             'sessions' => $sessions,
             'cycle' => $cycle,
@@ -283,45 +290,22 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         $this->ensureSubscriptionInScope($subscription, $type);
 
         $validator = Validator::make($request->all(), [
-            'extend_days' => 'required|integer|min:1|max:30',
+            'extend_days' => 'required|integer|min:1|max:365',
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        $graceDays = (int) $request->extend_days;
-        $metadata = $subscription->metadata ?? [];
-
-        // Calculate grace_period_ends_at: stack on existing grace period or start from ends_at
-        $baseDate = isset($metadata['grace_period_ends_at'])
-            ? Carbon::parse($metadata['grace_period_ends_at'])
-            : ($subscription->ends_at ?? now());
-
-        $gracePeriodEndsAt = $baseDate->copy()->addDays($graceDays);
-        $metadata['grace_period_ends_at'] = $gracePeriodEndsAt->toDateTimeString();
-
-        // Log extension in metadata (same format as Filament action)
-        $metadata['extensions'] = $metadata['extensions'] ?? [];
-        $metadata['extensions'][] = [
-            'type' => 'grace_period',
-            'grace_days' => $graceDays,
-            'extended_by' => auth()->id(),
-            'extended_by_name' => auth()->user()->name,
-            'ends_at_at_time' => ($subscription->ends_at ?? now())->toDateTimeString(),
-            'grace_period_ends_at' => $gracePeriodEndsAt->toDateTimeString(),
-            'extended_at' => now()->toDateTimeString(),
-        ];
-
-        $updateData = ['metadata' => $metadata];
-
-        // If subscription is EXPIRED, transition to ACTIVE so the student regains access
-        if ($subscription->status === SessionSubscriptionStatus::EXPIRED) {
-            $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
+        // Delegate to the centralized maintenance service so Filament and
+        // frontend extend actions stay in lock-step (grace on current cycle,
+        // status transition from PAUSED/EXPIRED back to ACTIVE, etc.).
+        try {
+            app(\App\Services\Subscription\SubscriptionMaintenanceService::class)
+                ->extend($subscription, (int) $request->extend_days);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
-
-        // Only update metadata (+ status if needed) — do NOT change ends_at
-        $subscription->update($updateData);
 
         return redirect()->back()->with('success', __('supervisor.subscriptions.extended_successfully'));
     }
@@ -335,32 +319,12 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         $subscription = $this->resolveSubscription($type, $id);
         $this->ensureSubscriptionInScope($subscription, $type);
 
-        $metadata = $subscription->metadata ?? [];
-
-        if (! isset($metadata['grace_period_ends_at'])) {
+        try {
+            app(\App\Services\Subscription\SubscriptionMaintenanceService::class)
+                ->cancelExtension($subscription);
+        } catch (\Throwable $e) {
             return redirect()->back()->with('error', __('supervisor.subscriptions.no_active_extension'));
         }
-
-        // Remove grace period metadata
-        unset($metadata['grace_period_ends_at']);
-
-        // Log cancellation in extensions history
-        $metadata['extensions'] = $metadata['extensions'] ?? [];
-        $metadata['extensions'][] = [
-            'type' => 'grace_period_cancelled',
-            'cancelled_by' => auth()->id(),
-            'cancelled_by_name' => auth()->user()->name,
-            'cancelled_at' => now()->toDateTimeString(),
-        ];
-
-        $updateData = ['metadata' => $metadata ?: null];
-
-        // If subscription period has actually ended, revert to EXPIRED
-        if ($subscription->ends_at && $subscription->ends_at->isPast()) {
-            $updateData['status'] = SessionSubscriptionStatus::EXPIRED;
-        }
-
-        $subscription->update($updateData);
 
         return redirect()->back()->with('success', __('supervisor.subscriptions.extension_cancelled'));
     }
@@ -475,7 +439,6 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
         $validator = Validator::make($request->all(), [
             'billing_cycle' => 'required|in:monthly,quarterly,yearly',
-            'activate_mode' => 'required|in:pending,immediate',
         ]);
 
         if ($validator->fails()) {
@@ -483,10 +446,13 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         }
 
         try {
+            // Renew always activates — the old `activate_mode = pending` was the
+            // entry point that created ghost rows with NULL dates. Admins who
+            // want to grant the student more payment time should use the Extend
+            // action, which grants a grace period on the current cycle.
             $service = app(\App\Services\Subscription\SubscriptionRenewalService::class);
             $options = [
                 'billing_cycle' => $request->billing_cycle,
-                'activate_immediately' => $request->activate_mode === 'immediate',
             ];
 
             $new = $mode === 'resubscribe'

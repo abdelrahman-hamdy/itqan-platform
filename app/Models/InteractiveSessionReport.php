@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\HasHomeworkEvaluation;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -68,13 +68,9 @@ class InteractiveSessionReport extends BaseSessionReport
         return $this->homework_degree;
     }
 
-    /**
-     * Interactive sessions use grace period from academy settings
-     * InteractiveCourseSession gets academy through course relationship
-     */
+    /** @deprecated Unused — percentage-based status. */
     protected function getGracePeriodMinutes(): int
     {
-        return $this->session?->course?->academy?->settings?->default_late_tolerance_minutes
-            ?? config('business.attendance.grace_period_minutes', 15);
+        return 0;
     }
 }

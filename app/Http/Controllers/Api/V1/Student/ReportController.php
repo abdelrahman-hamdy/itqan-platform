@@ -435,10 +435,7 @@ class ReportController extends Controller
                 $status = $status->value;
             }
 
-            return in_array($status, [
-                AttendanceStatus::ATTENDED->value,
-                AttendanceStatus::LATE->value,
-            ]);
+            return in_array($status, AttendanceStatus::presentValues());
         })->count();
 
         return round(($attended / $total) * 100, 1);

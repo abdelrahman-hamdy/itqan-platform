@@ -34,7 +34,6 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use ValueError;
 
 class MeetingAttendanceResource extends BaseResource
 {
@@ -132,7 +131,14 @@ class MeetingAttendanceResource extends BaseResource
                         DateTimePicker::make('last_leave_time')
                             ->label('آخر وقت خروج'),
                         TextInput::make('total_duration_minutes')
-                            ->label('إجمالي المدة (دقيقة)')
+                            ->label('المدة المحتسبة (دقيقة)')
+                            ->helperText('الوقت داخل نافذة الجلسة المجدولة — مصدر نسبة الحضور')
+                            ->numeric()
+                            ->default(0)
+                            ->suffix('دقيقة'),
+                        TextInput::make('display_duration_minutes')
+                            ->label('وقت الحضور المعروض (دقيقة)')
+                            ->helperText('الوقت الكامل داخل الاجتماع متضمناً وقت التحضير والوقت الإضافي')
                             ->numeric()
                             ->default(0)
                             ->suffix('دقيقة'),
@@ -176,7 +182,7 @@ class MeetingAttendanceResource extends BaseResource
                     ->schema([
                         Select::make('attendance_status')
                             ->label('حالة الحضور')
-                            ->options(AttendanceStatus::options())
+                            ->options(AttendanceStatus::activeOptions())
                             ->required(),
                         TextInput::make('attendance_percentage')
                             ->label('نسبة الحضور')
@@ -214,26 +220,8 @@ class MeetingAttendanceResource extends BaseResource
                 TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
-                    ->color(fn (mixed $state): string => match (true) {
-                        $state === AttendanceStatus::ATTENDED, $state === AttendanceStatus::ATTENDED->value => 'success',
-                        $state === AttendanceStatus::LATE, $state === AttendanceStatus::LATE->value => 'warning',
-                        $state === AttendanceStatus::LEFT, $state === AttendanceStatus::LEFT->value => 'info',
-                        $state === AttendanceStatus::ABSENT, $state === AttendanceStatus::ABSENT->value => 'danger',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(function (mixed $state): string {
-                        if (! $state) {
-                            return '-';
-                        }
-                        if ($state instanceof AttendanceStatus) {
-                            return $state->label();
-                        }
-                        try {
-                            return AttendanceStatus::from($state)->label();
-                        } catch (ValueError $e) {
-                            return (string) $state;
-                        }
-                    }),
+                    ->color(fn (mixed $state): string => self::resolveAttendanceEnum($state)?->color() ?? 'gray')
+                    ->formatStateUsing(fn (mixed $state): string => self::resolveAttendanceEnum($state)?->label() ?? '-'),
                 TextColumn::make('user_type')
                     ->label('النوع')
                     ->badge()
@@ -270,8 +258,14 @@ class MeetingAttendanceResource extends BaseResource
                     ->sortable()
                     ->formatStateUsing(fn (string $state): string => $state.'%')
                     ->toggleable(),
-                TextColumn::make('total_duration_minutes')
+                TextColumn::make('display_duration_minutes')
                     ->label('وقت الحضور (دقيقة)')
+                    ->numeric()
+                    ->sortable()
+                    ->suffix(' د')
+                    ->toggleable(),
+                TextColumn::make('total_duration_minutes')
+                    ->label('المدة المحتسبة (دقيقة)')
                     ->numeric()
                     ->sortable()
                     ->suffix(' د')
@@ -432,5 +426,21 @@ class MeetingAttendanceResource extends BaseResource
             'view' => ViewMeetingAttendance::route('/{record}'),
             'edit' => EditMeetingAttendance::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Normalize an attendance_status column value (nullable string or enum
+     * instance) to an AttendanceStatus case, or null if unrecognized.
+     */
+    public static function resolveAttendanceEnum(mixed $state): ?AttendanceStatus
+    {
+        if ($state instanceof AttendanceStatus) {
+            return $state;
+        }
+        if (! is_string($state) || $state === '') {
+            return null;
+        }
+
+        return AttendanceStatus::tryFrom($state);
     }
 }

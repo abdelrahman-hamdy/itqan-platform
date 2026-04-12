@@ -95,8 +95,15 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
         $academySettings = AcademySettings::getForAcademy($academy);
         $formData['meeting_settings'] = [
             'default_preparation_minutes' => $academySettings->default_preparation_minutes ?? 10,
-            'default_late_tolerance_minutes' => $academySettings->default_late_tolerance_minutes ?? 15,
             'default_buffer_minutes' => $academySettings->default_buffer_minutes ?? 5,
+        ];
+
+        // Form uses semantic names; DB columns keep their legacy names.
+        $formData['attendance_settings'] = [
+            'student_full_attendance_percent' => $academySettings->default_attendance_threshold_percentage ?? 80,
+            'student_partial_attendance_percent' => $academySettings->student_minimum_presence_percent ?? 50,
+            'teacher_full_attendance_percent' => $academySettings->teacher_full_attendance_percent ?? 90,
+            'teacher_partial_attendance_percent' => $academySettings->teacher_partial_attendance_percent ?? 50,
         ];
 
         // Load notification settings with defaults
@@ -174,18 +181,31 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
                     'default_package_ids' => $data['academic_settings']['default_package_ids'] ?? [],
                 ]);
 
-                // Update meeting settings
                 $academySettings = AcademySettings::getForAcademy($academy);
 
-                // Prepare the update data
+                $attendanceForm = $data['attendance_settings'] ?? [];
+                $studentFull = (float) ($attendanceForm['student_full_attendance_percent'] ?? 80);
+                $studentPartial = (float) ($attendanceForm['student_partial_attendance_percent'] ?? 50);
+                $teacherFull = (float) ($attendanceForm['teacher_full_attendance_percent'] ?? 90);
+                $teacherPartial = (float) ($attendanceForm['teacher_partial_attendance_percent'] ?? 50);
+
+                if ($studentPartial > $studentFull || $teacherPartial > $teacherFull) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'attendance_settings.student_partial_attendance_percent' => __('settings.attendance_partial_lte_full'),
+                    ]);
+                }
+
+                // DB column names are legacy; form uses semantic names.
                 $meetingUpdate = [
                     'default_preparation_minutes' => $data['meeting_settings']['default_preparation_minutes'] ?? 10,
-                    'default_late_tolerance_minutes' => $data['meeting_settings']['default_late_tolerance_minutes'] ?? 15,
                     'default_buffer_minutes' => $data['meeting_settings']['default_buffer_minutes'] ?? 5,
+                    'default_attendance_threshold_percentage' => $studentFull,
+                    'student_minimum_presence_percent' => $studentPartial,
+                    'teacher_full_attendance_percent' => $teacherFull,
+                    'teacher_partial_attendance_percent' => $teacherPartial,
                 ];
 
-                // Debug: Log the data being saved
-                Log::info('Saving meeting settings', [
+                Log::info('Saving meeting + attendance settings', [
                     'academy_id' => $academy->id,
                     'data' => $meetingUpdate,
                 ]);

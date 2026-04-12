@@ -163,10 +163,7 @@ class StudentOverviewService
                 ->get();
 
             $totalSessions = $reports->count();
-            $attendedCount = $reports->whereIn('attendance_status', [
-                AttendanceStatus::ATTENDED,
-                AttendanceStatus::LATE,
-            ])->count();
+            $attendedCount = $reports->whereIn('attendance_status', AttendanceStatus::presentValues())->count();
 
             $attendanceRate = $totalSessions > 0 ? round(($attendedCount / $totalSessions) * 100) : 0;
             $avgPerformance = $reports->whereNotNull('overall_performance')->avg('overall_performance');
@@ -220,10 +217,7 @@ class StudentOverviewService
                     ->get();
 
                 $totalSessions = $reports->count();
-                $attendedCount = $reports->whereIn('attendance_status', [
-                    AttendanceStatus::ATTENDED,
-                    AttendanceStatus::LATE,
-                ])->count();
+                $attendedCount = $reports->whereIn('attendance_status', AttendanceStatus::presentValues())->count();
 
                 $attendanceRate = $totalSessions > 0 ? round(($attendedCount / $totalSessions) * 100) : 0;
                 $avgPerformance = $reports->whereNotNull('overall_performance')->avg('overall_performance');
@@ -275,10 +269,7 @@ class StudentOverviewService
             )->get();
 
             $totalSessions = $reports->count();
-            $attendedCount = $reports->whereIn('attendance_status', [
-                AttendanceStatus::ATTENDED,
-                AttendanceStatus::LATE,
-            ])->count();
+            $attendedCount = $reports->whereIn('attendance_status', AttendanceStatus::presentValues())->count();
 
             $attendanceRate = $totalSessions > 0 ? round(($attendedCount / $totalSessions) * 100) : 0;
             $avgPerformance = $reports->whereNotNull('overall_performance')->avg('overall_performance');
@@ -335,10 +326,7 @@ class StudentOverviewService
                     ->get();
 
                 $totalSessions = $reports->count();
-                $attendedCount = $reports->whereIn('attendance_status', [
-                    AttendanceStatus::ATTENDED,
-                    AttendanceStatus::LATE,
-                ])->count();
+                $attendedCount = $reports->whereIn('attendance_status', AttendanceStatus::presentValues())->count();
 
                 $attendanceRate = $totalSessions > 0 ? round(($attendedCount / $totalSessions) * 100) : 0;
                 $avgPerformance = $reports->whereNotNull('overall_performance')->avg('overall_performance');

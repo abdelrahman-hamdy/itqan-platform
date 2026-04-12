@@ -289,9 +289,9 @@ class ParentProfileController extends Controller
             return 100; // Default to 100% if no sessions yet
         }
 
-        // Count attended sessions (has attendance record) - includes 'attended' and 'late' statuses
-        $attendedQuran = $quranSessions->filter(fn ($s) => in_array($s->attendance_status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]))->count();
-        $attendedAcademic = $academicSessions->filter(fn ($s) => in_array($s->attendance_status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]))->count();
+        $presentStatuses = AttendanceStatus::presentValues();
+        $attendedQuran = $quranSessions->filter(fn ($s) => in_array($s->attendance_status, $presentStatuses, true))->count();
+        $attendedAcademic = $academicSessions->filter(fn ($s) => in_array($s->attendance_status, $presentStatuses, true))->count();
 
         $totalAttended = $attendedQuran + $attendedAcademic;
 

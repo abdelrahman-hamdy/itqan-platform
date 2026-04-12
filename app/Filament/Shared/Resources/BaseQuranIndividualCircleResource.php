@@ -575,7 +575,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
     {
         $sub = $record->activeSubscription ?? $record->subscription;
 
-        if (! $sub || $sub->status !== SessionSubscriptionStatus::ACTIVE) {
+        if (! $sub || ! $sub->isSchedulable()) {
             return 'الاشتراك غير نشط';
         }
 
@@ -605,7 +605,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
     {
         $sub = $record->activeSubscription ?? $record->subscription;
 
-        if (! $sub || $sub->status !== SessionSubscriptionStatus::ACTIVE) {
+        if (! $sub || ! $sub->isSchedulable()) {
             return 'gray';
         }
 

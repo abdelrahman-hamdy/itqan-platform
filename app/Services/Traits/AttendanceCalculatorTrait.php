@@ -6,97 +6,46 @@ use App\Enums\AttendanceStatus;
 use Carbon\Carbon;
 
 /**
- * Trait AttendanceCalculatorTrait
+ * Centralized percentage-based attendance calculation.
  *
- * Provides centralized attendance status calculation logic.
- * Eliminates duplication across BaseSessionReport and MeetingAttendance.
+ * Status rules:
+ *   attended% >= fullPercent     → ATTENDED
+ *   attended% >= partialPercent  → PARTIALLY_ATTENDED
+ *   attended% <  partialPercent  → ABSENT
+ *   no join                      → ABSENT
  *
- * Attendance Rules (50% threshold):
- * - < 50% attendance = 'left' (left early)
- * - >= 50% attendance + joined after grace = 'late'
- * - >= 50% attendance + joined on time = 'attended'
- * - No join = 'absent'
+ * Both student and teacher share the same shape and differ only in the
+ * thresholds the caller passes in.
  */
 trait AttendanceCalculatorTrait
 {
     /**
-     * Calculate attendance status based on join time, duration, and thresholds.
+     * Calculate attendance status from attended duration as a percentage of
+     * the scheduled session window.
      *
-     * This is the single source of truth for attendance calculation.
-     *
-     * @param  Carbon|null  $firstJoinTime  When user first joined
-     * @param  Carbon  $sessionStartTime  When session was scheduled to start
-     * @param  int  $sessionDurationMinutes  Total session duration
-     * @param  int  $actualAttendanceMinutes  How long user actually attended
-     * @param  int  $graceMinutes  Grace period for late arrivals (default 15)
-     * @return string One of: 'attended', 'late', 'left', 'absent'
-     */
-    /**
-     * @param  float|null  $minimumPresencePercent  Min % to not be LEFT (default from config or 50%)
+     * @param  Carbon|null  $firstJoinTime  When the user first joined (null → ABSENT)
+     * @param  int  $sessionDurationMinutes  Scheduled session duration (denominator)
+     * @param  int  $actualAttendanceMinutes  Time within the scheduled window
+     * @param  float  $fullPercent  Threshold for ATTENDED (inclusive)
+     * @param  float  $partialPercent  Threshold for PARTIALLY_ATTENDED (inclusive)
+     * @return string AttendanceStatus value: 'attended' | 'partially_attended' | 'absent'
      */
     protected function calculateAttendanceStatus(
         ?Carbon $firstJoinTime,
-        Carbon $sessionStartTime,
         int $sessionDurationMinutes,
         int $actualAttendanceMinutes,
-        ?int $graceMinutes = null,
-        ?float $minimumPresencePercent = null,
-    ): string {
-        $graceMinutes = $graceMinutes ?? config('business.attendance.grace_period_minutes', 15);
-        $minimumPresencePercent = $minimumPresencePercent ?? config('business.attendance.minimum_presence_percent', 50);
-
-        // If never joined, definitely absent
-        if (! $firstJoinTime) {
-            return AttendanceStatus::ABSENT->value;
-        }
-
-        // Calculate attendance percentage
-        $attendancePercentage = $sessionDurationMinutes > 0
-            ? ($actualAttendanceMinutes / $sessionDurationMinutes) * 100
-            : 0;
-
-        // Stayed less than minimum threshold - left early (regardless of join time)
-        if ($attendancePercentage < $minimumPresencePercent) {
-            return AttendanceStatus::LEFT->value;
-        }
-
-        // Stayed >= minimum% - check if late
-        $lateThreshold = $sessionStartTime->copy()->addMinutes($graceMinutes);
-        $wasLate = $firstJoinTime->isAfter($lateThreshold);
-
-        // Stayed >= minimum% and joined after tolerance - late
-        if ($wasLate) {
-            return AttendanceStatus::LATE->value;
-        }
-
-        // Stayed >= minimum% and joined on time - attended
-        return AttendanceStatus::ATTENDED->value;
-    }
-
-    /**
-     * Calculate teacher attendance status with teacher-specific thresholds.
-     *
-     * Teacher attendance rules (different from students):
-     * - >= fullPercent (90%) of session time → ATTENDED
-     * - >= partialPercent (50%) of session time → PARTIALLY_ATTENDED
-     * - < partialPercent (50%) of session time → ABSENT
-     *
-     * Teachers don't have a "late" concept — only duration matters.
-     */
-    protected function calculateTeacherAttendanceStatus(
-        ?Carbon $firstJoinTime,
-        int $sessionDurationMinutes,
-        int $actualAttendanceMinutes,
-        float $fullPercent = 90.0,
-        float $partialPercent = 50.0,
+        float $fullPercent,
+        float $partialPercent,
     ): string {
         if (! $firstJoinTime) {
             return AttendanceStatus::ABSENT->value;
         }
 
-        $attendancePercentage = $sessionDurationMinutes > 0
-            ? ($actualAttendanceMinutes / $sessionDurationMinutes) * 100
-            : 0;
+        if ($sessionDurationMinutes <= 0) {
+            return AttendanceStatus::ABSENT->value;
+        }
+
+        $attendancePercentage = ($actualAttendanceMinutes / $sessionDurationMinutes) * 100;
 
         if ($attendancePercentage >= $fullPercent) {
             return AttendanceStatus::ATTENDED->value;
@@ -110,110 +59,93 @@ trait AttendanceCalculatorTrait
     }
 
     /**
-     * Calculate attendance status using the AttendanceStatus enum.
+     * Teacher-specific wrapper. Identical logic to calculateAttendanceStatus();
+     * kept as a distinct method so callers express intent at the call site
+     * ("I am calculating a teacher's status with teacher thresholds").
      */
-    protected function calculateAttendanceStatusEnum(
+    protected function calculateTeacherAttendanceStatus(
         ?Carbon $firstJoinTime,
-        Carbon $sessionStartTime,
         int $sessionDurationMinutes,
         int $actualAttendanceMinutes,
-        ?int $graceMinutes = null,
-        ?float $minimumPresencePercent = null,
-    ): AttendanceStatus {
-        $graceMinutes = $graceMinutes ?? config('business.attendance.grace_period_minutes', 15);
-        $status = $this->calculateAttendanceStatus(
+        float $fullPercent = 90.0,
+        float $partialPercent = 50.0,
+    ): string {
+        return $this->calculateAttendanceStatus(
             $firstJoinTime,
-            $sessionStartTime,
             $sessionDurationMinutes,
             $actualAttendanceMinutes,
-            $graceMinutes,
-            $minimumPresencePercent,
+            $fullPercent,
+            $partialPercent,
         );
-
-        return AttendanceStatus::from($status);
     }
 
     /**
-     * Calculate real-time attendance status for active sessions.
-     * Handles edge cases for students who join early or stay long.
+     * Enum-returning wrapper around calculateAttendanceStatus().
+     */
+    protected function calculateAttendanceStatusEnum(
+        ?Carbon $firstJoinTime,
+        int $sessionDurationMinutes,
+        int $actualAttendanceMinutes,
+        float $fullPercent,
+        float $partialPercent,
+    ): AttendanceStatus {
+        return AttendanceStatus::from(
+            $this->calculateAttendanceStatus(
+                $firstJoinTime,
+                $sessionDurationMinutes,
+                $actualAttendanceMinutes,
+                $fullPercent,
+                $partialPercent,
+            )
+        );
+    }
+
+    /**
+     * Real-time attendance status for users currently in an active session.
      *
-     * @param  int  $currentAttendanceMinutes  Real-time attendance including current cycle
-     * @param  bool  $isCurrentlyInMeeting  Whether user is still in meeting
+     * When the user is still in the meeting and hasn't yet crossed the partial
+     * threshold, we return PARTIALLY_ATTENDED optimistically so the UI doesn't
+     * flip-flop to ABSENT mid-session. Once they actually leave, the final
+     * calc job uses calculateAttendanceStatus() and writes the definitive value.
      */
     protected function calculateRealtimeAttendanceStatus(
         ?Carbon $firstJoinTime,
-        Carbon $sessionStartTime,
         int $sessionDurationMinutes,
         int $currentAttendanceMinutes,
-        ?int $graceMinutes = null,
-        bool $isCurrentlyInMeeting = false
+        float $fullPercent,
+        float $partialPercent,
+        bool $isCurrentlyInMeeting = false,
     ): string {
-        $graceMinutes = $graceMinutes ?? config('business.attendance.grace_period_minutes', 15);
-
-        // No join = absent
         if (! $firstJoinTime) {
             return AttendanceStatus::ABSENT->value;
         }
 
-        // Calculate attendance percentage
-        $attendancePercentage = $sessionDurationMinutes > 0
-            ? ($currentAttendanceMinutes / $sessionDurationMinutes) * 100
-            : 0;
-
-        // 100% attendance override - anyone who attended full session is marked attended
-        if ($attendancePercentage >= 100) {
-            return AttendanceStatus::ATTENDED->value;
-        }
-
-        // Check if joined within grace period
-        $graceThresholdTime = $sessionStartTime->copy()->addMinutes($graceMinutes);
-        $joinedWithinGrace = $firstJoinTime->lte($graceThresholdTime);
-
-        // Get configurable thresholds
-        $excellentPercent = config('business.attendance.excellent_percent', 95);
-        $thresholdPercent = config('business.attendance.threshold_percent', 80);
-        $leftThresholdPercent = config('business.attendance.left_threshold_percent', 30);
-
-        // If joined after grace time, check attendance status
-        if (! $joinedWithinGrace) {
-            // CRITICAL FIX: If user is currently in meeting, they're actively attending
-            // Don't apply final thresholds to real-time data - show "late" not "absent"
-            if ($isCurrentlyInMeeting) {
-                return AttendanceStatus::LATE->value; // Late but actively attending
-            }
-
-            // Session ended or user left - apply final thresholds
-            if ($attendancePercentage >= $excellentPercent) {
-                return AttendanceStatus::LATE->value; // Late arrival but excellent attendance
-            } elseif ($attendancePercentage >= $thresholdPercent) {
-                return AttendanceStatus::LEFT->value; // Late and decent attendance
-            } else {
-                return AttendanceStatus::ABSENT->value; // Late and poor attendance
-            }
-        }
-
-        // Joined on time - check attendance status
-        // CRITICAL FIX: If user is currently in meeting, they're actively attending
-        if ($isCurrentlyInMeeting) {
-            return AttendanceStatus::ATTENDED->value; // On time and actively attending
-        }
-
-        // Session ended or user left - apply final thresholds
-        if ($attendancePercentage >= $thresholdPercent) {
-            return AttendanceStatus::ATTENDED->value;
-        } elseif ($attendancePercentage >= $leftThresholdPercent) {
-            return AttendanceStatus::LEFT->value;
-        } else {
+        if ($sessionDurationMinutes <= 0) {
             return AttendanceStatus::ABSENT->value;
         }
+
+        $attendancePercentage = ($currentAttendanceMinutes / $sessionDurationMinutes) * 100;
+
+        if ($attendancePercentage >= $fullPercent) {
+            return AttendanceStatus::ATTENDED->value;
+        }
+
+        if ($attendancePercentage >= $partialPercent) {
+            return AttendanceStatus::PARTIALLY_ATTENDED->value;
+        }
+
+        // Below partial threshold — if they're still in the meeting, show as
+        // PARTIALLY_ATTENDED so the UI doesn't read "absent" for someone who's
+        // visibly on screen. If they've already left, honor the hard cutoff.
+        if ($isCurrentlyInMeeting) {
+            return AttendanceStatus::PARTIALLY_ATTENDED->value;
+        }
+
+        return AttendanceStatus::ABSENT->value;
     }
 
     /**
-     * Calculate attendance percentage.
-     *
-     * @param  int  $actualMinutes  Minutes attended
-     * @param  int  $sessionDurationMinutes  Total session duration
-     * @return float Percentage (0-100, capped at 100)
+     * Calculate attendance percentage (capped at 100).
      */
     protected function calculateAttendancePercentage(int $actualMinutes, int $sessionDurationMinutes): float
     {
@@ -225,34 +157,56 @@ trait AttendanceCalculatorTrait
     }
 
     /**
-     * Determine if a student is late based on join time and session start.
+     * Sum minutes from join/leave cycles that fall inside [windowStart, windowEnd].
+     *
+     * Used by `display_duration_minutes` which counts time inside the full
+     * meeting window (prep + session + buffer), and — with a tighter window —
+     * could also be used for the scheduled-window calculation duration.
+     *
+     * Supports both webhook format (`type`/`timestamp`) and manual format
+     * (`joined_at`/`left_at`) used by MeetingAttendance::recordJoin/Leave.
      */
-    protected function isLateJoin(?Carbon $joinTime, Carbon $sessionStartTime, ?int $graceMinutes = null): bool
+    protected function sumCycleMinutesInWindow(array $cycles, Carbon $windowStart, Carbon $windowEnd): int
     {
-        $graceMinutes = $graceMinutes ?? config('business.attendance.grace_period_minutes', 15);
+        $total = 0;
+        $lastJoinTime = null;
 
-        if (! $joinTime) {
-            return false;
+        foreach ($cycles as $cycle) {
+            if (isset($cycle['type'])) {
+                if ($cycle['type'] === 'join') {
+                    $lastJoinTime = $cycle['timestamp'];
+                } elseif ($cycle['type'] === 'leave' && $lastJoinTime) {
+                    $join = is_string($lastJoinTime) ? Carbon::parse($lastJoinTime) : $lastJoinTime;
+                    $leave = is_string($cycle['timestamp']) ? Carbon::parse($cycle['timestamp']) : $cycle['timestamp'];
+                    $total += $this->clampCycleMinutes($join, $leave, $windowStart, $windowEnd);
+                    $lastJoinTime = null;
+                }
+            } elseif (isset($cycle['joined_at'], $cycle['left_at'])) {
+                $join = is_string($cycle['joined_at']) ? Carbon::parse($cycle['joined_at']) : $cycle['joined_at'];
+                $leave = is_string($cycle['left_at']) ? Carbon::parse($cycle['left_at']) : $cycle['left_at'];
+                $total += $this->clampCycleMinutes($join, $leave, $windowStart, $windowEnd);
+            }
         }
 
-        $graceThreshold = $sessionStartTime->copy()->addMinutes($graceMinutes);
-
-        return $joinTime->isAfter($graceThreshold);
+        return $total;
     }
 
     /**
-     * Calculate late minutes.
-     *
-     * @return int Minutes late (0 if on time or early)
+     * Clamp a single join/leave pair to [windowStart, windowEnd] and return
+     * the duration in whole minutes. Returns 0 if the pair doesn't overlap.
      */
-    protected function calculateLateMinutes(?Carbon $joinTime, Carbon $sessionStartTime, ?int $graceMinutes = null): int
+    protected function clampCycleMinutes(Carbon $join, Carbon $leave, Carbon $windowStart, Carbon $windowEnd): int
     {
-        $graceMinutes = $graceMinutes ?? config('business.attendance.grace_period_minutes', 15);
-
-        if (! $joinTime || ! $this->isLateJoin($joinTime, $sessionStartTime, $graceMinutes)) {
+        if ($join->lt($windowStart)) {
+            $join = $windowStart->copy();
+        }
+        if ($leave->gt($windowEnd)) {
+            $leave = $windowEnd->copy();
+        }
+        if ($leave->lte($join)) {
             return 0;
         }
 
-        return $joinTime->diffInMinutes($sessionStartTime);
+        return (int) round($join->diffInMinutes($leave));
     }
 }

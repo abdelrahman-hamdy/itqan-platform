@@ -2,12 +2,11 @@
 
 namespace App\Filament\Resources\AcademyGeneralSettingsResource\Pages;
 
-use Filament\Actions\ViewAction;
+use App\Filament\Pages\BaseEditRecord as EditRecord;
 use App\Filament\Resources\AcademyGeneralSettingsResource;
 use App\Models\Academy;
 use App\Models\AcademySettings;
-use Filament\Actions;
-use App\Filament\Pages\BaseEditRecord as EditRecord;
+use Filament\Actions\ViewAction;
 
 /**
  * @property Academy $record
@@ -31,11 +30,18 @@ class EditGeneralSettings extends EditRecord
             []
         );
 
-        // Add meeting settings to the form data
+        // Meeting settings (preparation + buffer minutes)
         $data['meeting_settings'] = [
             'default_preparation_minutes' => $academySettings->default_preparation_minutes ?? 10,
-            'default_late_tolerance_minutes' => $academySettings->default_late_tolerance_minutes ?? 15,
             'default_buffer_minutes' => $academySettings->default_buffer_minutes ?? 5,
+        ];
+
+        // Form uses semantic names; DB columns kept their legacy names.
+        $data['attendance_settings'] = [
+            'student_full_attendance_percent' => $academySettings->default_attendance_threshold_percentage ?? 80,
+            'student_partial_attendance_percent' => $academySettings->student_minimum_presence_percent ?? 50,
+            'teacher_full_attendance_percent' => $academySettings->teacher_full_attendance_percent ?? 90,
+            'teacher_partial_attendance_percent' => $academySettings->teacher_partial_attendance_percent ?? 50,
         ];
 
         // Add academic settings if they exist in the Academy model
@@ -61,12 +67,13 @@ class EditGeneralSettings extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        // Extract meeting settings and academic settings
+        // Extract meeting, attendance, and academic settings slots
         $meetingSettings = $data['meeting_settings'] ?? [];
+        $attendanceSettings = $data['attendance_settings'] ?? [];
         $academicSettings = $data['academic_settings'] ?? [];
 
-        // Remove these from the main data array so they don't try to save to Academy model
-        unset($data['meeting_settings']);
+        // Remove the form-only slots so they don't try to save to Academy model
+        unset($data['meeting_settings'], $data['attendance_settings']);
 
         // Keep academic_settings if it's a JSON column on Academy model
         if (is_array($academicSettings)) {
@@ -87,18 +94,42 @@ class EditGeneralSettings extends EditRecord
             'email_categories' => $notificationSettings['email_categories'] ?? [],
         ];
 
-        // Save meeting settings to AcademySettings model
-        if (! empty($meetingSettings)) {
-            $academySettingsModel = AcademySettings::firstOrCreate(
-                ['academy_id' => $this->record->id],
-                []
-            );
+        // Validate attendance thresholds: partial must be ≤ full for both roles.
+        $studentFull = (float) ($attendanceSettings['student_full_attendance_percent'] ?? 80);
+        $studentPartial = (float) ($attendanceSettings['student_partial_attendance_percent'] ?? 50);
+        $teacherFull = (float) ($attendanceSettings['teacher_full_attendance_percent'] ?? 90);
+        $teacherPartial = (float) ($attendanceSettings['teacher_partial_attendance_percent'] ?? 50);
 
-            $academySettingsModel->update([
-                'default_preparation_minutes' => $meetingSettings['default_preparation_minutes'] ?? 10,
-                'default_late_tolerance_minutes' => $meetingSettings['default_late_tolerance_minutes'] ?? 15,
-                'default_buffer_minutes' => $meetingSettings['default_buffer_minutes'] ?? 5,
-            ]);
+        if ($studentPartial > $studentFull || $teacherPartial > $teacherFull) {
+            \Filament\Notifications\Notification::make()
+                ->title(__('settings.attendance_partial_lte_full'))
+                ->danger()
+                ->send();
+
+            $this->halt();
+        }
+
+        // Save meeting + attendance settings to AcademySettings model
+        $academySettingsModel = AcademySettings::firstOrCreate(
+            ['academy_id' => $this->record->id],
+            []
+        );
+
+        $updates = [];
+        if (! empty($meetingSettings)) {
+            $updates['default_preparation_minutes'] = $meetingSettings['default_preparation_minutes'] ?? 10;
+            $updates['default_buffer_minutes'] = $meetingSettings['default_buffer_minutes'] ?? 5;
+        }
+        if (! empty($attendanceSettings)) {
+            // Semantic names from the form map back to the legacy DB column names.
+            $updates['default_attendance_threshold_percentage'] = $studentFull;
+            $updates['student_minimum_presence_percent'] = $studentPartial;
+            $updates['teacher_full_attendance_percent'] = $teacherFull;
+            $updates['teacher_partial_attendance_percent'] = $teacherPartial;
+        }
+
+        if (! empty($updates)) {
+            $academySettingsModel->update($updates);
         }
 
         return $data;

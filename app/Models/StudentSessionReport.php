@@ -74,13 +74,10 @@ class StudentSessionReport extends BaseSessionReport
         return ! empty($scores) ? round(array_sum($scores) / count($scores), 1) : null;
     }
 
-    /**
-     * Quran sessions use grace period from academy settings
-     */
+    /** @deprecated Unused — percentage-based status. */
     protected function getGracePeriodMinutes(): int
     {
-        return $this->session?->academy?->settings?->default_late_tolerance_minutes
-            ?? config('business.attendance.grace_period_minutes', 15);
+        return 0;
     }
 
     // ========================================

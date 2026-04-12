@@ -161,18 +161,19 @@ class QuranSessionStrategy extends AbstractSessionStrategy
         return QuranIndividualCircle::where('quran_teacher_id', $teacherId)
             ->with(['subscription.package', 'sessions', 'student'])
             ->whereHas('subscription', function ($query) {
-                // Include PENDING and ACTIVE subscriptions
-                $query->whereIn('status', [
-                    SessionSubscriptionStatus::PENDING->value,
-                    SessionSubscriptionStatus::ACTIVE->value,
-                ])
-                // ALSO include CANCELLED subscriptions that haven't reached end date yet
-                // (paid period should remain accessible until ends_at)
+                // Use the schedulable() scope so only subscriptions that would
+                // actually pass `isSchedulable()` appear in the teacher's list.
+                // This keeps grace-period-active subscriptions visible and
+                // eliminates the PENDING-without-grace rows that previously
+                // appeared but failed at the validator.
+                $query->schedulable()
+                    // Also include CANCELLED subscriptions that still have paid
+                    // time left on the clock (legacy grace path).
                     ->orWhere(function ($q) {
                         $q->where('status', SessionSubscriptionStatus::CANCELLED->value)
                             ->where(function ($dateQuery) {
                                 $dateQuery->where('ends_at', '>', now())
-                                    ->orWhereNull('ends_at'); // Include if no end date set yet
+                                    ->orWhereNull('ends_at');
                             });
                     });
             })
@@ -368,28 +369,29 @@ class QuranSessionStrategy extends AbstractSessionStrategy
     private function createIndividualCircleSchedule(int $circleId, array $data): int
     {
         file_put_contents(storage_path('logs/schedule_debug.log'),
-            date('Y-m-d H:i:s') . " strategy: circleId=$circleId\n", FILE_APPEND);
+            date('Y-m-d H:i:s')." strategy: circleId=$circleId\n", FILE_APPEND);
 
         $circle = QuranIndividualCircle::findOrFail($circleId);
 
         file_put_contents(storage_path('logs/schedule_debug.log'),
-            date('Y-m-d H:i:s') . " strategy: circle found #{$circle->id} sub_id={$circle->subscription_id}\n", FILE_APPEND);
+            date('Y-m-d H:i:s')." strategy: circle found #{$circle->id} sub_id={$circle->subscription_id}\n", FILE_APPEND);
 
         if (! $circle->subscription) {
             throw new Exception(__('calendar.strategy.no_valid_subscription'));
         }
 
         file_put_contents(storage_path('logs/schedule_debug.log'),
-            date('Y-m-d H:i:s') . " strategy: sub status={$circle->subscription->status->value}\n", FILE_APPEND);
+            date('Y-m-d H:i:s')." strategy: sub status={$circle->subscription->status->value}\n", FILE_APPEND);
 
-        if ($circle->subscription->status !== SessionSubscriptionStatus::ACTIVE) {
+        // Use the model-level contract so grace-period subscriptions pass.
+        if (! $circle->subscription->isSchedulable()) {
             throw new Exception(__('calendar.strategy.subscription_inactive'));
         }
 
         $remainingSessions = $this->sessionService->getRemainingIndividualSessions($circle);
 
         file_put_contents(storage_path('logs/schedule_debug.log'),
-            date('Y-m-d H:i:s') . " strategy: remaining=$remainingSessions\n", FILE_APPEND);
+            date('Y-m-d H:i:s')." strategy: remaining=$remainingSessions\n", FILE_APPEND);
 
         if ($remainingSessions <= 0) {
             throw new Exception(__('calendar.strategy.no_remaining_circle_sessions'));
@@ -399,7 +401,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
         $result = $this->sessionService->createIndividualCircleSchedule($circle, $data);
 
         file_put_contents(storage_path('logs/schedule_debug.log'),
-            date('Y-m-d H:i:s') . " strategy: created=$result\n", FILE_APPEND);
+            date('Y-m-d H:i:s')." strategy: created=$result\n", FILE_APPEND);
 
         return $result;
     }

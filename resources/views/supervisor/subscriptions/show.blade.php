@@ -214,13 +214,6 @@
                     {{ __('supervisor.subscriptions.grace_period_until', ['date' => $graceEnd?->format('Y-m-d')]) }}
                 </div>
             @endif
-            @if($subscription->previousSubscription)
-                <div class="flex items-center gap-2 text-gray-600">
-                    <i class="ri-links-line"></i>
-                    {{ __('supervisor.subscriptions.renewed_from') }}
-                    <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->previous_subscription_id]) }}" class="text-primary-600 hover:underline font-medium">#{{ $subscription->previousSubscription->subscription_code }}</a>
-                </div>
-            @endif
             @if($renewedBy)
                 <div class="flex items-center gap-2 text-gray-600">
                     <i class="ri-links-line"></i>
@@ -233,6 +226,59 @@
             @endif
         </div>
     </div>
+
+    {{-- ═══ CYCLES HISTORY ═══ --}}
+    @if($subscriptionCycles->isNotEmpty())
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-5 py-3 border-b border-gray-200 flex items-center gap-2">
+                <i class="ri-history-line text-gray-500"></i>
+                <h3 class="text-sm font-semibold text-gray-900">{{ __('supervisor.subscriptions.cycles_history_title') }}</h3>
+                <span class="text-xs bg-gray-100 px-2 py-0.5 rounded-full">{{ $subscriptionCycles->count() }}</span>
+            </div>
+            <div class="divide-y divide-gray-100">
+                @foreach($subscriptionCycles as $sCycle)
+                    @php
+                        $stateColor = match($sCycle->cycle_state) {
+                            'active' => 'bg-green-100 text-green-800',
+                            'queued' => 'bg-blue-100 text-blue-800',
+                            'archived' => 'bg-gray-100 text-gray-700',
+                            default => 'bg-gray-100 text-gray-700',
+                        };
+                        $stateLabel = __('supervisor.subscriptions.cycle_state_'.$sCycle->cycle_state);
+                        $paymentColor = match($sCycle->payment_status) {
+                            'paid' => 'bg-green-100 text-green-800',
+                            'pending' => 'bg-yellow-100 text-yellow-800',
+                            'failed' => 'bg-red-100 text-red-800',
+                            'waived' => 'bg-gray-100 text-gray-600',
+                            default => 'bg-gray-100 text-gray-700',
+                        };
+                        $paymentLabel = __('supervisor.subscriptions.cycle_payment_'.$sCycle->payment_status);
+                    @endphp
+                    <div class="px-5 py-3 flex items-center justify-between gap-3 text-sm">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="flex-shrink-0 font-bold text-gray-600">#{{ $sCycle->cycle_number }}</span>
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $stateColor }}">{{ $stateLabel }}</span>
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $paymentColor }}">{{ $paymentLabel }}</span>
+                            <span class="text-xs text-gray-500 truncate">
+                                {{ $sCycle->starts_at?->format('Y-m-d') ?? '—' }}
+                                &nbsp;→&nbsp;
+                                {{ $sCycle->ends_at?->format('Y-m-d') ?? '—' }}
+                            </span>
+                            @if($sCycle->grace_period_ends_at && $sCycle->grace_period_ends_at->isFuture())
+                                <span class="text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 rounded px-2 py-0.5">
+                                    <i class="ri-time-line"></i> {{ __('supervisor.subscriptions.grace_until', ['date' => $sCycle->grace_period_ends_at->format('Y-m-d')]) }}
+                                </span>
+                            @endif
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-gray-500 flex-shrink-0">
+                            <span>{{ $sCycle->sessions_used }} / {{ $sCycle->total_sessions }}</span>
+                            <span class="font-medium text-gray-700">{{ number_format((float) $sCycle->final_price, 2) }} {{ $sCycle->currency }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     {{-- ═══ SESSIONS ═══ --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -375,7 +421,7 @@
                     <form method="POST" action="{{ route('manage.subscriptions.renew', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}" id="show-renew-form">
                         @csrf
                         <div class="mb-3"><label class="block text-sm font-medium text-gray-700 mb-2">{{ __('supervisor.subscriptions.billing_cycle_label') }}</label><div class="flex gap-2">@foreach(['monthly'=>__('enums.billing_cycle.monthly'),'quarterly'=>__('enums.billing_cycle.quarterly'),'yearly'=>__('enums.billing_cycle.yearly')] as $v=>$l)<label class="flex-1 cursor-pointer"><input type="radio" name="billing_cycle" value="{{ $v }}" {{ $subscription->billing_cycle?->value===$v?'checked':'' }} class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700">{{ $l }}</div></label>@endforeach</div></div>
-                        <div class="flex gap-2"><label class="flex-1 cursor-pointer"><input type="radio" name="activate_mode" value="immediate" checked class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-indigo-600 peer-checked:bg-indigo-50">{{ __('supervisor.subscriptions.mode_immediate') }}</div></label><label class="flex-1 cursor-pointer"><input type="radio" name="activate_mode" value="pending" class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-indigo-600 peer-checked:bg-indigo-50">{{ __('supervisor.subscriptions.mode_pending') }}</div></label></div>
+                        <p class="text-xs text-gray-500">{{ __('supervisor.subscriptions.renew_always_activates_note') }}</p>
                     </form>
                 </div>
                 <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">
@@ -397,7 +443,7 @@
                     <form method="POST" action="{{ route('manage.subscriptions.resubscribe', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}" id="show-resubscribe-form">
                         @csrf
                         <div class="mb-3"><label class="block text-sm font-medium text-gray-700 mb-2">{{ __('supervisor.subscriptions.billing_cycle_label') }}</label><div class="flex gap-2">@foreach(['monthly'=>__('enums.billing_cycle.monthly'),'quarterly'=>__('enums.billing_cycle.quarterly'),'yearly'=>__('enums.billing_cycle.yearly')] as $v=>$l)<label class="flex-1 cursor-pointer"><input type="radio" name="billing_cycle" value="{{ $v }}" {{ $subscription->billing_cycle?->value===$v?'checked':'' }} class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-teal-600 peer-checked:bg-teal-50 peer-checked:text-teal-700">{{ $l }}</div></label>@endforeach</div></div>
-                        <div class="flex gap-2"><label class="flex-1 cursor-pointer"><input type="radio" name="activate_mode" value="immediate" checked class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-teal-600 peer-checked:bg-teal-50">{{ __('supervisor.subscriptions.mode_immediate') }}</div></label><label class="flex-1 cursor-pointer"><input type="radio" name="activate_mode" value="pending" class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-teal-600 peer-checked:bg-teal-50">{{ __('supervisor.subscriptions.mode_pending') }}</div></label></div>
+                        <p class="text-xs text-gray-500">{{ __('supervisor.subscriptions.resubscribe_always_activates_note') }}</p>
                     </form>
                 </div>
                 <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">

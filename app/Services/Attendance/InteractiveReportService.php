@@ -2,14 +2,14 @@
 
 namespace App\Services\Attendance;
 
-use InvalidArgumentException;
-use Illuminate\Support\Collection;
-use App\Models\InteractiveCourse;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
+use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseSession;
 use App\Models\InteractiveSessionReport;
 use App\Models\User;
+use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
 /**
  * Interactive Report Service
@@ -41,26 +41,6 @@ class InteractiveReportService extends BaseReportSyncService
     protected function getSessionTeacher($session): ?User
     {
         return $session->course?->teacher ?? null;
-    }
-
-    /**
-     * Get the attendance threshold percentage for Interactive sessions.
-     * Accesses academy settings via course relationship, falls back to config default.
-     */
-    protected function getAttendanceThreshold($session): float
-    {
-        return $session->course?->academy?->settings?->default_attendance_threshold_percentage
-            ?? config('business.attendance.threshold_percent', 80);
-    }
-
-    /**
-     * Get the grace period for Interactive sessions.
-     * Accesses academy settings via course relationship.
-     */
-    protected function getGracePeriod($session): int
-    {
-        return $session->course?->academy?->settings?->default_late_tolerance_minutes
-            ?? config('business.attendance.grace_period_minutes', 15);
     }
 
     /**

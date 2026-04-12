@@ -77,7 +77,7 @@ use App\Enums\AttendanceStatus;
             ],
             [
                 'date' => '2024-01-13',
-                'status' => AttendanceStatus::LEFT->value,
+                'status' => AttendanceStatus::PARTIALLY_ATTENDED->value,
                 'duration' => 45,
                 'notes' => __('components.academic.attendance.sample_notes.joined_late')
             ],
@@ -103,8 +103,8 @@ use App\Enums\AttendanceStatus;
                 <div class="flex-shrink-0">
                     @if($record['status'] === AttendanceStatus::ATTENDED->value)
                         <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                    @elseif($record['status'] === AttendanceStatus::LEFT->value)
-                        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    @elseif(in_array($record['status'], [AttendanceStatus::PARTIALLY_ATTENDED->value, AttendanceStatus::LATE->value, AttendanceStatus::LEFT->value]))
+                        <div class="w-3 h-3 bg-amber-500 rounded-full"></div>
                     @else
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     @endif

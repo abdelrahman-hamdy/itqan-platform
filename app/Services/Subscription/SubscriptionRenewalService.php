@@ -3,36 +3,52 @@
 namespace App\Services\Subscription;
 
 use App\Enums\BillingCycle;
+use App\Enums\PaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\AcademicPackage;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
 use App\Models\BaseSubscription;
+use App\Models\Payment;
 use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
+use App\Models\SubscriptionCycle;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Handles subscription renewal and resubscription logic.
+ * Handles subscription renewal and resubscription logic — mutate-in-place.
  *
- * Smart date logic:
- * - Sessions exhausted (remaining=0): new subscription starts from now(), fresh cycle
- * - Early renewal (remaining>0): new subscription starts from old ends_at, remaining sessions carry over
+ * A subscription is a persistent thread. Renewal advances the thread into a new
+ * cycle (row in `subscription_cycles`) instead of creating a new subscription row.
  *
- * Modes:
- * - renew: Same or different package, active/expiring subscription
- * - resubscribe: Dormant (cancelled/expired) subscription, may need teacher change
+ * Two renewal paths:
+ *   - Replace: current cycle is exhausted or past its end → archive and create a
+ *     fresh active cycle starting now. Subscription columns sync to the new cycle.
+ *   - Queue: current cycle still has sessions and time → create a queued cycle
+ *     starting at current.ends_at. The current cycle stays active; the queued one
+ *     is promoted by `subscriptions:advance-cycles` when the current ends.
+ *
+ * Renewal always activates. There is no "renew with pending payment" path — the
+ * user-initiated "pay later but keep scheduling" scenario is handled via the
+ * Extend action (grace period on the current cycle).
  */
 class SubscriptionRenewalService
 {
     /**
-     * Renew an existing subscription, optionally changing package or billing cycle.
+     * Renew an existing subscription into a new cycle.
      *
-     * @param  array  $options  Keys: package_id, billing_cycle, teacher_id, activate_immediately
+     * Options:
+     *   - billing_cycle:       monthly/quarterly/yearly for the new cycle
+     *   - package_id:          optional package switch (type-aware)
+     *   - teacher_id:          optional teacher switch (type-aware)
+     *   - discount_amount:     per-cycle discount
+     *   - is_recurring_discount: whether the discount persists into future cycles
+     *   - actor_id:            who triggered the renewal (for audit)
      */
     public function renew(BaseSubscription $old, array $options = []): BaseSubscription
     {
@@ -41,36 +57,133 @@ class SubscriptionRenewalService
         }
 
         return DB::transaction(function () use ($old, $options) {
-            $old = $old::lockForUpdate()->find($old->id);
+            /** @var BaseSubscription $subscription */
+            $subscription = $old::lockForUpdate()->find($old->id);
 
-            // Prevent duplicate renewals from concurrent requests
-            if ($old->hasPendingRenewal()) {
-                throw new Exception(__('subscriptions.renewal_already_pending'));
+            // Ensure we always have a current cycle row to work with.
+            // Legacy subscriptions created before the cycle refactor won't have one;
+            // in that case we materialize one from the subscription's current columns.
+            $currentCycle = $this->ensureCurrentCycle($subscription);
+
+            // Decide whether the new cycle REPLACES current immediately, or is QUEUED
+            // to start when the current cycle ends.
+            $replaceNow = $this->shouldReplaceImmediately($subscription, $currentCycle);
+
+            // Enforce max one queued cycle per subscription thread.
+            if (! $replaceNow && $subscription->queuedCycle()->exists()) {
+                throw new Exception(__('subscriptions.errors.queued_cycle_exists'));
             }
 
-            $newData = $this->buildRenewalData($old, $options);
+            // Build per-cycle pricing & session counts (uses current or new package)
+            $billingCycle = isset($options['billing_cycle'])
+                ? BillingCycle::from($options['billing_cycle'])
+                : $subscription->billing_cycle;
 
-            $modelClass = $old::class;
-            $new = $modelClass::create($newData);
+            $pricing = $this->resolvePricing($subscription, $options, $billingCycle);
 
-            // Disable auto-renew on old subscription to prevent double billing
-            $old->update(['auto_renew' => false]);
+            $sessionsPerMonth = $pricing['sessions_per_month'] ?? $subscription->sessions_per_month ?? 8;
+            $totalSessions = $sessionsPerMonth * max(1, $billingCycle->months());
 
-            Log::info('Subscription renewed', [
-                'old_id' => $old->id,
-                'new_id' => $new->id,
-                'type' => $old->getSubscriptionType(),
-                'package_changed' => isset($options['package_id']),
-                'billing_cycle_changed' => isset($options['billing_cycle']),
+            // Compute window for the new cycle
+            if ($replaceNow) {
+                $newStartsAt = Carbon::now();
+            } else {
+                $newStartsAt = $currentCycle->ends_at ?? $subscription->ends_at ?? Carbon::now();
+                if ($newStartsAt->isPast()) {
+                    $newStartsAt = Carbon::now();
+                }
+            }
+            $newEndsAt = $billingCycle->calculateEndDate($newStartsAt);
+
+            $carryover = $replaceNow
+                ? max(0, $this->remainingSessionsOnCycle($currentCycle))
+                : 0;
+
+            $totalWithCarryover = $totalSessions + $carryover;
+
+            // Archive the current cycle if replacing
+            if ($replaceNow) {
+                $currentCycle->update([
+                    'cycle_state' => SubscriptionCycle::STATE_ARCHIVED,
+                    'archived_at' => now(),
+                ]);
+            }
+
+            // Create the new cycle row
+            $newCycleNumber = ((int) $subscription->cycle_count) + ($subscription->current_cycle_id ? 1 : 0);
+            $newCycleNumber = max(1, $newCycleNumber);
+
+            $newCycle = SubscriptionCycle::create([
+                'subscribable_type' => $subscription::class,
+                'subscribable_id' => $subscription->id,
+                'academy_id' => $subscription->academy_id,
+                'cycle_number' => $newCycleNumber,
+                'cycle_state' => $replaceNow
+                    ? SubscriptionCycle::STATE_ACTIVE
+                    : SubscriptionCycle::STATE_QUEUED,
+                'billing_cycle' => $billingCycle->value,
+                'starts_at' => $newStartsAt,
+                'ends_at' => $newEndsAt,
+                'total_sessions' => $totalWithCarryover,
+                'sessions_used' => 0,
+                'sessions_completed' => 0,
+                'sessions_missed' => 0,
+                'carryover_sessions' => $carryover,
+                'total_price' => $pricing['price_fields']['total_price'] ?? 0,
+                'discount_amount' => $pricing['price_fields']['discount_amount'] ?? 0,
+                'final_price' => $pricing['price_fields']['final_price'] ?? 0,
+                'currency' => $subscription->currency ?? 'SAR',
+                'package_id' => $pricing['package_id'] ?? null,
+                'package_snapshot' => $pricing['package_snapshot'] ?? null,
+                'payment_status' => SubscriptionCycle::PAYMENT_PAID,
+                'metadata' => [
+                    'created_by_renewal' => true,
+                    'actor_id' => $options['actor_id'] ?? auth()->id(),
+                    'previous_cycle_id' => $currentCycle->id ?? null,
+                ],
             ]);
 
-            return $new;
+            // Sync subscription columns to the new cycle if we're replacing.
+            // If we're queuing, the subscription row stays on the current cycle;
+            // it will sync when AdvanceSubscriptionCycles promotes the queued cycle.
+            if ($replaceNow) {
+                $this->syncSubscriptionToCycle($subscription, $newCycle, $pricing, $options);
+            } else {
+                // Queued only: just bump the cycle count and keep the subscription on its current state
+                $subscription->update([
+                    'cycle_count' => $newCycleNumber,
+                ]);
+            }
+
+            // Create a COMPLETED payment row linked to this cycle (Renew asserts the cycle is paid)
+            $payment = $this->createRenewalPayment($subscription, $newCycle, $pricing);
+            $newCycle->update(['payment_id' => $payment->id]);
+
+            // Academic: create the next batch of UNSCHEDULED sessions for this cycle
+            if ($replaceNow && $subscription instanceof AcademicSubscription
+                && method_exists($subscription, 'createLessonAndSessionsForCycle')) {
+                $subscription->createLessonAndSessionsForCycle($newCycle);
+            }
+
+            Log::info('Subscription renewed (cycle-based)', [
+                'subscription_id' => $subscription->id,
+                'new_cycle_id' => $newCycle->id,
+                'cycle_state' => $newCycle->cycle_state,
+                'replace_now' => $replaceNow,
+                'carryover' => $carryover,
+                'total_sessions' => $totalWithCarryover,
+            ]);
+
+            return $subscription->fresh(['currentCycle', 'cycles']);
         });
     }
 
     /**
-     * Resubscribe from a dormant (cancelled/expired) subscription.
-     * Checks teacher availability and uses current package pricing.
+     * Resubscribe from a dormant (cancelled/expired/paused) subscription.
+     *
+     * Always replaces (never queues) — the subscription had no active coverage,
+     * so the new cycle starts now. Clears cancellation fields and reactivates
+     * linked circles/lessons.
      */
     public function resubscribe(BaseSubscription $old, array $options = []): BaseSubscription
     {
@@ -78,34 +191,25 @@ class SubscriptionRenewalService
             throw new Exception(__('subscriptions.cannot_resubscribe'));
         }
 
-        // Check teacher availability for session-based subscriptions
+        // Teacher availability check
         if ($old instanceof QuranSubscription || $old instanceof AcademicSubscription) {
             $this->validateTeacherAvailability($old, $options);
         }
 
         return DB::transaction(function () use ($old, $options) {
-            $old = $old::lockForUpdate()->find($old->id);
+            /** @var BaseSubscription $subscription */
+            $subscription = $old::lockForUpdate()->find($old->id);
 
-            // Force fresh package data for resubscriptions
-            $options['use_current_pricing'] = true;
-
-            $newData = $this->buildRenewalData($old, $options);
-
-            // Copy learning context from old subscription
-            $newData = $this->copyLearningContext($old, $newData);
-
-            $modelClass = $old::class;
-            $new = $modelClass::create($newData);
-
-            $old->update(['auto_renew' => false]);
-
-            Log::info('Subscription resubscribed', [
-                'old_id' => $old->id,
-                'new_id' => $new->id,
-                'type' => $old->getSubscriptionType(),
+            // Clear cancellation state and flip back to ACTIVE so the shared
+            // `renew()` path naturally triggers immediate replacement
+            // (exhausted/past-end branch) rather than queuing a future cycle.
+            $subscription->update([
+                'cancelled_at' => null,
+                'cancellation_reason' => null,
+                'status' => SessionSubscriptionStatus::ACTIVE,
             ]);
 
-            return $new;
+            return $this->renew($subscription, $options);
         });
     }
 
@@ -126,7 +230,8 @@ class SubscriptionRenewalService
         return in_array($subscription->status, [
             SessionSubscriptionStatus::CANCELLED,
             SessionSubscriptionStatus::EXPIRED,
-        ]);
+            SessionSubscriptionStatus::PAUSED,
+        ], true);
     }
 
     /**
@@ -159,7 +264,7 @@ class SubscriptionRenewalService
                 'name' => $pkg->name,
                 'sessions_per_month' => $pkg->sessions_per_month,
                 'session_duration_minutes' => $pkg->session_duration_minutes,
-                'monthly_price' => (float) $pkg->monthly_price,  // Package model column (not subscription)
+                'monthly_price' => (float) $pkg->monthly_price,
                 'quarterly_price' => (float) ($pkg->quarterly_price ?? $pkg->monthly_price * 3),
                 'yearly_price' => (float) ($pkg->yearly_price ?? $pkg->monthly_price * 12),
                 'currency' => $pkg->currency ?? 'SAR',
@@ -175,98 +280,206 @@ class SubscriptionRenewalService
         ];
     }
 
+    // ========================================================================
+    // Cycle management helpers
+    // ========================================================================
+
     /**
-     * Build the data array for the new subscription.
+     * Ensure the subscription has a `current_cycle_id` row.
+     *
+     * Delegates to the model-level `BaseSubscription::ensureCurrentCycle()` which
+     * is the single source of truth for first-cycle materialization.
      */
-    private function buildRenewalData(BaseSubscription $old, array $options): array
+    private function ensureCurrentCycle(BaseSubscription $subscription): SubscriptionCycle
     {
-        $packageId = $options['package_id'] ?? $this->getPackageId($old);
-        $billingCycle = isset($options['billing_cycle'])
-            ? BillingCycle::from($options['billing_cycle'])
-            : $old->billing_cycle;
-
-        // Determine pricing: use new package or old snapshot
-        $pricingData = $this->resolvePricing($old, $packageId, $billingCycle, $options);
-
-        // Determine start date and session carryover
-        $sessionsRemaining = method_exists($old, 'getSessionsRemaining') ? $old->getSessionsRemaining() : 0;
-        $sessionsExhausted = $old->is_sessions_exhausted;
-
-        if ($sessionsExhausted || $sessionsRemaining <= 0) {
-            // All sessions used: start fresh from now
-            $startsAt = now();
-        } else {
-            // Early renewal: start from old end date to preserve remaining time
-            $startsAt = $old->ends_at && $old->ends_at->isFuture() ? $old->ends_at : now();
-        }
-
-        $endsAt = $billingCycle->calculateEndDate($startsAt);
-
-        // Calculate total sessions for new period + carryover
-        $newSessionsPerMonth = $pricingData['sessions_per_month'] ?? $old->sessions_per_month ?? 8;
-        $totalNewSessions = $newSessionsPerMonth * max(1, $billingCycle->months());
-        $carryoverSessions = max(0, $sessionsRemaining);
-        $totalSessions = $totalNewSessions + $carryoverSessions;
-
-        // Determine activation status
-        $activateImmediately = $options['activate_immediately'] ?? false;
-        $status = $activateImmediately
-            ? SessionSubscriptionStatus::ACTIVE
-            : SessionSubscriptionStatus::PENDING;
-        $paymentStatus = $activateImmediately
-            ? SubscriptionPaymentStatus::PAID
-            : SubscriptionPaymentStatus::PENDING;
-
-        $data = [
-            'academy_id' => $old->academy_id,
-            'student_id' => $old->student_id,
-            'previous_subscription_id' => $old->id,
-            'subscription_code' => $old::generateSubscriptionCode($old->academy_id),
-            'status' => $status,
-            'payment_status' => $paymentStatus,
-            'billing_cycle' => $billingCycle,
-            'starts_at' => $activateImmediately ? $startsAt : null,
-            'ends_at' => $activateImmediately ? $endsAt : null,
-            'next_billing_date' => $activateImmediately ? $endsAt : null,
-            'last_payment_date' => $activateImmediately ? now() : null,
-            'auto_renew' => $billingCycle->supportsAutoRenewal(),
-            'total_sessions' => $totalSessions,
-            'sessions_remaining' => $totalSessions,
-            'sessions_used' => 0,
-            'total_sessions_completed' => 0,
-            'total_sessions_missed' => 0,
-            'session_duration_minutes' => $pricingData['session_duration_minutes'] ?? $old->session_duration_minutes,
-            'progress_percentage' => 0,
-            'currency' => $old->currency ?? 'SAR',
-        ];
-
-        // Merge pricing
-        $data = array_merge($data, $pricingData['price_fields']);
-
-        // Carry recurring discount flag
-        $data['is_recurring_discount'] = $options['is_recurring_discount'] ?? $old->is_recurring_discount;
-
-        // Add type-specific fields
-        $data = $this->addTypeSpecificFields($old, $data, $options);
-
-        return $data;
+        return $subscription->ensureCurrentCycle();
     }
 
     /**
-     * Resolve pricing from package (current or snapshotted).
+     * Decide whether the new cycle should replace the current cycle immediately
+     * (archive + activate now) or be queued (created as queued, starts when
+     * current ends).
+     *
+     * Per the user's model:
+     *   - If current cycle is exhausted OR its end date has passed, replace now.
+     *   - Otherwise, queue.
      */
-    private function resolvePricing(BaseSubscription $old, $packageId, BillingCycle $billingCycle, array $options): array
+    private function shouldReplaceImmediately(
+        BaseSubscription $subscription,
+        ?SubscriptionCycle $currentCycle,
+    ): bool {
+        if (! $currentCycle) {
+            return true;
+        }
+
+        if (! empty($subscription->status) && in_array($subscription->status, [
+            SessionSubscriptionStatus::CANCELLED,
+            SessionSubscriptionStatus::EXPIRED,
+            SessionSubscriptionStatus::PAUSED,
+        ], true)) {
+            return true;
+        }
+
+        $remaining = $this->remainingSessionsOnCycle($currentCycle);
+        if ($remaining <= 0) {
+            return true;
+        }
+
+        if ($currentCycle->ends_at && $currentCycle->ends_at->isPast()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function remainingSessionsOnCycle(SubscriptionCycle $cycle): int
     {
-        $useCurrentPricing = $options['use_current_pricing'] ?? ($packageId !== $this->getPackageId($old));
+        return max(0, ((int) $cycle->total_sessions) - ((int) $cycle->sessions_used));
+    }
+
+    /**
+     * Copy the new cycle's column values onto the subscription row so reads
+     * via `$sub->starts_at`, `$sub->total_sessions`, etc. stay accurate.
+     */
+    private function syncSubscriptionToCycle(
+        BaseSubscription $subscription,
+        SubscriptionCycle $cycle,
+        array $pricing,
+        array $options,
+    ): void {
+        $updateData = [
+            'status' => SessionSubscriptionStatus::ACTIVE,
+            'payment_status' => SubscriptionPaymentStatus::PAID,
+            'starts_at' => $cycle->starts_at,
+            'ends_at' => $cycle->ends_at,
+            'next_billing_date' => $cycle->ends_at,
+            'last_payment_date' => now(),
+            'billing_cycle' => BillingCycle::from($cycle->billing_cycle),
+            'total_sessions' => $cycle->total_sessions,
+            'sessions_remaining' => $cycle->total_sessions,
+            'sessions_used' => 0,
+            'total_sessions_completed' => 0,
+            'total_sessions_missed' => 0,
+            'progress_percentage' => 0,
+            'current_cycle_id' => $cycle->id,
+            'cycle_count' => $cycle->cycle_number,
+            'auto_renew' => BillingCycle::from($cycle->billing_cycle)->supportsAutoRenewal(),
+            'total_price' => $pricing['price_fields']['total_price'] ?? $subscription->total_price,
+            'discount_amount' => $pricing['price_fields']['discount_amount'] ?? $subscription->discount_amount,
+            'final_price' => $pricing['price_fields']['final_price'] ?? $subscription->final_price,
+            'is_recurring_discount' => $options['is_recurring_discount'] ?? $subscription->is_recurring_discount,
+            'package_name_ar' => $pricing['price_fields']['package_name_ar'] ?? $subscription->package_name_ar,
+            'package_name_en' => $pricing['price_fields']['package_name_en'] ?? $subscription->package_name_en,
+            'package_price_monthly' => $pricing['price_fields']['package_price_monthly'] ?? $subscription->package_price_monthly,
+            'package_price_quarterly' => $pricing['price_fields']['package_price_quarterly'] ?? $subscription->package_price_quarterly,
+            'package_price_yearly' => $pricing['price_fields']['package_price_yearly'] ?? $subscription->package_price_yearly,
+        ];
+
+        // Clear subscription-level grace period metadata (cycle is freshly paid)
+        $metadata = $subscription->metadata ?? [];
+        unset(
+            $metadata['grace_period_ends_at'],
+            $metadata['grace_period_expires_at'],
+            $metadata['grace_period_started_at'],
+            $metadata['sessions_exhausted'],
+            $metadata['sessions_exhausted_at']
+        );
+        $updateData['metadata'] = $metadata ?: null;
+
+        // Type-specific field preservation
+        if ($subscription instanceof QuranSubscription) {
+            if (isset($options['package_id'])) {
+                $updateData['package_id'] = $options['package_id'];
+            }
+            if (isset($options['teacher_id'])) {
+                $updateData['quran_teacher_id'] = $options['teacher_id'];
+            }
+        } elseif ($subscription instanceof AcademicSubscription) {
+            if (isset($options['package_id'])) {
+                $updateData['academic_package_id'] = $options['package_id'];
+            }
+            if (isset($options['teacher_id'])) {
+                $updateData['teacher_id'] = $options['teacher_id'];
+            }
+            $updateData['start_date'] = $cycle->starts_at;
+            $updateData['end_date'] = $cycle->ends_at;
+        }
+
+        $subscription->update($updateData);
+
+        // Restore any suspended future sessions
+        if (method_exists($subscription, 'restoreSuspendedSessions')) {
+            $subscription->restoreSuspendedSessions();
+        }
+    }
+
+    /**
+     * Create a COMPLETED payment row for the renewal.
+     *
+     * Renew asserts that the cycle is paid — either the student paid in-platform
+     * (webhook path) or the admin confirmed an external payment. Uses the
+     * `Payment::createPayment()` factory so purchase-source metadata, payment
+     * code generation, and fee/tax recalculation stay consistent with other
+     * in-platform payments.
+     */
+    private function createRenewalPayment(
+        BaseSubscription $subscription,
+        SubscriptionCycle $cycle,
+        array $pricing,
+    ): Payment {
+        $amount = (float) ($pricing['price_fields']['final_price']
+            ?? $cycle->final_price
+            ?? $cycle->total_price
+            ?? 0);
+
+        return Payment::createPayment([
+            'academy_id' => $subscription->academy_id,
+            'user_id' => $subscription->student_id,
+            'payable_type' => $subscription::class,
+            'payable_id' => $subscription->id,
+            'subscription_cycle_id' => $cycle->id,
+            'payment_method' => 'cash',
+            'payment_gateway' => 'manual',
+            'amount' => $amount,
+            'currency' => $subscription->currency ?? 'SAR',
+            'status' => PaymentStatus::COMPLETED,
+            'payment_status' => 'paid',
+            'payment_date' => now(),
+            'paid_at' => now(),
+            'confirmed_at' => now(),
+            'notes' => __('subscriptions.renewal_payment_recorded_by_admin'),
+        ]);
+    }
+
+    // ========================================================================
+    // Pricing resolution (kept mostly intact from the previous implementation)
+    // ========================================================================
+
+    private function resolvePricing(
+        BaseSubscription $subscription,
+        array $options,
+        BillingCycle $billingCycle,
+    ): array {
+        $packageId = $options['package_id'] ?? $this->getPackageId($subscription);
+        $useCurrentPricing = $options['use_current_pricing'] ?? ($packageId !== $this->getPackageId($subscription));
 
         if ($useCurrentPricing && $packageId) {
-            $package = $this->findPackage($old, $packageId);
+            $package = $this->findPackage($subscription, $packageId);
             if ($package) {
                 $finalPrice = $options['amount'] ?? PricingResolver::resolvePriceFromPackage($package, $billingCycle);
+                $discount = $this->resolveDiscount($subscription, $options);
 
                 return [
                     'sessions_per_month' => $package->sessions_per_month,
                     'session_duration_minutes' => $package->session_duration_minutes,
+                    'package_id' => $package->id,
+                    'package_snapshot' => [
+                        'id' => $package->id,
+                        'name' => $package->name,
+                        'sessions_per_month' => $package->sessions_per_month,
+                        'session_duration_minutes' => $package->session_duration_minutes,
+                        'currency' => $package->currency ?? 'SAR',
+                    ],
                     'price_fields' => [
                         'package_name_ar' => $package->name,
                         'package_name_en' => $package->name,
@@ -274,26 +487,27 @@ class SubscriptionRenewalService
                         'package_price_quarterly' => (float) ($package->quarterly_price ?? $package->monthly_price * 3),
                         'package_price_yearly' => (float) ($package->yearly_price ?? $package->monthly_price * 12),
                         'total_price' => $finalPrice,
-                        'discount_amount' => $discount = $this->resolveDiscount($old, $options),
+                        'discount_amount' => $discount,
                         'final_price' => max(0, $finalPrice - $discount),
                     ],
                 ];
             }
         }
 
-        // Use old subscription's snapshotted pricing
-        $finalPrice = $options['amount'] ?? $old->getPriceForBillingCycle();
-        $discount = $this->resolveDiscount($old, $options);
+        $finalPrice = $options['amount'] ?? $subscription->getPriceForBillingCycle();
+        $discount = $this->resolveDiscount($subscription, $options);
 
         return [
-            'sessions_per_month' => $old->sessions_per_month,
-            'session_duration_minutes' => $old->session_duration_minutes,
+            'sessions_per_month' => $subscription->sessions_per_month,
+            'session_duration_minutes' => $subscription->session_duration_minutes,
+            'package_id' => $this->getPackageId($subscription),
+            'package_snapshot' => $this->packageSnapshotFromSubscription($subscription),
             'price_fields' => [
-                'package_name_ar' => $old->package_name_ar,
-                'package_name_en' => $old->package_name_en,
-                'package_price_monthly' => $old->package_price_monthly,
-                'package_price_quarterly' => $old->package_price_quarterly,
-                'package_price_yearly' => $old->package_price_yearly,
+                'package_name_ar' => $subscription->package_name_ar,
+                'package_name_en' => $subscription->package_name_en,
+                'package_price_monthly' => $subscription->package_price_monthly,
+                'package_price_quarterly' => $subscription->package_price_quarterly,
+                'package_price_yearly' => $subscription->package_price_yearly,
                 'total_price' => $finalPrice,
                 'discount_amount' => $discount,
                 'final_price' => max(0, $finalPrice - $discount),
@@ -301,62 +515,30 @@ class SubscriptionRenewalService
         ];
     }
 
-    private function resolveDiscount(BaseSubscription $old, array $options): float
+    private function resolveDiscount(BaseSubscription $subscription, array $options): float
     {
         if (array_key_exists('discount_amount', $options)) {
             return (float) $options['discount_amount'];
         }
 
-        return $old->is_recurring_discount ? (float) $old->discount_amount : 0;
+        return $subscription->is_recurring_discount ? (float) $subscription->discount_amount : 0;
     }
 
-    /**
-     * Add type-specific fields (Quran or Academic).
-     */
-    private function addTypeSpecificFields(BaseSubscription $old, array $data, array $options): array
+    private function packageSnapshotFromSubscription(BaseSubscription $subscription): ?array
     {
-        if ($old instanceof QuranSubscription) {
-            $data['quran_teacher_id'] = $options['teacher_id'] ?? $old->quran_teacher_id;
-            $data['package_id'] = $options['package_id'] ?? $old->package_id;
-            $data['subscription_type'] = $old->subscription_type;
-            $data['memorization_level'] = $old->memorization_level;
-            $data['education_unit_type'] = $old->education_unit_type;
-            $data['education_unit_id'] = $old->education_unit_id;
-        } elseif ($old instanceof AcademicSubscription) {
-            $data['teacher_id'] = $options['teacher_id'] ?? $old->teacher_id;
-            $data['academic_package_id'] = $options['package_id'] ?? $old->academic_package_id;
-            $data['subscription_type'] = $old->subscription_type ?? 'private';
-            $data['subject_id'] = $old->subject_id;
-            $data['grade_level_id'] = $old->grade_level_id;
-            $data['subject_name'] = $old->subject_name;
-            $data['grade_level_name'] = $old->grade_level_name;
-            $data['sessions_per_week'] = $old->sessions_per_week;
-            $data['timezone'] = $old->timezone;
-        }
-
-        return $data;
+        return [
+            'package_id' => $this->getPackageId($subscription),
+            'name_ar' => $subscription->package_name_ar,
+            'name_en' => $subscription->package_name_en,
+            'sessions_per_month' => $subscription->sessions_per_month ?? null,
+            'session_duration_minutes' => $subscription->session_duration_minutes,
+            'monthly_price' => $subscription->package_price_monthly,
+            'quarterly_price' => $subscription->package_price_quarterly,
+            'yearly_price' => $subscription->package_price_yearly,
+            'currency' => $subscription->currency ?? 'SAR',
+        ];
     }
 
-    /**
-     * Copy learning context from old subscription to new one (for resubscribe).
-     */
-    private function copyLearningContext(BaseSubscription $old, array $data): array
-    {
-        if ($old instanceof QuranSubscription) {
-            // memorization_level is already set by addTypeSpecificFields()
-            $data['learning_goals'] = $old->learning_goals;
-            $data['student_notes'] = $old->student_notes;
-        } elseif ($old instanceof AcademicSubscription) {
-            $data['learning_goals'] = $old->learning_goals;
-            $data['student_notes'] = $old->student_notes;
-        }
-
-        return $data;
-    }
-
-    /**
-     * Validate teacher availability for resubscription.
-     */
     private function validateTeacherAvailability(BaseSubscription $old, array $options): void
     {
         $teacherId = $options['teacher_id'] ?? null;
@@ -384,9 +566,6 @@ class SubscriptionRenewalService
         }
     }
 
-    /**
-     * Get the package ID from a subscription (type-aware).
-     */
     private function getPackageId(BaseSubscription $subscription): ?int
     {
         if ($subscription instanceof QuranSubscription) {
@@ -399,9 +578,6 @@ class SubscriptionRenewalService
         return null;
     }
 
-    /**
-     * Find a package by subscription type.
-     */
     private function findPackage(BaseSubscription $subscription, int $packageId): QuranPackage|AcademicPackage|null
     {
         if ($subscription instanceof QuranSubscription) {

@@ -54,14 +54,16 @@ class SessionSettingsService
     }
 
     /**
-     * Get grace period minutes from academy settings
-     * This is how long we wait before marking student as ABSENT
+     * @deprecated Status is now percentage-based — use getStudentFullAttendancePercent() /
+     * getStudentPartialAttendancePercent() / getTeacherFullAttendancePercent() /
+     * getTeacherPartialAttendancePercent() instead. Returns 0 so lingering callers
+     * can't widen any window.
      */
     public function getGracePeriodMinutes(BaseSession $session): int
     {
-        $settings = $this->getAcademySettings($session);
+        unset($session);
 
-        return $settings?->default_late_tolerance_minutes ?? 15;
+        return 0;
     }
 
     /**
@@ -87,33 +89,55 @@ class SessionSettingsService
     }
 
     /**
-     * Get student full attendance threshold percentage
+     * Get student full attendance threshold percentage (>= this = ATTENDED).
+     *
+     * The DB column kept its legacy name (`default_attendance_threshold_percentage`)
+     * so the migration stays additive; the accessor uses the new semantic name.
      */
-    public function getStudentAttendanceThreshold(BaseSession $session): float
+    public function getStudentFullAttendancePercent(BaseSession $session): float
     {
         $settings = $this->getAcademySettings($session);
 
-        return (float) ($settings?->default_attendance_threshold_percentage ?? config('business.attendance.threshold_percent', 80));
+        return (float) ($settings?->default_attendance_threshold_percentage
+            ?? config('business.attendance.student_full_attendance_percent', 80));
     }
 
     /**
-     * Get student minimum presence percentage (below this = ABSENT)
+     * Get student partial attendance threshold percentage (>= this = PARTIALLY_ATTENDED).
+     *
+     * Backed by academy_settings.student_minimum_presence_percent (legacy column name).
      */
-    public function getStudentMinimumPresencePercent(BaseSession $session): float
+    public function getStudentPartialAttendancePercent(BaseSession $session): float
     {
         $settings = $this->getAcademySettings($session);
 
-        return (float) ($settings?->student_minimum_presence_percent ?? config('business.attendance.minimum_presence_percent', 50));
+        return (float) ($settings?->student_minimum_presence_percent
+            ?? config('business.attendance.student_partial_attendance_percent', 50));
     }
 
     /**
-     * Get student left threshold percentage (below this = ABSENT, above = LEFT)
+     * Resolve the [full%, partial%] threshold pair for a given user_type.
+     * Teacher rows use the teacher thresholds; anything else uses the student
+     * thresholds. Returned as a tuple to avoid two call sites per caller.
+     *
+     * @return array{0: float, 1: float}
      */
-    public function getStudentLeftThresholdPercent(BaseSession $session): float
+    public function getAttendanceThresholdsForUserType(BaseSession $session, ?string $userType): array
     {
-        $settings = $this->getAcademySettings($session);
+        $isTeacher = $userType !== null
+            && in_array($userType, \App\Models\MeetingAttendance::TEACHER_USER_TYPES, true);
 
-        return (float) ($settings?->student_left_threshold_percent ?? config('business.attendance.left_threshold_percent', 30));
+        if ($isTeacher) {
+            return [
+                $this->getTeacherFullAttendancePercent($session),
+                $this->getTeacherPartialAttendancePercent($session),
+            ];
+        }
+
+        return [
+            $this->getStudentFullAttendancePercent($session),
+            $this->getStudentPartialAttendancePercent($session),
+        ];
     }
 
     /**

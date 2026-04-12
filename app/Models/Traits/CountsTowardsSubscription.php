@@ -125,6 +125,28 @@ trait CountsTowardsSubscription
             $alreadyCounted = $session->subscription_counted ?? false;
 
             if (! $alreadyCounted) {
+                // Respect the matrix decision: a student row with
+                // counts_for_subscription=false (teacher absent + student
+                // present) must not decrement. Admin overrides flow through
+                // the same flag and are respected automatically.
+                if (method_exists($session, 'meetingAttendances')) {
+                    $studentAttendance = $session->meetingAttendances()
+                        ->where('user_type', 'student')
+                        ->first();
+
+                    if ($studentAttendance && $studentAttendance->counts_for_subscription === false) {
+                        Log::info("Session {$session->session_code} ({$session->id}) matrix excludes subscription count — skipping", [
+                            'session_id' => $session->id,
+                            'student_attendance_id' => $studentAttendance->id,
+                        ]);
+
+                        // Mark counted so reconcile doesn't keep retrying.
+                        $session->update(['subscription_counted' => true]);
+
+                        return;
+                    }
+                }
+
                 try {
                     // Deduct one session from subscription (useSession() acquires its own lock)
                     $subscription->useSession();
@@ -277,6 +299,16 @@ trait CountsTowardsSubscription
 
                 if ($attendance && $attendance->subscription_counted_at) {
                     continue; // Already counted by another process
+                }
+
+                // Matrix says don't decrement (teacher absent + student present).
+                // Stamp the idempotency timestamp anyway so reconcile stops retrying.
+                if ($attendance && $attendance->counts_for_subscription === false) {
+                    $attendance->update(['subscription_counted_at' => now()]);
+
+                    Log::info("Group session {$this->id}: matrix excludes student {$enrollment->student_id} from subscription count");
+
+                    continue;
                 }
 
                 $subscription->useSession();

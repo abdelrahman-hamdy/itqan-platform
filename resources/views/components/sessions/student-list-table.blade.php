@@ -59,7 +59,7 @@ use App\Enums\AttendanceStatus;
                                        ($attendance->status === AttendanceStatus::LATE->value ? 'bg-yellow-100 text-yellow-800' :
                                        ($attendance->status === AttendanceStatus::LEFT->value ? 'bg-orange-100 text-orange-800' :
                                        'bg-red-100 text-red-800')) }}">
-                                    {{ match($attendance->status) { AttendanceStatus::ATTENDED->value => __('components.attendance.attended'), AttendanceStatus::LATE->value => __('components.attendance.late'), AttendanceStatus::LEFT->value => __('components.attendance.left_early'), default => __('components.attendance.absent') } }}
+                                    {{ AttendanceStatus::tryFrom($attendance->status)?->label() ?? AttendanceStatus::ABSENT->label() }}
                                 </span>
                             @else
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">

@@ -140,7 +140,16 @@ Schedule::command('subscriptions:expire-active --force')
     ->hourly()
     ->withoutOverlapping()
     ->runInBackground()
-    ->description('Expire active subscriptions past their end date');
+    ->description('Pause active subscriptions past their end date (respects queued cycles + grace)');
+
+// Advance queued subscription cycles into active state when the current cycle ends
+// Runs hourly so the student never sees a gap between cycles
+Schedule::command('subscriptions:advance-cycles')
+    ->name('advance-subscription-cycles')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Promote queued subscription cycles to active when the current cycle ends');
 
 // Send expiry reminders for subscriptions expiring in 7, 3, or 1 days
 // Runs daily at 08:00 AM Riyadh time

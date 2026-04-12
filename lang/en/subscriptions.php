@@ -142,6 +142,7 @@ return [
         'certificate_already_issued' => 'Certificate has already been issued.',
         'certificate_not_eligible' => 'Subscription is not eligible for a certificate.',
         'invalid_package' => 'The selected package is not available.',
+        'queued_cycle_exists' => 'A queued renewal cycle already exists for this subscription. Please wait until the current cycle ends.',
         'cannot_cancel_paid' => 'Cannot cancel a paid subscription. It will expire automatically at the end date.',
         'cancel_reason_student' => 'Cancelled by student',
         'cannot_delete_package_with_subscriptions' => 'Cannot delete package with linked subscriptions. Deactivate it instead.',
@@ -193,6 +194,16 @@ return [
     'additional_days' => 'Additional days',
     'extend_grace_success' => 'Grace period extended',
     'extend_grace_success_body' => 'Grace period of :days days granted until :date',
+
+    // Cancel extension action (remove an active grace period)
+    'cancel_extension_label' => 'Cancel Grace Period',
+    'cancel_extension_modal_heading' => 'Cancel Active Grace Period',
+    'cancel_extension_modal_description' => 'The grace period will be removed from this subscription. If the original subscription window has ended, the subscription will be paused.',
+    'cancel_extension_success' => 'Grace period cancelled',
+
+    // Cycle-based renewal copy
+    'renewal_payment_recorded_by_admin' => 'Renewal payment recorded by admin (new cycle)',
+    'renew_always_activates_note' => 'The new cycle will activate immediately. To grant the student more time to pay, use the Extend Grace Period action instead.',
 
     // Cancel action
     'cancel_label' => 'Cancel Subscription',

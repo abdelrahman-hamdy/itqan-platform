@@ -48,14 +48,14 @@ class BackfillTeacherAttendance extends Command
                 $teacherAtt = MeetingAttendance::where('session_id', $session->id)
                     ->when($type === 'quran', fn ($q) => $q->whereIn('session_type', ['individual', 'group', 'trial']))
                     ->when($type !== 'quran', fn ($q) => $q->where('session_type', $type))
-                    ->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])
+                    ->whereIn('user_type', MeetingAttendance::TEACHER_USER_TYPES)
                     ->where('is_calculated', true)
                     ->first();
 
                 // Also try without session_type filter (legacy data may not have correct type)
                 if (! $teacherAtt) {
                     $teacherAtt = MeetingAttendance::where('session_id', $session->id)
-                        ->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])
+                        ->whereIn('user_type', MeetingAttendance::TEACHER_USER_TYPES)
                         ->first();
                 }
 

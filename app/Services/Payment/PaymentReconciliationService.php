@@ -38,6 +38,12 @@ class PaymentReconciliationService
             // Lock the subscription to prevent race conditions
             $subscription = $subscription::lockForUpdate()->find($subscription->id);
 
+            // Ensure a cycle row exists before settling — covers fresh PENDING
+            // subscriptions that were never activated via the webhook path
+            // (activateFromPayment). Without this, the admin "Confirm Payment"
+            // action would leave current_cycle_id = null.
+            $subscription->ensureCurrentCycle();
+
             // Step 1: Find or create the Payment record
             $payment = $this->resolvePayment($subscription, $paymentId);
 
@@ -82,6 +88,9 @@ class PaymentReconciliationService
             }
 
             $subscription->update($updateData);
+
+            // Settle the current cycle (mark PAID, clear grace, link payment)
+            $subscription->settleCurrentCycle($payment);
 
             // Step 4: Audit log
             PaymentAuditLog::logStatusChange(

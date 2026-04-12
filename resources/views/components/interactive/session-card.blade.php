@@ -90,13 +90,7 @@
                            ($attendanceStatusValue === AttendanceStatus::LEFT->value ? 'bg-orange-100 text-orange-700 border-orange-300' :
                            'bg-red-100 text-red-700 border-red-300')) }}">
                         <i class="ri-user-follow-line ms-1 rtl:ms-1 ltr:me-1"></i>
-                        {{ match($attendanceStatusValue) {
-                            AttendanceStatus::ATTENDED->value => __('components.attendance.attended'),
-                            AttendanceStatus::LATE->value => __('components.attendance.late'),
-                            AttendanceStatus::LEFT->value => __('components.attendance.left_early'),
-                            AttendanceStatus::ABSENT->value => __('components.attendance.absent'),
-                            default => $attendanceStatusValue
-                        } }}
+                        {{ AttendanceStatus::tryFrom($attendanceStatusValue)?->label() ?? $attendanceStatusValue }}
                     </span>
                 @endif
 

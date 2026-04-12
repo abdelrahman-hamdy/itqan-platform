@@ -1,28 +1,29 @@
 <?php
 
 return [
-    // Attendance rules section
     'attendance_rules' => 'قواعد الحضور والغياب',
-    'attendance_rules_description' => 'إعدادات حساب حضور الطلاب والمعلمين للجلسات',
+    'attendance_rules_description' => 'يتم تحديد حالة الحضور بناءً على نسبة المدة التي حضرها الطالب أو المعلم من مدة الجلسة المجدولة',
 
-    // Student attendance settings
+    // Student attendance thresholds
     'student_attendance' => 'حضور الطلاب',
-    'grace_period_minutes' => 'فترة السماح للتأخر',
-    'grace_period_help' => 'المدة بالدقائق قبل اعتبار الطالب متأخراً',
+    'student_full_attendance' => 'نسبة الحضور الكامل للطالب',
+    'student_full_help' => 'إذا حضر الطالب هذه النسبة من مدة الجلسة أو أكثر، يُعتبر حاضراً بالكامل',
+    'student_partial_attendance' => 'نسبة الحضور الجزئي للطالب',
+    'student_partial_help' => 'إذا حضر الطالب هذه النسبة أو أكثر (وأقل من نسبة الحضور الكامل) يُعتبر حاضراً جزئياً، وإذا حضر أقل منها يُعتبر غائباً',
+
+    // Kept for backward compatibility with any views still referencing it (deprecated)
     'full_attendance_threshold' => 'نسبة الحضور الكامل',
     'full_attendance_help' => 'النسبة المئوية المطلوبة لاعتبار الطالب حاضراً بالكامل',
-    'minimum_presence_percent' => 'الحد الأدنى للحضور',
-    'minimum_presence_help' => 'أقل نسبة حضور قبل اعتبار الطالب غادر مبكراً',
-    'left_threshold_percent' => 'حد المغادرة المبكرة',
-    'left_threshold_help' => 'أقل نسبة حضور قبل اعتبار الطالب غائباً',
-    'minutes' => 'دقيقة',
 
-    // Teacher attendance settings
+    // Teacher attendance thresholds
     'teacher_attendance' => 'حضور المعلمين',
     'teacher_full_attendance' => 'نسبة الحضور الكامل للمعلم',
-    'teacher_full_attendance_help' => 'النسبة المئوية المطلوبة لاعتبار المعلم حاضراً بالكامل',
+    'teacher_full_attendance_help' => 'إذا حضر المعلم هذه النسبة أو أكثر من مدة الجلسة، يُعتبر حاضراً ويتم احتساب أرباحه',
     'teacher_partial_attendance' => 'نسبة الحضور الجزئي للمعلم',
-    'teacher_partial_attendance_help' => 'النسبة المئوية المطلوبة لاعتبار المعلم حاضراً جزئياً',
+    'teacher_partial_attendance_help' => 'إذا حضر المعلم هذه النسبة أو أكثر يُعتبر حاضراً جزئياً (يُحتسب الاشتراك للطالب لكن لا تُحتسب أرباح للمعلم)، وإذا حضر أقل منها يُعتبر غائباً',
+
+    // Cross-field validation
+    'attendance_partial_lte_full' => 'يجب أن تكون نسبة الحضور الجزئي أقل من أو تساوي نسبة الحضور الكامل',
 
     // Counting management
     'counting_management' => 'إدارة احتساب الجلسة',

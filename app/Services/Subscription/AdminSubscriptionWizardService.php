@@ -50,6 +50,10 @@ class AdminSubscriptionWizardService
 
             // 2. Create payment record (skip if pending/inside platform)
             if (! ($data['create_as_pending'] ?? false)) {
+                // Admin-created active subscription: bootstrap first cycle so the
+                // cycles relation manager and API payload are populated immediately.
+                $subscription->ensureCurrentCycle();
+
                 $payment = $this->createPaymentRecord($subscription, $data);
                 PaymentAuditLog::logCreation($payment, auth()->id());
             }

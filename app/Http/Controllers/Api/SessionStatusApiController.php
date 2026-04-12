@@ -640,7 +640,7 @@ class SessionStatusApiController extends Controller
 
             if (! $hasEverJoined) {
                 $attendanceStatus = 'not_attended';
-            } elseif ($duration > 0 && in_array($attendanceStatus, ['left', 'partial'])) {
+            } elseif ($duration > 0 && in_array($attendanceStatus, ['partially_attended', 'left', 'partial'])) {
                 $attendanceStatus = 'partial_attendance';
             }
 
@@ -649,6 +649,7 @@ class SessionStatusApiController extends Controller
                 'attendance_status' => $attendanceStatus,
                 'attendance_percentage' => number_format($sessionReport->attendance_percentage ?? 0, 2),
                 'duration_minutes' => $duration,
+                'display_duration_minutes' => $meetingAttendance?->display_duration_minutes ?? $duration,
                 'join_count' => $meetingAttendance?->join_count ?? 0,
                 'is_late' => $sessionReport->is_late ?? false,
                 'late_minutes' => $sessionReport->late_minutes ?? 0,
@@ -663,6 +664,7 @@ class SessionStatusApiController extends Controller
             'attendance_status' => $hasEverJoined ? 'not_enough_time' : 'not_attended',
             'attendance_percentage' => '0.00',
             'duration_minutes' => $meetingAttendance?->total_duration_minutes ?? 0,
+            'display_duration_minutes' => $meetingAttendance?->display_duration_minutes ?? 0,
             'join_count' => $meetingAttendance?->join_count ?? 0,
             'session_state' => 'completed',
             'has_ever_joined' => $hasEverJoined,

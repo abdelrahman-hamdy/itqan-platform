@@ -3,17 +3,20 @@
 namespace App\Services;
 
 use App\Contracts\StudentReportServiceInterface;
-use App\Enums\SessionStatus;
 use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Models\User;
+use App\Services\Traits\AttendanceCalculatorTrait;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class StudentReportService implements StudentReportServiceInterface
 {
+    use AttendanceCalculatorTrait;
+
     /**
      * Generate or update student session report based on meeting attendance.
      *
@@ -61,7 +64,8 @@ class StudentReportService implements StudentReportServiceInterface
     }
 
     /**
-     * Calculate attendance data from meeting attendance
+     * Calculate attendance data from meeting attendance using the
+     * percentage-based thresholds from SessionSettingsService.
      */
     protected function calculateAttendanceData(QuranSession $session, User $student, ?MeetingAttendance $meetingAttendance): array
     {
@@ -78,36 +82,22 @@ class StudentReportService implements StudentReportServiceInterface
             ];
         }
 
-        $sessionStart = $session->scheduled_at;
-        $sessionDuration = $session->duration_minutes;
-        $maxLateMinutes = $this->getMaxLateMinutes($session);
-
-        // Calculate lateness
+        $sessionDuration = $session->duration_minutes ?? 60;
         $enterTime = $meetingAttendance->first_join_time;
         $leaveTime = $meetingAttendance->last_leave_time;
         $actualMinutes = $meetingAttendance->total_duration_minutes ?? 0;
 
-        $isLate = false;
-        $lateMinutes = 0;
+        [$fullPercent, $partialPercent] = app(SessionSettingsService::class)
+            ->getAttendanceThresholdsForUserType($session, 'student');
 
-        if ($enterTime && $sessionStart) {
-            $minutesAfterStart = $sessionStart->diffInMinutes($enterTime, false);
-            if ($minutesAfterStart > 0) {
-                $isLate = $minutesAfterStart > $maxLateMinutes;
-                $lateMinutes = $minutesAfterStart;
-            }
-        }
-
-        // Calculate attendance status
         $attendanceStatus = $this->calculateAttendanceStatus(
-            $actualMinutes,
+            $enterTime,
             $sessionDuration,
-            $isLate,
-            $lateMinutes,
-            $maxLateMinutes
+            $actualMinutes,
+            $fullPercent,
+            $partialPercent
         );
 
-        // Calculate attendance percentage
         $attendancePercentage = $sessionDuration > 0 ?
             min(100, ($actualMinutes / $sessionDuration) * 100) : 0;
 
@@ -116,73 +106,11 @@ class StudentReportService implements StudentReportServiceInterface
             'meeting_enter_time' => $enterTime,
             'meeting_leave_time' => $leaveTime,
             'actual_attendance_minutes' => $actualMinutes,
-            'is_late' => $isLate,
-            'late_minutes' => $lateMinutes,
+            'is_late' => false,
+            'late_minutes' => 0,
             'attendance_percentage' => round($attendancePercentage, 2),
             'meeting_events' => $meetingAttendance->join_leave_cycles ?? [],
         ];
-    }
-
-    /**
-     * Calculate attendance status based on various factors
-     */
-    protected function calculateAttendanceStatus(
-        int $actualMinutes,
-        int $sessionDuration,
-        bool $isLate,
-        int $lateMinutes,
-        int $maxLateMinutes
-    ): string {
-        if ($actualMinutes === 0) {
-            return AttendanceStatus::ABSENT->value;
-        }
-
-        // Guard against division by zero - treat as absent if session has no duration
-        if ($sessionDuration <= 0) {
-            return AttendanceStatus::ABSENT->value;
-        }
-
-        $attendancePercentage = ($actualMinutes / $sessionDuration) * 100;
-
-        // If too late, mark as absent
-        if ($lateMinutes > $maxLateMinutes) {
-            return AttendanceStatus::ABSENT->value;
-        }
-
-        // If attended less than 30%, mark as absent
-        if ($attendancePercentage < 30) {
-            return AttendanceStatus::ABSENT->value;
-        }
-
-        // If attended 30-50%, mark as left early (left)
-        if ($attendancePercentage < 50) {
-            return AttendanceStatus::LEFT->value;
-        }
-
-        // If late but attended well, mark as late
-        if ($isLate && $attendancePercentage >= 50) {
-            return AttendanceStatus::LATE->value;
-        }
-
-        // If attended 50%+ and not late, mark as attended
-        return AttendanceStatus::ATTENDED->value;
-    }
-
-    /**
-     * Get maximum allowed late minutes for session
-     */
-    protected function getMaxLateMinutes(QuranSession $session): int
-    {
-        // Get from circle settings if available, otherwise default
-        if ($session->session_type === 'group' && $session->circle) {
-            return $session->circle->max_late_minutes ?? 10;
-        }
-
-        if ($session->session_type === 'individual' && $session->individualCircle) {
-            return $session->individualCircle->max_late_minutes ?? 10;
-        }
-
-        return 10; // Default 10 minutes
     }
 
     /**
@@ -246,8 +174,9 @@ class StudentReportService implements StudentReportServiceInterface
         return [
             'total_students' => $reports->count(),
             'attended_count' => $reports->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
-            'late_count' => $reports->where('attendance_status', AttendanceStatus::LATE->value)->count(),
+            'partially_attended_count' => $reports->where('attendance_status', AttendanceStatus::PARTIALLY_ATTENDED->value)->count(),
             'absent_count' => $reports->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
+            'late_count' => $reports->where('attendance_status', AttendanceStatus::LATE->value)->count(),
             'left_count' => $reports->where('attendance_status', AttendanceStatus::LEFT->value)->count(),
             'auto_calculated_count' => $reports->where('is_calculated', true)->count(),
             'manually_evaluated_count' => $reports->where('manually_evaluated', true)->count(),
@@ -267,11 +196,7 @@ class StudentReportService implements StudentReportServiceInterface
             ->whereIn('session_id', $sessionIds)
             ->get();
 
-        $attendedReports = $reports->whereIn('attendance_status', [
-            AttendanceStatus::ATTENDED->value,
-            AttendanceStatus::LATE->value,
-            AttendanceStatus::LEFT->value,
-        ]);
+        $attendedReports = $reports->whereIn('attendance_status', AttendanceStatus::presentValues());
 
         return [
             'total_sessions' => $reports->count(),

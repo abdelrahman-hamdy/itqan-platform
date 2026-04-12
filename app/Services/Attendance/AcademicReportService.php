@@ -2,14 +2,14 @@
 
 namespace App\Services\Attendance;
 
-use InvalidArgumentException;
-use Illuminate\Support\Collection;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use App\Models\AcademicSubscription;
 use App\Models\User;
+use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
 /**
  * Academic Report Service
@@ -41,26 +41,6 @@ class AcademicReportService extends BaseReportSyncService
     protected function getSessionTeacher($session): ?User
     {
         return $session->academicTeacher;
-    }
-
-    /**
-     * Get the attendance threshold percentage for Academic sessions.
-     * Uses academy settings, falls back to config default.
-     */
-    protected function getAttendanceThreshold($session): float
-    {
-        return $session->academy?->settings?->default_attendance_threshold_percentage
-            ?? config('business.attendance.threshold_percent', 80);
-    }
-
-    /**
-     * Get the grace period for Academic sessions.
-     * Uses academy settings for late tolerance.
-     */
-    protected function getGracePeriod($session): int
-    {
-        return $session->academy?->settings?->default_late_tolerance_minutes
-            ?? config('business.attendance.grace_period_minutes', 15);
     }
 
     /**

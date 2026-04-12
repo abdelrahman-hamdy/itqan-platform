@@ -67,7 +67,7 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
 
         // Tab filter
         if ($activeTab === 'teachers') {
-            $baseQuery->whereIn('meeting_attendances.user_type', ['teacher', 'quran_teacher', 'academic_teacher']);
+            $baseQuery->whereIn('meeting_attendances.user_type', MeetingAttendance::TEACHER_USER_TYPES);
         } else {
             $baseQuery->where('meeting_attendances.user_type', 'student');
         }
@@ -149,7 +149,7 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
         $countingService = app(SessionCountingService::class);
         $adminId = auth()->id();
 
-        $isTeacher = in_array($attendance->user_type, ['teacher', 'quran_teacher', 'academic_teacher']);
+        $isTeacher = in_array($attendance->user_type, MeetingAttendance::TEACHER_USER_TYPES);
 
         if ($isTeacher) {
             $newValue = ! (bool) $session->counts_for_teacher;
@@ -275,15 +275,16 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
     {
         $attended = AttendanceStatus::ATTENDED->value;
         $absent = AttendanceStatus::ABSENT->value;
-        $late = AttendanceStatus::LATE->value;
+        $partialStatuses = AttendanceStatus::partialValues();
+        $partialPlaceholders = implode(',', array_fill(0, count($partialStatuses), '?'));
 
         if ($activeTab === 'teachers') {
-            $row = (clone $query)->selectRaw('
+            $row = (clone $query)->selectRaw("
                 COUNT(*) as total,
                 SUM(CASE WHEN meeting_attendances.attendance_status = ? THEN 1 ELSE 0 END) as attended,
                 SUM(CASE WHEN meeting_attendances.attendance_status = ? THEN 1 ELSE 0 END) as absent,
-                SUM(CASE WHEN meeting_attendances.attendance_status = ? THEN 1 ELSE 0 END) as late
-            ', [$attended, $absent, $late])->first();
+                SUM(CASE WHEN meeting_attendances.attendance_status IN ({$partialPlaceholders}) THEN 1 ELSE 0 END) as partial
+            ", [$attended, $absent, ...$partialStatuses])->first();
 
             // Counted stats via subquery (counts_for_teacher from session tables)
             $countedQuery = clone $query;
@@ -303,13 +304,13 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
                 });
             })->count();
         } else {
-            $row = (clone $query)->selectRaw('
+            $row = (clone $query)->selectRaw("
                 COUNT(*) as total,
                 SUM(CASE WHEN meeting_attendances.attendance_status = ? THEN 1 ELSE 0 END) as attended,
                 SUM(CASE WHEN meeting_attendances.attendance_status = ? THEN 1 ELSE 0 END) as absent,
-                SUM(CASE WHEN meeting_attendances.attendance_status = ? THEN 1 ELSE 0 END) as late,
+                SUM(CASE WHEN meeting_attendances.attendance_status IN ({$partialPlaceholders}) THEN 1 ELSE 0 END) as partial,
                 SUM(CASE WHEN meeting_attendances.counts_for_subscription = 1 THEN 1 ELSE 0 END) as counted
-            ', [$attended, $absent, $late])->first();
+            ", [$attended, $absent, ...$partialStatuses])->first();
 
             $counted = (int) ($row->counted ?? 0);
         }
@@ -320,7 +321,7 @@ class SupervisorAttendanceController extends BaseSupervisorWebController
             'total' => $total,
             'attended' => (int) ($row->attended ?? 0),
             'absent' => (int) ($row->absent ?? 0),
-            'late' => (int) ($row->late ?? 0),
+            'partial' => (int) ($row->partial ?? 0),
             'attendance_rate' => $total > 0 ? round(((int) $row->attended / $total) * 100) : 0,
             'counted' => $counted,
             'not_counted' => $total - $counted,

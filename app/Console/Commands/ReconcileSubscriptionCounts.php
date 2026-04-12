@@ -30,24 +30,25 @@ class ReconcileSubscriptionCounts extends Command
         $minutesAgo = (int) $this->option('minutes');
         $cutoff = now()->subMinutes($minutesAgo);
 
+        // Never reconcile sessions from before the cutoff — preserves the
+        // historical counting state recorded under the previous rules.
+        $matrixCutoff = config('business.attendance.matrix_cutoff_at');
+
         $reconciled = 0;
         $errors = 0;
 
-        // Process Quran sessions
-        // Skip sessions where teacher was explicitly marked absent (counts_for_teacher=false).
-        // Include sessions with counts_for_teacher = true OR NULL:
-        //   - true: teacher confirmed present → definitely count
-        //   - NULL: auto-calc may not have run yet, but sessions ended >10min ago should
-        //     have been processed. Count them to avoid permanent drift. The NULL case is
-        //     the most common cause of uncounted sessions after recovery incidents.
-        $quranSessions = QuranSession::where('status', SessionStatus::COMPLETED)
+        // No counts_for_teacher pre-filter: the per-student counts_for_subscription
+        // flag is now the source of truth, and updateSubscriptionUsage() consults
+        // it before decrementing.
+        $quranQuery = QuranSession::where('status', SessionStatus::COMPLETED)
             ->where('subscription_counted', false)
-            ->where('ended_at', '<', $cutoff)
-            ->where(function ($q) {
-                $q->where('counts_for_teacher', true)
-                  ->orWhereNull('counts_for_teacher');
-            })
-            ->get();
+            ->where('ended_at', '<', $cutoff);
+
+        if ($matrixCutoff) {
+            $quranQuery->where('scheduled_at', '>=', $matrixCutoff);
+        }
+
+        $quranSessions = $quranQuery->get();
 
         foreach ($quranSessions as $session) {
             if ($dryRun) {
@@ -74,15 +75,16 @@ class ReconcileSubscriptionCounts extends Command
             }
         }
 
-        // Process Academic sessions (same teacher-absence guard)
-        $academicSessions = AcademicSession::where('status', SessionStatus::COMPLETED)
+        // Process Academic sessions with the same guards.
+        $academicQuery = AcademicSession::where('status', SessionStatus::COMPLETED)
             ->where('subscription_counted', false)
-            ->where('ended_at', '<', $cutoff)
-            ->where(function ($q) {
-                $q->where('counts_for_teacher', true)
-                  ->orWhereNull('counts_for_teacher');
-            })
-            ->get();
+            ->where('ended_at', '<', $cutoff);
+
+        if ($matrixCutoff) {
+            $academicQuery->where('scheduled_at', '>=', $matrixCutoff);
+        }
+
+        $academicSessions = $academicQuery->get();
 
         foreach ($academicSessions as $session) {
             if ($dryRun) {

@@ -204,77 +204,106 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
     }
 
     /**
-     * Calculate teacher attendance status and auto-set counting flags.
+     * Set counts_for_teacher and per-student counts_for_subscription based on
+     * the attendance counting matrix:
      *
-     * After all student attendance is calculated, find the teacher's
-     * MeetingAttendance record, calculate their status using teacher-specific
-     * thresholds, then auto-set counts_for_teacher and counts_for_subscription.
+     *   teacher ≥ teacher_full%     → earnings YES, every student counts
+     *   teacher ≥ teacher_partial%  → earnings NO,  every student counts
+     *   teacher <  teacher_partial% → earnings NO; student present refunded,
+     *                                 student absent counts (no-show penalty)
      */
     private function calculateTeacherAttendanceAndSetFlags($session): void
     {
         try {
+            $matrixEnabled = (bool) config('business.attendance.use_matrix_counting', true);
+
             $teacherAttendance = MeetingAttendance::where('session_id', $session->id)
-                ->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])
+                ->whereIn('user_type', MeetingAttendance::TEACHER_USER_TYPES)
                 ->first();
 
             $sessionDuration = $session->duration_minutes ?? 60;
 
-            // Get teacher-specific thresholds from academy settings
+            // Teacher thresholds
             $settingsService = app(\App\Services\SessionSettingsService::class);
-            $fullPercent = $settingsService->getTeacherFullAttendancePercent($session);
-            $partialPercent = $settingsService->getTeacherPartialAttendancePercent($session);
+            $teacherFullPercent = $settingsService->getTeacherFullAttendancePercent($session);
+            $teacherPartialPercent = $settingsService->getTeacherPartialAttendancePercent($session);
+            $studentPartialPercent = $settingsService->getStudentPartialAttendancePercent($session);
 
-            // Calculate teacher attendance status
+            // Compute teacher attendance percentage and display status
+            $teacherPct = 0.0;
             $teacherStatus = AttendanceStatus::ABSENT;
-            if ($teacherAttendance && $teacherAttendance->first_join_time) {
+
+            if ($teacherAttendance && $teacherAttendance->first_join_time && $sessionDuration > 0) {
                 $totalMinutes = $teacherAttendance->total_duration_minutes ?? 0;
+                $teacherPct = ($totalMinutes / $sessionDuration) * 100;
                 $statusValue = $this->calculateTeacherAttendanceStatus(
                     $teacherAttendance->first_join_time,
                     $sessionDuration,
                     $totalMinutes,
-                    $fullPercent,
-                    $partialPercent,
+                    $teacherFullPercent,
+                    $teacherPartialPercent,
                 );
                 $teacherStatus = AttendanceStatus::from($statusValue);
             }
 
-            // Store teacher attendance on session
+            $teacherPresent = $teacherPct >= $teacherPartialPercent;
+            $teacherEarns = $teacherPct >= $teacherFullPercent;
+
             $updateData = [
                 'teacher_attendance_status' => $teacherStatus->value,
                 'teacher_attendance_calculated_at' => now(),
             ];
-
-            // Auto-set counts_for_teacher only if not already overridden by admin
+            // Respect admin overrides — only auto-set if nobody manually set it.
             if ($session->counts_for_teacher_set_by === null) {
-                $teacherCounts = $teacherStatus !== AttendanceStatus::ABSENT;
-                $updateData['counts_for_teacher'] = $teacherCounts;
-
-                // If teacher was absent, auto-exclude all students too (not their fault)
-                if (! $teacherCounts) {
-                    MeetingAttendance::where('session_id', $session->id)
-                        ->where('user_type', 'student')
-                        ->whereNull('counts_for_subscription_set_by')
-                        ->update(['counts_for_subscription' => false]);
-
-                    Log::info('CalculateSessionForAttendance: Teacher absent, auto-excluded all students', [
-                        'session_id' => $session->id,
-                    ]);
-                }
+                $updateData['counts_for_teacher'] = $teacherEarns;
             }
 
             $session->update($updateData);
 
-            Log::info('CalculateSessionForAttendance: Teacher attendance calculated', [
+            // Per-student matrix pass. `whereNull('counts_for_subscription')`
+            // is the historical-safety guard: we never overwrite a value that
+            // already exists, so pre-refactor rows and admin overrides are
+            // both preserved.
+            if ($matrixEnabled) {
+                $baseQuery = $session->meetingAttendances()
+                    ->where('user_type', 'student')
+                    ->whereNull('counts_for_subscription_set_by')
+                    ->whereNull('counts_for_subscription');
+
+                if ($teacherPresent) {
+                    // Rule 2 + 3 + row 4 + row 5: teacher present → every student counts.
+                    (clone $baseQuery)->update(['counts_for_subscription' => true]);
+                } else {
+                    // Teacher absent — split by student's own percentage.
+                    // Student absent → counts (Rule 3, no-show penalty).
+                    // Student present → does NOT count (Rule 4, student refunded).
+                    (clone $baseQuery)
+                        ->where(function ($q) use ($studentPartialPercent) {
+                            $q->whereNull('attendance_percentage')
+                                ->orWhere('attendance_percentage', '<', $studentPartialPercent);
+                        })
+                        ->update(['counts_for_subscription' => true]);
+
+                    (clone $baseQuery)
+                        ->where('attendance_percentage', '>=', $studentPartialPercent)
+                        ->update(['counts_for_subscription' => false]);
+                }
+            }
+
+            Log::info('CalculateSessionForAttendance: Teacher attendance and matrix applied', [
                 'session_id' => $session->id,
                 'teacher_status' => $teacherStatus->value,
+                'teacher_pct' => round($teacherPct, 2),
+                'teacher_present' => $teacherPresent,
+                'teacher_earns' => $teacherEarns,
                 'counts_for_teacher' => $updateData['counts_for_teacher'] ?? 'admin_override',
+                'matrix_enabled' => $matrixEnabled,
             ]);
 
-            // Count subscription usage when teacher was NOT explicitly absent.
-            // null = admin didn't override and auto-calc hadn't run yet; treat as "count by default".
-            // Only explicit false (teacher absent) skips counting.
-            // CountsTowardsSubscription::updateSubscriptionUsage() handles MeetingAttendance sync.
-            if ($session->counts_for_teacher !== false && method_exists($session, 'updateSubscriptionUsage')) {
+            // Always call updateSubscriptionUsage — it consults the per-student
+            // counts_for_subscription flag internally, so the "both absent"
+            // case (counts_for_teacher=false but student still pays) works.
+            if (method_exists($session, 'updateSubscriptionUsage')) {
                 try {
                     $session->updateSubscriptionUsage();
                 } catch (Exception $e) {
@@ -285,8 +314,7 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
                 }
             }
 
-            // Dispatch earnings calculation NOW that counts_for_teacher is set.
-            // This ensures the earnings job sees the correct attendance data.
+            // Dispatch earnings now that counts_for_teacher is set.
             dispatch(new CalculateSessionEarningsJob($session));
         } catch (Exception $e) {
             Log::error('CalculateSessionForAttendance: Failed to calculate teacher attendance', [
@@ -297,44 +325,42 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
     }
 
     /**
-     * Calculate final attendance for a single attendance record.
+     * Calculate final attendance for a single attendance record, populating
+     * status (percentage-based), total duration (capped to session window),
+     * and display duration (uncapped meeting-window time for UI).
      */
     private function calculateAttendance($session, MeetingAttendance $attendance): void
     {
         $cycles = $attendance->join_leave_cycles ?? [];
 
-        // Session timing info
         $sessionStart = $session->scheduled_at;
         $sessionEnd = $session->scheduled_end_at ?? $sessionStart->copy()->addMinutes($session->duration_minutes ?? 60);
 
-        // Reconcile any open cycles before calculating
         $cycles = $this->reconcileOpenCycles($cycles, $session, $attendance, $sessionEnd);
-        $sessionDuration = $sessionStart->diffInMinutes($sessionEnd);
+        $sessionDuration = (int) $sessionStart->diffInMinutes($sessionEnd);
 
-        // Calculate total duration from cycles, excluding preparation and buffer time
+        // total = capped to scheduled window (percentage denominator)
+        // display = uncapped meeting window (UI only, prep + session + buffer)
         $totalMinutes = $this->calculateTotalDuration($cycles, $sessionStart, $sessionEnd);
+        $displayMinutes = $this->calculateDisplayDuration($cycles, $session);
 
-        // Tolerance time (grace period for late arrival)
-        $toleranceMinutes = config('business.attendance.grace_period_minutes', 15);
+        $settingsService = app(\App\Services\SessionSettingsService::class);
+        [$fullPercent, $partialPercent] = $settingsService
+            ->getAttendanceThresholdsForUserType($session, $attendance->user_type);
 
-        // Determine first join time
-        $firstJoinTime = $attendance->first_join_time;
-
-        // Calculate attendance percentage (capped at session start time)
         $attendancePercentage = $sessionDuration > 0 ? min(100, ($totalMinutes / $sessionDuration) * 100) : 0;
 
-        // Determine attendance status using centralized trait logic
         $status = $this->determineAttendanceStatusFromTrait(
-            $firstJoinTime,
-            $sessionStart,
+            $attendance->first_join_time,
             $sessionDuration,
             $totalMinutes,
-            $toleranceMinutes
+            $fullPercent,
+            $partialPercent,
         );
 
-        // Update attendance record
         $attendance->update([
             'total_duration_minutes' => $totalMinutes,
+            'display_duration_minutes' => $displayMinutes,
             'session_duration_minutes' => $sessionDuration,
             'attendance_status' => $status->value,
             'attendance_percentage' => round($attendancePercentage, 2),
@@ -343,7 +369,7 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
         ]);
 
         // Broadcast attendance update for instant UI refresh
-        $this->broadcastAttendanceUpdated($session, $attendance, $status, $attendancePercentage, $totalMinutes, $sessionDuration);
+        $this->broadcastAttendanceUpdated($session, $attendance, $status, $attendancePercentage, $totalMinutes, $sessionDuration, $displayMinutes);
 
         // Sync to session report
         $this->syncToReport($session, $attendance);
@@ -351,10 +377,33 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
         Log::info('CalculateSessionForAttendance: Attendance calculated', [
             'session_id' => $session->id,
             'user_id' => $attendance->user_id,
+            'user_type' => $attendance->user_type,
             'status' => $status->value,
             'duration' => $totalMinutes,
+            'display_duration' => $displayMinutes,
             'percentage' => round($attendancePercentage, 2),
+            'full_percent' => $fullPercent,
+            'partial_percent' => $partialPercent,
         ]);
+    }
+
+    /**
+     * Calculate display duration (uncapped meeting-window time) from cycles.
+     * Delegates to AttendanceCalculatorTrait::sumCycleMinutesInWindow().
+     */
+    private function calculateDisplayDuration(array $cycles, $session): int
+    {
+        if (! $session || ! $session->scheduled_at) {
+            return 0;
+        }
+
+        $settingsService = app(\App\Services\SessionSettingsService::class);
+        $windowStart = $session->scheduled_at->copy()
+            ->subMinutes($settingsService->getPreparationMinutes($session));
+        $windowEnd = $session->scheduled_at->copy()
+            ->addMinutes(($session->duration_minutes ?? 60) + $settingsService->getBufferMinutes($session));
+
+        return $this->sumCycleMinutesInWindow($cycles, $windowStart, $windowEnd);
     }
 
     /**
@@ -366,7 +415,8 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
         AttendanceStatus $status,
         float $attendancePercentage,
         int $totalMinutes,
-        int $sessionDuration
+        int $sessionDuration,
+        int $displayMinutes = 0
     ): void {
         try {
             event(new AttendanceUpdated(
@@ -376,6 +426,7 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
                     'attendance_status' => $status->value,
                     'attendance_percentage' => round($attendancePercentage, 2),
                     'total_duration_minutes' => $totalMinutes,
+                    'display_duration_minutes' => $displayMinutes,
                     'session_duration_minutes' => $sessionDuration,
                     'first_join_time' => $attendance->first_join_time?->toISOString(),
                     'last_leave_time' => $attendance->last_leave_time?->toISOString(),
@@ -534,21 +585,21 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
     }
 
     /**
-     * Determine attendance status using centralized trait logic.
+     * Determine attendance status using centralized trait logic (percentage-based).
      */
     private function determineAttendanceStatusFromTrait(
         ?Carbon $firstJoinTime,
-        Carbon $sessionStartTime,
         int $sessionDurationMinutes,
         int $totalAttendanceMinutes,
-        int $toleranceMinutes
+        float $fullPercent,
+        float $partialPercent,
     ): AttendanceStatus {
         return $this->calculateAttendanceStatusEnum(
             $firstJoinTime,
-            $sessionStartTime,
             $sessionDurationMinutes,
             $totalAttendanceMinutes,
-            $toleranceMinutes
+            $fullPercent,
+            $partialPercent,
         );
     }
 
@@ -559,7 +610,7 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
     {
         try {
             // Skip teacher participants
-            if (in_array($attendance->user_type, ['teacher', 'quran_teacher', 'academic_teacher'])) {
+            if (in_array($attendance->user_type, MeetingAttendance::TEACHER_USER_TYPES)) {
                 return;
             }
 
@@ -595,10 +646,8 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
                 'actual_attendance_minutes' => $attendance->total_duration_minutes,
                 'attendance_status' => $attendance->attendance_status,
                 'attendance_percentage' => $attendance->attendance_percentage,
-                'is_late' => $attendance->first_join_time && $attendance->first_join_time->gt($session->scheduled_at->copy()->addMinutes(config('business.attendance.late_threshold_minutes', 15))),
-                'late_minutes' => $attendance->first_join_time && $attendance->first_join_time->gt($session->scheduled_at)
-                    ? (int) $session->scheduled_at->diffInMinutes($attendance->first_join_time)
-                    : 0,
+                'is_late' => false,
+                'late_minutes' => 0,
                 'is_calculated' => true,
                 'evaluated_at' => now(),
             ]);

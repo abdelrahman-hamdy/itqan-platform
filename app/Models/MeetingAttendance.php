@@ -45,6 +45,13 @@ class MeetingAttendance extends Model
     use HasFactory;
 
     /**
+     * Legal user_type values for teacher attendance rows. The bare 'teacher'
+     * value is what new code writes; 'quran_teacher' / 'academic_teacher' are
+     * legacy values still present on some historical rows.
+     */
+    public const TEACHER_USER_TYPES = ['teacher', 'quran_teacher', 'academic_teacher'];
+
+    /**
      * Get post-session grace period from config
      */
     public static function getPostSessionGraceMinutes(): int
@@ -53,11 +60,13 @@ class MeetingAttendance extends Model
     }
 
     /**
-     * Get default late tolerance from config
+     * Uncapped meeting-window duration for UI display. Falls back to the
+     * capped `total_duration_minutes` for historical rows where
+     * `display_duration_minutes` wasn't populated.
      */
-    public static function getDefaultLateToleranceMinutes(): int
+    public function getEffectiveDisplayMinutesAttribute(): int
     {
-        return (int) config('business.attendance.grace_period_minutes', 15);
+        return (int) ($this->display_duration_minutes ?: ($this->total_duration_minutes ?? 0));
     }
 
     protected $fillable = [
@@ -68,6 +77,7 @@ class MeetingAttendance extends Model
         'first_join_time',
         'last_leave_time',
         'total_duration_minutes',
+        'display_duration_minutes',
         'join_leave_cycles',
         'attendance_calculated_at',
         'attendance_status',
@@ -94,6 +104,7 @@ class MeetingAttendance extends Model
         'session_end_time' => 'datetime',
         'attendance_percentage' => 'decimal:2',
         'total_duration_minutes' => 'integer',
+        'display_duration_minutes' => 'integer',
         'session_duration_minutes' => 'integer',
         'join_count' => 'integer',
         'leave_count' => 'integer',
@@ -250,6 +261,9 @@ class MeetingAttendance extends Model
             'join_leave_cycles' => $cycles,
             'leave_count' => $this->leave_count + 1,
             'total_duration_minutes' => $this->calculateTotalDuration($cycles),
+            // display_duration_minutes is only populated at finalization
+            // (calculateFinalAttendance / the calc jobs) — no need to hit
+            // academy_settings on every flaky leave event.
         ]);
 
         Log::info('User left meeting', [
@@ -263,6 +277,40 @@ class MeetingAttendance extends Model
         ]);
 
         return true;
+    }
+
+    /**
+     * Calculate display duration — time inside the full meeting window
+     * (prep + session + buffer). Status calculation never uses this number.
+     */
+    private function calculateDisplayDuration(array $cycles): int
+    {
+        $session = $this->session;
+        if (! $session || ! $session->scheduled_at) {
+            return 0;
+        }
+
+        [$windowStart, $windowEnd] = $this->resolveMeetingWindow($session);
+
+        return $this->sumCycleMinutesInWindow($cycles, $windowStart, $windowEnd);
+    }
+
+    /**
+     * Resolve the full meeting window [prep start, buffer end] for a session.
+     *
+     * @return array{0: \Carbon\Carbon, 1: \Carbon\Carbon}
+     */
+    private function resolveMeetingWindow($session): array
+    {
+        $settingsService = app(\App\Services\SessionSettingsService::class);
+        $prepMinutes = $settingsService->getPreparationMinutes($session);
+        $bufferMinutes = $settingsService->getBufferMinutes($session);
+        $durationMinutes = $session->duration_minutes ?? 60;
+
+        return [
+            $session->scheduled_at->copy()->subMinutes($prepMinutes),
+            $session->scheduled_at->copy()->addMinutes($durationMinutes + $bufferMinutes),
+        ];
     }
 
     /**
@@ -325,7 +373,10 @@ class MeetingAttendance extends Model
     }
 
     /**
-     * Calculate final attendance after session ends
+     * Calculate final attendance after session ends. Status is decided by
+     * `total_duration_minutes / session.duration_minutes` against the
+     * configured full/partial thresholds. Also refreshes display_duration_minutes
+     * (uncapped meeting window) for UI.
      */
     public function calculateFinalAttendance(): bool
     {
@@ -338,17 +389,17 @@ class MeetingAttendance extends Model
             return false;
         }
 
-        // Get grace period from academy settings
-        $academy = $this->getAcademyForSession($session);
-        $graceMinutes = $academy?->settings?->default_late_tolerance_minutes ?? 15;
         $sessionDuration = $session->duration_minutes ?? 60;
         $sessionStartTime = $session->scheduled_at;
 
-        // Calculate attendance status using centralized trait
+        [$fullPercent, $partialPercent] = app(\App\Services\SessionSettingsService::class)
+            ->getAttendanceThresholdsForUserType($session, $this->user_type);
+
+        // Calculate attendance status using centralized trait (percentage-based)
         $attendanceStatus = $this->determineAttendanceStatusForFinal(
-            $sessionStartTime,
             $sessionDuration,
-            $graceMinutes
+            $fullPercent,
+            $partialPercent,
         );
 
         // Calculate attendance percentage
@@ -356,12 +407,15 @@ class MeetingAttendance extends Model
             ? ($this->total_duration_minutes / $sessionDuration) * 100
             : 0;
 
+        $cycles = $this->join_leave_cycles ?? [];
+
         $this->update([
             'attendance_status' => $attendanceStatus,
             'attendance_percentage' => min(100, $attendancePercentage),
             'session_duration_minutes' => $sessionDuration,
             'session_start_time' => $sessionStartTime,
-            'session_end_time' => $sessionStartTime->copy()->addMinutes($sessionDuration),
+            'session_end_time' => $sessionStartTime?->copy()->addMinutes($sessionDuration),
+            'display_duration_minutes' => $this->calculateDisplayDuration($cycles),
             'attendance_calculated_at' => AcademyContextService::nowInAcademyTimezone(),
             'is_calculated' => true,
         ]);
@@ -369,31 +423,34 @@ class MeetingAttendance extends Model
         Log::info('Final attendance calculated', [
             'session_id' => $this->session_id,
             'user_id' => $this->user_id,
+            'user_type' => $this->user_type,
             'attendance_status' => $attendanceStatus,
             'attendance_percentage' => $attendancePercentage,
             'total_duration' => $this->total_duration_minutes,
+            'display_duration' => $this->display_duration_minutes,
             'session_duration' => $sessionDuration,
+            'full_percent' => $fullPercent,
+            'partial_percent' => $partialPercent,
         ]);
 
         return true;
     }
 
     /**
-     * Determine attendance status based on join time and duration.
+     * Determine attendance status from attended duration and percentage thresholds.
      * Uses centralized AttendanceCalculatorTrait for calculation logic.
      */
     private function determineAttendanceStatusForFinal(
-        Carbon $sessionStartTime,
         int $sessionDuration,
-        int $graceMinutes
+        float $fullPercent,
+        float $partialPercent,
     ): string {
-        // Delegate to centralized trait method
         return $this->calculateAttendanceStatus(
             $this->first_join_time,
-            $sessionStartTime,
             $sessionDuration,
-            $this->total_duration_minutes,
-            $graceMinutes
+            $this->total_duration_minutes ?? 0,
+            $fullPercent,
+            $partialPercent,
         );
     }
 
@@ -787,16 +844,6 @@ class MeetingAttendance extends Model
     public function scopeAbsent($query)
     {
         return $query->where('attendance_status', AttendanceStatus::ABSENT->value);
-    }
-
-    public function scopeLate($query)
-    {
-        return $query->where('attendance_status', AttendanceStatus::LATE->value);
-    }
-
-    public function scopePartial($query)
-    {
-        return $query->where('attendance_status', AttendanceStatus::LEFT->value);
     }
 
     public function scopeCalculated($query)

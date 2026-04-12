@@ -2,11 +2,11 @@
 
 namespace App\Services\Attendance;
 
-use InvalidArgumentException;
-use Illuminate\Support\Collection;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Models\User;
+use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
 /**
  * Quran Report Service
@@ -38,26 +38,6 @@ class QuranReportService extends BaseReportSyncService
     protected function getSessionTeacher($session): ?User
     {
         return $session->quranTeacher;
-    }
-
-    /**
-     * Get the attendance threshold percentage for Quran sessions.
-     * Uses academy settings, falls back to config default.
-     */
-    protected function getAttendanceThreshold($session): float
-    {
-        return $session->academy?->settings?->default_attendance_threshold_percentage
-            ?? config('business.attendance.threshold_percent', 80);
-    }
-
-    /**
-     * Get the grace period for Quran sessions.
-     * Uses academy settings for late tolerance.
-     */
-    protected function getGracePeriod($session): int
-    {
-        return $session->academy?->settings?->default_late_tolerance_minutes
-            ?? config('business.attendance.grace_period_minutes', 15);
     }
 
     /**

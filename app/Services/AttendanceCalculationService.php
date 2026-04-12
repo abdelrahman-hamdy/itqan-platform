@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Exception;
 use App\Contracts\MeetingCapable;
 use App\Enums\AttendanceStatus;
 use App\Models\AcademicSession;
@@ -10,6 +9,7 @@ use App\Models\InteractiveCourseSession;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\User;
+use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -324,8 +324,8 @@ class AttendanceCalculationService
         $stats = [
             'total_participants' => $attendances->count(),
             'present' => $attendances->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
+            'partial' => $attendances->whereIn('attendance_status', AttendanceStatus::partialValues())->count(),
             'late' => $attendances->where('attendance_status', AttendanceStatus::LATE->value)->count(),
-            'partial' => $attendances->where('attendance_status', AttendanceStatus::LEFT->value)->count(),
             'absent' => $attendances->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
             'average_attendance_percentage' => 0,
             'total_meeting_duration' => 0,

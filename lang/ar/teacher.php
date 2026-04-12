@@ -836,6 +836,7 @@ return [
         'session_log' => 'سجل الجلسات',
         'session' => 'جلسة',
         'status_attended' => 'حضر',
+        'status_partially_attended' => 'حضور جزئي',
         'status_late' => 'متأخر',
         'status_absent' => 'غائب',
         'status_absent_short' => 'غاب',

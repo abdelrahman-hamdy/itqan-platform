@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Attendance;
 
+use App\Enums\AttendanceStatus;
 use App\Models\MeetingAttendance;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -42,12 +43,13 @@ class AttendanceResource extends JsonResource
 
             // Duration
             'total_duration_minutes' => $this->total_duration_minutes,
+            'display_duration_minutes' => $this->display_duration_minutes,
             'session_duration_minutes' => $this->session_duration_minutes,
 
             // Status
             'attendance_status' => $this->attendance_status ? [
                 'value' => $this->attendance_status,
-                'label' => $this->getStatusLabel(),
+                'label' => AttendanceStatus::tryFrom($this->attendance_status)?->label() ?? $this->attendance_status,
             ] : null,
             'attendance_percentage' => $this->attendance_percentage ? (float) $this->attendance_percentage : null,
 
@@ -68,23 +70,5 @@ class AttendanceResource extends JsonResource
             'created_at' => $this->created_at->toISOString(),
             'updated_at' => $this->updated_at->toISOString(),
         ];
-    }
-
-    /**
-     * Get status label
-     */
-    protected function getStatusLabel(): ?string
-    {
-        if (! $this->attendance_status) {
-            return null;
-        }
-
-        return match ($this->attendance_status) {
-            'attended' => __('enums.attendance_status.attended'),
-            'late' => __('enums.attendance_status.late'),
-            'left' => __('enums.attendance_status.left'),
-            'absent' => __('enums.attendance_status.absent'),
-            default => $this->attendance_status,
-        };
     }
 }

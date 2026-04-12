@@ -19,23 +19,16 @@ class StudentSessionReportFactory extends Factory
         $student = User::factory()->state(['user_type' => 'student']);
         $session = QuranSession::factory();
 
-        $attendanceStatuses = ['attended', 'late', 'left', 'absent'];
-        $attendanceStatus = $this->faker->randomElement($attendanceStatuses);
+        $attendanceStatus = $this->faker->randomElement(['attended', 'partially_attended', 'absent']);
 
-        // Calculate realistic attendance percentage based on status
         $attendancePercentage = match ($attendanceStatus) {
             'attended' => $this->faker->numberBetween(80, 100),
-            'late' => $this->faker->numberBetween(70, 95),
-            'left' => $this->faker->numberBetween(30, 49),
+            'partially_attended' => $this->faker->numberBetween(50, 79),
             'absent' => 0,
         };
 
-        // Calculate realistic attendance minutes (assuming 60-minute sessions)
         $actualMinutes = $attendanceStatus === 'absent' ? 0 :
-            round(($attendancePercentage / 100) * 60);
-
-        // Late minutes only for late status
-        $lateMinutes = $attendanceStatus === 'late' ? $this->faker->numberBetween(5, 15) : 0;
+            (int) round(($attendancePercentage / 100) * 60);
 
         return [
             'session_id' => $session,
@@ -43,23 +36,20 @@ class StudentSessionReportFactory extends Factory
             'teacher_id' => $teacher,
             'academy_id' => $academy,
 
-            // Performance degrees (nullable)
             'new_memorization_degree' => $this->faker->optional(0.7)->randomFloat(1, 0, 10),
             'reservation_degree' => $this->faker->optional(0.7)->randomFloat(1, 0, 10),
             'notes' => $this->faker->optional(0.3)->sentence(),
 
-            // Attendance data
             'attendance_status' => $attendanceStatus,
             'meeting_enter_time' => $attendanceStatus === 'absent' ? null :
                 $this->faker->dateTimeBetween('-1 hour', 'now'),
             'meeting_leave_time' => $attendanceStatus === 'absent' ? null :
                 $this->faker->dateTimeBetween('now', '+1 hour'),
             'actual_attendance_minutes' => $actualMinutes,
-            'is_late' => $attendanceStatus === 'late',
-            'late_minutes' => $lateMinutes,
+            'is_late' => false,
+            'late_minutes' => 0,
             'attendance_percentage' => $attendancePercentage,
 
-            // Meeting events (as JSON)
             'meeting_events' => $attendanceStatus === 'absent' ? [] : [
                 [
                     'joined_at' => now()->subMinutes(60)->toISOString(),
@@ -68,68 +58,38 @@ class StudentSessionReportFactory extends Factory
                 ],
             ],
 
-            // Evaluation metadata
             'evaluated_at' => now(),
-            'is_calculated' => $this->faker->boolean(80), // 80% auto-calculated
-            'manually_evaluated' => $this->faker->boolean(30), // 30% manually evaluated
+            'is_calculated' => $this->faker->boolean(80),
+            'manually_evaluated' => $this->faker->boolean(30),
         ];
     }
 
-    /**
-     * Create a report for an attended student
-     */
     public function attended(): static
     {
-        return $this->state(function (array $attributes) {
+        return $this->state(fn () => [
+            'attendance_status' => 'attended',
+            'attendance_percentage' => $this->faker->numberBetween(80, 100),
+            'actual_attendance_minutes' => $this->faker->numberBetween(48, 60),
+            'is_late' => false,
+            'late_minutes' => 0,
+            'meeting_enter_time' => now()->subMinutes(60),
+            'meeting_leave_time' => now(),
+        ]);
+    }
+
+    public function partiallyAttended(): static
+    {
+        return $this->state(function () {
+            $attendanceMinutes = $this->faker->numberBetween(30, 47);
+
             return [
-                'attendance_status' => 'attended',
-                'attendance_percentage' => $this->faker->numberBetween(80, 100),
-                'actual_attendance_minutes' => $this->faker->numberBetween(48, 60), // 80-100% of 60 minutes
+                'attendance_status' => 'partially_attended',
+                'attendance_percentage' => round(($attendanceMinutes / 60) * 100, 2),
+                'actual_attendance_minutes' => $attendanceMinutes,
                 'is_late' => false,
                 'late_minutes' => 0,
                 'meeting_enter_time' => now()->subMinutes(60),
-                'meeting_leave_time' => now(),
-            ];
-        });
-    }
-
-    /**
-     * Create a report for a late student
-     */
-    public function late(): static
-    {
-        return $this->state(function (array $attributes) {
-            $lateMinutes = $this->faker->numberBetween(5, 15);
-            $attendanceMinutes = $this->faker->numberBetween(40, 55);
-
-            return [
-                'attendance_status' => 'late',
-                'attendance_percentage' => round(($attendanceMinutes / 60) * 100, 2),
-                'actual_attendance_minutes' => $attendanceMinutes,
-                'is_late' => true,
-                'late_minutes' => $lateMinutes,
-                'meeting_enter_time' => now()->subMinutes(60)->addMinutes($lateMinutes),
-                'meeting_leave_time' => now(),
-            ];
-        });
-    }
-
-    /**
-     * Create a report for a student who left early
-     */
-    public function left(): static
-    {
-        return $this->state(function (array $attributes) {
-            $attendanceMinutes = $this->faker->numberBetween(18, 29); // 30-49% of 60 minutes
-
-            return [
-                'attendance_status' => 'left',
-                'attendance_percentage' => round(($attendanceMinutes / 60) * 100, 2),
-                'actual_attendance_minutes' => $attendanceMinutes,
-                'is_late' => $this->faker->boolean(),
-                'late_minutes' => $this->faker->boolean() ? $this->faker->numberBetween(0, 10) : 0,
-                'meeting_enter_time' => now()->subMinutes(40),
-                'meeting_leave_time' => now()->subMinutes(20),
+                'meeting_leave_time' => now()->subMinutes(60 - $attendanceMinutes),
             ];
         });
     }

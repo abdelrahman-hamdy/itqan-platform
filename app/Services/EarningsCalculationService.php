@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Contracts\EarningsCalculationServiceInterface;
-use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\BaseSession;
@@ -205,38 +204,41 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
     }
 
     /**
-     * Check if teacher attended the session (at least 50%)
+     * Check if the teacher earned this session. Only the ATTENDED tier earns;
+     * partial and absent tiers get nothing.
      */
     protected function didTeacherAttend(BaseSession $session): bool
     {
-        // Check teacher_attendance_status if available (new system)
-        if ($session->teacher_attendance_status) {
-            return $session->teacher_attendance_status !== AttendanceStatus::ABSENT->value;
+        // The matrix pass in CalculateSessionForAttendance writes the final
+        // decision to `counts_for_teacher`. If it's set, trust it — that's
+        // what subscription counting and every other reader uses.
+        if ($session->counts_for_teacher !== null) {
+            return (bool) $session->counts_for_teacher;
         }
 
+        // Fallback: the matrix job hasn't run yet (rare). Compute the same
+        // decision from the teacher's MeetingAttendance row.
         $teacherId = $this->getTeacherId($session);
-
         if (! $teacherId) {
             return false;
         }
 
         $attendance = MeetingAttendance::where('session_id', $session->id)
             ->where('user_id', $teacherId)
-            ->whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])
+            ->whereIn('user_type', \App\Models\MeetingAttendance::TEACHER_USER_TYPES)
             ->where('is_calculated', true)
             ->first();
 
         if (! $attendance) {
-            // No calculated attendance record — attendance job hasn't run yet or
-            // session was completed without LiveKit (offline/manual session).
-            // Only treat as attended if actual_duration_minutes confirms real presence.
-            // ended_at alone is not sufficient (it's always set for completed sessions).
+            // Offline/manual session with no LiveKit record — trust the
+            // session's reported actual duration as proof of presence.
             return ($session->actual_duration_minutes ?? 0) > 0;
         }
 
-        $minPresence = config('business.attendance.minimum_presence_percent', 50);
+        $fullPercent = app(\App\Services\SessionSettingsService::class)
+            ->getTeacherFullAttendancePercent($session);
 
-        return ($attendance->attendance_percentage ?? 0) >= $minPresence;
+        return ($attendance->attendance_percentage ?? 0) >= $fullPercent;
     }
 
     /**

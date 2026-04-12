@@ -680,6 +680,25 @@ class QuranSubscription extends BaseSubscription
         }
 
         if ($this->individualCircle) {
+            // Sync authoritative subscription values onto the existing circle.
+            // Prevents stale duration/session totals when a circle was created
+            // from an earlier package/cancelled attempt and linked to this sub.
+            $authoritativeDuration = $this->session_duration_minutes ?? $this->package?->session_duration_minutes;
+            $syncData = [];
+            if ($authoritativeDuration && $this->individualCircle->default_duration_minutes !== $authoritativeDuration) {
+                $syncData['default_duration_minutes'] = $authoritativeDuration;
+            }
+            if ($this->total_sessions && $this->individualCircle->total_sessions !== $this->total_sessions) {
+                $syncData['total_sessions'] = $this->total_sessions;
+            }
+            if ($this->sessions_remaining !== null && $this->individualCircle->sessions_remaining !== $this->sessions_remaining) {
+                $syncData['sessions_remaining'] = $this->sessions_remaining;
+            }
+            if (! empty($syncData)) {
+                $this->individualCircle->updateQuietly($syncData);
+                $this->individualCircle->refresh();
+            }
+
             return $this->individualCircle;
         }
 
@@ -908,25 +927,42 @@ class QuranSubscription extends BaseSubscription
      */
     public function activateFromPayment(Payment $payment): void
     {
-        DB::transaction(function () {
-            // Clear grace period metadata on successful payment
+        DB::transaction(function () use ($payment) {
+            // Lock the subscription row to serialize concurrent webhook calls
+            // that could otherwise both call ensureCurrentCycle() and create
+            // duplicate active cycles.
+            static::lockForUpdate()->find($this->id);
+            $this->refresh();
+
+            // Bootstrap the first cycle row if this is a brand-new subscription
+            // hitting activateFromPayment for the first time (current_cycle_id is null).
+            // Must run before settleCurrentCycle which marks the cycle as PAID.
+            $this->ensureCurrentCycle();
+
+            // Settle the current cycle (mark PAID, clear grace period on cycle + metadata)
+            $this->settleCurrentCycle($payment);
+
+            // Ensure lifecycle dates are populated (covers first-time activation
+            // of a truly PENDING subscription — renewals populate these via the
+            // SubscriptionRenewalService).
+            $startsAt = $this->starts_at ?? now();
+            $endsAt = $this->ends_at ?? $this->calculateEndDate($startsAt);
+
+            // Clear extra stale metadata keys that settleCurrentCycle doesn't touch
             $metadata = $this->metadata ?? [];
             unset(
-                $metadata['grace_period_ends_at'],
-                $metadata['grace_period_expires_at'],
-                $metadata['grace_period_started_at'],
                 $metadata['grace_notification_last_sent_at'],
                 $metadata['renewal_failed_count'],
                 $metadata['last_renewal_failure_at'],
                 $metadata['last_renewal_failure_reason']
             );
 
-            // Update subscription status
             $this->update([
                 'status' => SessionSubscriptionStatus::ACTIVE,
                 'payment_status' => SubscriptionPaymentStatus::PAID,
-                'starts_at' => $this->starts_at ?? now(),
-                'next_billing_date' => now()->addMonth(),
+                'starts_at' => $startsAt,
+                'ends_at' => $endsAt,
+                'next_billing_date' => $endsAt,
                 'last_payment_date' => now(),
                 'metadata' => $metadata ?: null,
             ]);

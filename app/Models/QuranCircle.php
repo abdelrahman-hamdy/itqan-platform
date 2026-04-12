@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\DifficultyLevel;
-use App\Enums\SessionSubscriptionStatus;
 use App\Enums\WeekDays;
 use App\Models\Traits\ScopedToAcademy;
 use Carbon\Carbon;
@@ -268,60 +267,59 @@ class QuranCircle extends Model
     }
 
     /**
-     * Get the active subscription for this circle (if any)
-     * Checks the polymorphic linked subscriptions first, then falls back to legacy
+     * Get the active subscription for this circle (if any).
      *
-     * Note: For group circles, there may be multiple active subscriptions (one per student)
-     * This method returns the first active one found.
+     * "Active" here means "schedulable right now" — includes grace-period
+     * subscriptions. Checks the polymorphic linked subscriptions first, then
+     * falls back to the legacy direct relationship.
+     *
+     * Note: For group circles, there may be multiple schedulable subscriptions
+     * (one per student); this returns the first one found.
      */
     public function getActiveSubscriptionAttribute(): ?QuranSubscription
     {
-        // Check new polymorphic linked subscriptions
         $activeLinked = $this->linkedSubscriptions()
-            ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->schedulable()
             ->first();
 
         if ($activeLinked) {
             return $activeLinked;
         }
 
-        // Fallback to legacy direct relationship
         return $this->quranSubscriptions()
-            ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->schedulable()
             ->first();
     }
 
     /**
-     * Get all active subscriptions for this circle
-     * (For group circles, there can be multiple - one per enrolled student)
+     * Get all schedulable subscriptions for this circle.
+     * (For group circles, there can be multiple — one per enrolled student.)
      */
     public function getActiveSubscriptionsAttribute(): Collection
     {
-        // Get from polymorphic relationship
         $linkedActive = $this->linkedSubscriptions()
-            ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->schedulable()
             ->get();
 
         if ($linkedActive->isNotEmpty()) {
             return $linkedActive;
         }
 
-        // Fallback to legacy
         return $this->quranSubscriptions()
-            ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->schedulable()
             ->get();
     }
 
     /**
-     * Check if this circle has any active subscriptions
+     * Check if this circle has any schedulable subscriptions.
      */
     public function hasActiveSubscriptions(): bool
     {
         return $this->linkedSubscriptions()
-            ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->schedulable()
             ->exists()
             || $this->quranSubscriptions()
-                ->where('status', SessionSubscriptionStatus::ACTIVE)
+                ->schedulable()
                 ->exists();
     }
 
@@ -343,14 +341,15 @@ class QuranCircle extends Model
     }
 
     /**
-     * Get enrollments with active subscriptions
+     * Get enrollments backed by a schedulable subscription
+     * (ACTIVE + PAID, or ACTIVE + in grace period).
      */
     public function paidEnrollments(): HasMany
     {
         return $this->enrollments()
             ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)
             ->whereHas('subscription', function ($q) {
-                $q->where('status', SessionSubscriptionStatus::ACTIVE);
+                $q->schedulable();
             });
     }
 

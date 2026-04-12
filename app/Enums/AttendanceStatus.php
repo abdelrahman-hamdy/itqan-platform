@@ -5,25 +5,86 @@ namespace App\Enums;
 /**
  * Attendance Status Enum
  *
- * Tracks participant attendance status for sessions.
- * Used by MeetingAttendance and session-specific attendance models.
+ * Current 3-state model (new code writes these only):
+ * - ATTENDED: duration >= full_attendance_percent
+ * - PARTIALLY_ATTENDED: duration >= partial_attendance_percent
+ * - ABSENT: duration < partial_attendance_percent or no join
  *
- * States:
- * - ATTENDED: Full participation in the session
- * - LATE: Arrived after session start but attended
- * - LEFT: Left before session ended (partial attendance)
- * - ABSENT: Did not attend at all
+ * Deprecated values kept for historical rows (will be migrated in Phase B):
+ * - LATE: pre-refactor "arrived after grace period"
+ * - LEFT: pre-refactor "left before session ended"
  *
  * @see \App\Models\MeetingAttendance
- * @see \App\Services\MeetingAttendanceService
  */
 enum AttendanceStatus: string
 {
-    case ATTENDED = 'attended';                   // Full attendance
-    case LATE = 'late';                           // Arrived late but attended
-    case LEFT = 'left';                           // Left early (partial attendance)
-    case ABSENT = 'absent';                       // Did not attend
-    case PARTIALLY_ATTENDED = 'partially_attended'; // Partial attendance (teacher: 50-89% of session)
+    case ATTENDED = 'attended';
+    case PARTIALLY_ATTENDED = 'partially_attended';
+    case ABSENT = 'absent';
+
+    /** @deprecated Legacy value — new code must not write this. */
+    case LATE = 'late';
+
+    /** @deprecated Legacy value — new code must not write this. */
+    case LEFT = 'left';
+
+    /**
+     * Currently-writable values for new data (excludes deprecated cases).
+     * Use this for Select dropdowns in admin/teacher manual-entry forms.
+     *
+     * @return array<string, string>
+     */
+    public static function activeOptions(): array
+    {
+        return [
+            self::ATTENDED->value => self::ATTENDED->label(),
+            self::PARTIALLY_ATTENDED->value => self::PARTIALLY_ATTENDED->label(),
+            self::ABSENT->value => self::ABSENT->label(),
+        ];
+    }
+
+    /**
+     * True for the "partial" tier: new PARTIALLY_ATTENDED and legacy LATE/LEFT.
+     * Used anywhere UI/stats want to bucket these together.
+     */
+    public function isPartialTier(): bool
+    {
+        return in_array($this, [
+            self::PARTIALLY_ATTENDED,
+            self::LATE,
+            self::LEFT,
+        ], true);
+    }
+
+    /**
+     * Status values that count as "present" for attendance-rate calculations.
+     * Includes the full tier, partial tier, and legacy LATE/LEFT rows.
+     *
+     * @return list<string>
+     */
+    public static function presentValues(): array
+    {
+        return [
+            self::ATTENDED->value,
+            self::PARTIALLY_ATTENDED->value,
+            self::LATE->value,
+            self::LEFT->value,
+        ];
+    }
+
+    /**
+     * Status values in the "partial" tier (PARTIALLY_ATTENDED + legacy LATE/LEFT).
+     *
+     * @return list<string>
+     */
+    public static function partialValues(): array
+    {
+        return [
+            self::PARTIALLY_ATTENDED->value,
+            self::LATE->value,
+            self::LEFT->value,
+        ];
+    }
 
     /**
      * Get localized label for the status
@@ -68,10 +129,10 @@ enum AttendanceStatus: string
     {
         return match ($this) {
             self::ATTENDED => 'success',
-            self::LATE => 'warning',
-            self::LEFT => 'primary',
-            self::ABSENT => 'danger',
             self::PARTIALLY_ATTENDED => 'warning',
+            self::ABSENT => 'danger',
+            self::LATE => 'warning',
+            self::LEFT => 'info',
         };
     }
 

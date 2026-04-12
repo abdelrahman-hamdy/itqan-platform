@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Attendance;
 
+use App\Enums\AttendanceStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
@@ -76,7 +77,7 @@ class AttendanceCollection extends ResourceCollection
             return null;
         }
 
-        $attended = $this->collection->whereIn('attendance_status', ['attended', 'late'])->count();
+        $attended = $this->collection->whereIn('attendance_status', AttendanceStatus::presentValues())->count();
 
         return round(($attended / $total) * 100, 2);
     }

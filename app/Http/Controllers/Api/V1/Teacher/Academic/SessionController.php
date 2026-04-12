@@ -655,8 +655,9 @@ class SessionController extends Controller
         $summary = [
             'total' => $records->count(),
             'attended' => $records->where('status_raw', 'attended')->count(),
-            'late' => $records->where('status_raw', 'late')->count(),
+            'partially_attended' => $records->where('status_raw', 'partially_attended')->count(),
             'absent' => $records->where('status_raw', 'absent')->count(),
+            'late' => $records->where('status_raw', 'late')->count(),
             'left' => $records->where('status_raw', 'left')->count(),
         ];
 

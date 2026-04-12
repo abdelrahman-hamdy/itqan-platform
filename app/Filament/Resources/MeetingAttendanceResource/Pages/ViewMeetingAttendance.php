@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\MeetingAttendanceResource\Pages;
 
-use App\Enums\AttendanceStatus;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
 use App\Filament\Resources\MeetingAttendanceResource;
 use App\Models\MeetingAttendance;
@@ -13,7 +12,6 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use ValueError;
 
 /**
  * @property MeetingAttendance $record
@@ -102,26 +100,8 @@ class ViewMeetingAttendance extends ViewRecord
                         TextEntry::make('attendance_status')
                             ->label('حالة الحضور')
                             ->badge()
-                            ->formatStateUsing(function (mixed $state): string {
-                                if (! $state) {
-                                    return '-';
-                                }
-                                if ($state instanceof AttendanceStatus) {
-                                    return $state->label();
-                                }
-                                try {
-                                    return AttendanceStatus::from($state)->label();
-                                } catch (ValueError $e) {
-                                    return (string) $state;
-                                }
-                            })
-                            ->color(fn (mixed $state): string => match (true) {
-                                $state === AttendanceStatus::ATTENDED, $state === AttendanceStatus::ATTENDED->value => 'success',
-                                $state === AttendanceStatus::LATE, $state === AttendanceStatus::LATE->value => 'warning',
-                                $state === AttendanceStatus::LEFT, $state === AttendanceStatus::LEFT->value => 'info',
-                                $state === AttendanceStatus::ABSENT, $state === AttendanceStatus::ABSENT->value => 'danger',
-                                default => 'gray',
-                            }),
+                            ->formatStateUsing(fn (mixed $state): string => \App\Filament\Resources\MeetingAttendanceResource::resolveAttendanceEnum($state)?->label() ?? '-')
+                            ->color(fn (mixed $state): string => \App\Filament\Resources\MeetingAttendanceResource::resolveAttendanceEnum($state)?->color() ?? 'gray'),
                     ])->columns(4),
 
                 Section::make('تفاصيل التوقيت')

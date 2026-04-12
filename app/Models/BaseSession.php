@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Contracts\MeetingCapable;
 use App\Enums\SessionStatus;
-use App\Models\Traits\HasAttendanceTracking;
 use App\Models\Traits\HasMeetingData;
 use App\Models\Traits\HasMeetings;
 use App\Models\Traits\HasSessionFeedback;
@@ -35,7 +34,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  *
  * Refactored: Extracted functionality into focused traits:
  * - HasMeetingData: Meeting link generation, LiveKit integration
- * - HasAttendanceTracking: Attendance records, duration calculations
+ * - HasMeetings: Meeting attendance records via meetingAttendances()
  * - HasSessionStatus: Status transitions, validation, display
  * - HasSessionScheduling: Scheduling, rescheduling, timing checks
  * - HasSessionFeedback: Teacher feedback, session notes
@@ -80,9 +79,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 abstract class BaseSession extends Model implements MeetingCapable
 {
-    use HasAttendanceTracking {
-        HasAttendanceTracking::meetingAttendances as traitMeetingAttendances;
-    }
     use HasFactory;
     use HasMeetingData {
         HasMeetingData::generateMeetingLink as traitGenerateMeetingLink;
@@ -97,7 +93,6 @@ abstract class BaseSession extends Model implements MeetingCapable
         HasMeetings::isMeetingActive insteadof HasMeetingData;
         HasMeetings::endMeeting insteadof HasMeetingData;
         HasMeetings::canJoinBasedOnTiming insteadof HasSessionScheduling;
-        HasMeetings::meetingAttendances insteadof HasAttendanceTracking;
     }
     use HasSessionFeedback;
     use HasSessionScheduling {
@@ -468,19 +463,10 @@ abstract class BaseSession extends Model implements MeetingCapable
         return 5;
     }
 
-    /**
-     * Get grace period minutes for late joins
-     * Can be overridden by child classes
-     */
+    /** @deprecated Unused — percentage-based status. */
     protected function getGracePeriodMinutes(): int
     {
-        $academy = $this->getAcademyForSettings();
-
-        if ($academy && $academy->settings) {
-            return $academy->settings->default_late_tolerance_minutes ?? 15;
-        }
-
-        return 15;
+        return 0;
     }
 
     /**

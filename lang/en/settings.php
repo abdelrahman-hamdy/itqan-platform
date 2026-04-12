@@ -1,28 +1,29 @@
 <?php
 
 return [
-    // Attendance rules section
     'attendance_rules' => 'Attendance Rules',
-    'attendance_rules_description' => 'Settings for calculating student and teacher session attendance',
+    'attendance_rules_description' => 'Attendance status is determined by the attended percentage of the scheduled session duration',
 
-    // Student attendance settings
+    // Student attendance thresholds
     'student_attendance' => 'Student Attendance',
-    'grace_period_minutes' => 'Late Arrival Grace Period',
-    'grace_period_help' => 'Minutes before a student is considered late',
+    'student_full_attendance' => 'Student Full Attendance Threshold',
+    'student_full_help' => 'If the student attends this percentage of the session or more, they are marked as fully attended',
+    'student_partial_attendance' => 'Student Partial Attendance Threshold',
+    'student_partial_help' => 'If the student attends this percentage or more (but less than full), they are marked as partially attended; below this they are marked absent',
+
+    // Kept for backward compatibility with any views still referencing it (deprecated)
     'full_attendance_threshold' => 'Full Attendance Threshold',
     'full_attendance_help' => 'Minimum percentage required to count as fully attended',
-    'minimum_presence_percent' => 'Minimum Presence',
-    'minimum_presence_help' => 'Minimum percentage before being marked as left early',
-    'left_threshold_percent' => 'Left Early Threshold',
-    'left_threshold_help' => 'Minimum percentage before being marked as absent',
-    'minutes' => 'minutes',
 
-    // Teacher attendance settings
+    // Teacher attendance thresholds
     'teacher_attendance' => 'Teacher Attendance',
-    'teacher_full_attendance' => 'Teacher Full Attendance',
-    'teacher_full_attendance_help' => 'Minimum percentage required for teacher to be considered fully attended',
-    'teacher_partial_attendance' => 'Teacher Partial Attendance',
-    'teacher_partial_attendance_help' => 'Minimum percentage for teacher to be considered partially attended',
+    'teacher_full_attendance' => 'Teacher Full Attendance Threshold',
+    'teacher_full_attendance_help' => 'If the teacher attends this percentage of the session or more, they are marked as fully attended and earnings are credited',
+    'teacher_partial_attendance' => 'Teacher Partial Attendance Threshold',
+    'teacher_partial_attendance_help' => 'If the teacher attends this percentage or more they are marked as partially attended (student subscription still counts, but teacher does not earn); below this they are marked absent',
+
+    // Cross-field validation
+    'attendance_partial_lte_full' => 'Partial attendance percentage must be less than or equal to full attendance percentage',
 
     // Counting management
     'counting_management' => 'Session Counting Management',

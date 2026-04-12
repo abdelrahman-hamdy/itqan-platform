@@ -12,6 +12,7 @@ use App\Models\BaseSession;
 use App\Models\User;
 use App\Services\Notification\NotificationUrlBuilder;
 use App\Services\NotificationService;
+use App\Services\SessionTransitionService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -19,11 +20,91 @@ use Illuminate\Support\Facades\Log;
 /**
  * BaseSession Observer
  *
- * Automatically handles meeting creation when session status changes.
- * This ensures meetings are created immediately without waiting for cron jobs.
+ * - Enforces subscription schedulability as a model-level guard
+ *   for every session create path (teacher UI, supervisor UI, services,
+ *   auto-schedule, etc.). Sessions created via `AcademicSession::withoutEvents()`
+ *   (cycle bootstrap from SubscriptionRenewalService / activateFromPayment)
+ *   bypass this guard by design.
+ * - Handles meeting creation when session status changes.
+ * - Handles reschedule notifications, attendance bootstrapping, and
+ *   post-completion earnings jobs.
  */
 class BaseSessionObserver
 {
+    /**
+     * Handle the BaseSession "creating" event — subscription schedulability guard.
+     *
+     * Sessions should never be created against a subscription that is not
+     * schedulable right now (status !== ACTIVE, or payment pending without grace).
+     * This observer is the catch-all net for the ~6 direct-`create()` call sites
+     * so that no new code path can accidentally bypass the validator layer.
+     *
+     * Bypassed automatically when the session is created inside a
+     * `Model::withoutEvents()` block (used by the Academic lesson bootstrap
+     * that pre-allocates UNSCHEDULED sessions for a new cycle).
+     */
+    public function creating(BaseSession $session): void
+    {
+        $subscription = $this->resolveSubscriptionFor($session);
+
+        if ($subscription === null) {
+            // Group sessions, trial sessions, and interactive course sessions
+            // don't have a per-student subscription — those paths have their
+            // own validators.
+            return;
+        }
+
+        if (! $subscription->isSchedulable()) {
+            throw \App\Exceptions\SubscriptionException::notSchedulable($subscription->id);
+        }
+    }
+
+    /**
+     * Resolve the subscription linked to a session, if any.
+     * Returns null for group/trial/interactive-course sessions.
+     *
+     * Prefers eager-loaded relations (via `$session->relationLoaded(...)`) to
+     * avoid N+1 queries in bulk session creation paths. Falls back to a
+     * targeted fetch when no relation is loaded.
+     */
+    private function resolveSubscriptionFor(BaseSession $session): ?\App\Models\BaseSubscription
+    {
+        if ($session instanceof \App\Models\QuranSession) {
+            if ($session->quran_subscription_id) {
+                return $session->relationLoaded('quranSubscription')
+                    ? $session->quranSubscription
+                    : \App\Models\QuranSubscription::find($session->quran_subscription_id);
+            }
+
+            if ($session->individual_circle_id) {
+                $circle = $session->relationLoaded('individualCircle')
+                    ? $session->individualCircle
+                    : \App\Models\QuranIndividualCircle::with([
+                        'linkedSubscriptions',
+                        'linkedSubscriptions.currentCycle',
+                        'subscription',
+                        'subscription.currentCycle',
+                    ])->find($session->individual_circle_id);
+
+                return $circle?->activeSubscription ?? $circle?->subscription;
+            }
+
+            return null;
+        }
+
+        if ($session instanceof \App\Models\AcademicSession) {
+            if ($session->academic_subscription_id) {
+                return $session->relationLoaded('academicSubscription')
+                    ? $session->academicSubscription
+                    : \App\Models\AcademicSubscription::find($session->academic_subscription_id);
+            }
+
+            return null;
+        }
+
+        return null;
+    }
+
     /**
      * Handle the BaseSession "updating" event.
      * This runs BEFORE the model is saved to the database.
@@ -128,22 +209,36 @@ class BaseSessionObserver
                 'new_status' => is_string($newStatus) ? $newStatus : $newStatus->value,
             ]);
 
-            // Earnings calculation is dispatched with a delay to let the
-            // CalculateSessionForAttendance job (triggered by LiveKit webhook)
-            // calculate teacher attendance and set counts_for_teacher first.
-            // If the attendance job already dispatched earnings, the earnings service's
-            // isAlreadyCalculated() check with lockForUpdate prevents duplicates.
             $newStatusEnum = is_string($newStatus) ? SessionStatus::from($newStatus) : $newStatus;
+            $oldStatusEnum = is_string($oldStatus) ? SessionStatus::tryFrom($oldStatus) : $oldStatus;
+
+            // Fires on the first entry into the active window, including no-show
+            // jumps SCHEDULED→COMPLETED that skip ONGOING. Skipped on the happy-path
+            // ONGOING→COMPLETED transition so we don't re-upsert the same rows.
+            $enteringActiveWindow = $newStatusEnum === SessionStatus::ONGOING
+                || ($newStatusEnum === SessionStatus::COMPLETED && ! in_array($oldStatusEnum, [SessionStatus::ONGOING, SessionStatus::COMPLETED], true));
+
+            if ($enteringActiveWindow) {
+                try {
+                    app(SessionTransitionService::class)->preCreateAttendanceRows($session);
+                } catch (Exception $e) {
+                    Log::warning('preCreateAttendanceRows failed in observer', [
+                        'session_id' => $session->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
 
             if ($newStatusEnum === SessionStatus::COMPLETED) {
                 try {
-                    // Full attendance + counting pipeline (teacher flags, subscription, earnings).
-                    // ShouldBeUnique prevents duplicates if webhook already dispatched this.
+                    // Full attendance + counting pipeline. Dispatch with delay so
+                    // the earnings job sees counts_for_teacher already set; the
+                    // job's ShouldBeUnique prevents duplicates when the LiveKit
+                    // webhook also dispatches this.
                     dispatch(new CalculateSessionForAttendance($session->id, get_class($session)))
                         ->delay(now()->addMinutes(5));
 
-                    // Earnings backup: if attendance job fails, this ensures earnings
-                    // are still calculated. isAlreadyCalculated() prevents duplicates.
+                    // Earnings backup — isAlreadyCalculated() guards against duplicates.
                     dispatch(new CalculateSessionEarningsJob($session))
                         ->delay(now()->addMinutes(10));
                 } catch (Exception $e) {
@@ -155,7 +250,6 @@ class BaseSessionObserver
                 }
             }
 
-            // Notify admin when a session is cancelled
             if ($newStatusEnum === SessionStatus::CANCELLED) {
                 $this->notifyAdminSessionCancelled($session);
             }

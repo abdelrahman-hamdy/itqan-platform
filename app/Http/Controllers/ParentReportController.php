@@ -513,55 +513,50 @@ class ParentReportController extends Controller
         // Helper to get session status value (handles both enum and string)
         $getStatusValue = fn ($status) => $status instanceof BackedEnum ? $status->value : (string) $status;
 
-        // Calculate Quran attendance stats
+        // Includes '' so sessions with no attendance_status still count as present.
+        $presentStatuses = [...AttendanceStatus::presentValues(), ''];
+        $partialStatuses = AttendanceStatus::partialValues();
+
         $quranTotal = $quranSessions->count();
-        $quranPresent = $quranSessions->filter(function ($session) use ($getStatusValue) {
-            // Present if: completed AND (no attendance_status OR attendance_status is attended/late)
-            $statusValue = $getStatusValue($session->status);
-            if ($statusValue === SessionStatus::COMPLETED->value) {
-                $attStatus = strtolower($session->attendance_status ?? AttendanceStatus::ATTENDED->value);
-
-                return in_array($attStatus, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value, '']) || is_null($session->attendance_status);
+        $quranPresent = $quranSessions->filter(function ($session) use ($getStatusValue, $presentStatuses) {
+            if ($getStatusValue($session->status) !== SessionStatus::COMPLETED->value) {
+                return false;
             }
+            $attStatus = strtolower($session->attendance_status ?? AttendanceStatus::ATTENDED->value);
 
-            return false;
+            return in_array($attStatus, $presentStatuses, true);
         })->count();
         $quranAbsent = $quranSessions->filter(function ($session) {
-            // Absent if attendance_status indicates absence
             $attStatus = strtolower($session->attendance_status ?? '');
 
             return $attStatus === AttendanceStatus::ABSENT->value;
         })->count();
-        $quranLate = $quranSessions->filter(function ($session) {
+        $quranPartial = $quranSessions->filter(function ($session) use ($partialStatuses) {
             $attStatus = strtolower($session->attendance_status ?? '');
 
-            return $attStatus === AttendanceStatus::LATE->value;
+            return in_array($attStatus, $partialStatuses, true);
         })->count();
         $quranAttendanceRate = $quranTotal > 0 ? round(($quranPresent / $quranTotal) * 100) : 0;
 
         // Calculate Academic attendance stats
         $academicTotal = $academicSessions->count();
-        $academicPresent = $academicSessions->filter(function ($session) use ($getStatusValue) {
-            // Present if: completed AND (no attendance_status OR attendance_status is attended/late)
-            $statusValue = $getStatusValue($session->status);
-            if ($statusValue === SessionStatus::COMPLETED->value) {
-                $attStatus = strtolower($session->attendance_status ?? AttendanceStatus::ATTENDED->value);
-
-                return in_array($attStatus, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value, '']) || is_null($session->attendance_status);
+        $academicPresent = $academicSessions->filter(function ($session) use ($getStatusValue, $presentStatuses) {
+            if ($getStatusValue($session->status) !== SessionStatus::COMPLETED->value) {
+                return false;
             }
+            $attStatus = strtolower($session->attendance_status ?? AttendanceStatus::ATTENDED->value);
 
-            return false;
+            return in_array($attStatus, $presentStatuses, true);
         })->count();
         $academicAbsent = $academicSessions->filter(function ($session) {
-            // Absent if attendance_status indicates absence
             $attStatus = strtolower($session->attendance_status ?? '');
 
             return $attStatus === AttendanceStatus::ABSENT->value;
         })->count();
-        $academicLate = $academicSessions->filter(function ($session) {
+        $academicPartial = $academicSessions->filter(function ($session) use ($partialStatuses) {
             $attStatus = strtolower($session->attendance_status ?? '');
 
-            return $attStatus === AttendanceStatus::LATE->value;
+            return in_array($attStatus, $partialStatuses, true);
         })->count();
         $academicAttendanceRate = $academicTotal > 0 ? round(($academicPresent / $academicTotal) * 100) : 0;
 
@@ -569,7 +564,7 @@ class ParentReportController extends Controller
         $totalSessions = $quranTotal + $academicTotal;
         $presentCount = $quranPresent + $academicPresent;
         $absentCount = $quranAbsent + $academicAbsent;
-        $lateCount = $quranLate + $academicLate;
+        $partialCount = $quranPartial + $academicPartial;
         $overallAttendanceRate = $totalSessions > 0 ? round(($presentCount / $totalSessions) * 100) : 0;
 
         return [
@@ -579,19 +574,19 @@ class ParentReportController extends Controller
                 'attendance_rate' => $overallAttendanceRate,
                 'present_count' => $presentCount,
                 'absent_count' => $absentCount,
-                'late_count' => $lateCount,
+                'partial_count' => $partialCount,
             ],
             'quran' => [
                 'attendance_rate' => $quranAttendanceRate,
                 'present' => $quranPresent,
                 'absent' => $quranAbsent,
-                'late' => $quranLate,
+                'partial' => $quranPartial,
             ],
             'academic' => [
                 'attendance_rate' => $academicAttendanceRate,
                 'present' => $academicPresent,
                 'absent' => $academicAbsent,
-                'late' => $academicLate,
+                'partial' => $academicPartial,
             ],
         ];
     }
