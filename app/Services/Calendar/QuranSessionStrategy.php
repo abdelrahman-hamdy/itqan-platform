@@ -185,14 +185,23 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                 // Reuse service method (source of truth for remaining calculation)
                 $remainingSessions = $this->sessionService->getRemainingIndividualSessions($circle);
 
-                // Count from eager-loaded collection (avoids N+1 DB queries)
+                // Count from eager-loaded collection — filter to CURRENT CYCLE only
+                // so completed sessions from previous cycles don't inflate progress.
                 $allSessions = $circle->sessions;
-                $countedSessions = $allSessions->whereNotIn('status', [
-                    SessionStatus::CANCELLED,
-                ])->count();
+                $cycleStart = $subscription?->starts_at;
+                $countedSessions = $allSessions->filter(function ($s) use ($cycleStart) {
+                    if ($s->status === SessionStatus::CANCELLED) {
+                        return false;
+                    }
+                    // Exclude sessions from previous cycles
+                    if ($cycleStart && $s->scheduled_at && $s->scheduled_at->lt($cycleStart)) {
+                        return false;
+                    }
+
+                    return true;
+                })->count();
 
                 $totalFromSub = $subscription?->total_sessions ?? $circle->total_sessions;
-                // Consumed sessions = sessions used on subscription but with no actual session records
                 $consumedByAdmin = max(0, $totalFromSub - ($subscription?->sessions_remaining ?? $totalFromSub) - $countedSessions);
 
                 $status = 'not_scheduled';

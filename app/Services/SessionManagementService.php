@@ -272,12 +272,17 @@ class SessionManagementService
      */
     public function getRemainingIndividualSessions(QuranIndividualCircle $circle): int
     {
-        // Use subscription.sessions_remaining as source of truth
-        // (accounts for consumed_sessions, completed, absent, forgiven)
-        $subscriptionRemaining = $circle->subscription?->sessions_remaining ?? 0;
+        $subscription = $circle->subscription;
+        $subscriptionRemaining = $subscription?->sessions_remaining ?? 0;
 
-        // Subtract pending sessions (created but not yet counted against subscription)
-        $pendingSessions = $circle->sessions()->active()->count();
+        // Only count pending sessions from the CURRENT cycle — sessions from
+        // previous cycles (before subscription.starts_at) shouldn't reduce
+        // the new cycle's available count.
+        $query = $circle->sessions()->active();
+        if ($subscription?->starts_at) {
+            $query->where('scheduled_at', '>=', $subscription->starts_at);
+        }
+        $pendingSessions = $query->count();
 
         return max(0, $subscriptionRemaining - $pendingSessions);
     }
