@@ -34,4 +34,5 @@ return [
     'override_by' => 'Overridden by',
     'auto_calculated' => 'Auto-calculated',
     'manually_set' => 'Manually set',
+    'minutes' => 'min',
 ];

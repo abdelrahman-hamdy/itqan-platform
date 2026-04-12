@@ -113,20 +113,20 @@
                     <span class="text-[10px] text-gray-400 w-10 shrink-0">{{ __('supervisor.sessions.teacher_short') }}</span>
                     @if($tAtt)
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap {{ $attColors[$tAtt] ?? 'bg-gray-100 text-gray-600' }}">{{ __('enums.attendance_status.' . $tAtt) }}</span>
-                        <span class="text-[10px] text-gray-400">{{ $tMinutes }}/{{ $duration }}{{ __('settings.minutes') }}</span>
+                        <span class="text-[10px] text-gray-400">{{ $tMinutes }}/{{ $duration }} {{ __('settings.minutes') }}</span>
                     @else
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap {{ $attColors['absent'] }}">{{ __('enums.attendance_status.absent') }}</span>
-                        <span class="text-[10px] text-gray-400">0/{{ $duration }}{{ __('settings.minutes') }}</span>
+                        <span class="text-[10px] text-gray-400">0/{{ $duration }} {{ __('settings.minutes') }}</span>
                     @endif
                 </div>
                 <div class="flex items-center gap-1.5">
                     <span class="text-[10px] text-gray-400 w-10 shrink-0">{{ __('supervisor.sessions.student_short') }}</span>
                     @if($sAtt)
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap {{ $attColors[$sAtt] ?? 'bg-gray-100 text-gray-600' }}">{{ __('enums.attendance_status.' . $sAtt) }}</span>
-                        <span class="text-[10px] text-gray-400">{{ $sMinutes }}/{{ $duration }}{{ __('settings.minutes') }}</span>
+                        <span class="text-[10px] text-gray-400">{{ $sMinutes }}/{{ $duration }} {{ __('settings.minutes') }}</span>
                     @else
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap {{ $attColors['absent'] }}">{{ __('enums.attendance_status.absent') }}</span>
-                        <span class="text-[10px] text-gray-400">0/{{ $duration }}{{ __('settings.minutes') }}</span>
+                        <span class="text-[10px] text-gray-400">0/{{ $duration }} {{ __('settings.minutes') }}</span>
                     @endif
                 </div>
             </div>

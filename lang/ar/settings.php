@@ -34,4 +34,5 @@ return [
     'override_by' => 'تم التعديل بواسطة',
     'auto_calculated' => 'محسوب تلقائياً',
     'manually_set' => 'تم تعيينه يدوياً',
+    'minutes' => 'د',
 ];
