@@ -146,10 +146,8 @@
                     <select name="status" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
                         <option value="">{{ __('supervisor.common.all') }}</option>
                         <option value="attended" {{ request('status') === 'attended' ? 'selected' : '' }}>{{ __('supervisor.attendance.present') }}</option>
-                        <option value="absent" {{ request('status') === 'absent' ? 'selected' : '' }}>{{ __('supervisor.attendance.absent') }}</option>
-                        <option value="late" {{ request('status') === 'late' ? 'selected' : '' }}>{{ __('supervisor.attendance.late') }}</option>
                         <option value="partially_attended" {{ request('status') === 'partially_attended' ? 'selected' : '' }}>{{ __('supervisor.attendance.partially_attended') }}</option>
-                        <option value="left" {{ request('status') === 'left' ? 'selected' : '' }}>{{ __('supervisor.attendance.left_early') }}</option>
+                        <option value="absent" {{ request('status') === 'absent' ? 'selected' : '' }}>{{ __('supervisor.attendance.absent') }}</option>
                     </select>
                 </div>
 
