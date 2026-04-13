@@ -159,7 +159,7 @@
 
     {{-- Counting --}}
     <td class="px-4 py-3 whitespace-nowrap" @click.stop>
-        @if($isCompleted && !$isTrial)
+        @if(($canManageSessions ?? false) && $isCompleted && !$isTrial)
             <div class="space-y-1.5">
                 {{-- Teacher counting button --}}
                 <div class="flex items-center gap-1.5">
@@ -240,7 +240,7 @@
                     {{ __('supervisor.sessions.join_meeting') }}
                 </a>
             @endif
-            @if($status->canCancel())
+            @if(($canManageSessions ?? false) && $status->canCancel())
                 @php $cancelUrl = route('manage.sessions.cancel', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]); @endphp
                 <button type="button"
                     @click.stop="window.confirmAction({

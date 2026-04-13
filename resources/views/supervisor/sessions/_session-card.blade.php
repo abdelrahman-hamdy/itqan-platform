@@ -135,7 +135,7 @@
             </div>
 
             {{-- Counting (not applicable to trial sessions) --}}
-            @if(!$isTrial)
+            @if(($canManageSessions ?? false) && !$isTrial)
             <div class="space-y-1" onclick="event.stopPropagation()">
                 <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">{{ __('supervisor.sessions.col_counting') }}</p>
                 <div class="flex flex-wrap gap-1.5">
@@ -201,7 +201,7 @@
     @endif
 
     {{-- Quick Actions --}}
-    @if($isLive || $status->canCancel())
+    @if($isLive || (($canManageSessions ?? false) && $status->canCancel()))
     <div class="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-1.5" onclick="event.stopPropagation();">
         @if($isLive)
             <a href="{{ $showUrl }}?mode=observer"
@@ -215,7 +215,7 @@
                 {{ __('supervisor.sessions.join_meeting') }}
             </a>
         @endif
-        @if($status->canCancel())
+        @if(($canManageSessions ?? false) && $status->canCancel())
             <a href="{{ $showUrl }}#cancel" @click.stop
                class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors">
                 <i class="ri-close-circle-line"></i>

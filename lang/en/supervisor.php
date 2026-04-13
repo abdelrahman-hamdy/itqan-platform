@@ -1183,6 +1183,8 @@ return [
         'can_manage_teacher_earnings_description' => 'View and review teacher earnings',
         'can_monitor_sessions' => 'Monitor Sessions',
         'can_monitor_sessions_description' => 'Join meetings and observe sessions',
+        'can_manage_sessions' => 'Manage Sessions',
+        'can_manage_sessions_description' => 'Cancel sessions and control counting',
         'perm_group_users' => 'User Management',
         'perm_group_financial' => 'Financial Management',
         'perm_group_monitoring' => 'Monitoring',

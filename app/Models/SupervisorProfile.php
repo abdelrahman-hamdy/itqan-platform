@@ -36,6 +36,7 @@ class SupervisorProfile extends Model
         'can_manage_payments',
         'can_manage_teacher_earnings',
         'can_monitor_sessions',
+        'can_manage_sessions',
         'can_manage_interactive_courses',
     ];
 
@@ -49,6 +50,7 @@ class SupervisorProfile extends Model
         'can_manage_payments' => 'boolean',
         'can_manage_teacher_earnings' => 'boolean',
         'can_monitor_sessions' => 'boolean',
+        'can_manage_sessions' => 'boolean',
         'can_manage_interactive_courses' => 'boolean',
     ];
 
@@ -313,6 +315,11 @@ class SupervisorProfile extends Model
     public function canMonitorSessions(): bool
     {
         return $this->can_monitor_sessions ?? false;
+    }
+
+    public function canManageSessions(): bool
+    {
+        return $this->can_manage_sessions ?? false;
     }
 
     public function canManageInteractiveCourses(): bool

@@ -1183,6 +1183,8 @@ return [
         'can_manage_teacher_earnings_description' => 'عرض ومراجعة أرباح المعلمين',
         'can_monitor_sessions' => 'مراقبة الجلسات',
         'can_monitor_sessions_description' => 'الانضمام للاجتماعات ومراقبة الجلسات',
+        'can_manage_sessions' => 'إدارة الجلسات',
+        'can_manage_sessions_description' => 'إلغاء الجلسات والتحكم في الاحتساب',
         'perm_group_users' => 'إدارة المستخدمين',
         'perm_group_financial' => 'الإدارة المالية',
         'perm_group_monitoring' => 'المراقبة',

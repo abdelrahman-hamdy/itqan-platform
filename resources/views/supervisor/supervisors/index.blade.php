@@ -228,6 +228,7 @@
                                             'can_manage_payments' => ['bg-emerald-100 text-emerald-700', 'ri-money-dollar-circle-line'],
                                             'can_manage_teacher_earnings' => ['bg-yellow-100 text-yellow-700', 'ri-wallet-3-line'],
                                             'can_monitor_sessions' => ['bg-indigo-100 text-indigo-700', 'ri-eye-line'],
+                                            'can_manage_sessions' => ['bg-cyan-100 text-cyan-700', 'ri-settings-4-line'],
                                         ];
                                     @endphp
                                     @foreach($permBadges as $perm => [$colors, $icon])

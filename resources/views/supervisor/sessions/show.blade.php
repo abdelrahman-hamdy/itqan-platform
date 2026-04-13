@@ -157,7 +157,7 @@
             @endif
 
             {{-- Cancel button --}}
-            @if($status->canCancel())
+            @if(($canManageSessions ?? false) && $status->canCancel())
                 <button @click="showCancelModal = true" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer">
                     <i class="ri-close-circle-line"></i>
                     {{ __($t.'cancel_session') }}
@@ -419,7 +419,7 @@
     </div>
 
     {{-- Counting Management Section (trials don't count for subscriptions or teacher earnings) --}}
-    @if($session->status === \App\Enums\SessionStatus::COMPLETED && ! $session->isTrial())
+    @if(($canManageSessions ?? false) && $session->status === \App\Enums\SessionStatus::COMPLETED && ! $session->isTrial())
     @php
         // Use meeting_attendances as source of truth (quran_session_attendances is empty)
         $allMeetingAtt = $session->meetingAttendances ?? collect();

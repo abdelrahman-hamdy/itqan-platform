@@ -277,8 +277,11 @@ abstract class BaseSupervisorProfileResource extends Resource
                 Fieldset::make('المراقبة والدورات')
                     ->schema([
                         Toggle::make('can_monitor_sessions')
-                            ->label('مراقبة الجلسات')
-                            ->helperText('الانضمام للاجتماعات ومراقبة الجلسات'),
+                            ->label(__('supervisor.supervisors.can_monitor_sessions'))
+                            ->helperText(__('supervisor.supervisors.can_monitor_sessions_description')),
+                        Toggle::make('can_manage_sessions')
+                            ->label(__('supervisor.supervisors.can_manage_sessions'))
+                            ->helperText(__('supervisor.supervisors.can_manage_sessions_description')),
                         Toggle::make('can_manage_interactive_courses')
                             ->label('إدارة الدورات التفاعلية')
                             ->helperText('إنشاء وتعديل الدورات التفاعلية'),

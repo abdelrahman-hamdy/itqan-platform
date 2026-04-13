@@ -48,6 +48,7 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
                 'can_manage_payments' => (bool) ($user->supervisorProfile?->can_manage_payments ?? false),
                 'can_manage_teacher_earnings' => (bool) ($user->supervisorProfile?->can_manage_teacher_earnings ?? false),
                 'can_monitor_sessions' => (bool) ($user->supervisorProfile?->can_monitor_sessions ?? false),
+                'can_manage_sessions' => (bool) ($user->supervisorProfile?->can_manage_sessions ?? false),
                 'quran_teachers_count' => $user->supervisorProfile?->quranTeachers()->count() ?? 0,
                 'academic_teachers_count' => $user->supervisorProfile?->academicTeachers()->count() ?? 0,
                 'total_responsibilities' => $user->supervisorProfile?->getTotalResponsibilitiesCount() ?? 0,
@@ -225,6 +226,7 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
             'can_manage_payments' => 'nullable|boolean',
             'can_manage_teacher_earnings' => 'nullable|boolean',
             'can_monitor_sessions' => 'nullable|boolean',
+            'can_manage_sessions' => 'nullable|boolean',
             'password' => ['required', PasswordRules::min(6)->letters()->numbers()],
             'password_confirmation' => 'required|same:password',
             'quran_teacher_ids' => 'nullable|array',
@@ -289,6 +291,7 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
                 'can_manage_payments' => $request->boolean('can_manage_payments'),
                 'can_manage_teacher_earnings' => $request->boolean('can_manage_teacher_earnings'),
                 'can_monitor_sessions' => $request->boolean('can_monitor_sessions'),
+                'can_manage_sessions' => $request->boolean('can_manage_sessions'),
                 'avatar' => $avatarPath,
             ]);
 
@@ -376,6 +379,7 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
             'can_manage_payments' => 'nullable|boolean',
             'can_manage_teacher_earnings' => 'nullable|boolean',
             'can_monitor_sessions' => 'nullable|boolean',
+            'can_manage_sessions' => 'nullable|boolean',
             'notes' => 'nullable|string|max:5000',
             'password' => ['nullable', PasswordRules::min(6)->letters()->numbers()],
             'password_confirmation' => 'nullable|same:password',
@@ -438,6 +442,7 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
                     'can_manage_payments' => $request->boolean('can_manage_payments'),
                     'can_manage_teacher_earnings' => $request->boolean('can_manage_teacher_earnings'),
                     'can_monitor_sessions' => $request->boolean('can_monitor_sessions'),
+                    'can_manage_sessions' => $request->boolean('can_manage_sessions'),
                     'notes' => $request->input('notes', $profile->notes),
                     'avatar' => $supervisor->avatar,
                 ]);

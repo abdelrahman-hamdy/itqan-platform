@@ -253,16 +253,18 @@
 
                 <h4 class="text-sm font-medium text-gray-700 mt-4">{{ __('supervisor.supervisors.perm_group_monitoring') }}</h4>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                        <input type="hidden" name="can_monitor_sessions" value="0">
-                        <input type="checkbox" name="can_monitor_sessions" value="1"
-                               class="h-5 w-5 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
-                               {{ old('can_monitor_sessions', $profile?->can_monitor_sessions) ? 'checked' : '' }}>
-                        <div>
-                            <p class="font-medium text-gray-900">{{ __('supervisor.supervisors.can_monitor_sessions') }}</p>
-                            <p class="text-sm text-gray-500">{{ __('supervisor.supervisors.can_monitor_sessions_description') }}</p>
-                        </div>
-                    </label>
+                    @foreach(['can_monitor_sessions', 'can_manage_sessions'] as $perm)
+                        <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                            <input type="hidden" name="{{ $perm }}" value="0">
+                            <input type="checkbox" name="{{ $perm }}" value="1"
+                                   class="h-5 w-5 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+                                   {{ old($perm, $profile?->$perm) ? 'checked' : '' }}>
+                            <div>
+                                <p class="font-medium text-gray-900">{{ __("supervisor.supervisors.{$perm}") }}</p>
+                                <p class="text-sm text-gray-500">{{ __("supervisor.supervisors.{$perm}_description") }}</p>
+                            </div>
+                        </label>
+                    @endforeach
                 </div>
             </div>
 

@@ -81,6 +81,7 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             'students' => $students,
             'statusOptions' => SessionStatus::options(),
             'liveSessions' => $liveSessions,
+            'canManageSessions' => $this->canManageSessions(),
         ]);
     }
 
@@ -141,6 +142,7 @@ class SupervisorSessionsController extends BaseSupervisorWebController
             'canObserve' => $canObserve,
             'mode' => $mode,
             'filamentUrl' => $filamentUrl,
+            'canManageSessions' => $this->canManageSessions(),
         ]);
     }
 
@@ -157,6 +159,12 @@ class SupervisorSessionsController extends BaseSupervisorWebController
 
         $validated = $request->validated();
         $updated = [];
+
+        // Status, schedule, and duration changes require manage permission
+        $hasManageFields = isset($validated['status']) || isset($validated['scheduled_at']) || isset($validated['duration_minutes']);
+        if ($hasManageFields && ! $this->canManageSessions()) {
+            return response()->json(['message' => __('common.unauthorized')], 403);
+        }
 
         if (isset($validated['status']) && $validated['status'] !== $session->status->value) {
             $session->status = SessionStatus::from($validated['status']);
@@ -198,6 +206,10 @@ class SupervisorSessionsController extends BaseSupervisorWebController
      */
     public function cancel(Request $request, $subdomain, string $sessionType, string $sessionId): JsonResponse
     {
+        if (! $this->canManageSessions()) {
+            return response()->json(['message' => __('common.unauthorized')], 403);
+        }
+
         $request->validate([
             'cancellation_reason' => ['required', 'string', 'max:500'],
         ]);
@@ -229,6 +241,10 @@ class SupervisorSessionsController extends BaseSupervisorWebController
      */
     public function toggleCountsForTeacher(Request $request, $subdomain, string $sessionType, int $sessionId): JsonResponse
     {
+        if (! $this->canManageSessions()) {
+            return response()->json(['message' => __('common.unauthorized')], 403);
+        }
+
         $session = $this->resolveSession($sessionType, (string) $sessionId);
 
         if (! $session) {
@@ -251,6 +267,10 @@ class SupervisorSessionsController extends BaseSupervisorWebController
      */
     public function toggleCountsForSubscription(Request $request, $subdomain, string $sessionType, int $sessionId, int $attendanceId): JsonResponse
     {
+        if (! $this->canManageSessions()) {
+            return response()->json(['message' => __('common.unauthorized')], 403);
+        }
+
         $session = $this->resolveSession($sessionType, (string) $sessionId);
 
         if (! $session) {
