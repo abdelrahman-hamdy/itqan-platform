@@ -71,11 +71,11 @@
         </a>
       </div>
 
-      {{-- Hero image column --}}
+      {{-- Hero image --}}
       @if($heroImage)
-      <div class="hidden lg:flex items-center justify-center">
+      <div class="flex items-center justify-center">
         <img src="{{ $heroImage }}" alt="{{ __('academy.hero.image_placeholder') }}"
-             class="w-full max-w-md xl:max-w-lg rounded-xl object-cover"
+             class="w-full max-w-sm sm:max-w-md xl:max-w-lg rounded-xl object-cover"
              style="max-height: 480px;">
       </div>
       @endif
@@ -83,31 +83,32 @@
 
     {{-- Feature cards --}}
     @if($academy->hero_show_boxes ?? true)
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 pb-16 sm:pb-20 lg:pb-24 {{ $heroImage ? '' : '-mt-4' }}">
-      @php
-        $features = [
-            ['icon' => 'M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.627 48.627 0 0 1 12 20.904a48.627 48.627 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5',
-             'title' => __('academy.hero.features.expert_teachers_title'),
-             'desc' => __('academy.hero.features.expert_teachers_desc')],
-            ['icon' => 'm15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z',
-             'title' => __('academy.hero.features.interactive_learning_title'),
-             'desc' => __('academy.hero.features.interactive_learning_desc')],
-            ['icon' => 'M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
-             'title' => __('academy.hero.features.flexible_schedule_title'),
-             'desc' => __('academy.hero.features.flexible_schedule_desc')],
-        ];
-      @endphp
-
+    @php
+      $features = [
+          ['icon' => 'M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.627 48.627 0 0 1 12 20.904a48.627 48.627 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5',
+           'title' => __('academy.hero.features.expert_teachers_title'),
+           'desc' => __('academy.hero.features.expert_teachers_desc')],
+          ['icon' => 'm15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z',
+           'title' => __('academy.hero.features.interactive_learning_title'),
+           'desc' => __('academy.hero.features.interactive_learning_desc')],
+          ['icon' => 'M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+           'title' => __('academy.hero.features.flexible_schedule_title'),
+           'desc' => __('academy.hero.features.flexible_schedule_desc')],
+      ];
+    @endphp
+    <div class="hidden sm:grid grid-cols-3 gap-4 pb-16 sm:pb-20 lg:pb-24 {{ $heroImage ? '' : '-mt-4' }}">
       @foreach($features as $i => $f)
-      <div class="group bg-white rounded-lg p-5 sm:p-6 border border-gray-100 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+      <div class="group flex items-start gap-4 bg-white rounded-lg p-4 sm:p-5 border border-gray-100 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
            style="animation: t2FadeUp .5s {{ ($i * 0.12) + 0.3 }}s both;">
-        <div class="w-11 h-11 rounded-lg flex items-center justify-center mb-4" style="background: {{ $brandHex500 }}10;">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style="background: {{ $brandHex500 }}10;">
           <svg class="w-5 h-5" style="color: {{ $brandHex600 }};" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="{{ $f['icon'] }}"/>
           </svg>
         </div>
-        <h3 class="text-sm font-bold text-gray-900 mb-1.5">{{ $f['title'] }}</h3>
-        <p class="text-xs text-gray-500 leading-relaxed">{{ $f['desc'] }}</p>
+        <div class="min-w-0">
+          <h3 class="text-sm font-bold text-gray-900 mb-1">{{ $f['title'] }}</h3>
+          <p class="text-xs text-gray-500 leading-relaxed">{{ $f['desc'] }}</p>
+        </div>
       </div>
       @endforeach
     </div>
