@@ -24,6 +24,7 @@ class InteractiveCourse extends Model
         'assigned_teacher_id',
         'title',
         'description',
+        'featured_image',
         'subject_id',
         'grade_level_id',
         'course_code',

@@ -17,7 +17,7 @@
     <div class="max-w-2xl mb-12 sm:mb-14">
       <div class="flex items-center gap-3 mb-4">
         <div class="w-10 h-[3px] rounded-full" style="background: {{ $brandHex500 }};"></div>
-        <span class="text-xs font-bold uppercase tracking-[0.15em] text-white/30">{{ __('academy.nav.sections.courses') }}</span>
+        <span class="text-xs font-bold uppercase text-white/30">{{ __('academy.nav.sections.courses') }}</span>
       </div>
       <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black text-white leading-tight">{{ $heading ?? __('academy.courses_section.default_heading') }}</h2>
       <p class="text-base text-white/35 mt-3 leading-relaxed">
@@ -54,9 +54,9 @@
               {{-- Top badges --}}
               <div class="absolute top-4 inset-x-4 flex justify-between">
                 @if($course->is_free)
-                <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 bg-green-500 text-white rounded-sm">{{ __('academy.cards.free') }}</span>
+                <span class="text-[10px] font-black uppercase px-2.5 py-1 bg-green-500 text-white rounded-sm">{{ __('academy.cards.free') }}</span>
                 @elseif($course->price > 0)
-                <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 text-white rounded-sm" style="background: {{ $brandHex600 }};">{{ number_format($course->price) }} {{ getCurrencySymbol() }}</span>
+                <span class="text-[10px] font-black uppercase px-2.5 py-1 text-white rounded-sm" style="background: {{ $brandHex600 }};">{{ number_format($course->price) }} {{ getCurrencySymbol() }}</span>
                 @else
                 <span></span>
                 @endif
@@ -71,7 +71,7 @@
               {{-- Bottom content --}}
               <div class="absolute bottom-0 inset-x-0 p-5">
                 @if($course->difficulty_level)
-                <span class="inline-block text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-sm mb-3
+                <span class="inline-block text-[9px] font-black uppercase px-2 py-0.5 rounded-sm mb-3
                   {{ $course->difficulty_level === 'easy' ? 'bg-emerald-500/25 text-emerald-300' :
                      ($course->difficulty_level === 'medium' ? 'bg-amber-500/25 text-amber-300' :
                      ($course->difficulty_level === 'hard' ? 'bg-red-500/25 text-red-300' : 'bg-white/10 text-white/50')) }}">

@@ -46,6 +46,13 @@
         }
     @endphp
 
+    {{-- Featured image --}}
+    @if($course->featured_image)
+    <div class="rounded-2xl overflow-hidden mb-6 md:mb-8">
+      <img src="{{ \Illuminate\Support\Facades\Storage::url($course->featured_image) }}" alt="{{ $course->title }}" class="w-full h-48 sm:h-64 md:h-80 object-cover">
+    </div>
+    @endif
+
     <!-- Hero Section -->
     <div class="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 mb-6 md:mb-8 border border-blue-100">
         <!-- Status Badge with Rating -->

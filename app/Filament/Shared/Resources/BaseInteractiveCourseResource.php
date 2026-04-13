@@ -14,6 +14,7 @@ use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Exception;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -121,6 +122,18 @@ abstract class BaseInteractiveCourseResource extends Resource
                     ->required()
                     ->maxLength(1000)
                     ->rows(4)
+                    ->columnSpanFull(),
+
+                FileUpload::make('featured_image')
+                    ->label('صورة الكورس')
+                    ->helperText('صورة مميزة تظهر في بطاقة الكورس وصفحة التفاصيل')
+                    ->image()
+                    ->directory('interactive-courses/featured')
+                    ->visibility('public')
+                    ->imageResizeMode('cover')
+                    ->imageCropAspectRatio('16:9')
+                    ->imageResizeTargetWidth('800')
+                    ->imageResizeTargetHeight('450')
                     ->columnSpanFull(),
             ]);
     }

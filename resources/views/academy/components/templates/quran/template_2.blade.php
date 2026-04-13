@@ -21,7 +21,7 @@
     <div class="max-w-2xl mb-14 sm:mb-16">
       <div class="flex items-center gap-3 mb-4">
         <div class="w-10 h-[3px] rounded-full" style="background: {{ $gradientFromHex }};"></div>
-        <span class="text-xs font-bold uppercase tracking-[0.15em] text-gray-400">{{ __('academy.nav.sections.quran') }}</span>
+        <span class="text-xs font-bold uppercase text-gray-400">{{ __('academy.nav.sections.quran') }}</span>
       </div>
       <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 leading-tight">{{ $heading ?? __('academy.quran_section.default_heading') }}</h2>
       @if(isset($subheading))
@@ -101,7 +101,7 @@
           {{-- Dark header bar --}}
           <div class="px-5 py-3 flex items-center justify-between gap-3" style="background: {{ $brandHex950 }};">
             <h4 class="text-sm font-bold text-white truncate">{{ $circle->name }}</h4>
-            <span class="shrink-0 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm" style="background: {{ $statusColor }}25; color: {{ $statusColor }};">
+            <span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded-sm" style="background: {{ $statusColor }}25; color: {{ $statusColor }};">
               @if($isEnrolled) {{ __('academy.cards.enrolled') }}
               @elseif($isOpen) {{ __('academy.cards.open') }}
               @elseif($isFull) {{ __('academy.cards.full') }}
@@ -122,7 +122,7 @@
 
             <div class="grid grid-cols-2 gap-3 mb-4">
               <div>
-                <span class="block text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">{{ __('components.circle.labels.students_count') }}</span>
+                <span class="block text-[10px] uppercase text-gray-400 mb-0.5">{{ __('components.circle.labels.students_count') }}</span>
                 <div class="flex items-center gap-2">
                   <span class="text-sm font-black text-gray-900">{{ $circle->students_count }}<span class="text-gray-300 font-normal">/{{ $circle->max_students }}</span></span>
                   <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
@@ -132,7 +132,7 @@
               </div>
               @if($circle->schedule_days_text)
               <div>
-                <span class="block text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">{{ __('components.circle.labels.schedule') }}</span>
+                <span class="block text-[10px] uppercase text-gray-400 mb-0.5">{{ __('components.circle.labels.schedule') }}</span>
                 <span class="text-sm font-semibold text-gray-700 truncate block">{{ $circle->schedule_days_text }}</span>
               </div>
               @endif

@@ -51,7 +51,7 @@ class AcademyHomepageController extends Controller
         $interactiveCourses = InteractiveCourse::withoutGlobalScope('academy')
             ->where('academy_id', $academy->id)
             ->where('is_published', true)
-            ->with(['assignedTeacher', 'subject', 'gradeLevel'])
+            ->with(['assignedTeacher.user', 'subject', 'gradeLevel'])
             ->take(4)
             ->get();
 

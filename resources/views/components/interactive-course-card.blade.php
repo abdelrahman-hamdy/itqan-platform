@@ -5,7 +5,13 @@
   $progress = $enrollment->progress_percentage ?? 0;
 @endphp
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all duration-300 flex flex-col">
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col">
+  @if($course->featured_image)
+  <div class="w-full h-40 sm:h-44 overflow-hidden">
+    <img src="{{ \Illuminate\Support\Facades\Storage::url($course->featured_image) }}" alt="{{ $course->title }}" class="w-full h-full object-cover">
+  </div>
+  @endif
+  <div class="p-6 flex flex-col flex-1">
   <div class="flex items-start justify-between mb-4">
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
       {{ $isEnrolled ? 'bg-green-100 text-green-800' : ($course->is_published ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') }}">
@@ -133,4 +139,5 @@
     {{ __('components.cards.interactive_course.view_details') }}
   </a>
   @endif
+  </div>
 </div>
