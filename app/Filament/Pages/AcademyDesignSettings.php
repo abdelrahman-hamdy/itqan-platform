@@ -136,6 +136,7 @@ class AcademyDesignSettings extends Page implements HasForms
                             ->label('صورة القسم الرئيسي')
                             ->helperText('تظهر هذه الصورة بجانب المحتوى في القالب الثاني والثالث')
                             ->image()
+                            ->disk('public')
                             ->directory('academies/hero-images')
                             ->visibility('public')
                             ->imageResizeMode('cover')

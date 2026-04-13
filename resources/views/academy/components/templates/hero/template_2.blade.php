@@ -14,7 +14,12 @@
 
     $heroHeading    = $heading ?? __('academy.hero.default_heading');
     $heroSubheading = $subheading ?? __('academy.hero.default_subheading');
-    $heroImage      = $academy?->hero_image ? asset('storage/' . $academy->hero_image) : null;
+    $heroImage      = null;
+    if ($academy?->hero_image) {
+        $heroImage = \Illuminate\Support\Facades\Storage::disk('public')->exists($academy->hero_image)
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($academy->hero_image)
+            : asset('storage/' . $academy->hero_image);
+    }
 @endphp
 
 <section id="hero-section" class="relative overflow-hidden" role="main"
@@ -75,7 +80,7 @@
       @if($heroImage)
       <div class="hidden lg:flex items-center justify-center">
         <img src="{{ $heroImage }}" alt="{{ __('academy.hero.image_placeholder') }}"
-             class="w-full max-w-md xl:max-w-lg rounded-xl object-cover shadow-xl"
+             class="w-full max-w-md xl:max-w-lg rounded-xl object-cover"
              style="max-height: 480px;">
       </div>
       @endif
