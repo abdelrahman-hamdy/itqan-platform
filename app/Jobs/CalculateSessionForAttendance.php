@@ -627,7 +627,7 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
             $teacherId = match (true) {
                 $session instanceof QuranSession => $session->quran_teacher_id,
                 $session instanceof AcademicSession => $session->academicTeacher?->user_id,
-                $session instanceof InteractiveCourseSession => $session->course?->academicTeacher?->user_id,
+                $session instanceof InteractiveCourseSession => $session->course?->assignedTeacher?->user_id,
                 default => $session->teacher_id ?? null,
             };
             $academyId = $session->academy_id
