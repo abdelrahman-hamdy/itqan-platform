@@ -46,10 +46,19 @@ return [
     // Hero Section
     'hero' => [
         'badge' => 'Advanced Learning Platform',
+        'badge_template2' => 'Start Your Learning Journey',
         'default_heading' => 'Distinguished Education for the Future',
         'default_subheading' => 'Join thousands of students developing their skills in the Holy Quran and academic education with the best specialized teachers',
         'cta_button' => 'Start Your Journey Now',
         'image_placeholder' => 'Hero Image',
+        'features' => [
+            'expert_teachers_title' => 'Expert Teachers',
+            'expert_teachers_desc' => 'Elite qualified educators with extensive experience',
+            'interactive_learning_title' => 'Interactive Learning',
+            'interactive_learning_desc' => 'Live sessions with real interaction and continuous follow-up',
+            'flexible_schedule_title' => 'Flexible Schedule',
+            'flexible_schedule_desc' => 'Learn at the time and place that suits you',
+        ],
     ],
 
     // Service Cards
@@ -175,6 +184,10 @@ return [
         'circles_subtitle' => 'Choose the circle that suits your level and start your journey in memorizing the Holy Quran',
         'teachers_title' => 'Distinguished Quran Teachers',
         'teachers_subtitle' => 'Elite group of the best qualified Quran teachers to teach you',
+        'individual_title' => 'Individual Learning',
+        'individual_subtitle' => 'Learn Quran with a private teacher tracking your progress step by step',
+        'group_title' => 'Group Memorization Circles',
+        'group_subtitle' => 'Join organized group circles for Quran memorization',
         'no_circles_title' => 'No circles available currently',
         'no_circles_message' => 'Quran circles will be added soon',
         'no_teachers_title' => 'No teachers available currently',
@@ -194,6 +207,10 @@ return [
         'courses_subtitle' => 'Comprehensive and advanced courses covering all academic subjects in an engaging interactive style',
         'teachers_title' => 'Distinguished Academic Teachers',
         'teachers_subtitle' => 'Elite group of the best teachers specialized in all academic subjects',
+        'interactive_courses_title' => 'Interactive Courses',
+        'interactive_courses_subtitle' => 'Live courses with specialized teachers and live interaction',
+        'academic_teachers_title' => 'Academic Teachers',
+        'academic_teachers_subtitle' => 'Teachers specialized in all academic subjects',
         'no_courses_title' => 'No interactive courses available currently',
         'no_courses_message' => 'Courses will be added soon',
         'no_teachers_title' => 'No academic teachers available currently',
@@ -227,6 +244,34 @@ return [
         'send_message' => 'Send Message',
         'default_address' => 'Riyadh, Saudi Arabia',
         'terms_of_use' => 'Terms of Use',
+    ],
+
+    // Courses Section (Recorded)
+    'courses_section' => [
+        'default_heading' => 'Recorded Courses',
+        'default_subheading' => 'Learn anytime at your own pace',
+        'no_courses_title' => 'No recorded courses available',
+        'no_courses_message' => 'Courses will be added soon',
+    ],
+
+    // Inline Card Labels (Template 2)
+    'cards' => [
+        'view_profile' => 'View Profile',
+        'view_details' => 'View Details',
+        'view_course' => 'View Course',
+        'enrolled' => 'Enrolled',
+        'open' => 'Open',
+        'full' => 'Full',
+        'free' => 'Free',
+        'per_month' => 'per month',
+        'experience_years' => ':years years experience',
+        'students' => ':count students',
+        'sessions' => ':count sessions',
+        'weeks' => ':count weeks',
+        'difficulty_easy' => 'Beginner',
+        'difficulty_medium' => 'Intermediate',
+        'difficulty_hard' => 'Advanced',
+        'enrollments' => ':count enrolled',
     ],
 
     // Common Actions

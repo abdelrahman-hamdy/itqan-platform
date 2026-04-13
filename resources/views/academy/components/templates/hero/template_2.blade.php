@@ -2,6 +2,7 @@
     // Get brand color with hex values
     $brandColor = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
     $brandHex50 = $brandColor->getHexValue(50);
+    $brandHex100 = $brandColor->getHexValue(100);
     $brandHex200 = $brandColor->getHexValue(200);
     $brandHex500 = $brandColor->getHexValue(500);
     $brandHex600 = $brandColor->getHexValue(600);
@@ -11,163 +12,128 @@
     $heroSubheading = $subheading ?? __('academy.hero.default_subheading');
 @endphp
 
-<!-- Hero Section - Template 2: Modern Abstract Design -->
-<section id="hero-section" class="relative flex items-center overflow-hidden bg-white py-24 sm:py-16 lg:py-0" role="main" style="min-height: min(100vh, 56rem);">
-  <!-- Abstract Background with Subtle Orbs -->
+<!-- Hero Section - Template 2: Educational Platform Design -->
+<section id="hero-section" class="relative flex items-center overflow-hidden bg-white py-20 sm:py-16 lg:py-0" role="main" style="min-height: min(100vh, 56rem);">
+  <!-- Educational Background Pattern -->
   <div class="absolute inset-0 overflow-hidden">
-    <!-- Subtle Gradient Overlay -->
-    <div class="absolute inset-0 opacity-40" style="background: linear-gradient(to bottom right, {{ $brandHex50 }}, white, #faf5ff);"></div>
+    <!-- Soft Gradient Overlay -->
+    <div class="absolute inset-0" style="background: radial-gradient(ellipse at center, {{ $brandHex50 }}80, white 70%);"></div>
 
-    <!-- Large Animated Gradient Orbs with Reduced Opacity -->
-    <div class="absolute top-0 -left-60 w-[600px] h-[600px] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" style="background-color: {{ $brandHex200 }};"></div>
-    <div class="absolute top-0 -right-60 w-[600px] h-[600px] bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+    <!-- SVG Educational Pattern (Books/Graduation) -->
+    <div class="absolute inset-0 opacity-[0.06]">
+      <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="edu-pattern" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+            <!-- Open Book Shape -->
+            <path d="M30 70 L30 40 Q45 35 60 40 Q75 35 90 40 L90 70 Q75 65 60 70 Q45 65 30 70Z" fill="none" stroke="{{ $brandHex500 }}" stroke-width="1.5" opacity="0.6"/>
+            <line x1="60" y1="40" x2="60" y2="70" stroke="{{ $brandHex500 }}" stroke-width="1" opacity="0.4"/>
+            <!-- Graduation Cap -->
+            <polygon points="60,10 40,20 60,30 80,20" fill="none" stroke="{{ $brandHex500 }}" stroke-width="1.2" opacity="0.5"/>
+            <line x1="60" y1="30" x2="60" y2="38" stroke="{{ $brandHex500 }}" stroke-width="1" opacity="0.4"/>
+            <line x1="75" y1="22" x2="75" y2="32" stroke="{{ $brandHex500 }}" stroke-width="1" opacity="0.3"/>
+            <circle cx="75" cy="33" r="2" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.8" opacity="0.3"/>
+            <!-- Small Dots Accent -->
+            <circle cx="10" cy="95" r="1.5" fill="{{ $brandHex500 }}" opacity="0.15"/>
+            <circle cx="110" cy="95" r="1.5" fill="{{ $brandHex500 }}" opacity="0.15"/>
+            <circle cx="10" cy="5" r="1.5" fill="{{ $brandHex500 }}" opacity="0.15"/>
+            <circle cx="110" cy="5" r="1.5" fill="{{ $brandHex500 }}" opacity="0.15"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#edu-pattern)" />
+      </svg>
+    </div>
 
-    <!-- Subtle Dot Pattern -->
-    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle, rgba(0,0,0,0.1) 1px, transparent 1px); background-size: 40px 40px;"></div>
+    <!-- Subtle Dot Grid -->
+    <div class="absolute inset-0 opacity-[0.04]" style="background-image: radial-gradient(circle, {{ $brandHex500 }} 1px, transparent 1px); background-size: 32px 32px;"></div>
   </div>
 
   <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-      <!-- Left Content -->
-      <div class="space-y-8 text-center lg:text-right">
-        <!-- Badge -->
-        <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full shadow-sm animate-bounce" style="background-color: {{ $brandHex50 }}; border: 1px solid {{ $brandHex200 }};">
-          <div class="w-2 h-2 rounded-full animate-pulse" style="background-color: {{ $brandHex500 }};"></div>
-          <span class="text-sm font-semibold" style="color: {{ $brandHex700 }};">{{ __('academy.hero.badge') }}</span>
-        </div>
-
-        <!-- Main Heading -->
-        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight text-gray-900">
-          {{ $heroHeading }}
-        </h1>
-
-        <!-- Subheading -->
-        <p class="text-lg lg:text-xl text-gray-600 leading-relaxed">
-          {{ $heroSubheading }}
-        </p>
-
-        <!-- CTA Button -->
-        <div class="flex justify-center lg:justify-start">
-          <a href="{{ route('student.register', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}"
-             class="group relative inline-flex items-center gap-3 px-8 py-4 text-white rounded-2xl font-semibold text-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-             style="background-color: {{ $brandHex600 }};"
-             onmouseover="this.style.backgroundColor='{{ $brandHex700 }}'"
-             onmouseout="this.style.backgroundColor='{{ $brandHex600 }}'">
-            <span>{{ __('academy.hero.cta_button') }}</span>
-            <i class="ri-arrow-left-line text-xl transition-transform duration-300 group-hover:-translate-x-1 ltr:rotate-180 ltr:group-hover:translate-x-1"></i>
-          </a>
-        </div>
+    <!-- Content Area -->
+    <div class="text-center max-w-3xl mx-auto space-y-8">
+      <!-- Floating Badge -->
+      <div class="inline-flex items-center gap-3 px-5 py-2.5 rounded-lg shadow-sm animate-float"
+           style="background-color: {{ $brandHex50 }}; border-inline-start: 3px solid {{ $brandHex500 }};">
+        <i class="ri-book-read-line text-lg" style="color: {{ $brandHex600 }};"></i>
+        <span class="text-sm font-semibold" style="color: {{ $brandHex700 }};">{{ __('academy.hero.badge_template2') }}</span>
       </div>
 
-      <!-- Right Content - Items Grid -->
-      @if($academy->hero_show_boxes ?? true)
-      @php
-          $visibleBoxes = collect([
-              $academy->quran_show_circles ?? true,
-              $academy->quran_show_teachers ?? true,
-              $academy->academic_show_teachers ?? true,
-              $academy->academic_show_courses ?? true,
-          ])->filter()->count();
-      @endphp
-      @if($visibleBoxes > 0)
-      <div class="grid {{ $visibleBoxes === 1 ? 'grid-cols-1 max-w-sm mx-auto' : 'grid-cols-2' }} gap-4 lg:gap-6">
-        @if($academy->quran_show_circles ?? true)
-        <!-- Quran Circles -->
-        <div class="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="relative z-10 space-y-3 sm:space-y-4">
-            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-              <i class="ri-group-line text-2xl sm:text-3xl text-white"></i>
-            </div>
-            <div>
-              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">{{ __('academy.services.quran_circles.title') }}</h3>
-              <p class="text-xs sm:text-sm text-gray-600">{{ __('academy.services.quran_circles.description') }}</p>
-            </div>
-          </div>
-          <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
-        </div>
-        @endif
+      <!-- Main Heading -->
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight text-gray-900">
+        {{ $heroHeading }}
+      </h1>
 
-        @if($academy->quran_show_teachers ?? true)
-        <!-- Individual Quran Learning -->
-        <div class="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="relative z-10 space-y-3 sm:space-y-4">
-            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-              <i class="ri-user-line text-2xl sm:text-3xl text-white"></i>
-            </div>
-            <div>
-              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">{{ __('academy.services.individual_learning.title') }}</h3>
-              <p class="text-xs sm:text-sm text-gray-600">{{ __('academy.services.individual_learning.description') }}</p>
-            </div>
-          </div>
-          <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-blue-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
-        </div>
-        @endif
+      <!-- Subheading -->
+      <p class="text-lg lg:text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto">
+        {{ $heroSubheading }}
+      </p>
 
-        @if($academy->academic_show_teachers ?? true)
-        <!-- Private Classes -->
-        <div class="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="relative z-10 space-y-3 sm:space-y-4">
-            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-              <i class="ri-video-line text-2xl sm:text-3xl text-white"></i>
-            </div>
-            <div>
-              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">{{ __('academy.services.private_lessons.title') }}</h3>
-              <p class="text-xs sm:text-sm text-gray-600">{{ __('academy.services.private_lessons.description') }}</p>
-            </div>
-          </div>
-          <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-amber-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
-        </div>
-        @endif
-
-        @if($academy->academic_show_courses ?? true)
-        <!-- Interactive Courses -->
-        <div class="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-violet-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="relative z-10 space-y-3 sm:space-y-4">
-            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-violet-400 to-purple-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-              <i class="ri-computer-line text-2xl sm:text-3xl text-white"></i>
-            </div>
-            <div>
-              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">{{ __('academy.services.interactive_courses.title') }}</h3>
-              <p class="text-xs sm:text-sm text-gray-600">{{ __('academy.services.interactive_courses.description') }}</p>
-            </div>
-          </div>
-          <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-violet-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
-        </div>
-        @endif
+      <!-- CTA Button -->
+      <div>
+        <a href="{{ route('student.register', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}"
+           class="group relative inline-flex items-center gap-3 px-8 py-4 text-white rounded-2xl font-semibold text-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+           style="background-color: {{ $brandHex600 }};"
+           onmouseover="this.style.backgroundColor='{{ $brandHex700 }}'"
+           onmouseout="this.style.backgroundColor='{{ $brandHex600 }}'">
+          <span>{{ __('academy.hero.cta_button') }}</span>
+          <i class="ri-arrow-left-line text-xl transition-transform duration-300 group-hover:-translate-x-1 ltr:rotate-180 ltr:group-hover:translate-x-1"></i>
+        </a>
       </div>
-      @endif
-      @endif
     </div>
+
+    <!-- Feature Cards -->
+    @if($academy->hero_show_boxes ?? true)
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 mt-14 lg:mt-16 max-w-4xl mx-auto">
+      <!-- Expert Teachers -->
+      <div class="group flex items-center gap-4 bg-white/80 backdrop-blur-sm rounded-xl p-4 lg:p-5 border border-gray-100 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+        <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+             style="background: linear-gradient(135deg, {{ $brandHex500 }}, {{ $brandHex600 }});">
+          <i class="ri-user-star-line text-xl text-white"></i>
+        </div>
+        <div class="min-w-0">
+          <h3 class="text-sm font-bold text-gray-900">{{ __('academy.hero.features.expert_teachers_title') }}</h3>
+          <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">{{ __('academy.hero.features.expert_teachers_desc') }}</p>
+        </div>
+      </div>
+
+      <!-- Interactive Learning -->
+      <div class="group flex items-center gap-4 bg-white/80 backdrop-blur-sm rounded-xl p-4 lg:p-5 border border-gray-100 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+        <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+             style="background: linear-gradient(135deg, {{ $brandHex500 }}, {{ $brandHex600 }});">
+          <i class="ri-live-line text-xl text-white"></i>
+        </div>
+        <div class="min-w-0">
+          <h3 class="text-sm font-bold text-gray-900">{{ __('academy.hero.features.interactive_learning_title') }}</h3>
+          <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">{{ __('academy.hero.features.interactive_learning_desc') }}</p>
+        </div>
+      </div>
+
+      <!-- Flexible Schedule -->
+      <div class="group flex items-center gap-4 bg-white/80 backdrop-blur-sm rounded-xl p-4 lg:p-5 border border-gray-100 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+        <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+             style="background: linear-gradient(135deg, {{ $brandHex500 }}, {{ $brandHex600 }});">
+          <i class="ri-calendar-check-line text-xl text-white"></i>
+        </div>
+        <div class="min-w-0">
+          <h3 class="text-sm font-bold text-gray-900">{{ __('academy.hero.features.flexible_schedule_title') }}</h3>
+          <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">{{ __('academy.hero.features.flexible_schedule_desc') }}</p>
+        </div>
+      </div>
+    </div>
+    @endif
   </div>
 </section>
 
 <style>
-  @keyframes blob {
+  @keyframes float {
     0%, 100% {
-      transform: translate(0, 0) scale(1);
+      transform: translateY(0px);
     }
-    33% {
-      transform: translate(30px, -50px) scale(1.1);
-    }
-    66% {
-      transform: translate(-20px, 20px) scale(0.9);
+    50% {
+      transform: translateY(-6px);
     }
   }
 
-  .animate-blob {
-    animation: blob 7s infinite;
-  }
-
-  .animation-delay-2000 {
-    animation-delay: 2s;
-  }
-
-  .animation-delay-4000 {
-    animation-delay: 4s;
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
   }
 </style>

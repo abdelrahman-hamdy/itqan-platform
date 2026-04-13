@@ -5,90 +5,172 @@
     $gradientFromHex = $hexColors['from'];
     $gradientToHex = $hexColors['to'];
 
+    $brandColor = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
+    $brandHex500 = $brandColor->getHexValue(500);
+    $brandHex600 = $brandColor->getHexValue(600);
+
     $showCourses = $academy->academic_show_courses ?? true;
     $showTeachers = $academy->academic_show_teachers ?? true;
-    $defaultTab = $showCourses ? 'courses' : 'teachers';
 
     $courseItems = $interactiveCourses->take(6);
     $teacherItems = $academicTeachers->take(6);
 @endphp
 
-<!-- Academic Section - Template 2: Clean Professional Design with Tabs -->
-<section id="academic" class="py-16 sm:py-20 lg:py-24 relative overflow-hidden transition-colors duration-500 scroll-mt-20"
-         x-data="{ activeTab: '{{ $defaultTab }}' }"
-         :style="activeTab === 'courses' ? 'background: linear-gradient(to bottom right, {{ $gradientFromHex }}1a, {{ $gradientFromHex }}0d, white)' : 'background: linear-gradient(to bottom right, {{ $gradientToHex }}1a, {{ $gradientToHex }}0d, white)'">
+<!-- Academic Section - Template 2: Dual Sub-sections with Horizontal Scroll -->
+<section id="academic" class="py-16 sm:py-20 lg:py-24 scroll-mt-20">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-8 sm:mb-10 lg:mb-12">
-      <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">{{ $heading ?? 'البرامج التعليمية' }}</h2>
+    <!-- Section Header -->
+    <div class="text-center mb-10 sm:mb-14">
+      <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{{ $heading ?? __('academy.academic_section.default_heading') }}</h2>
       @if(isset($subheading))
-        <p class="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">{{ $subheading }}</p>
-      @endif
-
-      <!-- Tab Toggle -->
-      @if($showCourses && $showTeachers)
-      <div class="inline-flex bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-md border border-gray-200">
-        <button
-          @click="activeTab = 'courses'"
-          :style="activeTab === 'courses' ? 'background-color: {{ $gradientFromHex }}; color: white;' : ''"
-          :class="activeTab === 'courses' ? 'shadow-sm' : 'text-gray-600 hover:text-gray-900'"
-          class="px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 whitespace-nowrap">
-          <i class="ri-book-open-line ms-1 sm:ms-2"></i>
-          <span class="hidden sm:inline">الكورسات التفاعلية</span>
-          <span class="sm:hidden">الكورسات</span>
-        </button>
-        <button
-          @click="activeTab = 'teachers'"
-          :style="activeTab === 'teachers' ? 'background-color: {{ $gradientToHex }}; color: white;' : ''"
-          :class="activeTab === 'teachers' ? 'shadow-sm' : 'text-gray-600 hover:text-gray-900'"
-          class="px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 whitespace-nowrap">
-          <i class="ri-user-star-line ms-1 sm:ms-2"></i>
-          المعلمون
-        </button>
-      </div>
+        <p class="text-base sm:text-lg text-gray-600">{{ $subheading }}</p>
       @endif
     </div>
 
-    <!-- Interactive Courses Section -->
+    {{-- Sub-section A: Interactive Courses (Horizontal Scroll) --}}
     @if($showCourses)
-    <div x-show="activeTab === 'courses'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0">
-      <div class="mb-8 sm:mb-10 lg:mb-12 text-center">
-        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">الكورسات التفاعلية المتاحة</h3>
-        <p class="text-sm sm:text-base text-gray-600">كورسات شاملة ومتطورة تغطي جميع المواد الدراسية بأسلوب تفاعلي ممتع</p>
+    <div class="rounded-2xl p-6 sm:p-8 lg:p-10 mb-8 lg:mb-12" style="background: linear-gradient(135deg, {{ $gradientFromHex }}0d, {{ $gradientFromHex }}06, white);">
+      <div class="mb-6 sm:mb-8">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: {{ $gradientFromHex }}20;">
+            <i class="ri-book-open-line text-base" style="color: {{ $gradientFromHex }};"></i>
+          </div>
+          <h3 class="text-lg sm:text-xl font-bold text-gray-900">{{ __('academy.academic_section.interactive_courses_title') }}</h3>
+        </div>
+        <p class="text-sm text-gray-500 ms-11">{{ __('academy.academic_section.interactive_courses_subtitle') }}</p>
       </div>
 
       @if($courseItems->count() > 0)
-      <div id="academic-courses-carousel" class="mb-8 sm:mb-10 lg:mb-12">
-        <div class="flex items-center gap-2 sm:gap-3 lg:gap-4">
-          <!-- Prev Button -->
-          <button class="carousel-prev hidden sm:flex flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="السابق">
-            <i class="ri-arrow-right-s-line text-xl md:text-2xl ltr:rotate-180"></i>
-          </button>
-
-          <!-- Track -->
-          <div class="flex-1 min-w-0 overflow-hidden">
-            <div class="carousel-track flex transition-transform duration-300 ease-in-out">
-              @foreach($courseItems as $course)
-                <div class="carousel-slide flex-shrink-0 w-full md:w-1/2 px-2 sm:px-3">
-                  <x-interactive-course-card :course="$course" :academy="$academy" />
+      <div id="interactive-courses-scroll" class="relative">
+        {{-- Scroll Container --}}
+        <div class="overflow-x-auto pb-4 -mx-2 px-2 scroll-smooth" style="scrollbar-width: thin; scrollbar-color: {{ $gradientFromHex }} #f3f4f6;">
+          <div class="flex gap-4 sm:gap-5" style="scroll-snap-type: x mandatory;">
+            @foreach($courseItems as $course)
+            @php
+              $isEnrolled = $enrollment ?? false;
+            @endphp
+            <div class="flex-shrink-0 w-[85vw] sm:w-[480px] md:w-[620px] scroll-snap-align-start">
+              <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md hover:border-gray-200 h-full flex flex-col md:flex-row">
+                {{-- Course Visual (Gradient Placeholder) --}}
+                <div class="md:w-[40%] flex-shrink-0 relative overflow-hidden" style="background: linear-gradient(135deg, {{ $gradientFromHex }}30, {{ $brandHex500 }}20, {{ $gradientFromHex }}10);">
+                  <div class="flex items-center justify-center h-40 md:h-full min-h-[160px]">
+                    <div class="text-center">
+                      <i class="ri-book-open-line text-4xl opacity-40" style="color: {{ $gradientFromHex }};"></i>
+                      @if($course->subject)
+                      <p class="text-xs font-medium mt-2 opacity-60" style="color: {{ $gradientFromHex }};">{{ $course->subject->name }}</p>
+                      @endif
+                    </div>
+                  </div>
+                  {{-- Status Badge --}}
+                  <div class="absolute top-3 start-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold
+                      {{ $course->is_published ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600' }}">
+                      {{ $course->is_published ? __('components.cards.interactive_course.status_available') : __('components.cards.interactive_course.status_unavailable') }}
+                    </span>
+                  </div>
                 </div>
-              @endforeach
-            </div>
-          </div>
 
-          <!-- Next Button -->
-          <button class="carousel-next hidden sm:flex flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="التالي">
-            <i class="ri-arrow-left-s-line text-xl md:text-2xl ltr:rotate-180"></i>
-          </button>
+                {{-- Course Content --}}
+                <div class="md:w-[60%] p-4 sm:p-5 flex flex-col">
+                  {{-- Title + Rating --}}
+                  <div class="flex items-start justify-between gap-2 mb-2">
+                    <h4 class="text-sm sm:text-base font-bold text-gray-900 line-clamp-2">{{ $course->title }}</h4>
+                    @if(($course->avg_rating ?? 0) > 0)
+                    <div class="flex items-center gap-0.5 flex-shrink-0">
+                      <i class="ri-star-fill text-xs text-amber-400"></i>
+                      <span class="text-xs font-medium text-gray-600">{{ number_format($course->avg_rating, 1) }}</span>
+                    </div>
+                    @endif
+                  </div>
+
+                  @if($course->description)
+                  <p class="text-xs text-gray-500 line-clamp-2 mb-3">{{ $course->description }}</p>
+                  @endif
+
+                  {{-- Details --}}
+                  <div class="space-y-2 text-xs text-gray-600 mb-3">
+                    @if($course->assignedTeacher)
+                    <div class="flex items-center gap-2">
+                      <i class="ri-user-star-line" style="color: {{ $gradientFromHex }};"></i>
+                      <span class="truncate">{{ $course->assignedTeacher->full_name }}</span>
+                    </div>
+                    @endif
+
+                    @if($course->gradeLevel)
+                    <div class="flex items-center gap-2">
+                      <i class="ri-graduation-cap-line" style="color: {{ $gradientFromHex }};"></i>
+                      <span>{{ $course->gradeLevel->getDisplayName() }}</span>
+                    </div>
+                    @endif
+
+                    <div class="flex items-center gap-2">
+                      <i class="ri-calendar-line" style="color: {{ $gradientFromHex }};"></i>
+                      <span>{{ __('academy.cards.sessions', ['count' => $course->total_sessions ?? 0]) }} &bull; {{ __('academy.cards.weeks', ['count' => $course->duration_weeks ?? 0]) }}</span>
+                    </div>
+
+                    @if($course->schedule && is_array($course->schedule) && count($course->schedule) > 0)
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      @foreach(array_slice($course->schedule, 0, 3) as $item)
+                      <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-50 text-gray-600">
+                        {{ is_array($item) ? ($item['day'] ?? '') : ($item->day ?? '') }}
+                        @if(is_array($item) ? ($item['time'] ?? null) : ($item->time ?? null))
+                          : {{ is_array($item) ? $item['time'] : $item->time }}
+                        @endif
+                      </span>
+                      @endforeach
+                    </div>
+                    @endif
+                  </div>
+
+                  {{-- Spacer --}}
+                  <div class="flex-grow"></div>
+
+                  {{-- Price + CTA --}}
+                  <div class="flex items-center justify-between gap-3 pt-3 border-t border-gray-50">
+                    @if($course->student_price > 0)
+                    <div>
+                      @if($course->hasDiscount())
+                        <span class="text-sm font-bold" style="color: {{ $gradientFromHex }};">{{ number_format($course->sale_price) }} {{ getCurrencySymbol() }}</span>
+                        <span class="text-xs text-gray-400 line-through ms-1">{{ number_format($course->student_price) }}</span>
+                      @else
+                        <span class="text-sm font-bold" style="color: {{ $gradientFromHex }};">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
+                      @endif
+                    </div>
+                    @else
+                    <span class="text-sm font-bold text-green-600">{{ __('academy.cards.free') }}</span>
+                    @endif
+
+                    <a href="{{ route('interactive-courses.show', ['subdomain' => $academy->subdomain, 'courseId' => $course->id]) }}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all duration-200 hover:opacity-90"
+                       style="background-color: {{ $gradientFromHex }};">
+                      {{ __('academy.cards.view_details') }}
+                      <i class="ri-arrow-left-s-line text-sm ltr:rotate-180"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            @endforeach
+          </div>
         </div>
 
-        <!-- Dots -->
-        <div class="carousel-dots flex justify-center items-center gap-3 mt-6"></div>
+        {{-- Navigation Arrows --}}
+        @if($courseItems->count() > 1)
+        <button class="scroll-prev hidden sm:flex absolute top-1/2 -translate-y-1/2 -start-3 lg:-start-5 w-10 h-10 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 items-center justify-center z-10"
+                style="color: {{ $gradientFromHex }};" aria-label="{{ __('academy.actions.view_more') }}">
+          <i class="ri-arrow-right-s-line text-xl ltr:rotate-180"></i>
+        </button>
+        <button class="scroll-next hidden sm:flex absolute top-1/2 -translate-y-1/2 -end-3 lg:-end-5 w-10 h-10 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 items-center justify-center z-10"
+                style="color: {{ $gradientFromHex }};" aria-label="{{ __('academy.actions.view_more') }}">
+          <i class="ri-arrow-left-s-line text-xl ltr:rotate-180"></i>
+        </button>
+        @endif
       </div>
 
       @if($interactiveCourses->count() > 0)
-      <div class="text-center">
+      <div class="text-center mt-6">
         <a href="{{ route('interactive-courses.index', ['subdomain' => $academy->subdomain]) }}"
-           class="inline-flex items-center gap-2 font-semibold transition-colors hover:gap-3"
+           class="inline-flex items-center gap-2 text-sm font-semibold transition-colors hover:gap-3"
            style="color: {{ $gradientFromHex }};">
           {{ __('academy.actions.view_more') }}
           <i class="ri-arrow-left-line ltr:rotate-180"></i>
@@ -96,59 +178,98 @@
       </div>
       @endif
       @else
-      <div class="text-center py-12 mb-8">
-        <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+      <div class="text-center py-8">
+        <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
              style="background-color: {{ $gradientFromHex }}1a;">
-          <i class="ri-book-open-line text-3xl" style="color: {{ $gradientFromHex }};"></i>
+          <i class="ri-book-open-line text-xl" style="color: {{ $gradientFromHex }};"></i>
         </div>
-        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا توجد كورسات تفاعلية متاحة حالياً</h3>
-        <p class="text-sm text-gray-600">سيتم إضافة الكورسات قريباً</p>
+        <p class="text-sm font-medium text-gray-700">{{ __('academy.academic_section.no_courses_title') }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ __('academy.academic_section.no_courses_message') }}</p>
       </div>
       @endif
     </div>
     @endif
 
-    <!-- Academic Teachers Section -->
+    {{-- Sub-section B: Academic Teachers (Compact Grid) --}}
     @if($showTeachers)
-    <div x-show="activeTab === 'teachers'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0">
-      <div class="mb-8 sm:mb-10 lg:mb-12 text-center">
-        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">المعلمون المتميزون</h3>
-        <p class="text-sm sm:text-base text-gray-600">نخبة من أفضل المعلمين المتخصصين في جميع المواد الدراسية</p>
+    <div class="rounded-2xl p-6 sm:p-8 lg:p-10" style="background: linear-gradient(135deg, {{ $gradientToHex }}0d, {{ $gradientToHex }}08, white);">
+      <div class="mb-6 sm:mb-8">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: {{ $gradientToHex }}20;">
+            <i class="ri-user-star-line text-base" style="color: {{ $gradientToHex }};"></i>
+          </div>
+          <h3 class="text-lg sm:text-xl font-bold text-gray-900">{{ __('academy.academic_section.academic_teachers_title') }}</h3>
+        </div>
+        <p class="text-sm text-gray-500 ms-11">{{ __('academy.academic_section.academic_teachers_subtitle') }}</p>
       </div>
 
       @if($teacherItems->count() > 0)
-      <div id="academic-teachers-carousel" class="mb-8 sm:mb-10 lg:mb-12">
-        <div class="flex items-center gap-2 sm:gap-3 lg:gap-4">
-          <!-- Prev Button -->
-          <button class="carousel-prev hidden sm:flex flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="السابق">
-            <i class="ri-arrow-right-s-line text-xl md:text-2xl ltr:rotate-180"></i>
-          </button>
-
-          <!-- Track -->
-          <div class="flex-1 min-w-0 overflow-hidden">
-            <div class="carousel-track flex transition-transform duration-300 ease-in-out">
-              @foreach($teacherItems as $teacher)
-                <div class="carousel-slide flex-shrink-0 w-full md:w-1/2 px-2 sm:px-3">
-                  <x-academic-teacher-card-list :teacher="$teacher" :academy="$academy" />
-                </div>
-              @endforeach
-            </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        @foreach($teacherItems as $teacher)
+        @php
+          $rating = $teacher->average_rating ?? $teacher->rating ?? 0;
+          $teacherName = $teacher->full_name ?? '';
+          $qualification = $teacher->educational_qualification;
+          $qualificationLabel = $qualification instanceof \App\Enums\EducationalQualification
+              ? $qualification->label()
+              : ($qualification ? \App\Enums\EducationalQualification::getLabel($qualification) : null);
+          $teacherSubjects = $teacher->relationLoaded('subjects')
+              ? $teacher->subjects
+              : (($teacher->subject_ids && is_array($teacher->subject_ids))
+                  ? \App\Models\AcademicSubject::whereIn('id', $teacher->subject_ids)->limit(3)->get()
+                  : collect());
+        @endphp
+        <a href="{{ route('academic-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id]) }}"
+           class="group flex items-start gap-3 bg-white rounded-xl p-3.5 border border-gray-100 shadow-sm transition-all duration-200 hover:shadow-md hover:border-gray-200">
+          {{-- Avatar --}}
+          <div class="flex-shrink-0">
+            <x-avatar :user="$teacher" size="sm" userType="academic_teacher"
+                       :gender="$teacher->gender ?? $teacher->user?->gender ?? 'male'" />
           </div>
 
-          <!-- Next Button -->
-          <button class="carousel-next hidden sm:flex flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="التالي">
-            <i class="ri-arrow-left-s-line text-xl md:text-2xl ltr:rotate-180"></i>
-          </button>
-        </div>
+          {{-- Info --}}
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <h4 class="text-sm font-bold text-gray-900 truncate">{{ $teacherName }}</h4>
+              @if($rating > 0)
+              <div class="flex items-center gap-0.5 flex-shrink-0">
+                <i class="ri-star-fill text-xs text-amber-400"></i>
+                <span class="text-xs font-medium text-gray-600">{{ number_format($rating, 1) }}</span>
+              </div>
+              @endif
+            </div>
 
-        <!-- Dots -->
-        <div class="carousel-dots flex justify-center items-center gap-3 mt-6"></div>
+            @if($qualificationLabel)
+            <span class="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-md mb-1.5"
+                  style="background-color: {{ $gradientToHex }}15; color: {{ $gradientToHex }};">{{ $qualificationLabel }}</span>
+            @endif
+
+            <div class="flex items-center flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-500">
+              @if($teacher->teaching_experience_years)
+              <span class="flex items-center gap-1">
+                <i class="ri-briefcase-line"></i>
+                {{ __('academy.cards.experience_years', ['years' => $teacher->teaching_experience_years]) }}
+              </span>
+              @endif
+              @if($teacherSubjects->isNotEmpty())
+              <span class="flex items-center gap-1">
+                <i class="ri-book-line"></i>
+                {{ $teacherSubjects->first()->name }}
+                @if($teacherSubjects->count() > 1)
+                  <span class="font-medium" style="color: {{ $gradientToHex }};">+{{ $teacherSubjects->count() - 1 }}</span>
+                @endif
+              </span>
+              @endif
+            </div>
+          </div>
+        </a>
+        @endforeach
       </div>
 
       @if($academicTeachers->count() > 0)
-      <div class="text-center">
+      <div class="text-center mt-6">
         <a href="{{ route('academic-teachers.index', ['subdomain' => $academy->subdomain]) }}"
-           class="inline-flex items-center gap-2 font-semibold transition-colors hover:gap-3"
+           class="inline-flex items-center gap-2 text-sm font-semibold transition-colors hover:gap-3"
            style="color: {{ $gradientToHex }};">
           {{ __('academy.actions.view_more') }}
           <i class="ri-arrow-left-line ltr:rotate-180"></i>
@@ -156,13 +277,13 @@
       </div>
       @endif
       @else
-      <div class="text-center py-12 mb-8">
-        <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+      <div class="text-center py-8">
+        <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
              style="background-color: {{ $gradientToHex }}1a;">
-          <i class="ri-user-star-line text-3xl" style="color: {{ $gradientToHex }};"></i>
+          <i class="ri-user-star-line text-xl" style="color: {{ $gradientToHex }};"></i>
         </div>
-        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا يوجد معلمون متاحون حالياً</h3>
-        <p class="text-sm text-gray-600">سيتم إضافة المعلمين قريباً</p>
+        <p class="text-sm font-medium text-gray-700">{{ __('academy.academic_section.no_teachers_title') }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ __('academy.academic_section.no_teachers_message') }}</p>
       </div>
       @endif
     </div>
@@ -170,169 +291,63 @@
   </div>
 </section>
 
+<style>
+  .scroll-snap-align-start {
+    scroll-snap-align: start;
+  }
+  #interactive-courses-scroll .overflow-x-auto::-webkit-scrollbar {
+    height: 6px;
+  }
+  #interactive-courses-scroll .overflow-x-auto::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 3px;
+  }
+  #interactive-courses-scroll .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: {{ $gradientFromHex }};
+    border-radius: 3px;
+  }
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    function initSectionSlider(containerId, brandColor) {
-        var container = document.getElementById(containerId);
-        if (!container) return;
+    var container = document.getElementById('interactive-courses-scroll');
+    if (!container) return;
 
-        var track = container.querySelector('.carousel-track');
-        var prevBtn = container.querySelector('.carousel-prev');
-        var nextBtn = container.querySelector('.carousel-next');
-        var dotContainer = container.querySelector('.carousel-dots');
-        var items = track.querySelectorAll('.carousel-slide');
+    var scrollEl = container.querySelector('.overflow-x-auto');
+    var prevBtn = container.querySelector('.scroll-prev');
+    var nextBtn = container.querySelector('.scroll-next');
 
-        if (!track || !items.length) return;
+    if (!scrollEl) return;
 
-        var currentIndex = 0;
-        var isAnimating = false;
-        var totalItems = items.length;
+    var scrollAmount = 400;
+    var isRTL = document.documentElement.dir === 'rtl';
 
-        function getItemsPerView() {
-            return window.innerWidth >= 768 ? 2 : 1;
-        }
-
-        function getMaxIndex() {
-            return Math.max(0, totalItems - getItemsPerView());
-        }
-
-        function updateCarousel() {
-            if (isAnimating) return;
-            isAnimating = true;
-
-            var itemsPerView = getItemsPerView();
-            var maxIndex = getMaxIndex();
-            currentIndex = Math.max(0, Math.min(currentIndex, maxIndex));
-
-            var itemWidthPercent = 100 / itemsPerView;
-            var translatePercent = currentIndex * itemWidthPercent;
-            var isRTL = document.documentElement.dir === 'rtl';
-
-            if (isRTL) {
-                track.style.transform = 'translateX(' + translatePercent + '%)';
-            } else {
-                track.style.transform = 'translateX(-' + translatePercent + '%)';
-            }
-
-            updateDots();
-            updateButtons();
-
-            setTimeout(function() { isAnimating = false; }, 350);
-        }
-
-        function updateButtons() {
-            var maxIndex = getMaxIndex();
-            if (prevBtn) {
-                prevBtn.style.opacity = currentIndex === 0 ? '0.5' : '1';
-                prevBtn.style.cursor = currentIndex === 0 ? 'default' : 'pointer';
-            }
-            if (nextBtn) {
-                nextBtn.style.opacity = currentIndex >= maxIndex ? '0.5' : '1';
-                nextBtn.style.cursor = currentIndex >= maxIndex ? 'default' : 'pointer';
-            }
-        }
-
-        function createDots() {
-            if (!dotContainer) return;
-            var maxIndex = getMaxIndex();
-            var numDots = maxIndex + 1;
-            dotContainer.innerHTML = '';
-            for (var i = 0; i < numDots; i++) {
-                (function(idx) {
-                    var dot = document.createElement('button');
-                    dot.className = 'w-3 h-3 rounded-full transition-all duration-300 cursor-pointer';
-                    dot.style.backgroundColor = idx === currentIndex ? brandColor : '#d1d5db';
-                    if (idx === currentIndex) dot.style.transform = 'scale(1.3)';
-                    dot.setAttribute('aria-label', 'الانتقال إلى ' + (idx + 1));
-                    dot.addEventListener('click', function() {
-                        if (isAnimating || idx === currentIndex) return;
-                        currentIndex = idx;
-                        updateCarousel();
-                        restartAutoplay();
-                    });
-                    dotContainer.appendChild(dot);
-                })(i);
-            }
-        }
-
-        function updateDots() {
-            if (!dotContainer) return;
-            var dots = dotContainer.querySelectorAll('button');
-            dots.forEach(function(dot, index) {
-                dot.style.backgroundColor = index === currentIndex ? brandColor : '#d1d5db';
-                dot.style.transform = index === currentIndex ? 'scale(1.3)' : 'scale(1)';
-            });
-        }
-
-        function goNext() {
-            if (isAnimating) return;
-            var maxIndex = getMaxIndex();
-            if (currentIndex < maxIndex) currentIndex++;
-            else currentIndex = 0;
-            updateCarousel();
-        }
-
-        function goPrev() {
-            if (isAnimating) return;
-            if (currentIndex > 0) currentIndex--;
-            else currentIndex = getMaxIndex();
-            updateCarousel();
-        }
-
-        if (nextBtn) nextBtn.addEventListener('click', function() { goNext(); restartAutoplay(); });
-        if (prevBtn) prevBtn.addEventListener('click', function() { goPrev(); restartAutoplay(); });
-
-        // Autoplay
-        var autoTimer = null;
-        function startAutoplay() {
-            stopAutoplay();
-            autoTimer = setInterval(goNext, 4000);
-        }
-        function stopAutoplay() {
-            if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
-        }
-        function restartAutoplay() { startAutoplay(); }
-
-        container.addEventListener('mouseenter', stopAutoplay);
-        container.addEventListener('mouseleave', startAutoplay);
-
-        // Resize
-        var resizeTimeout;
-        window.addEventListener('resize', function() {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function() {
-                var maxIndex = getMaxIndex();
-                if (currentIndex > maxIndex) currentIndex = maxIndex;
-                createDots();
-                isAnimating = false;
-                updateCarousel();
-            }, 150);
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+            scrollEl.scrollBy({ left: isRTL ? scrollAmount : -scrollAmount, behavior: 'smooth' });
         });
-
-        // Touch/swipe
-        var touchStartX = 0;
-        track.addEventListener('touchstart', function(e) {
-            touchStartX = e.changedTouches[0].screenX;
-            stopAutoplay();
-        }, { passive: true });
-
-        track.addEventListener('touchend', function(e) {
-            var diff = touchStartX - e.changedTouches[0].screenX;
-            var isRTL = document.documentElement.dir === 'rtl';
-            if (Math.abs(diff) > 50) {
-                if ((diff > 0 && !isRTL) || (diff < 0 && isRTL)) goNext();
-                else goPrev();
-            }
-            startAutoplay();
-        }, { passive: true });
-
-        // Initialize
-        createDots();
-        updateCarousel();
-        startAutoplay();
+    }
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            scrollEl.scrollBy({ left: isRTL ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+        });
     }
 
-    initSectionSlider('academic-courses-carousel', '{{ $gradientFromHex }}');
-    initSectionSlider('academic-teachers-carousel', '{{ $gradientToHex }}');
+    // Touch swipe support
+    var touchStartX = 0;
+    scrollEl.addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    scrollEl.addEventListener('touchend', function(e) {
+        var diff = touchStartX - e.changedTouches[0].screenX;
+        if (Math.abs(diff) > 50) {
+            if ((diff > 0 && !isRTL) || (diff < 0 && isRTL)) {
+                scrollEl.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            } else {
+                scrollEl.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+            }
+        }
+    }, { passive: true });
 });
 </script>

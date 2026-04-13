@@ -46,10 +46,19 @@ return [
     // Hero Section
     'hero' => [
         'badge' => 'منصة تعليمية متطورة',
+        'badge_template2' => 'ابدأ رحلة التعلم',
         'default_heading' => 'تعليم متميز للمستقبل',
         'default_subheading' => 'انضم إلى آلاف الطلاب الذين يطورون مهاراتهم في القرآن الكريم والتعليم الدراسي مع أفضل المعلمين المتخصصين',
         'cta_button' => 'ابدأ رحلتك الآن',
         'image_placeholder' => 'صورة البطل',
+        'features' => [
+            'expert_teachers_title' => 'معلمون متخصصون',
+            'expert_teachers_desc' => 'نخبة من المعلمين المؤهلين ذوي الخبرة الواسعة',
+            'interactive_learning_title' => 'تعلم تفاعلي',
+            'interactive_learning_desc' => 'جلسات مباشرة مع تفاعل حقيقي ومتابعة مستمرة',
+            'flexible_schedule_title' => 'جدول مرن',
+            'flexible_schedule_desc' => 'تعلم في الوقت والمكان الذي يناسبك',
+        ],
     ],
 
     // Service Cards
@@ -175,6 +184,10 @@ return [
         'circles_subtitle' => 'اختر الحلقة المناسبة لمستواك وابدأ رحلتك في حفظ القرآن الكريم',
         'teachers_title' => 'معلمو القرآن المتميزون',
         'teachers_subtitle' => 'نخبة من أفضل معلمي القرآن الكريم المؤهلين لتعليمك',
+        'individual_title' => 'التعليم الفردي',
+        'individual_subtitle' => 'تعلم القرآن الكريم مع معلم خاص يتابع تقدمك خطوة بخطوة',
+        'group_title' => 'حلقات التحفيظ الجماعية',
+        'group_subtitle' => 'انضم إلى حلقات جماعية منظمة لحفظ القرآن الكريم',
         'no_circles_title' => 'لا توجد حلقات متاحة حالياً',
         'no_circles_message' => 'سيتم إضافة حلقات القرآن الكريم قريباً',
         'no_teachers_title' => 'لا يوجد معلمون متاحون حالياً',
@@ -194,6 +207,10 @@ return [
         'courses_subtitle' => 'كورسات شاملة ومتطورة تغطي جميع المواد الدراسية بأسلوب تفاعلي ممتع',
         'teachers_title' => 'المعلمون المتميزون',
         'teachers_subtitle' => 'نخبة من أفضل المعلمين المتخصصين في جميع المواد الدراسية',
+        'interactive_courses_title' => 'الكورسات التفاعلية',
+        'interactive_courses_subtitle' => 'كورسات مباشرة مع معلمين متخصصين وتفاعل حي',
+        'academic_teachers_title' => 'المعلمون الأكاديميون',
+        'academic_teachers_subtitle' => 'معلمون متخصصون في جميع المواد الدراسية',
         'no_courses_title' => 'لا توجد كورسات تفاعلية متاحة حالياً',
         'no_courses_message' => 'سيتم إضافة الكورسات قريباً',
         'no_teachers_title' => 'لا يوجد معلمون متاحون حالياً',
@@ -227,6 +244,34 @@ return [
         'send_message' => 'أرسل رسالة',
         'default_address' => 'الرياض، المملكة العربية السعودية',
         'terms_of_use' => 'شروط الاستخدام',
+    ],
+
+    // Courses Section (Recorded)
+    'courses_section' => [
+        'default_heading' => 'الكورسات المسجلة',
+        'default_subheading' => 'تعلم في أي وقت بالسرعة التي تناسبك',
+        'no_courses_title' => 'لا توجد كورسات مسجلة حالياً',
+        'no_courses_message' => 'سيتم إضافة الكورسات قريباً',
+    ],
+
+    // Inline Card Labels (Template 2)
+    'cards' => [
+        'view_profile' => 'عرض الملف',
+        'view_details' => 'عرض التفاصيل',
+        'view_course' => 'عرض الكورس',
+        'enrolled' => 'مسجل',
+        'open' => 'متاحة',
+        'full' => 'مكتملة',
+        'free' => 'مجاني',
+        'per_month' => 'شهرياً',
+        'experience_years' => ':years سنوات خبرة',
+        'students' => ':count طالب',
+        'sessions' => ':count جلسة',
+        'weeks' => ':count أسبوع',
+        'difficulty_easy' => 'مبتدئ',
+        'difficulty_medium' => 'متوسط',
+        'difficulty_hard' => 'متقدم',
+        'enrollments' => ':count مسجل',
     ],
 
     // Common Actions

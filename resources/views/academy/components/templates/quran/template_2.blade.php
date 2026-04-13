@@ -7,148 +7,101 @@
 
     $showCircles = $academy->quran_show_circles ?? true;
     $showTeachers = $academy->quran_show_teachers ?? true;
-    $defaultTab = $showCircles ? 'circles' : 'teachers';
 
     $circleItems = $quranCircles->take(6);
     $teacherItems = $quranTeachers->take(6);
 @endphp
 
-<!-- Quran Section - Template 2: Clean Professional Design with Tabs -->
-<section id="quran" class="py-16 sm:py-20 lg:py-24 relative overflow-hidden transition-colors duration-500 scroll-mt-20"
-         x-data="{ activeTab: '{{ $defaultTab }}' }"
-         :style="activeTab === 'circles' ? 'background: linear-gradient(to bottom right, {{ $gradientFromHex }}1a, {{ $gradientFromHex }}0d, white)' : 'background: linear-gradient(to bottom right, {{ $gradientToHex }}1a, {{ $gradientToHex }}0d, white)'">
+<!-- Quran Section - Template 2: Dual Sub-sections Design -->
+<section id="quran" class="py-16 sm:py-20 lg:py-24 scroll-mt-20">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-8 sm:mb-10 lg:mb-12">
-      <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">{{ $heading ?? __('academy.quran_section.default_heading') }}</h2>
+    <!-- Section Header -->
+    <div class="text-center mb-10 sm:mb-14">
+      <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{{ $heading ?? __('academy.quran_section.default_heading') }}</h2>
       @if(isset($subheading))
-        <p class="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">{{ $subheading }}</p>
-      @endif
-
-      <!-- Tab Toggle -->
-      @if($showCircles && $showTeachers)
-      <div class="inline-flex bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-md border border-gray-200">
-        <button
-          @click="activeTab = 'circles'"
-          :style="activeTab === 'circles' ? 'background-color: {{ $gradientFromHex }}; color: white;' : ''"
-          :class="activeTab === 'circles' ? 'shadow-sm' : 'text-gray-600 hover:text-gray-900'"
-          class="px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 whitespace-nowrap">
-          <i class="ri-group-line ms-1 sm:ms-2"></i>
-          <span class="hidden sm:inline">{{ __('academy.quran_section.tabs.circles') }}</span>
-          <span class="sm:hidden">{{ __('academy.quran_section.tabs.circles_short') }}</span>
-        </button>
-        <button
-          @click="activeTab = 'teachers'"
-          :style="activeTab === 'teachers' ? 'background-color: {{ $gradientToHex }}; color: white;' : ''"
-          :class="activeTab === 'teachers' ? 'shadow-sm' : 'text-gray-600 hover:text-gray-900'"
-          class="px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 whitespace-nowrap">
-          <i class="ri-user-star-line ms-1 sm:ms-2"></i>
-          {{ __('academy.quran_section.tabs.teachers') }}
-        </button>
-      </div>
+        <p class="text-base sm:text-lg text-gray-600">{{ $subheading }}</p>
       @endif
     </div>
 
-    <!-- Quran Group Circles Section -->
-    @if($showCircles)
-    <div x-show="activeTab === 'circles'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0">
-      <div class="mb-8 sm:mb-10 lg:mb-12 text-center">
-        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{{ __('academy.quran_section.circles_title') }}</h3>
-        <p class="text-sm sm:text-base text-gray-600">{{ __('academy.quran_section.circles_subtitle') }}</p>
-      </div>
-
-      @if($circleItems->count() > 0)
-      <div id="quran-circles-carousel" class="mb-8 sm:mb-10 lg:mb-12">
-        <div class="flex items-center gap-2 sm:gap-3 lg:gap-4">
-          <!-- Prev Button -->
-          <button class="carousel-prev hidden sm:flex flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="السابق">
-            <i class="ri-arrow-right-s-line text-xl md:text-2xl ltr:rotate-180"></i>
-          </button>
-
-          <!-- Track -->
-          <div class="flex-1 min-w-0 overflow-hidden">
-            <div class="carousel-track flex transition-transform duration-300 ease-in-out">
-              @foreach($circleItems as $circle)
-                <div class="carousel-slide flex-shrink-0 w-full md:w-1/2 px-2 sm:px-3">
-                  <x-quran-circle-card-list :circle="$circle" :academy="$academy" />
-                </div>
-              @endforeach
-            </div>
-          </div>
-
-          <!-- Next Button -->
-          <button class="carousel-next hidden sm:flex flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="التالي">
-            <i class="ri-arrow-left-s-line text-xl md:text-2xl ltr:rotate-180"></i>
-          </button>
-        </div>
-
-        <!-- Dots -->
-        <div class="carousel-dots flex justify-center items-center gap-3 mt-6"></div>
-      </div>
-
-      @if($quranCircles->count() > 0)
-      <div class="text-center">
-        <a href="{{ route('quran-circles.index', ['subdomain' => $academy->subdomain]) }}"
-           class="inline-flex items-center gap-2 font-semibold transition-colors hover:gap-3"
-           style="color: {{ $gradientFromHex }};">
-          {{ __('academy.actions.view_more') }}
-          <i class="ri-arrow-left-line ltr:rotate-180"></i>
-        </a>
-      </div>
-      @endif
-      @else
-      <div class="text-center py-12 mb-8">
-        <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
-             style="background-color: {{ $gradientFromHex }}1a;">
-          <i class="ri-group-line text-3xl" style="color: {{ $gradientFromHex }};"></i>
-        </div>
-        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">{{ __('academy.quran_section.no_circles_title') }}</h3>
-        <p class="text-sm text-gray-600">{{ __('academy.quran_section.no_circles_message') }}</p>
-      </div>
-      @endif
-    </div>
-    @endif
-
-    <!-- Quran Teachers Section -->
+    {{-- Sub-section A: Individual Quran Teachers --}}
     @if($showTeachers)
-    <div id="quran-teachers" class="scroll-mt-24" x-show="activeTab === 'teachers'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0">
-      <div class="mb-8 sm:mb-10 lg:mb-12 text-center">
-        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{{ __('academy.quran_section.teachers_title') }}</h3>
-        <p class="text-sm sm:text-base text-gray-600">{{ __('academy.quran_section.teachers_subtitle') }}</p>
+    <div class="rounded-2xl p-6 sm:p-8 lg:p-10 mb-8 lg:mb-12" style="background: linear-gradient(135deg, {{ $gradientToHex }}0d, {{ $gradientToHex }}08, white);">
+      <div class="mb-6 sm:mb-8">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: {{ $gradientToHex }}20;">
+            <i class="ri-user-star-line text-base" style="color: {{ $gradientToHex }};"></i>
+          </div>
+          <h3 class="text-lg sm:text-xl font-bold text-gray-900">{{ __('academy.quran_section.individual_title') }}</h3>
+        </div>
+        <p class="text-sm text-gray-500 ms-11">{{ __('academy.quran_section.individual_subtitle') }}</p>
       </div>
 
       @if($teacherItems->count() > 0)
-      <div id="quran-teachers-carousel" class="mb-8 sm:mb-10 lg:mb-12">
-        <div class="flex items-center gap-2 sm:gap-3 lg:gap-4">
-          <!-- Prev Button -->
-          <button class="carousel-prev hidden sm:flex flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="السابق">
-            <i class="ri-arrow-right-s-line text-xl md:text-2xl ltr:rotate-180"></i>
-          </button>
-
-          <!-- Track -->
-          <div class="flex-1 min-w-0 overflow-hidden">
-            <div class="carousel-track flex transition-transform duration-300 ease-in-out">
-              @foreach($teacherItems as $teacher)
-                <div class="carousel-slide flex-shrink-0 w-full md:w-1/2 px-2 sm:px-3">
-                  <x-quran-teacher-card-list :teacher="$teacher" :academy="$academy" :availablePackages="$quranAvailablePackages ?? collect()" />
-                </div>
-              @endforeach
-            </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        @foreach($teacherItems as $teacher)
+        @php
+          $rating = $teacher->average_rating ?? $teacher->rating ?? 0;
+          $teacherName = $teacher->user->full_name ?? $teacher->user->name ?? '';
+          $qualification = $teacher->educational_qualification;
+          $qualificationLabel = $qualification instanceof \App\Enums\EducationalQualification
+              ? $qualification->label()
+              : ($qualification ? \App\Enums\EducationalQualification::getLabel($qualification) : null);
+        @endphp
+        <a href="{{ route('quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id]) }}"
+           class="group flex items-start gap-3 bg-white rounded-xl p-3.5 border border-gray-100 shadow-sm transition-all duration-200 hover:shadow-md hover:border-gray-200">
+          {{-- Avatar --}}
+          <div class="flex-shrink-0">
+            <x-avatar :user="$teacher" size="sm" userType="quran_teacher"
+                       :gender="$teacher->gender ?? $teacher->user?->gender ?? 'male'" />
           </div>
 
-          <!-- Next Button -->
-          <button class="carousel-next hidden sm:flex flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="التالي">
-            <i class="ri-arrow-left-s-line text-xl md:text-2xl ltr:rotate-180"></i>
-          </button>
-        </div>
+          {{-- Info --}}
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <h4 class="text-sm font-bold text-gray-900 truncate">{{ $teacherName }}</h4>
+              @if($rating > 0)
+              <div class="flex items-center gap-0.5 flex-shrink-0">
+                <i class="ri-star-fill text-xs text-amber-400"></i>
+                <span class="text-xs font-medium text-gray-600">{{ number_format($rating, 1) }}</span>
+              </div>
+              @endif
+            </div>
 
-        <!-- Dots -->
-        <div class="carousel-dots flex justify-center items-center gap-3 mt-6"></div>
+            @if($qualificationLabel)
+            <span class="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-md mb-1.5"
+                  style="background-color: {{ $gradientToHex }}15; color: {{ $gradientToHex }};">{{ $qualificationLabel }}</span>
+            @endif
+
+            <div class="flex items-center flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-500">
+              @if($teacher->teaching_experience_years)
+              <span class="flex items-center gap-1">
+                <i class="ri-briefcase-line"></i>
+                {{ __('academy.cards.experience_years', ['years' => $teacher->teaching_experience_years]) }}
+              </span>
+              @endif
+              @if($teacher->available_days && is_array($teacher->available_days) && count($teacher->available_days) > 0)
+              <span class="flex items-center gap-1">
+                <i class="ri-calendar-line"></i>
+                @php
+                  $displayDays = array_slice($teacher->available_days, 0, 2);
+                  $dayLabels = array_map(fn($d) => \App\Enums\WeekDays::from($d)->label(), $displayDays);
+                @endphp
+                {{ implode('، ', $dayLabels) }}
+                @if(count($teacher->available_days) > 2)
+                  <span class="font-medium" style="color: {{ $gradientToHex }};">+{{ count($teacher->available_days) - 2 }}</span>
+                @endif
+              </span>
+              @endif
+            </div>
+          </div>
+        </a>
+        @endforeach
       </div>
 
       @if($quranTeachers->count() > 0)
-      <div class="text-center">
+      <div class="text-center mt-6">
         <a href="{{ route('quran-teachers.index', ['subdomain' => $academy->subdomain]) }}"
-           class="inline-flex items-center gap-2 font-semibold transition-colors hover:gap-3"
+           class="inline-flex items-center gap-2 text-sm font-semibold transition-colors hover:gap-3"
            style="color: {{ $gradientToHex }};">
           {{ __('academy.actions.view_more') }}
           <i class="ri-arrow-left-line ltr:rotate-180"></i>
@@ -156,183 +109,147 @@
       </div>
       @endif
       @else
-      <div class="text-center py-12 mb-8">
-        <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+      <div class="text-center py-8">
+        <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
              style="background-color: {{ $gradientToHex }}1a;">
-          <i class="ri-user-star-line text-3xl" style="color: {{ $gradientToHex }};"></i>
+          <i class="ri-user-star-line text-xl" style="color: {{ $gradientToHex }};"></i>
         </div>
-        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">{{ __('academy.quran_section.no_teachers_title') }}</h3>
-        <p class="text-sm text-gray-600">{{ __('academy.quran_section.no_teachers_message') }}</p>
+        <p class="text-sm font-medium text-gray-700">{{ __('academy.quran_section.no_teachers_title') }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ __('academy.quran_section.no_teachers_message') }}</p>
+      </div>
+      @endif
+    </div>
+    @endif
+
+    {{-- Sub-section B: Group Quran Circles --}}
+    @if($showCircles)
+    <div class="rounded-2xl p-6 sm:p-8 lg:p-10" style="background: linear-gradient(135deg, {{ $gradientFromHex }}0d, {{ $gradientFromHex }}08, white);">
+      <div class="mb-6 sm:mb-8">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: {{ $gradientFromHex }}20;">
+            <i class="ri-group-line text-base" style="color: {{ $gradientFromHex }};"></i>
+          </div>
+          <h3 class="text-lg sm:text-xl font-bold text-gray-900">{{ __('academy.quran_section.group_title') }}</h3>
+        </div>
+        <p class="text-sm text-gray-500 ms-11">{{ __('academy.quran_section.group_subtitle') }}</p>
+      </div>
+
+      @if($circleItems->count() > 0)
+      <div class="grid md:grid-cols-2 gap-4 sm:gap-5">
+        @foreach($circleItems as $circle)
+        @php
+          $isEnrolled = in_array($circle->id, $enrolledCircleIds ?? []);
+          $isFull = $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::FULL
+                    || ($circle->enrolled_students >= $circle->max_students && $circle->max_students > 0);
+          $isOpen = !$isEnrolled && $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::OPEN && !$isFull;
+          $fillPercent = $circle->max_students > 0 ? round($circle->students_count / $circle->max_students * 100) : 0;
+        @endphp
+        <div class="group bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md hover:border-gray-200 flex">
+          {{-- Accent Bar --}}
+          <div class="w-1 flex-shrink-0" style="background: linear-gradient(to bottom, {{ $gradientFromHex }}, {{ $gradientFromHex }}80);"></div>
+
+          {{-- Content --}}
+          <div class="flex-1 p-4 sm:p-5">
+            {{-- Header: Name + Status --}}
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div class="min-w-0 flex-1">
+                <h4 class="text-sm sm:text-base font-bold text-gray-900 truncate">{{ $circle->name }}</h4>
+                @if($circle->description)
+                <p class="text-xs text-gray-500 line-clamp-1 mt-0.5">{{ $circle->description }}</p>
+                @endif
+              </div>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0
+                {{ $isEnrolled ? 'bg-green-100 text-green-700' : ($isOpen ? 'bg-blue-100 text-blue-700' : ($isFull ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600')) }}">
+                @if($isEnrolled)
+                  {{ __('academy.cards.enrolled') }}
+                @elseif($isOpen)
+                  {{ __('academy.cards.open') }}
+                @elseif($isFull)
+                  {{ __('academy.cards.full') }}
+                @endif
+              </span>
+            </div>
+
+            {{-- Teacher --}}
+            @if($circle->quranTeacher)
+            <div class="flex items-center gap-2 mb-3 text-xs text-gray-600">
+              <i class="ri-user-star-line" style="color: {{ $gradientFromHex }};"></i>
+              <span class="truncate">{{ $circle->quranTeacher->full_name }}</span>
+            </div>
+            @endif
+
+            {{-- Info Grid --}}
+            <div class="flex items-center flex-wrap gap-x-4 gap-y-2 text-xs text-gray-500 mb-3">
+              {{-- Students --}}
+              <div class="flex items-center gap-1.5">
+                <i class="ri-group-line"></i>
+                <span>{{ $circle->students_count }}/{{ $circle->max_students }}</span>
+                <div class="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full transition-all" style="width: {{ $fillPercent }}%; background-color: {{ $gradientFromHex }};"></div>
+                </div>
+              </div>
+
+              {{-- Schedule --}}
+              @if($circle->schedule_days_text)
+              <div class="flex items-center gap-1">
+                <i class="ri-calendar-line"></i>
+                <span class="truncate max-w-[120px]">{{ $circle->schedule_days_text }}</span>
+              </div>
+              @endif
+
+              {{-- Level --}}
+              @if($circle->memorization_level)
+              <div class="flex items-center gap-1">
+                <i class="ri-bar-chart-line"></i>
+                <span>{{ $circle->memorization_level_text }}</span>
+              </div>
+              @endif
+            </div>
+
+            {{-- Footer: Price + CTA --}}
+            <div class="flex items-center justify-between gap-3 pt-3 border-t border-gray-50">
+              @if($circle->monthly_fee)
+              <div>
+                <span class="text-sm font-bold" style="color: {{ $gradientFromHex }};">{{ number_format($circle->monthly_fee, 2) }} {{ getCurrencySymbol() }}</span>
+                <span class="text-[10px] text-gray-400">/ {{ __('academy.cards.per_month') }}</span>
+              </div>
+              @else
+              <div></div>
+              @endif
+
+              <a href="{{ route('quran-circles.show', ['subdomain' => $academy->subdomain, 'circleId' => $circle->id]) }}"
+                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all duration-200 hover:opacity-90"
+                 style="background-color: {{ $gradientFromHex }};">
+                {{ __('academy.cards.view_details') }}
+                <i class="ri-arrow-left-s-line text-sm ltr:rotate-180"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+        @endforeach
+      </div>
+
+      @if($quranCircles->count() > 0)
+      <div class="text-center mt-6">
+        <a href="{{ route('quran-circles.index', ['subdomain' => $academy->subdomain]) }}"
+           class="inline-flex items-center gap-2 text-sm font-semibold transition-colors hover:gap-3"
+           style="color: {{ $gradientFromHex }};">
+          {{ __('academy.actions.view_more') }}
+          <i class="ri-arrow-left-line ltr:rotate-180"></i>
+        </a>
+      </div>
+      @endif
+      @else
+      <div class="text-center py-8">
+        <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
+             style="background-color: {{ $gradientFromHex }}1a;">
+          <i class="ri-group-line text-xl" style="color: {{ $gradientFromHex }};"></i>
+        </div>
+        <p class="text-sm font-medium text-gray-700">{{ __('academy.quran_section.no_circles_title') }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ __('academy.quran_section.no_circles_message') }}</p>
       </div>
       @endif
     </div>
     @endif
   </div>
 </section>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    function initSectionSlider(containerId, brandColor) {
-        var container = document.getElementById(containerId);
-        if (!container) return;
-
-        var track = container.querySelector('.carousel-track');
-        var prevBtn = container.querySelector('.carousel-prev');
-        var nextBtn = container.querySelector('.carousel-next');
-        var dotContainer = container.querySelector('.carousel-dots');
-        var items = track.querySelectorAll('.carousel-slide');
-
-        if (!track || !items.length) return;
-
-        var currentIndex = 0;
-        var isAnimating = false;
-        var totalItems = items.length;
-
-        function getItemsPerView() {
-            return window.innerWidth >= 768 ? 2 : 1;
-        }
-
-        function getMaxIndex() {
-            return Math.max(0, totalItems - getItemsPerView());
-        }
-
-        function updateCarousel() {
-            if (isAnimating) return;
-            isAnimating = true;
-
-            var itemsPerView = getItemsPerView();
-            var maxIndex = getMaxIndex();
-            currentIndex = Math.max(0, Math.min(currentIndex, maxIndex));
-
-            var itemWidthPercent = 100 / itemsPerView;
-            var translatePercent = currentIndex * itemWidthPercent;
-            var isRTL = document.documentElement.dir === 'rtl';
-
-            if (isRTL) {
-                track.style.transform = 'translateX(' + translatePercent + '%)';
-            } else {
-                track.style.transform = 'translateX(-' + translatePercent + '%)';
-            }
-
-            updateDots();
-            updateButtons();
-
-            setTimeout(function() { isAnimating = false; }, 350);
-        }
-
-        function updateButtons() {
-            var maxIndex = getMaxIndex();
-            if (prevBtn) {
-                prevBtn.style.opacity = currentIndex === 0 ? '0.5' : '1';
-                prevBtn.style.cursor = currentIndex === 0 ? 'default' : 'pointer';
-            }
-            if (nextBtn) {
-                nextBtn.style.opacity = currentIndex >= maxIndex ? '0.5' : '1';
-                nextBtn.style.cursor = currentIndex >= maxIndex ? 'default' : 'pointer';
-            }
-        }
-
-        function createDots() {
-            if (!dotContainer) return;
-            var maxIndex = getMaxIndex();
-            var numDots = maxIndex + 1;
-            dotContainer.innerHTML = '';
-            for (var i = 0; i < numDots; i++) {
-                (function(idx) {
-                    var dot = document.createElement('button');
-                    dot.className = 'w-3 h-3 rounded-full transition-all duration-300 cursor-pointer';
-                    dot.style.backgroundColor = idx === currentIndex ? brandColor : '#d1d5db';
-                    if (idx === currentIndex) dot.style.transform = 'scale(1.3)';
-                    dot.setAttribute('aria-label', 'الانتقال إلى ' + (idx + 1));
-                    dot.addEventListener('click', function() {
-                        if (isAnimating || idx === currentIndex) return;
-                        currentIndex = idx;
-                        updateCarousel();
-                        restartAutoplay();
-                    });
-                    dotContainer.appendChild(dot);
-                })(i);
-            }
-        }
-
-        function updateDots() {
-            if (!dotContainer) return;
-            var dots = dotContainer.querySelectorAll('button');
-            dots.forEach(function(dot, index) {
-                dot.style.backgroundColor = index === currentIndex ? brandColor : '#d1d5db';
-                dot.style.transform = index === currentIndex ? 'scale(1.3)' : 'scale(1)';
-            });
-        }
-
-        function goNext() {
-            if (isAnimating) return;
-            var maxIndex = getMaxIndex();
-            if (currentIndex < maxIndex) currentIndex++;
-            else currentIndex = 0;
-            updateCarousel();
-        }
-
-        function goPrev() {
-            if (isAnimating) return;
-            if (currentIndex > 0) currentIndex--;
-            else currentIndex = getMaxIndex();
-            updateCarousel();
-        }
-
-        if (nextBtn) nextBtn.addEventListener('click', function() { goNext(); restartAutoplay(); });
-        if (prevBtn) prevBtn.addEventListener('click', function() { goPrev(); restartAutoplay(); });
-
-        // Autoplay
-        var autoTimer = null;
-        function startAutoplay() {
-            stopAutoplay();
-            autoTimer = setInterval(goNext, 4000);
-        }
-        function stopAutoplay() {
-            if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
-        }
-        function restartAutoplay() { startAutoplay(); }
-
-        container.addEventListener('mouseenter', stopAutoplay);
-        container.addEventListener('mouseleave', startAutoplay);
-
-        // Resize
-        var resizeTimeout;
-        window.addEventListener('resize', function() {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function() {
-                var maxIndex = getMaxIndex();
-                if (currentIndex > maxIndex) currentIndex = maxIndex;
-                createDots();
-                isAnimating = false;
-                updateCarousel();
-            }, 150);
-        });
-
-        // Touch/swipe
-        var touchStartX = 0;
-        track.addEventListener('touchstart', function(e) {
-            touchStartX = e.changedTouches[0].screenX;
-            stopAutoplay();
-        }, { passive: true });
-
-        track.addEventListener('touchend', function(e) {
-            var diff = touchStartX - e.changedTouches[0].screenX;
-            var isRTL = document.documentElement.dir === 'rtl';
-            if (Math.abs(diff) > 50) {
-                if ((diff > 0 && !isRTL) || (diff < 0 && isRTL)) goNext();
-                else goPrev();
-            }
-            startAutoplay();
-        }, { passive: true });
-
-        // Initialize
-        createDots();
-        updateCarousel();
-        startAutoplay();
-    }
-
-    initSectionSlider('quran-circles-carousel', '{{ $gradientFromHex }}');
-    initSectionSlider('quran-teachers-carousel', '{{ $gradientToHex }}');
-});
-</script>

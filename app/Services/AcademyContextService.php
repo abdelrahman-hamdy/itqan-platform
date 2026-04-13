@@ -69,7 +69,13 @@ class AcademyContextService
         $user = auth()->user();
 
         if (! $user) {
-            // If no user is authenticated, return the default academy
+            // Unauthenticated request on an academy subdomain — use the middleware-resolved academy
+            $middlewareAcademy = app()->has('current_academy') ? app('current_academy') : null;
+
+            if ($middlewareAcademy instanceof Academy && $middlewareAcademy->is_active && ! $middlewareAcademy->maintenance_mode) {
+                return $middlewareAcademy;
+            }
+
             return self::getDefaultAcademy();
         }
 
