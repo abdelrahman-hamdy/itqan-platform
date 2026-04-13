@@ -1531,15 +1531,8 @@ class QuranSession extends BaseSession implements RecordingCapable
 
     public function isRecordingEnabled(): bool
     {
-        if ($this->session_type === 'individual') {
-            return (bool) $this->individualCircle?->recording_enabled;
-        }
-
-        if (in_array($this->session_type, ['group', 'circle'])) {
-            return (bool) $this->circle?->recording_enabled;
-        }
-
-        return false;
+        // Always enabled — auto-recording orchestrator manages capacity
+        return true;
     }
 
     public function getRecordingConfiguration(): array

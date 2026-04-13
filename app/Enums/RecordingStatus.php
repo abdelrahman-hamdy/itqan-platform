@@ -19,10 +19,12 @@ namespace App\Enums;
  */
 enum RecordingStatus: string
 {
+    case QUEUED = 'queued';
     case RECORDING = 'recording';
     case PROCESSING = 'processing';
     case COMPLETED = 'completed';
     case FAILED = 'failed';
+    case SKIPPED = 'skipped';
     case DELETED = 'deleted';
 
     /**
@@ -39,10 +41,12 @@ enum RecordingStatus: string
     public function icon(): string
     {
         return match ($this) {
+            self::QUEUED => 'ri-time-line',
             self::RECORDING => 'ri-record-circle-line',
             self::PROCESSING => 'ri-loader-4-line',
             self::COMPLETED => 'ri-checkbox-circle-line',
             self::FAILED => 'ri-error-warning-line',
+            self::SKIPPED => 'ri-skip-forward-line',
             self::DELETED => 'ri-delete-bin-line',
         };
     }
@@ -53,10 +57,12 @@ enum RecordingStatus: string
     public function color(): string
     {
         return match ($this) {
+            self::QUEUED => 'info',        // Blue - waiting for capacity
             self::RECORDING => 'danger',   // Red - recording in progress
             self::PROCESSING => 'warning', // Yellow - being processed
             self::COMPLETED => 'success',  // Green - ready
             self::FAILED => 'danger',      // Red - error
+            self::SKIPPED => 'gray',       // Gray - was not recorded
             self::DELETED => 'gray',       // Gray - deleted
         };
     }
@@ -67,10 +73,12 @@ enum RecordingStatus: string
     public function hexColor(): string
     {
         return match ($this) {
+            self::QUEUED => '#3B82F6',     // blue-500
             self::RECORDING => '#EF4444',  // red-500
             self::PROCESSING => '#F59E0B', // amber-500
             self::COMPLETED => '#22C55E',  // green-500
             self::FAILED => '#DC2626',     // red-600
+            self::SKIPPED => '#6B7280',    // gray-500
             self::DELETED => '#9CA3AF',    // gray-400
         };
     }
@@ -123,6 +131,7 @@ enum RecordingStatus: string
         return in_array($this, [
             self::COMPLETED,
             self::FAILED,
+            self::SKIPPED,
             self::DELETED,
         ]);
     }
@@ -153,6 +162,7 @@ enum RecordingStatus: string
     {
         return ! in_array($this, [
             self::RECORDING,
+            self::QUEUED,
             self::DELETED,
         ]);
     }
@@ -201,10 +211,12 @@ enum RecordingStatus: string
     public static function adminFilterStatuses(): array
     {
         return [
+            self::QUEUED,
             self::RECORDING,
             self::PROCESSING,
             self::COMPLETED,
             self::FAILED,
+            self::SKIPPED,
         ];
     }
 

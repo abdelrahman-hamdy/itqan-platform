@@ -276,15 +276,27 @@ abstract class BaseSupervisorProfileResource extends Resource
                     ])->columns(2),
                 Fieldset::make('المراقبة والدورات')
                     ->schema([
-                        Toggle::make('can_monitor_sessions')
-                            ->label(__('supervisor.supervisors.can_monitor_sessions'))
-                            ->helperText(__('supervisor.supervisors.can_monitor_sessions_description')),
+                        Toggle::make('can_manage_recording')
+                            ->label(__('supervisor.supervisors.can_manage_recording'))
+                            ->helperText(__('supervisor.supervisors.can_manage_recording_description'))
+                            ->live(),
                         Toggle::make('can_manage_sessions')
                             ->label(__('supervisor.supervisors.can_manage_sessions'))
                             ->helperText(__('supervisor.supervisors.can_manage_sessions_description')),
                         Toggle::make('can_manage_interactive_courses')
                             ->label('إدارة الدورات التفاعلية')
                             ->helperText('إنشاء وتعديل الدورات التفاعلية'),
+                        \Filament\Forms\Components\CheckboxList::make('recording_session_types')
+                            ->label(__('supervisor.supervisors.recording_session_types_label'))
+                            ->options([
+                                'quran_individual' => __('supervisor.recording.type_quran_individual'),
+                                'quran_group' => __('supervisor.recording.type_quran_group'),
+                                'academic_lesson' => __('supervisor.recording.type_academic_lesson'),
+                                'interactive_course' => __('supervisor.recording.type_interactive_course'),
+                                'trial' => __('supervisor.recording.type_trial'),
+                            ])
+                            ->columns(3)
+                            ->visible(fn (\Filament\Forms\Get $get) => $get('can_manage_recording')),
                     ])->columns(2),
                 Grid::make(2)->schema([
                     Select::make('quran_teacher_ids')

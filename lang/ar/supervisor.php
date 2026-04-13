@@ -38,6 +38,7 @@ return [
         'attendance' => 'الحضور والغياب',
         'recorded_courses' => 'الدورات المسجلة',
         'support_tickets' => 'تقارير المشاكل',
+        'recording_management' => 'إدارة التسجيلات',
     ],
 
     'dashboard' => [
@@ -1194,6 +1195,9 @@ return [
         'can_manage_teacher_earnings_description' => 'عرض ومراجعة أرباح المعلمين',
         'can_monitor_sessions' => 'مراقبة الجلسات',
         'can_monitor_sessions_description' => 'الانضمام للاجتماعات ومراقبة الجلسات',
+        'can_manage_recording' => 'مراقبة وتسجيل الحلقات',
+        'can_manage_recording_description' => 'مراقبة الجلسات المباشرة وإدارة تسجيلاتها',
+        'recording_session_types_label' => 'أنواع الجلسات المسموح بتسجيلها',
         'can_manage_sessions' => 'إدارة الجلسات',
         'can_manage_sessions_description' => 'إلغاء الجلسات والتحكم في الاحتساب',
         'perm_group_users' => 'إدارة المستخدمين',
@@ -1817,5 +1821,75 @@ return [
         'teacher_type' => 'نوع المعلم',
         'rating' => 'التقييم',
         'month_summary' => 'ملخص الشهر',
+    ],
+
+    'recording' => [
+        'page_title' => 'إدارة التسجيلات والمراقبة',
+        'page_subtitle' => 'مراقبة وتسجيل الحلقات والجلسات التعليمية',
+        'breadcrumb' => 'إدارة التسجيلات',
+
+        // Capacity dashboard
+        'capacity_active' => 'التسجيلات النشطة',
+        'capacity_max' => 'الحد الأقصى',
+        'capacity_queued' => 'في الانتظار',
+        'capacity_server_status' => 'حالة الخادم',
+        'capacity_recorded_today' => 'تم تسجيلها اليوم',
+        'server_healthy' => 'يعمل بشكل طبيعي',
+        'server_at_capacity' => 'وصل للحد الأقصى',
+        'server_error' => 'خطأ في الخادم',
+
+        // Tabs
+        'tab_live' => 'الجلسات المباشرة',
+        'tab_history' => 'السجل',
+
+        // Session types
+        'type_quran_individual' => 'قرآن فردي',
+        'type_quran_group' => 'قرآن جماعي',
+        'type_academic_lesson' => 'درس أكاديمي',
+        'type_interactive_course' => 'دورة تفاعلية',
+        'type_trial' => 'جلسة تجريبية',
+
+        // Recording status badges
+        'status_recording' => 'جاري التسجيل',
+        'status_queued' => 'في الانتظار',
+        'status_skipped' => 'تم التخطي',
+        'status_manual' => 'يدوي',
+        'status_completed' => 'مكتمل',
+        'status_failed' => 'فشل',
+        'status_none' => 'بدون تسجيل',
+
+        // Filters
+        'filter_session_type' => 'نوع الجلسة',
+        'filter_recording_status' => 'حالة التسجيل',
+        'filter_all_types' => 'جميع الأنواع',
+        'filter_all_statuses' => 'جميع الحالات',
+        'filter_teacher' => 'المعلم',
+        'filter_all_teachers' => 'جميع المعلمين',
+        'filter_search' => 'بحث...',
+
+        // History
+        'history_total_recorded' => 'إجمالي المسجلة',
+        'history_total_skipped' => 'إجمالي المتخطاة',
+        'history_total_failed' => 'إجمالي الفاشلة',
+        'history_total_duration' => 'إجمالي المدة',
+        'history_storage_used' => 'المساحة المستخدمة',
+
+        // Actions
+        'observe_session' => 'مراقبة',
+        'join_session' => 'انضمام',
+
+        // Empty states
+        'no_live_sessions' => 'لا توجد جلسات مباشرة',
+        'no_live_sessions_description' => 'لا توجد جلسات مباشرة حالياً في نطاق صلاحياتك.',
+        'no_history' => 'لا يوجد سجل',
+        'no_history_description' => 'لم يتم تسجيل أي جلسات بعد.',
+
+        // Table headers
+        'session' => 'الجلسة',
+        'teacher' => 'المعلم',
+        'type' => 'النوع',
+        'time' => 'الوقت',
+        'status' => 'حالة التسجيل',
+        'actions' => 'الإجراءات',
     ],
 ];

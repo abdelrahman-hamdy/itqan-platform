@@ -21,6 +21,7 @@ use App\Models\MeetingAttendanceEvent;
 use App\Models\QuranSession;
 use App\Models\User;
 use App\Services\AttendanceEventService;
+use App\Services\RecordingOrchestratorService;
 use App\Services\RecordingService;
 use App\Services\RoomPermissionService;
 use App\Services\SessionTransitionService;
@@ -45,7 +46,8 @@ class LiveKitWebhookController extends Controller
         protected UnifiedSessionStatusService $statusService,
         protected AttendanceEventService $eventService,
         protected RecordingService $recordingService,
-        protected RoomPermissionService $roomPermissionService
+        protected RoomPermissionService $roomPermissionService,
+        protected RecordingOrchestratorService $recordingOrchestrator,
     ) {}
 
     /**
@@ -226,71 +228,15 @@ class LiveKitWebhookController extends Controller
     }
 
     /**
-     * Try to start auto-recording if session supports it and has it enabled
+     * Try to start auto-recording via the recording orchestrator.
+     * The orchestrator handles capacity checking, queuing, and FIFO promotion.
      */
     private function tryStartAutoRecording(BaseSession $session, string $roomName): void
     {
         try {
-            // Check if session implements RecordingCapable interface
-            if (! ($session instanceof RecordingCapable)) {
-                Log::debug('Auto-recording skipped: Session does not implement RecordingCapable', [
-                    'session_id' => $session->id,
-                ]);
-
-                return;
-            }
-
-            // Only record during actual session time (not preparation or grace period)
-            $session->refresh();
-            $session->loadMissing(['individualCircle', 'circle']);
-            if ($session->scheduled_at && now()->lt($session->scheduled_at)) {
-                Log::debug('Auto-recording skipped: Session scheduled time not yet reached', [
-                    'session_id' => $session->id,
-                    'scheduled_at' => $session->scheduled_at,
-                ]);
-
-                return;
-            }
-
-            // Check if recording is enabled for this session
-            if (! $session->isRecordingEnabled()) {
-                Log::debug('Auto-recording skipped: Recording not enabled for this session', [
-                    'session_id' => $session->id,
-                ]);
-
-                return;
-            }
-
-            // Check if session can be recorded (status, permissions, etc.)
-            if (! $session->canBeRecorded()) {
-                Log::debug('Auto-recording skipped: Session cannot be recorded at this time', [
-                    'session_id' => $session->id,
-                ]);
-
-                return;
-            }
-
-            // Check if already recording
-            if ($session->isRecording()) {
-                Log::debug('Auto-recording skipped: Session is already being recorded', [
-                    'session_id' => $session->id,
-                ]);
-
-                return;
-            }
-
-            // Start auto-recording
-            $recording = $this->recordingService->startRecording($session);
-
-            Log::info('Auto-recording started successfully', [
-                'session_id' => $session->id,
-                'recording_id' => $recording->id,
-                'egress_id' => $recording->recording_id,
-            ]);
-
+            $this->recordingOrchestrator->handleSessionLive($session, $roomName);
         } catch (Exception $e) {
-            // Log error but don't fail the webhook - recording is optional
-            Log::error('Failed to start auto-recording', [
+            Log::error('Recording orchestrator failed', [
                 'session_id' => $session->id,
                 'room_name' => $roomName,
                 'error' => $e->getMessage(),
@@ -364,6 +310,9 @@ class LiveKitWebhookController extends Controller
                     ]);
                 }
             }
+
+            // Mark any queued recordings as skipped and free up slots
+            $this->recordingOrchestrator->handleSessionEnded($session);
 
             // Dispatch SessionCompletedEvent for attendance finalization + subscription counting
             if ($wasCompletedByThisEvent) {
@@ -1178,6 +1127,9 @@ class LiveKitWebhookController extends Controller
 
             // Delegate to RecordingService for processing
             $this->recordingService->processEgressWebhook($data);
+
+            // A recording slot just freed up — process the queue
+            \App\Jobs\ProcessRecordingQueueJob::dispatch();
 
         } catch (Exception $e) {
             Log::error('Failed to handle egress_ended webhook', [

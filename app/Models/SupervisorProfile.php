@@ -38,6 +38,8 @@ class SupervisorProfile extends Model
         'can_monitor_sessions',
         'can_manage_sessions',
         'can_manage_interactive_courses',
+        'can_manage_recording',
+        'recording_session_types',
     ];
 
     protected $casts = [
@@ -52,6 +54,8 @@ class SupervisorProfile extends Model
         'can_monitor_sessions' => 'boolean',
         'can_manage_sessions' => 'boolean',
         'can_manage_interactive_courses' => 'boolean',
+        'can_manage_recording' => 'boolean',
+        'recording_session_types' => 'array',
     ];
 
     /**
@@ -325,6 +329,34 @@ class SupervisorProfile extends Model
     public function canManageInteractiveCourses(): bool
     {
         return $this->can_manage_interactive_courses ?? false;
+    }
+
+    public function canManageRecording(): bool
+    {
+        return $this->can_manage_recording ?? false;
+    }
+
+    /**
+     * Get the session types this supervisor can manage recordings for.
+     */
+    public function getRecordingSessionTypes(): array
+    {
+        return $this->recording_session_types ?? [];
+    }
+
+    /**
+     * Check if supervisor can manage recording for a specific session type.
+     * Empty array means all types are allowed.
+     */
+    public function canRecordSessionType(string $type): bool
+    {
+        if (! $this->canManageRecording()) {
+            return false;
+        }
+
+        $allowed = $this->getRecordingSessionTypes();
+
+        return empty($allowed) || in_array($type, $allowed);
     }
 
     /**

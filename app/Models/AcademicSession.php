@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Contracts\RecordingCapable;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Models\Traits\CountsTowardsSubscription;
+use App\Models\Traits\HasRecording;
 use App\Services\NotificationService;
 use DB;
 use Exception;
@@ -71,9 +73,9 @@ use Illuminate\Support\Facades\Log;
  * @see BaseSession Parent class with common session fields
  * @see CountsTowardsSubscription Trait for subscription logic
  */
-class AcademicSession extends BaseSession
+class AcademicSession extends BaseSession implements RecordingCapable
 {
-    use CountsTowardsSubscription;
+    use CountsTowardsSubscription, HasRecording;
 
     /**
      * Academic-specific fillable fields (merged with parent in constructor)
@@ -828,5 +830,30 @@ class AcademicSession extends BaseSession
 
         // Group sessions subscription logic not yet implemented
         return null;
+    }
+
+    // ========================================
+    // Recording (Audio-Only) — auto-managed
+    // ========================================
+
+    public function isRecordingEnabled(): bool
+    {
+        // Always enabled — auto-recording orchestrator manages capacity
+        return true;
+    }
+
+    public function getRecordingConfiguration(): array
+    {
+        return [
+            'room_name' => $this->getRecordingRoomName(),
+            'filename' => $this->getRecordingFilename(),
+            'storage_path' => $this->getRecordingStoragePath(),
+            'metadata' => $this->getRecordingMetadata(),
+            'audio_only' => true,
+            'video_only' => false,
+            'preset' => 'AUDIO_ONLY',
+            'audio_bitrate' => config('livekit.audio.recording_bitrate', 128000),
+            'audio_frequency' => config('livekit.audio.recording_frequency', 48000),
+        ];
     }
 }

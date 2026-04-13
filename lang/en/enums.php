@@ -120,10 +120,12 @@ return [
         'completed' => 'Completed',
     ],
     'recording_status' => [
+        'queued' => 'Queued',
         'recording' => 'Recording',
         'processing' => 'Processing',
         'completed' => 'Completed',
         'failed' => 'Failed',
+        'skipped' => 'Skipped',
         'deleted' => 'Deleted',
     ],
     'week_days' => [

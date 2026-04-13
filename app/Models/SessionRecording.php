@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use App\Enums\RecordingStatus;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -54,6 +54,9 @@ class SessionRecording extends Model
         'processing_error',
         'processed_at',
         'completed_at',
+        'auto_managed',
+        'queued_at',
+        'skipped_reason',
     ];
 
     protected $casts = [
@@ -61,9 +64,11 @@ class SessionRecording extends Model
         'ended_at' => 'datetime',
         'processed_at' => 'datetime',
         'completed_at' => 'datetime',
+        'queued_at' => 'datetime',
         'metadata' => 'array',
         'duration' => 'integer',
         'file_size' => 'integer',
+        'auto_managed' => 'boolean',
         'status' => RecordingStatus::class,
     ];
 
@@ -129,6 +134,38 @@ class SessionRecording extends Model
     public function scopeRecent($query, int $days = 7)
     {
         return $query->where('created_at', '>=', now()->subDays($days));
+    }
+
+    /**
+     * Scope: Get queued recordings
+     */
+    public function scopeQueued($query)
+    {
+        return $query->where('status', RecordingStatus::QUEUED->value);
+    }
+
+    /**
+     * Scope: Get auto-managed recordings
+     */
+    public function scopeAutoManaged($query)
+    {
+        return $query->where('auto_managed', true);
+    }
+
+    /**
+     * Scope: Get oldest queued recording (FIFO)
+     */
+    public function scopeOldestQueued($query)
+    {
+        return $query->queued()->orderBy('queued_at', 'asc');
+    }
+
+    /**
+     * Scope: Get skipped recordings
+     */
+    public function scopeSkipped($query)
+    {
+        return $query->where('status', RecordingStatus::SKIPPED->value);
     }
 
     // ========================================
@@ -247,14 +284,11 @@ class SessionRecording extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        return match ($this->status) {
-            'recording' => 'جاري التسجيل',
-            'processing' => 'جاري المعالجة',
-            'completed' => 'مكتمل',
-            'failed' => 'فشل',
-            'deleted' => 'محذوف',
-            default => $this->status,
-        };
+        if ($this->status instanceof RecordingStatus) {
+            return $this->status->label();
+        }
+
+        return (string) $this->status;
     }
 
     /**
@@ -262,19 +296,54 @@ class SessionRecording extends Model
      */
     public function getStatusColorAttribute(): string
     {
-        return match ($this->status) {
-            'recording' => 'danger', // Red - recording in progress
-            'processing' => 'warning', // Yellow - being processed
-            'completed' => 'success', // Green - ready
-            'failed' => 'danger', // Red - error
-            'deleted' => 'gray', // Gray - deleted
-            default => 'gray',
-        };
+        if ($this->status instanceof RecordingStatus) {
+            return $this->status->color();
+        }
+
+        return 'gray';
+    }
+
+    /**
+     * Check if recording is queued
+     */
+    public function isQueued(): bool
+    {
+        return $this->status === RecordingStatus::QUEUED;
+    }
+
+    /**
+     * Check if recording was skipped
+     */
+    public function isSkipped(): bool
+    {
+        return $this->status === RecordingStatus::SKIPPED;
     }
 
     // ========================================
     // ACTION METHODS
     // ========================================
+
+    /**
+     * Mark recording as queued (waiting for capacity)
+     */
+    public function markAsQueued(): void
+    {
+        $this->update([
+            'status' => RecordingStatus::QUEUED,
+            'queued_at' => now(),
+        ]);
+    }
+
+    /**
+     * Mark recording as skipped (session ended without being recorded)
+     */
+    public function markAsSkipped(string $reason): void
+    {
+        $this->update([
+            'status' => RecordingStatus::SKIPPED,
+            'skipped_reason' => $reason,
+        ]);
+    }
 
     /**
      * Mark recording as processing

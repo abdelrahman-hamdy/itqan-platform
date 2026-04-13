@@ -18,6 +18,7 @@
     $canAccessSubscriptions = $isAdmin || ($profile?->canManageSubscriptions() ?? false) || ($profile?->canViewSubscriptions() ?? false);
     $canManagePayments = $isAdmin || ($profile?->canManagePayments() ?? false);
     $canManageTeacherEarnings = $isAdmin || ($profile?->canManageTeacherEarnings() ?? false);
+    $canManageRecording = $isAdmin || ($profile?->canManageRecording() ?? false) || ($profile?->canMonitorSessions() ?? false);
 @endphp
 
 <x-sidebar.container sidebar-id="supervisor-sidebar" storage-key="supervisorSidebarCollapsed">
@@ -143,6 +144,14 @@
           :label="__('supervisor.sidebar.attendance')"
           icon="ri-user-follow-line"
           :active="request()->routeIs('manage.attendance.*')" />
+
+        @if($canManageRecording ?? false)
+        <x-sidebar.nav-item
+          :href="route('manage.recording.index', ['subdomain' => $subdomain])"
+          :label="__('supervisor.sidebar.recording_management')"
+          icon="ri-record-circle-line"
+          :active="request()->routeIs('manage.recording.*')" />
+        @endif
       </x-sidebar.nav-section>
 
       <!-- Management -->

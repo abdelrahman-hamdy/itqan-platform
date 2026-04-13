@@ -108,10 +108,12 @@ return [
         'completed' => 'مكتمل',
     ],
     'recording_status' => [
+        'queued' => 'في الانتظار',
         'recording' => 'جاري التسجيل',
         'processing' => 'جاري المعالجة',
         'completed' => 'مكتمل',
         'failed' => 'فشل',
+        'skipped' => 'تم التخطي',
         'deleted' => 'محذوف',
     ],
     'week_days' => [

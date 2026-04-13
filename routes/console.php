@@ -129,6 +129,14 @@ Schedule::command('recordings:cleanup --days=7')
     ->runInBackground()
     ->description('Delete session recordings older than 7 days');
 
+// RECORDING: Process stale recording queue entries (safety net for missed webhooks)
+Schedule::command('recordings:process-queue')
+    ->name('process-recording-queue')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Process stale recording queue entries and promote waiting sessions');
+
 // ════════════════════════════════════════════════════════════════
 // SUBSCRIPTION MANAGEMENT
 // ════════════════════════════════════════════════════════════════

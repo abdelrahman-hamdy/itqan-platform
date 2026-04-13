@@ -25,13 +25,14 @@ use App\Http\Controllers\Supervisor\SupervisorPaymentsController;
 use App\Http\Controllers\Supervisor\SupervisorProfileController;
 use App\Http\Controllers\Supervisor\SupervisorQuizzesController;
 use App\Http\Controllers\Supervisor\SupervisorRecordedCoursesController;
+use App\Http\Controllers\Supervisor\SupervisorRecordingController;
 use App\Http\Controllers\Supervisor\SupervisorSessionReportsController;
 use App\Http\Controllers\Supervisor\SupervisorSessionsController;
 use App\Http\Controllers\Supervisor\SupervisorStudentsController;
 use App\Http\Controllers\Supervisor\SupervisorSubscriptionsController;
 use App\Http\Controllers\Supervisor\SupervisorSupervisorsController;
-use App\Http\Controllers\Supervisor\SupervisorTeacherEarningsController;
 use App\Http\Controllers\Supervisor\SupervisorSupportTicketsController;
+use App\Http\Controllers\Supervisor\SupervisorTeacherEarningsController;
 use App\Http\Controllers\Supervisor\SupervisorTeachersController;
 use App\Http\Controllers\Supervisor\SupervisorTrialSessionsController;
 use App\Http\Controllers\Teacher\GroupCircleReportController;
@@ -191,6 +192,12 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
             ->name('sessions.toggle-counts-teacher')->whereIn('sessionType', ['quran', 'academic', 'interactive']);
         Route::patch('/sessions/{sessionType}/{sessionId}/attendance/{attendanceId}/counts-subscription', [SupervisorSessionsController::class, 'toggleCountsForSubscription'])
             ->name('sessions.toggle-counts-subscription')->whereIn('sessionType', ['quran', 'academic', 'interactive']);
+
+        // Recording Management
+        Route::get('/recording/capacity', [SupervisorRecordingController::class, 'capacityStatus'])->name('recording.capacity');
+        Route::get('/recording/history', [SupervisorRecordingController::class, 'history'])->name('recording.history');
+        Route::get('/recording/live-presence', [SupervisorRecordingController::class, 'livePresence'])->name('recording.live-presence');
+        Route::get('/recording', [SupervisorRecordingController::class, 'index'])->name('recording.index');
 
         // Redirect old monitoring route
         Route::get('/sessions-monitoring', fn (Request $request, $subdomain) => redirect()->route('manage.sessions.index', ['subdomain' => $subdomain] + $request->query()))->name('sessions-monitoring.index');
