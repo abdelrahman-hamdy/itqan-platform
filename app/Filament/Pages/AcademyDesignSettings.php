@@ -134,7 +134,7 @@ class AcademyDesignSettings extends Page implements HasForms
 
                         FileUpload::make('hero_image')
                             ->label('صورة القسم الرئيسي')
-                            ->helperText('هذه الصورة تظهر فقط في القالب الثالث')
+                            ->helperText('تظهر هذه الصورة بجانب المحتوى في القالب الثاني والثالث')
                             ->image()
                             ->directory('academies/hero-images')
                             ->visibility('public')
@@ -142,7 +142,7 @@ class AcademyDesignSettings extends Page implements HasForms
                             ->imageCropAspectRatio('4:3')
                             ->imageResizeTargetWidth('800')
                             ->imageResizeTargetHeight('600')
-                            ->visible(fn ($get) => $get('hero_template') === 'template_3'),
+                            ->visible(fn ($get) => in_array($get('hero_template'), ['template_2', 'template_3'])),
 
                         TextInput::make('hero_heading')
                             ->label('عنوان القسم')
