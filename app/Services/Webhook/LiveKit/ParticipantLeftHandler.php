@@ -89,8 +89,9 @@ class ParticipantLeftHandler extends AbstractLiveKitEventHandler
             'session_type' => get_class($session),
             'session_id' => $session->id,
             'user_id' => $user->id,
-            'event_type' => MeetingEventType::LEFT->value,
+            'event_type' => MeetingEventType::LEFT,
             'event_id' => $participant['sid'] ?? uniqid('leave_'),
+            'academy_id' => $session->academy_id ?? null,
             'participant_identity' => $participant['identity'] ?? null,
             'participant_sid' => $participant['sid'] ?? null,
             'event_timestamp' => $leftAt,
@@ -119,7 +120,7 @@ class ParticipantLeftHandler extends AbstractLiveKitEventHandler
         $joinEvent = MeetingAttendanceEvent::where('session_type', get_class($session))
             ->where('session_id', $session->id)
             ->where('user_id', $user->id)
-            ->where('event_type', MeetingEventType::JOINED->value)
+            ->where('event_type', MeetingEventType::JOINED)
             ->whereNull('left_at')
             ->orderBy('event_timestamp', 'desc')
             ->first();

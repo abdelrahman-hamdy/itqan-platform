@@ -65,7 +65,7 @@ class RoomFinishedHandler extends AbstractLiveKitEventHandler
     {
         $unclosedEvents = MeetingAttendanceEvent::where('session_type', get_class($session))
             ->where('session_id', $session->id)
-            ->where('event_type', MeetingEventType::JOINED->value)
+            ->where('event_type', MeetingEventType::JOINED)
             ->whereNull('left_at')
             ->get();
 
@@ -100,7 +100,7 @@ class RoomFinishedHandler extends AbstractLiveKitEventHandler
     private function updateSessionStatus(BaseSession $session, Carbon $endTime): void
     {
         // Only update if session is in ONGOING status
-        if ($session->status === SessionStatus::ONGOING || $session->status->value === SessionStatus::ONGOING->value) {
+        if ($session->status === SessionStatus::ONGOING) {
             $session->update([
                 'status' => SessionStatus::COMPLETED,
                 'ended_at' => $endTime,
