@@ -15,7 +15,6 @@ use Carbon\Carbon;
 use Exception;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -383,16 +382,35 @@ abstract class BaseInteractiveCourseResource extends Resource
                             }),
                     ]),
 
-                KeyValue::make('schedule')
+                Repeater::make('schedule')
                     ->label('الجدول الأسبوعي')
-                    ->keyLabel('اليوم')
-                    ->valueLabel('التوقيت')
-                    ->default([
-                        'الأحد' => '16:00 - 17:00',
-                        'الثلاثاء' => '16:00 - 17:00',
+                    ->schema([
+                        Grid::make(4)->schema([
+                            Select::make('day')
+                                ->label('اليوم')
+                                ->options(WeekDays::options())
+                                ->required(),
+                            Select::make('hour')
+                                ->label('الساعة')
+                                ->options(array_combine(range(1, 12), range(1, 12)))
+                                ->required(),
+                            Select::make('minute')
+                                ->label('الدقيقة')
+                                ->options(['00' => '00', '15' => '15', '30' => '30', '45' => '45'])
+                                ->required(),
+                            Select::make('period')
+                                ->label('الفترة')
+                                ->options(['am' => __('common.am'), 'pm' => __('common.pm')])
+                                ->required(),
+                        ]),
                     ])
+                    ->default([['day' => 'sunday', 'hour' => 4, 'minute' => '00', 'period' => 'pm']])
+                    ->addActionLabel('إضافة يوم')
                     ->afterStateHydrated(function ($component, $state) {
-                        $component->state(static::normalizeScheduleState($state));
+                        $component->state(static::hydrateScheduleForRepeater($state));
+                    })
+                    ->dehydrateStateUsing(function ($state) {
+                        return static::dehydrateScheduleFromRepeater($state);
                     })
                     ->columnSpanFull(),
             ]);
@@ -613,7 +631,121 @@ abstract class BaseInteractiveCourseResource extends Resource
     }
 
     // ========================================
-    // Schedule Normalization
+    // Schedule Hydration / Dehydration
+    // ========================================
+
+    /**
+     * Convert any stored schedule format into repeater-compatible entries.
+     * Returns: [['day' => 'sunday', 'hour' => 4, 'minute' => '00', 'period' => 'pm'], ...]
+     */
+    public static function hydrateScheduleForRepeater(mixed $state): array
+    {
+        if (! is_array($state) || empty($state)) {
+            return [['day' => 'sunday', 'hour' => 4, 'minute' => '00', 'period' => 'pm']];
+        }
+
+        $arabicToDayValue = collect(WeekDays::cases())
+            ->mapWithKeys(fn (WeekDays $d) => [mb_strtolower($d->label()) => $d->value])
+            ->toArray();
+
+        $entries = [];
+
+        // Array-of-objects: [{"day":"sunday","time":"16:00"}]
+        if (array_is_list($state) && isset($state[0]['day'])) {
+            foreach ($state as $item) {
+                $dayValue = strtolower($item['day'] ?? '');
+                // Validate it's a known WeekDays value
+                if (! WeekDays::tryFrom($dayValue)) {
+                    $dayValue = $arabicToDayValue[$dayValue] ?? $dayValue;
+                }
+                $time = $item['time'] ?? '16:00';
+                $entries[] = array_merge(['day' => $dayValue], self::parseTimeTo12h($time));
+            }
+
+            return $entries ?: [['day' => 'sunday', 'hour' => 4, 'minute' => '00', 'period' => 'pm']];
+        }
+
+        // Key-value: {"الأحد": "16:00 - 17:00"} or {"monday": "10:00"}
+        foreach ($state as $key => $value) {
+            $lowerKey = strtolower($key);
+            $dayValue = WeekDays::tryFrom($lowerKey)?->value ?? ($arabicToDayValue[mb_strtolower($key)] ?? $lowerKey);
+            $time = is_string($value) ? $value : '16:00';
+            // For range format, use start time only
+            if (str_contains($time, ' - ')) {
+                $time = trim(explode(' - ', $time)[0]);
+            }
+            $entries[] = array_merge(['day' => $dayValue], self::parseTimeTo12h($time));
+        }
+
+        return $entries ?: [['day' => 'sunday', 'hour' => 4, 'minute' => '00', 'period' => 'pm']];
+    }
+
+    /**
+     * Convert repeater entries back to storage format: [{"day":"sunday","time":"16:00"}]
+     */
+    public static function dehydrateScheduleFromRepeater(mixed $state): array
+    {
+        if (! is_array($state) || empty($state)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($state as $entry) {
+            if (empty($entry['day'])) {
+                continue;
+            }
+            $hour = (int) ($entry['hour'] ?? 12);
+            $minute = $entry['minute'] ?? '00';
+            $period = $entry['period'] ?? 'pm';
+
+            // Convert 12h to 24h
+            if ($period === 'am' && $hour === 12) {
+                $hour24 = 0;
+            } elseif ($period === 'pm' && $hour !== 12) {
+                $hour24 = $hour + 12;
+            } else {
+                $hour24 = $hour;
+            }
+
+            $result[] = [
+                'day' => $entry['day'],
+                'time' => sprintf('%02d:%s', $hour24, $minute),
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Parse a 24h time string into [hour, minute, period] for the repeater.
+     */
+    private static function parseTimeTo12h(string $time): array
+    {
+        $time = trim($time);
+        if (! preg_match('/^(\d{1,2}):(\d{2})$/', $time, $matches)) {
+            return ['hour' => 4, 'minute' => '00', 'period' => 'pm'];
+        }
+        $h = (int) $matches[1];
+        $m = $matches[2];
+        // Snap minute to nearest valid option
+        $validMinutes = ['00', '15', '30', '45'];
+        if (! in_array($m, $validMinutes)) {
+            $mInt = (int) $m;
+            $m = $validMinutes[0];
+            foreach ($validMinutes as $vm) {
+                if (abs($mInt - (int) $vm) < abs($mInt - (int) $m)) {
+                    $m = $vm;
+                }
+            }
+        }
+        $period = $h >= 12 ? 'pm' : 'am';
+        $h12 = $h % 12 ?: 12;
+
+        return ['hour' => $h12, 'minute' => $m, 'period' => $period];
+    }
+
+    // ========================================
+    // Schedule Normalization (Legacy)
     // ========================================
 
     /**

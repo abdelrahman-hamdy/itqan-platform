@@ -82,11 +82,11 @@
           <p class="text-sm font-semibold text-gray-900">{{ $course->total_sessions ?? 0 }} {{ __('components.cards.interactive_course.session_unit') }} <span class="text-gray-400">•</span> {{ $course->duration_weeks ?? 0 }} {{ __('components.cards.interactive_course.week_unit') }}</p>
         </div>
       </div>
-      @if($course->schedule && is_array($course->schedule) && count($course->schedule) > 0)
+      @if(count($course->formatted_schedule) > 0)
       <div class="flex flex-wrap gap-1 mt-2 ms-12">
-        @foreach($course->schedule as $item)
+        @foreach($course->formatted_schedule as $entry)
         <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-white text-blue-700 border border-blue-200">
-          {{ is_array($item) ? ($item['day'] ?? '') . ': ' . ($item['time'] ?? '') : $item }}
+          {{ $entry['day'] }}: {{ $entry['time'] }}
         </span>
         @endforeach
       </div>

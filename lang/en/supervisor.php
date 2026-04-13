@@ -710,6 +710,9 @@ return [
         'schedule_time' => 'Time',
         'add_schedule_entry' => 'Add Day',
         'remove' => 'Remove',
+        'schedule_hour' => 'Hour',
+        'schedule_minute' => 'Minute',
+        'schedule_period' => 'Period',
     ],
 
     'quizzes' => [

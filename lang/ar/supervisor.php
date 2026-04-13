@@ -710,6 +710,9 @@ return [
         'schedule_time' => 'التوقيت',
         'add_schedule_entry' => 'إضافة يوم',
         'remove' => 'حذف',
+        'schedule_hour' => 'الساعة',
+        'schedule_minute' => 'الدقيقة',
+        'schedule_period' => 'الفترة',
     ],
 
     'quizzes' => [

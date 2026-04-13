@@ -129,13 +129,7 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
             $subjects = AcademicSubject::where('academy_id', $academyId)->orderBy('name')->get();
             $gradeLevels = AcademicGradeLevel::where('academy_id', $academyId)->orderBy('name')->get();
             $weekDaysOptions = WeekDays::options();
-            $normalized = BaseInteractiveCourseResource::normalizeScheduleState($course->schedule ?? []);
-            if (! empty($normalized)) {
-                $scheduleEntries = collect($normalized)
-                    ->map(fn ($time, $day) => ['day' => $day, 'time' => $time])
-                    ->values()
-                    ->all();
-            }
+            $scheduleEntries = BaseInteractiveCourseResource::hydrateScheduleForRepeater($course->schedule ?? []);
         }
 
         return view('supervisor.interactive-courses.show', compact(
@@ -251,8 +245,12 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
             'featured_image' => 'nullable|image|max:2048',
             'schedule_days' => 'nullable|array',
             'schedule_days.*' => 'nullable|string',
-            'schedule_times' => 'nullable|array',
-            'schedule_times.*' => 'nullable|string',
+            'schedule_hours' => 'nullable|array',
+            'schedule_hours.*' => 'nullable|integer|min:1|max:12',
+            'schedule_minutes' => 'nullable|array',
+            'schedule_minutes.*' => 'nullable|string|in:00,15,30,45',
+            'schedule_periods' => 'nullable|array',
+            'schedule_periods.*' => 'nullable|string|in:am,pm',
         ]);
 
         $validated['certificate_enabled'] = (bool) $validated['certificate_enabled'];
@@ -272,17 +270,31 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
             unset($validated['featured_image']);
         }
 
-        // Reconstruct schedule from parallel arrays
+        // Reconstruct schedule from parallel arrays into unified format
         $days = $validated['schedule_days'] ?? [];
-        $times = $validated['schedule_times'] ?? [];
+        $hours = $validated['schedule_hours'] ?? [];
+        $minutes = $validated['schedule_minutes'] ?? [];
+        $periods = $validated['schedule_periods'] ?? [];
         $schedule = [];
         foreach ($days as $index => $day) {
-            if (! empty($day) && isset($times[$index])) {
-                $schedule[$day] = $times[$index];
+            if (empty($day)) {
+                continue;
             }
+            $hour = (int) ($hours[$index] ?? 12);
+            $minute = $minutes[$index] ?? '00';
+            $period = $periods[$index] ?? 'pm';
+            // Convert 12h to 24h
+            if ($period === 'am' && $hour === 12) {
+                $hour24 = 0;
+            } elseif ($period === 'pm' && $hour !== 12) {
+                $hour24 = $hour + 12;
+            } else {
+                $hour24 = $hour;
+            }
+            $schedule[] = ['day' => $day, 'time' => sprintf('%02d:%s', $hour24, $minute)];
         }
         $validated['schedule'] = ! empty($schedule) ? $schedule : null;
-        unset($validated['schedule_days'], $validated['schedule_times']);
+        unset($validated['schedule_days'], $validated['schedule_hours'], $validated['schedule_minutes'], $validated['schedule_periods']);
 
         $course->update($validated);
 

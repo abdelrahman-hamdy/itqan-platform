@@ -367,7 +367,7 @@
                                             <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.featured_image') }}</label>
                                             @if($course->featured_image)
                                                 <div class="mb-2">
-                                                    <img src="{{ asset('storage/' . $course->featured_image) }}" alt="{{ $course->title }}" class="w-full h-32 object-cover rounded-lg border border-gray-200">
+                                                    <img src="{{ asset('storage/' . $course->featured_image) }}" alt="{{ $course->title }}" class="w-full rounded-lg border border-gray-200">
                                                 </div>
                                             @endif
                                             <input type="file" name="featured_image" accept="image/*"
@@ -449,7 +449,7 @@
                                     <div class="mt-3" x-data="{
                                         nextId: {{ count($scheduleEntries) }},
                                         entries: @js(array_map(fn($e, $i) => array_merge($e, ['_id' => $i]), $scheduleEntries, array_keys($scheduleEntries))),
-                                        addEntry() { this.entries.push({ day: '', time: '', _id: this.nextId++ }) },
+                                        addEntry() { this.entries.push({ day: '', hour: 4, minute: '00', period: 'pm', _id: this.nextId++ }) },
                                         removeEntry(index) { this.entries.splice(index, 1) }
                                     }">
                                         <label class="block text-xs font-medium text-gray-700 mb-2">{{ __('supervisor.interactive_courses.schedule') }}</label>
@@ -457,15 +457,31 @@
                                             <template x-for="(entry, index) in entries" :key="entry._id">
                                                 <div class="flex items-center gap-2">
                                                     <select :name="'schedule_days[' + index + ']'" x-model="entry.day"
-                                                            class="flex-1 rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                                            class="w-28 rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
                                                         <option value="">{{ __('supervisor.interactive_courses.schedule_day') }}</option>
                                                         @foreach($weekDaysOptions as $value => $label)
-                                                            <option value="{{ $label }}">{{ $label }}</option>
+                                                            <option value="{{ $value }}">{{ $label }}</option>
                                                         @endforeach
                                                     </select>
-                                                    <input type="text" :name="'schedule_times[' + index + ']'" x-model="entry.time"
-                                                           placeholder="16:00 - 17:00"
-                                                           class="flex-1 rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                                    <select :name="'schedule_hours[' + index + ']'" x-model="entry.hour"
+                                                            class="w-16 rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                                        @for($h = 1; $h <= 12; $h++)
+                                                            <option value="{{ $h }}">{{ $h }}</option>
+                                                        @endfor
+                                                    </select>
+                                                    <span class="text-gray-400 text-sm">:</span>
+                                                    <select :name="'schedule_minutes[' + index + ']'" x-model="entry.minute"
+                                                            class="w-16 rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                                        <option value="00">00</option>
+                                                        <option value="15">15</option>
+                                                        <option value="30">30</option>
+                                                        <option value="45">45</option>
+                                                    </select>
+                                                    <select :name="'schedule_periods[' + index + ']'" x-model="entry.period"
+                                                            class="w-16 rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                                        <option value="am">{{ __('common.am') }}</option>
+                                                        <option value="pm">{{ __('common.pm') }}</option>
+                                                    </select>
                                                     <button type="button" @click="removeEntry(index)" x-show="entries.length > 1"
                                                             class="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
                                                         <i class="ri-delete-bin-line text-sm"></i>

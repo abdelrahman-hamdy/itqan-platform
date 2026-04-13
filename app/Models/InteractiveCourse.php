@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\EnrollmentStatus;
 use App\Enums\InteractiveCourseStatus;
+use App\Enums\WeekDays;
 use App\Models\Traits\ScopedToAcademy;
 use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -284,6 +285,72 @@ class InteractiveCourse extends Model
     public function getStatusInArabicAttribute(): string
     {
         return $this->status->label();
+    }
+
+    /**
+     * Get schedule formatted for display with Arabic day labels and 12h AM/PM time.
+     * Handles all stored formats: array-of-objects, key-value with Arabic/English keys.
+     *
+     * @return array<int, array{day: string, time: string}>
+     */
+    public function getFormattedScheduleAttribute(): array
+    {
+        $schedule = $this->schedule;
+        if (! is_array($schedule) || empty($schedule)) {
+            return [];
+        }
+
+        $dayTranslations = collect(WeekDays::cases())
+            ->mapWithKeys(fn (WeekDays $d) => [strtolower($d->value) => $d->label()])
+            ->toArray();
+
+        // Array-of-objects: [{"day":"sunday","time":"16:00"}]
+        if (array_is_list($schedule) && isset($schedule[0]['day'])) {
+            return array_map(function ($item) use ($dayTranslations) {
+                $dayKey = strtolower($item['day'] ?? '');
+                $dayLabel = $dayTranslations[$dayKey] ?? $item['day'];
+                $timeLabel = self::formatTime24to12($item['time'] ?? '');
+
+                return ['day' => $dayLabel, 'time' => $timeLabel];
+            }, $schedule);
+        }
+
+        // Key-value: {"الأحد": "16:00 - 17:00"} or {"monday": "10:00"}
+        $result = [];
+        foreach ($schedule as $key => $value) {
+            $lowerKey = strtolower($key);
+            $dayLabel = $dayTranslations[$lowerKey] ?? $key;
+            $timeLabel = self::formatTime24to12($value);
+            $result[] = ['day' => $dayLabel, 'time' => $timeLabel];
+        }
+
+        return $result;
+    }
+
+    private static function formatTime24to12(string $time): string
+    {
+        // Handle range format "16:00 - 17:00" (legacy)
+        if (str_contains($time, ' - ')) {
+            $parts = explode(' - ', $time);
+
+            return self::formatSingleTime($parts[0]).' - '.self::formatSingleTime($parts[1]);
+        }
+
+        return self::formatSingleTime($time);
+    }
+
+    private static function formatSingleTime(string $time): string
+    {
+        $time = trim($time);
+        if (! preg_match('/^\d{1,2}:\d{2}$/', $time)) {
+            return $time;
+        }
+        [$hour, $minute] = explode(':', $time);
+        $h = (int) $hour;
+        $period = $h >= 12 ? __('common.pm') : __('common.am');
+        $h12 = $h % 12 ?: 12;
+
+        return $h12.':'.$minute.' '.$period;
     }
 
     public function getPaymentTypeInArabicAttribute(): string
