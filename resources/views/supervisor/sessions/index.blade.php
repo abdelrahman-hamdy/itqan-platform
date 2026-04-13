@@ -320,7 +320,11 @@ document.addEventListener('DOMContentLoaded', () => {
             liveSessions.forEach(id => params.append('sessions[]', id));
             const res = await fetch(`${presenceUrl}?${params}`);
             if (res.ok) {
-                Alpine.store('presence').sessions = await res.json();
+                const data = await res.json();
+                const prev = JSON.stringify(Alpine.store('presence').sessions);
+                if (JSON.stringify(data) !== prev) {
+                    Alpine.store('presence').sessions = data;
+                }
             }
         } catch (e) { /* silent */ }
     }
