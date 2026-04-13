@@ -80,6 +80,11 @@ class AttendanceNotificationService
     protected function sendParentNotifications(MeetingAttendance $attendance, User $student): void
     {
         try {
+            $session = $attendance->session;
+            if (! $session) {
+                return;
+            }
+
             $parents = $this->parentNotificationService->getParentsForStudent($student);
 
             foreach ($parents as $parent) {
@@ -88,11 +93,11 @@ class AttendanceNotificationService
                     AttendanceStatus::ATTENDED->value => NotificationType::ATTENDANCE_MARKED_PRESENT,
                     AttendanceStatus::ABSENT->value => NotificationType::ATTENDANCE_MARKED_ABSENT,
                     AttendanceStatus::LATE->value => NotificationType::ATTENDANCE_MARKED_LATE,
-                    AttendanceStatus::LEFT->value => NotificationType::ATTENDANCE_MARKED_LATE, // Left early treated as late for notifications
+                    AttendanceStatus::LEFT->value => NotificationType::ATTENDANCE_MARKED_LATE,
                     default => NotificationType::ATTENDANCE_MARKED_PRESENT,
                 };
 
-                $sessionType = $attendance->session->getMeetingType() ?? 'session';
+                $sessionType = $session->getMeetingType() ?? 'session';
                 $routeName = $sessionType === 'quran' ? 'parent.sessions.show' : 'parent.sessions.show';
 
                 $this->notificationService->send(
@@ -100,8 +105,8 @@ class AttendanceNotificationService
                     $notificationType,
                     [
                         'child_name' => $student->name,
-                        'session_title' => $attendance->session->title ?? 'الجلسة',
-                        'date' => $this->formatInAcademyTimezone($attendance->session->scheduled_at),
+                        'session_title' => $session->title ?? __('meetings.session'),
+                        'date' => $this->formatInAcademyTimezone($session->scheduled_at),
                     ],
                     route($routeName, [
                         'sessionType' => $sessionType,
