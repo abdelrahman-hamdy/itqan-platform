@@ -78,7 +78,22 @@ class ParticipantJoinedHandler extends AbstractLiveKitEventHandler
      */
     private function recordJoinEvent(BaseSession $session, User $user, array $participant): void
     {
-        // Create or update join event
+        // Deduplicate rapid reconnection storms: skip if same user joined this session within 5 seconds
+        $recentJoin = MeetingAttendanceEvent::where('session_id', $session->id)
+            ->where('user_id', $user->id)
+            ->where('event_type', MeetingEventType::JOINED->value)
+            ->where('event_timestamp', '>=', now()->subSeconds(5))
+            ->exists();
+
+        if ($recentJoin) {
+            $this->logInfo('Skipping duplicate rapid join', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+            ]);
+
+            return;
+        }
+
         MeetingAttendanceEvent::updateOrCreate(
             [
                 'session_type' => get_class($session),
@@ -90,8 +105,8 @@ class ParticipantJoinedHandler extends AbstractLiveKitEventHandler
             [
                 'participant_identity' => $participant['identity'] ?? null,
                 'participant_sid' => $participant['sid'] ?? null,
-                'occurred_at' => now(),
-                'metadata' => [
+                'event_timestamp' => now(),
+                'raw_webhook_data' => [
                     'room_sid' => $session->meeting_room_sid,
                     'joined_at' => now()->toIso8601String(),
                 ],

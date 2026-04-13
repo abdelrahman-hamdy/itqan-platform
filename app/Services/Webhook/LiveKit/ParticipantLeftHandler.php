@@ -93,8 +93,8 @@ class ParticipantLeftHandler extends AbstractLiveKitEventHandler
             'event_id' => $participant['sid'] ?? uniqid('leave_'),
             'participant_identity' => $participant['identity'] ?? null,
             'participant_sid' => $participant['sid'] ?? null,
-            'occurred_at' => $leftAt,
-            'metadata' => [
+            'event_timestamp' => $leftAt,
+            'raw_webhook_data' => [
                 'room_sid' => $session->meeting_room_sid,
                 'left_at' => $leftAt->toIso8601String(),
             ],
@@ -120,18 +120,18 @@ class ParticipantLeftHandler extends AbstractLiveKitEventHandler
             ->where('session_id', $session->id)
             ->where('user_id', $user->id)
             ->where('event_type', MeetingEventType::JOINED->value)
-            ->whereNull('closed_at')
-            ->orderBy('occurred_at', 'desc')
+            ->whereNull('left_at')
+            ->orderBy('event_timestamp', 'desc')
             ->first();
 
         if ($joinEvent) {
-            $joinedAt = Carbon::parse($joinEvent->occurred_at);
+            $joinedAt = Carbon::parse($joinEvent->event_timestamp);
             $durationMinutes = $joinedAt->diffInMinutes($leftAt);
 
             $joinEvent->update([
-                'closed_at' => $leftAt,
+                'left_at' => $leftAt,
                 'duration_minutes' => $durationMinutes,
-                'closed_by_event_id' => $participant['sid'] ?? null,
+                'leave_event_id' => $participant['sid'] ?? null,
             ]);
 
             $this->logInfo('Join event closed', [

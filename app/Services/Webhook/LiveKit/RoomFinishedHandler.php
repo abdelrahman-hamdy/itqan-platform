@@ -66,17 +66,17 @@ class RoomFinishedHandler extends AbstractLiveKitEventHandler
         $unclosedEvents = MeetingAttendanceEvent::where('session_type', get_class($session))
             ->where('session_id', $session->id)
             ->where('event_type', MeetingEventType::JOINED->value)
-            ->whereNull('closed_at')
+            ->whereNull('left_at')
             ->get();
 
         foreach ($unclosedEvents as $event) {
-            $joinedAt = Carbon::parse($event->occurred_at);
+            $joinedAt = Carbon::parse($event->event_timestamp);
             $durationMinutes = $joinedAt->diffInMinutes($endTime);
 
             $event->update([
-                'closed_at' => $endTime,
+                'left_at' => $endTime,
                 'duration_minutes' => $durationMinutes,
-                'closed_by_event_id' => 'room_closed',
+                'leave_event_id' => 'room_closed',
             ]);
 
             $this->logInfo('Unclosed join event closed', [
